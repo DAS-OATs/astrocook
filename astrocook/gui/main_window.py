@@ -15,7 +15,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
-    QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
@@ -307,14 +307,20 @@ class MainWindowV2(QMainWindow):
         """Creates the right sidebar widget with plot toggles and cursor controls."""
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        sidebar_layout.setContentsMargins(10, 10, 15, 10)
-        sidebar_layout.setSpacing(15) # Increase spacing between sections
+        sidebar_layout.setContentsMargins(25, 10, 15, 10)
+        sidebar_layout.setSpacing(15)
+
+        # --- Helper: Expand Field ---
+        def _expand_field(widget):
+            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            return widget
 
         # --- Plot Element Toggles ---
-        plot_toggles_layout = QVBoxLayout() # Group toggles
+        # (This section remains unchanged)
+        plot_toggles_layout = QVBoxLayout()
         plot_toggles_layout.setSpacing(8)
-        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>")) # Section title
-
+        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>"))
+        
         self.error_checkbox = QCheckBox("1-sigma error"); self.error_checkbox.setChecked(True)
         self.error_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.error_checkbox)
@@ -327,33 +333,31 @@ class MainWindowV2(QMainWindow):
         self.model_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.model_checkbox)
 
-        self.systems_checkbox = QCheckBox("Systems"); self.systems_checkbox.setChecked(True) # Often useful default
+        self.systems_checkbox = QCheckBox("Systems"); self.systems_checkbox.setChecked(True)
         self.systems_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.systems_checkbox)
 
-        # --- *** NEW: Auxiliary Column Plotter *** ---
-        # (Using a form layout for clean alignment)
+        # Aux Column
         form_layout_aux = QFormLayout()
         form_layout_aux.setSpacing(5)
         self.aux_col_combo = QComboBox()
-        self.aux_col_combo.setToolTip("Select an auxiliary column to plot (e.g., a mask)")
+        self.aux_col_combo.setToolTip("Select an auxiliary column to plot")
         self.aux_col_combo.currentTextChanged.connect(self._trigger_replot)
-        form_layout_aux.addRow("Aux Column:", self.aux_col_combo)
+        form_layout_aux.addRow("Aux Column:", self.aux_col_combo) 
         plot_toggles_layout.addLayout(form_layout_aux)
-        # --- *** END NEW *** ---
 
         self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
         self.strong_lines_checkbox.setToolTip("Show only major emission lines when z_em is active.")
-        self.strong_lines_checkbox.setChecked(True) # Default to clean view
+        self.strong_lines_checkbox.setChecked(True)
         self.strong_lines_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.strong_lines_checkbox)
 
-        sidebar_layout.addLayout(plot_toggles_layout) # Add group to main layout
+        sidebar_layout.addLayout(plot_toggles_layout)
 
         self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
         self.isomag_checkbox.setToolTip("Show lines of constant AB magnitude")
         self.isomag_checkbox.toggled.connect(lambda b: self.plot_viewer.toggle_isomag_grid(b))
-        self.isomag_checkbox.setObjectName("PlotControlCheckbox") # Ensure styling
+        self.isomag_checkbox.setObjectName("PlotControlCheckbox")
         plot_toggles_layout.addWidget(self.isomag_checkbox)
     
         # --- ** Axis & View Controls ** ---
@@ -364,7 +368,7 @@ class MainWindowV2(QMainWindow):
         # X-Axis Unit
         form_layout_x = QFormLayout()
         self.x_unit_combo = QComboBox()
-        self.x_unit_options = ["nm", "Angstrom", "micron"] # Simplified units
+        self.x_unit_options = ["nm", "Angstrom", "micron"]
         self.x_unit_combo.addItems(self.x_unit_options)
         self.x_unit_combo.setToolTip("Change λ display units (data remains nm).")
         form_layout_x.addRow("λ Unit:", self.x_unit_combo)
@@ -373,13 +377,14 @@ class MainWindowV2(QMainWindow):
         # X/Y Toggles
         self.norm_y_checkbox = QCheckBox("Normalize F")
         self.norm_y_checkbox.setToolTip("Plot F / Continuum and set F limits.")
-        self.norm_y_checkbox.toggled.connect(self._on_view_toggle) # <-- CHANGE THIS
+        self.norm_y_checkbox.toggled.connect(self._on_view_toggle)
         view_layout.addWidget(self.norm_y_checkbox)
 
         self.snr_checkbox = QCheckBox("Show SNR (F / error)")
         self.snr_checkbox.setToolTip("Plot F / Error Column.")
-        self.snr_checkbox.toggled.connect(self._on_view_toggle) # <-- NEW
+        self.snr_checkbox.toggled.connect(self._on_view_toggle)
         view_layout.addWidget(self.snr_checkbox)
+        
         form_layout_snr = QFormLayout()
         form_layout_snr.setSpacing(5)
         self.snr_col_combo = QComboBox()
@@ -390,122 +395,111 @@ class MainWindowV2(QMainWindow):
 
         self.log_x_checkbox = QCheckBox("Logarithmic λ")
         view_layout.addWidget(self.log_x_checkbox)
-        
         self.log_y_checkbox = QCheckBox("Logarithmic F")
-        #view_layout.addWidget(self.log_y_checkbox)
         
         sidebar_layout.addLayout(view_layout)
-        # -----------------------------
 
-        # Connect new signals
         self.x_unit_combo.currentTextChanged.connect(self._trigger_replot)
-        #self.norm_y_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
 
-        # --- *** NEW: Axis Limit Controls *** ---
-        limits_layout = QVBoxLayout()
-        limits_layout.setSpacing(8)
-        limits_layout.addWidget(QLabel("<b>Axis Limits:</b>"))
+        # --- *** UNIFIED GRID FOR CONTROLS *** ---
+        # [CHANGE] Use a SINGLE grid for both sections to guarantee alignment
+        unified_grid = QGridLayout()
+        unified_grid.setContentsMargins(0, 0, 0, 0)
+        unified_grid.setVerticalSpacing(5)
+        unified_grid.setHorizontalSpacing(10) # A bit more space between label and box
+        
+        # Column 0: Labels (Fixed min width)
+        unified_grid.setColumnMinimumWidth(0, 80)
+        # Column 1: Boxes (Stretch)
+        unified_grid.setColumnStretch(1, 1)
 
-        # Use QFormLayout for label-input pairs
-        form_layout_limits = QFormLayout()
-        form_layout_limits.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        form_layout_limits.setLabelAlignment(Qt.AlignLeft)
-        form_layout_limits.setSpacing(5)
+        # -- SECTION 1: Axis Limits --
+        # Header (Span 2 columns)
+        header_limits = QLabel("<b>Axis Limits:</b>")
+        # Add some top margin to separate from previous section
+        header_limits.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
+        unified_grid.addWidget(header_limits, 0, 0, 1, 2)
 
-        # Create validators (use C locale for decimal points)
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
         validator.setNotation(QDoubleValidator.StandardNotation)
 
-        self.xmin_input = QLineEdit("0.0")
-        self.xmin_input.setValidator(validator)
-        self.xmax_input = QLineEdit("1.0")
-        self.xmax_input.setValidator(validator)
-        self.ymin_input = QLineEdit("0.0")
-        self.ymin_input.setValidator(validator)
-        self.ymax_input = QLineEdit("1.0")
-        self.ymax_input.setValidator(validator)
+        self.xmin_input = _expand_field(QLineEdit("0.0")); self.xmin_input.setValidator(validator)
+        self.xmax_input = _expand_field(QLineEdit("1.0")); self.xmax_input.setValidator(validator)
+        self.ymin_input = _expand_field(QLineEdit("0.0")); self.ymin_input.setValidator(validator)
+        self.ymax_input = _expand_field(QLineEdit("1.0")); self.ymax_input.setValidator(validator)
 
         self.xmin_input.editingFinished.connect(self._on_set_custom_limits)
         self.xmax_input.editingFinished.connect(self._on_set_custom_limits)
         self.ymin_input.editingFinished.connect(self._on_set_custom_limits)
         self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
         
-        form_layout_limits.addRow("λ Min:", self.xmin_input)
-        form_layout_limits.addRow("λ Max:", self.xmax_input)
-        form_layout_limits.addRow("F Min:", self.ymin_input)
-        form_layout_limits.addRow("F Max:", self.ymax_input)
-        
-        limits_layout.addLayout(form_layout_limits)
+        # Rows 1-4
+        unified_grid.addWidget(QLabel("λ Min:"), 1, 0)
+        unified_grid.addWidget(self.xmin_input, 1, 1)
+        unified_grid.addWidget(QLabel("λ Max:"), 2, 0)
+        unified_grid.addWidget(self.xmax_input, 2, 1)
+        unified_grid.addWidget(QLabel("F Min:"), 3, 0)
+        unified_grid.addWidget(self.ymin_input, 3, 1)
+        unified_grid.addWidget(QLabel("F Max:"), 4, 0)
+        unified_grid.addWidget(self.ymax_input, 4, 1)
 
-        #self.set_limits_button = QPushButton("Set Custom Limits")
-        #self.set_limits_button.clicked.connect(self._on_set_custom_limits)
-        #limits_layout.addWidget(self.set_limits_button)
-        
-        sidebar_layout.addLayout(limits_layout)
+        # -- SECTION 2: Redshift Cursor --
+        # Header (Span 2 columns)
+        header_cursor = QLabel("<b>Redshift Cursor:</b>")
+        header_cursor.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
+        unified_grid.addWidget(header_cursor, 5, 0, 1, 2)
 
-        # --- Redshift Cursor Controls ---
-        cursor_layout = QVBoxLayout() # Group cursor controls
-        cursor_layout.setSpacing(8)
-        cursor_layout.addWidget(QLabel("<b>Redshift Cursor:</b>")) # Section title
-
-        # Use QFormLayout for label-input pairs
-        form_layout = QFormLayout()
-        form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        form_layout.setLabelAlignment(Qt.AlignLeft) # Align labels left
-        form_layout.setSpacing(5)
-
-        self.cursor_series_input = QLineEdit("Ly_a") # Default series
-        self.cursor_z_input = QLineEdit("0.0") # Default redshift
-        # Add validator for redshift input
+        self.cursor_series_input = _expand_field(QLineEdit("Ly_a"))
+        self.cursor_z_input = _expand_field(QLineEdit("0.0"))
         z_validator = QDoubleValidator()
-        # ** Set locale to one using period (e.g., C locale or en_US) **
-        z_validator.setLocale(QLocale.C) # Force C locale (period decimal separator)
+        z_validator.setLocale(QLocale.C) 
         z_validator.setNotation(QDoubleValidator.StandardNotation)
         self.cursor_z_input.setValidator(z_validator)
 
-        form_layout.addRow("Series:", self.cursor_series_input)
-        form_layout.addRow("Redshift:", self.cursor_z_input)
-        cursor_layout.addLayout(form_layout) # Add form to cursor group
+        # Rows 6-7
+        unified_grid.addWidget(QLabel("Series:"), 6, 0)
+        unified_grid.addWidget(self.cursor_series_input, 6, 1)
+        unified_grid.addWidget(QLabel("Redshift:"), 7, 0)
+        unified_grid.addWidget(self.cursor_z_input, 7, 1)
+        
+        # Add the Unified Grid to the sidebar
+        sidebar_layout.addLayout(unified_grid)
 
         self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
-        cursor_layout.addWidget(self.cursor_show_checkbox)
+        # Add some margin to the checkbox
+        self.cursor_show_checkbox.setStyleSheet("margin-top: 5px;")
+        sidebar_layout.addWidget(self.cursor_show_checkbox)
 
-        sidebar_layout.addLayout(cursor_layout) # Add group to main layout
-
-        # Connect signals for cursor updates
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
-        self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) # Just replot on show/hide
+        self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        # --- Spacer ---
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
-        # Assign object names for styling if needed
+        # ... (Object naming remains the same) ...
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
         self.model_checkbox.setObjectName("PlotControlCheckbox")
         self.systems_checkbox.setObjectName("PlotControlCheckbox")
-        self.aux_col_combo.setObjectName("AuxColumnCombo") # <-- NEW
+        self.aux_col_combo.setObjectName("AuxColumnCombo")
         self.strong_lines_checkbox.setObjectName("PlotControlCheckbox")
         self.isomag_checkbox.setObjectName("PlotControlCheckbox")
-
         self.x_unit_combo.setObjectName("XUnitCombo")
         self.norm_y_checkbox.setObjectName("PlotControlCheckbox")
         self.snr_checkbox.setObjectName("PlotControlCheckbox")
         self.log_x_checkbox.setObjectName("PlotControlCheckbox")
         self.log_y_checkbox.setObjectName("PlotControlCheckbox")
-        
         self.cursor_show_checkbox.setObjectName("PlotControlCheckbox")
         
         self.right_sidebar_widget.resize(0, self.height())
         self.right_sidebar_widget.setVisible(False)
-
+        
     def _setup_collapse_buttons(self):
         """Creates and positions the collapse buttons as children of main window."""
         # Left Button
@@ -930,6 +924,7 @@ class MainWindowV2(QMainWindow):
                 color: {text_color};
                 margin-bottom: 0px; /* Override default label margin */
                 padding-top: 4px; /* Align better with LineEdit */
+                min-width: 80px;
             }}
 
             /* Collapse Buttons: Blend, NO borders */
@@ -1732,36 +1727,46 @@ class MainWindowV2(QMainWindow):
         dialog.setWindowTitle(f"Session Inspector: {history_item.display_name}")
         dialog.setMinimumWidth(400)
         
+        # [CHANGE] Apply rounded style to LineEdits to match sidebar styling
+        # We add a subtle border to ensure the rounded shape is visible against the dialog background.
+        dialog.setStyleSheet("""
+            QLineEdit {
+                padding: 3px;
+                border-radius: 5px;
+                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
+                color: {text_color};
+            }
+        """)
+        
         layout = QVBoxLayout(dialog)
         
         # --- 1. Editable Properties Section ---
         form_layout = QFormLayout()
-        # Allow the field column to grow
         form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        form_layout.setVerticalSpacing(5)
 
         # Helper to make line edits expand horizontally
         def _expand_field(widget):
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             return widget
-        
+
         # Name
         self.info_name_edit = _expand_field(QLineEdit(history_item.display_name))
         form_layout.addRow("Session Name:", self.info_name_edit)
         
-        # Object (Handle undefined)
+        # Object
         current_obj = meta.get('OBJECT', '')
-        # [CHANGE] If empty, show "undefined" placeholder logic
         obj_display = str(current_obj) if current_obj else "undefined"
         self.info_object_edit = _expand_field(QLineEdit(obj_display))
         form_layout.addRow("Object Name:", self.info_object_edit)
         
         # z_em
-        self.info_zem_edit = QLineEdit(f"{spec._data.z_em:.5f}")
+        self.info_zem_edit = _expand_field(QLineEdit(f"{spec._data.z_em:.5f}"))
         dbl_validator = QDoubleValidator(); dbl_validator.setLocale(QLocale.C)
         self.info_zem_edit.setValidator(dbl_validator)
         form_layout.addRow("Emission Redshift (z_em):", self.info_zem_edit)
 
-        # Resolution (Handle undefined)
+        # Resolution
         if spec._data.resol > 0:
             current_resol_str = f"{spec._data.resol:.0f}"
         else:
@@ -1774,29 +1779,28 @@ class MainWindowV2(QMainWindow):
         layout.addLayout(form_layout)
         
         # --- 2. Read-Only Stats Section (HTML) ---
-        # Calculate stats (same logic as before)
         x_vals = spec.x.value
         x_range = "Empty"
         snr_str = "N/A"
         if len(x_vals) > 0:
             x_range = f"{np.min(x_vals):.2f} - {np.max(x_vals):.2f} {spec.x.unit}"
             try:
-                # Simple SNR estimate
                 snr_arr = spec.y.value / spec.dy.value
                 valid_snr = snr_arr[(spec.y.value > 0) & (spec.dy.value > 0)]
                 if len(valid_snr) > 0:
                     snr_str = f"{np.nanmedian(valid_snr):.2f}"
             except: pass
 
-        # HTML Table for neat alignment of read-only info
+        # [CHANGE] Formatted according to your new requirements
+        # Removed "Resolution" from here as it is now editable above
         stats_html = (
-            "<hr>"
-            "<style>td { padding-right: 15px; }</style>"
+            "<p style='margin-bottom: 5px;'><b>Other info:</b></p>"
+            "<style>td { padding-left: 15px; padding-top: 5px; }</style>"
             "<table width='100%'>"
-            f"<tr><td><b>Range:</b></td><td>{x_range}</td></tr>"
-            f"<tr><td><b>Median SNR:</b></td><td>{snr_str}</td></tr>"
-            f"<tr><td><b>Points:</b></td><td>{len(spec.x)}</td></tr>"
-            f"<tr><td><b>Components:</b></td><td>{len(systs.components)}</td></tr>"
+            f"<tr><td>Wavelength Range:</td><td>{x_range}</td></tr>"
+            f"<tr><td>Median SNR:</td><td>{snr_str}</td></tr>"
+            f"<tr><td>Number of data points:</td><td>{len(spec.x)}</td></tr>"
+            f"<tr><td>Number of components:</td><td>{len(systs.components)}</td></tr>"
             "</table>"
         )
         

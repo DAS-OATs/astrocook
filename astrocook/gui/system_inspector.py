@@ -992,6 +992,11 @@ class SystemInspector(QWidget):
         Updates the table with data from the session and handles row selection logic.
         Prioritizes the 'latest added' component if a new one is detected.
         """
+        if session:
+            self.setWindowTitle(f"System Inspector: {session.name}")
+        else:
+            self.setWindowTitle("System Inspector")
+            
         # 1. Capture previous state (Selection & Max ID)
         sel = self.table_view.selectionModel().selectedRows()
         prev_uuid = None
