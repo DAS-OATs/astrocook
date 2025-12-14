@@ -14,9 +14,12 @@ if TYPE_CHECKING:
 EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
         "brief": "Set session properties.",
-        "details": "Set core session properties. For resolution, you can enter a value (R) or a pixel sampling (e.g. '3px').",
+        "details": "Set core session properties like name, object, redshift, and resolution.",
         "params": [
-            {"name": "z_em", "type": float, "default": "_current_", "doc": "Emission Redshift (z_em)"},
+            {"name": "name", "type": str, "default": "_current_", "doc": "Session Name (display label)"},
+            {"name": "object", "type": str, "default": "_current_", "doc": "Object Name (header)"},
+            # CHANGED: types to str to allow '_current_' default without casting errors
+            {"name": "z_em", "type": str, "default": "_current_", "doc": "Emission Redshift (z_em)"},
             {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"} 
         ],
         "url": "edit_cb.html#set_properties"
@@ -287,45 +290,49 @@ class RecipeEditV2:
             raise ValueError(f"Invalid resolution format: '{resol_str}'. Use a number (R) or 'Npx'.")
         
 
-    def set_properties(self, z_em: str = '0.0', resol: str = '0.0') -> Optional['SessionV2']:
-        r"""
-        Sets the core physical properties of the session.
-
-        Parameters
-        ----------
-        z_em : str (float)
-            Emission redshift of the source.
-        resol : str (float)
-            Resolving power :math:`R = \lambda / \Delta\lambda` (e.g. "50000").
-            Can also be a pixel FWHM proxy (e.g. "3px" or "3.5 pixel") to estimate R
-            from the median sampling.
-            If "0.0", the recipe will try to read it from metadata.
-
-        Returns
-        -------
-        SessionV2
-            A new session instance with updated metadata.
+    def set_properties(self, name: str = '_current_', object: str = '_current_', 
+                       z_em: str = '_current_', resol: str = '_current_') -> Optional['SessionV2']:
         """
+        Sets the core physical properties and metadata of the session.
+        """
+        # 1. Parse numerical inputs (z_em, resol)
         try:
-            z_em_f = float(z_em)
-            resol_f = self._parse_resolution_string(str(resol))
+            if str(z_em) == '_current_':
+                z_em_f = self._session.spec._data.z_em
+            else:
+                z_em_f = float(z_em)
+                
+            if str(resol) == '_current_':
+                # Use stored resolution (R) directly
+                resol_f = self._session.spec._data.resol
+            else:
+                resol_f = self._parse_resolution_string(str(resol))
         except ValueError:
             logging.error(msg_param_fail)
             return 0
             
+        # 2. Handle text inputs
+        current_meta = self._session.spec.meta
+        
+        # Determine new values, falling back to current if '_current_' is passed
+        new_name = name if name != '_current_' else self._session.name
+        new_object = object if object != '_current_' else current_meta.get('OBJECT', '')
+        
         try:
-            # Check if values actually changed
-            # [FIX] Check against stored R
-            current_resol = self._session.spec._data.resol
-            if current_resol == 0.0:
-                 current_resol = self._session.spec.meta.get('resol', 0.0)
-
-            if z_em_f == self._session.spec._data.z_em and resol_f == current_resol:
-                raise ValueError("No changes were made to the properties.")
+            # 3. Apply changes via SpectrumV2.with_properties
+            new_spec = self._session.spec.with_properties(
+                z_em=z_em_f, 
+                resol=resol_f,
+                object_name=new_object 
+            )
             
-            # [FIX] Pass 'resol' (R) to with_properties
-            new_spec = self._session.spec.with_properties(z_em=z_em_f, resol=resol_f)
-            return self._session.with_new_spectrum(new_spec)
+            # 4. Handle Session Name (Lives on the Session wrapper)
+            new_session = self._session.with_new_spectrum(new_spec)
+            if new_name:
+                new_session.name = new_name
+            
+            return new_session
+            
         except Exception as e:
             raise e
 

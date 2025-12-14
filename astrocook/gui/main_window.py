@@ -1250,6 +1250,11 @@ class MainWindowV2(QMainWindow):
             # Update the name in the sidebar model *if* the active history corresponds to the last item
             # (This keeps the name updated for the current linear path)
 
+            # If the recipe changed the session name (e.g. set_properties), 
+            # update the history wrapper immediately so the Sidebar reflects it.
+            if target_history.display_name != new_session.name:
+                target_history.display_name = new_session.name
+
             # Refresh the *single* log viewer if it's open
             if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
                 try:
@@ -1712,145 +1717,192 @@ class MainWindowV2(QMainWindow):
         )
     
     def _on_session_info(self, history_item: SessionHistory):
-        """ Displays an info box for the selected session. """
-        if not history_item:
-            return
+        """ 
+        Displays an editable info/inspector box for the selected session. 
+        """
+        if not history_item: return
         
-        try:
-            state = history_item.current_state
-            spec = state.spec
-            systs = state.systs
-            meta = spec.meta if spec else {}
+        state = history_item.current_state
+        spec = state.spec
+        systs = state.systs
+        meta = spec.meta if spec else {}
 
-            # --- Calculate new stats ---
-            x_vals = spec.x.value
-            if len(x_vals) > 0:
-                x_range = f"{np.min(x_vals):.2f} - {np.max(x_vals):.2f} {spec.x.unit}"
-                
-                # Simple SNR estimate (median(y/dy))
-                try:
-                    snr_arr = spec.y.value / spec.dy.value
-                    # Filter valid
-                    valid_snr = snr_arr[(spec.y.value > 0) & (spec.dy.value > 0)]
-                    if len(valid_snr) > 0:
-                        snr_med = np.nanmedian(valid_snr)
-                        snr_str = f"{snr_med:.2f}"
-                    else:
-                        snr_str = "N/A"
-                except:
-                    snr_str = "N/A"
-            else:
-                x_range = "Empty"
-                snr_str = "N/A"
-
-            # Resolution info
-            if spec._data.resol > 0:
-                resol_str = f"R ~ {spec._data.resol:.0f}"
-            else:
-                resol_str = "Unknown"
+        # --- Create Custom Dialog ---
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Session Inspector: {history_item.display_name}")
+        dialog.setMinimumWidth(400)
         
+        layout = QVBoxLayout(dialog)
+        
+        # --- 1. Editable Properties Section ---
+        form_layout = QFormLayout()
+        # Allow the field column to grow
+        form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
-            # --- Build an HTML table for alignment ---
-            # We can control the font and style here reliably.
-            info_html = (
-                "<style>"
-                "table { border: none; font-size: 13px; }"
-                "td { border: none; padding-right: 15px; }"
-                "b { font-weight: bold; }"
-                "</style>"
-                "<table>"
-            )
+        # Helper to make line edits expand horizontally
+        def _expand_field(widget):
+            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            return widget
+        
+        # Name
+        self.info_name_edit = _expand_field(QLineEdit(history_item.display_name))
+        form_layout.addRow("Session Name:", self.info_name_edit)
+        
+        # Object (Handle undefined)
+        current_obj = meta.get('OBJECT', '')
+        # [CHANGE] If empty, show "undefined" placeholder logic
+        obj_display = str(current_obj) if current_obj else "undefined"
+        self.info_object_edit = _expand_field(QLineEdit(obj_display))
+        form_layout.addRow("Object Name:", self.info_object_edit)
+        
+        # z_em
+        self.info_zem_edit = QLineEdit(f"{spec._data.z_em:.5f}")
+        dbl_validator = QDoubleValidator(); dbl_validator.setLocale(QLocale.C)
+        self.info_zem_edit.setValidator(dbl_validator)
+        form_layout.addRow("Emission Redshift (z_em):", self.info_zem_edit)
 
-            # Helper for clean table rows
-            def add_row(key: str, value, sub_key: bool = False):
-                indent = "&nbsp;" * (4 if sub_key else 0)
-                return (f"<tr>"
-                        f"<td>{indent}<b>{key}:</b></td>"
-                        f"<td>{value}</td>"
-                        f"</tr>")
+        # Resolution (Handle undefined)
+        if spec._data.resol > 0:
+            current_resol_str = f"{spec._data.resol:.0f}"
+        else:
+            current_resol_str = "undefined"
             
-            def add_header(title: str):
-                 return (f"<tr>"
-                        f"<td colspan='2'><br><b>{title}:</b></td>"
-                        f"</tr>")
+        self.info_resol_edit = _expand_field(QLineEdit(current_resol_str))
+        self.info_resol_edit.setPlaceholderText("Resolving Power R")
+        form_layout.addRow("Resolution (R):", self.info_resol_edit)
+        
+        layout.addLayout(form_layout)
+        
+        # --- 2. Read-Only Stats Section (HTML) ---
+        # Calculate stats (same logic as before)
+        x_vals = spec.x.value
+        x_range = "Empty"
+        snr_str = "N/A"
+        if len(x_vals) > 0:
+            x_range = f"{np.min(x_vals):.2f} - {np.max(x_vals):.2f} {spec.x.unit}"
+            try:
+                # Simple SNR estimate
+                snr_arr = spec.y.value / spec.dy.value
+                valid_snr = snr_arr[(spec.y.value > 0) & (spec.dy.value > 0)]
+                if len(valid_snr) > 0:
+                    snr_str = f"{np.nanmedian(valid_snr):.2f}"
+            except: pass
 
-            info_html += add_row("Session", history_item.display_name)
-            
-            info_html += add_header("Target Properties")
-            info_html += add_row("Object", meta.get('OBJECT', 'N/A'), sub_key=True)
-            info_html += add_row("z_em", f"{spec._data.z_em:.5f}", sub_key=True)
-            # REMOVED z_rf row
-            
-            info_html += add_header("Spectrum Stats")
-            info_html += add_row("Range", x_range, sub_key=True)
-            info_html += add_row("Points", len(spec.x), sub_key=True)
-            info_html += add_row("Resolution", resol_str, sub_key=True)
-            info_html += add_row("Median SNR", snr_str, sub_key=True)
+        # HTML Table for neat alignment of read-only info
+        stats_html = (
+            "<hr>"
+            "<style>td { padding-right: 15px; }</style>"
+            "<table width='100%'>"
+            f"<tr><td><b>Range:</b></td><td>{x_range}</td></tr>"
+            f"<tr><td><b>Median SNR:</b></td><td>{snr_str}</td></tr>"
+            f"<tr><td><b>Points:</b></td><td>{len(spec.x)}</td></tr>"
+            f"<tr><td><b>Components:</b></td><td>{len(systs.components)}</td></tr>"
+            "</table>"
+        )
+        
+        stats_label = QLabel(stats_html)
+        stats_label.setTextFormat(Qt.RichText)
+        layout.addWidget(stats_label)
+        
+        # --- 3. Buttons ---
+        btn_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(lambda: self._apply_session_info_changes(
+            dialog, history_item
+        ))
+        btn_box.rejected.connect(dialog.reject)
+        layout.addWidget(btn_box)
+        
+        dialog.exec()
 
-            info_html += add_header("Analysis")
-            info_html += add_row("Components", len(systs.components), sub_key=True)
+    def _apply_session_info_changes(self, dialog, history_item):
+        """
+        Callback to apply changes from the info dialog via the set_properties recipe.
+        """
+        # Get values from the widgets
+        new_name = self.info_name_edit.text()
+        new_obj = self.info_object_edit.text()
+        new_zem = self.info_zem_edit.text()
+        
+        # Handle Object "undefined"
+        raw_obj = self.info_object_edit.text().strip()
+        if raw_obj.lower() == "undefined" or not raw_obj:
+            new_obj = "" # Set to empty string internally
+        else:
+            new_obj = raw_obj
             
-            info_html += "</table>"
-            # --- End HTML string ---
+        # Handle z_em safety (replace comma with dot just in case)
+        new_zem = self.info_zem_edit.text().replace(',', '.')
+        
+        # Handle Resolution "undefined"
+        raw_resol = self.info_resol_edit.text().strip()
+        if raw_resol.lower() == "undefined" or not raw_resol:
+            new_resol = "0.0"
+        else:
+            new_resol = raw_resol
 
-            # --- Create the custom dialog ---
-            dialog = QDialog(self)
-            dialog.setWindowTitle(f"Session Info: {history_item.display_name}")
-            
-            layout = QVBoxLayout(dialog)
-            
-            text_edit = QTextEdit()
-            text_edit.setReadOnly(True)
-            text_edit.setHtml(info_html) # Set the HTML content
-            
-            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-            button_box.rejected.connect(dialog.reject)
-            
-            layout.addWidget(text_edit)
-            layout.addWidget(button_box)
-            
-            # --- Set the size you want ---
-            dialog.resize(450, 350)
-            dialog.exec() # Show the modal dialog
+        # 1. Switch active history to the one being edited 
+        if self.active_history != history_item:
+            self.active_history = history_item
+            self._update_view_for_session(history_item.current_state, set_current_list_item=True)
 
-        except Exception as e:
-            logging.error(f"Could not generate session info: {e}")
-            QMessageBox.warning(self, "Error", f"Could not retrieve session info:\n{e}")
+        # 2. Build params dictionary
+        params = {
+            'name': new_name,
+            'object': new_obj,
+            'z_em': new_zem,
+            'resol': new_resol # [CHANGE] Pass new resolution
+        }
+
+        # 3. Call the recipe through the standard pipeline
+        self._on_recipe_requested("edit", "set_properties", params, {})
+        
+        dialog.accept()
 
     def _on_session_name_changed(self, index_top_left, index_bottom_right):
-        """ Slot called when data in the session_model changes (i.e., rename). """
-        
+        """ 
+        Slot called when the user renames a session directly in the sidebar list.
+        """
         row = index_top_left.row()
         if not (0 <= row < len(self.session_histories)):
             return
             
         try:
-            # 1. Get the history item
             history_item = self.session_histories[row]
             
-            # 2. Get the new name from the model
+            # 1. Get the new name from the Qt Model (user input)
             new_name = self.session_model.data(index_top_left, Qt.ItemDataRole.DisplayRole)
             
-            if new_name and new_name != history_item.display_name:
-                old_name = history_item.display_name
+            # 2. Check against the INTERNAL session state name
+            current_internal_name = history_item.current_state.name
+            
+            if new_name and new_name != current_internal_name:
+                logging.info(f"Sidebar rename: '{current_internal_name}' -> '{new_name}'.")
                 
-                # 3. Update the history object's display name
+                # --- [FIX START] Hybrid Update ---
+                
+                # A. Update the wrapper IMMEDIATELY.
+                # This ensures if you open the Info window 1ms later, it shows the new name.
                 history_item.display_name = new_name
                 
-                # 4. If this is the active session, update the log scripter title
-                if history_item is self.active_history and self.log_scripter_dialog:
-                    self.log_scripter_dialog.setWindowTitle(f"Log Scripter: {new_name}")
+                # B. Switch active history if needed (recipe runs on active)
+                if self.active_history != history_item:
+                    self.active_history = history_item
+                
+                # C. Trigger recipe to sync the internal SessionV2 state and Log.
+                params = {
+                    'name': new_name,
+                    'object': '_current_',
+                    'z_em': '_current_',
+                    'resol': '_current_'
+                }
+                self._on_recipe_requested("edit", "set_properties", params, {})
+                
+                # --- [FIX END] ---
 
-                    self._update_window_title(new_name)
-                    
-                logging.info(f"Renamed session '{old_name}' to '{new_name}'")
-        
-        except AttributeError as e:
-            # This is the error you were seeing
-            logging.error(f"Error during in-place session rename: {e}")
-            QMessageBox.critical(self, "Rename Error", 
-                                 f"Failed to set display_name property.\n"
-                                 f"Please check 'session_manager.py'.\nError: {e}")
+            elif new_name != history_item.display_name:
+                # Sync wrapper if model changed but internal state matched (rare edge case)
+                history_item.display_name = new_name
+
         except Exception as e:
             logging.error(f"Error during in-place session rename: {e}")
 
@@ -2157,6 +2209,28 @@ class MainWindowV2(QMainWindow):
         if not self.active_history: # Simple check
             QMessageBox.warning(self, "No Session", "Please load a spectrum.")
             return
+        
+        if name == 'set_properties':
+            current_params = {}
+            # Name
+            current_params['name'] = self.active_history.display_name
+            
+            # Object, z_em, Resol
+            spec = self.active_history.current_state.spec
+            if spec:
+                meta = spec.meta
+                current_params['object'] = meta.get('OBJECT', '')
+                current_params['z_em'] = f"{spec._data.z_em:.5f}"
+                
+                if spec._data.resol > 0:
+                    current_params['resol'] = f"{spec._data.resol:.0f}"
+                else:
+                    current_params['resol'] = "0" # Or leave blank
+            
+            # Merge with any passed initial_params (which take precedence)
+            if initial_params:
+                current_params.update(initial_params)
+            initial_params = current_params
 
         # [FIX] Use centralized check (mode='dialog')
         if not self._check_and_handle_requirements(category, name, initial_params, mode='dialog'):

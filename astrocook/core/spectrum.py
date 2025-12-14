@@ -332,36 +332,34 @@ class SpectrumV2:
             
         return v1_spec
     
-    def with_properties(self, z_em: float, resol: float = 0.0) -> 'SpectrumV2':
+    def with_properties(self, z_em: float, resol: float = 0.0, 
+                        object_name: Optional[str] = None) -> 'SpectrumV2':
         """
         API: Returns a NEW SpectrumV2 instance with updated properties.
-        
-        Parameters
-        ----------
-        z_em : float
-            Emission Redshift.
-        resol : float
-            Resolving Power R (lambda / d_lambda).
-
-        Returns
-        -------
-        SpectrumV2
-            A new instance containing the updated metadata.
         """
         new_meta = deepcopy(self._data.meta)
         
-        # [FIX] Store R directly
+        history_entries = [f"z_em={z_em}"]
+
+        # Update Resolution
         if resol > 0:
             new_meta['resol'] = resol
-            # Optional: Calculate FWHM (km/s) for reference/compatibility
             c_kms = 299792.458
             new_meta['resol_fwhm'] = c_kms / resol
-            logging.info(f"Set global resolution R={resol:.0f} (FWHM ~ {new_meta['resol_fwhm']:.2f} km/s)")
+            history_entries.append(f"R={resol}")
 
-        # [FIX] Update 'resol' field in dataclass with R
+        # Update Object Name
+        if object_name is not None:
+            new_meta['OBJECT'] = object_name
+            # Also update standard ESO keyword if present, for consistency
+            if 'HIERARCH ESO OBS TARG NAME' in new_meta:
+                new_meta['HIERARCH ESO OBS TARG NAME'] = object_name
+            history_entries.append(f"Object='{object_name}'")
+
+        # Update Core Data
         new_data = dataclasses.replace(self._data, z_em=z_em, resol=resol, meta=new_meta)
         
-        new_history = self.history + [f"Set properties (z_em={z_em}, R={resol})"]
+        new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
