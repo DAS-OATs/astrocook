@@ -110,7 +110,7 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "dx", "type": float, "default": 10.0, "doc": "Step size for the final grid"},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit for step size (km/s or nm)"},
             {"name": "kappa", "type": str, "default": "5.0", "doc": "Sigma clipping threshold (None for off)"},
-            {"name": "equalize_order", "type": int, "default": -1, "doc": "Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)"},
+            {"name": "equalize_order", "type": int, "default": 0, "doc": "Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)"},
         ],
         "url": "edit_cb.html#coadd"
     }
