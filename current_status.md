@@ -42,6 +42,7 @@
 
 ### **IV. Recipes (`astrocook/recipes/`)**
 
+Astrocook possesses and API layer exposing all recipes to the user, for scripting and LLM integration. Some examples:
 * **`absorbers.py`:**
   * **`optimize_system`:** Wraps the core `optimize_hierarchy` logic, ensuring the visual model is updated (unmasked) after the fit completes.
 * **`edit.py`:**
@@ -53,12 +54,11 @@
 2.  **Scientific Robustness:** Verified `optimize_hierarchy` against synthetic "Train Wreck" data (SNR=10, 10 blended components); achieved ~80% recovery with no overfitting.
 3.  **Persistence Fixes:** Solved the "N/A" metadata bug by updating `adapter.py` and `system_list_migration.py` to persist fit statistics in legacy tables.
 4.  **UX Stability:** Fixed the vanishing cursor and synchronized resolution display between plots and tables.
+5.  **Co-addition:** Solved critical aliasing ("jaggedness") in echelle co-addition by implementing a physics-aware pipeline that preserves 2D pixel geometry and uses vectorized drizzling.
 
-### **VI. Files for Context**
+### **VI. Task for this conversation**
 
-1.  `astrocook/core/system_list.py` (Optimization Logic)
-2.  `astrocook/fitting/voigt_fitter.py` (Resolution Heuristics)
-3.  `astrocook/io/adapter.py` (Persistence Logic)
-4.  `astrocook/gui/system_inspector.py` (Visualization)
-5.  `astrocook/recipes/absorbers.py` (Recipe Interface)
-6.  `batch_driver.py` (Headless Script)
+
+
+### **VII. Files for Context**
+
