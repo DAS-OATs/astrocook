@@ -189,22 +189,6 @@ class SpectrumV2:
         return TableAdapterV2(output)
 
     @property
-    def _z_rf(self) -> float:
-        """
-        Adapter GETTER per l'attributo V1 '_rfz'.
-        Restituisce l'attributo immutabile z_rf.
-        """
-        return self._data.z_rf
-
-    @_z_rf.setter
-    def _z_rf(self, val: float):
-        """
-        Adapter SETTER per l'attributo V1 '_rfz'.
-        Ignora silenziosamente la modifica.
-        """
-        pass 
-        
-    @property
     def _z_em(self) -> float:
         """
         Adapter GETTER per l'attributo V1 '_zem'.
@@ -504,7 +488,6 @@ class SpectrumV2:
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
 
@@ -580,7 +563,6 @@ class SpectrumV2:
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
 
@@ -711,7 +693,6 @@ class SpectrumV2:
             aux_cols=new_aux,
             meta=new_meta,
             z_em=self._data.z_em,
-            z_rf=self._data.z_rf,
             resol=self._data.resol
         )
         
@@ -769,7 +750,6 @@ class SpectrumV2:
             dy=new_data_cols.pop('dy'),
             aux_cols=new_data_cols, # Remaining items are aux_cols
             meta=deepcopy(self._data.meta),
-            z_rf=self._data.z_rf,
             z_em=self._data.z_em
         )
         
@@ -896,7 +876,7 @@ class SpectrumV2:
             x=self._data.x.quantity,
             y=self._data.y.values,
             sigma_kms=sigma_kms,
-            z_rf=self._data.z_rf
+            z_ref=self._data.z_em
         )
         new_y_col = DataColumnV2(new_y_values, self._data.y.unit, "Smoothed Flux")
 
@@ -904,7 +884,7 @@ class SpectrumV2:
             x=self._data.x.quantity,
             y=self._data.dy.values,
             sigma_kms=sigma_kms,
-            z_rf=self._data.z_rf
+            z_ref=self._data.z_em
         )
         new_dy_col = DataColumnV2(new_dy_values, self._data.dy.unit, "Smoothed Error")
 
@@ -923,7 +903,7 @@ class SpectrumV2:
                             self._data.x.quantity,
                             old_col.values,
                             sigma_kms,
-                            self._data.z_rf
+                            self._data.z_em
                         )
                         
                         new_aux_cols[col_name] = DataColumnV2(
@@ -981,7 +961,7 @@ class SpectrumV2:
             x=self._data.x.quantity,
             y=old_col_data.value,
             sigma_kms=sigma_kms,
-            z_rf=self._data.z_rf
+            z_ref=self._data.z_em
         )
         
         new_data_col = DataColumnV2(
@@ -1024,7 +1004,6 @@ class SpectrumV2:
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_rf=self._data.z_rf,
             z_em=self._data.z_em
         )
 
@@ -1058,16 +1037,16 @@ class SpectrumV2:
         """
         
         original_x_unit = self._data.x.unit 
-        z_rf = self._data.z_rf 
+        z_ref = self._data.z_em if self._data.z_em is not None else 0.0 
 
         if dx.unit.is_equivalent(au.km/au.s):
             target_calc_unit = au.km/au.s
         else:
             target_calc_unit = original_x_unit
 
-        x_calc = convert_axis_velocity(self._data.x.quantity, z_rf, target_calc_unit)
-        xmin_calc = convert_axis_velocity(self._data.xmin.quantity, z_rf, target_calc_unit)
-        xmax_calc = convert_axis_velocity(self._data.xmax.quantity, z_rf, target_calc_unit)
+        x_calc = convert_axis_velocity(self._data.x.quantity, z_ref, target_calc_unit)
+        xmin_calc = convert_axis_velocity(self._data.xmin.quantity, z_ref, target_calc_unit)
+        xmax_calc = convert_axis_velocity(self._data.xmax.quantity, z_ref, target_calc_unit)
 
         # 1. Rebin the flux-like columns
         x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
@@ -1078,9 +1057,9 @@ class SpectrumV2:
         )
         
         # 2. Convert new grid back to original units (e.g., nm)
-        x_final = convert_axis_velocity(x_new, z_rf, original_x_unit)
-        xmin_final = convert_axis_velocity(xmin_new, z_rf, original_x_unit)
-        xmax_final = convert_axis_velocity(xmax_new, z_rf, original_x_unit)
+        x_final = convert_axis_velocity(x_new, z_ref, original_x_unit)
+        xmin_final = convert_axis_velocity(xmin_new, z_ref, original_x_unit)
+        xmax_final = convert_axis_velocity(xmax_new, z_ref, original_x_unit)
         
         # --- *** 3. THIS IS THE FIX: Interpolate Aux Columns *** ---
         new_aux_cols = {}
@@ -1123,7 +1102,6 @@ class SpectrumV2:
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=self._data.meta, 
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
         
@@ -1318,7 +1296,6 @@ class SpectrumV2:
             dy=dy_col_new, 
             aux_cols=aux_cols_new, 
             meta=deepcopy(self.meta),
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
         new_history = self.history + [f"Resampled on grid of '{target_grid_spec.meta.get('name', 'unnamed')}'"]
@@ -1498,7 +1475,7 @@ class SpectrumV2:
             mask_abs=mask_abs,
             fudge=fudge,
             smooth_std_kms=smooth_std_kms,
-            z_rf=self._data.z_rf # Pass z_rf for smoothing
+            z_ref=self._data.z_em # Pass z_em for smoothing
         )
         
         # 3. Create new data core
@@ -1703,7 +1680,7 @@ class SpectrumV2:
             region_id_map_merged, num_merged = merge_regions_by_velocity(
                 region_id_map_raw,
                 spec.x,
-                spec._data.z_rf,
+                spec._data.z_em,
                 merge_dv
             )
             logging.info(f"identify_lines: {num_merged} regions remain after merging.")
@@ -1746,7 +1723,7 @@ class SpectrumV2:
         for series_name in metal_doublets:
             # --- *** MODIFIED: Only check redward_map *** ---
             candidates_red = _find_kinematic_doublet_candidates(
-                redward_map, spec.x, spec._data.z_rf, series_name, z_em
+                redward_map, spec.x, spec._data.z_em, series_name, z_em
             )
             for (rid_1, rid_2, z_test) in candidates_red:
                 # --- *** Append the threshold *** ---
@@ -1758,7 +1735,7 @@ class SpectrumV2:
         if 'Ly_ab' in multiplet_list:
             logging.info("Checking for Ly_ab doublet...")
             lyab_candidates = _find_kinematic_doublet_candidates(
-                forest_map, spec.x, spec._data.z_rf, 'Ly_ab', z_em
+                forest_map, spec.x, spec._data.z_ref, 'Ly_ab', z_em
             )
             for (rid_1, rid_2, z_test) in lyab_candidates:
                 # --- *** Append the threshold *** ---
@@ -1967,14 +1944,14 @@ class SpectrumV2:
         
         return float(z_grid[best_idx])
     
-    def x_convert(self, z_rf: float, xunit: au.Unit) -> 'SpectrumV2':
+    def x_convert(self, z_ref: float, xunit: au.Unit) -> 'SpectrumV2':
         """
         API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
         (Replaces V1's mutable _x_convert)
         """
         
         # 1. Execute pure conversion logic
-        x_new, xmin_new, xmax_new = convert_x_axis(self._data, z_rf, xunit)
+        x_new, xmin_new, xmax_new = convert_x_axis(self._data, z_ref, xunit)
         
         # 2. Build new SpectrumDataV2, preserving the core vertical data
         new_data = SpectrumDataV2(
@@ -1985,12 +1962,11 @@ class SpectrumV2:
             dy=self._data.dy,
             aux_cols=self._data.aux_cols,
             meta=self._data.meta,
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
         
         # 3. Return a NEW SpectrumV2 instance
-        new_history = self.history + [f"X-axis converted to {xunit} at z_rf={z_rf}"]
+        new_history = self.history + [f"X-axis converted to {xunit} at z_ref={z_ref}"]
         return SpectrumV2(data=new_data, history=new_history)
 
     def y_convert(self, yunit: au.Unit) -> 'SpectrumV2':
@@ -2011,7 +1987,6 @@ class SpectrumV2:
             dy=new_dy, # Updated
             aux_cols=new_aux_cols, # Auxiliary columns should also be converted if unit-dependent
             meta=self._data.meta,
-            z_rf=self._data.z_rf,  # Propagate
             z_em=self._data.z_em   # Propagate
         )
         

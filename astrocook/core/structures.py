@@ -132,7 +132,6 @@ class SpectrumDataV2:
     meta: Dict[str, Any] = field(default_factory=dict)
     
     # Session properties
-    z_rf: float = 0.0 # Redshift del rest frame (was rf_z)
     z_em: float = 0.0 # Emission redshift
     resol: float = 0.0 # Median resolution
 
@@ -145,7 +144,6 @@ class SpectrumDataV2:
                        xmax_values: Optional[np.ndarray] = None,
                        aux_data: Optional[Dict[str, tuple]] = None, # {'col_name': (values, unit, desc)}
                        meta: Optional[Dict[str, Any]] = None,
-                       z_rf: float = 0.0,
                        z_em: float = 0.0) -> 'SpectrumDataV2':
         """
         Factory method to create a SpectrumDataV2 from raw NumPy arrays.
@@ -192,7 +190,6 @@ class SpectrumDataV2:
                    y=y_col, dy=dy_col, 
                    aux_cols=aux_cols, 
                    meta=meta if meta is not None else {},
-                   z_rf=z_rf,
                    z_em=z_em)
     
 @dataclass(frozen=True)

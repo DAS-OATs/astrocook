@@ -25,7 +25,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Convert X axis.",
         "details": "Convert the x axis units and zero point to wavelength or velocity units.",
         "params": [
-            {"name": "z_rf", "type": float, "default": "_current_", "doc": "Emission redshift"},
+            {"name": "z_ref", "type": float, "default": "_current_", "doc": "Reference redshift for velocity conversion (defaults to z_em)"},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
         ],
         "url": "edit_cb.html#convert-x-axis"
@@ -329,14 +329,14 @@ class RecipeEditV2:
         except Exception as e:
             raise e
 
-    def x_convert(self, z_rf: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
+    def x_convert(self, z_ref: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
         Converts the X-axis (wavelength/velocity) to a new unit.
 
         Parameters
         ----------
-        z_rf : str (float)
-            Rest-frame redshift used for velocity conversions.
+        z_ref : str (float)
+            Reference redshift used for velocity conversions.
         xunit : str
             Target unit (e.g. ``'nm'``, ``'Angstrom'``, ``'km/s'``).
 
@@ -345,9 +345,17 @@ class RecipeEditV2:
         SessionV2
             A new session with the converted X-axis.
         """
-        # V1-style validation (simplified)
+        # Handle default logic here
+        if z_ref == '_current_':
+            z_ref_float = self._session.spec._data.z_em
+        else:
+            try:
+                z_ref_float = float(z_ref)
+            except ValueError:
+                logging.error(msg_param_fail)
+                return 0
+            
         try:
-            z_rf_float = float(z_rf)
             xunit_obj = au.Unit(xunit)
         except ValueError:
             # Replicates V1 error handling path to avoid crash in the GUI context
@@ -355,7 +363,7 @@ class RecipeEditV2:
             return 0 # Returning 0 prevents crashing and triggers V1 logging
 
         # 1. Get the new SpectrumV2 instance (the immutable operation)
-        new_spec_v2 = self._session.spec.x_convert(z_rf=z_rf_float, xunit=xunit_obj)
+        new_spec_v2 = self._session.spec.x_convert(z_ref=z_ref_float, xunit=xunit_obj)
         
         # 2. Return a NEW SessionV2 instance with the updated spectrum
         return self._session.with_new_spectrum(new_spec_v2) 

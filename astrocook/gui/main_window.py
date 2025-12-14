@@ -1632,7 +1632,7 @@ class MainWindowV2(QMainWindow):
         history_item = self.session_histories[row]
 
         # --- *** NEW: Info action *** ---
-        info_action = QAction(f"Info", self)
+        info_action = QAction(f"View Info", self)
         info_action.triggered.connect(
             # Use lambda to pass the specific history item
             lambda checked=False, item=history_item: self._on_session_info(item)
@@ -1722,6 +1722,34 @@ class MainWindowV2(QMainWindow):
             systs = state.systs
             meta = spec.meta if spec else {}
 
+            # --- Calculate new stats ---
+            x_vals = spec.x.value
+            if len(x_vals) > 0:
+                x_range = f"{np.min(x_vals):.2f} - {np.max(x_vals):.2f} {spec.x.unit}"
+                
+                # Simple SNR estimate (median(y/dy))
+                try:
+                    snr_arr = spec.y.value / spec.dy.value
+                    # Filter valid
+                    valid_snr = snr_arr[(spec.y.value > 0) & (spec.dy.value > 0)]
+                    if len(valid_snr) > 0:
+                        snr_med = np.nanmedian(valid_snr)
+                        snr_str = f"{snr_med:.2f}"
+                    else:
+                        snr_str = "N/A"
+                except:
+                    snr_str = "N/A"
+            else:
+                x_range = "Empty"
+                snr_str = "N/A"
+
+            # Resolution info
+            if spec._data.resol > 0:
+                resol_str = f"R ~ {spec._data.resol:.0f}"
+            else:
+                resol_str = "Unknown"
+        
+
             # --- Build an HTML table for alignment ---
             # We can control the font and style here reliably.
             info_html = (
@@ -1748,17 +1776,18 @@ class MainWindowV2(QMainWindow):
 
             info_html += add_row("Session", history_item.display_name)
             
-            info_html += add_header("FITS Header")
+            info_html += add_header("Target Properties")
             info_html += add_row("Object", meta.get('OBJECT', 'N/A'), sub_key=True)
-            info_html += add_row("Instrument", meta.get('INSTRUME', 'N/A'), sub_key=True)
-            info_html += add_row("Date Obs", meta.get('DATE-OBS', 'N/A'), sub_key=True)
-            
-            info_html += add_header("Astrocook Properties")
             info_html += add_row("z_em", f"{spec._data.z_em:.5f}", sub_key=True)
-            info_html += add_row("z_rf", f"{spec._data.z_rf:.5f}", sub_key=True)
+            # REMOVED z_rf row
             
-            info_html += add_header("Data Summary")
-            info_html += add_row("Data Points", len(spec.x), sub_key=True)
+            info_html += add_header("Spectrum Stats")
+            info_html += add_row("Range", x_range, sub_key=True)
+            info_html += add_row("Points", len(spec.x), sub_key=True)
+            info_html += add_row("Resolution", resol_str, sub_key=True)
+            info_html += add_row("Median SNR", snr_str, sub_key=True)
+
+            info_html += add_header("Analysis")
             info_html += add_row("Components", len(systs.components), sub_key=True)
             
             info_html += "</table>"

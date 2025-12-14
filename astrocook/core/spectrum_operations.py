@@ -25,12 +25,12 @@ XEM_LYA_KM_S_ZERO = (XEM_LYA * (1 + 0.0)).to(au.km/au.s, equivalencies=au.equiva
 
 def convert_axis_velocity(
     x_quantity: au.Quantity, 
-    z_rf: float, # Renamed from zem
+    z_ref: float, # Renamed from zem
     target_unit: au.Unit
 ) -> au.Quantity:
     """
     Converts X-axis data between wavelength (nm) and velocity (km/s) space,
-    using the V1 zero-point logic (Ly-alpha rest-frame relative to z_rf).
+    using the V1 zero-point logic (Ly-alpha rest-frame relative to z_ref).
     """
     
     v_c = c_light.to(au.km/au.s).value
@@ -38,12 +38,12 @@ def convert_axis_velocity(
     # Define a custom conversion function
     # Lambda to Velocity (Forward)
     def lambda_to_v(lambda_val):
-        # Use z_rf as the zero-point for the velocity conversion
-        return np.log(lambda_val / (XEM_LYA.value * (1 + z_rf))) * v_c
+        # Use z_ref as the zero-point for the velocity conversion
+        return np.log(lambda_val / (XEM_LYA.value * (1 + z_ref))) * v_c
 
     # Velocity to Lambda (Reverse)
     def v_to_lambda(v_val):
-        return np.exp(v_val / v_c) * (XEM_LYA.value * (1 + z_rf))
+        return np.exp(v_val / v_c) * (XEM_LYA.value * (1 + z_ref))
 
     custom_equiv = [
         (au.nm, au.km/au.s, lambda_to_v, v_to_lambda),
@@ -55,7 +55,7 @@ def convert_axis_velocity(
     else:
         return x_quantity.to(target_unit)
 
-def convert_x_axis(spec_data: SpectrumDataV2, z_rf: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
+def convert_x_axis(spec_data: SpectrumDataV2, z_ref: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
     """
     Performs X-axis conversion based on V1 logic and returns new Quantity arrays.
     """
@@ -66,9 +66,9 @@ def convert_x_axis(spec_data: SpectrumDataV2, z_rf: float, xunit: au.Unit) -> Tu
     
     if xunit.is_equivalent(au.km/au.s) or x.unit.is_equivalent(au.km/au.s):
         # Use the V2 dedicated velocity conversion logic
-        x_new = convert_axis_velocity(x, z_rf, xunit)
-        xmin_new = convert_axis_velocity(xmin, z_rf, xunit)
-        xmax_new = convert_axis_velocity(xmax, z_rf, xunit)
+        x_new = convert_axis_velocity(x, z_ref, xunit)
+        xmin_new = convert_axis_velocity(xmin, z_ref, xunit)
+        xmax_new = convert_axis_velocity(xmax, z_ref, xunit)
         
     else:
         # Simple wavelength-to-wavelength
@@ -123,7 +123,7 @@ def smooth_spectrum(
     x: au.Quantity,
     y: np.ndarray,
     sigma_kms: float, # std in km/s
-    z_rf: float = 0.0
+    z_ref: float = 0.0
 ) -> np.ndarray:
     """
     Smooths a flux array using a Gaussian filter with a given std in km/s.
@@ -134,7 +134,7 @@ def smooth_spectrum(
         # 2. Convert x-axis to km/s to get pixel size
         try:
             # We need the x-axis as a Quantity to convert it
-            x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+            x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
             avg_dv = np.mean(np.gradient(x_kms))
             
             # 3. Convert smoothing std (km/s) to pixels
@@ -265,11 +265,11 @@ def rebin_spectrum(
     """
     # 1. Prepare Units and Arrays
     xunit_target = dx.unit
-    z_rf = spec_data.meta.get('z_em', 0.0) if spec_data.meta else 0.0
+    z_ref = spec_data.z_em if spec_data.z_em else 0.0
 
     def _to_target_val(q: au.Quantity):
         if q is None: return None
-        return convert_axis_velocity(q, z_rf, xunit_target).value
+        return convert_axis_velocity(q, z_ref, xunit_target).value
 
     # Output Grid
     if xstart is None: xstart_val = np.nanmin(_to_target_val(x_in))
@@ -468,7 +468,7 @@ def find_absorbed_regions(
         pass
 
     # --- 3. Calculate pixel size in km/s (dv) ---
-    x_kms = convert_axis_velocity(x, z_rf=0.0, target_unit=au.km/au.s).value
+    x_kms = convert_axis_velocity(x, z_ref=0.0, target_unit=au.km/au.s).value
     dv = np.gradient(x_kms)
 
     # --- 4. Define Lya-forest and outside regions ---
@@ -540,7 +540,7 @@ def fit_continuum_interp(
     mask_abs: np.ndarray,
     fudge: float = 1.0,
     smooth_std_kms: float = 500.0, # std in km/s
-    z_rf: float = 0.0
+    z_ref: float = 0.0
 ) -> np.ndarray:
     """
     Fits a continuum by interpolating unabsorbed points and smoothing.
@@ -565,7 +565,7 @@ def fit_continuum_interp(
     # 4. Smooth the result (V1's _gauss_convolve)
     if smooth_std_kms > 0:
         # Convert x-axis to km/s to get pixel size
-        x_kms = convert_axis_velocity(x * au.nm, z_rf=z_rf, target_unit=au.km/au.s).value
+        x_kms = convert_axis_velocity(x * au.nm, z_ref=z_ref, target_unit=au.km/au.s).value
         avg_dv = np.mean(np.gradient(x_kms))
         
         # Convert smoothing std (km/s) to pixels
@@ -695,7 +695,7 @@ def detect_regions(
 def merge_regions_by_velocity(
     region_map: np.ndarray,
     x: au.Quantity,
-    z_rf: float,
+    z_ref: float,
     merge_dv: float
 ) -> Tuple[np.ndarray, int]:
     """
@@ -709,7 +709,7 @@ def merge_regions_by_velocity(
 
     try:
         # 1. Get velocity axis
-        x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+        x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
     except Exception as e:
         logging.error(f"Cannot merge regions: failed to convert x-axis to km/s: {e}")
         num_regions = len(np.unique(region_map)) - 1
@@ -900,7 +900,7 @@ def compute_identification_signal(
 def _find_kinematic_doublet_candidates(
     region_map: np.ndarray,
     x: au.Quantity,
-    z_rf: float,
+    z_ref: float,
     multiplet_name: str,
     z_em: float
 ) -> List[Tuple[int, float]]:
@@ -922,7 +922,7 @@ def _find_kinematic_doublet_candidates(
         dv_kms = lags_kms[secondary_line] # e.g., ~498 km/s for CIV
         
         # 2. Get x-axis in velocity space
-        x_kms = convert_axis_velocity(x, z_rf=z_rf, target_unit=au.km/au.s).value
+        x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
         
         # 3. Create a "shifted" region map
         # Interpolate the region map onto an axis shifted by dv_kms

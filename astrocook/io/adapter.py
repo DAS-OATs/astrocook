@@ -57,7 +57,6 @@ def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
         y=y_col, dy=dy_col, 
         aux_cols=aux_cols, 
         meta=meta_v1,
-        z_rf=getattr(v1_spectrum_instance, '_rfz', 0.0),
         z_em=getattr(v1_spectrum_instance, '_zem', 0.0)
     )
 
@@ -115,7 +114,6 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
             col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
             aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
-    z_rf = float(meta.pop('Z_RF', 0.0))
     z_em = float(meta.pop('Z_EM', 0.0))
     
     resol_val = 0.0
@@ -128,7 +126,7 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
     return SpectrumDataV2(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
         y=y_col, dy=dy_col, 
-        aux_cols=aux_cols, meta=meta, z_rf=z_rf, z_em=z_em, resol=resol_val
+        aux_cols=aux_cols, meta=meta, z_em=z_em, resol=resol_val
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':
@@ -250,7 +248,6 @@ def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
         t[name] = Column(data_col.values, unit=data_col.unit)
     t.meta.update(spec_data.meta)
     t.meta['ORIGIN'] = 'Astrocook V2'
-    t.meta['Z_RF'] = spec_data.z_rf
     t.meta['Z_EM'] = spec_data.z_em
     return t
 
