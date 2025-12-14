@@ -1265,7 +1265,7 @@ class SpectrumV2:
             xmax=DataColumnV2(final_xmax.value, final_xmax.unit),
             y=DataColumnV2(reb_y.value, reb_y.unit), 
             dy=DataColumnV2(reb_dy.value, reb_dy.unit),
-            meta=self.meta 
+            meta=new_meta 
         )
         
         return self.__class__(final_spec_data)
