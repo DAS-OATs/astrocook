@@ -91,7 +91,6 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
             hdul = fits.open(path)
             hdr = hdul[0].header
         else:
-            # Simple simulation for other formats (you'll need to expand this for V1 formats)
             logging.error(f"Unsupported file extension for direct V1 loading: {path}. Trying FITS...")
             return None
     except Exception as e:
@@ -101,33 +100,38 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
     # 2. Mock the minimal Session V1 object required by Format.generic_spectrum
     class MockSessionV1:
         def __init__(self, gui):
-            self._gui = gui # V1 code expects this directly
-        
-        # The generic_spectrum V1 logic needs this method accessible via the session:
-        # It tries to call sess._gui._flags_cond() or sess._gui._flags_extr()
-        # Let's mock the necessary methods on the mock GUI object itself.
-        
-        # We don't need to define anything here, but we must ensure the 'gui' object
-        # that is passed to this mock is able to handle the V1 requests.       
+            self._gui = gui 
 
-        
-    # 3. Enhance the V1 Call: Pass the Real GUI Object     
-
-    # The V1 logic needs access to the main GUI controller to check flags.
     mock_sess = MockSessionV1(gui_context)       
     v1_format_loader = FormatV1()
     
     try:
-        # Attempt real V1 loading
-        v1_spec = getattr(v1_format_loader, format_name)(mock_sess, hdul)
+        # --- FIX START ---
+        if format_name == "archive":
+            # V1 'Format' class has no 'archive' method. Archives use the 'astrocook' 
+            # method, which requires the structure name ('spec') as the second argument.
+            v1_spec = v1_format_loader.astrocook(hdul, 'spec')
+            
+        else:
+            # Standard V1 loading via format name
+            loader_func = getattr(v1_format_loader, format_name)
+            
+            # Handle signature mismatch in V1 methods:
+            # 'generic_spectrum' takes (sess, hdul)
+            # Most instrument loaders (e.g. 'eso_adp') take only (hdul)
+            try:
+                v1_spec = loader_func(mock_sess, hdul)
+            except TypeError:
+                v1_spec = loader_func(hdul)
+        # --- FIX END ---
+
         if v1_spec is None or v1_spec == 0:
-            # Raise an exception to correctly enter the 'except' block
             raise RuntimeError(f"V1 loader '{format_name}' returned None.")
         
         logging.debug(f"V1 spectrum loaded successfully using {format_name}.")
         
     except Exception as e:
-        # If V1 loading fails (expected for generic_spectrum), use the size-matched mock
+        # If V1 loading fails, use the size-matched mock
         logging.warning(f"V1 format loading failed for {format_name} ({e}). Using size-matched mock data.")
         v1_spec = create_mock_v1_spectrum(hdul)
         
@@ -138,7 +142,6 @@ def load_v1_spec_object(path: str, format_name: str, gui_context: Any) -> Spectr
     if v1_spec is not None:
         return v1_spec
     else:
-        # Should be unreachable if the FITS file was opened
         return None
 
 def load_v1_systs_object(file_path: str) -> Optional[SystListV1]:
