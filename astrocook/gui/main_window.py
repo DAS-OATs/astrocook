@@ -109,6 +109,8 @@ class MainWindowV2(QMainWindow):
 
         self._last_attempted_recipe: Optional[dict] = None
 
+        self._suppress_refit_warning = False
+
         #self.setGeometry(100, 100, 450, 150) # Initial small size
         self.resize(1400,900)
         # Centratura robusta (Fix per macOS)
@@ -923,6 +925,9 @@ class MainWindowV2(QMainWindow):
                 background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
                 color: {text_color};
             }}
+            QLineEdit:focus {{
+                border: 1px solid #296bff; /* Highlight color */
+            }}
             
             
             /* Style Form Layout labels */
@@ -958,21 +963,17 @@ class MainWindowV2(QMainWindow):
     def _show_custom_message(self, title, header, text, icon_name="icon_3d_HR.png", 
                              buttons=QMessageBox.StandardButton.Ok, 
                              default_btn=None, 
-                             parent=None):
+                             parent=None,
+                             checkbox_text=None): # <--- New argument
         """
-        Crea una Message Box con icona personalizzata, usando HTML per la formattazione
-        e CSS per correggere i margini su macOS.
+        Creates a custom Message Box. 
+        If checkbox_text is provided, returns (button, is_checked).
+        Otherwise, returns button.
         """
-        # Determina il genitore corretto
         target_parent = parent if parent else self
         
         msg_box = QMessageBox(target_parent)
         msg_box.setWindowTitle(title)
-        
-        # --- 1. FORMATTAZIONE HTML (Risolve il problema "Tutto Grassetto") ---
-        # Uniamo Header e Text in un unico blocco HTML.
-        # header: font-size leggermente più grande e bold.
-        # text: font-weight normal e un po' di margine sopra (<br> o margin-top).
         
         formatted_text = (
             f"<p style='font-size: 13pt; font-weight: bold; margin: 0px;'>{header}</p>"
@@ -980,16 +981,13 @@ class MainWindowV2(QMainWindow):
         )
         msg_box.setText(formatted_text)
         
-        # --- 2. ICONA ---
         try:
             icon_path = resource_path(os.path.join("assets", icon_name))
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
-                # Scaliamo a 64x64 (dimensione standard per dialoghi Mac)
                 pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 msg_box.setIconPixmap(pixmap)
-        except Exception as e:
-            logging.warning(f"Impossibile caricare pixmap messaggio: {e}")
+        except Exception:
             msg_box.setIcon(QMessageBox.Icon.Information)
 
         msg_box.setStandardButtons(buttons)
@@ -998,17 +996,23 @@ class MainWindowV2(QMainWindow):
 
         msg_box.setWindowModality(Qt.WindowModal)
         
-        # --- 3. CORREZIONE MARGINI (Risolve il problema "Bordo piccolo") ---
-        # Usiamo i fogli di stile Qt (QSS) per dare aria alla finestra.
-        # min-width: evita che la finestra sia troppo stretta.
-        # padding-top: spinge tutto il contenuto verso il basso (crea il bordo superiore).
+        # Style with optional checkbox margin
         msg_box.setStyleSheet("""
-            QLabel {
-                padding-top: 10px;
-            }
+            QLabel { padding-top: 10px; }
+            QCheckBox { margin-top: 10px; font-size: 12pt; }
         """)
         
-        return msg_box.exec()
+        # [NEW] Add Checkbox if requested
+        cb = None
+        if checkbox_text:
+            cb = QCheckBox(checkbox_text)
+            msg_box.setCheckBox(cb)
+        
+        ret = msg_box.exec()
+        
+        if cb:
+            return ret, cb.isChecked()
+        return ret
      
 
     # --- ** NEW Toggle & Animation Methods ** ---
@@ -1753,6 +1757,9 @@ class MainWindowV2(QMainWindow):
                 background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
                 color: {text_color};
             }
+            QLineEdit:focus {{
+                border: 1px solid #296bff; /* Highlight color */
+            }}
         """)
         
         layout = QVBoxLayout(dialog)
@@ -2388,20 +2395,42 @@ class MainWindowV2(QMainWindow):
             elif recipe_name == 'update_component' and 'resol' in params:
                  is_res_change = True
 
-            if is_res_change:
-                # Determine parent to prevent Main Window from stealing focus
+            # 1. Determine if we need to warn
+            warn_resolution = False
+            warn_refit = False
+
+            if recipe_name == 'set_properties' and 'resol' in params and params['resol'] != '_current_' and not self._suppress_refit_warning:
+                warn_resolution = True
+            elif recipe_name == 'update_component' and 'resol' in params and not self._suppress_refit_warning:
+                warn_resolution = True
+            elif recipe_name in ['update_component', 'update_constraint'] and not self._suppress_refit_warning:
+                warn_refit = True
+
+            # 2. Show Warning
+            if warn_resolution or warn_refit:
+                # Determine parent
                 msg_parent = self
                 if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible():
                     msg_parent = self.system_inspector
 
-                self._show_custom_message(
-                    title="Resolution Updated",
-                    header="Resolution has been updated internally.",
-                    text="To see the effect on the absorption model (green line), please refit the components.",
+                title = "Resolution Updated" if warn_resolution else "Parameters Updated"
+                header = "Resolution updated internally." if warn_resolution else "Component parameters updated."
+                text = "To see the effect on the absorption model (green line), please <b>refit</b> the components."
+                
+                # Use unified method with checkbox
+                ret, is_checked = self._show_custom_message(
+                    title=title,
+                    header=header,
+                    text=text,
                     buttons=QMessageBox.StandardButton.Ok,
-                    parent=msg_parent
+                    parent=msg_parent,
+                    checkbox_text="Don't show this messages again"
                 )
-            
+                
+                if is_checked:
+                    self._suppress_refit_warning = True
+                    logging.info("User suppressed refit warnings for this session.")
+
             # [FIX] Resume Pending Action
             if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
                 pending = self._pending_recipe_on_properties_set
@@ -2421,6 +2450,7 @@ class MainWindowV2(QMainWindow):
                         pending['category'], pending['name'], pending['params'], {}
                     ))
 
+            
         except Exception as e:
             logging.error(f"Failed to process recipe result: {e}", exc_info=True)
             QMessageBox.critical(self, "GUI Error", f"Failed to update GUI:\n{e}")
@@ -2428,6 +2458,48 @@ class MainWindowV2(QMainWindow):
         finally:
             QApplication.restoreOverrideCursor()
             QTimer.singleShot(0, self._force_restack_floating_widgets)
+
+    def _show_refit_warning_with_checkbox(self, parent_widget):
+        """Shows a warning with a 'Don't show again' checkbox, styled like custom messages."""
+        msg_box = QMessageBox(parent_widget)
+        msg_box.setWindowTitle("Parameters Updated")
+        
+        # --- 1. Custom Icon (Same as _show_custom_message) ---
+        try:
+            icon_path = resource_path(os.path.join("assets", "icon_3d_HR.png"))
+            pixmap = QPixmap(icon_path)
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                msg_box.setIconPixmap(pixmap)
+        except Exception:
+            msg_box.setIcon(QMessageBox.Icon.Information)
+
+        # --- 2. HTML Formatting (Same as _show_custom_message) ---
+        header = "Component parameters have been updated."
+        text = "To see the effect on the absorption model (green line), please <b>refit</b> the components."
+        
+        formatted_text = (
+            f"<p style='font-size: 13pt; font-weight: bold; margin: 0px;'>{header}</p>"
+            f"<p style='font-size: 12pt; font-weight: normal; margin-top: 8px;'>{text}</p>"
+        )
+        msg_box.setText(formatted_text)
+        
+        # --- 3. CSS Styling (Same as _show_custom_message) ---
+        msg_box.setStyleSheet("""
+            QLabel { padding-top: 10px; }
+            QCheckBox { margin-top: 10px; font-size: 12pt; }
+        """)
+
+        # Add Checkbox
+        cb = QCheckBox("Don't show this again")
+        msg_box.setCheckBox(cb)
+        
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.exec()
+        
+        if cb.isChecked():
+            self._suppress_refit_warning = True
+            logging.info("User suppressed future refit warnings for this session.")
 
     def _on_recipe_dialog_finished(self, result: int):
         """

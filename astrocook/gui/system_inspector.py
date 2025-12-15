@@ -88,7 +88,9 @@ class SystemTableModel(QAbstractTableModel):
     def __init__(self, components: List[ComponentDataV2] = None):
         super().__init__()
         self._components = components if components else []
-        self._highlighted_uuids = set()
+        self._primary_uuids = set()
+        self._secondary_uuids = set()
+
         # Store constraints: {uuid: {param: ConstraintObj}}
         self._constraints_map = {} 
 
@@ -101,14 +103,18 @@ class SystemTableModel(QAbstractTableModel):
         self._constraints_map = constraints_map if constraints_map else {}
         self.endResetModel()
 
-    def set_highlighted_uuids(self, uuids: set):
-        if self._highlighted_uuids == uuids: return
-        self._highlighted_uuids = uuids
+    def set_highlighted_uuids(self, primary_uuids: set, secondary_uuids: set):
+        if self._primary_uuids == primary_uuids and self._secondary_uuids == secondary_uuids:
+            return
+            
+        self._primary_uuids = primary_uuids
+        self._secondary_uuids = secondary_uuids
+        
         if self._components:
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
             self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
-
+            
     def rowCount(self, parent=QModelIndex()): return len(self._components)
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
     
@@ -124,9 +130,18 @@ class SystemTableModel(QAbstractTableModel):
         
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
-            if comp.uuid in self._highlighted_uuids:
-                #return QColor("#FFF8DC") # Cornsilk
-                return QColor("deepskyblue")
+            # Primary (Selected) is now handled by QTableView stylesheet (Orange)
+            # We only paint the Secondary (Group) background here.
+            
+            # NOTE: If we paint background for Primary here, it might conflict or blend.
+            # Since QTableView draws selection ON TOP, we usually don't need to return
+            # a color for the selected item here, unless we want it to show when focus is lost.
+            # However, to be safe and avoid conflicts, let's only return the Group color.
+            
+            if comp.uuid in self._secondary_uuids:
+                # Blue with Alpha (R, G, B, A) -> (41, 107, 255, 50)
+                return QColor(245, 161, 0, 50) 
+            
             return None
 
         # --- CONSTRAINTS CHECK ---
@@ -141,7 +156,6 @@ class SystemTableModel(QAbstractTableModel):
                 is_free = c_data.is_free
                 is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
 
-        # 2. Font Styles
         if role == Qt.FontRole and is_constrained_col:
             font = QFont()
             if is_linked:
@@ -150,36 +164,24 @@ class SystemTableModel(QAbstractTableModel):
                 font.setItalic(True); return font
             return None
 
-        # 3. [FIX] Unified Tooltips
         if role == Qt.ToolTipRole:
-            # Build Base Info (ID, Series, Z, Stats)
-            c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-            c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
-            
-            tooltip_html = (f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
-                            f"<b>z:</b> {comp.z:.6f}<br>"
-                            f"<b>Chi2:</b> {c_chi2} | <b>Resol:</b> {c_resol}")
-
-            c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-            c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
-            
-            # Use the same structure as pyside_plot.py
-            tooltip_html = (
+             # (Your updated HTML tooltip logic from previous step goes here)
+             c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+             c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+             tooltip_html = (
                 f"<div style='font-size: 13px'>"
                 f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
                 f"<b>z:</b> {comp.z:.6f}<br>"
                 f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
-            )
-
-            if is_constrained_col:
-                tooltip_html += "<hr style='margin: 4px 0;'>" # Subtle separator
+             )
+             if is_constrained_col:
+                tooltip_html += "<hr style='margin: 4px 0;'>"
                 if is_linked:
                     target_name = "Unknown"; target_z = ""
                     if c_data.target_uuid:
                         for c_ref in self._components:
                             if c_ref.uuid == c_data.target_uuid:
                                 target_name = c_ref.series; target_z = f" (z={c_ref.z:.5f})"; break
-                    
                     import re
                     expr_display = c_data.expression if c_data.expression else "Direct Link"
                     def replacer(match):
@@ -189,7 +191,6 @@ class SystemTableModel(QAbstractTableModel):
                         return "Unknown"
                     expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
                     expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
-                    
                     tooltip_html += (f"<b>Status:</b> Linked<br>"
                                      f"<b>Target:</b> {target_name}{target_z}<br>"
                                      f"<b>Formula:</b> <code>{expr_pretty}</code>")
@@ -197,11 +198,9 @@ class SystemTableModel(QAbstractTableModel):
                     tooltip_html += "<b>Status:</b> Frozen (Fixed)"
                 else:
                     tooltip_html += "<b>Status:</b> Free"
-            
-            tooltip_html += "</div>"
-            return tooltip_html
+             tooltip_html += "</div>"
+             return tooltip_html
 
-        # 4. Text Display
         if role in (Qt.DisplayRole, Qt.EditRole):
             val = getattr(comp, attr, None)
             if role == Qt.DisplayRole and isinstance(val, float):
@@ -692,7 +691,7 @@ class VelocityPlotWidget(QWidget):
                                 resol=comp_res_arg, resol_unit=comp_res_unit,
                                 context="STATIC_PLOT" 
                             )
-                            ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
+                            ax_main.plot(v_p, prof, color='#f5a100', ls='--', lw=1.2, alpha=0.9)
 
             # ... (Rest of plotting logic: Ticks, Labels, Residuals) ...
             tick_ymin, tick_ymax = 0.02, 0.08 
@@ -966,10 +965,14 @@ class SystemInspector(QWidget):
 
         # [CHANGE] Apply Rounded Tooltip Style
         self.setStyleSheet("""
+            QTableView {
+                selection-background-color: #f5a100;
+                selection-color: black;
+            }
             QToolTip {
                 border: 1px solid gray;
                 border-radius: 5px;
-                background-color: #F2F8F8;
+                background-color: #f2f8f8;
                 color: black;
                 padding: 4px;
                 background-clip: border-box;
@@ -1084,7 +1087,16 @@ class SystemInspector(QWidget):
         c_layout.addWidget(self.resid_cb)
         
         pal = QApplication.palette()
-        style = f"QLineEdit {{ padding: 3px; border-radius: 4px; background: {pal.color(pal.ColorRole.Base).name()}; color: {pal.color(pal.ColorRole.Text).name()}; }}"
+        style = f"""
+            QLineEdit {{ 
+                padding: 3px; 
+                border-radius: 4px; 
+                background: {pal.color(pal.ColorRole.Base).name()}; 
+                color: {pal.color(pal.ColorRole.Text).name()}; }}
+            QLineEdit:focus {{
+                border: 1px solid #296bff; /* Highlight color */
+            }}
+        """
         for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in]: w.setStyleSheet(style)
         
         r_layout.addLayout(c_layout)
@@ -1406,6 +1418,9 @@ class SystemInspector(QWidget):
                 background-color: {base_col};
                 color: {text_col};
             }}
+            QLineEdit:focus {{
+                border: 1px solid #296bff; /* Highlight color */
+            }}
         """)
         layout = QVBoxLayout(dialog)
         layout.setSpacing(10)
@@ -1498,19 +1513,24 @@ class SystemInspector(QWidget):
             self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
     
     def _update_group_definition(self, selected_comps: List[ComponentDataV2]):
-        """
-        Calculates the 'Fluid Group' using the SSOT in SystemListV2.
-        """
         if not selected_comps or not self.current_session:
-            self.table_model.set_highlighted_uuids(set())
+            # Clear Highlights
+            self.table_model.set_highlighted_uuids(set(), set())
             self.proxy_model.set_allowed_uuids(set())
             return
 
-        seed_uuids = [c.uuid for c in selected_comps]
+        # 1. Identify Primary UUIDs (The ones explicitly selected)
+        primary_uuids = {c.uuid for c in selected_comps}
         
-        # Delegate to the API (Single Source of Truth)
-        group_uuids = self.current_session.systs.get_connected_group(seed_uuids)
+        # 2. Identify Full Group
+        group_list = self.current_session.systs.get_connected_group(list(primary_uuids))
+        all_group_uuids = set(group_list)
+        
+        # 3. Identify Secondary UUIDs (Group members NOT selected)
+        secondary_uuids = all_group_uuids - primary_uuids
 
-        # Apply to Models
-        self.table_model.set_highlighted_uuids(group_uuids)
-        self.proxy_model.set_allowed_uuids(group_uuids)
+        # 4. Update Model Colors
+        self.table_model.set_highlighted_uuids(primary_uuids, secondary_uuids)
+        
+        # 5. Update Proxy Filter (Show entire group)
+        self.proxy_model.set_allowed_uuids(all_group_uuids)
