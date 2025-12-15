@@ -742,6 +742,11 @@ class VoigtFitterV2:
         
         # 4. Final Flux Model (Un-sliced)
         self._cached_tau_groups = {} # Clear cache
+
+        # [FIX] Temporarily disable active_uuids so _compute_model calculates EVERYTHING
+        # We need the full model (static + active) for the green line.
+        stored_active_uuids = self._constraints._active_uuids
+        self._constraints._active_uuids = None
         
         # Restore full arrays
         temp_x = self._x_calc
@@ -752,9 +757,11 @@ class VoigtFitterV2:
         else:
              self._resol_calc = None
              
+        # This will now loop over ALL components because active_uuids is None
         final_model_norm = self._compute_model(res.x)
         
-        # Restore slice state
+        # Restore state (good practice)
+        self._constraints._active_uuids = stored_active_uuids
         self._x_calc = temp_x
         self._resol_calc = temp_resol
         
