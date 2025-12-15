@@ -67,7 +67,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z", "type": float, "default": None, "doc": "Redshift"},
             {"name": "logN", "type": float, "default": None, "doc": "logN"},
             {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
-            {"name": "series", "type": str, "default": None, "doc": "Series"}
+            {"name": "series", "type": str, "default": None, "doc": "Series"},
+            # [CHANGE] Added resol parameter
+            {"name": "resol", "type": float, "default": None, "doc": "Resolution (R or FWHM)"}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
@@ -265,14 +267,16 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed add_component: {e}"); return 0
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
-                         b: str = 'None', series: str = 'None') -> 'SessionV2':
+                         b: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
         try:
             changes = {}
             if z != 'None': changes['z'] = float(z)
             if logN != 'None': changes['logN'] = float(logN)
             if b != 'None': changes['b'] = float(b)
             if series != 'None': changes['series'] = str(series)
+            if resol != 'None': changes['resol'] = float(resol) # Handle resolution update
             
+            # Pass dictionary unpacking to SystemListV2.update_component
             new_systs = self._session.systs.update_component(uuid, **changes)
             return self._session.with_new_system_list(new_systs)
         except Exception as e:

@@ -2380,6 +2380,27 @@ class MainWindowV2(QMainWindow):
                 auto_show_aux=auto_show_col,
                 force_autoscale=should_autoscale
             )
+
+            is_res_change = False
+            if recipe_name == 'set_properties' and 'resol' in params:
+                 # Check if it was a real value, not just a placeholder/current
+                 if params['resol'] != '_current_': is_res_change = True
+            elif recipe_name == 'update_component' and 'resol' in params:
+                 is_res_change = True
+
+            if is_res_change:
+                # Determine parent to prevent Main Window from stealing focus
+                msg_parent = self
+                if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible():
+                    msg_parent = self.system_inspector
+
+                self._show_custom_message(
+                    title="Resolution Updated",
+                    header="Resolution has been updated internally.",
+                    text="To see the effect on the absorption model (green line), please refit the components.",
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=msg_parent
+                )
             
             # [FIX] Resume Pending Action
             if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:

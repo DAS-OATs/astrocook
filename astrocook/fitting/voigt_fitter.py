@@ -146,12 +146,15 @@ class VoigtFitterV2:
         # 2. Resolution Setup
         self._resol_column = None
         self._use_variable_resolution = False
+        self._variable_resol_unit = 'R' # Default
         
         if self._spectrum.has_aux_column('resol'):
             self._resol_column = self._spectrum.get_column('resol').value
-            if np.any(np.isfinite(self._resol_column)):
+            # Check if column has valid data (not just NaNs/zeros)
+            if np.any(np.isfinite(self._resol_column) & (self._resol_column > 0)):
                 self._use_variable_resolution = True
-
+                
+                # Heuristic for unit
                 med_res = np.nanmedian(self._resol_column)
                 if med_res > 500.0:
                     self._variable_resol_unit = 'R'
@@ -163,9 +166,14 @@ class VoigtFitterV2:
         # Fallback to global metadata
         self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
         
+        # Determine global unit based on value magnitude (heuristic)
+        self._global_resol_unit = 'R'
+        if self._global_resol_val and self._global_resol_val < 500.0:
+             self._global_resol_unit = 'km/s'
+
         if not self._use_variable_resolution:
             if self._global_sigma_pix:
-                logging.info(f"VoigtFitter: Global R={self._global_resol_val:.0f} (sigma_pix={self._global_sigma_pix:.3f})")
+                logging.info(f"VoigtFitter: Global R={self._global_resol_val:.0f} ({self._global_resol_unit})")
             else:
                 logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
@@ -177,7 +185,9 @@ class VoigtFitterV2:
         self._dy_norm_calc = None
         self._fit_mask_calc = None
         self._resol_calc = None
-        self._cached_tau_static = None
+        
+        # [CHANGE] Cache is now a dict: { (resol_val, unit_str): tau_array }
+        self._cached_tau_groups = {}
 
 
     def _determine_resolution(self) -> Tuple[float, Optional[float]]:
@@ -290,50 +300,94 @@ class VoigtFitterV2:
                 z, N_col, b_eff
             )
         return tau_comp
+    
+    def _get_component_resolution(self, comp: ComponentDataV2) -> Tuple[float, str]:
+        """
+        Determines the resolution (val, unit) for a specific component.
+        Priority: Variable Column > Component Attribute > Global Default
+        """
+        # 1. Variable Column (Overrides everything if active)
+        if self._use_variable_resolution:
+            return -1.0, 'column' # Sentinel value for "Use Column"
+
+        # 2. Component Attribute
+        if comp.resol is not None and comp.resol > 0:
+            # Heuristic for unit
+            unit = 'R' if comp.resol > 500.0 else 'km/s'
+            return float(comp.resol), unit
+            
+        # 3. Global Default
+        if self._global_resol_val > 0:
+            return self._global_resol_val, self._global_resol_unit
+            
+        return 0.0, 'none'
 
     def _compute_model(self, p_free: np.ndarray) -> np.ndarray:
         """
-        Computes the normalized flux model for the current free parameters.
-        Includes convolution with resolution if applicable.
+        Computes the normalized flux model.
+        Groups components by resolution to apply correct convolution.
         """
         p_full = self._constraints.map_p_free_to_full(p_free)
         
-        # 1. Calculate Total Optical Depth (High Res)
-        if self._cached_tau_static is not None:
-            tau_total = self._cached_tau_static.copy()
-        else:
-            tau_total = np.zeros_like(self._x_calc)
-            
+        # Dictionary to accumulate Tau for each resolution type
+        # Key: (value, unit_str)
+        # Special Key: (-1.0, 'column') for variable resolution
+        tau_groups = {}
+        
+        # 1. Load Cached Background (Static Components)
+        if self._cached_tau_groups:
+            for key, tau_arr in self._cached_tau_groups.items():
+                tau_groups[key] = tau_arr.copy()
+        
+        # 2. Add Active Components
         components = self._system_list.components
         active_uuids = self._constraints._active_uuids
         num_params_per_comp = 4
         
         for i, comp in enumerate(components):
-            if self._cached_tau_static is not None:
-                if active_uuids is not None and comp.uuid not in active_uuids:
-                    continue
+            # Skip if static (already in cache)
+            if active_uuids is not None and comp.uuid not in active_uuids:
+                continue
             
+            # Identify Resolution Group
+            res_key = self._get_component_resolution(comp)
+            
+            # Initialize group if needed
+            if res_key not in tau_groups:
+                tau_groups[res_key] = np.zeros_like(self._x_calc)
+            
+            # Compute parameters
             idx = i * num_params_per_comp
             z = p_full[idx]
             logN = p_full[idx + 1]
             b_val = p_full[idx + 2]
             btur = p_full[idx + 3]
             
-            tau_total += self._compute_tau_component(comp, z, logN, b_val, btur)
+            # Add to group Tau
+            tau_groups[res_key] += self._compute_tau_component(comp, z, logN, b_val, btur)
 
-        flux_model_high_res = np.exp(-tau_total)
-
-        # 2. Convolve (Using SSOT function)
-        if self._use_variable_resolution and self._resol_calc is not None:
-            return convolve_flux(flux_model_high_res, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
-
-        elif self._global_sigma_pix:
-            # Fallback for constant global R
-            # We can still use convolve_flux with a scalar
-            return convolve_flux(flux_model_high_res, self._x_calc, self._global_resol_val, resol_unit='R')
+        # 3. Compute Flux per Group -> Convolve -> Multiply
+        # Start with Continuum (1.0 in normalized space)
+        final_model = np.ones_like(self._x_calc)
+        
+        for (res_val, res_unit), tau_arr in tau_groups.items():
+            # Convert Tau to Flux
+            flux_group = np.exp(-tau_arr)
             
-        else:
-            return flux_model_high_res
+            # Apply Convolution
+            if res_unit == 'column':
+                # Use the sliced resolution column
+                if self._resol_calc is not None:
+                    flux_group = convolve_flux(flux_group, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
+            
+            elif res_val > 0:
+                # Constant scalar resolution
+                flux_group = convolve_flux(flux_group, self._x_calc, res_val, resol_unit=res_unit)
+            
+            # Combine (Product of transmission)
+            final_model *= flux_group
+            
+        return final_model
 
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
         model = self._compute_model(p_free)
@@ -562,14 +616,21 @@ class VoigtFitterV2:
 
         logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
 
-        # 2. PRE-CALCULATE BACKGROUND
+        # 2. PRE-CALCULATE BACKGROUND (Grouped by Resolution)
+        self._cached_tau_groups = {}
+        active_uuids = self._constraints._active_uuids
+        
         if active_uuids is not None:
-            self._cached_tau_static = np.zeros_like(self._x_calc)
             for comp in self._system_list.components:
                 if comp.uuid not in active_uuids:
-                    self._cached_tau_static += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
-        else:
-            self._cached_tau_static = None
+                    # Determine Group
+                    res_key = self._get_component_resolution(comp)
+                    
+                    if res_key not in self._cached_tau_groups:
+                        self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
+                    
+                    # Add Tau
+                    self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
 
         # Bounds Logic
         lower_bounds, upper_bounds = self._constraints.get_bounds()
@@ -626,26 +687,13 @@ class VoigtFitterV2:
         p_full_errors = np.zeros_like(p_fitted_full)
         p_full_errors[is_free_mask] = p_free_errors
         
-        # [FIX] Use the exact resolution calculated in __init__
-        # This ensures the metadata saved matches the fit physics.
+        # We try to pick the most representative resolution used in this fit.
         fit_resol_val = 0.0
-        c_kms = 299792.458
-
         if self._use_variable_resolution and self._resol_calc is not None:
-            # Get the median of the resolution chunks used in the fit
-            raw_val = np.nanmedian(self._resol_calc)
-            
-            if np.isfinite(raw_val) and raw_val > 0:
-                # If the column was determined to be velocity (e.g. 17.0 km/s), 
-                # convert to R (e.g. 17600)
-                if self._variable_resol_unit == 'km/s':
-                    fit_resol_val = c_kms / raw_val
-                else:
-                    # It is already R
-                    fit_resol_val = raw_val
-                    
-        elif self._global_resol_val:
-            fit_resol_val = self._global_resol_val
+             fit_resol_val = np.nanmedian(self._resol_calc)
+             if self._variable_resol_unit == 'km/s': fit_resol_val = 299792.458 / fit_resol_val # Store as R? Or keep native? Let's keep native value.
+        elif self._global_resol_val > 0:
+             fit_resol_val = self._global_resol_val
 
         new_components = []
         old_components = self._system_list.components
@@ -654,20 +702,28 @@ class VoigtFitterV2:
         for i, old_comp in enumerate(old_components):
             idx = i * 4
             
-            # 1. Update Parameters
             dz_new = p_full_errors[idx] if is_free_mask[idx] else old_comp.dz
             dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else old_comp.dlogN
             db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else old_comp.db
             
-            # 2. Determine Metadata (Chi2 / Resol)
+            # Metadata Update
+            comp_chi2 = old_comp.chi2
+            comp_resol = old_comp.resol
+            
             if active_uuids is None or old_comp.uuid in active_uuids:
                 comp_chi2 = red_chi2
-                comp_resol = fit_resol_val
-            else:
-                # Keep existing metadata for untouched components
-                comp_chi2 = old_comp.chi2
-                comp_resol = old_comp.resol
-
+                
+                # Logic: If we used the component's OWN resolution, preserve it.
+                # If we used the global/column resolution, update it to reflect the fit conditions.
+                used_res_val, used_res_unit = self._get_component_resolution(old_comp)
+                
+                if used_res_unit == 'column':
+                    # If variable, we usually store the median R of the fit
+                    comp_resol = fit_resol_val
+                elif used_res_val > 0:
+                    # If we used a specific scalar (Global or Attribute), store that.
+                    comp_resol = used_res_val
+            
             new_comp = dataclasses.replace(old_comp,
                 z=p_fitted_full[idx], 
                 logN=p_fitted_full[idx+1], 
@@ -685,8 +741,9 @@ class VoigtFitterV2:
         new_system_list = SystemListV2(new_data_core)
         
         # 4. Final Flux Model (Un-sliced)
-        self._cached_tau_static = None
-        # Temporarily restore full arrays to compute full model
+        self._cached_tau_groups = {} # Clear cache
+        
+        # Restore full arrays
         temp_x = self._x_calc
         temp_resol = self._resol_calc
         self._x_calc = self._x_ang

@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFi
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QHeaderView, QAbstractItemView, QMenu,
+    QPushButton, QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip
 )
 from typing import List, Optional
@@ -19,13 +19,60 @@ from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
-# SSOT: Import convolution logic
+# --- [CHANGE] Robust Convolution Import with Local Fallback ---
 try:
     from ..fitting.voigt_fitter import convolve_flux
 except ImportError:
-    # Fallback if import fails (should not happen in prod)
-    logging.warning("SystemInspector: Could not import convolve_flux from voigt_fitter. Using dummy.")
-    def convolve_flux(flux, x, r, **kwargs): return flux
+    logging.warning("SystemInspector: Could not import convolve_flux. Using local fallback.")
+    convolve_flux = None
+
+# Local Fallback Function (Guaranteed to exist)
+def _local_convolve_flux(flux, x, resol, resol_unit='R'):
+    """
+    Robust fallback convolution using Astropy Gaussian1DKernel.
+    """
+    try:
+        from astropy.convolution import convolve, Gaussian1DKernel
+        
+        # 1. Determine effective Resolution (Scalar)
+        r_eff = resol
+        if np.ndim(resol) > 0:
+            r_eff = np.nanmedian(resol)
+        
+        if r_eff is None or r_eff <= 0: 
+            return flux
+
+        # 2. Determine Sigma in Angstroms
+        # FWHM = lambda / R   (if R)
+        # FWHM = lambda * (km/s / c) (if km/s)
+        lam_center = np.nanmedian(x)
+        
+        if resol_unit == 'R':
+            fwhm_ang = lam_center / r_eff
+        else: # 'km/s'
+            fwhm_ang = (r_eff / 299792.458) * lam_center
+        
+        # Sigma = FWHM / 2.355
+        sigma_ang = fwhm_ang / 2.35482 
+        
+        # 3. Determine Sigma in Pixels
+        dx = np.nanmedian(np.diff(x))
+        if dx == 0: return flux
+        
+        sigma_pix = sigma_ang / dx
+        
+        # 4. Convolve (if kernel is at least somewhat significant)
+        if sigma_pix < 0.01: return flux # Relaxed threshold
+
+        kernel = Gaussian1DKernel(stddev=sigma_pix)
+        return convolve(flux, kernel, boundary='extend')
+        
+    except ImportError:
+        logging.error("SystemInspector: Astropy not found for convolution.")
+        return flux
+    except Exception as e:
+        logging.error(f"SystemInspector: Convolution failed: {e}")
+        return flux
 
 # --- 1. Table Configuration ---
 COL_MAP = {
@@ -113,9 +160,19 @@ class SystemTableModel(QAbstractTableModel):
                             f"<b>z:</b> {comp.z:.6f}<br>"
                             f"<b>Chi2:</b> {c_chi2} | <b>Resol:</b> {c_resol}")
 
-            # Append Parameter Info if applicable
+            c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
+            c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+            
+            # Use the same structure as pyside_plot.py
+            tooltip_html = (
+                f"<div style='font-size: 13px'>"
+                f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
+                f"<b>z:</b> {comp.z:.6f}<br>"
+                f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+            )
+
             if is_constrained_col:
-                tooltip_html += "<hr>"
+                tooltip_html += "<hr style='margin: 4px 0;'>" # Subtle separator
                 if is_linked:
                     target_name = "Unknown"; target_z = ""
                     if c_data.target_uuid:
@@ -132,6 +189,7 @@ class SystemTableModel(QAbstractTableModel):
                         return "Unknown"
                     expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
                     expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
+                    
                     tooltip_html += (f"<b>Status:</b> Linked<br>"
                                      f"<b>Target:</b> {target_name}{target_z}<br>"
                                      f"<b>Formula:</b> <code>{expr_pretty}</code>")
@@ -140,6 +198,7 @@ class SystemTableModel(QAbstractTableModel):
                 else:
                     tooltip_html += "<b>Status:</b> Free"
             
+            tooltip_html += "</div>"
             return tooltip_html
 
         # 4. Text Display
@@ -204,10 +263,14 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         try: return float(l_data) < float(r_data)
         except (ValueError, TypeError): return str(l_data) < str(r_data)
         
-# --- Updated: Uses SSOT Convolution ---
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
+    # [FIX] Clean inputs to avoid Unit errors
+    if hasattr(lambda_0, 'value'): lambda_0 = lambda_0.value
+    if hasattr(wave_grid_ang, 'value'): wave_grid_ang = wave_grid_ang.value
+    if hasattr(b_kms, 'value'): b_kms = b_kms.value
+
     # 1. Physics
     lambda_c = lambda_0 * (1.0 + z)
     c_kms = 2.99792458e5
@@ -224,10 +287,30 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol
     flux = np.exp(-tau)
 
     # 2. Convolution (SSOT)
-    try:
-        return convolve_flux(flux, wave_grid_ang, resol, resol_unit)
-    except NameError:
-        # Fallback if import failed
+    should_convolve = False
+    if resol is not None:
+        if np.ndim(resol) == 0: # Scalar
+            if resol > 0: should_convolve = True
+        else: # Array
+            if np.any(np.nan_to_num(resol) > 0):
+                should_convolve = True
+    
+    if should_convolve:
+        try:
+            # Try importing main function if defined
+            if convolve_flux is not None:
+                try:
+                    return convolve_flux(flux, wave_grid_ang, resol, resol_unit=resol_unit)
+                except TypeError:
+                    return convolve_flux(flux, wave_grid_ang, resol)
+            else:
+                raise ImportError("Main convolve_flux not available")
+                
+        except Exception as e:
+            # Force logging here to see if the main convolution is crashing
+            logging.warning(f"DEBUG: Main convolution failed ({e}). Falling back to local.")
+            return _local_convolve_flux(flux, wave_grid_ang, resol, resol_unit)
+    else:
         return flux
 
 # --- 2. The Paged Plot Widget ---
@@ -385,9 +468,6 @@ class VelocityPlotWidget(QWidget):
 
         expanded = []
         for item in self.inspector.active_transitions:
-            # Check for exact transition matches (xem_d) FIRST.
-            # This prevents specific transitions (e.g. CII_1334) from expanding into multiplets
-            # if they are ambiguously defined as group keys in ATOM_DATA.
             if item in xem_d: 
                 expanded.append(item)
             elif item in STANDARD_MULTIPLETS: 
@@ -462,7 +542,7 @@ class VelocityPlotWidget(QWidget):
         self.fig.clear()
         self.axes = []
         self._panel_map = {} 
-        self._tick_map_visuals = [] # Store tick positions for tooltips
+        self._tick_map_visuals = [] 
 
         if not self._all_transitions or not self._current_session:
             self.canvas.draw(); return
@@ -492,7 +572,6 @@ class VelocityPlotWidget(QWidget):
         c_kms = 299792.458
         z_sys = self._plot_center_z
 
-        # Check for Variable Resolution
         resol_col = None
         if session.spec.has_aux_column('resol'):
             resol_col = session.spec.get_column('resol').value
@@ -552,18 +631,23 @@ class VelocityPlotWidget(QWidget):
             
             if len(v_p) == 0: continue
             
-            # --- PREPARE RESOLUTION FOR THIS PANEL ---
-            res_arg = None
-            res_unit = 'R'
+            # --- 1. Determine "Panel Resolution" (Column or Global) ---
+            # This is the baseline resolution for the data in this panel.
+            found_valid_col_data = False
+            panel_res_arg = None
+            panel_res_unit = 'R'
             
             if resol_col is not None:
-                # Extract slice
-                res_arg = resol_col[mask]
-                res_unit = 'km/s'
+                temp_res = resol_col[mask]
+                if np.any(np.isfinite(temp_res)):
+                    panel_res_arg = temp_res
+                    found_valid_col_data = True
+                    if np.nanmedian(panel_res_arg) > 500.0: panel_res_unit = 'R'
+                    else: panel_res_unit = 'km/s'
 
-            else:
-                # Fallback scalar
-                res_arg, res_unit = self._get_resolution_at(lam_obs)
+            if not found_valid_col_data:
+                # Fallback to Global (Metadata)
+                panel_res_arg, panel_res_unit = self._get_resolution_at(lam_obs)
 
             ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
             ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
@@ -573,7 +657,7 @@ class VelocityPlotWidget(QWidget):
                 mod_p = mod_norm[mask]
                 ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
 
-            # Plot Components (Orange Dashed)
+            # --- Plot Components ---
             if self._selected_components:
                 atom_info = ATOM_DATA.get(trans_name)
                 if atom_info:
@@ -583,18 +667,34 @@ class VelocityPlotWidget(QWidget):
                                    (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
                         if is_match:
                             
-                            # [FIX] Calculate Effective b (Thermal + Turbulent)
-                            # The model (Green Line) uses this. The component plot (Orange Line) must too.
+                            # --- [FIX] Resolution Priority ---
+                            # 1. Spectrum Column (if present)
+                            # 2. Component Attribute (if present)
+                            # 3. Global Attribute (Default/Panel)
+                            
+                            comp_res_arg = panel_res_arg
+                            comp_res_unit = panel_res_unit
+                            
+                            # Only check for override if we are NOT using a spectrum column
+                            if not found_valid_col_data:
+                                # Check if component has specific resolution
+                                c_res = getattr(sel_c, 'resol', None)
+                                if c_res is not None and c_res > 0:
+                                    comp_res_arg = c_res
+                                    # Heuristic for unit
+                                    comp_res_unit = 'R' if c_res > 500 else 'km/s'
+
                             b_eff = np.sqrt(sel_c.b**2 + sel_c.btur**2)
 
                             prof = calc_voigt_profile(
                                 x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
-                                sel_c.z, 10**sel_c.logN, b_eff, # <--- Passing b_eff
-                                resol=res_arg, resol_unit=res_unit,
-                                context="STATIC_PLOT" # <--- Tag for logs
+                                sel_c.z, 10**sel_c.logN, b_eff, 
+                                resol=comp_res_arg, resol_unit=comp_res_unit,
+                                context="STATIC_PLOT" 
                             )
                             ax_main.plot(v_p, prof, color='orange', ls='--', lw=1.2, alpha=0.9)
 
+            # ... (Rest of plotting logic: Ticks, Labels, Residuals) ...
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
             lam_rest_panel_ang = xem_d[trans_name].to(au.Angstrom).value
@@ -682,7 +782,7 @@ class VelocityPlotWidget(QWidget):
         b = self.cursor_b
         
         session = self._current_session
-        x_full = session.spec.x.value # Assuming sorted
+        x_full = session.spec.x.value
         resol_col = None
         if session.spec.has_aux_column('resol'):
             resol_col = session.spec.get_column('resol').value
@@ -690,16 +790,12 @@ class VelocityPlotWidget(QWidget):
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
             
-            # 1. Identify Siblings (Series Members)
             siblings = [trans_name]
             for series_key, members in STANDARD_MULTIPLETS.items():
                 if trans_name in members:
-                    # Only include siblings that are currently being plotted.
-                    # This ensures consistency: if plot_system filtered it out, the cursor won't show it.
                     siblings = [m for m in members if m in self._all_transitions]
                     break
             
-            # 2. Setup Grid
             atom_info = ATOM_DATA.get(trans_name)
             if not atom_info: continue
             
@@ -709,45 +805,45 @@ class VelocityPlotWidget(QWidget):
             v_grid = np.linspace(v_min, v_max, 300)
             lam_grid_ang = lam_obs_center_ang * (1 + v_grid / c_kms)
             
-            # --- CURSOR RESOLUTION INTERPOLATION ---
+            # --- [FIX] ROBUST RESOLUTION LOGIC FOR CURSOR ---
             res_arg = None
             res_unit = 'R'
+            found_valid_res = False
             
             if resol_col is not None:
-                # Interpolate resolution onto the display grid
-                # Convert grid to nm for interpolation
+                # Interpolate resolution onto the cursor grid
                 lam_grid_nm = lam_grid_ang / 10.0
-                res_arg = np.interp(lam_grid_nm, x_full, resol_col)
-                res_arg = np.nan_to_num(res_arg, nan=0.0)
-                # [FIX] Smart Detection: R vs km/s
-                # If values are large (>500), assume Resolving Power R.
-                # Otherwise, assume FWHM in km/s.
-                median_res = np.nanmedian(res_arg)
-                if median_res > 500.0:
-                    res_unit = 'R'
-                else:
-                    res_unit = 'km/s'
-            else:
-                 # Fallback scalar
+                # Use np.interp but allow it to carry NaNs/junk if present
+                res_temp = np.interp(lam_grid_nm, x_full, resol_col, left=np.nan, right=np.nan)
+                
+                # Check validity
+                if np.any(np.isfinite(res_temp)):
+                    res_arg = res_temp
+                    found_valid_res = True
+                    
+                    # Smart Unit Detection
+                    median_res = np.nanmedian(res_arg)
+                    if median_res > 500.0:
+                        res_unit = 'R'
+                    else:
+                        res_unit = 'km/s'
+
+            if not found_valid_res:
+                 # Fallback to scalar global resolution
                  lam_cursor_nm = (lam_0_ang * (1+z_new)) / 10.0
                  res_arg, res_unit = self._get_resolution_at(lam_cursor_nm)
+            # ------------------------------------------------
 
-            # --- CALCULATE ---
             total_prof = np.ones_like(v_grid)
             for sibling in siblings:
                 s_info = ATOM_DATA.get(sibling)
                 if not s_info: continue
-                # ... (bounds check) ...
-
-                # Cursor usually only controls 'b' (Thermal), assuming btur=0 for manual guessing
-                # If you want the cursor to include btur, you need a UI input for it. 
-                # For now, we pass cursor_b as is.
                 
                 prof = calc_voigt_profile(
                     lam_grid_ang, s_info['wave'], s_info['f'], s_info['gamma'],
                     z_new, N, b,
                     resol=res_arg, resol_unit=res_unit,
-                    context="CURSOR" # <--- Tag for logs
+                    context="CURSOR" 
                 )
                 total_prof *= prof
             
@@ -770,7 +866,7 @@ class VelocityPlotWidget(QWidget):
                 line_resid.set_data(v_grid, prof_sigma)
             
         self.canvas.draw_idle()
-
+    
     def on_press(self, event):
         """
         Handles mouse clicks on the velocity plot.
@@ -867,6 +963,19 @@ class SystemInspector(QWidget):
         self.active_transitions: List[str] = [] 
         self.setWindowTitle("System Inspector")
         self.resize(1200, 800) 
+
+        # [CHANGE] Apply Rounded Tooltip Style
+        self.setStyleSheet("""
+            QToolTip {
+                border: 1px solid gray;
+                border-radius: 5px;
+                background-color: #F2F8F8;
+                color: black;
+                padding: 4px;
+                background-clip: border-box;
+            }
+        """)
+
         self._setup_ui()
         
     def _setup_ui(self):
@@ -1268,14 +1377,77 @@ class SystemInspector(QWidget):
             m.addSeparator()
 
         # Set Resolution Action
-        act_resol = QAction("Set Resolution...", m)
-        if self.main_window:
-            act_resol.triggered.connect(lambda: self.main_window._launch_recipe_dialog("edit", "set_properties"))
+        act_resol = QAction("Set R for this component...", m)
+        act_resol.triggered.connect(self._set_component_resolution)
         m.addAction(act_resol)
 
         m.addAction("Refit Selected", self._refit)
         m.addAction("Delete", self._delete)
         m.exec(self.table_view.mapToGlobal(pos))
+
+    # Method to set resolution for specific components
+    def _set_component_resolution(self):
+        indexes = self.table_view.selectionModel().selectedRows()
+        if not indexes: return
+
+        # 1. Create Custom Dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Set Component Resolving Power")
+        dialog.setMinimumWidth(300)
+        
+        # Apply strict styling to match other forms
+        pal = QApplication.palette()
+        text_col = pal.color(pal.ColorRole.Text).name()
+        base_col = pal.color(pal.ColorRole.Base).name()
+        dialog.setStyleSheet(f"""
+            QLineEdit {{
+                padding: 4px;
+                border-radius: 4px;
+                background-color: {base_col};
+                color: {text_col};
+            }}
+        """)
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(10)
+
+        # 2. Form Layout (Label Left, Box Right)
+        form_layout = QHBoxLayout()
+        label = QLabel("Resolving power R (e.g. 50000):")
+        
+        self.res_input = QLineEdit()
+        #self.res_input.setPlaceholderText("e.g. 50000")
+        validator = QDoubleValidator()
+        validator.setBottom(0.0)
+        validator.setNotation(QDoubleValidator.StandardNotation)
+        self.res_input.setValidator(validator)
+        
+        form_layout.addWidget(label)
+        form_layout.addWidget(self.res_input)
+        layout.addLayout(form_layout)
+        
+        # 3. Standard Buttons
+        btn_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(dialog.accept)
+        btn_box.rejected.connect(dialog.reject)
+        layout.addWidget(btn_box)
+
+        # 4. Execute
+        if dialog.exec() == QDialog.Accepted:
+            try:
+                val = float(self.res_input.text())
+                
+                # Update each selected component
+                for idx in indexes:
+                    src = self.proxy_model.mapToSource(idx)
+                    comp = self.table_model.get_component_at(src.row())
+                    if comp:
+                         if self.main_window:
+                             self.main_window._on_recipe_requested(
+                                 "absorbers", "update_component", 
+                                 {'uuid': comp.uuid, 'resol': val}, {}
+                             )
+            except ValueError:
+                pass
 
     # Helper for Mass
     def _get_mass(self, series_name):
