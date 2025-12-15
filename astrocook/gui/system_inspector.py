@@ -592,6 +592,7 @@ class VelocityPlotWidget(QWidget):
                 y_resid = np.divide(y_norm - mod_norm, dy_norm, where=dy_norm!=0)
 
         colors = get_color_cycle(5, cmap='tab20')
+        #colors[0] = "#296bff"
 
         for i, trans_name in enumerate(visible_trans):
             if show_resid:
@@ -1402,6 +1403,29 @@ class SystemInspector(QWidget):
         indexes = self.table_view.selectionModel().selectedRows()
         if not indexes: return
 
+        # [NEW] Determine initial value to show
+        initial_val = 0.0
+        
+        # 1. Try fetching from the first selected component
+        first_src = self.proxy_model.mapToSource(indexes[0])
+        first_comp = self.table_model.get_component_at(first_src.row())
+        
+        if first_comp and first_comp.resol is not None and first_comp.resol > 0:
+            initial_val = first_comp.resol
+        else:
+            # 2. Fallback to Global Session Resolution
+            if self.current_session:
+                # Try scalar attribute
+                if hasattr(self.current_session.spec._data, 'resol'):
+                    r = self.current_session.spec._data.resol
+                    if r > 0: initial_val = r
+                
+                # Try Metadata if still 0
+                if initial_val == 0 and 'resol' in self.current_session.spec.meta:
+                    try:
+                        initial_val = float(self.current_session.spec.meta['resol'])
+                    except: pass
+
         # 1. Create Custom Dialog
         dialog = QDialog(self)
         dialog.setWindowTitle("Set Component Resolving Power")
@@ -1430,7 +1454,11 @@ class SystemInspector(QWidget):
         label = QLabel("Resolving power R (e.g. 50000):")
         
         self.res_input = QLineEdit()
-        #self.res_input.setPlaceholderText("e.g. 50000")
+        if initial_val > 0:
+            self.res_input.setText(f"{initial_val:.0f}")
+        else:
+            #self.res_input.setPlaceholderText("e.g. 50000")
+            pass
         validator = QDoubleValidator()
         validator.setBottom(0.0)
         validator.setNotation(QDoubleValidator.StandardNotation)

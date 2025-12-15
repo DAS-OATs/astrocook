@@ -1,4 +1,5 @@
 from copy import deepcopy
+import dataclasses
 import json
 import logging
 import matplotlib.pyplot as plt
@@ -2358,7 +2359,7 @@ class MainWindowV2(QMainWindow):
         try:
             new_session_state, recipe_name, params = result_data
             
-            # ... (Logging logic remains the same) ...
+            # 1. Logging
             try:
                 if isinstance(self.active_history.log_manager, HistoryLogV2):
                     params_to_log = params.copy()
@@ -2366,20 +2367,61 @@ class MainWindowV2(QMainWindow):
                     self.active_history.log_manager.add_entry(recipe_name, params_to_log)
             except Exception: pass
 
-            # ... (identify_lines logic remains the same) ...
+            # 2. Identify Lines Logic
             auto_show_col = None
             if recipe_name == 'identify_lines':
-                 # ... (summary dialog) ...
-                 pass
-            else:
-                 # ... (column detection logic) ...
-                 pass
+                count = len(new_session_state.systs.components) if new_session_state.systs else 0
+                self._show_custom_message(
+                    title="Identification Complete",
+                    header="Line identification finished.",
+                    text=f"Found {count} candidate systems.",
+                    icon_name="icon_3d_HR.png"
+                )
 
             should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
+
+            if recipe_name == 'set_properties':
+                
+                if 'resol' in params:
+                    raw_val = str(params['resol'])
+                    
+                    if raw_val != '_current_':
+                        try:
+                            new_res = float(raw_val)
+                            
+                            if new_session_state.systs and new_session_state.systs.components:
+                                
+                                # 1. Force Update All Components
+                                updated_comps = []
+                                for i, c in enumerate(new_session_state.systs.components):
+                                    # Create a fresh copy
+                                    new_c = dataclasses.replace(c, resol=new_res)
+                                    updated_comps.append(new_c)
+                                    # Log the first one to verify
+
+                                # 2. Rebuild Session
+                                if updated_comps:
+                                    # Replace data core
+                                    new_syst_data = dataclasses.replace(new_session_state.systs._data, components=updated_comps)
+                                    
+                                    # Re-instantiate SystemListV2
+                                    # IMPORTANT: Ensure SystemListV2 is imported or accessible via class
+                                    SystemListClass = new_session_state.systs.__class__
+                                    new_systs = SystemListClass(new_syst_data)
+                                    
+                                    # Restore constraints if present
+                                    if new_session_state.systs.constraint_model:
+                                        new_systs.constraint_model = new_session_state.systs.constraint_model
+
+                                    # Update Session
+                                    new_session_state = new_session_state.with_new_system_list(new_systs)
+                        except Exception as e:
+                            logging.error(f"Propagation crashed: {e}", exc_info=True)
 
             original_history_index = self.session_histories.index(self.active_history)
             branching = is_branching_recipe(recipe_name)
             
+            # Now pass the (potentially updated) session state to the GUI handler
             self.update_gui_session_state(
                 new_session_state,
                 original_session_index=original_history_index, 
@@ -2387,28 +2429,19 @@ class MainWindowV2(QMainWindow):
                 auto_show_aux=auto_show_col,
                 force_autoscale=should_autoscale
             )
-
-            is_res_change = False
-            if recipe_name == 'set_properties' and 'resol' in params:
-                 # Check if it was a real value, not just a placeholder/current
-                 if params['resol'] != '_current_': is_res_change = True
-            elif recipe_name == 'update_component' and 'resol' in params:
-                 is_res_change = True
-
-            # 1. Determine if we need to warn
+            
+            # --- Warnings Logic ---
             warn_resolution = False
             warn_refit = False
 
-            if recipe_name == 'set_properties' and 'resol' in params and params['resol'] != '_current_' and not self._suppress_refit_warning:
+            if recipe_name == 'set_properties' and 'resol' in params and str(params['resol']) != '_current_' and not self._suppress_refit_warning:
                 warn_resolution = True
             elif recipe_name == 'update_component' and 'resol' in params and not self._suppress_refit_warning:
-                warn_resolution = True
+                 warn_resolution = True
             elif recipe_name in ['update_component', 'update_constraint'] and not self._suppress_refit_warning:
-                warn_refit = True
+                 warn_refit = True
 
-            # 2. Show Warning
             if warn_resolution or warn_refit:
-                # Determine parent
                 msg_parent = self
                 if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible():
                     msg_parent = self.system_inspector
@@ -2417,27 +2450,24 @@ class MainWindowV2(QMainWindow):
                 header = "Resolution updated internally." if warn_resolution else "Component parameters updated."
                 text = "To see the effect on the absorption model (green line), please <b>refit</b> the components."
                 
-                # Use unified method with checkbox
                 ret, is_checked = self._show_custom_message(
                     title=title,
                     header=header,
                     text=text,
                     buttons=QMessageBox.StandardButton.Ok,
                     parent=msg_parent,
-                    checkbox_text="Don't show this messages again"
+                    checkbox_text="Don't show this again"
                 )
                 
                 if is_checked:
                     self._suppress_refit_warning = True
                     logging.info("User suppressed refit warnings for this session.")
 
-            # [FIX] Resume Pending Action
+            # --- Resume Pending Action ---
             if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
                 pending = self._pending_recipe_on_properties_set
-                self._pending_recipe_on_properties_set = None # Clear
+                self._pending_recipe_on_properties_set = None 
                 
-                # Verify we have z_em or resol now
-                # (Simple check: did the state update? Yes, set_properties forces it)
                 logging.info(f"Resuming pending action: {pending['name']}")
                 
                 if pending['mode'] == 'dialog':
@@ -2445,12 +2475,10 @@ class MainWindowV2(QMainWindow):
                         pending['category'], pending['name'], pending.get('params')
                     ))
                 elif pending['mode'] == 'direct':
-                    # Directly run the worker again with the original params
                     QTimer.singleShot(0, lambda: self._on_recipe_requested(
                         pending['category'], pending['name'], pending['params'], {}
                     ))
 
-            
         except Exception as e:
             logging.error(f"Failed to process recipe result: {e}", exc_info=True)
             QMessageBox.critical(self, "GUI Error", f"Failed to update GUI:\n{e}")

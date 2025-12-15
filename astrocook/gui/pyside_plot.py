@@ -115,10 +115,13 @@ def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
             logging.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
     try:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
         return [colors[i % len(colors)] for i in range(n)]
     except Exception as e:
         logging.warning(f"Could not get color cycle: {e}. Using fallback.")
-        cmap = plt.get_cmap(fallback_cmap); return [cmap(i / n) for i in range(n)]
+        cmap = plt.get_cmap(fallback_cmap)
+        return [cmap(i / n) for i in range(n)]
+
 # ----------------------------
 
 def decimate_y_min_max(y: np.ndarray, factor: int) -> np.ndarray:
@@ -883,6 +886,7 @@ class SpectrumPlotWidget(QWidget):
             x_unit = str(spec.x.unit)
                     
             colors = get_color_cycle(5, cmap='tab20') # Get colors
+            #colors[0] = "#296bff"
 
             plot_style = spec.meta.get('plot_style', 'step')
             
@@ -1717,7 +1721,7 @@ class SpectrumPlotWidget(QWidget):
 
         # 5. Refresh Display
         self._update_tooltip_display()
-        
+
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
