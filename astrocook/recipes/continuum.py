@@ -17,7 +17,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
             {"name": "smooth_len_out", "type": float, "default": 400.0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
             {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
-            {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
+            {"name": "fudge", "type": str, "default": "auto", "doc": "Fudge factor. Use 'auto' or a float (e.g., '1.0')."}, 
             {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
             {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
@@ -37,11 +37,12 @@ CONTINUUM_RECIPES_SCHEMAS = {
     },
     "fit_continuum": {
         "brief": "Fit continuum to mask (V1 logic).",
-        "details": "Interpolate unabsorbed regions from a mask, apply fudge factor, and smooth the result to create 'cont'.",
+        "details": "Interpolate unabsorbed regions from a mask, optionally auto-center (fudge='auto'), and smooth result.",
         "params": [
-            {"name": "fudge", "type": float, "default": 1.0, "doc": "Continuum fudge factor"},
+            # CHANGED: type is now str, default is "auto"
+            {"name": "fudge", "type": str, "default": "auto", "doc": "Fudge factor. Use 'auto' or a float (e.g., '1.0')."}, 
             {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
-            {"name": "mask_col", "type": str, "default": "mask_unabs", "doc": "Mask column to use"},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column to use (True=Absorbed)"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "continuum_cb.html#fit_continuum"
@@ -119,18 +120,16 @@ class RecipeContinuumV2:
             logging.error(f"Failed during find_absorbed: {e}", exc_info=True)
             return 0
 
-    def fit_continuum(self, fudge: str = '1.0', smooth_std: str = '500.0', 
+    def fit_continuum(self, fudge: str = 'auto', smooth_std: str = '500.0', 
                       mask_col: str = 'abs_mask', renorm_model: str = 'True') -> 'SessionV2':
         """
-        Fit a continuum to the unabsorbed regions of the spectrum.
-
-        This recipe interpolates across the regions identified by ``mask_col``
-        and applies a Gaussian smoothing to produce the final continuum.
+        Fit a continuum to the unabsorbed regions.
 
         Parameters
         ----------
-        fudge : str (float)
-            A multiplicative factor to adjust the continuum level manually.
+        fudge : str
+            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
+            If 'auto', the factor is calculated to center the continuum residuals.
         smooth_std : str (float)
             Standard deviation (km/s) of the Gaussian kernel used to smooth 
             the interpolated spline.
@@ -146,20 +145,24 @@ class RecipeContinuumV2:
             A new session with the ``cont`` column added/updated.
         """
         try:
-            fudge_f = float(fudge)
-            smooth_std_f = float(smooth_std) # This is in km/s
-            # --- ADD THIS LINE ---
+            smooth_std_f = float(smooth_std)
             renorm_model_b = str(renorm_model) == 'True'
+            
+            # Allow 'auto' or parse float
+            if fudge.lower() == 'auto':
+                fudge_arg = 'auto'
+            else:
+                fudge_arg = float(fudge)
+                
         except ValueError:
             logging.error(msg_param_fail)
             return 0
         
         try:
             new_spec_v2 = self._session.spec.fit_continuum(
-                fudge=fudge_f,
+                fudge=fudge_arg,
                 smooth_std_kms=smooth_std_f,
                 mask_col=mask_col,
-                # --- ADD THIS ARGUMENT (must be added to spectrum.py) ---
                 renorm_model=renorm_model_b 
             )
             return self._session.with_new_spectrum(new_spec_v2)
@@ -183,8 +186,9 @@ class RecipeContinuumV2:
             Smoothing length (km/s) for initial guess (redward).
         kappa : str (float)
             Sigma threshold for finding absorption.
-        fudge : str (float)
-            Manual adjustment factor for the final continuum.
+        fudge : str
+            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
+            If 'auto', the factor is calculated to center the continuum residuals.
         smooth_std : str (float)
             Final smoothing width (km/s).
         template : str (bool)
@@ -202,7 +206,11 @@ class RecipeContinuumV2:
             smooth_len_out_q = float(smooth_len_out) * au.km/au.s
             kappa_f = float(kappa)
             template_b = str(template) == 'True'
-            fudge_f = float(fudge)
+            # Allow 'auto' or parse float
+            if fudge.lower() == 'auto':
+                fudge_f = 'auto'
+            else:
+                fudge_f = float(fudge)
             smooth_std_f = float(smooth_std) # This is in km/s
             z_em_f = self._session.spec._data.z_em # Read z_em from session
             renorm_model_b = str(renorm_model) == 'True'

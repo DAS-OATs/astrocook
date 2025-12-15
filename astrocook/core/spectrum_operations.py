@@ -438,144 +438,180 @@ def find_absorbed_regions(
     maxiter: int = 100
 ) -> np.ndarray:
     """
-    Pure function to find absorbed regions, porting the V1 'clip_flux' logic.
-    
-    Returns:
-        mask_abs (np.ndarray): A boolean mask where True means "unabsorbed".
+    Finds absorbed regions using iterative clipping with robust V1 parity logic.
+    Fixes:
+      1. Window size calculated from min(dv) instead of mean(dv) to preserve narrow features.
+      2. Interpolation performed in wavelength space, not index space.
     """
     
     # --- 1. Initial Masking ---
     mask_unabs = np.ones_like(y, dtype=bool)
     valid_data = ~np.isnan(y) & ~np.isnan(dy) & (dy > 0)
     mask_unabs[~valid_data] = False
-    mask_unabs[y <= 3.0 * dy] = False # Low S/N
     
+    # Exclude low S/N regions from being 'continuum anchors'
+    with np.errstate(invalid='ignore'):
+        mask_unabs[y <= 3.0 * dy] = False 
+    
+    # Define Ly-alpha proximity
     if z_em == 0.0:
-        logging.warning("z_em is 0.0. Cannot split at Ly-alpha. Using 'smooth_len_out' for all regions.")
+        logging.warning("z_em is 0.0. Using 'smooth_len_out' for all regions.")
         lya_prox_nm = -np.inf * au.nm
     else:
-        # Calculate Ly-alpha proximity region (V1 logic)
-        prox = 5000 * au.km/au.s
-        lya_obs = XEM_LYA * (1 + z_em)
-        lya_prox_nm = (lya_obs * (1 - prox / c_light)).to(au.nm)
+        # We need the global XEM_LYA constant here. 
+        # Ensure it is imported or defined as 121.567 * au.nm
+        lya_obs = (121.567 * au.nm) * (1 + z_em) 
+        prox_kms = 5000 * au.km/au.s
+        c_kms = 299792.458 * au.km/au.s
+        lya_prox_nm = lya_obs * (1 - prox_kms / c_kms)
 
-    # --- 2. Handle Template (Stubbed) ---
+    # --- 2. Handle Template (Placeholder) ---
     y_proc = y.copy()
     if template:
-        # V1 logic: y_proc = y / template_interp
-        logging.warning("Template correction is not yet implemented. Skipping.")
-        # We would need to pass in the qso_composite data
-        pass
+        pass # Template logic would go here
 
-    # --- 3. Calculate pixel size in km/s (dv) ---
+    # --- 3. Calculate pixel size (dv) & Setup X ---
+    # We need dv in km/s for window size calculation
     x_kms = convert_axis_velocity(x, z_ref=0.0, target_unit=au.km/au.s).value
     dv = np.gradient(x_kms)
+    x_val = x.value # Work with raw values for speed
 
-    # --- 4. Define Lya-forest and outside regions ---
-    # We must operate on the *full* array, not a slice
-    in_lya_forest = (x < lya_prox_nm) & mask_unabs
-    out_of_forest = (x >= lya_prox_nm) & mask_unabs
+    # --- 4. Define Regions ---
+    # Convert mask to arrays for boolean indexing
+    in_lya_forest = (x < lya_prox_nm)
+    out_of_forest = (x >= lya_prox_nm)
     
     intervals = [
         (in_lya_forest, smooth_len_lya),
         (out_of_forest, smooth_len_out)
     ]
     
-    mask_clipped = np.zeros_like(y, dtype=bool) # Mask of *newly* clipped points
+    mask_clipped = np.zeros_like(y, dtype=bool) 
 
     # --- 5. Iterative Clipping Loop ---
     for i in range(maxiter):
         
         y_rm_full = np.full_like(y, np.nan)
         
-        # --- 6. Process Lya and Outside regions separately ---
-        for mask_interval, smooth_len in intervals:
-            if np.sum(mask_interval) == 0:
-                continue # Skip if this region is empty
-                
-            # Combine current interval mask with *not-yet-clipped* mask
+        for region_bool, smooth_len in intervals:
+            # Combine geometric region with the current unabsorbed mask
+            mask_interval = region_bool & mask_unabs
+            
+            # Points belonging to this interval AND not yet clipped locally
             current_mask = mask_interval & ~mask_clipped
-            if np.sum(current_mask) < 10: # Safety check
+            
+            if np.sum(current_mask) < 10: 
                 continue
                 
-            y_interval = y_proc[current_mask]
+            # V1 FIX: Use np.min(dv) for a conservative (smaller pixels -> larger window)
+            # Use abs() because dv can be negative if spectrum is flipped
+            dv_segment = np.abs(dv[current_mask])
+            min_dv = np.min(dv_segment) if len(dv_segment) > 0 else 1.0
+            if min_dv == 0: min_dv = 1.0 
             
-            # Convert smoothing length (km/s) to pixel window
-            avg_dv = np.mean(dv[current_mask])
-            hwindow = int(smooth_len.to_value(au.km/au.s) / avg_dv / 8) # V1 logic: h = len/dv/8
-            hwindow = max(1, hwindow) # Ensure window is at least 1
+            # V1 Logic: window = length / min_dv / 8
+            # (The '/8' is a V1 heuristic for 'local' smoothing)
+            smooth_val = smooth_len.to_value(au.km/au.s)
+            hwindow = int(smooth_val / min_dv / 8)
+            hwindow = max(3, hwindow) # Safety floor
+            
+            y_interval = y_proc[current_mask]
             
             if len(y_interval) < hwindow * 2 + 1:
                 y_rm_interval = np.full_like(y_interval, np.mean(y_interval))
             else:
                 y_rm_interval = running_mean(y_interval, h=hwindow)
             
-            # Interpolate this mean back to the interval's indices
-            indices_full = np.arange(len(y))
-            indices_interval = indices_full[current_mask]
-            y_rm_interp = np.interp(indices_full[mask_interval], indices_interval, y_rm_interval)
+            # V1 FIX: Interpolate using X coordinates, not indices
+            # We interpolate the running mean (defined on 'current_mask') 
+            # onto the full unabsorbed set ('mask_interval')
+            x_target = x_val[mask_interval]      
+            x_source = x_val[current_mask]       
             
-            # Store the result
+            # np.interp requires sorted x. 
+            if x_source[0] < x_source[-1]:
+                y_rm_interp = np.interp(x_target, x_source, y_rm_interval)
+            else:
+                # Handle descending x-axis
+                sort_idx = np.argsort(x_source)
+                y_rm_interp = np.interp(x_target, x_source[sort_idx], y_rm_interval[sort_idx])
+            
             y_rm_full[mask_interval] = y_rm_interp
 
-        # 7. Find new outliers across the *whole* spectrum
-        is_outlier = (y_proc - y_rm_full) < (-kappa * dy)
-        is_outlier[~mask_unabs] = False # Don't clip already-masked points
+        # 6. Find new outliers
+        # Compare raw data against the smoothed model
+        # V1 Logic: outlier if y < model - kappa * sigma
+        # (We rely on NaNs in y_rm_full to skip invalid regions)
+        with np.errstate(invalid='ignore'):
+            is_outlier = (y_proc - y_rm_full) < (-kappa * dy)
         
+        # Only mark as outlier if it was previously considered valid/unabsorbed
+        is_outlier[~mask_unabs] = False 
+        
+        # Check convergence
         if np.sum(is_outlier) == 0:
             logging.info(f"Clipping converged after {i+1} iterations.")
             break
         
-        mask_clipped = mask_clipped | is_outlier # Add new outliers to the clipped mask
-        mask_unabs = mask_unabs & ~is_outlier  # Update the master unabsorbed mask
+        mask_clipped = mask_clipped | is_outlier 
+        mask_unabs = mask_unabs & ~is_outlier
         
         if i == maxiter - 1:
             logging.warning(f"Clipping did not converge after {maxiter} iterations.")
 
     return ~mask_unabs
 
-def fit_continuum_interp(
-    x: np.ndarray,
+def compute_auto_fudge(
     y: np.ndarray,
     mask_abs: np.ndarray,
-    fudge: float = 1.0,
-    smooth_std_kms: float = 500.0, # std in km/s
-    z_ref: float = 0.0
+    cont_model: np.ndarray
+) -> float:
+    """
+    Calculates a scalar fudge factor to center the continuum residuals.
+    Fixes the 'Low Bias' issue where sigma-clipped continuums sit too low.
+    """
+    mask_unabs = ~mask_abs
+    if np.sum(mask_unabs) < 10: 
+        return 1.0
+    
+    y_valid = y[mask_unabs]
+    model_valid = cont_model[mask_unabs]
+    
+    # Calculate Residuals (Data - Model)
+    # If model is low, residuals are positive.
+    with np.errstate(invalid='ignore'):
+        residuals = y_valid - model_valid
+    
+    # Use Median to be robust against non-Gaussian outliers
+    avg_residual = np.nanmedian(residuals)
+    avg_model = np.nanmedian(model_valid)
+    
+    if avg_model == 0 or np.isnan(avg_model): 
+        return 1.0
+    
+    # V1 Logic: fudge = 1 + (residual / model)
+    fudge_factor = 1.0 + (avg_residual / avg_model)
+    
+    return float(fudge_factor)
+
+def interpolate_continuum_mask(
+    x: np.ndarray,
+    y: np.ndarray,
+    mask_abs: np.ndarray
 ) -> np.ndarray:
     """
-    Fits a continuum by interpolating unabsorbed points and smoothing.
-    Based on V1 'clip_flux' logic.
+    Interpolates the unabsorbed points to create a raw continuum guess.
     """
-    
     mask_unabs = ~mask_abs
-
-    # 1. Get unabsorbed points
     x_unabs = x[mask_unabs]
     y_unabs = y[mask_unabs]
     
     if len(x_unabs) < 2:
         raise ValueError("Cannot fit continuum: < 2 unabsorbed points found.")
         
-    # 2. Interpolate unabsorbed points back to the full grid
+    # Simple linear interpolation over the gaps
     cont_interp = np.interp(x, x_unabs, y_unabs)
-    
-    # 3. Apply fudge factor
-    cont_interp *= fudge
-    
-    # 4. Smooth the result (V1's _gauss_convolve)
-    if smooth_std_kms > 0:
-        # Convert x-axis to km/s to get pixel size
-        x_kms = convert_axis_velocity(x * au.nm, z_ref=z_ref, target_unit=au.km/au.s).value
-        avg_dv = np.mean(np.gradient(x_kms))
-        
-        # Convert smoothing std (km/s) to pixels
-        smooth_std_pix = smooth_std_kms / avg_dv
-        
-        cont_final = gaussian_filter1d(cont_interp, smooth_std_pix)
-    else:
-        cont_final = cont_interp
-        
-    return cont_final
+    return cont_interp
 
 def fit_powerlaw_to_regions(
     x: np.ndarray,

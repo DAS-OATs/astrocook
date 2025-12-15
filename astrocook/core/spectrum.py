@@ -13,8 +13,7 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
 from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import (
     convert_axis_velocity, 
-    convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, 
-    _find_kinematic_doublet_candidates, fit_continuum_interp, fit_powerlaw_to_regions, 
+    convert_x_axis, convert_y_axis, detect_regions, find_absorbed_regions, _find_kinematic_doublet_candidates, fit_powerlaw_to_regions, 
     merge_regions_by_velocity, rate_doublet_candidate, smooth_spectrum, rebin_spectrum, running_std,
 )
 from astrocook.core.atomic_data import ATOM_DATA
@@ -1387,120 +1386,126 @@ class SpectrumV2:
     def find_absorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
                       kappa: float, template: bool) -> 'SpectrumV2':
         """
-        Finds unabsorbed regions and adds/updates the 'abs_mask' column.
-
-        This method uses an iterative sigma-clipping approach to identify regions
-        of the spectrum that are significantly below the estimated continuum level.
-
-        Parameters
-        ----------
-        smooth_len_lya : Quantity
-            Smoothing length for the Ly-alpha forest (e.g. 5000 km/s).
-        smooth_len_out : Quantity
-            Smoothing length outside the Ly-alpha forest (e.g. 400 km/s).
-        kappa : float
-            Sigma-clipping threshold.
-        template : bool
-            Whether to use a QSO template (not implemented).
-
-        Returns
-        -------
-        SpectrumV2
-            A new instance containing the 'abs_mask' column.
+        API Method: Identifies absorbed regions.
+        Calls pure function: find_absorbed_regions
         """
-        # 1. Call the pure function with the new signature
+        # Call Pure Function
         mask = find_absorbed_regions(
             x=self._data.x.quantity,
             y=self._data.y.values,
             dy=self._data.dy.values,
-            z_em=self._data.z_em, # Get z_em from self
+            z_em=self._data.z_em,
             smooth_len_lya=smooth_len_lya,
             smooth_len_out=smooth_len_out,
             kappa=kappa,
             template=template
         )
         
-        # 2. Create new data core
+        # State Update
         new_aux_cols = deepcopy(self._data.aux_cols)
         new_aux_cols['abs_mask'] = DataColumnV2(
             values=mask,
             unit=au.dimensionless_unscaled,
             description="Mask of absorbed regions (True=absorbed)"
         )
-        
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        return SpectrumV2(data=new_data, history=self.history + [f"Found absorbed (kappa={kappa})"])
         
-        # 3. Return new SpectrumV2
-        new_history = self.history + [f"Found absorbed regions (kappa={kappa})"]
-        return SpectrumV2(data=new_data, history=new_history)
-        
-    def fit_continuum(self, fudge: float, smooth_std_kms: float, 
+    def fit_continuum(self, fudge: Union[float, str], smooth_std_kms: float, 
                       mask_col: str = 'abs_mask', renorm_model: bool = False) -> 'SpectrumV2':
         """
         Fits a continuum to the unabsorbed regions.
-
-        Uses a spline interpolation through the 'unabsorbed' pixels defined by
-        ``mask_col``, followed by Gaussian smoothing.
-
-        Parameters
-        ----------
-        fudge : float
-            Multiplicative factor applied to the continuum level.
-        smooth_std_kms : float
-            Standard deviation of the Gaussian smoothing kernel (km/s).
-        mask_col : str
-            Name of the mask column (True=Absorbed, False=Continuum).
-        renorm_model : bool, optional
-            If True, re-normalizes the 'model' column to match the new continuum.
-
-        Returns
-        -------
-        SpectrumV2
-            A new instance containing the 'cont' column.
+        Orchestrates: Interpolate -> Auto-Fudge -> Smooth -> Renormalize Model.
         """
-        # 1. Get the mask
+        from astrocook.core.spectrum_operations import (
+            interpolate_continuum_mask, 
+            compute_auto_fudge,
+            smooth_spectrum
+        )
+
+        # 1. Validation
         if mask_col not in self._data.aux_cols:
             raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_absorbed' first.")
         
+        # Ensure mask is boolean
         mask_abs = self._data.aux_cols[mask_col].values
         if mask_abs.dtype.kind != 'b':
-            raise TypeError(f"Mask column '{mask_col}' is not a boolean mask.")
+             mask_abs = mask_abs.astype(bool)
 
-        # 2. Call the pure "interp-and-smooth" function
-        cont_values = fit_continuum_interp(
-            x=self._data.x.values,
-            y=self._data.y.values,
-            mask_abs=mask_abs,
-            fudge=fudge,
-            smooth_std_kms=smooth_std_kms,
-            z_ref=self._data.z_em # Pass z_em for smoothing
-        )
+        # 2. Step A: Interpolate unabsorbed points (Raw Guess)
+        try:
+            cont_raw = interpolate_continuum_mask(
+                x=self._data.x.values,
+                y=self._data.y.values,
+                mask_abs=mask_abs
+            )
+        except ValueError as e:
+            logging.error(e)
+            return self
+
+        # 3. Step B: Calculate or Parse Fudge
+        applied_fudge = 1.0
+        if isinstance(fudge, str) and fudge.lower() == 'auto':
+            applied_fudge = compute_auto_fudge(
+                y=self._data.y.values,
+                mask_abs=mask_abs,
+                cont_model=cont_raw
+            )
+            logging.info(f"Auto-fudge calculated: {applied_fudge:.4f}")
+        else:
+            try:
+                applied_fudge = float(fudge)
+            except (ValueError, TypeError):
+                logging.warning(f"Invalid fudge '{fudge}', defaulting to 1.0")
+
+        # Apply Fudge
+        cont_fudged = cont_raw * applied_fudge
         
-        # 3. Create new data core
+        # 4. Step C: Smooth the Result
+        if smooth_std_kms > 0:
+            cont_final = smooth_spectrum(
+                x=self._data.x.quantity,
+                y=cont_fudged,
+                sigma_kms=smooth_std_kms,
+                z_ref=self._data.z_em
+            )
+        else:
+            cont_final = cont_fudged
+        
+        # 5. Build New Auxiliary Columns
         new_aux_cols = deepcopy(self._data.aux_cols)
+        
+        # Store new continuum
         new_aux_cols['cont'] = DataColumnV2(
-            values=cont_values,
+            values=cont_final,
             unit=self._data.y.unit, 
-            description=f"Continuum fit (interp+smooth) to '{mask_col}'"
+            description=f"Continuum (smooth={smooth_std_kms} km/s, fudge={applied_fudge:.3f})"
         )
         
+        # --- 6. Step D: Renormalize Model (Restored Feature) ---
+        # We must grab the OLD continuum and model from the CURRENT instance (self)
         old_cont_col = self._data.aux_cols.get('cont')
         old_model_col = self._data.aux_cols.get('model')
 
         if renorm_model and old_cont_col is not None and old_model_col is not None:
+            # Note: We rely on the internal helper _renormalize_model 
+            # (ensure it exists in SpectrumV2 as seen in your upload)
             new_model_col = self._renormalize_model(
-                old_cont_col.values,
-                cont_values, # The new continuum
-                old_model_col
+                old_cont_vals=old_cont_col.values,
+                new_cont_vals=cont_final,
+                old_model_col=old_model_col
             )
             if new_model_col:
                 new_aux_cols['model'] = new_model_col
+                logging.info("Model column re-normalized to new continuum.")
 
+        # 7. Create New Data Core
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
-        # 4. Return new SpectrumV2
-        new_history = self.history + [f"Fitted continuum (smooth={smooth_std_kms} km/s)"]
-        return SpectrumV2(data=new_data, history=new_history)
+        # 8. Return New SpectrumV2
+        hist_entry = f"Fitted continuum (fudge={applied_fudge:.3f}, smooth={smooth_std_kms} km/s)"
+        return SpectrumV2(data=new_data, history=self.history + [hist_entry])
+    
 
     def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> 'SpectrumV2':
         """
