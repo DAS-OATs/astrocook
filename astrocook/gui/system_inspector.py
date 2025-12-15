@@ -929,7 +929,7 @@ class SystemInspector(QWidget):
         c_layout.setContentsMargins(5, 5, 5, 5) # Exact match to Left Toolbar
         c_layout.setSpacing(5)
 
-        c_layout.addWidget(QLabel("Trans:"))
+        c_layout.addWidget(QLabel("Trans.:"))
         self.trans_in = QLineEdit()
         self.trans_in.setPlaceholderText("CIV, SiIV")
         self.trans_in.returnPressed.connect(self._apply)
@@ -970,7 +970,7 @@ class SystemInspector(QWidget):
         self.b_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.b_in)
         
-        self.resid_cb = QCheckBox("Resid")
+        self.resid_cb = QCheckBox("Resid.")
         self.resid_cb.toggled.connect(self._apply) 
         c_layout.addWidget(self.resid_cb)
         
@@ -996,7 +996,7 @@ class SystemInspector(QWidget):
             self.setWindowTitle(f"System Inspector: {session.name}")
         else:
             self.setWindowTitle("System Inspector")
-            
+
         # 1. Capture previous state (Selection & Max ID)
         sel = self.table_view.selectionModel().selectedRows()
         prev_uuid = None

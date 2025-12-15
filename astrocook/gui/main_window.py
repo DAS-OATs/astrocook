@@ -307,7 +307,7 @@ class MainWindowV2(QMainWindow):
         """Creates the right sidebar widget with plot toggles and cursor controls."""
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        sidebar_layout.setContentsMargins(25, 10, 15, 10)
+        sidebar_layout.setContentsMargins(15, 10, 15, 10)
         sidebar_layout.setSpacing(15)
 
         # --- Helper: Expand Field ---
@@ -343,7 +343,7 @@ class MainWindowV2(QMainWindow):
         self.aux_col_combo = QComboBox()
         self.aux_col_combo.setToolTip("Select an auxiliary column to plot")
         self.aux_col_combo.currentTextChanged.connect(self._trigger_replot)
-        form_layout_aux.addRow("Aux Column:", self.aux_col_combo) 
+        form_layout_aux.addRow("Aux. Column:", self.aux_col_combo) 
         plot_toggles_layout.addLayout(form_layout_aux)
 
         self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
@@ -390,7 +390,7 @@ class MainWindowV2(QMainWindow):
         self.snr_col_combo = QComboBox()
         self.snr_col_combo.setToolTip("Select column to use as error for SNR")
         self.snr_col_combo.currentTextChanged.connect(self._trigger_replot)
-        form_layout_snr.addRow("  Error Col:", self.snr_col_combo)
+        form_layout_snr.addRow("  Error Col.:", self.snr_col_combo)
         view_layout.addLayout(form_layout_snr)
 
         self.log_x_checkbox = QCheckBox("Logarithmic λ")
@@ -437,13 +437,18 @@ class MainWindowV2(QMainWindow):
         self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
         
         # Rows 1-4
-        unified_grid.addWidget(QLabel("λ Min:"), 1, 0)
+        self.lbl_lmin = QLabel("λ Min:")
+        self.lbl_lmax = QLabel("λ Max:")
+        self.lbl_fmin = QLabel("F Min:")
+        self.lbl_fmax = QLabel("F Max:")
+
+        unified_grid.addWidget(self.lbl_lmin, 1, 0)
         unified_grid.addWidget(self.xmin_input, 1, 1)
-        unified_grid.addWidget(QLabel("λ Max:"), 2, 0)
+        unified_grid.addWidget(self.lbl_lmax, 2, 0)
         unified_grid.addWidget(self.xmax_input, 2, 1)
-        unified_grid.addWidget(QLabel("F Min:"), 3, 0)
+        unified_grid.addWidget(self.lbl_fmin, 3, 0)
         unified_grid.addWidget(self.ymin_input, 3, 1)
-        unified_grid.addWidget(QLabel("F Max:"), 4, 0)
+        unified_grid.addWidget(self.lbl_fmax, 4, 0)
         unified_grid.addWidget(self.ymax_input, 4, 1)
 
         # -- SECTION 2: Redshift Cursor --
@@ -460,7 +465,7 @@ class MainWindowV2(QMainWindow):
         self.cursor_z_input.setValidator(z_validator)
 
         # Rows 6-7
-        unified_grid.addWidget(QLabel("Series:"), 6, 0)
+        unified_grid.addWidget(QLabel("Trans.:"), 6, 0)
         unified_grid.addWidget(self.cursor_series_input, 6, 1)
         unified_grid.addWidget(QLabel("Redshift:"), 7, 0)
         unified_grid.addWidget(self.cursor_z_input, 7, 1)
@@ -482,7 +487,6 @@ class MainWindowV2(QMainWindow):
         sidebar_layout.addItem(spacer)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
-        # ... (Object naming remains the same) ...
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
         self.model_checkbox.setObjectName("PlotControlCheckbox")
@@ -497,6 +501,8 @@ class MainWindowV2(QMainWindow):
         self.log_y_checkbox.setObjectName("PlotControlCheckbox")
         self.cursor_show_checkbox.setObjectName("PlotControlCheckbox")
         
+        self._populate_snr_combo()
+
         self.right_sidebar_widget.resize(0, self.height())
         self.right_sidebar_widget.setVisible(False)
         
@@ -1366,33 +1372,7 @@ class MainWindowV2(QMainWindow):
         # --- *** END NEW *** ---
 
         # --- *** NEW: Update SNR Column Combo *** ---
-        try:
-            self.snr_col_combo.blockSignals(True)
-            current_snr_col = self.snr_col_combo.currentText()
-            self.snr_col_combo.clear()
-            self.snr_col_combo.addItem("dy") # 'dy' is always the default
-            
-            if is_valid:
-                # Add other potential error columns (e.g., 'running_std', 'cont_err')
-                all_cols = list(session_state_to_show.spec.t._data_dict.keys())
-                # Find columns that are not 'dy' but might be errors
-                potential_err_cols = sorted([
-                    c for c in all_cols 
-                    if ('err' in c or 'running_std' in c) and c != 'dy'
-                ])
-                if potential_err_cols:
-                    self.snr_col_combo.addItems(potential_err_cols)
-            
-            index = self.snr_col_combo.findText(current_snr_col)
-            if index != -1:
-                self.snr_col_combo.setCurrentIndex(index)
-            else:
-                self.snr_col_combo.setCurrentIndex(0) # Default to 'dy'
-        
-        except Exception as e:
-            logging.warning(f"Failed to update SNR Column combobox: {e}")
-        finally:
-            self.snr_col_combo.blockSignals(False)
+        self._populate_snr_combo()
             
         # Also set the visibility of the combo box
         #self.snr_col_combo.parentWidget().setVisible(self.snr_checkbox.isChecked())
@@ -1451,8 +1431,47 @@ class MainWindowV2(QMainWindow):
         # 2. Show/hide the SNR error column selector
         #self.snr_col_combo.parentWidget().setVisible(self.snr_checkbox.isChecked())
         
+        # Determine symbol
+        is_norm = self.norm_y_checkbox.isChecked()
+        sym = "ƒ" if is_norm else "F"
+        
+        # Update Labels
+        self.lbl_fmin.setText(f"{sym} Min:")
+        self.lbl_fmax.setText(f"{sym} Max:")
+
         # 3. Trigger the redraw
         self._trigger_replot()
+
+    # Helper to populate the SNR combo with "dF" instead of "dy"
+    # Call this whenever you load a session or refresh columns
+    def _populate_snr_combo(self):
+        self.snr_col_combo.blockSignals(True)
+        current_text = self.snr_col_combo.currentText() 
+        self.snr_col_combo.clear()
+        
+        # 1. Always add the standard error as "dF"
+        self.snr_col_combo.addItem("dF") 
+        
+        # 2. Add filtered aux columns
+        if self.active_history and self.active_history.current_state.spec:
+            spec = self.active_history.current_state.spec
+            
+            if hasattr(spec, '_data') and hasattr(spec._data, 'aux_cols'):
+                for col in spec._data.aux_cols:
+                    # [CHANGE] Strict filtering: only 'running_std' or '*err*'
+                    is_error_like = (col == 'running_std') or ('err' in col.lower())
+                    
+                    if is_error_like and col != 'dy': 
+                        self.snr_col_combo.addItem(col)
+
+        # Restore selection if it still exists
+        index = self.snr_col_combo.findText(current_text)
+        if index >= 0:
+            self.snr_col_combo.setCurrentIndex(index)
+        else:
+            self.snr_col_combo.setCurrentIndex(0) # Default to dF
+
+        self.snr_col_combo.blockSignals(False)
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""

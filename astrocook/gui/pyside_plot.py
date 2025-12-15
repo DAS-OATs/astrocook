@@ -399,6 +399,18 @@ class SpectrumPlotWidget(QWidget):
         super().__init__()
         self.main_window = main_window_ref
         
+        # This style applies to any QToolTip triggered from this widget
+        self.setStyleSheet("""
+            QToolTip {
+                border: 1px solid gray;
+                border-radius: 5px;     /* The rounded corners */
+                background-color: #F2F8F8;
+                color: black;
+                padding: 4px;           /* internal padding */
+                background-clip: border-box;
+            }
+        """)
+
         # Main Vertical Layout for the plot area
         self.main_layout = QVBoxLayout(self)
 
@@ -446,6 +458,11 @@ class SpectrumPlotWidget(QWidget):
         # Store the original Matplotlib coordinate formatter ONCE
         self._default_format_coord = self.canvas.axes.format_coord
 
+        # Tooltip state
+        self._tip_component_html = None
+        self._tip_data_rows = None # List of (label, value, unit) tuples
+        self._tip_region_html = None
+
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
 
@@ -463,8 +480,11 @@ class SpectrumPlotWidget(QWidget):
             # The ._data object is the frozen SpectrumDataV2
             current_data_id = id(session_state.spec._data) 
 
-        # --- Get the selected SNR error column ---
         selected_snr_col = self.main_window.snr_col_combo.currentText()
+        
+        # [CHANGE] Map "dF" display name back to internal "dy" name
+        if selected_snr_col == "dF":
+            selected_snr_col = "dy"
 
         # If data changed OR the SNR error col changed, invalidate caches
         if (current_data_id != self._cached_data_id or 
@@ -778,6 +798,7 @@ class SpectrumPlotWidget(QWidget):
 
                     # Save to SNR cache
                     x_data = x_data_raw # X is always the same
+                    dx_data = dx_data_raw # X is always the same
                     self._cached_y_plot_snr = y_data
                     self._cached_dx_plot_snr = dx_data
                     self._cached_dy_plot_snr = dy_data
@@ -1522,16 +1543,16 @@ class SpectrumPlotWidget(QWidget):
     
     def show_data_tooltip(self, event):
         """
-        Finds the data point nearest to the mouse and shows a tooltip
-        containing ONLY the data for lines near the cursor.
+        Slow handler called by timer (hover stop).
+        Calculates Component, Region, and Data info and displays the unified tooltip.
         """
         if not event or not event.xdata or not event.ydata:
             return
+        
         # Don't show data tooltip if redshift cursor is active
-        #if self.main_window.cursor_show_checkbox.isChecked():
-        #    return
+        if self.main_window.cursor_show_checkbox.isChecked():
+            return
             
-        # 1. Get current spectrum
         session = None
         if self.main_window and self.main_window.active_history:
             session = self.main_window.active_history.current_state
@@ -1541,24 +1562,47 @@ class SpectrumPlotWidget(QWidget):
         spec = session.spec
         x_full = spec.x.value
 
-        # 2. Find nearest index in X
+        # --- 1. Detect Component ---
+        self._tip_component_html = None
+        found_comp = None
+        
+        if event.inaxes:
+            xlim = event.inaxes.get_xlim()
+            tol = (xlim[1] - xlim[0]) * 0.01 
+            
+            for ax, x_pos, comp in self._tick_visuals:
+                if ax == event.inaxes and abs(event.xdata - x_pos) < tol:
+                    found_comp = comp
+                    break
+        
+        if found_comp:
+            c_chi2 = f"{found_comp.chi2:.2f}" if found_comp.chi2 is not None else "N/A"
+            c_resol = f"{found_comp.resol:.0f}" if found_comp.resol is not None else "N/A"
+            
+            self._tip_component_html = (
+                f"<div style='font-size: 13px'>"
+                f"<b>ID:</b> {found_comp.id} | <b>{found_comp.series}</b><br>"
+                f"<b>z:</b> {found_comp.z:.5f}<br>"
+                f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+                f"</div>"
+            )
+
+        # --- 2. Find Nearest Data Index ---
         idx = np.searchsorted(x_full, event.xdata)
         if idx > 0 and (idx == len(x_full) or 
                         np.abs(event.xdata - x_full[idx-1]) < np.abs(event.xdata - x_full[idx])):
             idx -= 1
+        
         if idx < 0 or idx >= len(x_full):
+            if self._tip_component_html: self._update_tooltip_display()
             return
         
-        # 1. Gather Region Info
-        region_id_str = ""
-        region_id_labels = ""
+        # --- 3. Region Identification ---
+        self._tip_region_html = None
         if 'abs_ids' in spec._data.aux_cols:
             try:
                 region_id_val = int(spec._data.aux_cols['abs_ids'].values[idx])
                 if region_id_val != 0:
-                    region_id_str = str(region_id_val)
-                    
-                    # Check for identification labels
                     ident_labels_json = spec.meta.get('region_identifications')
                     if ident_labels_json:
                         ident_labels_raw = json.loads(ident_labels_json)
@@ -1566,129 +1610,172 @@ class SpectrumPlotWidget(QWidget):
                         
                         if region_id_val in ident_labels_dict:
                             ids_for_region = ident_labels_dict[region_id_val]
-                            labels = []
-                            for (name, score) in ids_for_region:
-                                # Only show R2 score if it's a real, positive score
-                                # This hides (R2=0.00) for Ly_a cleanup lines
-                                if score > 0.0 or True:
-                                    labels.append(f"{name} (R2={score:.2f})")
-                                else:
-                                    labels.append(name)
+                            labels = [f"{name} ({score:.2f})" if score > 0 else name for name, score in ids_for_region]
                             label_str = ", ".join(labels)
                             if label_str:
-                                region_id_labels = label_str
-            except Exception as e:
-                logging.warning(f"Could not parse region ID/labels: {e}")
+                                self._tip_region_html = f"<tr><td style='padding-right:8px'><b>ID:</b></td><td>{label_str}</td></tr>"
+            except Exception: pass
 
-        # 2. Gather Data Proximity Info
-        rows_to_show = []
-        # Only check for data proximity if the cursor is OFF
-        if not self.main_window.cursor_show_checkbox.isChecked():
-            
-            # Density Check
-            xlim = self.canvas.axes.get_xlim()
-            idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
-            idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
-            n_visible = idx_end_vis - idx_start_vis
-            TOOLTIP_MAX_POINTS = 20000 
-            if n_visible <= TOOLTIP_MAX_POINTS:
-            
-                # Dynamic Proximity Check
-                THRESHOLD_PIX = 40
-                def check_dist(y_array):
-                    if y_array is None: return False
-                    data_pos = self.canvas.axes.transData.transform((x_full[idx], y_array[idx]))
-                    mouse_pos = (event.x, event.y)
-                    return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
-
-                # Check Flux
-                if check_dist(spec.y.value):
-                    rows_to_show.append(("y", spec.y.value[idx], spec.y.unit))
-                    rows_to_show.append(("dy", spec.dy.value[idx], spec.dy.unit))
-                    
-                # Check Continuum
-                if self.main_window.continuum_checkbox.isChecked():
-                    cont_col = spec._data.aux_cols.get('cont')
-                    if cont_col and check_dist(cont_col.values):
-                        rows_to_show.append(("cont", cont_col.values[idx], cont_col.unit))
-
-                # Check Model
-                if self.main_window.model_checkbox.isChecked():
-                    model_col = spec._data.aux_cols.get('model')
-                    if model_col and check_dist(model_col.values):
-                        rows_to_show.append(("model", model_col.values[idx], model_col.unit))
-
-                # Check Dynamic Aux Column
-                selected_aux = self.main_window.aux_col_combo.currentText()
-                if selected_aux and selected_aux != "None":
-                    is_redundant = (selected_aux == 'cont' and self.main_window.continuum_checkbox.isChecked()) or \
-                                    (selected_aux == 'model' and self.main_window.model_checkbox.isChecked()) or \
-                                    (selected_aux == 'abs_ids') # <<< *** Use new name ***
-                    if not is_redundant:
-                        aux_col = spec._data.aux_cols.get(selected_aux)
-                        if aux_col and aux_col.values.dtype.kind in 'fiu' and check_dist(aux_col.values):
-                            rows_to_show.append((selected_aux, aux_col.values[idx], aux_col.unit))
+        # --- 4. Data Points (Zoom Check) ---
+        self._tip_data_rows = []
         
-        # 3. Build Tooltip
-        # Only show tooltip if we found *something* (region or data)
-        if not rows_to_show and not region_id_str:
-            return
-
-        try:
-            tip_html = "<table style='font-size: 13px'>"
+        xlim = self.canvas.axes.get_xlim()
+        idx_start_vis = np.searchsorted(x_full, xlim[0], side='left')
+        idx_end_vis = np.searchsorted(x_full, xlim[1], side='right')
+        n_visible = idx_end_vis - idx_start_vis
+        TOOLTIP_MAX_POINTS = 20000 
+        
+        if n_visible <= TOOLTIP_MAX_POINTS:
+            # Determine Normalization State
+            is_norm = self.main_window.norm_y_checkbox.isChecked()
+            sym_flux = "\u0192" if is_norm else "F"
+            sym_dflux = "d" + sym_flux
             
-            def add_row(label, val_str):
-                return f"<tr><td style='padding-right:10px'><b>{label}:</b></td><td>{val_str}</td></tr>"
+            # [NEW] Calculate dLambda (Pixel Size)
+            d_lambda_val = None
+            if spec.xmin is not None and spec.xmax is not None:
+                try:
+                    # Access values safely assuming they are Columns/Quantities
+                    v_xmin = spec.xmin.value[idx] if hasattr(spec.xmin, 'value') else spec.xmin[idx]
+                    v_xmax = spec.xmax.value[idx] if hasattr(spec.xmax, 'value') else spec.xmax[idx]
+                    d_lambda_val = v_xmax - v_xmin
+                except Exception:
+                    pass
 
-            # Always show X
-            tip_html += add_row("x", f"{x_full[idx]:.4f} {spec.x.unit}")
-            
-            # Add dynamic data rows
-            for label, val, unit in rows_to_show:
-                tip_html += add_row(label, f"{val:.4e} {unit}")
+            # Pre-calculate Continuum Value
+            cont_val_at_idx = 1.0
+            has_cont = False
+            if spec.cont is not None:
+                cont_val_at_idx = spec.cont.value[idx]
+                has_cont = True
+            if cont_val_at_idx == 0: cont_val_at_idx = np.nan
 
-            # Add Region ID if found
-            if region_id_str:
-                # Do not show the numerical Abs. ID
-                # tip_html += add_row("Abs. ID", region_id_str) 
-                if region_id_labels:
-                    tip_html += add_row("<b>Likely ID</b>", f"<b>{region_id_labels}</b>")
+            # Helper: Calculate PLOTTED value and DISPLAY value
+            def get_vals(col_type):
+                if col_type == 'y':
+                    raw = spec.y.value[idx]
+                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    return raw, raw, str(spec.y.unit)
+                
+                elif col_type == 'dy':
+                    raw = spec.dy.value[idx]
+                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    return raw, raw, str(spec.dy.unit)
 
-            tip_html += "</table>"
-            QToolTip.showText(QCursor.pos(), tip_html, self)
-                    
-        except Exception as e:
-            logging.warning(f"Error building combined tooltip: {e}")
+                elif col_type == 'cont':
+                    if not has_cont: return None, None, ""
+                    if is_norm: return 1.0, 1.0, ""
+                    return cont_val_at_idx, cont_val_at_idx, str(spec.y.unit)
 
+                elif col_type == 'model':
+                    if spec.model is None: return None, None, ""
+                    raw = spec.model.value[idx]
+                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    return raw, raw, str(spec.y.unit)
+                return None, None, ""
+
+            # Check Proximity
+            THRESHOLD_PIX = 40
+            def check_dist(y_val_plotted):
+                if y_val_plotted is None or not np.isfinite(y_val_plotted): return False
+                data_pos = self.canvas.axes.transData.transform((x_full[idx], y_val_plotted))
+                mouse_pos = (event.x, event.y)
+                return np.hypot(data_pos[0] - mouse_pos[0], data_pos[1] - mouse_pos[1]) < THRESHOLD_PIX
+
+            # Helper to add Lambda and dLambda rows
+            def _add_lambda_rows():
+                self._tip_data_rows.append(("\u03bb", f"{x_full[idx]:.4f}", f"{spec.x.unit}"))
+                if d_lambda_val is not None:
+                    self._tip_data_rows.append(("d\u03bb", f"{d_lambda_val:.4f}", f"{spec.x.unit}"))
+
+            # A. Check Flux
+            y_plot, y_disp, y_unit = get_vals('y')
+            if check_dist(y_plot):
+                _add_lambda_rows()
+                self._tip_data_rows.append((sym_flux, f"{y_disp:.4e}", y_unit))
+                
+                # Add error
+                _, dy_disp, _ = get_vals('dy')
+                self._tip_data_rows.append((sym_dflux, f"{dy_disp:.4e}", y_unit))
+
+            # B. Check Continuum
+            if self.main_window.continuum_checkbox.isChecked():
+                c_plot, c_disp, c_unit = get_vals('cont')
+                if check_dist(c_plot):
+                    # Add lambda if not already added
+                    if not self._tip_data_rows:
+                        _add_lambda_rows()
+                    self._tip_data_rows.append(("Cont", f"{c_disp:.4e}", c_unit))
+
+            # C. Check Model
+            if self.main_window.model_checkbox.isChecked():
+                m_plot, m_disp, m_unit = get_vals('model')
+                if check_dist(m_plot):
+                    if not self._tip_data_rows:
+                        _add_lambda_rows()
+                    self._tip_data_rows.append(("Mod", f"{m_disp:.4e}", m_unit))
+
+        # 5. Refresh Display
+        self._update_tooltip_display()
+        
     def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
         """Called by MainWindowV2 to swap the immutable session object and redraw."""
         self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
 
-    def on_mouse_move(self, event):
-        if not event.inaxes: 
+    def _update_tooltip_display(self):
+        """
+        Combines component, region, and data info into a single HTML tooltip.
+        Order: Data Points -> Region Info -> Component Info
+        """
+        html_parts = []
+        has_previous_content = False
+
+        # --- 1. Data Points (Top) ---
+        if self._tip_data_rows:
+            rows_html = ""
+            for label, val_str, unit_str in self._tip_data_rows:
+                # Format: <b>Symbol:</b> Value Unit
+                rows_html += f"<tr><td style='padding-right:8px'><b>{label}:</b></td><td>{val_str} {unit_str}</td></tr>"
+            
+            html_parts.append(f"<table style='font-size: 13px'>{rows_html}</table>")
+            has_previous_content = True
+
+        # --- 2. Region Info (Middle) ---
+        if self._tip_region_html:
+            # Add separator if Data Points were shown
+            if has_previous_content:
+                html_parts.append("<hr style='margin: 4px 0px;'>")
+            
+            # _tip_region_html is a pre-formatted <tr>...</tr> string. 
+            # We wrap it in a fresh table to ensure alignment and structure.
+            html_parts.append(f"<table style='font-size: 13px'>{self._tip_region_html}</table>")
+            has_previous_content = True
+
+        # --- 3. Component Info (Bottom) ---
+        if self._tip_component_html:
+            # Add separator if Data or Region info was shown
+            if has_previous_content:
+                html_parts.append("<hr style='margin: 4px 0px;'>")
+            
+            # _tip_component_html is a pre-formatted <div>
+            html_parts.append(self._tip_component_html)
+
+        # --- Finalize ---
+        if not html_parts:
             QToolTip.hideText()
             return
-        
-        # Check Ticks
-        found_comp = None
-        xlim = event.inaxes.get_xlim()
-        tol = (xlim[1] - xlim[0]) * 0.01 # 1% tolerance
-        
-        for ax, x_pos, comp in self._tick_visuals:
-            if ax == event.inaxes and abs(event.xdata - x_pos) < tol:
-                found_comp = comp
-                break
-        
-        if found_comp:
-            c_chi2 = f"{found_comp.chi2:.2f}" if found_comp.chi2 is not None else "N/A"
-            c_resol = f"{found_comp.resol:.0f}" if found_comp.resol is not None else "N/A"
-            text = (f"ID: {found_comp.id} | {found_comp.series}\n"
-                    f"z: {found_comp.z:.5f}\n"
-                    f"Chi2: {c_chi2} | R: {c_resol}")
-            # Use QCursor.pos() for correct HiDPI position
-            QToolTip.showText(QCursor.pos(), text, self.canvas)
-        else:
-            QToolTip.hideText()
+
+        content = "".join(html_parts)
+        # The CSS in __init__ now handles the border and rounding.
+        QToolTip.showText(QCursor.pos(), content, self)
+
+    def on_mouse_move(self, event):
+        """
+        Handler called on mouse move.
+        We do nothing here to prevent flickering. All tooltip logic is deferred 
+        to show_data_tooltip (called when the mouse stops).
+        """
+        pass
             
     # Add on_press for Context Menu
     def on_press(self, event):
