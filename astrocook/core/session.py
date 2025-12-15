@@ -174,6 +174,13 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             systs=system_list_v2
         )
         
+        # Ensure 'cont' is intrinsic and 'telluric_model' is separate
+        if new_session.spec:
+            try:
+                new_session = new_session.with_new_spectrum(new_session.spec.sanitize_legacy_tellurics())
+            except Exception as e:
+                logging.warning(f"Failed to sanitize legacy tellurics: {e}")
+                
         return new_session 
 
     except Exception as e: 

@@ -328,7 +328,7 @@ class MainWindowV2(QMainWindow):
         self.error_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.error_checkbox)
 
-        self.continuum_checkbox = QCheckBox("Continuum"); self.continuum_checkbox.setChecked(True)
+        self.continuum_checkbox = QCheckBox("Normalization"); self.continuum_checkbox.setChecked(True)
         self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.continuum_checkbox)
 

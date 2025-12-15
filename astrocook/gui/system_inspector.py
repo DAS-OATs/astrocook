@@ -575,20 +575,20 @@ class VelocityPlotWidget(QWidget):
         if session.spec.has_aux_column('resol'):
             resol_col = session.spec.get_column('resol').value
 
-        has_cont = session.spec.cont is not None
+        has_norm = session.spec.norm is not None
         y = session.spec.y.value
         dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(y)
-        cont = session.spec.cont.value if has_cont else np.ones_like(y)
+        norm = session.spec.norm.value if has_norm else np.ones_like(y)
         
         with np.errstate(divide='ignore', invalid='ignore'):
-            y_norm = np.divide(y, cont, where=cont!=0)
-            dy_norm = np.divide(dy, cont, where=cont!=0)
+            y_norm = np.divide(y, norm, where=norm!=0)
+            dy_norm = np.divide(dy, norm, where=norm!=0)
             
         y_resid = None
         if session.spec.model is not None:
             mod = session.spec.model.value
             with np.errstate(divide='ignore', invalid='ignore'):
-                mod_norm = np.divide(mod, cont, where=cont!=0) if has_cont else mod
+                mod_norm = np.divide(mod, norm, where=norm!=0) if has_norm else mod
                 y_resid = np.divide(y_norm - mod_norm, dy_norm, where=dy_norm!=0)
 
         colors = get_color_cycle(5, cmap='tab20')
@@ -855,9 +855,9 @@ class VelocityPlotWidget(QWidget):
                 v_full = c_kms * (x_full - lam_obs_center_spec) / lam_obs_center_spec
                 
                 dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(x_full)
-                cont = session.spec.cont.value if session.spec.cont is not None else np.ones_like(x_full)
+                norm = session.spec.norm.value if session.spec.norm is not None else np.ones_like(x_full)
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    dy_norm = np.divide(dy, cont, where=cont!=0)
+                    dy_norm = np.divide(dy, norm, where=norm!=0)
                 
                 dy_interp = np.interp(v_grid, v_full, dy_norm, left=1.0, right=1.0)
                 with np.errstate(divide='ignore', invalid='ignore'):

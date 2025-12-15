@@ -146,6 +146,40 @@ class SpectrumV2:
             # Combine values and unit into a Quantity
             return au.Quantity(cont_col.values, cont_col.unit)
         return None
+    
+    @property
+    def norm(self) -> Optional[au.Quantity]:
+        """
+        Returns the normalization vector (Continuum * Telluric).
+        
+        Logic:
+        1. If cont exists: 
+           - Returns cont * telluric (if telluric exists).
+           - Returns cont (otherwise).
+        2. If cont is missing:
+           - Returns 1.0 (if flux median is ~1, assuming pre-normalized).
+           - Returns None (if flux is physical, signaling need for continuum fitting).
+        """
+        cont = self.get_column('cont')
+        telluric = self.get_column('telluric_model')
+        
+        # Case 1: Continuum Exists
+        if cont is not None:
+            if telluric is not None:
+                # Multiply Continuum (Quantity) by Telluric (Array/Quantity)
+                # Assuming telluric is dimensionless 0..1 transmission
+                return cont * telluric.value
+            return cont
+            
+        # Case 2: No Continuum (Check for implicit normalization)
+        # Heuristic: If median flux is order of unity (0.1 - 10), assume normalized.
+        # If median flux is 1e-17, assume physical.
+        y_median = np.nanmedian(self.y.value)
+        if 0.1 < y_median < 10.0:
+             return np.ones_like(self.y.value) * self.y.unit
+             
+        # Case 3: Physical Flux with no Continuum -> Needs Fitting
+        return None
 
     @property
     def model(self) -> Optional[au.Quantity]:
@@ -409,6 +443,39 @@ class SpectrumV2:
         except Exception as e:
             logging.warning(f"Failed to renormalize model column: {e}")
             return None
+    
+    def sanitize_legacy_tellurics(self) -> 'SpectrumV2':
+        """
+        Patches legacy spectra where 'cont' included tellurics and 'cont_no_telluric' 
+        stored the intrinsic continuum.
+        
+        Logic:
+        1. If 'cont_no_telluric' exists:
+           - Overwrite 'cont' with 'cont_no_telluric' (Intrinsic).
+           - Remove 'cont_no_telluric'.
+        2. Returns a new SpectrumV2 instance (or self if no changes needed).
+        """
+        # Check if the legacy column exists
+        if 'cont_no_telluric' not in self._data.aux_cols:
+            return self
+            
+        logging.info("Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting.")
+        
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        
+        # 1. Promote 'cont_no_telluric' to be the canonical 'cont'
+        # This ensures 'cont' is purely intrinsic.
+        new_aux_cols['cont'] = new_aux_cols['cont_no_telluric']
+        #new_aux_cols['cont'].description = "Intrinsic Continuum (Sanitized)"
+        
+        # 2. Remove the redundant legacy column
+        del new_aux_cols['cont_no_telluric']
+        
+        # 3. Create new state
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        
+        # Note: We add a history entry so the user knows this happened
+        return SpectrumV2(data=new_data, history=self.history + ["Sanitized legacy telluric columns"])
     
     # --- Methods implementing the API ---
 
@@ -1423,16 +1490,19 @@ class SpectrumV2:
             smooth_spectrum
         )
 
-        # 1. Validation
+        # 1. Validation & Setup
         if mask_col not in self._data.aux_cols:
             raise ValueError(f"Mask column '{mask_col}' not found. Run 'find_absorbed' first.")
         
-        # Ensure mask is boolean
-        mask_abs = self._data.aux_cols[mask_col].values
-        if mask_abs.dtype.kind != 'b':
-             mask_abs = mask_abs.astype(bool)
+        mask_abs = self._data.aux_cols[mask_col].values.astype(bool)
+        
+        # Check for Telluric Model
+        telluric_col = self._data.aux_cols.get('telluric_model')
+        telluric_vals = telluric_col.values if telluric_col is not None else None
 
-        # 2. Step A: Interpolate unabsorbed points (Raw Guess)
+        # 2. Step A: Interpolate (Raw Guess)
+        # Note: Ideally we would fit (y / telluric), but standard practice 
+        # often fits y directly (assuming tellurics are masked).
         try:
             cont_raw = interpolate_continuum_mask(
                 x=self._data.x.values,
@@ -1443,9 +1513,10 @@ class SpectrumV2:
             logging.error(e)
             return self
 
-        # 3. Step B: Calculate or Parse Fudge
+        # 3. Step B: Auto-Fudge
         applied_fudge = 1.0
         if isinstance(fudge, str) and fudge.lower() == 'auto':
+            # Calculate fudge using the raw guess
             applied_fudge = compute_auto_fudge(
                 y=self._data.y.values,
                 mask_abs=mask_abs,
@@ -1458,46 +1529,56 @@ class SpectrumV2:
             except (ValueError, TypeError):
                 logging.warning(f"Invalid fudge '{fudge}', defaulting to 1.0")
 
-        # Apply Fudge
         cont_fudged = cont_raw * applied_fudge
         
-        # 4. Step C: Smooth the Result
+        # 4. Step C: Smooth
         if smooth_std_kms > 0:
-            cont_final = smooth_spectrum(
+            cont_intrinsic = smooth_spectrum(
                 x=self._data.x.quantity,
                 y=cont_fudged,
                 sigma_kms=smooth_std_kms,
                 z_ref=self._data.z_em
             )
         else:
-            cont_final = cont_fudged
-        
+            cont_intrinsic = cont_fudged
+            
         # 5. Build New Auxiliary Columns
         new_aux_cols = deepcopy(self._data.aux_cols)
         
-        # Store new continuum
+        # [CRITICAL] Store the Intrinsic Continuum
+        # Since we added the .norm property, 'cont' should remain clean of tellurics
+        # so that .norm = cont * telluric works correctly.
         new_aux_cols['cont'] = DataColumnV2(
-            values=cont_final,
+            values=cont_intrinsic,
             unit=self._data.y.unit, 
             description=f"Continuum (smooth={smooth_std_kms} km/s, fudge={applied_fudge:.3f})"
         )
         
-        # --- 6. Step D: Renormalize Model (Restored Feature) ---
-        # We must grab the OLD continuum and model from the CURRENT instance (self)
+        # 6. Step D: Renormalize Model (Corrected Logic)
         old_cont_col = self._data.aux_cols.get('cont')
         old_model_col = self._data.aux_cols.get('model')
 
         if renorm_model and old_cont_col is not None and old_model_col is not None:
-            # Note: We rely on the internal helper _renormalize_model 
-            # (ensure it exists in SpectrumV2 as seen in your upload)
+            # Construct the FULL Normalization vectors (Cont * Telluric)
+            # This ensures we preserve the optical depth (e^-tau) correctly.
+            
+            old_norm_vals = old_cont_col.values
+            new_norm_vals = cont_intrinsic
+            
+            if telluric_vals is not None:
+                # Apply telluric to both old and new baselines
+                old_norm_vals = old_norm_vals * telluric_vals
+                new_norm_vals = new_norm_vals * telluric_vals
+
+            # Pass the *Effective Norms* to the helper
             new_model_col = self._renormalize_model(
-                old_cont_vals=old_cont_col.values,
-                new_cont_vals=cont_final,
+                old_cont_vals=old_norm_vals,
+                new_cont_vals=new_norm_vals,
                 old_model_col=old_model_col
             )
             if new_model_col:
                 new_aux_cols['model'] = new_model_col
-                logging.info("Model column re-normalized to new continuum.")
+                logging.info("Model column re-normalized to new continuum (incorporating tellurics).")
 
         # 7. Create New Data Core
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)

@@ -434,20 +434,20 @@ class SpectrumPlotWidget(QWidget):
         self._cached_x_plot_raw = None
         self._cached_y_plot_raw = None
         self._cached_dy_plot_raw = None
-        self._cached_cont_plot_raw = None
+        self._cached_norm_plot_raw = None
         self._cached_model_plot_raw = None
 
         # Cache for NORMALIZED plot-ready (decimated) arrays
         self._cached_y_plot_norm = None
         self._cached_dy_plot_norm = None
-        self._cached_cont_plot_norm = None
+        self._cached_norm_plot_norm = None
         self._cached_model_plot_norm = None
 
         # Cache for SNR plot-ready (decimated) arrays
         self._cached_y_plot_snr = None
         self._cached_dy_plot_snr = None
         self._cached_model_plot_snr = None # (e.g., model / dy)
-        self._cached_cont_plot_snr = None # (e.g., cont / dy)
+        self._cached_norm_plot_snr = None # (e.g., norm / dy)
         self._cached_snr_error_col = "" # Tracks which error col was used
 
         # List to store active iso-mag curves
@@ -508,15 +508,15 @@ class SpectrumPlotWidget(QWidget):
             self._cached_x_plot_raw = None
             self._cached_y_plot_raw = None
             self._cached_dy_plot_raw = None
-            self._cached_cont_plot_raw = None
+            self._cached_norm_plot_raw = None
             self._cached_model_plot_raw = None
             self._cached_y_plot_norm = None
             self._cached_dy_plot_norm = None
-            self._cached_cont_plot_norm = None
+            self._cached_norm_plot_norm = None
             self._cached_model_plot_norm = None
             self._cached_y_plot_snr = None
             self._cached_dy_plot_snr = None
-            self._cached_cont_plot_snr = None
+            self._cached_norm_plot_snr = None
             self._cached_model_plot_snr = None
             self._cached_snr_error_col = "" # Clear the cached col name
 
@@ -615,7 +615,7 @@ class SpectrumPlotWidget(QWidget):
             full_y_data = spec.y.value
             full_dx_data = spec.xmax.value-spec.xmin.value if (spec.xmin, spec.xmax) is not (None, None) else np.zeros_like(full_x_data)
             full_dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(full_y_data)
-            full_cont_data = spec.cont.value if hasattr(spec.cont, 'value') else spec.cont
+            full_norm_data = spec.norm.value if hasattr(spec.norm, 'value') else spec.norm
             full_model_data = spec.model.value if hasattr(spec.model, 'value') else spec.model
 
             # --- Check View Toggles ---
@@ -654,7 +654,7 @@ class SpectrumPlotWidget(QWidget):
                     y_data = self._cached_y_plot_norm
                     dx_data = self._cached_dx_plot_norm
                     dy_data = self._cached_dy_plot_norm
-                    cont_data = self._cached_cont_plot_norm
+                    norm_data = self._cached_norm_plot_norm
                     model_data = self._cached_model_plot_norm
                 
                 else:
@@ -666,7 +666,7 @@ class SpectrumPlotWidget(QWidget):
                         y_data_raw = self._cached_y_plot_raw
                         dx_data_raw = self._cached_dx_plot_raw
                         dy_data_raw = self._cached_dy_plot_raw
-                        cont_data_raw = self._cached_cont_plot_raw
+                        norm_data_raw = self._cached_norm_plot_raw
                         model_data_raw = self._cached_model_plot_raw
                     else:
                         logging.debug("...RAW plot data cache is also empty. Computing...")
@@ -676,14 +676,14 @@ class SpectrumPlotWidget(QWidget):
                             y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
                             dx_data_raw = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                             dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
-                            cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                            norm_data_raw = decimate_y_min_max(full_norm_data, DECIMATION_FACTOR)
                             model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
                         else: # We are zoomed, forcing home, or data is small
                             x_data_raw = full_x_data
                             y_data_raw = full_y_data
                             dx_data_raw = full_dx_data
                             dy_data_raw = full_dy_data
-                            cont_data_raw = full_cont_data
+                            norm_data_raw = full_norm_data
                             model_data_raw = full_model_data
                         
                         # Save to RAW cache
@@ -691,32 +691,32 @@ class SpectrumPlotWidget(QWidget):
                         self._cached_y_plot_raw = y_data_raw
                         self._cached_dx_plot_raw = dx_data_raw
                         self._cached_dy_plot_raw = dy_data_raw
-                        self._cached_cont_plot_raw = cont_data_raw
+                        self._cached_norm_plot_raw = norm_data_raw
                         self._cached_model_plot_raw = model_data_raw
 
                     # 4a. NOW, compute and cache the NORMALIZED data
-                    if cont_data_raw is not None:
+                    if norm_data_raw is not None:
                         x_data = x_data_raw
-                        cont_val = cont_data_raw
-                        y_data = np.divide(y_data_raw, cont_val, out=np.full_like(y_data_raw, np.nan), where=cont_val!=0)
-                        dx_data = np.divide(dx_data_raw, cont_val, out=np.full_like(dx_data_raw, np.nan), where=cont_val!=0)
-                        dy_data = np.divide(dy_data_raw, cont_val, out=np.full_like(dy_data_raw, np.nan), where=cont_val!=0)
+                        norm_val = norm_data_raw
+                        y_data = np.divide(y_data_raw, norm_val, out=np.full_like(y_data_raw, np.nan), where=norm_val!=0)
+                        dx_data = np.divide(dx_data_raw, norm_val, out=np.full_like(dx_data_raw, np.nan), where=norm_val!=0)
+                        dy_data = np.divide(dy_data_raw, norm_val, out=np.full_like(dy_data_raw, np.nan), where=norm_val!=0)
                         model_data = None
                         if model_data_raw is not None:
-                            model_data = np.divide(model_data_raw, cont_val, out=np.full_like(model_data_raw, np.nan), where=cont_val!=0)
-                        cont_data = np.ones_like(cont_data_raw)
+                            model_data = np.divide(model_data_raw, norm_val, out=np.full_like(model_data_raw, np.nan), where=norm_val!=0)
+                        norm_data = np.ones_like(norm_data_raw)
                         
                         # Save to NORMALIZED cache
                         self._cached_x_plot_norm = x_data
                         self._cached_y_plot_norm = y_data
                         self._cached_dx_plot_norm = dx_data
                         self._cached_dy_plot_norm = dy_data
-                        self._cached_cont_plot_norm = cont_data
+                        self._cached_norm_plot_norm = norm_data
                         self._cached_model_plot_norm = model_data
                     else:
                         logging.warning("Normalize checked, but continuum data is missing.")
-                        x_data, y_data, dx_data, dy_data, cont_data, model_data = \
-                            x_data_raw, y_data_raw, dx_data_raw, dy_data_raw, cont_data_raw, model_data_raw
+                        x_data, y_data, dx_data, dy_data, norm_data, model_data = \
+                            x_data_raw, y_data_raw, dx_data_raw, dy_data_raw, norm_data_raw, model_data_raw
 
             elif is_snr:
                 # --- *** NEW BLOCK FOR SNR *** ---
@@ -726,7 +726,7 @@ class SpectrumPlotWidget(QWidget):
                     y_data = self._cached_y_plot_snr
                     dx_data = self._cached_dx_plot_snr
                     dy_data = self._cached_dy_plot_snr
-                    cont_data = self._cached_cont_plot_snr
+                    norm_data = self._cached_norm_plot_snr
                     model_data = self._cached_model_plot_snr
                 
                 else:
@@ -738,7 +738,7 @@ class SpectrumPlotWidget(QWidget):
                         y_data_raw = self._cached_y_plot_raw
                         dx_data_raw = self._cached_dx_plot_raw
                         dy_data_raw = self._cached_dy_plot_raw
-                        cont_data_raw = self._cached_cont_plot_raw
+                        norm_data_raw = self._cached_norm_plot_raw
                         model_data_raw = self._cached_model_plot_raw
                     else:
                         # ... (compute raw decimated data) ...
@@ -748,7 +748,7 @@ class SpectrumPlotWidget(QWidget):
                             y_data_raw = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
                             dx_data_raw = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                             dy_data_raw = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
-                            cont_data_raw = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                            norm_data_raw = decimate_y_min_max(full_norm_data, DECIMATION_FACTOR)
                             model_data_raw = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
                         else:
                             # ... (get from data_slice) ...
@@ -756,7 +756,7 @@ class SpectrumPlotWidget(QWidget):
                             y_data_raw = full_y_data[data_slice]
                             dx_data_raw = full_dx_data[data_slice]
                             dy_data_raw = full_dy_data[data_slice]
-                            cont_data_raw = full_cont_data[data_slice] if full_cont_data is not None else None
+                            norm_data_raw = full_norm_data[data_slice] if full_norm_data is not None else None
                             model_data_raw = full_model_data[data_slice] if full_model_data is not None else None
                         
                         # Save to RAW cache
@@ -764,7 +764,7 @@ class SpectrumPlotWidget(QWidget):
                         self._cached_y_plot_raw = y_data_raw
                         self._cached_dx_plot_raw = dx_data_raw
                         self._cached_dy_plot_raw = dy_data_raw
-                        self._cached_cont_plot_raw = cont_data_raw
+                        self._cached_norm_plot_raw = norm_data_raw
                         self._cached_model_plot_raw = model_data_raw
 
                     # 2. Get the ERROR array to use
@@ -774,7 +774,7 @@ class SpectrumPlotWidget(QWidget):
                         if error_col_name == 'dy':
                             full_error_data = full_dy_data
                         else:
-                            # This path is for 'running_std', 'cont_err', etc.
+                            # This path is for 'running_std', 'norm_err', etc.
                             full_error_data = spec.get_column(error_col_name).value
                     except Exception as e:
                         logging.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
@@ -791,9 +791,9 @@ class SpectrumPlotWidget(QWidget):
                     y_data = np.divide(y_data_raw, error_data_raw, out=np.full_like(y_data_raw, np.nan), where=error_data_raw!=0)
                     dy_data = np.ones_like(y_data) # Error on SNR is (dy/dy) = 1.0
                     
-                    cont_data = None
-                    if cont_data_raw is not None:
-                        cont_data = np.divide(cont_data_raw, error_data_raw, out=np.full_like(cont_data_raw, np.nan), where=error_data_raw!=0)
+                    norm_data = None
+                    if norm_data_raw is not None:
+                        norm_data = np.divide(norm_data_raw, error_data_raw, out=np.full_like(norm_data_raw, np.nan), where=error_data_raw!=0)
                     
                     model_data = None
                     if model_data_raw is not None:
@@ -805,7 +805,7 @@ class SpectrumPlotWidget(QWidget):
                     self._cached_y_plot_snr = y_data
                     self._cached_dx_plot_snr = dx_data
                     self._cached_dy_plot_snr = dy_data
-                    self._cached_cont_plot_snr = cont_data
+                    self._cached_norm_plot_snr = norm_data
                     self._cached_model_plot_snr = model_data
                     self._cached_snr_error_col = error_col_name # Store the col used
 
@@ -817,7 +817,7 @@ class SpectrumPlotWidget(QWidget):
                     y_data = self._cached_y_plot_raw
                     dx_data = self._cached_dx_plot_raw
                     dy_data = self._cached_dy_plot_raw
-                    cont_data = self._cached_cont_plot_raw
+                    norm_data = self._cached_norm_plot_raw
                     model_data = self._cached_model_plot_raw
                 
                 else:
@@ -828,14 +828,14 @@ class SpectrumPlotWidget(QWidget):
                         y_data = decimate_y_min_max(full_y_data, DECIMATION_FACTOR)
                         dx_data = decimate_y_min_max(full_dx_data, DECIMATION_FACTOR)
                         dy_data = decimate_y_min_max(full_dy_data, DECIMATION_FACTOR)
-                        cont_data = decimate_y_min_max(full_cont_data, DECIMATION_FACTOR)
+                        norm_data = decimate_y_min_max(full_norm_data, DECIMATION_FACTOR)
                         model_data = decimate_y_min_max(full_model_data, DECIMATION_FACTOR)
                     else: # We are zoomed, forcing home, or data is small
                         x_data = full_x_data
                         y_data = full_y_data
                         dx_data = full_dx_data
                         dy_data = full_dy_data
-                        cont_data = full_cont_data
+                        norm_data = full_norm_data
                         model_data = full_model_data
                     
                     # Save to RAW cache
@@ -843,7 +843,7 @@ class SpectrumPlotWidget(QWidget):
                     self._cached_y_plot_raw = y_data
                     self._cached_dx_plot_raw = dx_data
                     self._cached_dy_plot_raw = dy_data
-                    self._cached_cont_plot_raw = cont_data
+                    self._cached_norm_plot_raw = norm_data
                     self._cached_model_plot_raw = model_data
 
             # --- 2. SLICING BLOCK (NEW) ---
@@ -874,8 +874,8 @@ class SpectrumPlotWidget(QWidget):
                         y_data = y_data[final_slice]
                         dx_data = dx_data[final_slice]
                         dy_data = dy_data[final_slice]
-                        if cont_data is not None:
-                            cont_data = cont_data[final_slice]
+                        if norm_data is not None:
+                            norm_data = norm_data[final_slice]
                         if model_data is not None:
                             model_data = model_data[final_slice]
                     else:
@@ -946,13 +946,13 @@ class SpectrumPlotWidget(QWidget):
 
             # 3. Plot Continuum (Conditional)
             if self.main_window.continuum_checkbox.isChecked(): # <<< Check main window's checkbox
-                if cont_data is not None:
+                if norm_data is not None:
                     ax.plot(
-                        x_data, cont_data, linestyle='--',
-                        color='black', lw=0.8, label='Continuum', rasterized=True
+                        x_data, norm_data, linestyle='--',
+                        color='black', lw=0.8, label='Normalization', rasterized=True
                     )
                 else:
-                    logging.warning("Continuum requested but 'cont' not found.")
+                    logging.warning("Normalization requested but spec.norm is None.")
 
             # 4. Plot Model
             if self.main_window.model_checkbox.isChecked():
@@ -1647,34 +1647,37 @@ class SpectrumPlotWidget(QWidget):
                     pass
 
             # Pre-calculate Continuum Value
-            cont_val_at_idx = 1.0
-            has_cont = False
-            if spec.cont is not None:
-                cont_val_at_idx = spec.cont.value[idx]
-                has_cont = True
-            if cont_val_at_idx == 0: cont_val_at_idx = np.nan
+            norm_val_at_idx = 1.0
+            has_norm = False
+            # [CHANGE] Access .norm property
+            norm_q = spec.norm
+            if norm_q is not None:
+                norm_val_at_idx = norm_q.value[idx]
+                has_norm = True
+                
+            if norm_val_at_idx == 0: norm_val_at_idx = np.nan
 
             # Helper: Calculate PLOTTED value and DISPLAY value
             def get_vals(col_type):
                 if col_type == 'y':
                     raw = spec.y.value[idx]
-                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
                     return raw, raw, str(spec.y.unit)
                 
                 elif col_type == 'dy':
                     raw = spec.dy.value[idx]
-                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
                     return raw, raw, str(spec.dy.unit)
 
                 elif col_type == 'cont':
-                    if not has_cont: return None, None, ""
+                    if not has_norm: return None, None, ""
                     if is_norm: return 1.0, 1.0, ""
-                    return cont_val_at_idx, cont_val_at_idx, str(spec.y.unit)
+                    return norm_val_at_idx, norm_val_at_idx, str(spec.y.unit)
 
                 elif col_type == 'model':
                     if spec.model is None: return None, None, ""
                     raw = spec.model.value[idx]
-                    if is_norm: return (raw / cont_val_at_idx), (raw / cont_val_at_idx), ""
+                    if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
                     return raw, raw, str(spec.y.unit)
                 return None, None, ""
 

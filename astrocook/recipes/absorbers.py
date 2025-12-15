@@ -383,35 +383,43 @@ class RecipeAbsorbersV2:
             depth_i = int(group_depth)
             
             if not self._session.systs: return 0
+
+            current_session = self._session
+
+            # [CHANGE] Trigger Continuum Auto-Estimation if needed
+            if current_session.spec.norm is None:
+                logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
+                from astrocook.recipes.continuum import RecipeContinuumV2
+                cont_rec = RecipeContinuumV2(current_session)
+                # This returns a NEW session with continuum
+                current_session = cont_rec.estimate_auto()
             
-            # USE CONTEXT MANAGER (Point 1 of Prompt)
-            with self._session.systs.fitting_context([uuid], group_depth=depth_i):
-                fitter = VoigtFitterV2(self._session.spec, self._session.systs)
+            # Use the possibly-updated session for fitting
+            with current_session.systs.fitting_context([uuid], group_depth=depth_i):
+                fitter = VoigtFitterV2(current_session.spec, current_session.systs)
                 new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
             
-            # The context manager exited, so 'new_systs' (cloned from self._session.systs) 
-            # might need a reset if the clone happened INSIDE the context. 
-            # Actually, fitter.fit returns a NEW system list. 
-            # We just need to ensure the NEW list is clean.
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)
 
-            # 6. Construct Result
             from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
             
-            new_aux_cols = deepcopy(self._session.spec._data.aux_cols)
+            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
             new_aux_cols['model'] = DataColumnV2(
                 values=model_flux,
-                unit=self._session.spec.y.unit,
+                unit=current_session.spec.y.unit,
                 description="Voigt Fit Model"
             )
-            new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
-            new_spec = self._session.spec.__class__(new_spec_data) 
+            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
+            new_spec = current_session.spec.__class__(new_spec_data) 
             
-            session_with_spec = self._session.with_new_spectrum(new_spec)
+            session_with_spec = current_session.with_new_spectrum(new_spec)
             return session_with_spec.with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
             
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
@@ -465,9 +473,18 @@ class RecipeAbsorbersV2:
 
             if not self._session.systs: return 0
 
-            # 2. Call Core Logic (The Brain)
-            new_systs = self._session.systs.optimize_hierarchy(
-                spec=self._session.spec,
+            current_session = self._session
+
+            # [CHANGE] Trigger Continuum Auto-Estimation if needed
+            if current_session.spec.norm is None:
+                logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
+                from astrocook.recipes.continuum import RecipeContinuumV2
+                cont_rec = RecipeContinuumV2(current_session)
+                current_session = cont_rec.estimate_auto()
+
+            # Pass the (possibly updated) session to optimize_hierarchy
+            new_systs = current_session.systs.optimize_hierarchy(
+                spec=current_session.spec,
                 uuid_seed=uuid,
                 max_components=max_c,
                 threshold_sigma=thresh,
@@ -478,32 +495,28 @@ class RecipeAbsorbersV2:
                 patience=pat
             )
             
-            # 3. [CRITICAL FIX] Ensure Mask is OFF before Final Model Calc
-            # Even if SystemList cleaned it, we double-check here to guarantee
-            # the visual model (Green Line) represents the WHOLE system.
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)
 
-            # 4. Compute Final Model (Green Line)
             from astrocook.fitting.voigt_fitter import VoigtFitterV2
-            fitter = VoigtFitterV2(self._session.spec, new_systs)
+            # Use current_session.spec (which might have new continuum)
+            fitter = VoigtFitterV2(current_session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            # 5. Update Session
             from astrocook.core.structures import DataColumnV2
             from copy import deepcopy
             import dataclasses
             
-            new_aux_cols = deepcopy(self._session.spec._data.aux_cols)
+            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
             new_aux_cols['model'] = DataColumnV2(
                 values=model_flux,
-                unit=self._session.spec.y.unit,
+                unit=current_session.spec.y.unit,
                 description="Voigt Fit Model"
             )
-            new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
-            new_spec = self._session.spec.__class__(new_spec_data) 
+            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
+            new_spec = current_session.spec.__class__(new_spec_data) 
             
-            return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+            return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
         except Exception as e:
              logging.error(f"optimize_system failed: {e}", exc_info=True)

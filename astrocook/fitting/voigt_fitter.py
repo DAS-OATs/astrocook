@@ -127,19 +127,23 @@ class VoigtFitterV2:
         # Convert to Angstroms for internal Voigt calc
         self._x_ang = self._spectrum.x.to(au.Angstrom).value
         
-        if self._spectrum.cont is not None:
-            self._cont = self._spectrum.cont.value
-            self._cont[self._cont == 0] = np.nan 
-        else:
-            logging.warning("No continuum found. Assuming flux is already normalized.")
-            self._cont = np.ones_like(self._spectrum.y.value)
+        norm_q = self._spectrum.norm
+        
+        if norm_q is None:
+            # Raise explicit error so Recipe can catch it and trigger estimate_auto
+            raise ValueError("Normalization vector is missing (Flux is physical and no continuum found).")
+            
+        self._norm = norm_q.value
+        # Mask invalid normalization (zeros or negative values)
+        self._norm[self._norm <= 0] = np.nan 
 
-        self._y_norm = self._spectrum.y.value / self._cont
+        # Normalize Flux and Error
+        self._y_norm = self._spectrum.y.value / self._norm
         
         raw_dy = self._spectrum.dy.value
-        min_err = 1e-9 * np.nanmedian(self._cont) 
+        min_err = 1e-9 * np.nanmedian(self._norm) 
         safe_dy = np.maximum(raw_dy, min_err)
-        self._dy_norm = safe_dy / self._cont
+        self._dy_norm = safe_dy / self._norm
         
         self._valid_mask = np.isfinite(self._y_norm) & np.isfinite(self._dy_norm) & (self._dy_norm > 0)
         
@@ -765,7 +769,7 @@ class VoigtFitterV2:
         self._x_calc = temp_x
         self._resol_calc = temp_resol
         
-        final_model_flux = final_model_norm * self._cont
+        final_model_flux = final_model_norm * self._norm
 
         logging.info(f"Fit complete. Chi2: {chi2:.2f} (Red: {red_chi2:.2f}) over {n_data} pixels.")
         return new_system_list, final_model_flux, res
@@ -797,5 +801,5 @@ class VoigtFitterV2:
         self._x_calc = temp_x 
         self._resol_calc = temp_resol
         
-        y_model_phys = y_model_norm * self._cont
+        y_model_phys = y_model_norm * self._norm
         return self._x_ang, y_model_phys
