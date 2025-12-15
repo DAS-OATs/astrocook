@@ -1746,8 +1746,6 @@ class MainWindowV2(QMainWindow):
         dialog.setWindowTitle(f"Session Inspector: {history_item.display_name}")
         dialog.setMinimumWidth(400)
         
-        # [CHANGE] Apply rounded style to LineEdits to match sidebar styling
-        # We add a subtle border to ensure the rounded shape is visible against the dialog background.
         dialog.setStyleSheet("""
             QLineEdit {
                 padding: 3px;
@@ -1764,7 +1762,6 @@ class MainWindowV2(QMainWindow):
         form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         form_layout.setVerticalSpacing(5)
 
-        # Helper to make line edits expand horizontally
         def _expand_field(widget):
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             return widget
@@ -1801,6 +1798,8 @@ class MainWindowV2(QMainWindow):
         x_vals = spec.x.value
         x_range = "Empty"
         snr_str = "N/A"
+        step_str = "N/A"
+        
         if len(x_vals) > 0:
             x_range = f"{np.min(x_vals):.2f} - {np.max(x_vals):.2f} {spec.x.unit}"
             try:
@@ -1810,13 +1809,38 @@ class MainWindowV2(QMainWindow):
                     snr_str = f"{np.nanmedian(valid_snr):.2f}"
             except: pass
 
-        # [CHANGE] Formatted according to your new requirements
-        # Removed "Resolution" from here as it is now editable above
+            # --- Step Detection Logic ---
+            if len(x_vals) > 1:
+                dx = np.diff(x_vals)
+                med_dx = np.median(dx)
+                
+                # 1. Check Linear Constancy (within 0.01%)
+                is_linear = np.allclose(dx, med_dx, rtol=1e-4)
+                
+                if is_linear:
+                    step_str = f"{med_dx:.4f} {spec.x.unit} (constant)"
+                else:
+                    # 2. Check Log Constancy
+                    is_log = False
+                    if np.all(x_vals > 0):
+                        dlog = np.diff(np.log10(x_vals))
+                        med_dlog = np.median(dlog)
+                        is_log = np.allclose(dlog, med_dlog, rtol=1e-4)
+                    
+                    if is_log:
+                        # Convert to Velocity Step: dv = c * ln(10) * dlog10(lambda)
+                        c_kms = 299792.458
+                        dv = c_kms * med_dlog * np.log(10)
+                        step_str = f"{med_dx:.4f} {spec.x.unit} (log; dv: {dv:.2f} km/s)"
+                    else:
+                        step_str = f"{med_dx:.4f} {spec.x.unit} (variable)"
+
         stats_html = (
             "<p style='margin-bottom: 5px;'><b>Other info:</b></p>"
             "<style>td { padding-left: 15px; padding-top: 5px; }</style>"
             "<table width='100%'>"
             f"<tr><td>Wavelength Range:</td><td>{x_range}</td></tr>"
+            f"<tr><td>Median Step:</td><td>{step_str}</td></tr>" # Added Row
             f"<tr><td>Median SNR:</td><td>{snr_str}</td></tr>"
             f"<tr><td>Number of data points:</td><td>{len(spec.x)}</td></tr>"
             f"<tr><td>Number of components:</td><td>{len(systs.components)}</td></tr>"
