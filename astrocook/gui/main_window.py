@@ -1509,48 +1509,84 @@ class MainWindowV2(QMainWindow):
         self.snr_col_combo.blockSignals(False)
 
     def _toggle_continuum_editor(self):
-        # Check if we are currently editing
+        # Safety check
+        if not hasattr(self, 'plot_viewer'): return
+
         is_editing = getattr(self.plot_viewer, '_edit_mode_active', False)
 
         if not is_editing:
-            # --- STARTING EDIT ---
-            # 1. Read the current visual position of the slider
+            # --- STARTING ---
+            if not self.active_history: return
+
             slider_pos = self.stride_slider.value()
-            
-            # 2. Calculate the actual stride from it
             initial_stride = self._get_log_stride(slider_pos)
-            
-            # 3. Pass it to the start method
             self.plot_viewer.start_continuum_edit(initial_stride=initial_stride)
 
-            # UI Updates
             self.edit_cont_button.setText("Save")
-            # Optional: Make button look "active" (e.g., blue)
-            #self.edit_cont_button.setStyleSheet("font-weight: bold; color: blue;") 
             self.stride_slider.setEnabled(True)
-
-            # Sync slider label to current default
             current_stride = self._get_log_stride(self.stride_slider.value())
             self.stride_label.setText(f"Spacing: {current_stride} px")
-
+            
         else:
-            # --- STOPPING EDIT ---
-            # Assuming you want to save automatically when clicking "End and Save"
+            # --- STOPPING & SAVING ---
+            
+            # 1. Retrieve the manual knots
             knots_x, knots_y = self.plot_viewer.stop_continuum_edit(save=True)
 
-            # UI Updates
+            # UI Reset
             self.edit_cont_button.setText("Start")
-            self.edit_cont_button.setStyleSheet("") # Reset style
+            self.edit_cont_button.setStyleSheet("") 
             self.stride_slider.setEnabled(False)
-            self.stride_label.setText("") # Reset or keep last value
-        
-        if self.plot_viewer._edit_mode_active:
-            # We just STARTED editing
-            self.stride_slider.setEnabled(True)
-        else:
-            # We just STOPPED editing
-            self.stride_slider.setEnabled(False)
+            self.stride_label.setText("") 
 
+            # 2. PREPARE RECIPE PARAMETERS
+            if knots_x is not None and knots_y is not None and self.active_history:
+                
+                recipe_name = "update_from_knots"
+                
+                # A. Fetch default params from Schema
+                # This ensures we respect the defaults defined in continuum.py
+                schema = CONTINUUM_RECIPES_SCHEMAS.get(recipe_name, {})
+                params = {p['name']: p['default'] for p in schema.get('params', [])}
+                
+                # B. Inject our manual data
+                # (We keep these hidden in the schema so the dialog won't show huge lists)
+                params['knots_x'] = knots_x
+                params['knots_y'] = knots_y
+
+                # 3. ASK USER (Using the Unified Helper)
+                # This mimics the standard recipe flow: it checks if 'renorm_model' 
+                # is in the params and prompts the user if needed.
+                if hasattr(self, '_ask_to_renormalize_model'):
+                    # Pass the name and the fully populated params dict
+                    updated_params = self._ask_to_renormalize_model(recipe_name, params)
+                    if updated_params is None: # User Cancelled
+                        return
+                    params = updated_params
+                
+                # 4. COMMIT TO BACKEND
+                try:
+                    current_session = self.active_history.current_state
+                    
+                    # Call the recipe using the dictionary unpacking
+                    # This maps keys 'knots_x', 'knots_y', 'renorm_model' to arguments
+                    new_session = current_session.continuum.update_from_knots(**params)
+                    
+                    self.active_history.add_state(new_session)
+                    logging.info("Continuum update saved to history.")
+                    
+                    # 5. FORCE REFRESH
+                    if hasattr(self, 'session_list_view'):
+                        selection_model = self.session_list_view.selectionModel()
+                        current_index = selection_model.currentIndex()
+                        if current_index.isValid():
+                            self.session_list_view.clicked.emit(current_index)
+                        else:
+                            self.update_gui_from_state(new_session)
+                            
+                except Exception as e:
+                    logging.error(f"Failed to save continuum: {e}")
+                        
     def on_stride_change(self):
         # 1. Safety Check: If plot_viewer doesn't exist yet (during startup), do nothing.
         if not hasattr(self, 'plot_viewer') or self.plot_viewer is None:
@@ -1749,9 +1785,6 @@ class MainWindowV2(QMainWindow):
                 lambda: self._on_coadd_requested(primary_history, others_names)
             )
             menu.addAction(coadd_action)
-            
-            menu.exec(self.session_list_view.mapToGlobal(pos))
-            return
             
             menu.exec(self.session_list_view.mapToGlobal(pos))
             return
@@ -2669,14 +2702,14 @@ class MainWindowV2(QMainWindow):
         # 1. smooth_column targeting 'cont'
         is_cont_target = (recipe_name == 'smooth_column' and target_col == 'cont')
         # 2. Any of these recipes, which *always* create/modify 'cont'
-        is_cont_recipe = recipe_name in ['fit_continuum', 'estimate_auto']
+        is_cont_recipe = recipe_name in ['fit_continuum', 'estimate_auto', 'update_from_knots']
 
         if (is_cont_target or is_cont_recipe):
             # If it's a cont recipe, check if a model exists
             if self.active_history.current_state.spec.has_aux_column('model'):
                 ret = self._show_custom_message(
                     title="Re-normalize Model?",
-                    header="Update Model normalization?", # Grassetto
+                    header="Update Model normalization?",
                     text="You are modifying the continuum. Do you want to automatically re-normalize the 'model' column to match?", # Normale
                     buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     default_btn=QMessageBox.StandardButton.Yes
@@ -2687,6 +2720,9 @@ class MainWindowV2(QMainWindow):
                     params['renorm_model'] = 'True'
                 else:
                     params['renorm_model'] = 'False'
+            
+        return params
+
 
     # --- *** 5. NEW: Callback slots for single recipes *** ---
     def _on_recipe_finished(self, result_data: tuple):

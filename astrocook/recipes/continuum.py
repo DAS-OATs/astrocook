@@ -56,7 +56,17 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "kappa", "type": float, "default": 3.0, "doc": "Sigma threshold for clipping outliers"},
         ],
         "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
-    }
+    },
+    "update_from_knots": {
+        "brief": "Update continuum from manual knots.",
+        "details": "Interpolate a spline through manually placed knots and update the continuum.",
+        "params": [
+            {"name": "knots_x", "type": list, "default": [], "doc": "List of x coordinates", "gui_hidden": True},
+            {"name": "knots_y", "type": list, "default": [], "doc": "List of y coordinates", "gui_hidden": True},
+            {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
+        ],
+        # No URL needed for internal interactive recipes, but you can add one if you have docs
+    },
 }
 
 
@@ -283,26 +293,56 @@ class RecipeContinuumV2:
         except Exception as e:
             logging.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
             return 0
-        
-
-    def update_from_knots(self, knots_x: list, knots_y: list) -> 'SessionV2':
+    
+    def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':
         """
         Updates the continuum based on a list of interactive knots.
+        
+        Parameters
+        ----------
+        knots_x, knots_y : list
+            Coordinates of the spline knots.
+        renorm_model : bool
+            If True, re-scales the 'model' column (if present) to preserve 
+            optical depth with the new continuum.
         """
         # 1. Create Spline from knots
-        # Ensure imports are available (scipy.interpolate.CubicSpline)
         from scipy.interpolate import CubicSpline
+        import numpy as np
+        
+        # Sort knots to prevent spline errors
+        sorter = np.argsort(knots_x)
+        knots_x = np.array(knots_x)[sorter]
+        knots_y = np.array(knots_y)[sorter]
+        
         cs = CubicSpline(knots_x, knots_y)
 
-        # 2. Access the session via 'self._session'
-        # (The worker initialized this class with the session object)
+        # 2. Access the session
         session = self._session 
+        x_axis = session.spec.x.value
+        
+        # 3. Evaluate new continuum
+        new_cont = cs(x_axis)
 
-        # 3. Evaluate on the session's FULL wavelength grid
-        new_cont = cs(session.spec.x.value)
-
-        # 4. Create new session with updated continuum
+        # 4. Handle Model Renormalization
         new_spec = session.spec.update_column('cont', new_cont)
         
-        # 5. Return the new session state
+        if renorm_model and 'model' in session.spec.t.colnames:
+            try:
+                # Retrieve old values safely
+                old_cont = session.spec.cont.value
+                old_model = session.spec.model.value
+                
+                # Avoid division by zero
+                valid = (old_cont != 0)
+                factor = np.ones_like(old_cont)
+                factor[valid] = new_cont[valid] / old_cont[valid]
+                
+                new_model = old_model * factor
+                new_spec = new_spec.update_column('model', new_model)
+                logging.info("Model renormalized to match new continuum.")
+            except Exception as e:
+                logging.warning(f"Could not renormalize model: {e}")
+
+        # 5. Return new session
         return session.with_new_spectrum(new_spec)
