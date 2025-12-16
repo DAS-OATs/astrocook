@@ -624,7 +624,12 @@ class SpectrumPlotWidget(QWidget):
             # Get full data arrays
             full_x_data = spec.x.value
             full_y_data = spec.y.value
-            full_dx_data = spec.xmax.value-spec.xmin.value if (spec.xmin, spec.xmax) is not (None, None) else np.zeros_like(full_x_data)
+            # We check that NEITHER of them is None before accessing .value
+            full_dx_data = (
+                            spec.xmax.value - spec.xmin.value 
+                            if spec.xmin is not None and spec.xmax is not None 
+                            else np.zeros_like(full_x_data)
+                         )
             full_dy_data = spec.dy.value if spec.dy is not None else np.zeros_like(full_y_data)
             full_norm_data = spec.norm.value if hasattr(spec.norm, 'value') else spec.norm
             full_model_data = spec.model.value if hasattr(spec.model, 'value') else spec.model
@@ -1901,45 +1906,56 @@ class SpectrumPlotWidget(QWidget):
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
 
-    def start_continuum_edit(self):
-        """Initializes the continuum editor with decimated knots."""
+    def start_continuum_edit(self, initial_stride=500, resume_data=None):
+        """
+        initial_stride: The slider value.
+        resume_data: Tuple (x, y) of knots to restore after a pan/zoom suspension.
+        """
         if not self.main_window.active_history: return
         
-        # 1. PREPARE THE CANVAS (The "Clean Slate" Step)
-        # We process toolbar changes and force a full draw FIRST.
-        # This flushes any pending events and ensures the background is captured
-        # BEFORE we introduce our fragile animated artists.
+        # [TOOLBAR HANDLING]
+        # We generally disable pan/zoom here, but our new wrapper handles the flow now.
         if hasattr(self, 'toolbar') and self.toolbar:
             if self.toolbar.mode == 'pan/zoom':
                 self.toolbar.pan() 
             elif self.toolbar.mode == 'zoom rect':
                 self.toolbar.zoom()
 
-        # Force the full redraw now. 
-        # If this method clears 'cursor_artists', our new artists won't be there yet to get killed.
         self.canvas.draw() 
 
-        # 2. DATA PREPARATION
-        spec = self.main_window.active_history.current_state.spec
-        x_full = spec.x.value
-        if spec.cont is not None:
-            y_source = spec.cont.value
+        # If no explicit data passed, but we have suspended data waiting, USE IT.
+        if resume_data is None and getattr(self, '_is_suspended', False):
+            print("DEBUG: recovering suspended data in start_continuum_edit")
+            resume_data = getattr(self, '_suspended_continuum_data', None)
+            # Reset suspension flags since we are consuming the data now
+            self._is_suspended = False
+            self._suspended_continuum_data = None
+
+        # [DATA PREPARATION]
+        if resume_data is not None:
+            # --- RESUMING FROM SUSPENSION ---
+            # Restore the knots exactly as they were before panning
+            self._knots_x, self._knots_y = resume_data
         else:
-            y_source = spec.y.value
-            
-        stride = 500
-        indices = np.arange(0, len(x_full), stride, dtype=int)
-        if indices[-1] != len(x_full) - 1:
-            indices = np.append(indices, len(x_full) - 1)
-            
-        self._knots_x = x_full[indices]
-        self._knots_y = y_source[indices]
+            # --- FRESH START ---
+            spec = self.main_window.active_history.current_state.spec
+            x_full = spec.x.value
+            if spec.cont is not None:
+                y_source = spec.cont.value
+            else:
+                y_source = spec.y.value
+                
+            stride = int(initial_stride) # Ensure int
+            indices = np.arange(0, len(x_full), stride, dtype=int)
+            if indices[-1] != len(x_full) - 1:
+                indices = np.append(indices, len(x_full) - 1)
+                
+            self._knots_x = x_full[indices]
+            self._knots_y = y_source[indices]
         
-        # 3. NUCLEAR CLEANUP (Just in case)
         self._remove_editor_artists()
 
-        # 4. CREATE ARTISTS (Fresh)
-        # Note: We create them AFTER the self.canvas.draw() above.
+        # [CREATE ARTISTS]
         self.knot_artist, = self.canvas.axes.plot(
             self._knots_x, self._knots_y, 
             'o', color='black', markersize=4, alpha=0.5, 
@@ -1955,28 +1971,16 @@ class SpectrumPlotWidget(QWidget):
         self._edit_mode_active = True
         self.update_spline_preview()
 
-        # 5. REGISTRATION & MANUAL PAINT
-        # We append them now. They missed the main draw() cycle (good!), 
-        # so we must paint them manually.
         if self.knot_artist not in self.canvas.cursor_artists:
             self.canvas.cursor_artists.append(self.knot_artist)
         if self.spline_artist not in self.canvas.cursor_artists:
             self.canvas.cursor_artists.append(self.spline_artist)
 
-        # Paint them on top of the already-drawn background
         self.canvas.draw_animated()
-
-        # 1. Force Qt focus to the canvas widget
         self.canvas.setFocus()
-        
-        # 2. Force a Qt-level repaint (not just Matplotlib)
-        # This tells the window manager "this area is dirty, please allow updates"
         self.canvas.update()
 
     def stop_continuum_edit(self, save=False):
-        import traceback
-        print("STOP called by:")
-        traceback.print_stack()
         """Cleans up the editor."""
         self._edit_mode_active = False
         self._active_knot_idx = None
@@ -2014,6 +2018,51 @@ class SpectrumPlotWidget(QWidget):
             except: pass
             self.spline_artist = None
 
+    def update_continuum_stride(self, stride):
+        """Re-initializes knots with a new stride without stopping the edit."""
+        if not self._edit_mode_active: return
+
+        # 1. Update Data
+        if not self.main_window.active_history: return
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        
+        # Check source (Continuum vs Y)
+        if spec.cont is not None:
+            y_source = spec.cont.value
+        else:
+            y_source = spec.y.value
+            
+        # Recalc indices
+        indices = np.arange(0, len(x_full), stride, dtype=int)
+        if indices[-1] != len(x_full) - 1:
+            indices = np.append(indices, len(x_full) - 1)
+            
+        self._knots_x = x_full[indices]
+        self._knots_y = y_source[indices]
+        
+        # 2. Update Artists
+        # We update the internal data of the artist objects
+        if self.knot_artist:
+            self.knot_artist.set_data(self._knots_x, self._knots_y)
+        
+        self.update_spline_preview()
+        
+        # 3. RENDER FIX (The "Manual" Paint Job)
+        # We cannot use draw_idle() because it skips animated artists.
+        # We must manually orchestrate the paint:
+        
+        # A. Draw the "heavy" background (Axes, Grid, Spectrum)
+        # This wipes the canvas clean.
+        self.canvas.draw() 
+        
+        # B. Paint our animated artists on top of that fresh background
+        # (Using the same method that works in start_continuum_edit)
+        self.canvas.draw_animated() 
+        
+        # C. Force Qt to display the result
+        self.canvas.update()
+
     def update_spline_preview(self):
         """Recalculates the spline and updates the artist."""
         if self._knots_x is None or len(self._knots_x) < 2: return
@@ -2042,6 +2091,46 @@ class SpectrumPlotWidget(QWidget):
 
     def get_knots(self):
         return self._knots_x, self._knots_y
+
+    def suspend_continuum_edit(self):
+        """Pauses editing and saves state."""
+        # Only suspend if we are ACTIVELY editing.
+        # If we are already suspended (e.g. switching Pan->Zoom), do nothing 
+        # (keep the existing saved state).
+        # Check both: must be active editing AND not already suspended
+        if self._edit_mode_active:
+            print("Suspending continuum edit...")
+            knots_x, knots_y = self.stop_continuum_edit(save=True)
+            self._suspended_continuum_data = (knots_x, knots_y)
+            self._is_suspended = True
+            print("Suspended.")
+            
+            self.canvas.draw_idle()
+            return True
+        return False
+
+    def resume_continuum_edit(self):
+        """Restarts editing if it was previously suspended."""
+        if getattr(self, '_is_suspended', False):
+            data = getattr(self, '_suspended_continuum_data', None)
+            
+            # --- Recover Stride ---
+            # Try to fetch current slider position so we don't reset density
+            current_stride = 500
+            if hasattr(self, 'main_window') and hasattr(self.main_window, 'stride_slider'):
+                 val = self.main_window.stride_slider.value()
+                 current_stride = self.main_window._get_log_stride(val)
+
+            # --- Restart ---
+            self.start_continuum_edit(initial_stride=current_stride, resume_data=data)
+            
+            # --- Cleanup & Force Paint ---
+            self._is_suspended = False
+            self._suspended_continuum_data = None
+            
+            # Explicitly force focus and update again (Belt and Suspenders)
+            self.canvas.setFocus()
+            self.canvas.draw_idle()
 
 class AstrocookToolbar(NavigationToolbar):
     """
@@ -2087,6 +2176,58 @@ class AstrocookToolbar(NavigationToolbar):
                 icon = qta.icon('mdi.selection-drag', color='black')
                 action.setIcon(icon)
                 break
+
+        self._paused_for_continuum = False  # Memory: Did we pause the continuum editor?
+
+    def _get_plot_widget(self):
+        """Helper to find the SpectrumPlotWidget."""
+        # Check direct parent
+        parent = self.parent()
+        if hasattr(parent, 'suspend_continuum_edit'):
+            return parent
+        # Check canvas parent
+        if self.canvas and self.canvas.parent():
+            parent = self.canvas.parent()
+            if hasattr(parent, 'suspend_continuum_edit'):
+                return parent
+        return None
+
+    def _handle_tool_click(self, tool_method, *args):
+        """Wrapper to coordinate Tool toggles with Continuum Editor."""
+        plot_widget = self._get_plot_widget()
+        
+        # 1. SUSPEND (Immediate)
+        # If we are editing, pause BEFORE Matplotlib takes over
+        if plot_widget and getattr(plot_widget, '_edit_mode_active', False):
+            if plot_widget.suspend_continuum_edit():
+                self._paused_for_continuum = True
+                print("DEBUG: Active edit detected -> Suspended.")
+
+        # 2. RUN NATIVE TOOL
+        tool_method(*args)
+        
+        # 3. RESUME (Delayed)
+        # We wait 10ms to allow Matplotlib to finish its own redraw/cleanup
+        # before we try to paint our knots again.
+        def check_resume():
+            # Only resume if tool is strictly OFF (mode is empty)
+            if self.mode == '' and self._paused_for_continuum:
+                if plot_widget:
+                    print("DEBUG: Tool disabled -> Auto-Resuming.")
+                    plot_widget.resume_continuum_edit()
+                self._paused_for_continuum = False
+            
+            # If mode is NOT empty (e.g. we switched Pan->Zoom), 
+            # we do nothing. The _paused_for_continuum flag remains True,
+            # so the *next* check_resume (when Zoom ends) will catch it.
+
+        QTimer.singleShot(10, check_resume)
+
+    def pan(self, *args):
+        self._handle_tool_click(super().pan, *args)
+
+    def zoom(self, *args):
+        self._handle_tool_click(super().zoom, *args)
             
     def toggle_select_mode(self):
         """Toggles the region selection mode on/off."""
@@ -2120,6 +2261,8 @@ class AstrocookToolbar(NavigationToolbar):
         else:
             # Fallback to original behavior
             super().home()
+
+    
 
 
 # --- Utility Function to Launch the Viewer for Testing ---

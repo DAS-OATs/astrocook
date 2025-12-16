@@ -17,7 +17,7 @@ from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixma
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
-    QMenu, QMessageBox,
+    QMenu, QMessageBox, QSlider, QGroupBox,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
 import re
@@ -474,7 +474,7 @@ class MainWindowV2(QMainWindow):
         unified_grid.addWidget(self.cursor_z_input, 7, 1)
         
         # Add the Unified Grid to the sidebar
-        sidebar_layout.addLayout(unified_grid)
+        #sidebar_layout.addLayout(unified_grid)
 
         self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
         # Add some margin to the checkbox
@@ -486,11 +486,35 @@ class MainWindowV2(QMainWindow):
         self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        # Edit Continuum Button (Span 2 columns)
-        self.btn_edit_cont = QPushButton("Edit Continuum")
-        self.btn_edit_cont.setCheckable(True)
-        self.btn_edit_cont.clicked.connect(self._toggle_continuum_editor)
-        sidebar_layout.addWidget(self.btn_edit_cont)
+        # Continuum Tools
+        header_continuum = QLabel("<b>Edit Continuum:</b>")
+        # Add some top margin to separate from previous section
+        header_continuum.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
+        unified_grid.addWidget(header_continuum, 8, 0, 1, 2)
+
+        self.edit_cont_button = QPushButton("Start")
+        self.edit_cont_button.setMaximumWidth(100) # Keep it compact
+        self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
+        unified_grid.addWidget(self.edit_cont_button, 9, 0, 1, 1)
+
+        # 5. The Logarithmic Slider
+        self.stride_slider = QSlider(Qt.Horizontal)
+        self.stride_slider.setMinimum(0)   # Linear representation
+        self.stride_slider.setMaximum(100) # 0 = 10 stride, 100 = 2000 stride
+        self.stride_slider.setEnabled(False) # Disabled until 'Start'
+        self.stride_slider.valueChanged.connect(self.on_stride_change)
+
+        # Set initial default (e.g., stride 500)
+        self._set_slider_from_stride(500)
+
+        unified_grid.addWidget(self.stride_slider, 9, 1, 1, 1)
+
+        # 4. Slider Label (Dynamic)
+        self.stride_label = QLabel("")
+        unified_grid.addWidget(self.stride_label, 10, 1, 1, 1)
+
+        # Add the group to your main sidebar layout
+        sidebar_layout.addLayout(unified_grid)
 
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
@@ -1484,46 +1508,83 @@ class MainWindowV2(QMainWindow):
 
         self.snr_col_combo.blockSignals(False)
 
-    def _toggle_continuum_editor(self, checked):
-        if checked:
-            # START EDITING
-            logging.info("Starting Continuum Editor...")
-            self.plot_viewer.start_continuum_edit()
+    def _toggle_continuum_editor(self):
+        # Check if we are currently editing
+        is_editing = getattr(self.plot_viewer, '_edit_mode_active', False)
+
+        if not is_editing:
+            # --- STARTING EDIT ---
+            # 1. Read the current visual position of the slider
+            slider_pos = self.stride_slider.value()
             
-            # Don't change background color (breaks native style).
-            # Just change text and rely on the 'checked' state (usually pressed in)
-            self.btn_edit_cont.setText("Save Continuum Changes")
+            # 2. Calculate the actual stride from it
+            initial_stride = self._get_log_stride(slider_pos)
             
-            # Optional: Show instructions (keep this)
-            self._show_custom_message(
-                title="Editor Active",
-                header="Continuum Editing Mode",
-                text="• <b>Left Drag:</b> Move knots vertically.<br>"
-                     "• <b>Right Click on Knot:</b> Delete.<br>"
-                     "• <b>Right Click empty space:</b> Add knot.<br>"
-                     "• Click 'Save Continuum Changes' when done.",
-                buttons=QMessageBox.StandardButton.Ok
-            )
-            
+            # 3. Pass it to the start method
+            self.plot_viewer.start_continuum_edit(initial_stride=initial_stride)
+
+            # UI Updates
+            self.edit_cont_button.setText("Save")
+            # Optional: Make button look "active" (e.g., blue)
+            #self.edit_cont_button.setStyleSheet("font-weight: bold; color: blue;") 
+            self.stride_slider.setEnabled(True)
+
+            # Sync slider label to current default
+            current_stride = self._get_log_stride(self.stride_slider.value())
+            self.stride_label.setText(f"Spacing: {current_stride} px")
+
         else:
-            # STOP & SAVE
+            # --- STOPPING EDIT ---
+            # Assuming you want to save automatically when clicking "End and Save"
             knots_x, knots_y = self.plot_viewer.stop_continuum_edit(save=True)
-            
-            if knots_x is not None:
-                logging.info(f"Saving {len(knots_x)} knots to history.")
-                
-                # Convert to lists for JSON serialization in recipes
-                params = {
-                    'knots_x': knots_x.tolist(), 
-                    'knots_y': knots_y.tolist()
-                }
-                
-                # CALL THE NEW RECIPE
-                # You must implement 'update_from_knots' in astrocook/recipes/continuum.py
-                self._on_recipe_requested("continuum", "update_from_knots", params, {})
-                
-            self.btn_edit_cont.setText("Edit Continuum")
-            self.btn_edit_cont.setStyleSheet("") # Reset style
+
+            # UI Updates
+            self.edit_cont_button.setText("Start")
+            self.edit_cont_button.setStyleSheet("") # Reset style
+            self.stride_slider.setEnabled(False)
+            self.stride_label.setText("") # Reset or keep last value
+        
+        if self.plot_viewer._edit_mode_active:
+            # We just STARTED editing
+            self.stride_slider.setEnabled(True)
+        else:
+            # We just STOPPED editing
+            self.stride_slider.setEnabled(False)
+
+    def on_stride_change(self):
+        # 1. Safety Check: If plot_viewer doesn't exist yet (during startup), do nothing.
+        if not hasattr(self, 'plot_viewer') or self.plot_viewer is None:
+            return
+        
+        """Handles logarithmic slider changes."""
+        slider_pos = self.stride_slider.value()
+        stride = self._get_log_stride(slider_pos)
+
+        # Update the text label live
+        self.stride_label.setText(f"Spacing: {stride} px")
+
+        # Update the plot (using your previously fixed method)
+        if hasattr(self.plot_viewer, '_edit_mode_active') and self.plot_viewer._edit_mode_active:
+            self.plot_viewer.update_continuum_stride(stride)
+
+    def _get_log_stride(self, slider_value):
+        """Maps linear slider (0-100) to logarithmic stride (10-5000)."""
+        min_val = 100
+        max_val = 5000
+        # Formula: y = min * (max/min)^(x/100)
+        stride = min_val * (max_val / min_val) ** (slider_value / 100.0)
+        return int(stride)
+
+    def _set_slider_from_stride(self, stride):
+        """Inverse mapping: Stride -> Slider Position (for defaults)."""
+        min_val = 10
+        max_val = 2000
+        if stride < min_val: stride = min_val
+        if stride > max_val: stride = max_val
+
+        # Formula: x = 100 * log(y/min) / log(max/min)
+        position = 100.0 * np.log(stride / min_val) / np.log(max_val / min_val)
+        self.stride_slider.setValue(int(position))
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""
