@@ -502,7 +502,14 @@ class MainWindowV2(QMainWindow):
         self.stride_slider.setMinimum(0)   # Linear representation
         self.stride_slider.setMaximum(100) # 0 = 10 stride, 100 = 2000 stride
         self.stride_slider.setEnabled(False) # Disabled until 'Start'
-        self.stride_slider.valueChanged.connect(self.on_stride_change)
+        self.stride_slider.valueChanged.connect(self._on_stride_change)
+        # These detect the start/end of the drag gesture
+        self.stride_slider.sliderPressed.connect(self._on_stride_slider_pressed)
+        self.stride_slider.sliderReleased.connect(self._on_stride_slider_released)
+        self.stride_slider.setToolTip(
+            "Adjust the density of control points.\n"
+            "Warning: Reducing density may permanently smooth out details if you edit knots afterwards."
+        )
 
         # Set initial default (e.g., stride 500)
         self._set_slider_from_stride(500)
@@ -1587,7 +1594,7 @@ class MainWindowV2(QMainWindow):
                 except Exception as e:
                     logging.error(f"Failed to save continuum: {e}")
                         
-    def on_stride_change(self):
+    def _on_stride_change(self):
         # 1. Safety Check: If plot_viewer doesn't exist yet (during startup), do nothing.
         if not hasattr(self, 'plot_viewer') or self.plot_viewer is None:
             return
@@ -1602,6 +1609,16 @@ class MainWindowV2(QMainWindow):
         # Update the plot (using your previously fixed method)
         if hasattr(self.plot_viewer, '_edit_mode_active') and self.plot_viewer._edit_mode_active:
             self.plot_viewer.update_continuum_stride(stride)
+    
+    def _on_stride_slider_pressed(self):
+        """Lock the current knot shape before resampling."""
+        if hasattr(self, 'plot_viewer'):
+            self.plot_viewer.begin_stride_interaction()
+
+    def _on_stride_slider_released(self):
+        """Release the lock."""
+        if hasattr(self, 'plot_viewer'):
+            self.plot_viewer.end_stride_interaction()
 
     def _get_log_stride(self, slider_value):
         """Maps linear slider (0-100) to logarithmic stride (10-5000)."""

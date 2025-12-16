@@ -1838,18 +1838,16 @@ class SpectrumPlotWidget(QWidget):
     def on_press(self, event):
         if not event.inaxes: return
         
-        # 1. Gate: Ignore EVERYTHING if toolbar is active (Pan/Zoom)
+        # 1. Gate: Ignore if toolbar is active
         if hasattr(self, 'toolbar') and self.toolbar.mode != '':
             return
 
-        # 2. Continuum Editing Logic (High Priority)
-        # We handle this FIRST. If we act on a knot, we return immediately 
-        # to prevent selecting a region or opening a menu.
+        # 2. CONTINUUM EDITING LOGIC (High Priority)
         if self._edit_mode_active and event.inaxes == self.canvas.axes:
-            # Logic borrowed from your bottom block, moved here to fix the AttributeError
             click_x, click_y = event.xdata, event.ydata
             
-            # Calculate distance in pixels (Inline 'find_nearest_knot')
+            # Calculate distances for "Magnet" or "Remove"
+            # We transform to pixels for precise clicking feel
             knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
             click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
             dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
@@ -1858,34 +1856,48 @@ class SpectrumPlotWidget(QWidget):
             
             THRESHOLD = 10 # pixels
             
-            # RIGHT CLICK: Precise Add/Remove
+            # --- RIGHT CLICK: Add/Remove ---
             if event.button == 3: 
+                modified = False
+                
                 if min_dist < THRESHOLD:
-                    # Remove Knot (Delete) if clicked ON a knot
+                    # REMOVE Knot
                     if len(self._knots_x) > 2:
                         self._knots_x = np.delete(self._knots_x, nearest_idx)
                         self._knots_y = np.delete(self._knots_y, nearest_idx)
-                        self.update_spline_preview()
-                        
-                        # We must update the background buffer? 
-                        # No, on_background_draw has clean bg. Just repaint.
-                        self.canvas.draw_animated()
+                        modified = True
                 else:
-                    # Add Knot (Create) if clicked in EMPTY space
-                    insert_idx = np.searchsorted(self._knots_x, click_x)
-                    self._knots_x = np.insert(self._knots_x, insert_idx, click_x)
-                    self._knots_y = np.insert(self._knots_y, insert_idx, click_y)
-                    self.update_spline_preview()
-                    self.canvas.draw_animated()
-                
-                # Consume event (don't show context menu)
-                return True 
+                    # ADD Knot
+                    # We simply append the new knot, then sort everything.
+                    # This works even if the existing knots are messy/unsorted.
+                    self._knots_x = np.append(self._knots_x, click_x)
+                    self._knots_y = np.append(self._knots_y, click_y)
+                    
+                    # Sort immediately to keep data clean
+                    sorter = np.argsort(self._knots_x)
+                    self._knots_x = self._knots_x[sorter]
+                    self._knots_y = self._knots_y[sorter]
+                    modified = True
 
-            # LEFT CLICK: "Magnet" Grab
+                if modified:
+                    # Update Visuals (Blitting for speed)
+                    self.knot_artist.set_data(self._knots_x, self._knots_y)
+                    self.update_spline_preview()
+                    
+                    if hasattr(self, 'background') and self.background:
+                        self.canvas.restore_region(self.background)
+                        self.canvas.axes.draw_artist(self.knot_artist)
+                        self.canvas.axes.draw_artist(self.spline_artist)
+                        self.canvas.blit(self.canvas.axes.bbox)
+                    else:
+                        self.canvas.draw()
+                        
+                return True # Consume event
+
+            # --- LEFT CLICK: Grab Knot ---
             if event.button == 1:
-                # Magnet logic: grab nearest knot regardless of distance
                 self._active_knot_idx = nearest_idx
-                return True # Consume event (don't start region selection)
+                return True
 
         # 3. Region Selection (Button 1)
         # Only runs if NOT consumed by continuum logic above
@@ -1980,7 +1992,7 @@ class SpectrumPlotWidget(QWidget):
         # [CREATE ARTISTS]
         self.knot_artist, = self.canvas.axes.plot(
             self._knots_x, self._knots_y, 
-            'o', color='black', markersize=4, alpha=0.5, 
+            'o', color='black', markersize=2, alpha=0.5, 
             label='Knots', zorder=10, animated=True
         )
         
@@ -2010,18 +2022,18 @@ class SpectrumPlotWidget(QWidget):
         self._edit_mode_active = False
         self._active_knot_idx = None
         
-        # --- DISCONNECT LISTENER ---
         if hasattr(self, '_draw_cid'):
             self.canvas.mpl_disconnect(self._draw_cid)
             del self._draw_cid
         
-        # Clear background buffer to free memory
         self.background = None
 
         # Capture data
         final_x, final_y = None, None
         if save:
-            final_x, final_y = self._knots_x, self._knots_y
+            # FIX: Return the sanitized (sorted & deduped) knots.
+            # This makes the "merge" permanent upon saving.
+            final_x, final_y = self._get_sanitized_knots()
 
         self._remove_editor_artists()
         self.canvas.draw()
@@ -2069,78 +2081,109 @@ class SpectrumPlotWidget(QWidget):
             except: pass
             self.spline_artist = None
 
+    def begin_stride_interaction(self):
+        """Called when user starts clicking the slider. Caches the current high-fidelity knots."""
+        if not self._edit_mode_active: return
+        # Save a clean copy of the knots as they were BEFORE resampling started
+        self._stride_backup_x, self._stride_backup_y = self._get_sanitized_knots()
+
+    def end_stride_interaction(self):
+        """Called when user releases the slider."""
+        # Clear the backup so subsequent manual edits are respected
+        self._stride_backup_x = None
+        self._stride_backup_y = None
+
     def update_continuum_stride(self, stride):
-        """Re-initializes knots with a new stride using instant blitting."""
+        """
+        Resamples the continuum using the Backup (if dragging) or Current (if single step).
+        """
         if not self._edit_mode_active: return
 
-        # 1. Update Data
+        # 1. Choose Source Data
+        # If we are dragging the slider, use the High-Fidelity Backup.
+        # If this is a single programmatic update, use the current knots.
+        if getattr(self, '_stride_backup_x', None) is not None:
+            src_x, src_y = self._stride_backup_x, self._stride_backup_y
+        else:
+            src_x, src_y = self._get_sanitized_knots()
+        
+        if len(src_x) < 2: return 
+        
+        from scipy.interpolate import CubicSpline
+        try:
+            # Create spline from the SOURCE (Original shape)
+            source_spline = CubicSpline(src_x, src_y)
+        except Exception:
+            return
+
+        # 2. Calculate New Grid (same as before)
         if not self.main_window.active_history: return
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
         
-        if spec.cont is not None:
-            y_source = spec.cont.value
-        else:
-            y_source = spec.y.value
-            
         indices = np.arange(0, len(x_full), int(stride), dtype=int)
         if indices[-1] != len(x_full) - 1:
             indices = np.append(indices, len(x_full) - 1)
             
-        self._knots_x = x_full[indices]
-        self._knots_y = y_source[indices]
+        new_knots_x = x_full[indices]
         
-        # 2. Update Artists
+        # 3. Project Original Shape onto New Grid
+        new_knots_y = source_spline(new_knots_x)
+        
+        # 4. Apply Update
+        self._knots_x = new_knots_x
+        self._knots_y = new_knots_y
+        
+        # 5. Render
         self.knot_artist.set_data(self._knots_x, self._knots_y)
         self.update_spline_preview()
         
-        # 3. RENDER FIX (Blitting)
-        # We reuse the clean background captured by the draw listener
         if hasattr(self, 'background') and self.background:
-            # A. Restore clean background (erasing old knots)
             self.canvas.restore_region(self.background)
-            
-            # B. Draw updated artists
             self.canvas.axes.draw_artist(self.knot_artist)
             self.canvas.axes.draw_artist(self.spline_artist)
-            
-            # C. Blit to screen immediately
             self.canvas.blit(self.canvas.axes.bbox)
         else:
-            # Fallback if background is missing (rare)
             self.canvas.draw()
 
     def update_spline_preview(self):
         if not self._edit_mode_active: return
         
-        # 1. Sort knots (Crucial for spline math)
-        sort_idx = np.argsort(self._knots_x)
-        self._knots_x = self._knots_x[sort_idx]
-        self._knots_y = self._knots_y[sort_idx]
+        # 1. Get Clean Data
+        # We do NOT modify self._knots_x in place here, so the 'index' of the knot 
+        # you are dragging remains valid even if you cross other knots.
+        x_clean, y_clean = self._get_sanitized_knots()
         
-        # 2. Define the grid for the spline
-        # FIX: Do NOT use current axis limits. Use the Full Data limits.
-        # Assuming you have access to the full x data:
+        if len(x_clean) < 2: return
+
+        # 2. Calculate Spline on Full Grid
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
         
-        # We calculate the spline on the full grid (or a decimated version if huge)
-        # Using the actual x_full ensures it aligns perfectly with the spectrum.
-        spline_x = x_full 
-        
-        # 3. Calculate Spline (Cubic Interpolation)
         from scipy.interpolate import CubicSpline
         try:
-            cs = CubicSpline(self._knots_x, self._knots_y, bc_type='natural')
-            spline_y = cs(spline_x)
-            
-            # 4. Update the Spline Artist
-            self.spline_artist.set_data(spline_x, spline_y)
+            cs = CubicSpline(x_clean, y_clean, bc_type='natural')
+            spline_y = cs(x_full)
+            self.spline_artist.set_data(x_full, spline_y)
         except Exception as e:
             print(f"Spline error: {e}")
 
-    def get_knots(self):
-        return self._knots_x, self._knots_y
+    def _get_sanitized_knots(self):
+        """Returns sorted, unique copies of knots for spline calculation."""
+        if len(self._knots_x) == 0: return np.array([]), np.array([])
+        
+        # 1. Sort by X
+        sorter = np.argsort(self._knots_x)
+        x_s = self._knots_x[sorter]
+        y_s = self._knots_y[sorter]
+        
+        # 2. Remove Duplicates (The "Merge" effect)
+        # np.unique returns sorted unique elements. 
+        # We keep the first occurrence of any duplicate x.
+        x_u, unique_indices = np.unique(x_s, return_index=True)
+        y_u = y_s[unique_indices]
+        
+        return x_u, y_u
 
 class AstrocookToolbar(NavigationToolbar):
     """
