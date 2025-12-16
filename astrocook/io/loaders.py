@@ -44,62 +44,284 @@ def _auto_limits(x_arr: np.ndarray, x_unit: au.Unit) -> Tuple[DataColumnV2, Data
     return DataColumnV2(xmin, x_unit), DataColumnV2(xmax, x_unit)
 
 def detect_file_format(file_path: str) -> str:
-    """
-    Inspects the file content to determine the correct loader format string.
-    """
     path_lower = file_path.lower()
-
-    # 1. Archives (Pass-through to legacy logic in session.py)
     if path_lower.endswith(('.acs', '.acs2')):
         return "archive"
 
-    # 2. FITS Files Sniffing
-    # We check for signature extensions or header keywords
     try:
-        # Open in read-only, memory-mapped mode for speed
         with fits.open(file_path, mode='readonly', memmap=True) as hdul:
             ext_names = [h.name.upper() for h in hdul]
-            primary_header = hdul[0].header
-            instrume = primary_header.get('INSTRUME', '').upper()
+            
+            # 1. PypeIt spec1d (Multi-Extension Order-by-Order)
+            # Look for HDU names like 'OBJ...-ORDER...'
+            if any('ORDER' in en for en in ext_names):
+                return "pypeit_spec1d_multi"
 
-            # --- ESPRESSO S2D Check ---
-            # Unmistakable signature: SCIDATA table + WAVEDATA image
+            # 2. PypeIt Coadds/Stacks
+            if 'SPECTRUM' in ext_names:
+                cols = hdul['SPECTRUM'].columns.names
+                if any(c == 'wave_stack' for c in cols):
+                    return "pypeit_stack"
+                if 'ivar' in cols or 'sigma' in cols:
+                    return "pypeit_coadd"
+
+            # 3. ESPRESSO S2D
             if 'SCIDATA' in ext_names and \
                any(w in ext_names for w in ['WAVEDATA_VAC_BARY', 'WAVEDATA_AIR']):
                 return "espresso_s2d_fits"
 
-            # --- X-SHOOTER Check ---
-            # Standard binary table with specific columns
-            if 'XSHOOTER' in instrume or 'X-SHOOTER' in instrume:
+            # 4. X-Shooter Binary Table (Standard ESO)
+            instrume = hdul[0].header.get('INSTRUME', '').upper()
+            if ('XSHOOTER' in instrume) and 'BinTableHDU' in str(type(hdul[-1])):
                 return "xshooter_fits"
-
-            # --- Fallback FITS ---
-            return "generic_spectrum"
-
+            
     except (OSError, fits.VerifyError):
-        # Not a valid FITS file, proceed to ASCII check
         pass
 
-    # 3. ASCII Sniffing
+    # CSV/ASCII checks
     try:
-        # Read first few lines to check for headers
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             head = [next(f) for _ in range(10)]
         head_str = "".join(head).upper()
-
-        if "RESVEL" in head_str:
-            return "ascii_resvel_header"
-        
-        if path_lower.endswith('.csv'):
-            return "simple_csv"
-            
+        if "RESVEL" in head_str: return "ascii_resvel_header"
+        if path_lower.endswith('.csv'): return "simple_csv"
     except Exception:
         pass
 
-    # 4. Final Fallback
     return "generic_spectrum"
 
 # --- Loader Implementations ---
+
+@register_loader("pypeit_coadd")
+def load_pypeit_coadd(file_path: str, **kwargs) -> SpectrumDataV2:
+    """
+    Loader for PypeIt 'Coadd' 1D files.
+    Features: Sorts wavelength and removes negative/bad values.
+    """
+    try:
+        data = Table.read(file_path, hdu='SPECTRUM')
+        
+        x = data['wave'].data
+        y = data['flux'].data
+        
+        # Error handling: prefer sigma, fallback to IVAR
+        if 'sigma' in data.columns:
+            dy = data['sigma'].data
+        elif 'ivar' in data.columns:
+            ivar = data['ivar'].data
+            with np.errstate(divide='ignore', invalid='ignore'):
+                dy = np.sqrt(1.0 / ivar)
+            dy[~np.isfinite(dy)] = np.inf 
+        else:
+            dy = np.zeros_like(y)
+            
+        mask_in = data['mask'].data if 'mask' in data.columns else np.zeros_like(y, dtype=int)
+
+        # --- CRITICAL FIX: CLEAN AND SORT ---
+        # 1. Filter invalid wavelengths (<= 0) and NaNs
+        valid_mask = (x > 1.0) & np.isfinite(x) & np.isfinite(y)
+        
+        x = x[valid_mask]
+        y = y[valid_mask]
+        dy = dy[valid_mask]
+        mask_in = mask_in[valid_mask]
+        
+        # 2. Sort by Wavelength
+        sort_idx = np.argsort(x)
+        x = x[sort_idx]
+        y = y[sort_idx]
+        dy = dy[sort_idx]
+        mask_in = mask_in[sort_idx]
+        
+        # 3. Units
+        x_unit = au.Angstrom
+        if np.median(x) > 3000: 
+            x = x / 10.0
+            x_unit = au.nm
+
+        y_unit = au.dimensionless_unscaled
+        
+        # 4. Build Structure
+        x_col = DataColumnV2(x, x_unit, "Wavelength")
+        xmin_col, xmax_col = _auto_limits(x, x_unit)
+        aux_cols = {'quality': DataColumnV2(mask_in, au.dimensionless_unscaled, "PypeIt Mask")}
+
+        with fits.open(file_path) as hdul:
+            meta = dict(hdul[0].header)
+        meta['ORIGIN'] = 'pypeit_coadd'
+
+        return SpectrumDataV2(
+            x=x_col, xmin=xmin_col, xmax=xmax_col,
+            y=DataColumnV2(y, y_unit), 
+            dy=DataColumnV2(dy, y_unit),
+            aux_cols=aux_cols,
+            meta=meta
+        )
+    except Exception as e:
+        logging.error(f"Failed to load PypeIt Coadd: {e}")
+        raise
+
+
+@register_loader("pypeit_spec1d_multi")
+def load_pypeit_spec1d_multi(file_path: str, **kwargs) -> SpectrumDataV2:
+    """
+    Loader for PypeIt 'spec1d' Multi-Extension FITS.
+    Stitches echelle orders (extensions named 'ORDERxxxx') into one structure.
+    """
+    try:
+        x_list, y_list, dy_list, mask_list, order_list = [], [], [], [], []
+        
+        with fits.open(file_path) as hdul:
+            meta = dict(hdul[0].header)
+            
+            # Iterate over all HDUs
+            for hdu in hdul:
+                # Identify Order extensions
+                if isinstance(hdu, (fits.BinTableHDU, fits.TableHDU)) and 'ORDER' in hdu.name:
+                    
+                    # Extract Order Number from name (e.g. "...ORDER0030")
+                    try:
+                        order_num = int(re.search(r'ORDER(\d+)', hdu.name).group(1))
+                    except:
+                        order_num = 0
+                        
+                    data = hdu.data
+                    
+                    # Grab Optimal Extraction columns (OPT_*)
+                    if 'OPT_WAVE' not in data.names: continue
+                    
+                    wave = data['OPT_WAVE']
+                    flux = data['OPT_FLAM'] # Flux density
+                    
+                    # Error (SIG preferred)
+                    if 'OPT_FLAM_SIG' in data.names:
+                        err = data['OPT_FLAM_SIG']
+                    elif 'OPT_FLAM_IVAR' in data.names:
+                        ivar = data['OPT_FLAM_IVAR']
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            err = np.sqrt(1.0 / ivar)
+                        err[~np.isfinite(err)] = np.inf
+                    else:
+                        err = np.zeros_like(flux)
+                        
+                    mask = data['OPT_MASK'] if 'OPT_MASK' in data.names else np.zeros_like(flux, dtype=int)
+                    
+                    # Filter valid pixels within the order immediately
+                    valid = (wave > 1.0) & np.isfinite(wave) & np.isfinite(flux)
+                    
+                    x_list.append(wave[valid])
+                    y_list.append(flux[valid])
+                    dy_list.append(err[valid])
+                    mask_list.append(mask[valid])
+                    order_list.append(np.full_like(wave[valid], order_num))
+
+        if not x_list:
+            raise ValueError("No valid 'ORDER' extensions found in PypeIt spec1d file.")
+
+        # Concatenate all orders
+        x = np.concatenate(x_list)
+        y = np.concatenate(y_list)
+        dy = np.concatenate(dy_list)
+        q = np.concatenate(mask_list)
+        o = np.concatenate(order_list)
+
+        # Sort the stitched result by wavelength
+        sort_idx = np.argsort(x)
+        x = x[sort_idx]
+        y = y[sort_idx]
+        dy = dy[sort_idx]
+        q = q[sort_idx]
+        o = o[sort_idx]
+
+        # Units
+        x_unit = au.Angstrom
+        if np.median(x) > 3000:
+            x = x / 10.0
+            x_unit = au.nm
+        
+        y_unit = au.dimensionless_unscaled
+        
+        # Build structure
+        x_col = DataColumnV2(x, x_unit, "Wavelength")
+        xmin_col, xmax_col = _auto_limits(x, x_unit)
+        
+        aux_cols = {
+            'quality': DataColumnV2(q, au.dimensionless_unscaled, "PypeIt Mask"),
+            'order': DataColumnV2(o, au.dimensionless_unscaled, "Echelle Order")
+        }
+
+        meta['ORIGIN'] = 'pypeit_spec1d_multi'
+        meta['plot_style'] = 'scatter' # Suggest scatter for echelle data
+
+        return SpectrumDataV2(
+            x=x_col, xmin=xmin_col, xmax=xmax_col,
+            y=DataColumnV2(y, y_unit), 
+            dy=DataColumnV2(dy, y_unit),
+            aux_cols=aux_cols,
+            meta=meta
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to load PypeIt spec1d Multi-Order: {e}")
+        raise
+
+@register_loader("pypeit_stack")
+def load_pypeit_stack(file_path: str, **kwargs) -> SpectrumDataV2:
+    """
+    Loader for PypeIt 'OrderStack' files (Arrays stored in a single table row).
+    """
+    try:
+        # Load the table, accessing the first row immediately
+        t = Table.read(file_path, hdu='SPECTRUM')
+        row = t[0] # The data is in the cells of the first row
+
+        # 1. Wavelength
+        x = row['wave_stack']
+        x_unit = au.Angstrom
+        if np.median(x) > 3000:
+            x = x / 10.0
+            x_unit = au.nm
+
+        # 2. Flux
+        y = row['flux_stack']
+        y_unit = au.dimensionless_unscaled
+
+        # 3. Error
+        if 'sigma_stack' in t.columns:
+             dy = row['sigma_stack']
+        elif 'ivar_stack' in t.columns:
+             ivar = row['ivar_stack']
+             with np.errstate(divide='ignore', invalid='ignore'):
+                 dy = np.sqrt(1.0 / ivar)
+             dy[~np.isfinite(dy)] = np.inf
+        else:
+             dy = np.zeros_like(y)
+
+        # 4. Aux
+        aux_cols = {}
+        if 'mask_stack' in t.columns:
+            aux_cols['quality'] = DataColumnV2(
+                row['mask_stack'], au.dimensionless_unscaled, "PypeIt Stack Mask"
+            )
+
+        # 5. Metadata
+        with fits.open(file_path) as hdul:
+            meta = dict(hdul[0].header)
+        meta['ORIGIN'] = 'pypeit_stack'
+
+        x_col = DataColumnV2(x, x_unit)
+        xmin_col, xmax_col = _auto_limits(x, x_unit)
+
+        return SpectrumDataV2(
+            x=x_col, xmin=xmin_col, xmax=xmax_col,
+            y=DataColumnV2(y, y_unit), 
+            dy=DataColumnV2(dy, y_unit),
+            aux_cols=aux_cols,
+            meta=meta
+        )
+    except Exception as e:
+        logging.error(f"Failed to load PypeIt Stack: {e}")
+        raise
 
 @register_loader("simple_csv")
 def load_simple_csv(file_path: str, **kwargs) -> SpectrumDataV2:
@@ -418,3 +640,9 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
     except Exception as e:
         logging.error(f"Failed to load X-Shooter FITS: {e}")
         raise
+
+@register_loader("generic_spectrum")
+def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumDataV2:
+    """Fallback loader."""
+    # ... (Keep your existing fallback logic here) ...
+    raise NotImplementedError("Generic loader not fully implemented in this snippet.")
