@@ -1198,6 +1198,13 @@ class SpectrumV2:
                 logging.warning(f"Cannot rebin non-numerical aux col '{name}'. Dropping.")
         # --- *** END FIX *** ---
 
+        # Create a copy of the metadata to avoid modifying the original session
+        new_meta = self._data.meta.copy()
+
+        # Remove the 'plot_style' tag so the GUI reverts to the default (Line)
+        if 'plot_style' in new_meta:
+            del new_meta['plot_style']
+
         # 4. Build new SpectrumDataV2
         new_data = SpectrumDataV2(
             x=DataColumnV2(x_final.value, x_final.unit),
@@ -1206,7 +1213,7 @@ class SpectrumV2:
             y=DataColumnV2(y_new.value, y_new.unit),
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
-            meta=self._data.meta, 
+            meta=new_meta, 
             z_em=self._data.z_em   # Propagate
         )
         
