@@ -1,9 +1,10 @@
 import astropy.units as au
 import logging
+import numpy as np
 from scipy.interpolate import CubicSpline
 from typing import TYPE_CHECKING, Optional
 
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLogV2, LogEntryV2
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -297,25 +298,16 @@ class RecipeContinuumV2:
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':
         """
         Updates the continuum based on a list of interactive knots.
-        
-        Parameters
-        ----------
-        knots_x, knots_y : list
-            Coordinates of the spline knots.
-        renorm_model : bool
-            If True, re-scales the 'model' column (if present) to preserve 
-            optical depth with the new continuum.
         """
         # 1. Create Spline from knots
         from scipy.interpolate import CubicSpline
-        import numpy as np
         
         # Sort knots to prevent spline errors
         sorter = np.argsort(knots_x)
-        knots_x = np.array(knots_x)[sorter]
-        knots_y = np.array(knots_y)[sorter]
+        knots_x_sorted = np.array(knots_x)[sorter]
+        knots_y_sorted = np.array(knots_y)[sorter]
         
-        cs = CubicSpline(knots_x, knots_y)
+        cs = CubicSpline(knots_x_sorted, knots_y_sorted)
 
         # 2. Access the session
         session = self._session 
@@ -329,7 +321,6 @@ class RecipeContinuumV2:
         
         if renorm_model and 'model' in session.spec.t.colnames:
             try:
-                # Retrieve old values safely
                 old_cont = session.spec.cont.value
                 old_model = session.spec.model.value
                 
@@ -343,6 +334,21 @@ class RecipeContinuumV2:
                 logging.info("Model renormalized to match new continuum.")
             except Exception as e:
                 logging.warning(f"Could not renormalize model: {e}")
+
+        # --- FIX: MANUAL LOGGING ---
+        if self._session.log_manager:
+            # Prepare parameters for the log. 
+            # Crucial: Convert numpy arrays to lists for JSON serialization.
+            log_params = {
+                'knots_x': knots_x_sorted.tolist() if isinstance(knots_x_sorted, np.ndarray) else list(knots_x_sorted),
+                'knots_y': knots_y_sorted.tolist() if isinstance(knots_y_sorted, np.ndarray) else list(knots_y_sorted),
+                'renorm_model': renorm_model
+            }
+            
+            # Create and add the entry
+            # Pass the strings/dicts. The manager creates the LogEntry object internally.
+            self._session.log_manager.add_entry("update_from_knots", log_params)
+        # ---------------------------
 
         # 5. Return new session
         return session.with_new_spectrum(new_spec)
