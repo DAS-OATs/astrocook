@@ -1793,30 +1793,110 @@ class SpectrumPlotWidget(QWidget):
         QToolTip.showText(QCursor.pos(), content, self)
 
     def on_mouse_move(self, event):
-        """
-        Handler called on mouse move.
-        We do nothing here to prevent flickering. All tooltip logic is deferred 
-        to show_data_tooltip (called when the mouse stops).
-        """
-        if self._edit_mode_active and self._active_knot_idx is not None and event.inaxes:
-            # Vertical Only: Update Y, keep X original
-            self._knots_y[self._active_knot_idx] = event.ydata
+        if not event.inaxes: return
+
+        # Gate: Ignore if toolbar is active
+        if hasattr(self, 'toolbar') and self.toolbar.mode != '':
+            return
+
+        # --- CONTINUUM EDITING LOGIC ---
+        if self._edit_mode_active and self._active_knot_idx is not None:
+            # 1. Update the internal data (Move the knot)
+            # We constrain x to stay between neighbors to prevent knots crossing over
+            new_x = event.xdata
+            new_y = event.ydata
             
-            # Update visuals
+            # (Optional) Constraint logic: Keep knots sorted
+            # idx = self._active_knot_idx
+            # if idx > 0: new_x = max(new_x, self._knots_x[idx-1] + 0.0001)
+            # if idx < len(self._knots_x) - 1: new_x = min(new_x, self._knots_x[idx+1] - 0.0001)
+            
+            self._knots_x[self._active_knot_idx] = new_x
+            self._knots_y[self._active_knot_idx] = new_y
+            
+            # 2. Update the Artist Objects
+            self.knot_artist.set_data(self._knots_x, self._knots_y)
+            
+            # Recalculate the spline (See point #2 below about clipping!)
             self.update_spline_preview()
             
-            # Reuse the canvas's built-in animator. 
-            # It restores the background -> draws all cursor_artists (including ours) -> blits.
-            self.canvas.draw_animated()
+            # 3. BLITTING (The "Live" Update)
+            # This is what was missing or broken.
+            if self.background:
+                # A. Restore the clean background (erasing the old knot position)
+                self.canvas.restore_region(self.background)
+                
+                # B. Draw the artists at their NEW positions
+                self.canvas.axes.draw_artist(self.knot_artist)
+                self.canvas.axes.draw_artist(self.spline_artist)
+                
+                # C. Show it on screen
+                self.canvas.blit(self.canvas.axes.bbox)
+                
+            return # Stop processing (don't do region selection etc)
             
-    # Add on_press for Context Menu
     def on_press(self, event):
+        if not event.inaxes: return
+        
+        # 1. Gate: Ignore EVERYTHING if toolbar is active (Pan/Zoom)
+        if hasattr(self, 'toolbar') and self.toolbar.mode != '':
+            return
+
+        # 2. Continuum Editing Logic (High Priority)
+        # We handle this FIRST. If we act on a knot, we return immediately 
+        # to prevent selecting a region or opening a menu.
+        if self._edit_mode_active and event.inaxes == self.canvas.axes:
+            # Logic borrowed from your bottom block, moved here to fix the AttributeError
+            click_x, click_y = event.xdata, event.ydata
+            
+            # Calculate distance in pixels (Inline 'find_nearest_knot')
+            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
+            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
+            dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
+            nearest_idx = np.argmin(dists)
+            min_dist = dists[nearest_idx]
+            
+            THRESHOLD = 10 # pixels
+            
+            # RIGHT CLICK: Precise Add/Remove
+            if event.button == 3: 
+                if min_dist < THRESHOLD:
+                    # Remove Knot (Delete) if clicked ON a knot
+                    if len(self._knots_x) > 2:
+                        self._knots_x = np.delete(self._knots_x, nearest_idx)
+                        self._knots_y = np.delete(self._knots_y, nearest_idx)
+                        self.update_spline_preview()
+                        
+                        # We must update the background buffer? 
+                        # No, on_background_draw has clean bg. Just repaint.
+                        self.canvas.draw_animated()
+                else:
+                    # Add Knot (Create) if clicked in EMPTY space
+                    insert_idx = np.searchsorted(self._knots_x, click_x)
+                    self._knots_x = np.insert(self._knots_x, insert_idx, click_x)
+                    self._knots_y = np.insert(self._knots_y, insert_idx, click_y)
+                    self.update_spline_preview()
+                    self.canvas.draw_animated()
+                
+                # Consume event (don't show context menu)
+                return True 
+
+            # LEFT CLICK: "Magnet" Grab
+            if event.button == 1:
+                # Magnet logic: grab nearest knot regardless of distance
+                self._active_knot_idx = nearest_idx
+                return True # Consume event (don't start region selection)
+
+        # 3. Region Selection (Button 1)
+        # Only runs if NOT consumed by continuum logic above
         if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
             self._selection_start_x = event.xdata
             self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
             self.canvas.draw_idle() 
             return True
 
+        # 4. Context Menu (Button 3)
+        # Only runs if NOT consumed by continuum logic above
         if event.button == 3 and event.inaxes:
             found_comp = None
             xlim = event.inaxes.get_xlim(); tol = (xlim[1] - xlim[0]) * 0.015 
@@ -1843,48 +1923,13 @@ class SpectrumPlotWidget(QWidget):
 
             if not menu.isEmpty(): menu.exec(QCursor.pos()); return True
 
-        if self._edit_mode_active and event.inaxes == self.canvas.axes:
-            click_x, click_y = event.xdata, event.ydata
-            
-            # Calculate distance in pixels
-            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
-            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
-            dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
-            nearest_idx = np.argmin(dists)
-            min_dist = dists[nearest_idx]
-            
-            THRESHOLD = 10 # pixels
-            
-            # RIGHT CLICK: Precise Add/Remove
-            if event.button == 3: 
-                if min_dist < THRESHOLD:
-                    # Remove Knot (Delete) if clicked ON a knot
-                    if len(self._knots_x) > 2:
-                        self._knots_x = np.delete(self._knots_x, nearest_idx)
-                        self._knots_y = np.delete(self._knots_y, nearest_idx)
-                        self.update_spline_preview()
-                        self.canvas.draw_animated() # Instant update
-                else:
-                    # Add Knot (Create) if clicked in EMPTY space
-                    # We insert it sorted by X to maintain spline logic
-                    insert_idx = np.searchsorted(self._knots_x, click_x)
-                    self._knots_x = np.insert(self._knots_x, insert_idx, click_x)
-                    self._knots_y = np.insert(self._knots_y, insert_idx, click_y)
-                    self.update_spline_preview()
-                    self.canvas.draw_animated() # Instant update
-                return True 
-
-            # LEFT CLICK: "Magnet" Grab
-            if event.button == 1:
-                # --- FIX 2: No Threshold ---
-                # We grab 'nearest_idx' regardless of distance.
-                # The entire vertical strip belongs to this node.
-                self._active_knot_idx = nearest_idx
-                return True
-
         return False
     
     def on_release(self, event):
+        # --- FIX: Gating Logic ---
+        if hasattr(self, 'toolbar') and self.toolbar.mode != '':
+            return
+        
         # 1. Handle Continuum Editor Release
         if self._edit_mode_active and self._active_knot_idx is not None:
             logging.debug(f"Released knot {self._active_knot_idx}")
@@ -1906,52 +1951,29 @@ class SpectrumPlotWidget(QWidget):
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
 
-    def start_continuum_edit(self, initial_stride=500, resume_data=None):
-        """
-        initial_stride: The slider value.
-        resume_data: Tuple (x, y) of knots to restore after a pan/zoom suspension.
-        """
+    def start_continuum_edit(self, initial_stride=500):
         if not self.main_window.active_history: return
         
-        # [TOOLBAR HANDLING]
-        # We generally disable pan/zoom here, but our new wrapper handles the flow now.
+        # [TOOLBAR RESET]
         if hasattr(self, 'toolbar') and self.toolbar:
-            if self.toolbar.mode == 'pan/zoom':
-                self.toolbar.pan() 
-            elif self.toolbar.mode == 'zoom rect':
-                self.toolbar.zoom()
+             if self.toolbar.mode == 'pan/zoom': self.toolbar.pan() 
+             elif self.toolbar.mode == 'zoom rect': self.toolbar.zoom()
 
-        self.canvas.draw() 
-
-        # If no explicit data passed, but we have suspended data waiting, USE IT.
-        if resume_data is None and getattr(self, '_is_suspended', False):
-            print("DEBUG: recovering suspended data in start_continuum_edit")
-            resume_data = getattr(self, '_suspended_continuum_data', None)
-            # Reset suspension flags since we are consuming the data now
-            self._is_suspended = False
-            self._suspended_continuum_data = None
-
-        # [DATA PREPARATION]
-        if resume_data is not None:
-            # --- RESUMING FROM SUSPENSION ---
-            # Restore the knots exactly as they were before panning
-            self._knots_x, self._knots_y = resume_data
+        # [DATA PREP]
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        if spec.cont is not None:
+            y_source = spec.cont.value
         else:
-            # --- FRESH START ---
-            spec = self.main_window.active_history.current_state.spec
-            x_full = spec.x.value
-            if spec.cont is not None:
-                y_source = spec.cont.value
-            else:
-                y_source = spec.y.value
-                
-            stride = int(initial_stride) # Ensure int
-            indices = np.arange(0, len(x_full), stride, dtype=int)
-            if indices[-1] != len(x_full) - 1:
-                indices = np.append(indices, len(x_full) - 1)
-                
-            self._knots_x = x_full[indices]
-            self._knots_y = y_source[indices]
+            y_source = spec.y.value
+            
+        stride = int(initial_stride)
+        indices = np.arange(0, len(x_full), stride, dtype=int)
+        if indices[-1] != len(x_full) - 1:
+            indices = np.append(indices, len(x_full) - 1)
+            
+        self._knots_x = x_full[indices]
+        self._knots_y = y_source[indices]
         
         self._remove_editor_artists()
 
@@ -1971,33 +1993,62 @@ class SpectrumPlotWidget(QWidget):
         self._edit_mode_active = True
         self.update_spline_preview()
 
+        # [REGISTER for Blitting]
         if self.knot_artist not in self.canvas.cursor_artists:
             self.canvas.cursor_artists.append(self.knot_artist)
         if self.spline_artist not in self.canvas.cursor_artists:
             self.canvas.cursor_artists.append(self.spline_artist)
 
-        self.canvas.draw_animated()
-        self.canvas.setFocus()
-        self.canvas.update()
+        # --- CONNECT LISTENER ---
+        self._draw_cid = self.canvas.mpl_connect('draw_event', self.on_background_draw)
+
+        # Force Initial Draw (This triggers on_background_draw, populating self.background)
+        self.canvas.draw()
 
     def stop_continuum_edit(self, save=False):
         """Cleans up the editor."""
         self._edit_mode_active = False
         self._active_knot_idx = None
         
-        # Capture data before destruction if saving
+        # --- DISCONNECT LISTENER ---
+        if hasattr(self, '_draw_cid'):
+            self.canvas.mpl_disconnect(self._draw_cid)
+            del self._draw_cid
+        
+        # Clear background buffer to free memory
+        self.background = None
+
+        # Capture data
         final_x, final_y = None, None
         if save:
             final_x, final_y = self._knots_x, self._knots_y
 
-        # --- FIX: FULL DESTRUCTION ---
-        # Don't just hide them. Remove them. 
-        # This ensures the next 'start' begins with a clean slate.
         self._remove_editor_artists()
-            
         self.canvas.draw()
         
         return final_x, final_y
+
+    def on_background_draw(self, event):
+        """
+        Called on every Matplotlib draw (Pan, Zoom, Resize).
+        We capture the 'clean' background (Grid+Spectrum) BEFORE painting our artists.
+        """
+        if not self._edit_mode_active: return
+        
+        # 1. Capture the CLEAN background now!
+        # Since 'animated=True' artists are skipped by the main draw, 
+        # the canvas currently contains only the Grid and Spectrum.
+        # We save this state immediately.
+        bbox = self.canvas.axes.bbox
+        self.background = self.canvas.copy_from_bbox(bbox)
+        
+        # 2. Now paint our animated artists on top
+        # This makes them visible to the user, but doesn't 'pollute' 
+        # the self.background buffer we just saved.
+        if self.knot_artist:
+            self.knot_artist.draw(event.renderer)
+        if self.spline_artist:
+            self.spline_artist.draw(event.renderer)
 
     def _remove_editor_artists(self):
         """Helper to cleanly remove artists from both Canvas and Matplotlib."""
@@ -2019,7 +2070,7 @@ class SpectrumPlotWidget(QWidget):
             self.spline_artist = None
 
     def update_continuum_stride(self, stride):
-        """Re-initializes knots with a new stride without stopping the edit."""
+        """Re-initializes knots with a new stride using instant blitting."""
         if not self._edit_mode_active: return
 
         # 1. Update Data
@@ -2027,14 +2078,12 @@ class SpectrumPlotWidget(QWidget):
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
         
-        # Check source (Continuum vs Y)
         if spec.cont is not None:
             y_source = spec.cont.value
         else:
             y_source = spec.y.value
             
-        # Recalc indices
-        indices = np.arange(0, len(x_full), stride, dtype=int)
+        indices = np.arange(0, len(x_full), int(stride), dtype=int)
         if indices[-1] != len(x_full) - 1:
             indices = np.append(indices, len(x_full) - 1)
             
@@ -2042,95 +2091,56 @@ class SpectrumPlotWidget(QWidget):
         self._knots_y = y_source[indices]
         
         # 2. Update Artists
-        # We update the internal data of the artist objects
-        if self.knot_artist:
-            self.knot_artist.set_data(self._knots_x, self._knots_y)
-        
+        self.knot_artist.set_data(self._knots_x, self._knots_y)
         self.update_spline_preview()
         
-        # 3. RENDER FIX (The "Manual" Paint Job)
-        # We cannot use draw_idle() because it skips animated artists.
-        # We must manually orchestrate the paint:
-        
-        # A. Draw the "heavy" background (Axes, Grid, Spectrum)
-        # This wipes the canvas clean.
-        self.canvas.draw() 
-        
-        # B. Paint our animated artists on top of that fresh background
-        # (Using the same method that works in start_continuum_edit)
-        self.canvas.draw_animated() 
-        
-        # C. Force Qt to display the result
-        self.canvas.update()
+        # 3. RENDER FIX (Blitting)
+        # We reuse the clean background captured by the draw listener
+        if hasattr(self, 'background') and self.background:
+            # A. Restore clean background (erasing old knots)
+            self.canvas.restore_region(self.background)
+            
+            # B. Draw updated artists
+            self.canvas.axes.draw_artist(self.knot_artist)
+            self.canvas.axes.draw_artist(self.spline_artist)
+            
+            # C. Blit to screen immediately
+            self.canvas.blit(self.canvas.axes.bbox)
+        else:
+            # Fallback if background is missing (rare)
+            self.canvas.draw()
 
     def update_spline_preview(self):
-        """Recalculates the spline and updates the artist."""
-        if self._knots_x is None or len(self._knots_x) < 2: return
+        if not self._edit_mode_active: return
         
+        # 1. Sort knots (Crucial for spline math)
+        sort_idx = np.argsort(self._knots_x)
+        self._knots_x = self._knots_x[sort_idx]
+        self._knots_y = self._knots_y[sort_idx]
+        
+        # 2. Define the grid for the spline
+        # FIX: Do NOT use current axis limits. Use the Full Data limits.
+        # Assuming you have access to the full x data:
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        
+        # We calculate the spline on the full grid (or a decimated version if huge)
+        # Using the actual x_full ensures it aligns perfectly with the spectrum.
+        spline_x = x_full 
+        
+        # 3. Calculate Spline (Cubic Interpolation)
+        from scipy.interpolate import CubicSpline
         try:
-            # Sort is required for Spline logic if we added knots out of order
-            sort_idx = np.argsort(self._knots_x)
-            self._knots_x = self._knots_x[sort_idx]
-            self._knots_y = self._knots_y[sort_idx]
+            cs = CubicSpline(self._knots_x, self._knots_y, bc_type='natural')
+            spline_y = cs(spline_x)
             
-            # Create Spline
-            cs = CubicSpline(self._knots_x, self._knots_y)
-            
-            # Evaluate on visible range (or full range)
-            # For speed, we can evaluate on the same x-grid as the plot data
-            # cached in self._cached_x_plot_raw, or generate a linspace
-            xlim = self.canvas.axes.get_xlim()
-            x_eval = np.linspace(xlim[0], xlim[1], 1000)
-            y_eval = cs(x_eval)
-            
-            self.spline_artist.set_data(x_eval, y_eval)
-            self.knot_artist.set_data(self._knots_x, self._knots_y)
-            
+            # 4. Update the Spline Artist
+            self.spline_artist.set_data(spline_x, spline_y)
         except Exception as e:
-            logging.error(f"Spline update failed: {e}")
+            print(f"Spline error: {e}")
 
     def get_knots(self):
         return self._knots_x, self._knots_y
-
-    def suspend_continuum_edit(self):
-        """Pauses editing and saves state."""
-        # Only suspend if we are ACTIVELY editing.
-        # If we are already suspended (e.g. switching Pan->Zoom), do nothing 
-        # (keep the existing saved state).
-        # Check both: must be active editing AND not already suspended
-        if self._edit_mode_active:
-            print("Suspending continuum edit...")
-            knots_x, knots_y = self.stop_continuum_edit(save=True)
-            self._suspended_continuum_data = (knots_x, knots_y)
-            self._is_suspended = True
-            print("Suspended.")
-            
-            self.canvas.draw_idle()
-            return True
-        return False
-
-    def resume_continuum_edit(self):
-        """Restarts editing if it was previously suspended."""
-        if getattr(self, '_is_suspended', False):
-            data = getattr(self, '_suspended_continuum_data', None)
-            
-            # --- Recover Stride ---
-            # Try to fetch current slider position so we don't reset density
-            current_stride = 500
-            if hasattr(self, 'main_window') and hasattr(self.main_window, 'stride_slider'):
-                 val = self.main_window.stride_slider.value()
-                 current_stride = self.main_window._get_log_stride(val)
-
-            # --- Restart ---
-            self.start_continuum_edit(initial_stride=current_stride, resume_data=data)
-            
-            # --- Cleanup & Force Paint ---
-            self._is_suspended = False
-            self._suspended_continuum_data = None
-            
-            # Explicitly force focus and update again (Belt and Suspenders)
-            self.canvas.setFocus()
-            self.canvas.draw_idle()
 
 class AstrocookToolbar(NavigationToolbar):
     """
@@ -2176,58 +2186,6 @@ class AstrocookToolbar(NavigationToolbar):
                 icon = qta.icon('mdi.selection-drag', color='black')
                 action.setIcon(icon)
                 break
-
-        self._paused_for_continuum = False  # Memory: Did we pause the continuum editor?
-
-    def _get_plot_widget(self):
-        """Helper to find the SpectrumPlotWidget."""
-        # Check direct parent
-        parent = self.parent()
-        if hasattr(parent, 'suspend_continuum_edit'):
-            return parent
-        # Check canvas parent
-        if self.canvas and self.canvas.parent():
-            parent = self.canvas.parent()
-            if hasattr(parent, 'suspend_continuum_edit'):
-                return parent
-        return None
-
-    def _handle_tool_click(self, tool_method, *args):
-        """Wrapper to coordinate Tool toggles with Continuum Editor."""
-        plot_widget = self._get_plot_widget()
-        
-        # 1. SUSPEND (Immediate)
-        # If we are editing, pause BEFORE Matplotlib takes over
-        if plot_widget and getattr(plot_widget, '_edit_mode_active', False):
-            if plot_widget.suspend_continuum_edit():
-                self._paused_for_continuum = True
-                print("DEBUG: Active edit detected -> Suspended.")
-
-        # 2. RUN NATIVE TOOL
-        tool_method(*args)
-        
-        # 3. RESUME (Delayed)
-        # We wait 10ms to allow Matplotlib to finish its own redraw/cleanup
-        # before we try to paint our knots again.
-        def check_resume():
-            # Only resume if tool is strictly OFF (mode is empty)
-            if self.mode == '' and self._paused_for_continuum:
-                if plot_widget:
-                    print("DEBUG: Tool disabled -> Auto-Resuming.")
-                    plot_widget.resume_continuum_edit()
-                self._paused_for_continuum = False
-            
-            # If mode is NOT empty (e.g. we switched Pan->Zoom), 
-            # we do nothing. The _paused_for_continuum flag remains True,
-            # so the *next* check_resume (when Zoom ends) will catch it.
-
-        QTimer.singleShot(10, check_resume)
-
-    def pan(self, *args):
-        self._handle_tool_click(super().pan, *args)
-
-    def zoom(self, *args):
-        self._handle_tool_click(super().zoom, *args)
             
     def toggle_select_mode(self):
         """Toggles the region selection mode on/off."""
