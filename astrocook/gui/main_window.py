@@ -479,7 +479,7 @@ class MainWindowV2(QMainWindow):
         self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
         # Add some margin to the checkbox
         self.cursor_show_checkbox.setStyleSheet("margin-top: 5px;")
-        sidebar_layout.addWidget(self.cursor_show_checkbox)
+        unified_grid.addWidget(self.cursor_show_checkbox, 8, 0, 1, 2)
 
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
@@ -490,12 +490,12 @@ class MainWindowV2(QMainWindow):
         header_continuum = QLabel("<b>Edit Continuum:</b>")
         # Add some top margin to separate from previous section
         header_continuum.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_continuum, 8, 0, 1, 2)
+        unified_grid.addWidget(header_continuum, 9, 0, 1, 2)
 
         self.edit_cont_button = QPushButton("Start")
         self.edit_cont_button.setMaximumWidth(100) # Keep it compact
         self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
-        unified_grid.addWidget(self.edit_cont_button, 9, 0, 1, 1)
+        unified_grid.addWidget(self.edit_cont_button, 10, 0, 1, 1)
 
         # 5. The Logarithmic Slider
         self.stride_slider = QSlider(Qt.Horizontal)
@@ -514,11 +514,11 @@ class MainWindowV2(QMainWindow):
         # Set initial default (e.g., stride 500)
         self._set_slider_from_stride(500)
 
-        unified_grid.addWidget(self.stride_slider, 9, 1, 1, 1)
+        unified_grid.addWidget(self.stride_slider, 10, 1, 1, 1)
 
         # 4. Slider Label (Dynamic)
         self.stride_label = QLabel("")
-        unified_grid.addWidget(self.stride_label, 10, 1, 1, 1)
+        unified_grid.addWidget(self.stride_label, 11, 1, 1, 1)
 
         # Add the group to your main sidebar layout
         sidebar_layout.addLayout(unified_grid)
