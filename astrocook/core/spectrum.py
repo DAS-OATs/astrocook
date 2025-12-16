@@ -311,6 +311,47 @@ class SpectrumV2:
         """Accede a una colonna ausiliaria per la GUI (es. 'cont')."""
         col = self._data.aux_cols.get(name)
         return col.quantity if col else None
+    
+    def update_column(self, name: str, values: np.ndarray, 
+                      unit: Optional[au.Unit] = None,
+                      description: str = "") -> 'SpectrumV2':
+        """
+        Returns a NEW SpectrumV2 instance with the specified column updated or added.
+        Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).
+        """
+        # 1. Determine Unit (inherit if not provided and col exists)
+        target_unit = unit
+        if target_unit is None:
+            if name in self._data.aux_cols:
+                target_unit = self._data.aux_cols[name].unit
+            elif name in ['y', 'dy']:
+                target_unit = getattr(self._data, name).unit
+            else:
+                # Default fallback: match Flux unit
+                target_unit = self._data.y.unit
+        
+        # 2. Create the DataColumnV2 object
+        # (DataColumnV2 is already imported in your spectrum.py)
+        new_col = DataColumnV2(values, target_unit, description)
+        
+        # 3. Prepare new data structure (Immutable Pattern)
+        new_data = None
+        
+        # Check Core Columns
+        if name == 'y':
+            new_data = dataclasses.replace(self._data, y=new_col)
+        elif name == 'dy':
+            new_data = dataclasses.replace(self._data, dy=new_col)
+        # We purposely exclude x/xmin/xmax here to prevent grid mismatches
+        else:
+            # Auxiliary Column
+            new_aux = deepcopy(self._data.aux_cols)
+            new_aux[name] = new_col
+            new_data = dataclasses.replace(self._data, aux_cols=new_aux)
+            
+        # 4. Return new SpectrumV2
+        new_history = self.history + [f"Updated column '{name}'"]
+        return SpectrumV2(data=new_data, history=new_history)
 
     def to_v1_spectrum(self) -> SpectrumV1:
         """

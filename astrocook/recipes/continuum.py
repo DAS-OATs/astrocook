@@ -1,6 +1,7 @@
-import logging
-from typing import TYPE_CHECKING, Optional
 import astropy.units as au
+import logging
+from scipy.interpolate import CubicSpline
+from typing import TYPE_CHECKING, Optional
 
 from astrocook.core.structures import HistoryLogV2
 from astrocook.legacy.message import msg_param_fail
@@ -282,3 +283,26 @@ class RecipeContinuumV2:
         except Exception as e:
             logging.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
             return 0
+        
+
+    def update_from_knots(self, knots_x: list, knots_y: list) -> 'SessionV2':
+        """
+        Updates the continuum based on a list of interactive knots.
+        """
+        # 1. Create Spline from knots
+        # Ensure imports are available (scipy.interpolate.CubicSpline)
+        from scipy.interpolate import CubicSpline
+        cs = CubicSpline(knots_x, knots_y)
+
+        # 2. Access the session via 'self._session'
+        # (The worker initialized this class with the session object)
+        session = self._session 
+
+        # 3. Evaluate on the session's FULL wavelength grid
+        new_cont = cs(session.spec.x.value)
+
+        # 4. Create new session with updated continuum
+        new_spec = session.spec.update_column('cont', new_cont)
+        
+        # 5. Return the new session state
+        return session.with_new_spectrum(new_spec)

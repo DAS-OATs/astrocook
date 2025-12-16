@@ -486,6 +486,12 @@ class MainWindowV2(QMainWindow):
         self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
+        # Edit Continuum Button (Span 2 columns)
+        self.btn_edit_cont = QPushButton("Edit Continuum")
+        self.btn_edit_cont.setCheckable(True)
+        self.btn_edit_cont.clicked.connect(self._toggle_continuum_editor)
+        sidebar_layout.addWidget(self.btn_edit_cont)
+
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
 
@@ -1477,6 +1483,47 @@ class MainWindowV2(QMainWindow):
             self.snr_col_combo.setCurrentIndex(0) # Default to dF
 
         self.snr_col_combo.blockSignals(False)
+
+    def _toggle_continuum_editor(self, checked):
+        if checked:
+            # START EDITING
+            logging.info("Starting Continuum Editor...")
+            self.plot_viewer.start_continuum_edit()
+            
+            # Don't change background color (breaks native style).
+            # Just change text and rely on the 'checked' state (usually pressed in)
+            self.btn_edit_cont.setText("Save Continuum Changes")
+            
+            # Optional: Show instructions (keep this)
+            self._show_custom_message(
+                title="Editor Active",
+                header="Continuum Editing Mode",
+                text="• <b>Left Drag:</b> Move knots vertically.<br>"
+                     "• <b>Right Click on Knot:</b> Delete.<br>"
+                     "• <b>Right Click empty space:</b> Add knot.<br>"
+                     "• Click 'Save Continuum Changes' when done.",
+                buttons=QMessageBox.StandardButton.Ok
+            )
+            
+        else:
+            # STOP & SAVE
+            knots_x, knots_y = self.plot_viewer.stop_continuum_edit(save=True)
+            
+            if knots_x is not None:
+                logging.info(f"Saving {len(knots_x)} knots to history.")
+                
+                # Convert to lists for JSON serialization in recipes
+                params = {
+                    'knots_x': knots_x.tolist(), 
+                    'knots_y': knots_y.tolist()
+                }
+                
+                # CALL THE NEW RECIPE
+                # You must implement 'update_from_knots' in astrocook/recipes/continuum.py
+                self._on_recipe_requested("continuum", "update_from_knots", params, {})
+                
+            self.btn_edit_cont.setText("Edit Continuum")
+            self.btn_edit_cont.setStyleSheet("") # Reset style
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""

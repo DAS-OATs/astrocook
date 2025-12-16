@@ -1,3 +1,4 @@
+import traceback
 from matplotlib import pylab
 import astropy.constants as const
 import astropy.units as au
@@ -17,6 +18,7 @@ from PySide6.QtGui import QAction, QCursor, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget
 import qtawesome as qta
 import scienceplots
+from scipy.interpolate import CubicSpline
 from typing import Optional, TYPE_CHECKING
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
@@ -468,6 +470,15 @@ class SpectrumPlotWidget(QWidget):
 
         # Add ONLY toolbar to main layout
         self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
+
+        # --- Continuum Editor State ---
+        self._edit_mode_active = False
+        self._knots_x = None  # np.array
+        self._knots_y = None  # np.array
+        self._active_knot_idx = None # Index of knot being dragged
+        
+        self.knot_artist = None  # Matplotlib Line2D (markers)
+        self.spline_artist = None # Matplotlib Line2D (smooth line)
 
         # Draw initial plot (will read checkbox state from main window)
         self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
@@ -1782,7 +1793,16 @@ class SpectrumPlotWidget(QWidget):
         We do nothing here to prevent flickering. All tooltip logic is deferred 
         to show_data_tooltip (called when the mouse stops).
         """
-        pass
+        if self._edit_mode_active and self._active_knot_idx is not None and event.inaxes:
+            # Vertical Only: Update Y, keep X original
+            self._knots_y[self._active_knot_idx] = event.ydata
+            
+            # Update visuals
+            self.update_spline_preview()
+            
+            # Reuse the canvas's built-in animator. 
+            # It restores the background -> draws all cursor_artists (including ours) -> blits.
+            self.canvas.draw_animated()
             
     # Add on_press for Context Menu
     def on_press(self, event):
@@ -1817,20 +1837,211 @@ class SpectrumPlotWidget(QWidget):
                 menu.addAction(act_zem)
 
             if not menu.isEmpty(): menu.exec(QCursor.pos()); return True
+
+        if self._edit_mode_active and event.inaxes == self.canvas.axes:
+            click_x, click_y = event.xdata, event.ydata
+            
+            # Calculate distance in pixels
+            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
+            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
+            dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
+            nearest_idx = np.argmin(dists)
+            min_dist = dists[nearest_idx]
+            
+            THRESHOLD = 10 # pixels
+            
+            # RIGHT CLICK: Precise Add/Remove
+            if event.button == 3: 
+                if min_dist < THRESHOLD:
+                    # Remove Knot (Delete) if clicked ON a knot
+                    if len(self._knots_x) > 2:
+                        self._knots_x = np.delete(self._knots_x, nearest_idx)
+                        self._knots_y = np.delete(self._knots_y, nearest_idx)
+                        self.update_spline_preview()
+                        self.canvas.draw_animated() # Instant update
+                else:
+                    # Add Knot (Create) if clicked in EMPTY space
+                    # We insert it sorted by X to maintain spline logic
+                    insert_idx = np.searchsorted(self._knots_x, click_x)
+                    self._knots_x = np.insert(self._knots_x, insert_idx, click_x)
+                    self._knots_y = np.insert(self._knots_y, insert_idx, click_y)
+                    self.update_spline_preview()
+                    self.canvas.draw_animated() # Instant update
+                return True 
+
+            # LEFT CLICK: "Magnet" Grab
+            if event.button == 1:
+                # --- FIX 2: No Threshold ---
+                # We grab 'nearest_idx' regardless of distance.
+                # The entire vertical strip belongs to this node.
+                self._active_knot_idx = nearest_idx
+                return True
+
         return False
     
     def on_release(self, event):
+        # 1. Handle Continuum Editor Release
+        if self._edit_mode_active and self._active_knot_idx is not None:
+            logging.debug(f"Released knot {self._active_knot_idx}")
+            self._active_knot_idx = None  # <--- This "drops" the knot
+            return  # Stop processing further (e.g. region selection)
+
+        # 2. Handle Existing Region Selection Logic
         if self._selection_start_x is not None:
-            start = self._selection_start_x; end = event.xdata
-            self.canvas.cleanup_selection(); self._selection_start_x = None
-            if start is None or end is None or start == end: return
+            start = self._selection_start_x
+            end = event.xdata
+            self.canvas.cleanup_selection()
+            self._selection_start_x = None
+            
+            if start is None or end is None or start == end: 
+                return
+            
             xmin, xmax = sorted([start, end])
             if self.main_window:
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
 
-# NOTE: The rest of the plotting logic (plot_spectrum content, resizeEvent, etc.) 
-# must be placed into this class, and the old SpectrumViewerPySide class should be deleted.
+    def start_continuum_edit(self):
+        """Initializes the continuum editor with decimated knots."""
+        if not self.main_window.active_history: return
+        
+        # 1. PREPARE THE CANVAS (The "Clean Slate" Step)
+        # We process toolbar changes and force a full draw FIRST.
+        # This flushes any pending events and ensures the background is captured
+        # BEFORE we introduce our fragile animated artists.
+        if hasattr(self, 'toolbar') and self.toolbar:
+            if self.toolbar.mode == 'pan/zoom':
+                self.toolbar.pan() 
+            elif self.toolbar.mode == 'zoom rect':
+                self.toolbar.zoom()
+
+        # Force the full redraw now. 
+        # If this method clears 'cursor_artists', our new artists won't be there yet to get killed.
+        self.canvas.draw() 
+
+        # 2. DATA PREPARATION
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        if spec.cont is not None:
+            y_source = spec.cont.value
+        else:
+            y_source = spec.y.value
+            
+        stride = 500
+        indices = np.arange(0, len(x_full), stride, dtype=int)
+        if indices[-1] != len(x_full) - 1:
+            indices = np.append(indices, len(x_full) - 1)
+            
+        self._knots_x = x_full[indices]
+        self._knots_y = y_source[indices]
+        
+        # 3. NUCLEAR CLEANUP (Just in case)
+        self._remove_editor_artists()
+
+        # 4. CREATE ARTISTS (Fresh)
+        # Note: We create them AFTER the self.canvas.draw() above.
+        self.knot_artist, = self.canvas.axes.plot(
+            self._knots_x, self._knots_y, 
+            'o', color='black', markersize=4, alpha=0.5, 
+            label='Knots', zorder=10, animated=True
+        )
+        
+        self.spline_artist, = self.canvas.axes.plot(
+            [], [], 
+            '-', color='black', lw=3, alpha=0.3, 
+            label='Draft Cont.', zorder=9, animated=True
+        )
+
+        self._edit_mode_active = True
+        self.update_spline_preview()
+
+        # 5. REGISTRATION & MANUAL PAINT
+        # We append them now. They missed the main draw() cycle (good!), 
+        # so we must paint them manually.
+        if self.knot_artist not in self.canvas.cursor_artists:
+            self.canvas.cursor_artists.append(self.knot_artist)
+        if self.spline_artist not in self.canvas.cursor_artists:
+            self.canvas.cursor_artists.append(self.spline_artist)
+
+        # Paint them on top of the already-drawn background
+        self.canvas.draw_animated()
+
+        # 1. Force Qt focus to the canvas widget
+        self.canvas.setFocus()
+        
+        # 2. Force a Qt-level repaint (not just Matplotlib)
+        # This tells the window manager "this area is dirty, please allow updates"
+        self.canvas.update()
+
+    def stop_continuum_edit(self, save=False):
+        import traceback
+        print("STOP called by:")
+        traceback.print_stack()
+        """Cleans up the editor."""
+        self._edit_mode_active = False
+        self._active_knot_idx = None
+        
+        # Capture data before destruction if saving
+        final_x, final_y = None, None
+        if save:
+            final_x, final_y = self._knots_x, self._knots_y
+
+        # --- FIX: FULL DESTRUCTION ---
+        # Don't just hide them. Remove them. 
+        # This ensures the next 'start' begins with a clean slate.
+        self._remove_editor_artists()
+            
+        self.canvas.draw()
+        
+        return final_x, final_y
+
+    def _remove_editor_artists(self):
+        """Helper to cleanly remove artists from both Canvas and Matplotlib."""
+        # 1. Remove from the Blitting List (Canvas Loop)
+        if hasattr(self, 'knot_artist') and self.knot_artist in self.canvas.cursor_artists:
+            self.canvas.cursor_artists.remove(self.knot_artist)
+        if hasattr(self, 'spline_artist') and self.spline_artist in self.canvas.cursor_artists:
+            self.canvas.cursor_artists.remove(self.spline_artist)
+
+        # 2. Remove from the Plot (Matplotlib Axes)
+        if hasattr(self, 'knot_artist') and self.knot_artist:
+            try: self.knot_artist.remove()
+            except: pass # Already removed or not attached
+            self.knot_artist = None
+
+        if hasattr(self, 'spline_artist') and self.spline_artist:
+            try: self.spline_artist.remove()
+            except: pass
+            self.spline_artist = None
+
+    def update_spline_preview(self):
+        """Recalculates the spline and updates the artist."""
+        if self._knots_x is None or len(self._knots_x) < 2: return
+        
+        try:
+            # Sort is required for Spline logic if we added knots out of order
+            sort_idx = np.argsort(self._knots_x)
+            self._knots_x = self._knots_x[sort_idx]
+            self._knots_y = self._knots_y[sort_idx]
+            
+            # Create Spline
+            cs = CubicSpline(self._knots_x, self._knots_y)
+            
+            # Evaluate on visible range (or full range)
+            # For speed, we can evaluate on the same x-grid as the plot data
+            # cached in self._cached_x_plot_raw, or generate a linspace
+            xlim = self.canvas.axes.get_xlim()
+            x_eval = np.linspace(xlim[0], xlim[1], 1000)
+            y_eval = cs(x_eval)
+            
+            self.spline_artist.set_data(x_eval, y_eval)
+            self.knot_artist.set_data(self._knots_x, self._knots_y)
+            
+        except Exception as e:
+            logging.error(f"Spline update failed: {e}")
+
+    def get_knots(self):
+        return self._knots_x, self._knots_y
 
 class AstrocookToolbar(NavigationToolbar):
     """
