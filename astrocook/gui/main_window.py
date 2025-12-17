@@ -801,6 +801,24 @@ class MainWindowV2(QMainWindow):
         absorbers_menu.addAction(doublets_auto_action)
         self.doublets_auto_action = doublets_auto_action; self.doublets_auto_action.setEnabled(False)
         
+        lya_auto_action = QAction("Auto-fit &Ly-alpha Forest...", self)
+        lya_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "lya_auto"))
+        lya_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit Ly-alpha lines.")
+        absorbers_menu.addAction(lya_auto_action)
+        self.lya_auto_action = lya_auto_action; self.lya_auto_action.setEnabled(False)
+
+        forest_auto_action = QAction("Auto-fit &Full Lyman Series...", self)
+        forest_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "forest_auto"))
+        forest_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit the Lyman series.")
+        #absorbers_menu.addAction(forest_auto_action)
+        self.forest_auto_action = forest_auto_action; self.forest_auto_action.setEnabled(False)
+
+        metals_auto_action = QAction("Check &Associated Metals...", self)
+        metals_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "metals_auto"))
+        metals_auto_action.setToolTip("Scans all existing systems and attempts to add other ions at the same redshift.")
+        #absorbers_menu.addAction(metals_auto_action)
+        self.metals_auto_action = metals_auto_action; self.metals_auto_action.setEnabled(False)
+
         absorbers_menu.addSeparator()
 
         identify_action = QAction("&Identify Absorption Lines...", self)
@@ -2352,6 +2370,10 @@ class MainWindowV2(QMainWindow):
         'estimate_auto', 
         'find_absorbed',
         'extract_preset',
+        'doublets_auto',
+        'lya_auto',
+        'forest_auto',
+        'metals_auto',
         'identify_lines'
     }
 
@@ -2359,7 +2381,10 @@ class MainWindowV2(QMainWindow):
     _RECIPES_REQUIRING_RESOL = {
         'fit_component',
         'add_component',
-        'fit_components', # Future-proofing
+        'doublets_auto',
+        'lya_auto',
+        'forest_auto',
+        'metals_auto',
         'identify_lines'  # Useful for matching linewidths
     }
 
@@ -3037,6 +3062,9 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 
         if hasattr(self, 'doublets_auto_action'): self.doublets_auto_action.setEnabled(enable_recipes)
+        if hasattr(self, 'lya_auto_action'): self.lya_auto_action.setEnabled(enable_recipes)
+        if hasattr(self, 'forest_auto_action'): self.forest_auto_action.setEnabled(enable_recipes)
+        if hasattr(self, 'metals_auto_action'): self.metals_auto_action.setEnabled(enable_recipes)
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---

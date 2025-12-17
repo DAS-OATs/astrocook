@@ -9,7 +9,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Union
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
+from astrocook.core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d
 from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import (
     convert_axis_velocity, 
@@ -1744,45 +1744,23 @@ class SpectrumV2:
                        debug_rating: bool = False) -> 'SpectrumV2':
         """
         Identifies absorption lines by correlating regions with multiplet templates.
-
-        This method employs a multi-step algorithm:
-        1.  Detects and merges absorption regions in velocity space.
-        2.  Scans for kinematic doublets (e.g. CIV, SiIV) redward of Ly-alpha.
-        3.  Scans for Ly-alpha/Ly-beta pairs in the forest.
-        4.  Scores candidates using an R^2 correlation metric.
-        5.  Populates metadata with candidate identifications.
-
-        Parameters
-        ----------
-        multiplet_list : list of str
-            List of multiplets to search for (e.g. ``['CIV', 'SiIV']``).
-        mask_col : str
-            Name of the absorption mask column.
-        min_pix_region : int
-            Minimum pixels to consider a region.
-        merge_dv : float
-            Maximum velocity separation (km/s) to merge adjacent regions.
-        score_threshold : float
-            Minimum R^2 score (0-1) to accept a candidate.
-        bypass_scoring : bool
-            If True, accept all kinematic matches regardless of score.
-        debug_rating : bool
-            If True, produce debug plots for the rating process.
-
-        Returns
-        -------
-        SpectrumV2
-            A new instance with 'abs_ids' column and identification metadata.
+        
+        Uses a de-blending strategy:
+        1. Detects merged absorption regions.
+        2. Within each region, finds local minima (peaks in inverted flux).
+        3. Creates a candidate system for each minimum.
         """
         
         # This is the 'self' spectrum object
         spec = self
-        z_em = spec._data.z_em # <<< *** GET z_em ***
+        z_em = spec._data.z_em
         if z_em == 0.0:
             raise ValueError("z_em must be set before running identify_lines.")
         
-        logging.info(f"identify_lines (New Algorithm): Starting identification...")
-        logging.debug(f"  Params: merge_dv={merge_dv}, score_threshold={score_threshold}")
+        # Import SciPy signal processing tools
+        from scipy.signal import find_peaks, peak_widths
+        
+        logging.info(f"identify_lines (De-blending): Starting identification...")
 
         # 1. Silently create abs_mask if it doesn't exist
         if not spec.has_aux_column(mask_col):
@@ -1798,150 +1776,104 @@ class SpectrumV2:
                 logging.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
                 raise e
         
-        # --- *** START: NEW ALGORITHM (Steps 1-5) *** ---
-        
-        # 1. Get Merged Regions
+        # 2. Get Merged Regions
         try:
             mask_data = spec.get_column(mask_col).value
             if mask_data.dtype.kind != 'b':
                  mask_data = mask_data.astype(bool)
             
             region_id_map_raw, num_raw = detect_regions(mask_data, min_pix_region)
-            logging.info(f"identify_lines: Found {num_raw} raw regions.")
-
             region_id_map_merged, num_merged = merge_regions_by_velocity(
-                region_id_map_raw,
-                spec.x,
-                spec._data.z_em,
-                merge_dv
+                region_id_map_raw, spec.x, spec._data.z_em, merge_dv
             )
             logging.info(f"identify_lines: {num_merged} regions remain after merging.")
         except Exception as e:
             logging.error(f"Failed to detect or merge absorption regions: {e}", exc_info=True)
             raise e
 
-        # Define AOD profile (for Step 5)
+        # Define AOD profile
         cont = spec.cont.value if spec.cont is not None else np.ones_like(spec.y.value)
         flux = spec.y.value
         with np.errstate(divide='ignore', invalid='ignore'):
             aod = -np.log(flux / cont)
-        aod[~np.isfinite(aod)] = 0.0 # Clean NaNs/Infs
+        aod[~np.isfinite(aod)] = 0.0 
 
         # Define boundaries
         x_nm = spec.x.to_value(au.nm)
         lya_limit_obs_nm = (1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)
         lya_obs_nm = (1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)
         
-        # Split region map into Forest and Redward
         forest_mask = (x_nm < lya_obs_nm) & (x_nm > lya_limit_obs_nm)
         redward_mask = (x_nm >= lya_obs_nm)
         
         forest_map = region_id_map_merged.copy()
-        forest_map[~forest_mask] = 0 # Zero out non-forest regions
+        forest_map[~forest_mask] = 0 
         
         redward_map = region_id_map_merged.copy()
-        redward_map[~redward_mask] = 0 # Zero out non-redward regions
+        redward_map[~redward_mask] = 0
 
-        # ---
-        # 2. Kinematic check for Metal Doublets (Red Side)
-        # ---
-        all_candidates = [] # List of (rid, z_test, series_name)
+        # --- Kinematic Checks (Steps 2-4) ---
+        all_candidates = [] 
         metal_doublets = [
             m for m in multiplet_list 
             if m in STANDARD_MULTIPLETS and len(STANDARD_MULTIPLETS[m]) == 2 and m != 'Ly_ab'
         ]
-        logging.info(f"Checking for metal doublets: {metal_doublets}")
         
         for series_name in metal_doublets:
-            # --- *** MODIFIED: Only check redward_map *** ---
             candidates_red = _find_kinematic_doublet_candidates(
                 redward_map, spec.x, spec._data.z_em, series_name, z_em
             )
             for (rid_1, rid_2, z_test) in candidates_red:
-                # --- *** Append the threshold *** ---
                 all_candidates.append((rid_1, rid_2, z_test, series_name, score_threshold))
         
-        # ---
-        # 3. Kinematic check for Ly_ab (Forest)
-        # ---
         if 'Ly_ab' in multiplet_list:
-            logging.info("Checking for Ly_ab doublet...")
             lyab_candidates = _find_kinematic_doublet_candidates(
                 forest_map, spec.x, spec._data.z_em, 'Ly_ab', z_em
             )
             for (rid_1, rid_2, z_test) in lyab_candidates:
-                # --- *** Append the threshold *** ---
                 all_candidates.append((rid_1, rid_2, z_test, 'Ly_ab', score_threshold))
 
-        logging.info(f"Found {len(all_candidates)} total kinematic candidates.")
-
-        # ---
-        # 4. Rate Candidates with R^2 Score
-        # ---
-        reliable_ids = {} # {rid: (series_name, score, z_test)}
-        logging.info(f"Rating {len(all_candidates)} kinematic candidates with R^2 score...")
-
+        # --- Rate Candidates ---
+        reliable_ids = {} 
         for (rid_1, rid_2, z_test, series_name, threshold) in all_candidates:
-            
-            # --- *** Get the masks for the PAIR *** ---
             if series_name == 'Ly_ab':
-                threshold = score_threshold # Use normal threshold for Ly_ab
+                threshold = score_threshold 
             else:
-                # It's a metal line. Check if it's in the forest.
                 region_mask_for_check = (region_id_map_merged == rid_1)
                 x_region_mean = np.mean(x_nm[region_mask_for_check])
                 if x_region_mean < lya_obs_nm:
-                    threshold = 1.1 # Set threshold to 1.1 (impossible to pass)
+                    threshold = 1.1 # Impossible threshold for metals in forest
                 else:
-                    threshold = score_threshold # Use normal threshold
+                    threshold = score_threshold 
                 
             mask_1 = (region_id_map_merged == rid_1)
             mask_2 = (region_id_map_merged == rid_2)
             
-            if not np.any(mask_1) or not np.any(mask_2):
-                continue # Skip if a region is empty (shouldn't happen)
+            if not np.any(mask_1) or not np.any(mask_2): continue
             
-            # --- *** Call the R^2 rater on the PAIR *** ---
             r2_score = rate_doublet_candidate(
-                spec, mask_1, mask_2, series_name, z_test,
-                debug_rating=debug_rating
+                spec, mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
             )
             
             if r2_score > threshold or bypass_scoring:
-                log_msg = f"PASSED > {threshold}"
-                if bypass_scoring and r2_score <= threshold:
-                    log_msg = f"BYPASSED (Score: {r2_score:.3f})"
-                
-                logging.debug(f"  > Pair ({rid_1}, {rid_2}): {series_name} at z={z_test:.4f} scored R^2 = {r2_score:.3f} ({log_msg})")
-
-                # Get the component names
                 lines = STANDARD_MULTIPLETS[series_name]
                 comp_1, comp_2 = lines[0], lines[1]
-                rid_1_int = int(rid_1) # rid_1 is the red region
-                rid_2_int = int(rid_2) # rid_2 is the blue region
+                rid_1_int = int(rid_1) 
+                rid_2_int = int(rid_2) 
                 
-                # Add Red Line (comp_2) to Red Region (rid_1)
                 if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []
                 reliable_ids[rid_1_int].append((comp_2, r2_score, z_test))
 
-                # Add Blue Line (comp_1) to Blue Region (rid_2)
                 if rid_2_int not in reliable_ids: reliable_ids[rid_2_int] = []
                 reliable_ids[rid_2_int].append((comp_1, r2_score, z_test))
-            
-            # (If score < threshold, we just drop the candidate)
 
-        # ---
-        # 5. Forest Cleanup (Label un-ID'd regions as Ly_a)
-        # ---
+        # --- Forest Cleanup ---
         forest_rids = np.unique(forest_map)
         forest_rids = forest_rids[forest_rids > 0]
         
         for rid in forest_rids:
             rid_int = int(rid)
             if rid_int not in reliable_ids:
-                # This region is in the forest but was not ID'd as Ly_ab
-                # Label it as Ly_a
-                # We need a z_test. We'll use the AOD peak.
                 region_mask = (region_id_map_merged == rid_int)
                 aod_region = aod.copy()
                 aod_region[~region_mask] = -np.inf
@@ -1950,50 +1882,121 @@ class SpectrumV2:
                 if aod_peak_idx > 0:
                     x_peak_nm = x_nm[aod_peak_idx]
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
-                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test)] # Give it 0 score
-                    logging.debug(f"  > Region {rid_int}: Labeled as Ly_a (cleanup) at z={z_test:.4f}")
+                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test)]
 
-        logging.info(f"Finalized {len(reliable_ids)} identified regions.")
+        logging.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
+
+        # --- 6. Save results with SMART DE-BLENDING ---
         
-        # --- 6. Save results for populating (Systems Logic) ---
         final_vis_map = np.zeros_like(region_id_map_merged)
         system_series_map = {}
         system_z_map = {}
-        sys_id_counter = 1
+        system_logN_map = {}
+        system_b_map = {}
         
-        # Helper to avoid adding the same system twice (e.g. once detected via 1548, once via 1550)
-        # We store a tuple (SystemName, Rounded_Z) to detect duplicates
+        sys_id_counter = 1
         processed_systems = set()
+        c_kms = 299792.458
+        
+        # Pre-calculations
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dv_pix = c_kms * np.abs(np.gradient(spec.x.value)) / spec.x.value
+            aod_clean = np.nan_to_num(aod, nan=0.0, posinf=0.0, neginf=0.0)
+            aod_clean = np.maximum(aod_clean, 0.0)
 
-        # Iterate reliable_ids (which are keyed by Region ID)
         for rid, candidates in reliable_ids.items():
-            final_vis_map[region_id_map_merged == rid] = rid
+            # Mark region
+            region_mask = (region_id_map_merged == rid)
+            final_vis_map[region_mask] = rid
             
-            for (component_name, score, z_test) in candidates:
+            # --- DE-BLENDING ---
+            flux_seg = spec.y.value[region_mask]
+            err_seg = spec.dy.value[region_mask]
+            x_seg = spec.x.value[region_mask]
+            
+            if len(flux_seg) < 3:
+                peaks = [np.argmin(flux_seg)]
+                widths_pix = [len(flux_seg)]
+            else:
+                inv_flux = 1.0 - flux_seg
+                inv_flux_smooth = gaussian_filter1d(inv_flux, sigma=1.0)
                 
-                # Deduce System Name from component_name (e.g. CIV_1548 -> CIV)
-                system_name = component_name
+                # NEW: Calculate local noise floor (3-sigma)
+                # Use standard error if available, else heuristic
+                local_sigma = np.nanmedian(err_seg) if np.all(err_seg > 0) else 0.01
+                dynamic_prominence = max(0.02, 3.0 * local_sigma)
+
+                # Use dynamic prominence instead of fixed 0.02
+                peaks, properties = find_peaks(inv_flux_smooth, prominence=dynamic_prominence, width=1.0)
                 
-                # Check if it belongs to a multiplet
-                for mult, members in STANDARD_MULTIPLETS.items():
-                    if component_name in members:
-                        system_name = mult
-                        break
+                if len(peaks) == 0:
+                    peaks = [np.argmax(inv_flux_smooth)]
+                    widths_pix = [len(flux_seg)]
+                else:
+                    # Get FWHM in pixels
+                    widths_pix = peak_widths(inv_flux_smooth, peaks, rel_height=0.5)[0]
+
+            # Process each detected SUB-PEAK
+            for i, peak_idx in enumerate(peaks):
+                x_peak_obs = x_seg[peak_idx]
                 
-                # Create a unique key for this system at this redshift
-                # Rounding z to 4 decimal places prevents floating point duplicates
-                z_round = round(z_test, 4)
-                uniq_key = (system_name, z_round)
-                
-                if uniq_key not in processed_systems:
-                    system_series_map[sys_id_counter] = system_name
-                    system_z_map[sys_id_counter] = z_test
+                # Estimate b from FWHM
+                local_dv = dv_pix[region_mask][peak_idx]
+                fwhm_kms = widths_pix[i] * local_dv
+                # FWHM = 2.355 * sigma = 1.665 * b
+                b_guess = max(5.0, fwhm_kms / 1.665) 
+                b_guess = min(100.0, b_guess)
+
+                for (component_name, score, z_test_orig) in candidates:
                     
-                    # Store metadata for the GUI (optional, for viewing)
-                    # We might want to store the score too
+                    # Deduce System Name
+                    system_name = component_name
+                    if component_name in STANDARD_MULTIPLETS:
+                        system_name = component_name
+                    else:
+                        for mult, members in STANDARD_MULTIPLETS.items():
+                            if component_name in members:
+                                system_name = mult
+                                break
                     
-                    sys_id_counter += 1
-                    processed_systems.add(uniq_key)
+                    # Recalculate Z based on THIS peak
+                    if component_name in ATOM_DATA:
+                        lam_rest = ATOM_DATA[component_name]['wave'] / 10.0 # nm
+                        z_peak = (x_peak_obs / lam_rest) - 1.0
+                    else:
+                        z_peak = z_test_orig
+                        
+                    # Estimate N (partitioned AOD)
+                    # Window: Peak +/- FWHM
+                    p_start = max(0, int(peak_idx - widths_pix[i]))
+                    p_end = min(len(aod_clean[region_mask]), int(peak_idx + widths_pix[i] + 1))
+                    
+                    local_tau = np.sum(aod_clean[region_mask][p_start:p_end] * dv_pix[region_mask][p_start:p_end])
+                    
+                    if component_name in ATOM_DATA:
+                        atom = ATOM_DATA[component_name]
+                        if atom['f'] > 0:
+                            # N = 3.768e14 * Integral(tau dv) / (f * lambda)
+                            # (Adjust integration window factor if needed, but raw sum is decent start)
+                            N_val = 3.768e14 * local_tau / (atom['f'] * atom['wave'])
+                            logN_guess = np.log10(N_val) if N_val > 0 else 13.0
+                        else: logN_guess = 13.5
+                    else: logN_guess = 13.5
+                    
+                    logN_guess = max(11.0, min(19.0, logN_guess))
+
+                    # Unique Key (System + Rounded Z)
+                    z_round = round(z_peak, 5)
+                    uniq_key = (system_name, z_round)
+                    
+                    if uniq_key not in processed_systems:
+                        system_series_map[sys_id_counter] = system_name
+                        system_z_map[sys_id_counter] = z_peak
+                        system_logN_map[sys_id_counter] = logN_guess
+                        system_b_map[sys_id_counter] = b_guess
+                        
+                        sys_id_counter += 1
+                        processed_systems.add(uniq_key)
 
         # --- 7. Create Final Data Core ---
         new_meta = spec.meta
@@ -2003,7 +2006,6 @@ class SpectrumV2:
         new_meta['num_regions_merged'] = int(num_merged)
         new_meta['num_regions_identified'] = len(reliable_ids)
 
-        # Add the 'abs_ids' column
         vis_col = DataColumnV2(
             values=final_vis_map,
             unit=au.dimensionless_unscaled,
@@ -2011,20 +2013,15 @@ class SpectrumV2:
         )
         new_aux_cols['abs_ids'] = vis_col
 
-        # Save metadata
-        try:
-            pass
-            #new_meta['region_identifications'] = json.dumps(identifications_for_meta)
-        except Exception as e:
-            logging.error(f"Failed to serialize region identifications: {e}")
-            new_meta['region_identifications'] = None
-
-        # Serialize the SYSTEM maps
+        # Serialize
         try:
             new_meta['series_map_json'] = json.dumps(system_series_map)
             new_meta['z_map_json'] = json.dumps(system_z_map)
+            new_meta['logN_map_json'] = json.dumps(system_logN_map) # New
+            new_meta['b_map_json'] = json.dumps(system_b_map)       # New
         except Exception as e:
             logging.error(f"Failed to serialize component maps: {e}")
+            new_meta['region_identifications'] = None
         
         final_data_core = dataclasses.replace(
             spec._data, 
@@ -2032,8 +2029,7 @@ class SpectrumV2:
             aux_cols=new_aux_cols
         )
         
-        # 9. Return new SpectrumV2
-        new_history = self.history + [f"Identified {len(reliable_ids)} regions"]
+        new_history = self.history + [f"Identified {len(processed_systems)} systems (de-blended)"]
         return SpectrumV2(data=final_data_core, history=new_history)
     
     def get_velocity_bounds(self, z_target: float, trans: str) -> tuple:

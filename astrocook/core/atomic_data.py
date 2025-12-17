@@ -141,7 +141,7 @@ ATOM_DATA = {
 
 # --- 2. Standard Multiplet Definitions ---
 # Gives a clean way to refer to groups without ambiguity.
-STANDARD_MULTIPLETS = {
+METAL_MULTIPLETS = {
     # Doublets (strongest first for primary ID)
     'CIV': ['CIV_1548', 'CIV_1550'],
     'SiIV': ['SiIV_1393', 'SiIV_1402'],
@@ -157,12 +157,16 @@ STANDARD_MULTIPLETS = {
     'FeII': ['FeII_2382', 'FeII_2600', 'FeII_2344', 'FeII_2586', 'FeII_1608', 'FeII_2374'],
     'NI': ['NI_1200', 'NI_1199', 'NI_1201'],
     'CrII': ['CrII_2056', 'CrII_2062', 'CrII_2066'], # <<< *** ADDED ***
+}
 
+HYDROGEN_MULTIPLETS = {
     # Series
     'Lyman': ['Ly_a', 'Ly_b', 'Ly_g', 'Ly_d', 'Ly_e', 'Ly_6', 'Ly_7', 'Ly_8'],
     'Ly_a': ['Ly_a'], 
     'Ly_ab': ['Ly_a', 'Ly_b'], 
 }
+
+STANDARD_MULTIPLETS = {**METAL_MULTIPLETS, **HYDROGEN_MULTIPLETS}
 
 # Built from ATOM_DATA to be used by V2 functions.
 # This replaces the dependency on legacy.vars.xem_d

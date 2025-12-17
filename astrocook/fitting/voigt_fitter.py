@@ -67,8 +67,12 @@ def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: s
         resol_arr = np.asarray(resol)
         final_convolved = np.zeros_like(flux)
         
-        # Optimization: Group by unique resolution values (rounded)
-        unique_resols = np.unique(np.round(resol_arr, 3))
+        if resol_unit == 'R':
+            rounded_resol = np.round(resol_arr / 100.0) * 100.0
+        else:
+            rounded_resol = np.round(resol_arr * 2.0) / 2.0
+            
+        unique_resols = np.unique(rounded_resol)
         
         for r_val in unique_resols:
             if r_val <= 0: continue
@@ -101,6 +105,7 @@ def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: s
             return gaussian_filter1d(flux, sigma_pix)
             
     return flux
+
 class VoigtFitterV2:
     """
     Engine for fitting Voigt profiles to spectral data.
@@ -190,8 +195,12 @@ class VoigtFitterV2:
         self._fit_mask_calc = None
         self._resol_calc = None
         
-        # [CHANGE] Cache is now a dict: { (resol_val, unit_str): tau_array }
+        # Cache is now a dict: { (resol_val, unit_str): tau_array }
         self._cached_tau_groups = {}
+        
+        # [OPTIMIZATION] Cache list of active components for the inner loop
+        # Stores tuples: (index_in_system_list, component_object)
+        self._active_fit_components: Optional[List[Tuple[int, ComponentDataV2]]] = None
 
 
     def _determine_resolution(self) -> Tuple[float, Optional[float]]:
@@ -295,6 +304,9 @@ class VoigtFitterV2:
             atom = ATOM_DATA.get(trans_name)
             if not atom: continue
             
+            # --- CRITICAL OPTIMIZATION Check ---
+            # Even with pre-filtering, keep this for safety in the inner loop
+            # Check if line center is vaguely in window
             obs_cent = atom['wave'] * (1 + z)
             if obs_cent < self._x_calc[0] - 100 or obs_cent > self._x_calc[-1] + 100:
                 continue
@@ -329,66 +341,80 @@ class VoigtFitterV2:
     def _compute_model(self, p_free: np.ndarray) -> np.ndarray:
         """
         Computes the normalized flux model.
-        Groups components by resolution to apply correct convolution.
+        Uses vectorization if available (during fit), otherwise falls back to 
+        standard iteration (during plotting).
         """
         p_full = self._constraints.map_p_free_to_full(p_free)
         
-        # Dictionary to accumulate Tau for each resolution type
-        # Key: (value, unit_str)
-        # Special Key: (-1.0, 'column') for variable resolution
-        tau_groups = {}
+        # 1. Load Background (Tau computed from static components)
+        tau_total_dict = {k: v.copy() for k, v in self._cached_tau_groups.items()}
         
-        # 1. Load Cached Background (Static Components)
-        if self._cached_tau_groups:
-            for key, tau_arr in self._cached_tau_groups.items():
-                tau_groups[key] = tau_arr.copy()
-        
-        # 2. Add Active Components
-        components = self._system_list.components
-        active_uuids = self._constraints._active_uuids
-        num_params_per_comp = 4
-        
-        for i, comp in enumerate(components):
-            # Skip if static (already in cache)
-            if active_uuids is not None and comp.uuid not in active_uuids:
-                continue
-            
-            # Identify Resolution Group
-            res_key = self._get_component_resolution(comp)
-            
-            # Initialize group if needed
-            if res_key not in tau_groups:
-                tau_groups[res_key] = np.zeros_like(self._x_calc)
-            
-            # Compute parameters
-            idx = i * num_params_per_comp
-            z = p_full[idx]
-            logN = p_full[idx + 1]
-            b_val = p_full[idx + 2]
-            btur = p_full[idx + 3]
-            
-            # Add to group Tau
-            tau_groups[res_key] += self._compute_tau_component(comp, z, logN, b_val, btur)
+        # 2. Add Active/Dynamic Components
+        # CASE A: Vectorized (Fastest - Used inside fit())
+        if hasattr(self, '_active_lines_data') and self._active_lines_data:
+            for res_key, data in self._active_lines_data.items():
+                # A. Extract parameters using fancy indexing
+                z_arr = p_full[data['idx_z']]
+                logN_arr = p_full[data['idx_N']]
+                b_arr = p_full[data['idx_b']]
+                btur_arr = p_full[data['idx_btur']]
+                
+                # B. Calculate Effective b
+                b_eff_arr = np.sqrt(b_arr**2 + btur_arr**2)
+                N_arr = 10**logN_arr
+                
+                # C. Compute Tau Vectorized
+                tau_active = self._voigt_optical_depth_vectorized(
+                    self._x_calc, 
+                    data['lambda'], data['f'], data['gamma'],
+                    z_arr, N_arr, b_eff_arr
+                )
+                
+                # D. Add to accumulator
+                if res_key not in tau_total_dict:
+                    tau_total_dict[res_key] = tau_active
+                else:
+                    tau_total_dict[res_key] += tau_active
 
-        # 3. Compute Flux per Group -> Convolve -> Multiply
-        # Start with Continuum (1.0 in normalized space)
+        # CASE B: Standard Loop (Fallback - Used for plotting / compute_model_flux)
+        # This handles cases where we aren't using the pre-compiled vector cache.
+        else:
+            num_params_per_comp = 4
+            
+            # If active_uuids is None (default for plotting), iterate ALL components
+            active_uuids = self._constraints._active_uuids
+            
+            for i, comp in enumerate(self._system_list.components):
+                # Skip if we are in a partial-fit mode and this component isn't active
+                if active_uuids is not None and comp.uuid not in active_uuids:
+                    continue
+
+                # Identify Resolution Group
+                res_key = self._get_component_resolution(comp)
+                if res_key not in tau_total_dict:
+                    tau_total_dict[res_key] = np.zeros_like(self._x_calc)
+                
+                # Compute parameters
+                idx = i * num_params_per_comp
+                z = p_full[idx]
+                logN = p_full[idx + 1]
+                b_val = p_full[idx + 2]
+                btur = p_full[idx + 3]
+                
+                # Add to group Tau
+                tau_total_dict[res_key] += self._compute_tau_component(comp, z, logN, b_val, btur)
+
+        # 3. Convolve and Combine
         final_model = np.ones_like(self._x_calc)
         
-        for (res_val, res_unit), tau_arr in tau_groups.items():
-            # Convert Tau to Flux
+        for (res_val, res_unit), tau_arr in tau_total_dict.items():
             flux_group = np.exp(-tau_arr)
             
-            # Apply Convolution
-            if res_unit == 'column':
-                # Use the sliced resolution column
-                if self._resol_calc is not None:
-                    flux_group = convolve_flux(flux_group, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
-            
+            if res_unit == 'column' and self._resol_calc is not None:
+                 flux_group = convolve_flux(flux_group, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
             elif res_val > 0:
-                # Constant scalar resolution
-                flux_group = convolve_flux(flux_group, self._x_calc, res_val, resol_unit=res_unit)
+                 flux_group = convolve_flux(flux_group, self._x_calc, res_val, resol_unit=res_unit)
             
-            # Combine (Product of transmission)
             final_model *= flux_group
             
         return final_model
@@ -534,38 +560,61 @@ class VoigtFitterV2:
             logging.info(f"  -> Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
         return p_refined
 
+    def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray, 
+                                      lambda_0: np.ndarray, f_val: np.ndarray, 
+                                      gamma: np.ndarray, z: np.ndarray, 
+                                      N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
+        """
+        Vectorized Voigt profile calculation.
+        Computes profiles for M lines on N pixels simultaneously.
+        
+        Input arrays (lambda_0, z, etc.) must be shape (M,).
+        wave_grid_ang must be shape (N,).
+        Returns summed tau array of shape (N,).
+        """
+        # Broadcast dimensions: (Lines, Pixels)
+        # lambda_0: (M, 1)
+        # wave_grid: (1, N)
+        
+        lambda_0 = lambda_0[:, np.newaxis]
+        f_val = f_val[:, np.newaxis]
+        gamma = gamma[:, np.newaxis]
+        z = z[:, np.newaxis]
+        N_col = N_col[:, np.newaxis]
+        b_safe = np.maximum(b_kms, 0.1)[:, np.newaxis]
+        
+        wave_grid = wave_grid_ang[np.newaxis, :]
+        
+        # 1. Physics
+        lambda_c = lambda_0 * (1.0 + z)
+        c_kms = 2.99792458e5
+        dop_width_ang = (b_safe / c_kms) * lambda_c
+        dop_width_ang = np.maximum(dop_width_ang, 1e-10)
+
+        # 2. Coordinate Transformation
+        # x shape: (M, N)
+        x = (wave_grid - lambda_c) / dop_width_ang
+        
+        c_ang_s = 2.99792458e18
+        a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
+        
+        # 3. Faddeeva (Voigt) - Expensive Step
+        # Computes entire matrix in C-speed
+        z_complex = x + 1j * a
+        H_ax = wofz(z_complex).real
+        
+        # 4. Optical Depth
+        prefactor = 1.4974e-15
+        tau_matrix = prefactor * N_col * f_val * lambda_0 / b_safe * H_ax
+        
+        # 5. Collapse lines (Sum over axis 0)
+        return np.sum(tau_matrix, axis=0)
+
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 1) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
         Executes the optimization using scipy.optimize.least_squares.
-
-        This method:
-        1.  Determines the **Fit Mask**: Only pixels within ``z_window_kms`` of the
-            target lines are used for chi-squared calculation.
-        2.  Refines the initial guess using ``_smart_guess``.
-        3.  Runs the optimizer.
-        4.  Computes parameter errors from the covariance matrix.
-        5.  Updates the components in the system list.
-
-        Parameters
-        ----------
-        max_nfev : int
-            Maximum number of function evaluations allowed.
-        method : str
-            Optimization algorithm ('trf', 'dogbox', 'lm').
-        z_window_kms : float
-            Velocity window (km/s) around line centers to include in the fit mask.
-        verbose : int
-            Verbosity level for the optimizer.
-
-        Returns
-        -------
-        new_system_list : SystemListV2
-            A new list containing the best-fit component parameters.
-        final_model_flux : np.ndarray
-            The flux array of the best-fit model (convolved and multiplied by continuum).
-        res : OptimizeResult
-            The raw result object from ``scipy.optimize``.
+        Includes spatial pre-filtering and vectorization setup for speed.
         """
         logging.info(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
@@ -620,23 +669,116 @@ class VoigtFitterV2:
 
         logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
 
-        # 2. PRE-CALCULATE BACKGROUND (Grouped by Resolution)
+        # --- OPTIMIZATION 1: PRE-CALCULATE BACKGROUND ON RELEVANT COMPONENTS ONLY ---
         self._cached_tau_groups = {}
-        active_uuids = self._constraints._active_uuids
         
+        # Get window bounds for spatial filtering (with buffer)
+        if len(self._x_calc) > 0:
+            x_min_win = self._x_calc[0]
+            x_max_win = self._x_calc[-1]
+        else:
+            x_min_win, x_max_win = -np.inf, np.inf
+        buffer_ang = 100.0
+        
+        relevant_static_comps = []
         if active_uuids is not None:
+            # We filter the 1000+ static components to just the ~5-10 nearby ones
             for comp in self._system_list.components:
-                if comp.uuid not in active_uuids:
-                    # Determine Group
-                    res_key = self._get_component_resolution(comp)
-                    
-                    if res_key not in self._cached_tau_groups:
-                        self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
-                    
-                    # Add Tau
-                    self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
+                if comp.uuid in active_uuids: continue
+                
+                is_relevant = False
+                t_list = get_trans_list(comp.series)
+                for t in t_list:
+                    atom = ATOM_DATA.get(t)
+                    if not atom: continue
+                    obs_w = atom['wave'] * (1 + comp.z)
+                    # Simple bounds check (much faster than computing profile)
+                    if (x_min_win - buffer_ang) < obs_w < (x_max_win + buffer_ang):
+                        is_relevant = True
+                        break
+                
+                if is_relevant:
+                    relevant_static_comps.append(comp)
+        
+        # Now compute background only for the survivors
+        for comp in relevant_static_comps:
+            # Determine Group
+            res_key = self._get_component_resolution(comp)
+            
+            if res_key not in self._cached_tau_groups:
+                self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
+            
+            # Add Tau
+            self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
 
-        # Bounds Logic
+        # --- OPTIMIZATION 2: CACHE ACTIVE LIST FOR INNER LOOP ---
+        self._active_fit_components = []
+        if active_uuids is not None:
+            for i, comp in enumerate(self._system_list.components):
+                if comp.uuid in active_uuids:
+                    self._active_fit_components.append((i, comp))
+        else:
+            # If fitting everything, we don't need a special cache
+            self._active_fit_components = None
+
+        # --- OPTIMIZATION 3: PREPARE VECTORIZED LINE DATA ---
+        # We flatten components -> lines for the active set
+        self._active_lines_data = {} # Key: res_key, Value: dict of arrays
+        
+        # Determine iterator (either the cached active list or full list)
+        if self._active_fit_components is not None:
+            iterator = self._active_fit_components
+        else:
+            iterator = enumerate(self._system_list.components)
+
+        grouped_lines = {}
+        
+        for idx, comp in iterator:
+            res_key = self._get_component_resolution(comp)
+            if res_key not in grouped_lines:
+                grouped_lines[res_key] = {
+                    'lambda': [], 'f': [], 'gamma': [], 
+                    'p_idx_z': [], 'p_idx_logN': [], 'p_idx_b': [], 'p_idx_btur': [] 
+                }
+            
+            # Get transitions
+            if comp.series in STANDARD_MULTIPLETS: t_list = STANDARD_MULTIPLETS[comp.series]
+            elif comp.series in ATOM_DATA: t_list = [comp.series]
+            else: continue
+            
+            # Store Mapping to p_full indices
+            base_idx = idx * 4
+            
+            for t in t_list:
+                atom = ATOM_DATA.get(t)
+                if not atom: continue
+                
+                # Append Atomic Data
+                g = grouped_lines[res_key]
+                g['lambda'].append(atom['wave'])
+                g['f'].append(atom['f'])
+                g['gamma'].append(atom['gamma'])
+                
+                # Append Parameter Indices (So we can pull values from p_full rapidly)
+                g['p_idx_z'].append(base_idx)
+                g['p_idx_logN'].append(base_idx + 1)
+                g['p_idx_b'].append(base_idx + 2)
+                g['p_idx_btur'].append(base_idx + 3)
+
+        # Convert to Numpy Arrays and store
+        for rk, data in grouped_lines.items():
+            if not data['lambda']: continue
+            self._active_lines_data[rk] = {
+                'lambda': np.array(data['lambda']),
+                'f':      np.array(data['f']),
+                'gamma':  np.array(data['gamma']),
+                'idx_z':  np.array(data['p_idx_z']),
+                'idx_N':  np.array(data['p_idx_logN']),
+                'idx_b':  np.array(data['p_idx_b']),
+                'idx_btur': np.array(data['p_idx_btur'])
+            }
+
+        # --- Bounds Logic ---
         lower_bounds, upper_bounds = self._constraints.get_bounds()
         p_full = self._constraints.map_p_free_to_full(p0)
         is_free_mask = self._constraints._param_map['is_free']
@@ -671,6 +813,10 @@ class VoigtFitterV2:
         # Fit
         res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
         
+        # --- CLEANUP (Reset Optimized Caches) ---
+        self._active_fit_components = None
+        self._active_lines_data = None
+
         # Statistics
         p_free_errors = np.zeros_like(res.x)
         chi2 = 0; red_chi2 = 0
@@ -751,6 +897,8 @@ class VoigtFitterV2:
         # We need the full model (static + active) for the green line.
         stored_active_uuids = self._constraints._active_uuids
         self._constraints._active_uuids = None
+        self._active_fit_components = None 
+        self._active_lines_data = None # Ensure we iterate everything
         
         # Restore full arrays
         temp_x = self._x_calc
@@ -777,27 +925,25 @@ class VoigtFitterV2:
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes the model flux for the *current* parameters without running a fit.
-
-        Returns
-        -------
-        x_ang : np.ndarray
-            The wavelength grid in Angstroms.
-        y_model : np.ndarray
-            The model flux (physical units) over the full spectral range.
         """
         p_current_free = self._constraints.p_free_vector
         temp_x = self._x_calc
         temp_resol = self._resol_calc
         
+        # Switch to full spectrum context
         self._x_calc = self._x_ang
         if self._use_variable_resolution:
              self._resol_calc = self._resol_column
         else:
              self._resol_calc = None
 
-        self._cached_tau_static = None
+        # Reset caches to force Case B (Standard Loop) in _compute_model
+        self._cached_tau_groups = {}
+        self._active_lines_data = None 
+        
         y_model_norm = self._compute_model(p_current_free)
         
+        # Restore context
         self._x_calc = temp_x 
         self._resol_calc = temp_resol
         

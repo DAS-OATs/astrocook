@@ -555,7 +555,11 @@ class SystemListV2:
         if not seed_uuids: return set()
         
         c_kms = 299792.458
-        comp_map = {c.uuid: c for c in self.components}
+        # 1. Sort components by Z for fast searching
+        sorted_comps = sorted(self.components, key=lambda c: c.z)
+        comp_map = {c.uuid: c for c in sorted_comps}
+        z_values = np.array([c.z for c in sorted_comps])
+        
         # Access constraints if available, else empty
         constraints_map = self._data.v2_constraints_map if hasattr(self._data, 'v2_constraints_map') else {}
 
@@ -610,13 +614,30 @@ class SystemListV2:
         
         for _ in range(max_depth):
             added_count = 0
-            # Get current member objects
             current_members = [comp_map[u] for u in group_uuids if u in comp_map]
             
-            for other in self.components:
+            # 2. Define "Safe" Z-Window for candidates
+            # (Conservative: Max possible metal line offset is ~20000 km/s, e.g. Ly-a vs CIV)
+            # For pure overlapping, 500 km/s is enough. For constraints, we use the map.
+            # We filter based on kinematic proximity to ANY current member.
+            
+            if not current_members: break
+            
+            min_z = min(c.z for c in current_members)
+            max_z = max(c.z for c in current_members)
+            
+            # Expand window by 0.1 (huge buffer for multiplet separation like Ly-a <-> CIV)
+            z_lower = min_z - 0.1
+            z_upper = max_z + 0.1
+            
+            # 3. Fast Slice using numpy searchsorted
+            idx_start = np.searchsorted(z_values, z_lower)
+            idx_end = np.searchsorted(z_values, z_upper)
+            candidates = sorted_comps[idx_start:idx_end]
+
+            for other in candidates:
                 if other.uuid in group_uuids: continue
                 
-                # Check against ALL current group members
                 is_connected = False
                 for member in current_members:
                     if are_overlapping(member, other):
