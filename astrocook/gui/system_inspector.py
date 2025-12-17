@@ -961,6 +961,8 @@ class SystemInspector(QWidget):
         self.main_window = main_window
         self.current_session = None
         self.active_transitions: List[str] = [] 
+        self._manual_trans_edit = False 
+        self._manual_base_text = ""  # Stores the persistent manual text
         self.setWindowTitle("System Inspector")
         self.resize(1200, 800) 
 
@@ -1046,6 +1048,7 @@ class SystemInspector(QWidget):
         self.trans_in = QLineEdit()
         self.trans_in.setPlaceholderText("CIV, SiIV")
         self.trans_in.returnPressed.connect(self._apply)
+        self.trans_in.textEdited.connect(self._on_manual_edit)
         c_layout.addWidget(self.trans_in, 1) 
         
         c_layout.addWidget(QLabel("z:"))
@@ -1108,6 +1111,18 @@ class SystemInspector(QWidget):
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
         layout.addWidget(splitter)
+    
+    def _on_manual_edit(self, text):
+        """
+        Called ONLY when the user types in the box. 
+        Updates the 'Base' text which serves as the anchor for fluid prepending.
+        """
+        if not text.strip():
+            self._manual_trans_edit = False
+            self._manual_base_text = ""
+        else:
+            self._manual_trans_edit = True
+            self._manual_base_text = text
 
     def set_session(self, session):
         """
@@ -1231,12 +1246,36 @@ class SystemInspector(QWidget):
         self._update_group_definition(selected_comps)
 
         if primary_comp and self.current_session:
-            cur = self.trans_in.text()
-            toks = [t.strip() for t in cur.split(',') if t.strip()]
-            if primary_comp.series and primary_comp.series not in toks: toks.append(primary_comp.series)
-            new_txt = ", ".join(toks)
+            new_txt = ""
+            
+            if not self._manual_trans_edit:
+                # --- MODE A: Auto-Replace ---
+                # The box simply reflects the selection.
+                new_txt = primary_comp.series
+                # Update the BASE so if the user starts typing now, 
+                # they append to the CURRENT selection.
+                self._manual_base_text = new_txt 
+                
+            else:
+                # --- MODE B: Fluid Prepend ---
+                # We prepend the selection to the BASE text (what user typed),
+                # NOT to the current box text (which might have old temp selections).
+                
+                # Check for duplicates in the base text to be clean
+                base_tokens = [t.strip() for t in self._manual_base_text.split(',') if t.strip()]
+                
+                if primary_comp.series in base_tokens:
+                    # Already in the manual list: just show the manual list
+                    new_txt = self._manual_base_text
+                else:
+                    # Prepend: "Selection, Base"
+                    new_txt = f"{primary_comp.series}, {self._manual_base_text}"
+            
+            # Update the widget (Programmatic setText does NOT fire textEdited)
             self.trans_in.setText(new_txt)
             self.z_in.setText(f"{primary_comp.z:.5f}")
+            
+            # Update Internal State & Plot
             self._parse(new_txt)
             self.vel_plot.plot_system(self.current_session, primary_comp, selected_comps)
             

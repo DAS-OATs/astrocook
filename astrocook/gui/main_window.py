@@ -2542,16 +2542,12 @@ class MainWindowV2(QMainWindow):
 
             # 2. Identify Lines Logic
             auto_show_col = None
-            if recipe_name == 'identify_lines':
-                auto_show_col = 'abs_idx'
-                count = len(new_session_state.systs.components) if new_session_state.systs else 0
-                if count > 0:
-                    self._show_custom_message(
-                        title="Identification Complete",
-                        header="Line identification finished.",
-                        text=f"Added {count} candidate systems.",
-                        icon_name="icon_3d_HR.png"
-                    )
+            if recipe_name in ['identify_lines', 'doublets_auto', 'populate_from_identification']:
+                # Check if the column exists in the new session
+                if new_session_state.spec.has_aux_column('abs_ids'):
+                    auto_show_col = 'abs_ids'
+                elif new_session_state.spec.has_aux_column('abs_mask'):
+                    auto_show_col = 'abs_mask'
 
             should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
 
