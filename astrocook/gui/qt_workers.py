@@ -59,12 +59,25 @@ class RecipeWorker(QRunnable):
         self.recipe_name = recipe_name
         self.params = params
         self.alias_map = alias_map
+        self._is_stopped = False
 
+    def stop(self):
+        """Thread-safe method to request a stop."""
+        logging.info(f"Stopping recipe '{self.recipe_name}'...")
+        self._is_stopped = True
+        
+        # Inject the stop flag into the session object so recipes can see it
+        # This acts as a 'shared variable' between GUI thread and Physics thread
+        self.session._stop_flag = True
+        
     def run(self):
         """The main work. This runs on the background thread."""
         try:
             logging.info(f"RecipeWorker: Running {self.category}.{self.recipe_name}")
 
+            # Reset stop flag on session start
+            self.session._stop_flag = False
+            
             # 1. Find the recipe method
             recipe_instance = getattr(self.session, self.category, None)
             if not recipe_instance:
@@ -85,6 +98,15 @@ class RecipeWorker(QRunnable):
             if not new_session_state or new_session_state == 0:
                 raise ValueError(f"Recipe failed to execute (returned 0). Check logs.")
                 
+            # [NEW] Check if stop was requested during execution
+            if getattr(self.session, '_stop_flag', False):
+                logging.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
+                # We emit finished normally. The result (new_session_state) 
+                # will be the ORIGINAL session because the recipe aborted itself.
+                # The Main Window will check the flag and decide not to update history.
+                self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
+                return
+            
             # 4. Success! Emit the new state
             #    We also pass back the params (for logging) and recipe name
             self.signals.finished.emit((new_session_state, self.recipe_name, self.params))

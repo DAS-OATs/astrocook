@@ -195,7 +195,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations per group"},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window around lines (km/s)"},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
-            {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"}
+            {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"},
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."}
         ],
         "url": "absorbers_cb.html#refit_all"
     }
@@ -209,6 +210,27 @@ class RecipeAbsorbersV2:
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'abs'
+
+    def _is_stop_requested(self):
+        """
+        Robustly checks if a stop has been requested.
+        Looks at the local session flag AND the active GUI worker.
+        """
+        # 1. Check direct flag (works if we are on the root session)
+        if getattr(self._session, '_stop_flag', False):
+            return True
+            
+        # 2. Check via GUI worker (works for derived sessions in pipelines)
+        # The _gui reference is preserved across session copies.
+        if hasattr(self._session, '_gui') and self._session._gui:
+            gui = self._session._gui
+            # Access the worker stored in MainWindow
+            if hasattr(gui, '_current_worker') and gui._current_worker:
+                # Check the worker's internal flag
+                if getattr(gui._current_worker, '_is_stopped', False):
+                    return True
+                    
+        return False
 
     def components_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                       score_threshold: str = "0.5",
@@ -230,23 +252,22 @@ class RecipeAbsorbersV2:
         
         session_for_id = self._session
         
-        # --- 0. PRE-FLIGHT CHECK: Ensure Mask Exists ---
-        # If 'abs_mask' is missing, we must generate it first.
-        if not session_for_id.spec.has_aux_column(mask_col):
-            logging.info(f"Mask '{mask_col}' not found. Auto-running 'find_absorbed'...")
-            try:
-                # Create a temporary recipe handler to run the prerequisite
-                # (This returns a NEW session with the mask)
-                rec_temp = RecipeAbsorbersV2(session_for_id)
-                session_for_id = rec_temp._session.find_absorbed(
-                    smooth_len_lya="5000.0", 
-                    smooth_len_out="400.0",
-                    kappa="2.0",
-                    template="False"
-                )
-            except Exception as e:
-                logging.error(f"Auto-generation of mask failed: {e}")
-                return 0
+        # --- 0. FORCE MASK REGENERATION ---
+        # Always generate a fresh mask to ensure it matches current z_em/flux state.
+        # This prevents "stale mask" bugs when running recipes sequentially.
+        logging.info(f"Generating fresh '{mask_col}'...")
+        try:
+            from astrocook.recipes.continuum import RecipeContinuumV2
+            rec_cont = RecipeContinuumV2(session_for_id)
+            session_for_id = rec_cont.find_absorbed(
+                smooth_len_lya="5000.0", 
+                smooth_len_out="400.0",
+                kappa="2.0",
+                template="False"
+            )
+        except Exception as e:
+            logging.error(f"Mask generation failed: {e}")
+            return 0
 
         target_mask_col = mask_col
         
@@ -285,6 +306,7 @@ class RecipeAbsorbersV2:
                 # Proceed without masking (fallback to full spectrum)
         
         # --- 2. IDENTIFY (using the masked session) ---
+        if self._is_stop_requested(): return self._session
         logging.info("Step 1/3: Scanning spectrum for candidate pairs...")
         
         # Create a temp recipe wrapper for the masked session
@@ -313,6 +335,7 @@ class RecipeAbsorbersV2:
             return self._session
 
         # --- 3. POPULATE ---
+        if self._is_stop_requested(): return self._session
         logging.info("Step 2/3: Creating component models...")
         rec_step2 = RecipeAbsorbersV2(session_step1)
         session_step2 = rec_step2.populate_from_identification(
@@ -324,13 +347,15 @@ class RecipeAbsorbersV2:
         logging.info(">> PROGRESS: 50")
 
         # --- 4. REFIT ALL ---
-        logging.info("Step 3/3: Optimizing all systems...")
+        if self._is_stop_requested(): return self._session
+        logging.info("Step 3/3: Re-fitting all systems...")
         rec_step3 = RecipeAbsorbersV2(session_step2)
         final_session = rec_step3.refit_all(
             max_nfev='200',
             z_window_kms=z_window_kms,
             group_depth='1',
-            max_group_size='25'
+            max_group_size='25',
+            region_limit=region_limit
         )
         
         logging.info("Component pipeline complete.")
@@ -384,27 +409,27 @@ class RecipeAbsorbersV2:
                     continue
                 valid_comps.append(c)
             
-            if deleted_count > 0:
-                logging.info(f"Rejected {deleted_count} lines (too narrow).")
-                
-                import dataclasses
-                from astrocook.core.system_list import SystemListV2
-                new_data = dataclasses.replace(systs._data, components=valid_comps)
-                new_systs = SystemListV2(new_data)
-                final_session = final_session.with_new_system_list(new_systs)
-                
-                # 3. Final Refit
-                logging.info("Refining fit for confirmed systems...")
-                rec_polish = RecipeAbsorbersV2(final_session)
-                final_session = rec_polish.refit_all(
-                    max_nfev='200',
-                    z_window_kms=z_window_kms,
-                    group_depth='1',
-                    max_group_size='25'
-                )
-            else:
-                logging.info("No interlopers found. Clean.")
-                logging.info(">> PROGRESS: 100")
+            #if deleted_count > 0:
+            #    logging.info(f"Rejected {deleted_count} lines (too narrow).")
+            #    
+            #    import dataclasses
+            #    from astrocook.core.system_list import SystemListV2
+            #    new_data = dataclasses.replace(systs._data, components=valid_comps)
+            #    new_systs = SystemListV2(new_data)
+            #    final_session = final_session.with_new_system_list(new_systs)
+            #    
+            #    # 3. Final Refit
+            #    logging.info("Refining fit for confirmed systems...")
+            #    rec_polish = RecipeAbsorbersV2(final_session)
+            #    final_session = rec_polish.refit_all(
+            #        max_nfev='200',
+            #        z_window_kms=z_window_kms,
+            #        group_depth='1',
+            #        max_group_size='25'
+            #    )
+            #else:
+            #    logging.info("No interlopers found. Clean.")
+            #    logging.info(">> PROGRESS: 100")
 
         except Exception as e:
             logging.warning(f"lya_auto cleanup failed: {e}")
@@ -858,7 +883,8 @@ class RecipeAbsorbersV2:
         
 
     def refit_all(self, max_nfev: str = '100', z_window_kms: str = '20.0', 
-                  group_depth: str = '0', max_group_size: str = '20') -> 'SessionV2':
+                  group_depth: str = '0', max_group_size: str = '20',
+                  region_limit: str = "None") -> 'SessionV2':
         """
         Refits components using Chunking.
         """
@@ -877,27 +903,79 @@ class RecipeAbsorbersV2:
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 current_session = RecipeContinuumV2(current_session).estimate_auto()
 
+            # --- 0. DETERMINE FILTER BOUNDS ---
+            obs_min_limit = 0.0 * au.nm
+            obs_max_limit = 1e6 * au.nm
+            use_region_filter = False
+
+            if region_limit != "None":
+                try:
+                    obs_min_limit, obs_max_limit = current_session.spec.get_region_bounds(region_limit)
+                    use_region_filter = True
+                    logging.info(f"Refit restricted to {region_limit} ({obs_min_limit:.1f} - {obs_max_limit:.1f}).")
+                except ValueError:
+                    logging.warning(f"Could not apply region limit '{region_limit}'. Fitting all.")
+
+            # --- 1. IDENTIFY VALID COMPONENTS (Filtering Step) ---
+            from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+            
+            uuids_in_region = set()
+            
+            for c in current_session.systs.components:
+                is_valid = True
+                if use_region_filter:
+                    # Resolve primary rest wavelength
+                    series = c.series
+                    lam_rest = None
+                    if series in ATOM_DATA:
+                        lam_rest = ATOM_DATA[series]['wave']
+                    elif series in STANDARD_MULTIPLETS:
+                        prim = STANDARD_MULTIPLETS[series][0]
+                        if prim in ATOM_DATA:
+                            lam_rest = ATOM_DATA[prim]['wave']
+                    
+                    if lam_rest:
+                        lam_obs_ang = lam_rest * (1 + c.z)
+                        lam_obs_q = lam_obs_ang * au.Angstrom
+                        if not (obs_min_limit <= lam_obs_q <= obs_max_limit):
+                            is_valid = False
+                
+                if is_valid:
+                    uuids_in_region.add(c.uuid)
+
+            if not uuids_in_region:
+                logging.info("No components found in the specified region to fit.")
+                return current_session
+
+            # --- 2. BUILD WORK UNITS (Grouping Step) ---
+            work_units = []
+
             # 1. Define Work Units
             if depth_i == 0:
                 logging.debug(f"Refit All: Strategy = Iterative Single-Component (Robust).")
-                sorted_comps = sorted(current_session.systs.components, key=lambda c: c.z)
+                # Filter the list, then sort by Z
+                valid_comps = [c for c in current_session.systs.components if c.uuid in uuids_in_region]
+                sorted_comps = sorted(valid_comps, key=lambda c: c.z)
                 work_units = [[c.uuid] for c in sorted_comps]
             else:
                 logging.debug(f"Refit All: Strategy = Connected Groups (depth={depth_i}).")
-                all_uuids = set(c.uuid for c in current_session.systs.components)
-                work_units = []
-                
+                # Initialize 'todo' set with only valid UUIDs
+                # (We only start groups from valid seeds, but neighbors outside region can still be pulled in)
+                todo_uuids = uuids_in_region.copy()
                 comp_map = {c.uuid: c for c in current_session.systs.components}
 
-                while all_uuids:
-                    seed = next(iter(all_uuids))
+                while todo_uuids:
+                    seed = next(iter(todo_uuids))
+                    
+                    # Find group (physics-based)
                     group = current_session.systs.get_connected_group([seed], max_depth=depth_i)
                     
                     if not group: 
-                        all_uuids.remove(seed); continue
+                        todo_uuids.remove(seed); continue
                     
                     group_list = list(group)
                     
+                    # Chunking Logic
                     if len(group_list) <= max_size_i:
                         work_units.append(group_list)
                     else:
@@ -910,7 +988,8 @@ class RecipeAbsorbersV2:
                         
                         logging.debug(f"  -> Split massive group ({len(group_list)} comps) into {len(sorted_uuids)//max_size_i + 1} chunks.")
 
-                    all_uuids.difference_update(group)
+                    # Remove found items from todo list
+                    todo_uuids.difference_update(group)
 
             total_units = len(work_units)
             logging.info(f"Preparing to fit {total_units} absorption systems...")
@@ -924,6 +1003,11 @@ class RecipeAbsorbersV2:
             from astrocook.core.system_list import SystemListV2
 
             for i, target_uuids in enumerate(work_units):
+
+                if self._is_stop_requested():
+                    logging.warning("Refit All: Stop requested. Aborting.")
+                    return self._session  # Return original state (revert)
+            
                 pct = int(100 * (i + 1) / total_units)
                 logging.info(f">> PROGRESS: {pct}")
                 
@@ -932,9 +1016,9 @@ class RecipeAbsorbersV2:
                     if peek_comp:
                         series_str = peek_comp.series
                         z_str = f"{peek_comp.z:.4f}"
-                        logging.info(f"Optimizing System {i+1}/{total_units}: {series_str} at z={z_str}")
+                        logging.info(f"Re-fitting System {i+1}/{total_units}: {series_str} at z={z_str}")
                     else:
-                        logging.info(f"Optimizing Group {i+1}/{total_units}...")
+                        logging.info(f"Re-fitting Group {i+1}/{total_units}...")
 
                 if not target_uuids: continue
                 

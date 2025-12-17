@@ -2512,6 +2512,11 @@ class MainWindowV2(QMainWindow):
         dialog.finished.connect(self._on_recipe_dialog_finished)
         dialog.show() 
         self.active_recipe_dialog = dialog
+    
+    def _on_stop_recipe(self):
+        """Slot called when Stop button is clicked."""
+        if hasattr(self, '_current_worker') and self._current_worker:
+            self._current_worker.stop()
 
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
@@ -2544,8 +2549,9 @@ class MainWindowV2(QMainWindow):
         if recipe_name in long_running_recipes:
             # A. Create Detailed Dialog
             self.progress_dialog = RecipeProgressDialog(f"{recipe_name}", self)
+            self.progress_dialog.stop_requested.connect(self._on_stop_recipe)
             self.progress_dialog.show()
-            
+
             # B. Setup Log Tapping
             self.log_bridge = LogSignalBridge()
             self.log_bridge.new_log_message.connect(self.progress_dialog.update_log)
@@ -2578,6 +2584,7 @@ class MainWindowV2(QMainWindow):
             params=params,
             alias_map=alias_map
         )
+        self._current_worker = worker
         worker.signals.finished.connect(self._on_recipe_finished)
         worker.signals.error.connect(self._on_recipe_error)
         self.thread_pool.start(worker)
@@ -2826,6 +2833,16 @@ class MainWindowV2(QMainWindow):
         self._safely_close_progress_dialog()
 
     def _on_recipe_finished(self, result_data: tuple):
+        new_session_state, recipe_name, params = result_data
+        
+        # [NEW] Check if operation was cancelled (returned same object or flagged)
+        if getattr(new_session_state, '_stop_flag', False):
+            logging.info("Operation cancelled. Reverting to previous state.")
+            # Do NOT update history.
+            # Just ensure GUI reflects the ACTIVE history state (which hasn't changed)
+            self._update_view_for_session(self.active_history.current_state)
+            return
+        
         """Slot called when the RecipeWorker succeeds."""
         # [CHANGE] Use new cleanup helper
         self._cleanup_progress_ui()
@@ -3317,6 +3334,8 @@ class RecipeProgressDialog(QDialog):
     A minimal progress dialog for long-running recipes.
     Shows a determinate bar and the last status message.
     """
+    stop_requested = Signal()
+
     def __init__(self, title, parent=None):
         super().__init__(parent)
         self.setWindowTitle(f"Running {title}")
@@ -3354,6 +3373,25 @@ class RecipeProgressDialog(QDialog):
         # Add a stretch to keep things tight at the top
         layout.addStretch()
 
+        # Use a horizontal layout to manage alignment
+        btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 1. Add a "spring" to push the button to the right
+        btn_layout.addStretch()
+
+        # [NEW] Stop Button
+        self.stop_btn = QPushButton("Stop")
+        self.stop_btn.setMaximumWidth(100)
+        self.stop_btn.setToolTip("Stop execution gracefully")
+        self.stop_btn.clicked.connect(self._on_stop_clicked)
+        
+        # 3. Add button to the horizontal row
+        btn_layout.addWidget(self.stop_btn)
+
+        # 4. Add the row to the main vertical layout
+        layout.addLayout(btn_layout)
+
     def update_log(self, message):
         """
         Parses logs. 
@@ -3375,3 +3413,10 @@ class RecipeProgressDialog(QDialog):
             self.status_label.setText(clean_msg)
             # Force UI update immediately so text doesn't lag behind heavy calculations
             QApplication.processEvents()
+    
+    def _on_stop_clicked(self):
+        self.stop_btn.setEnabled(False)
+        self.stop_btn.setText("Stopping...")
+        self.status_label.setText("Attempting to stop gracefully...")
+        # Emit signal to parent
+        self.stop_requested.emit()
