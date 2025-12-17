@@ -794,14 +794,21 @@ class MainWindowV2(QMainWindow):
 
         # RECIPES FOR 'ABSORBERS' MENU
 
+        # --- AUTOMATED PIPELINES (Prominent at top) ---
+        doublets_auto_action = QAction("Auto-detect &Doublets...", self)
+        doublets_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit metal doublets.")
+        doublets_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "doublets_auto"))
+        absorbers_menu.addAction(doublets_auto_action)
+        self.doublets_auto_action = doublets_auto_action; self.doublets_auto_action.setEnabled(False)
+        
+        absorbers_menu.addSeparator()
+
         identify_action = QAction("&Identify Absorption Lines...", self)
         identify_action.setToolTip("Automatically identify absorption regions using correlation signals")
         identify_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "identify_lines"))
         absorbers_menu.addAction(identify_action)
         self.identify_lines_action = identify_action; self.identify_lines_action.setEnabled(False)
         
-        absorbers_menu.addSeparator()
-
         refit_all_action = QAction("&Refit All Systems...", self)
         refit_all_action.setToolTip("Optimizes all components in the spectrum by fitting disjoint groups.")
         refit_all_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "refit_all"))
@@ -3033,6 +3040,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 
+        if hasattr(self, 'doublets_auto_action'): self.doublets_auto_action.setEnabled(enable_recipes)
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---

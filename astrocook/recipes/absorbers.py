@@ -21,6 +21,23 @@ if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
 ABSORBERS_RECIPES_SCHEMAS = {
+    "doublets_auto": {
+        "brief": "Auto-detect and fit doublets.",
+        "details": "Automated pipeline: Identifies kinematic doublet candidates, populates them as systems, and refits the spectrum.",
+        "params": [
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0-1) to accept a candidate."},
+            {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
+            {"name": "min_pix_region", "type": int, "default": 3, "doc": "Min pixels for a region."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Window for fitting (km/s)."},
+            {"name": "optimize", "type": bool, "default": True, "doc": "Run AIC optimization on each system?"},
+            {"name": "max_components", "type": int, "default": 3, "doc": "Max extra components per system."},
+            {"name": "threshold_sigma", "type": float, "default": 3.0, "doc": "Residual threshold to trigger addition."},
+            {"name": "aic_penalty", "type": float, "default": 10.0, "doc": "AIC penalty (higher = fewer weak lines)."}
+        ],
+        "url": "absorbers_cb.html#doublets_auto"
+    },
     "identify_lines": {
         "brief": "Identify likely absorption systems.",
         "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
@@ -32,7 +49,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
             {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."},
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."},
-            {"name": "auto_populate", "type": bool, "default": True, "doc": "Automatically add identified components to the system list?"}
         ],
         "url": "absorbers_cb.html#identify_lines"
     },
@@ -155,6 +171,121 @@ class RecipeAbsorbersV2:
         self._session = session_v2
         self._tag = 'abs'
 
+    def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
+                      score_threshold: str = "0.5",
+                      merge_dv: str = "10.0",
+                      min_pix_region: str = "3",
+                      mask_col: str = "abs_mask",
+                      z_window_kms: str = "20.0",
+                      optimize: str = "True",
+                      max_components: str = "3",
+                      threshold_sigma: str = "3.0",
+                      aic_penalty: str = "10.0") -> 'SessionV2':
+        """
+        Orchestrates the identification, population, optimization, and fitting of doublets.
+        """
+        try:
+            # Parse Optimization Params
+            do_optimize = str(optimize).lower() == 'true'
+            max_c = int(max_components)
+            thresh_sig = float(threshold_sigma)
+            aic_pen = float(aic_penalty)
+            z_win = float(z_window_kms)
+        except ValueError:
+            logging.error(msg_param_fail); return 0
+
+        logging.info("Starting 'doublets_auto' pipeline...")
+        
+        # 1. IDENTIFY (Atomic)
+        session_step1 = self.identify_lines(
+            multiplets=multiplets,
+            mask_col=mask_col,
+            min_pix_region=min_pix_region,
+            merge_dv=merge_dv,
+            score_threshold=score_threshold,
+            bypass_scoring="False",
+            debug_rating="False"
+        )
+        
+        spec_meta = session_step1.spec.meta
+        series_map_json = spec_meta.get('series_map_json')
+        z_map_json = spec_meta.get('z_map_json')
+        
+        if not series_map_json:
+            logging.warning("doublets_auto: No candidates found.")
+            return session_step1
+
+        # 2. POPULATE (Atomic)
+        rec_step2 = RecipeAbsorbersV2(session_step1)
+        session_step2 = rec_step2.populate_from_identification(
+            region_id_col='abs_ids',
+            series_map_json=series_map_json,
+            z_map_json=z_map_json
+        )
+        
+        # 3. OPTIMIZE (Iterative Loop)
+        if do_optimize:
+            logging.info("doublets_auto: Starting AIC Optimization loop...")
+            
+            # We work on the SystemList directly for speed
+            current_systs = session_step2.systs
+            spec = session_step2.spec
+            
+            # Load maps to find the components we just added
+            import json
+            try:
+                series_map = json.loads(series_map_json)
+                z_map = json.loads(z_map_json)
+                
+                # Iterate over detected systems
+                for sys_id_str in series_map.keys():
+                    target_series = series_map[sys_id_str]
+                    target_z = z_map.get(sys_id_str, 0.0)
+                    
+                    # Find the corresponding component UUID in the list
+                    # (We look for a match in series and z)
+                    seed_uuid = None
+                    for c in current_systs.components:
+                        if c.series == target_series and abs(c.z - target_z) < 1e-4:
+                            seed_uuid = c.uuid
+                            break
+                    
+                    if seed_uuid:
+                        logging.info(f"  -> Optimizing {target_series} at z={target_z:.4f}...")
+                        try:
+                            # Run optimization on this system
+                            # This returns a NEW SystemListV2
+                            current_systs = current_systs.optimize_hierarchy(
+                                spec=spec,
+                                uuid_seed=seed_uuid,
+                                max_components=max_c,
+                                threshold_sigma=thresh_sig,
+                                aic_penalty=aic_pen,
+                                z_window_kms=100.0, # Search window for extra components
+                                min_dv=10.0,
+                                group_depth=2,
+                                patience=2
+                            )
+                        except Exception as e:
+                            logging.error(f"Optimization failed for {target_series} at {target_z}: {e}")
+
+                # Update session with optimized systems
+                session_step2 = session_step2.with_new_system_list(current_systs)
+
+            except Exception as e:
+                logging.error(f"Error during optimization loop: {e}", exc_info=True)
+
+        # 4. REFIT ALL (Atomic)
+        # Global polish (handles any overlaps created during optimization)
+        rec_step3 = RecipeAbsorbersV2(session_step2)
+        final_session = rec_step3.refit_all(
+            max_nfev='200',
+            z_window_kms=z_window_kms
+        )
+        
+        logging.info("doublets_auto pipeline complete.")
+        return final_session
+
     def identify_lines(self, 
                        multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                        mask_col: str = 'abs_mask', 
@@ -162,23 +293,22 @@ class RecipeAbsorbersV2:
                        merge_dv: str = '10.0',
                        score_threshold: str = '0.5',
                        bypass_scoring: str = 'False',
-                       debug_rating: str = 'False',
-                       auto_populate: str = 'True') -> 'SessionV2':
+                       debug_rating: str = 'False') -> 'SessionV2':
         try:
             min_pix_i = int(min_pix_region)
             merge_dv_f = float(merge_dv)
             score_thresh_f = float(score_threshold)
             bypass_scoring_b = bypass_scoring.lower() == 'true'
             debug_rating_b = debug_rating.lower() == 'true'
-            auto_populate_b = str(auto_populate).lower() == 'true'
-            multiplet_list_arr = [m.strip() for m in multiplets.split(',') if m.strip()]
+            multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
         
         try:
-            logging.debug("identify_lines recipe: Calling spec.identify_lines...")
+            logging.debug("identify_lines: Calling spec.identify_lines...")
+            # This relies on SpectrumV2.identify_lines saving SYSTEM names to JSON
             new_spec_v2 = self._session.spec.identify_lines(
-                multiplet_list=multiplet_list_arr,
+                multiplet_list=multiplet_list,
                 mask_col=mask_col,
                 min_pix_region=min_pix_i,
                 merge_dv=merge_dv_f,
@@ -187,34 +317,7 @@ class RecipeAbsorbersV2:
                 debug_rating=debug_rating_b
             )
             
-            series_map_json = new_spec_v2.meta.get('series_map_json')
-            z_map_json = new_spec_v2.meta.get('z_map_json')
-
-            if not series_map_json or not z_map_json:
-                logging.warning("identify_lines: No candidates found.")
-                return self._session.with_new_spectrum(new_spec_v2)
-
-            if not auto_populate_b:
-                return self._session.with_new_spectrum(new_spec_v2)
-
-            # --- Auto-Populate Logic ---
-            temp_session = self._session.with_new_spectrum(new_spec_v2)
-            
-            # Ensure SystemList exists
-            if temp_session.systs is None:
-                from astrocook.core.structures import SystemListDataV2
-                from astrocook.core.system_list import SystemListV2
-                temp_session = temp_session.with_new_system_list(SystemListV2(SystemListDataV2()))
-
-            # Call the NEW populate recipe
-            temp_recipe = RecipeAbsorbersV2(temp_session)
-            final_session = temp_recipe.populate_from_identification(
-                region_id_col='abs_ids', # Unused but kept for API compat
-                series_map_json=series_map_json,
-                z_map_json=z_map_json
-            )
-            
-            return final_session
+            return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
             return 0

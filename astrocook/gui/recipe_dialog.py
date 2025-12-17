@@ -143,7 +143,7 @@ class RecipeDialog(QDialog):
                     except AttributeError:
                         param_default = "0.0" 
 
-                label = QLabel(f"{param_doc}:")
+                label = QLabel(f"{param_doc}.strip('.'):")
                 label.setToolTip(param_doc) 
 
                 widget = None

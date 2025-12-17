@@ -80,6 +80,81 @@ class RecipeContinuumV2:
         self._session = session_v2
         self._tag = 'cont' # V1 tag for this menu
 
+    def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
+                      kappa: str = '2.0', fudge: str = '1.0', 
+                      smooth_std: str = '500.0', template: str = 'False', renorm_model: str = 'True') -> 'SessionV2':
+        """
+        Automatically estimate the continuum in a single step.
+
+        This recipe chains ``find_absorbed`` and ``fit_continuum`` together.
+
+        Parameters
+        ----------
+        smooth_len_lya : str (float)
+            Smoothing length (km/s) for initial guess (Ly-alpha forest).
+        smooth_len_out : str (float)
+            Smoothing length (km/s) for initial guess (redward).
+        kappa : str (float)
+            Sigma threshold for finding absorption.
+        fudge : str
+            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
+            If 'auto', the factor is calculated to center the continuum residuals.
+        smooth_std : str (float)
+            Final smoothing width (km/s).
+        template : str (bool)
+            Use PCA template (Not Implemented).
+        renorm_model : str (bool)
+            Re-normalize existing model?
+
+        Returns
+        -------
+        SessionV2
+            A new session with both ``abs_mask`` and ``cont`` columns updated.
+        """
+        try:
+            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
+            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
+            kappa_f = float(kappa)
+            template_b = str(template) == 'True'
+            # Allow 'auto' or parse float
+            if fudge.lower() == 'auto':
+                fudge_f = 'auto'
+            else:
+                fudge_f = float(fudge)
+            smooth_std_f = float(smooth_std) # This is in km/s
+            z_em_f = self._session.spec._data.z_em # Read z_em from session
+            renorm_model_b = str(renorm_model) == 'True'
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+            
+        if z_em_f == 0.0:
+            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
+
+        try:
+            logging.info("Auto-continuum: Finding absorbed regions...")
+            # 1. Call the first API method
+            spec_with_mask = self._session.spec.find_absorbed(
+                smooth_len_lya=smooth_len_lya_q,
+                smooth_len_out=smooth_len_out_q,
+                kappa=kappa_f,
+                template=template_b
+            )
+            
+            logging.info("Auto-continuum: Fitting continuum to mask...")
+            spec_with_cont = spec_with_mask.fit_continuum(
+                fudge=fudge_f,
+                smooth_std_kms=smooth_std_f,
+                mask_col='abs_mask',
+                renorm_model=renorm_model_b
+            )
+            
+            # 3. Return the final new state
+            return self._session.with_new_spectrum(spec_with_cont)
+        except Exception as e:
+            logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
+            return 0
+
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
                         kappa: str = '2.0', template: str = 'False') -> 'SessionV2':
         """
@@ -180,81 +255,6 @@ class RecipeContinuumV2:
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logging.error(f"Failed during fit_continuum: {e}", exc_info=True)
-            return 0
-            
-    def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
-                      kappa: str = '2.0', fudge: str = '1.0', 
-                      smooth_std: str = '500.0', template: str = 'False', renorm_model: str = 'True') -> 'SessionV2':
-        """
-        Automatically estimate the continuum in a single step.
-
-        This recipe chains ``find_absorbed`` and ``fit_continuum`` together.
-
-        Parameters
-        ----------
-        smooth_len_lya : str (float)
-            Smoothing length (km/s) for initial guess (Ly-alpha forest).
-        smooth_len_out : str (float)
-            Smoothing length (km/s) for initial guess (redward).
-        kappa : str (float)
-            Sigma threshold for finding absorption.
-        fudge : str
-            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
-            If 'auto', the factor is calculated to center the continuum residuals.
-        smooth_std : str (float)
-            Final smoothing width (km/s).
-        template : str (bool)
-            Use PCA template (Not Implemented).
-        renorm_model : str (bool)
-            Re-normalize existing model?
-
-        Returns
-        -------
-        SessionV2
-            A new session with both ``abs_mask`` and ``cont`` columns updated.
-        """
-        try:
-            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
-            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
-            kappa_f = float(kappa)
-            template_b = str(template) == 'True'
-            # Allow 'auto' or parse float
-            if fudge.lower() == 'auto':
-                fudge_f = 'auto'
-            else:
-                fudge_f = float(fudge)
-            smooth_std_f = float(smooth_std) # This is in km/s
-            z_em_f = self._session.spec._data.z_em # Read z_em from session
-            renorm_model_b = str(renorm_model) == 'True'
-        except ValueError:
-            logging.error(msg_param_fail)
-            return 0
-            
-        if z_em_f == 0.0:
-            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
-
-        try:
-            logging.info("Auto-continuum: Finding absorbed regions...")
-            # 1. Call the first API method
-            spec_with_mask = self._session.spec.find_absorbed(
-                smooth_len_lya=smooth_len_lya_q,
-                smooth_len_out=smooth_len_out_q,
-                kappa=kappa_f,
-                template=template_b
-            )
-            
-            logging.info("Auto-continuum: Fitting continuum to mask...")
-            spec_with_cont = spec_with_mask.fit_continuum(
-                fudge=fudge_f,
-                smooth_std_kms=smooth_std_f,
-                mask_col='abs_mask',
-                renorm_model=renorm_model_b
-            )
-            
-            # 3. Return the final new state
-            return self._session.with_new_spectrum(spec_with_cont)
-        except Exception as e:
-            logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
             return 0
         
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',

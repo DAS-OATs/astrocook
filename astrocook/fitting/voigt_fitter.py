@@ -477,7 +477,7 @@ class VoigtFitterV2:
                 if (val - lowest_point) > 4.0 * err: right_boundary = i; break
 
         idx_min = max(0, start_idx + left_boundary - 1)
-        idx_max = min(len(self._x_ang), start_idx + right_boundary + 1)
+        idx_max = min(len(self._x_ang) - 1, start_idx + right_boundary + 1)
         
         if idx_max <= idx_min: return None, None
         return self._x_ang[idx_min], self._x_ang[idx_max]
