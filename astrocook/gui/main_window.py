@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from PySide6.QtCore import (
-    Qt,
+    Qt, QObject, Signal,
     QItemSelectionModel,
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
@@ -17,7 +17,7 @@ from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixma
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
-    QMenu, QMessageBox, QSlider, QGroupBox,
+    QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
 import re
@@ -2520,8 +2520,7 @@ class MainWindowV2(QMainWindow):
         """
         if not self.active_history: return
 
-        # [FIX] Use centralized check (mode='direct')
-        # This catches context menu actions like 'add_component'
+        # [Check Requirements logic remains the same...]
         if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
             return
 
@@ -2532,15 +2531,46 @@ class MainWindowV2(QMainWindow):
 
         self._ask_to_renormalize_model(recipe_name, params)
 
-        # ... (Rest of existing logic: Progress Dialog, Worker Start) ...
-        if self.progress_dialog: self.progress_dialog.cancel()
-        self.progress_dialog = QProgressDialog(f"Running {recipe_name}...", "Cancel", 0, 0, self)
-        self.progress_dialog.setWindowTitle("Recipe Running")
-        self.progress_dialog.setCancelButton(None) 
-        self.progress_dialog.setModal(True)
-        self.progress_dialog.setFixedWidth(400)
-        self.progress_dialog.show()
+        # --- NEW DIALOG LOGIC START ---
+        
+        # 1. Clean up old dialogs
+        if self.progress_dialog: 
+            self.progress_dialog.close()
+            self.progress_dialog = None
+        
+        # 2. Decide: Simple Dialog vs. Detailed Dialog
+        long_running_recipes = {'doublets_auto', 'lya_auto', 'forest_auto', 'refit_all', 'metals_auto'}
+        
+        if recipe_name in long_running_recipes:
+            # A. Create Detailed Dialog
+            self.progress_dialog = RecipeProgressDialog(f"{recipe_name}", self)
+            self.progress_dialog.show()
+            
+            # B. Setup Log Tapping
+            self.log_bridge = LogSignalBridge()
+            self.log_bridge.new_log_message.connect(self.progress_dialog.update_log)
+            
+            self.qt_log_handler = QtLogHandler(self.log_bridge)
+            self.qt_log_handler.setLevel(logging.INFO)
+            
+            # Attach to Root Logger to capture everything from core/recipes
+            logging.getLogger().addHandler(self.qt_log_handler)
+            
+        else:
+            # Standard "Short" Dialog
+            self.progress_dialog = QProgressDialog(f"Running {recipe_name}...", "Cancel", 0, 0, self)
+            self.progress_dialog.setWindowTitle("Recipe Running")
+            self.progress_dialog.setCancelButton(None) 
+            self.progress_dialog.setModal(True)
+            self.progress_dialog.setFixedWidth(400)
+            self.progress_dialog.show()
+            
+            # No log tapping for short recipes
+            self.qt_log_handler = None
 
+        # --- NEW DIALOG LOGIC END ---
+
+        # Start Worker (Existing Code)
         worker = RecipeWorker(
             session=self.active_history.current_state,
             category=category,
@@ -2630,7 +2660,11 @@ class MainWindowV2(QMainWindow):
             warn_resolution = False
             warn_refit = False
 
-            if recipe_name == 'set_properties' and 'resol' in params and str(params['resol']) != '_current_' and not self._suppress_refit_warning:
+            if recipe_name == 'set_properties' \
+                and 'resol' in params \
+                and str(params['resol']) != '_current_' \
+                and self.active_history.current_state.spec.has_aux_column('model') \
+                and not self._suppress_refit_warning:
                 warn_resolution = True
             elif recipe_name == 'update_component' and 'resol' in params and not self._suppress_refit_warning:
                  warn_resolution = True
@@ -2780,27 +2814,36 @@ class MainWindowV2(QMainWindow):
 
 
     # --- *** 5. NEW: Callback slots for single recipes *** ---
+    def _cleanup_progress_ui(self):
+        """Helper to remove log handlers and close dialogs."""
+        # 1. Detach Log Handler if it exists
+        if hasattr(self, 'qt_log_handler') and self.qt_log_handler:
+            logging.getLogger().removeHandler(self.qt_log_handler)
+            self.qt_log_handler = None
+            self.log_bridge = None
+
+        # 2. Close Dialog safely
+        self._safely_close_progress_dialog()
+
     def _on_recipe_finished(self, result_data: tuple):
         """Slot called when the RecipeWorker succeeds."""
-        self._safely_close_progress_dialog()
+        # [CHANGE] Use new cleanup helper
+        self._cleanup_progress_ui()
 
         # Set the "Wait" cursor for the whole application
         QApplication.setOverrideCursor(Qt.WaitCursor)
         
-        # Schedule the heavy GUI update to run in 10ms.
-        # This gives the GUI time to breathe and show the cursor
-        # before it freezes for the plot redraw.
+        # Schedule the heavy GUI update
         QTimer.singleShot(10, lambda: self._process_recipe_result(result_data))
-
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""
         title, message, trace = error_data
         
-        self._safely_close_progress_dialog()
+        # [CHANGE] Use new cleanup helper
+        self._cleanup_progress_ui()
             
         if trace:
-            # Critical bug: just show standard error
             QMessageBox.critical(self, title, message)
         else:
             # User error: Offer to try again
@@ -3252,3 +3295,83 @@ class MainWindowV2(QMainWindow):
         # 2. Delegate focus logic to the inspector
         if self.system_inspector:
             self.system_inspector.focus_on_component(uuid, force_group_view=True)
+
+class LogSignalBridge(QObject):
+    """Thread-safe bridge to emit log messages as Qt signals."""
+    new_log_message = Signal(str)
+
+class QtLogHandler(logging.Handler):
+    """Python Logging Handler that pipes messages to a Qt Signal."""
+    def __init__(self, bridge):
+        super().__init__()
+        self.bridge = bridge
+    
+    def emit(self, record):
+        # Format the message
+        msg = self.format(record)
+        # Emit signal (thread-safe way to talk to GUI)
+        self.bridge.new_log_message.emit(msg)
+
+class RecipeProgressDialog(QDialog):
+    """
+    A minimal progress dialog for long-running recipes.
+    Shows a determinate bar and the last status message.
+    """
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Running {title}")
+        self.setModal(True)
+        # Resize to be compact but wide enough for text
+        self.resize(400, 120)
+        
+        # Remove [X] to prevent unsafe closing
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Header
+        self.header_label = QLabel(f"Recipe Running...")
+        self.header_label.setStyleSheet("font-size: 14px;")
+        layout.addWidget(self.header_label)
+
+        # Progress Bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        # Optional: Make it look a bit thicker/modern
+        self.progress_bar.setStyleSheet("QProgressBar { min-height: 20px; }")
+        layout.addWidget(self.progress_bar)
+
+        # Status Label (Last log line)
+        self.status_label = QLabel("Initializing...")
+        self.status_label.setStyleSheet("font-size: 11px;")
+        self.status_label.setWordWrap(True)
+        layout.addWidget(self.status_label)
+
+        # Add a stretch to keep things tight at the top
+        layout.addStretch()
+
+    def update_log(self, message):
+        """
+        Parses logs. 
+        - '>> PROGRESS: 50' -> Updates bar.
+        - Other text -> Updates status label.
+        """
+        if ">> PROGRESS:" in message:
+            try:
+                parts = message.split(">> PROGRESS:")
+                val = int(parts[1].strip())
+                self.progress_bar.setValue(val)
+            except ValueError:
+                pass
+            return
+
+        clean_msg = message.strip()
+        if clean_msg:
+            # Update the text label
+            self.status_label.setText(clean_msg)
+            # Force UI update immediately so text doesn't lag behind heavy calculations
+            QApplication.processEvents()

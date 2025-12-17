@@ -651,7 +651,7 @@ class SystemListV2:
             if added_count == 0:
                 break
         
-        logging.info(f"Fluid Group: {len(seed_uuids)} targets -> {len(group_uuids)} active components.")
+        logging.debug(f"Fluid Group: {len(seed_uuids)} targets -> {len(group_uuids)} active components.")
         return group_uuids
 
     def _sanitize_after_fit(self, systs: 'SystemListV2') -> 'SystemListV2':

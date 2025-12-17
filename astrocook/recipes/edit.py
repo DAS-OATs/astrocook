@@ -580,36 +580,20 @@ class RecipeEditV2:
         SessionV2
             A new session containing the extracted region.
         """
-        z_em = self._session.spec._data.z_em
-        if z_em == 0.0:
-             logging.error("Cannot extract preset region: z_em is 0.0. Run 'Set Properties' first.")
-             return 0
-
-        # 1. Define Presets (Rest-Frame Wavelengths in nm)
-        # These are standard approximations.
-        # Ly-alpha is ~121.567 nm, Ly-beta is ~102.57 nm, Lyman limit is ~91.18 nm
-        presets = {
-            'lya_forest': (102.57, 121.567),   # Between Ly-beta and Ly-alpha emissions (with buffer)
-            'all_ly_forest': (91.18, 121.567),  # Full series down to the limit
-            'red_side': (121.567, 10000.0)    # Everything redward of Ly-alpha emission
-        }
-        
-        if region not in presets:
-            logging.error(f"Unknown preset region '{region}'. Available: {list(presets.keys())}")
+        try:
+            obs_min, obs_max = self._session.spec.get_region_bounds(region)
+        except ValueError as e:
+            logging.error(e)
             return 0
             
-        rf_min, rf_max = presets[region]
+        # Convert to the spectrum's native unit for the string expression
+        spec_unit = self._session.spec.x.unit
+        v_min = obs_min.to(spec_unit).value
+        v_max = obs_max.to(spec_unit).value
         
-        # 2. Convert to Observed Frame
-        obs_min = rf_min * (1.0 + z_em)
-        obs_max = rf_max * (1.0 + z_em)
+        expression = f"(x > {v_min:.4f}) & (x < {v_max:.4f})"
+        logging.info(f"Extracting '{region}': {expression} (z_em={self._session.spec._data.z_em:.4f})")
         
-        # 3. Build the split expression
-        expression = f"(x > {obs_min:.4f}) & (x < {obs_max:.4f})"
-        logging.info(f"Extracting '{region}': {expression} (z_em={z_em:.4f})")
-        
-        # 4. Re-use the existing split logic
-        # We can call our own split method directly!
         return self.split(expression=expression)
     
     def trim_common(self, others_names: str, z_target: str, trans_self: str, 

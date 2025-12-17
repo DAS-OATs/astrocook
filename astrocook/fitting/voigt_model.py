@@ -56,7 +56,7 @@ class VoigtModelConstraintV2:
         
         self._refresh_state()
         
-        logging.info(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
+        logging.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
     def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2):
         """
@@ -84,7 +84,7 @@ class VoigtModelConstraintV2:
         else:
             # Use the shared logic from the SystemList
             self._active_uuids = self._system_list.get_connected_group(target_uuids)
-            logging.info(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
+            logging.debug(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
 

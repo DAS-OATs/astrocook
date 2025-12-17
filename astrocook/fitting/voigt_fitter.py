@@ -167,10 +167,10 @@ class VoigtFitterV2:
                 med_res = np.nanmedian(self._resol_column)
                 if med_res > 500.0:
                     self._variable_resol_unit = 'R'
-                    logging.info(f"VoigtFitter: Variable resolution detected. Median={med_res:.0f} -> Assuming 'R'.")
+                    logging.debug(f"VoigtFitter: Variable resolution detected. Median={med_res:.0f} -> Assuming 'R'.")
                 else:
                     self._variable_resol_unit = 'km/s'
-                    logging.info(f"VoigtFitter: Variable resolution detected. Median={med_res:.1f} -> Assuming 'km/s'.")
+                    logging.debug(f"VoigtFitter: Variable resolution detected. Median={med_res:.1f} -> Assuming 'km/s'.")
 
         # Fallback to global metadata
         self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
@@ -182,9 +182,9 @@ class VoigtFitterV2:
 
         if not self._use_variable_resolution:
             if self._global_sigma_pix:
-                logging.info(f"VoigtFitter: Global R={self._global_resol_val:.0f} ({self._global_resol_unit})")
+                logging.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f} ({self._global_resol_unit})")
             else:
-                logging.info("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
+                logging.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
         # Placeholders
         self._fit_mask = None
@@ -616,7 +616,7 @@ class VoigtFitterV2:
         Executes the optimization using scipy.optimize.least_squares.
         Includes spatial pre-filtering and vectorization setup for speed.
         """
-        logging.info(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
+        logging.debug(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
         
         # 1. DYNAMIC FIT MASK
@@ -667,7 +667,7 @@ class VoigtFitterV2:
         else:
             self._resol_calc = None
 
-        logging.info(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
+        logging.debug(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
 
         # --- OPTIMIZATION 1: PRE-CALCULATE BACKGROUND ON RELEVANT COMPONENTS ONLY ---
         self._cached_tau_groups = {}
@@ -919,7 +919,7 @@ class VoigtFitterV2:
         
         final_model_flux = final_model_norm * self._norm
 
-        logging.info(f"Fit complete. Chi2: {chi2:.2f} (Red: {red_chi2:.2f}) over {n_data} pixels.")
+        logging.debug(f"Fit complete. Chi2: {chi2:.2f} (Red: {red_chi2:.2f}) over {n_data} pixels.")
         return new_system_list, final_model_flux, res
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:

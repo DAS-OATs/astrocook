@@ -13,7 +13,6 @@ from astrocook.gui.debug_utils import GLOBAL_PLOTTER
 try:
     from astrocook.legacy.functions import trans_parse
 except ImportError:
-    # logging.error("V1 'trans_parse' not available. Identification recipe will fail.")
     trans_parse = lambda s: []
 from astrocook.legacy.message import msg_param_fail
 
@@ -21,9 +20,10 @@ if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
 ABSORBERS_RECIPES_SCHEMAS = {
-    "doublets_auto": {
-        "brief": "Auto-detect and fit doublets.",
-        "details": "Automated pipeline: Identifies kinematic doublet candidates, populates them as systems, and refits the spectrum.",
+    # --- 1. THE MASTER PIPELINE ---
+    "components_auto": {
+        "brief": "Auto-detect and fit components.",
+        "details": "General pipeline: Identifies candidates (doublets or singles), populates them as systems, and refits the spectrum.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for."},
             {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0-1) to accept a candidate."},
@@ -31,18 +31,29 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_pix_region", "type": int, "default": 3, "doc": "Min pixels for a region."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Window for fitting (km/s)."},
+            # New generic region limiter
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit search to 'red_side', 'lya_forest', or 'None'."}
+        ],
+        "url": "absorbers_cb.html#components_auto"
+    },
+    # --- 2. WRAPPERS ---
+    "doublets_auto": {
+        "brief": "Auto-fit metal doublets (Red Side).",
+        "details": "Wrapper for components_auto targeted at the red side (z < z_em). Finds CIV, SiIV, MgII.",
+        "params": [
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min score."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."}
         ],
         "url": "absorbers_cb.html#doublets_auto"
     },
     "lya_auto": {
-        "brief": "Auto-fit Lyman-alpha forest.",
-        "details": "Pipeline optimized for the forest: Detects Ly-a lines, handles saturation, and filters narrow interlopers.",
+        "brief": "Auto-fit Ly-alpha forest.",
+        "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s) to keep."},
-            {"name": "z_start", "type": float, "default": 0.0, "doc": "Start redshift (0=start of spectrum)."},
-            {"name": "z_end", "type": float, "default": 10.0, "doc": "End redshift (10=end of spectrum)."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window (km/s)."},
+            {"name": "z_window_kms", "type": float, "default": 50.0, "doc": "Fit window (km/s)."}
         ],
         "url": "absorbers_cb.html#lya_auto"
     },
@@ -52,7 +63,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Threshold for detection."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s)."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."}
         ],
         "url": "absorbers_cb.html#forest_auto"
     },
@@ -113,7 +124,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "logN", "type": float, "default": None, "doc": "logN"},
             {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
             {"name": "series", "type": str, "default": None, "doc": "Series"},
-            # [CHANGE] Added resol parameter
             {"name": "resol", "type": float, "default": None, "doc": "Resolution (R or FWHM)"}
         ],
         "url": "absorbers_cb.html#update_component",
@@ -185,7 +195,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations per group"},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window around lines (km/s)"},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
-            {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"} # <--- NEW
+            {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"}
         ],
         "url": "absorbers_cb.html#refit_all"
     }
@@ -200,34 +210,110 @@ class RecipeAbsorbersV2:
         self._session = session_v2
         self._tag = 'abs'
 
-    def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
+    def components_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                       score_threshold: str = "0.5",
                       merge_dv: str = "10.0",
                       min_pix_region: str = "3",
                       mask_col: str = "abs_mask",
-                      z_window_kms: str = "20.0") -> 'SessionV2':
+                      z_window_kms: str = "20.0",
+                      region_limit: str = "None") -> 'SessionV2':
         """
-        Orchestrates the identification, population, optimization, and fitting of doublets.
-        Includes a 'Smart Skip' to avoid optimizing simple systems that fit well.
+        The Master Pipeline: Identifies, Populates, and Fits components.
+        Supports masking by region ('red_side' or 'lya_forest').
         """
-        logging.info("Starting 'doublets_auto' pipeline...")
+        logging.info(">> PROGRESS: 0")
+        logging.info(f"Initializing component search ({region_limit})...")
         
-        # 1. IDENTIFY
-        session_step1 = self.identify_lines(
-            multiplets=multiplets, mask_col=mask_col, min_pix_region=min_pix_region,
-            merge_dv=merge_dv, score_threshold=score_threshold,
-            bypass_scoring="False", debug_rating="False"
+        # --- 1. PREPARE REGION MASK ---
+        # We create a temporary session with a restricted mask to force identify_lines
+        # to ignore specific regions.
+        
+        session_for_id = self._session
+        
+        # --- 0. PRE-FLIGHT CHECK: Ensure Mask Exists ---
+        # If 'abs_mask' is missing, we must generate it first.
+        if not session_for_id.spec.has_aux_column(mask_col):
+            logging.info(f"Mask '{mask_col}' not found. Auto-running 'find_absorbed'...")
+            try:
+                # Create a temporary recipe handler to run the prerequisite
+                # (This returns a NEW session with the mask)
+                rec_temp = RecipeAbsorbersV2(session_for_id)
+                session_for_id = rec_temp._session.find_absorbed(
+                    smooth_len_lya="5000.0", 
+                    smooth_len_out="400.0",
+                    kappa="2.0",
+                    template="False"
+                )
+            except Exception as e:
+                logging.error(f"Auto-generation of mask failed: {e}")
+                return 0
+
+        target_mask_col = mask_col
+        
+        # --- 1. PREPARE REGION MASK (Using SSOT) ---
+        if region_limit != "None":
+            spec = session_for_id.spec
+            
+            try:
+                # 1. Get Bounds (e.g. Ly-beta to Ly-alpha)
+                obs_min, obs_max = spec.get_region_bounds(region_limit)
+                logging.debug(f"Applying {region_limit} mask: {obs_min:.1f} - {obs_max:.1f}")
+
+                # 2. Get Data Arrays
+                # We work in Angstroms for the mask logic (internal convention)
+                x_ang = spec.x.to(au.Angstrom).value
+                min_ang = obs_min.to(au.Angstrom).value
+                max_ang = obs_max.to(au.Angstrom).value
+                
+                # 3. Modify Mask
+                # Copy original mask
+                mask_vals = spec.get_column(mask_col).value.astype(bool).copy()
+                
+                # STRICT MASKING: False if OUTSIDE bounds
+                mask_vals[x_ang < min_ang] = False
+                mask_vals[x_ang > max_ang] = False
+                
+                # 4. Inject
+                new_spec = session_for_id.spec.update_column(
+                    target_mask_col, mask_vals, unit=au.dimensionless_unscaled
+                )
+                session_for_id = session_for_id.with_new_spectrum(new_spec)
+                
+            except ValueError as e:
+                # Handle missing z_em or bad region name gracefully
+                logging.warning(f"Region masking skipped: {e}")
+                # Proceed without masking (fallback to full spectrum)
+        
+        # --- 2. IDENTIFY (using the masked session) ---
+        logging.info("Step 1/3: Scanning spectrum for candidate pairs...")
+        
+        # Create a temp recipe wrapper for the masked session
+        rec_temp = RecipeAbsorbersV2(session_for_id)
+        
+        session_step1 = rec_temp.identify_lines(
+            multiplets=multiplets, 
+            mask_col=target_mask_col, # Use the restricted mask
+            min_pix_region=min_pix_region,
+            merge_dv=merge_dv, 
+            score_threshold=score_threshold,
+            bypass_scoring="False", 
+            debug_rating="False"
         )
         
+        logging.info(">> PROGRESS: 30")
+        
+        # Check results
         spec_meta = session_step1.spec.meta
         series_map_json = spec_meta.get('series_map_json')
         z_map_json = spec_meta.get('z_map_json')
         
         if not series_map_json:
-            logging.warning("doublets_auto: No candidates found.")
-            return session_step1
+            logging.warning("components_auto: No candidates found in region.")
+            # Return original session (undoing the temp mask creation)
+            return self._session
 
-        # 2. POPULATE (and Initial Fit)
+        # --- 3. POPULATE ---
+        logging.info("Step 2/3: Creating component models...")
         rec_step2 = RecipeAbsorbersV2(session_step1)
         session_step2 = rec_step2.populate_from_identification(
             region_id_col='abs_ids',
@@ -235,46 +321,59 @@ class RecipeAbsorbersV2:
             z_map_json=z_map_json
         )
 
-        # 4. REFIT ALL
+        logging.info(">> PROGRESS: 50")
+
+        # --- 4. REFIT ALL ---
+        logging.info("Step 3/3: Optimizing all systems...")
         rec_step3 = RecipeAbsorbersV2(session_step2)
         final_session = rec_step3.refit_all(
             max_nfev='200',
             z_window_kms=z_window_kms,
-            group_depth='2',
-            max_group_size='10'
+            group_depth='1',
+            max_group_size='25'
         )
         
-        logging.info("doublets_auto pipeline complete.")
+        logging.info("Component pipeline complete.")
         return final_session
-    
-    def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                 z_start: str = "0.0", z_end: str = "10.0",
-                 z_window_kms: str = "100.0") -> 'SessionV2':
+
+    def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
+                      score_threshold: str = "0.5",
+                      z_window_kms: str = "20.0") -> 'SessionV2':
         """
-        Pipeline for the Lyman-alpha forest.
+        Wrapper: Auto-detect metal doublets on the Red Side.
         """
-        # Reuse doublets_auto logic but targeting 'Ly_a' specifically
-        # and adding a post-processing cleanup step.
-        
-        logging.info("Starting 'lya_auto' pipeline...")
-        
-        # 1. Run Standard Pipeline with 'Ly_a' target
-        # We assume the user wants to populate 'Ly_a' single lines.
-        # (For Ly-series matching, use forest_auto)
-        final_session = self.doublets_auto(
-            multiplets="Ly_a", # Force Ly_a only
+        return self.components_auto(
+            multiplets=multiplets,
             score_threshold=score_threshold,
             z_window_kms=z_window_kms,
-            mask_col='abs_mask' # Standard mask
+            region_limit="red_side"  # <--- FORCE RED SIDE
+        )
+
+    def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
+                 z_window_kms: str = "50.0") -> 'SessionV2':
+        """
+        Wrapper: Auto-detect Ly-alpha in the Forest.
+        """
+        logging.info(">> PROGRESS: 0")
+        logging.info("Initializing Lyman-alpha forest analysis...")
+        
+        # 1. Run Pipeline (FORCE region='lya_forest')
+        final_session = self.components_auto(
+            multiplets="Ly_a",
+            score_threshold=score_threshold,
+            z_window_kms=z_window_kms,
+            mask_col='abs_mask',
+            region_limit='lya_forest' # <--- FORCE FOREST
         )
         
-        # 2. Cleanup: Filter by b-parameter (Interlopers)
-        # We need to access the SystemList directly
+        # 2. Cleanup Phase (Interlopers)
+        logging.info(">> PROGRESS: 0")
+        logging.info("Analysing line shapes to remove interlopers...")
+        
         try:
             min_b_val = float(min_b)
             systs = final_session.systs
             
-            # Simple filter: Keep components with b >= min_b OR not Ly_a (don't delete metals!)
             valid_comps = []
             deleted_count = 0
             
@@ -282,37 +381,20 @@ class RecipeAbsorbersV2:
                 is_lya = (c.series == 'Ly_a')
                 if is_lya and c.b < min_b_val:
                     deleted_count += 1
-                    continue # Drop it
+                    continue
                 valid_comps.append(c)
             
             if deleted_count > 0:
-                logging.info(f"lya_auto: Removed {deleted_count} narrow interlopers (b < {min_b_val} km/s).")
+                logging.info(f"Rejected {deleted_count} lines (too narrow).")
                 
-                # Update System List
                 import dataclasses
                 from astrocook.core.system_list import SystemListV2
                 new_data = dataclasses.replace(systs._data, components=valid_comps)
                 new_systs = SystemListV2(new_data)
-                
-                # Refit Global Model (fastest way to update plot)
                 final_session = final_session.with_new_system_list(new_systs)
                 
-                # We should probably refit once more to be safe, but let's just update model
-                from astrocook.fitting.voigt_fitter import VoigtFitterV2
-                fitter = VoigtFitterV2(final_session.spec, new_systs)
-                _, model_flux = fitter.compute_model_flux()
-                
-                # Update Spectrum
-                from astrocook.core.structures import DataColumnV2
-                from copy import deepcopy
-                new_aux = deepcopy(final_session.spec._data.aux_cols)
-                new_aux['model'] = DataColumnV2(model_flux, final_session.spec.y.unit, "Voigt Fit Model")
-                new_spec_d = dataclasses.replace(final_session.spec._data, aux_cols=new_aux)
-                final_session = final_session.with_new_spectrum(final_session.spec.__class__(new_spec_d))
-
-                # C. [CRITICAL FIX] Refit the survivors!
-                # The remaining lines need to re-adjust now that their neighbors are gone.
-                logging.info("lya_auto: Refitting survivors to fill gaps...")
+                # 3. Final Refit
+                logging.info("Refining fit for confirmed systems...")
                 rec_polish = RecipeAbsorbersV2(final_session)
                 final_session = rec_polish.refit_all(
                     max_nfev='200',
@@ -320,6 +402,9 @@ class RecipeAbsorbersV2:
                     group_depth='1',
                     max_group_size='25'
                 )
+            else:
+                logging.info("No interlopers found. Clean.")
+                logging.info(">> PROGRESS: 100")
 
         except Exception as e:
             logging.warning(f"lya_auto cleanup failed: {e}")
@@ -330,51 +415,47 @@ class RecipeAbsorbersV2:
                     z_window_kms: str = "20.0") -> 'SessionV2':
         """
         Pipeline for the full Lyman series. 
-        Identifies 'Ly_a' candidates but populates them as 'Lyman' systems.
         """
         logging.info("Starting 'forest_auto' pipeline...")
         
-        # 1. IDENTIFY 'Ly_a' lines first (we use Ly_a as the finder)
-        session_step1 = self.identify_lines(
+        # 1. IDENTIFY 'Ly_a' lines
+        # (We can use components_auto logic, but we need to intercept the map before populate)
+        # So we manually call steps 1 & 2.
+        
+        # Force forest region
+        session_id_only = self.identify_lines(
             multiplets="Ly_a", 
-            score_threshold=score_threshold
+            score_threshold=score_threshold,
+            # We can't easily pass region mask to identify_lines directly via public API without
+            # duplicating the logic in components_auto. 
+            # Ideally, identify_lines should support region_limit, but for now, 
+            # let's trust the user or just run on whole spectrum (since forest is dominant).
+            # OR better: Use components_auto but hacking the 'multiplets' is hard.
         )
         
-        # 2. MODIFY MAPS: Change 'Ly_a' to 'Lyman'
-        # This is the trick: We found Ly_a, but we tell populate to create the full series.
+        # 2. MODIFY MAPS: Swap 'Ly_a' -> 'Lyman'
         import json
-        spec_meta = session_step1.spec.meta
+        spec_meta = session_id_only.spec.meta
         series_json = spec_meta.get('series_map_json')
         
         if series_json:
             series_map = json.loads(series_json)
-            # Swap 'Ly_a' -> 'Lyman'
             for k, v in series_map.items():
-                if v == 'Ly_a':
-                    series_map[k] = 'Lyman'
-            
-            # Save back to meta (this is a bit hacky but efficient)
-            spec_meta['series_map_json'] = json.dumps(series_map)
-            # Note: SpectrumV2 is immutable, so we technically need a new one, 
-            # but since we are just passing metadata to the next recipe step, 
-            # we can cheat by passing the map directly to populate_from_identification 
-            # or creating a temp session. Let's pass arguments explicitly.
-            
+                if v == 'Ly_a': series_map[k] = 'Lyman'
             new_series_json = json.dumps(series_map)
         else:
             new_series_json = None
 
-        # 3. POPULATE & FIT (using 'Lyman' series)
-        rec_step2 = RecipeAbsorbersV2(session_step1)
+        # 3. POPULATE & FIT
+        rec_step2 = RecipeAbsorbersV2(session_id_only)
         session_step2 = rec_step2.populate_from_identification(
             series_map_json=new_series_json,
             z_map_json=spec_meta.get('z_map_json')
         )
         
-        # 4. Cleanup & Refit (Reuse lya_auto logic for filtering?)
-        # For now, just refit all.
+        # 4. Refit All
         rec_step3 = RecipeAbsorbersV2(session_step2)
-        return rec_step3.refit_all(z_window_kms=z_window_kms)
+        return rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1')
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0") -> 'SessionV2':
@@ -394,100 +475,57 @@ class RecipeAbsorbersV2:
         logging.info(f"metals_auto: Checking {len(ion_list)} ions for existing systems...")
         
         current_session = self._session
-        # Get unique redshifts of existing systems (grouped by proximity)
-        # Actually, simpler: Iterate over every component, try to add missing ions at that Z.
-        
-        # Optimization: Group components by Z to avoid checking the same Z 10 times
+        # Optimization: Group components by Z
         from collections import defaultdict
         systems_by_z = defaultdict(list)
         for c in current_session.systs.components:
             z_round = round(c.z, 4)
             systems_by_z[z_round].append(c)
             
-        # We need a Fitter for AIC calculation
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
         
-        # Base AIC
-        fitter = VoigtFitterV2(current_session.spec, current_session.systs)
-        # We need a way to calculate global AIC or local AIC. 
-        # Since we are adding lines, global AIC is fine if we are consistent.
-        # But global fit is slow. Let's do local checks.
-        
-        # Actually, let's use the 'optimize_hierarchy' logic but focused on SPECIES not COMPONENTS.
-        # Since we don't have a specific 'add_species' core method yet, we will script it here.
-        
         running_systs = current_session.systs
-        
         count_added = 0
         
         for z_val, comps in systems_by_z.items():
             existing_series = {c.series for c in comps}
             
-            # Check each target ion
             for ion in ion_list:
-                # 1. Skip if already present
                 if ion in existing_series: continue
                 
-                # 2. Skip if physically unlikely (e.g. Low Ion in High Ion system)? 
-                # For now, check everything.
-                
-                # 3. Trial Add
                 logging.debug(f"  Checking {ion} at z={z_val}...")
-                
-                # Use a lightweight trial system list
-                # We need to copy running_systs to trial_systs
-                # This is expensive. 
-                # BETTER: Add it, fit locally, check AIC, remove if bad.
-                
-                # Save state (constraints are complex, so deepcopy logic needed or careful management)
-                # Let's try: Add -> Fit(Island) -> Calc AIC -> Decide
                 
                 # A. Add
                 trial_systs = running_systs.add_component(ion, z_val, logN=13.0, b=10.0)
                 new_uuid = trial_systs.components[-1].uuid
                 
                 # B. Fit (Local Island)
-                # We need to fit the NEW ion + the EXISTING system at this Z.
-                # Find connected group for the new UUID
                 group = trial_systs.get_connected_group([new_uuid])
                 
                 try:
-                    # Calculate AIC BEFORE (on the group without the new line)
-                    # This is tricky because the new line changes the model.
-                    # Standard approach: Fit with new line. If LogN drops to 0 or errors are huge, reject.
-                    # Or use strict AIC.
-                    
                     with trial_systs.fitting_context(list(group), group_depth=0):
                         fitter = VoigtFitterV2(current_session.spec, trial_systs)
                         fitted_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win, verbose=0)
                         
                         # C. Evaluate
-                        # Check significance: Is the fitted LogN significant? Is the line visible?
-                        # Heuristic: If LogN < 11.5 or b > 100 or b < 1, it's probably noise.
-                        
-                        # Find the fitted component
                         fitted_comp = fitted_systs.get_component_by_uuid(new_uuid)
-                        if not fitted_comp: continue # Should not happen
+                        if not fitted_comp: continue 
                         
                         keep = True
                         if fitted_comp.logN < 12.0: keep = False
                         if fitted_comp.b > 50.0: keep = False
                         if fitted_comp.b < 2.0: keep = False
                         
-                        # Formal AIC check would require comparing Chi2 of 'running_systs' vs 'fitted_systs' 
-                        # on the SAME pixel mask.
-                        
                         if keep:
                             logging.info(f"  -> Found {ion} at z={z_val} (logN={fitted_comp.logN:.2f})")
                             running_systs = fitted_systs
                             count_added += 1
-                            existing_series.add(ion) # Don't add twice
+                            existing_series.add(ion) 
                 except Exception as e:
                     logging.debug(f"  Fit failed: {e}")
 
         if count_added > 0:
             logging.info(f"metals_auto: Added {count_added} new systems.")
-            # Final Polish
             return self.refit_all()
         else:
             logging.info("metals_auto: No new metals found.")
@@ -513,7 +551,6 @@ class RecipeAbsorbersV2:
         
         try:
             logging.debug("identify_lines: Calling spec.identify_lines...")
-            # This relies on SpectrumV2.identify_lines saving SYSTEM names to JSON
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
                 mask_col=mask_col,
@@ -533,10 +570,8 @@ class RecipeAbsorbersV2:
                        series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
         """
         Populates the system list from identification maps.
-        Uses the upgraded add_component to create linked multiplets and fits them immediately.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
-        from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 
         if not series_map_json or not z_map_json:
             logging.error("populate_from_identification: Missing maps.")
@@ -545,7 +580,6 @@ class RecipeAbsorbersV2:
         try:
             series_map = json.loads(series_map_json)
             z_map = json.loads(z_map_json)
-            # Ensure keys are integers
             series_map = {int(k): v for k, v in series_map.items()}
             z_map = {int(k): v for k, v in z_map.items()}
         except Exception as e:
@@ -571,21 +605,6 @@ class RecipeAbsorbersV2:
             
             # A. Add Single Component (e.g. 'CIV')
             running_systs = running_systs.add_component(series, z_val, logN=13.5, b=15.0)
-            
-            # B. Immediate Local Fit
-            # Even though it's one component, VoigtFitter will fit all lines in the doublet
-            #if running_systs.components:
-            #    target_uuid = running_systs.components[-1].uuid
-            #    
-            #    try:
-            #        with running_systs.fitting_context([target_uuid], group_depth=0):
-            #            fitter = VoigtFitterV2(spec, running_systs)
-            #            new_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=20.0, verbose=0)
-            #            
-            #            if res and res.success:
-            #                running_systs = new_systs
-            #    except Exception as e:
-            #        logging.warning(f"Fit failed for {series}: {e}")
 
         # 3. Cleanup and Model Generation
         if running_systs.constraint_model:
@@ -647,7 +666,6 @@ class RecipeAbsorbersV2:
             if series != 'None': changes['series'] = str(series)
             if resol != 'None': changes['resol'] = float(resol) # Handle resolution update
             
-            # Pass dictionary unpacking to SystemListV2.update_component
             new_systs = self._session.systs.update_component(uuid, **changes)
             return self._session.with_new_system_list(new_systs)
         except Exception as e:
@@ -692,7 +710,6 @@ class RecipeAbsorbersV2:
                 logging.error(f"Sibling session '{sibling_name}' not found.")
                 return 0.0
             
-            # --- CALL CORE LOGIC ---
             z_found = self._session.spec.detect_doublet_z(
                 sibling_session.spec, trans_self, trans_sibling
             )
@@ -702,50 +719,6 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"detect_anchor failed: {e}")
             return 0.0
-        
-    # Let's implement the logic we wrote in batch_driver, tailored for the Recipe API.
-    # Since Recipes usually operate on 'self._session', we might need to pass the second session explicitly.
-    
-    def detect_doublet_anchor(self, sibling_session: 'SessionV2', 
-                              trans_primary: str, trans_secondary: str) -> float:
-        from scipy.ndimage import gaussian_filter1d
-        
-        # 1. Get Data
-        s1 = self._session
-        s2 = sibling_session
-        x1, y1 = s1.spec.x.value, s1.spec.y.value
-        x2, y2 = s2.spec.x.value, s2.spec.y.value
-        
-        if len(x1) == 0 or len(x2) == 0: return 0.0
-
-        # 2. Physics
-        if trans_primary not in ATOM_DATA or trans_secondary not in ATOM_DATA:
-            logging.error("Unknown transitions"); return 0.0
-
-        lam1 = ATOM_DATA[trans_primary]['wave'] / 10.0
-        lam2 = ATOM_DATA[trans_secondary]['wave'] / 10.0
-
-        # 3. Correlation
-        z1 = x1 / lam1 - 1.0
-        z2 = x2 / lam2 - 1.0
-        
-        z_min, z_max = max(z1.min(), z2.min()), min(z1.max(), z2.max())
-        if z_max <= z_min: return 0.0
-        
-        dz = np.median(np.diff(z1))
-        z_grid = np.arange(z_min, z_max, dz)
-        
-        y1_int = np.interp(z_grid, z1, y1)
-        y2_int = np.interp(z_grid, z2, y2)
-        
-        depth1 = np.maximum(0.0, 1.0 - gaussian_filter1d(y1_int, 2.0))
-        depth2 = np.maximum(0.0, 1.0 - gaussian_filter1d(y2_int, 2.0))
-        
-        score = depth1 * depth2
-        best_idx = np.argmax(score)
-        
-        logging.info(f"Anchor detected at z={z_grid[best_idx]:.5f}")
-        return float(z_grid[best_idx])
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
         try:
@@ -757,15 +730,12 @@ class RecipeAbsorbersV2:
 
             current_session = self._session
 
-            # [CHANGE] Trigger Continuum Auto-Estimation if needed
             if current_session.spec.norm is None:
                 logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 cont_rec = RecipeContinuumV2(current_session)
-                # This returns a NEW session with continuum
                 current_session = cont_rec.estimate_auto()
             
-            # Use the possibly-updated session for fitting
             with current_session.systs.fitting_context([uuid], group_depth=depth_i):
                 fitter = VoigtFitterV2(current_session.spec, current_session.systs)
                 new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
@@ -788,9 +758,6 @@ class RecipeAbsorbersV2:
             
             session_with_spec = current_session.with_new_spectrum(new_spec)
             return session_with_spec.with_new_system_list(new_systs)
-            
-        except Exception as e:
-            logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
             
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
@@ -836,7 +803,6 @@ class RecipeAbsorbersV2:
                         z_window_kms: str = '100.0', min_dv: str = '10.0',
                         group_depth: str = '2', patience: str = '2') -> 'SessionV2':
         try:
-            # 1. Parse Args
             max_c = int(max_components); thresh = float(threshold_sigma)
             aic_p = float(aic_penalty); z_win = float(z_window_kms)
             min_dv_f = float(min_dv)
@@ -846,14 +812,12 @@ class RecipeAbsorbersV2:
 
             current_session = self._session
 
-            # [CHANGE] Trigger Continuum Auto-Estimation if needed
             if current_session.spec.norm is None:
                 logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 cont_rec = RecipeContinuumV2(current_session)
                 current_session = cont_rec.estimate_auto()
 
-            # Pass the (possibly updated) session to optimize_hierarchy
             new_systs = current_session.systs.optimize_hierarchy(
                 spec=current_session.spec,
                 uuid_seed=uuid,
@@ -870,7 +834,6 @@ class RecipeAbsorbersV2:
                 new_systs.constraint_model.set_active_components(None)
 
             from astrocook.fitting.voigt_fitter import VoigtFitterV2
-            # Use current_session.spec (which might have new continuum)
             fitter = VoigtFitterV2(current_session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
@@ -897,9 +860,7 @@ class RecipeAbsorbersV2:
     def refit_all(self, max_nfev: str = '100', z_window_kms: str = '20.0', 
                   group_depth: str = '0', max_group_size: str = '20') -> 'SessionV2':
         """
-        Refits components. 
-        If group_depth=0 (Recommended), it fits components one-by-one (Iterative),
-        which is robust against de-blending degeneracies.
+        Refits components using Chunking.
         """
         try:
             max_nfev_i = int(max_nfev)
@@ -911,22 +872,18 @@ class RecipeAbsorbersV2:
                 logging.warning("refit_all: No components to fit.")
                 return 0
 
-            # Trigger Continuum if needed
             current_session = self._session
             if current_session.spec.norm is None:
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 current_session = RecipeContinuumV2(current_session).estimate_auto()
 
             # 1. Define Work Units
-            # If depth=0, we FORCE one-by-one fitting.
             if depth_i == 0:
-                logging.info(f"Refit All: Strategy = Iterative Single-Component (Robust).")
-                # Sort by redshift to sweep through the spectrum logically
+                logging.debug(f"Refit All: Strategy = Iterative Single-Component (Robust).")
                 sorted_comps = sorted(current_session.systs.components, key=lambda c: c.z)
                 work_units = [[c.uuid] for c in sorted_comps]
             else:
-                # Standard Friends-of-Friends (Only use if you trust the groups are non-degenerate)
-                logging.info(f"Refit All: Strategy = Connected Groups (depth={depth_i}).")
+                logging.debug(f"Refit All: Strategy = Connected Groups (depth={depth_i}).")
                 all_uuids = set(c.uuid for c in current_session.systs.components)
                 work_units = []
                 
@@ -941,27 +898,23 @@ class RecipeAbsorbersV2:
                     
                     group_list = list(group)
                     
-                    # If group is acceptable, add it
                     if len(group_list) <= max_size_i:
                         work_units.append(group_list)
                     else:
-                        # GROUP IS TOO BIG: SPLIT IT
-                        # 1. Sort by redshift
                         sorted_group = sorted([comp_map[u] for u in group_list], key=lambda c: c.z)
                         sorted_uuids = [c.uuid for c in sorted_group]
                         
-                        # 2. Chunk it
-                        # We overlap chunks slightly? No, standard partitioning is safer for stability.
-                        # The "Context Window" in fit loop handles the boundaries (fixing neighbors).
                         for k in range(0, len(sorted_uuids), max_size_i):
                             chunk = sorted_uuids[k : k + max_size_i]
                             work_units.append(chunk)
                         
-                        logging.info(f"  -> Split massive group ({len(group_list)} comps) into {len(sorted_uuids)//max_size_i + 1} chunks.")
+                        logging.debug(f"  -> Split massive group ({len(group_list)} comps) into {len(sorted_uuids)//max_size_i + 1} chunks.")
 
                     all_uuids.difference_update(group)
 
-            logging.info(f"Refit All: Processing {len(work_units)} units (Batch Mode)...")
+            total_units = len(work_units)
+            logging.info(f"Preparing to fit {total_units} absorption systems...")
+            logging.info(">> PROGRESS: 0")
 
             # 2. Sequential Local Fit Loop
             reference_systs = current_session.systs
@@ -971,38 +924,42 @@ class RecipeAbsorbersV2:
             from astrocook.core.system_list import SystemListV2
 
             for i, target_uuids in enumerate(work_units):
+                pct = int(100 * (i + 1) / total_units)
+                logging.info(f">> PROGRESS: {pct}")
+                
+                if target_uuids:
+                    peek_comp = next((c for c in reference_systs.components if c.uuid == target_uuids[0]), None)
+                    if peek_comp:
+                        series_str = peek_comp.series
+                        z_str = f"{peek_comp.z:.4f}"
+                        logging.info(f"Optimizing System {i+1}/{total_units}: {series_str} at z={z_str}")
+                    else:
+                        logging.info(f"Optimizing Group {i+1}/{total_units}...")
+
                 if not target_uuids: continue
                 
                 # A. Define Local Context Window
-                # We look up the targets in the REFERENCE list
                 target_comps = [c for c in reference_systs.components if c.uuid in target_uuids]
                 if not target_comps: continue
                 
                 min_z = min(c.z for c in target_comps)
                 max_z = max(c.z for c in target_comps)
                 
-                # Context Buffer: +/- 1000 km/s is enough for wings
                 c_kms = 299792.458
                 dz_buffer = (1 + max_z) * (1000.0 / c_kms)
                 z_start = min_z - dz_buffer
                 z_end = max_z + dz_buffer
                 
-                # B. Build Local System List
-                # This includes neighbors, but they will be FIXED (parameters not in target_uuids)
                 local_comps = [c for c in reference_systs.components if z_start <= c.z <= z_end]
                 local_systs_data = dataclasses.replace(reference_systs._data, components=local_comps)
                 local_systs = SystemListV2(local_systs_data)
                 
-                # C. Fit Locally
                 try:
                     fitter = VoigtFitterV2(current_session.spec, local_systs)
                     
-                    # group_depth=0 ensures ONLY 'target_uuids' are free. 
-                    # Neighbors in 'local_comps' act as fixed background.
                     with local_systs.fitting_context(target_uuids, group_depth=0):
                         new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0)
                     
-                    # D. Collect Results
                     for fitted_comp in new_local_systs.components:
                         if fitted_comp.uuid in target_uuids:
                             updated_components_map[fitted_comp.uuid] = fitted_comp
@@ -1011,7 +968,8 @@ class RecipeAbsorbersV2:
                     logging.warning(f"Fit failed for unit {i}: {e}")
 
             # 3. Batch Merge
-            logging.info(f"Refit All: Merging {len(updated_components_map)} fitted components...")
+            logging.info(">> PROGRESS: 100")
+            logging.debug(f"Refit All: Merging {len(updated_components_map)} fitted components...")
             
             final_comps = []
             for c in reference_systs.components:
@@ -1049,4 +1007,3 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"refit_all failed: {e}", exc_info=True)
             return 0
-

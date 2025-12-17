@@ -7,7 +7,7 @@ import logging
 import numexpr as ne
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from astrocook.core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d
 from astrocook.core.photometry import generate_calibration_curve
@@ -29,6 +29,13 @@ _NE_GLOBAL_DICT = {
     'std': np.nanstd,
     # numexpr *does* have: sum, prod, mean, std, min, max, log, log10, etc.
 }
+
+REGION_PRESETS = {
+    'lya_forest': (102.57 * au.nm, 121.567 * au.nm),   # Ly-beta to Ly-alpha
+    'all_ly_forest': (91.18 * au.nm, 121.567 * au.nm), # Ly-limit to Ly-alpha
+    'red_side': (121.567 * au.nm, 10000.0 * au.nm)     # Redward of Ly-alpha
+}
+
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
     def __init__(self, data_dict):
@@ -518,6 +525,24 @@ class SpectrumV2:
         # Note: We add a history entry so the user knows this happened
         return SpectrumV2(data=new_data, history=self.history + ["Sanitized legacy telluric columns"])
     
+    def get_region_bounds(self, region: str) -> Tuple[au.Quantity, au.Quantity]:
+        """
+        Returns observed (xmin, xmax) for a standard region based on z_em.
+        """
+        z_em = self._data.z_em
+        if z_em == 0.0:
+            raise ValueError("z_em is 0.0. Cannot calculate rest-frame regions.")
+            
+        if region not in REGION_PRESETS:
+            raise ValueError(f"Unknown region '{region}'. Options: {list(REGION_PRESETS.keys())}")
+            
+        rf_min, rf_max = REGION_PRESETS[region]
+        
+        obs_min = rf_min * (1.0 + z_em)
+        obs_max = rf_max * (1.0 + z_em)
+        
+        return obs_min, obs_max
+
     # --- Methods implementing the API ---
 
     def apply_expression(self, target_col: str, expression: str, 
