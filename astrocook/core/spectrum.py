@@ -1867,7 +1867,7 @@ class SpectrumV2:
         if 'Ly_ab' in multiplet_list:
             logging.info("Checking for Ly_ab doublet...")
             lyab_candidates = _find_kinematic_doublet_candidates(
-                forest_map, spec.x, spec._data.z_ref, 'Ly_ab', z_em
+                forest_map, spec.x, spec._data.z_em, 'Ly_ab', z_em
             )
             for (rid_1, rid_2, z_test) in lyab_candidates:
                 # --- *** Append the threshold *** ---

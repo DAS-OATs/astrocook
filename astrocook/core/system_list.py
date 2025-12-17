@@ -333,49 +333,87 @@ class SystemListV2:
     def add_component(self, series: str, z: float, logN: float = 13.5, 
                       b: float = 10.0, btur: float = 0.0) -> 'SystemListV2':
         """
-        Manually add a single component to the list.
-
-        Parameters
-        ----------
-        series : str
-            Transition or Multiplet name (e.g. 'Ly_a', 'CIV').
-        z : float
-            Redshift.
-        logN : float, optional
-            Column density (log10), default 13.5.
-        b : float, optional
-            Doppler parameter (km/s), default 10.0.
-        btur : float, optional
-            Turbulent broadening (km/s), default 0.0.
-
-        Returns
-        -------
-        SystemListV2
-            A new instance containing the added component.
+        Adds a component or a multiplet system to the list.
+        
+        If 'series' is a known multiplet (e.g., 'CIV'), this adds the primary 
+        line and automatically creates and links secondary lines.
+        If 'series' is a single transition (e.g., 'Ly_a'), it adds a single component.
         """
+        from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+        from astrocook.core.structures import ParameterConstraintV2
+
+        # 1. Determine if this is a Multiplet or Single Line
+        lines = [series]
+        is_multiplet = False
+        
+        # Check if the series name exists in the standard multiplet dictionary
+        if series in STANDARD_MULTIPLETS:
+            lines = STANDARD_MULTIPLETS[series]
+            is_multiplet = True
+        
+        # 2. Prepare ID tracking
         current_components = self._data.components
         next_id = 1
         if current_components:
             next_id = max(c.id for c in current_components) + 1
+
+        new_comps = []
+        # Copy existing constraints maps to modify them
+        new_constraints = dict(self._data.v2_constraints_map) if hasattr(self._data, 'v2_constraints_map') else {}
+        new_parsed = dict(self._data.parsed_constraints)
+        
+        primary_uuid = None
+
+        # 3. Iterate and Create
+        for i, line_name in enumerate(lines):
+            # Create Component Data
+            comp = ComponentDataV2(
+                id=next_id,
+                z=z, dz=None,
+                logN=logN, dlogN=None,
+                b=b, db=None,
+                btur=btur, dbtur=None,
+                func='voigt', series=line_name
+            )
+            new_comps.append(comp)
             
-        new_comp = ComponentDataV2(
-            id=next_id,
-            z=z, dz=None,
-            logN=logN, dlogN=None,
-            b=b, db=None,
-            btur=btur, dbtur=None,
-            func='voigt', series=series
-        )
+            # Logic for Multiplets: First line is Primary, others are Secondaries
+            if is_multiplet:
+                if i == 0:
+                    primary_uuid = comp.uuid
+                else:
+                    # Link Secondary to Primary
+                    if comp.uuid not in new_constraints: new_constraints[comp.uuid] = {}
+                    
+                    for param in ['z', 'logN', 'b', 'btur']:
+                        # Expression: "p['primary_uuid'].param"
+                        expr = f"p['{primary_uuid}'].{param}"
+                        
+                        constraint = ParameterConstraintV2(
+                            is_free=False,
+                            expression=expr,
+                            target_uuid=primary_uuid
+                        )
+                        new_constraints[comp.uuid][param] = constraint
+                        new_parsed[(comp.uuid, param)] = constraint
+            
+            next_id += 1
+
+        # 4. Rebuild SystemList
+        final_comps = current_components + new_comps
         
-        new_component_list = current_components + [new_comp]
         new_id_map = dict(self._data.v1_id_to_uuid_map)
-        new_id_map[next_id] = new_comp.uuid
-        
+        for c in new_comps:
+            new_id_map[c.id] = c.uuid
+            
         new_data_core = dataclasses.replace(
             self._data,
-            components=new_component_list,
-            v1_id_to_uuid_map=new_id_map
+            components=final_comps,
+            v1_id_to_uuid_map=new_id_map,
+            v2_constraints_map=new_constraints,
+            parsed_constraints=new_parsed
         )
+        
         return SystemListV2(new_data_core)
     
     def get_component_by_uuid(self, uuid: str) -> Optional[ComponentDataV2]:

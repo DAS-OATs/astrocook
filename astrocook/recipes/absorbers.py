@@ -1,4 +1,5 @@
 import astropy.units as au
+from copy import deepcopy
 import json
 import logging
 import numpy as np
@@ -132,6 +133,16 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "patience", "type": int, "default": 2, "doc": "Trials allowed without AIC improvement."}
         ],
         "url": "absorbers_cb.html#optimize_system"
+    },
+    "refit_all": {
+        "brief": "Refit all systems.",
+        "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
+        "params": [
+            {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations per group"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window around lines (km/s)"},
+            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"}
+        ],
+        "url": "absorbers_cb.html#refit_all"
     }
 }
 
@@ -521,3 +532,99 @@ class RecipeAbsorbersV2:
         except Exception as e:
              logging.error(f"optimize_system failed: {e}", exc_info=True)
              return 0
+        
+
+    def refit_all(self, max_nfev: str = '200', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
+        """
+        Refits all components in the session by processing disjoint groups (islands) sequentially.
+        """
+        try:
+            # 1. Parse Arguments
+            max_nfev_i = int(max_nfev)
+            z_win_f = float(z_window_kms)
+            depth_i = int(group_depth)
+
+            if not self._session.systs or not self._session.systs.components:
+                logging.warning("refit_all: No components to fit.")
+                return 0
+
+            # 2. Trigger Continuum Auto-Estimate if needed (Crucial for Batch/Empty starts)
+            current_session = self._session
+            if current_session.spec.norm is None:
+                logging.info("Flux not normalized. Triggering continuum estimate...")
+                from astrocook.recipes.continuum import RecipeContinuumV2
+                current_session = RecipeContinuumV2(current_session).estimate_auto()
+
+            # 3. Identify Islands (Graph-based grouping)
+            # We clone the list logic to find groups without modifying the object yet
+            all_uuids = set(c.uuid for c in current_session.systs.components)
+            processed_uuids = set()
+            islands = []
+
+            logging.info(f"Refit All: Scanning {len(all_uuids)} components for disjoint islands...")
+
+            while all_uuids:
+                seed = next(iter(all_uuids))
+                # Use the current system list to find connections
+                group = current_session.systs.get_connected_group([seed], max_depth=depth_i)
+                
+                # Verify group is not empty (sanity check)
+                if not group: 
+                    all_uuids.remove(seed)
+                    continue
+
+                islands.append(list(group))
+                
+                # Mark as processed
+                processed_uuids.update(group)
+                all_uuids.difference_update(group)
+
+            logging.info(f"Refit All: Found {len(islands)} disjoint islands. Starting sequential fit...")
+
+            # 4. Sequential Fit Loop
+            # We update 'running_systs' iteratively. 
+            running_systs = current_session.systs
+
+            for i, island_uuids in enumerate(islands):
+                logging.info(f"  -> Fitting Island {i+1}/{len(islands)} ({len(island_uuids)} components)...")
+                
+                # Create a Fitter for the CURRENT state of the system list
+                fitter = VoigtFitterV2(current_session.spec, running_systs)
+                
+                # Apply the Mask for this island
+                with running_systs.fitting_context(island_uuids, group_depth=0): # Depth 0 because we already grouped them!
+                    # Fit
+                    new_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0)
+                    
+                    # Update our running state
+                    running_systs = new_systs
+
+            # 5. Final Model Generation
+            # Clean up any active masks
+            if running_systs.constraint_model:
+                running_systs.constraint_model.set_active_components(None)
+            
+            # Compute one final global model trace
+            final_fitter = VoigtFitterV2(current_session.spec, running_systs)
+            _, model_flux = final_fitter.compute_model_flux()
+
+            # 6. Pack Result
+            from astrocook.core.structures import DataColumnV2
+            import dataclasses
+            
+            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
+            new_aux_cols['model'] = DataColumnV2(
+                values=model_flux,
+                unit=current_session.spec.y.unit,
+                description="Voigt Fit Model"
+            )
+            
+            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
+            new_spec = current_session.spec.__class__(new_spec_data) 
+            
+            logging.info("Refit All: Complete.")
+            return current_session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
+
+        except Exception as e:
+            logging.error(f"refit_all failed: {e}", exc_info=True)
+            return 0

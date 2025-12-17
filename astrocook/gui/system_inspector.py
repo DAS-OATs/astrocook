@@ -1395,6 +1395,7 @@ class SystemInspector(QWidget):
         m.addAction(act_resol)
 
         m.addAction("Refit Selected", self._refit)
+        m.addAction("Refit All", self._refit_all)
         m.addAction("Delete", self._delete)
         m.exec(self.table_view.mapToGlobal(pos))
 
@@ -1539,6 +1540,13 @@ class SystemInspector(QWidget):
         comp = self.table_model.get_component_at(src.row())
         if comp and self.main_window:
             self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
+    
+    def _refit_all(self):
+        if self.main_window:
+            # Trigger the newly created recipe
+            self.main_window._on_recipe_requested(
+                "absorbers", "refit_all", {}, {}
+            )
     
     def _update_group_definition(self, selected_comps: List[ComponentDataV2]):
         if not selected_comps or not self.current_session:

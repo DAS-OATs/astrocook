@@ -800,6 +800,14 @@ class MainWindowV2(QMainWindow):
         absorbers_menu.addAction(identify_action)
         self.identify_lines_action = identify_action; self.identify_lines_action.setEnabled(False)
         
+        absorbers_menu.addSeparator()
+
+        refit_all_action = QAction("&Refit All Systems...", self)
+        refit_all_action.setToolTip("Optimizes all components in the spectrum by fitting disjoint groups.")
+        refit_all_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "refit_all"))
+        absorbers_menu.addAction(refit_all_action)
+        self.refit_all_action = refit_all_action; self.refit_all_action.setEnabled(False)
+
         self._update_undo_redo_actions()
 
     def _on_set_custom_limits(self):
@@ -3024,6 +3032,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
+        if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...
