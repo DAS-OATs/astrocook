@@ -1363,6 +1363,7 @@ class MainWindowV2(QMainWindow):
     def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
                                  set_current_list_item=False, target_list_index=None, is_startup=False,
                                  force_autoscale: bool = False, auto_show_aux: Optional[str] = None):
+        
         """Updates the central plot widget and UI state for the given session state."""
         self.session_manager = session_state_to_show # Keep for plot widget compatibility
         is_valid = False
@@ -1412,7 +1413,6 @@ class MainWindowV2(QMainWindow):
                  idx = self.aux_col_combo.findText(current_selection)
                  if idx != -1:
                      target_index = idx
-            
             self.aux_col_combo.setCurrentIndex(target_index)
         
         except Exception as e:
@@ -2536,13 +2536,15 @@ class MainWindowV2(QMainWindow):
             # 2. Identify Lines Logic
             auto_show_col = None
             if recipe_name == 'identify_lines':
+                auto_show_col = 'abs_idx'
                 count = len(new_session_state.systs.components) if new_session_state.systs else 0
-                self._show_custom_message(
-                    title="Identification Complete",
-                    header="Line identification finished.",
-                    text=f"Found {count} candidate systems.",
-                    icon_name="icon_3d_HR.png"
-                )
+                if count > 0:
+                    self._show_custom_message(
+                        title="Identification Complete",
+                        header="Line identification finished.",
+                        text=f"Added {count} candidate systems.",
+                        icon_name="icon_3d_HR.png"
+                    )
 
             should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
 
@@ -2614,7 +2616,7 @@ class MainWindowV2(QMainWindow):
 
                 title = "Resolution Updated" if warn_resolution else "Parameters Updated"
                 header = "Resolution updated internally." if warn_resolution else "Component parameters updated."
-                text = "To see the effect on the absorption model (green line), please <b>refit</b> the components."
+                text = "To see the effect on the absorption model (green line), please refit the components."
                 
                 ret, is_checked = self._show_custom_message(
                     title=title,

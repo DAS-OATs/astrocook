@@ -2013,7 +2013,8 @@ class SpectrumV2:
 
         # Save metadata
         try:
-            new_meta['region_identifications'] = json.dumps(identifications_for_meta)
+            pass
+            #new_meta['region_identifications'] = json.dumps(identifications_for_meta)
         except Exception as e:
             logging.error(f"Failed to serialize region identifications: {e}")
             new_meta['region_identifications'] = None
