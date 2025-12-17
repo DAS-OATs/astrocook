@@ -171,14 +171,14 @@ class RecipeAbsorbersV2:
             bypass_scoring_b = bypass_scoring.lower() == 'true'
             debug_rating_b = debug_rating.lower() == 'true'
             auto_populate_b = str(auto_populate).lower() == 'true'
-            multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
+            multiplet_list_arr = [m.strip() for m in multiplets.split(',') if m.strip()]
         except ValueError:
             logging.error(msg_param_fail); return 0
         
         try:
             logging.debug("identify_lines recipe: Calling spec.identify_lines...")
             new_spec_v2 = self._session.spec.identify_lines(
-                multiplet_list=multiplet_list,
+                multiplet_list=multiplet_list_arr,
                 mask_col=mask_col,
                 min_pix_region=min_pix_i,
                 merge_dv=merge_dv_f,
@@ -191,30 +191,25 @@ class RecipeAbsorbersV2:
             z_map_json = new_spec_v2.meta.get('z_map_json')
 
             if not series_map_json or not z_map_json:
-                logging.warning("identify_lines: Identification ran but produced no component maps.")
-                return self._session.with_new_spectrum(new_spec_v2)
-
-            try:
-                series_map = json.loads(series_map_json)
-                z_map = json.loads(z_map_json)
-                series_map = {int(k): v for k, v in series_map.items()}
-                z_map = {int(k): v for k, v in z_map.items()}
-            except Exception as e:
-                logging.error(f"identify_lines: Failed to deserialize component maps: {e}")
+                logging.warning("identify_lines: No candidates found.")
                 return self._session.with_new_spectrum(new_spec_v2)
 
             if not auto_populate_b:
                 return self._session.with_new_spectrum(new_spec_v2)
 
+            # --- Auto-Populate Logic ---
             temp_session = self._session.with_new_spectrum(new_spec_v2)
+            
+            # Ensure SystemList exists
             if temp_session.systs is None:
                 from astrocook.core.structures import SystemListDataV2
                 from astrocook.core.system_list import SystemListV2
                 temp_session = temp_session.with_new_system_list(SystemListV2(SystemListDataV2()))
 
+            # Call the NEW populate recipe
             temp_recipe = RecipeAbsorbersV2(temp_session)
             final_session = temp_recipe.populate_from_identification(
-                region_id_col='abs_ids',
+                region_id_col='abs_ids', # Unused but kept for API compat
                 series_map_json=series_map_json,
                 z_map_json=z_map_json
             )
@@ -226,29 +221,84 @@ class RecipeAbsorbersV2:
     
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
                        series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
+        """
+        Populates the system list from identification maps.
+        Uses the upgraded add_component to create linked multiplets and fits them immediately.
+        """
+        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+
         if not series_map_json or not z_map_json:
             logging.error("populate_from_identification: Missing maps.")
             return 0
+        
         try:
             series_map = json.loads(series_map_json)
             z_map = json.loads(z_map_json)
+            # Ensure keys are integers
             series_map = {int(k): v for k, v in series_map.items()}
             z_map = {int(k): v for k, v in z_map.items()}
         except Exception as e:
             logging.error(f"populate_from_identification: Failed to deserialize maps: {e}")
             return 0
 
-        try:
-            new_systs_v2 = self._session.systs.add_components_from_regions(
-                spec=self._session.spec,
-                region_id_col=region_id_col,
-                series_map=series_map,
-                z_map=z_map
-            )
-            return self._session.with_new_system_list(new_systs_v2)
-        except Exception as e:
-            logging.error(f"Failed during populate_from_identification: {e}", exc_info=True)
-            return 0
+        running_systs = self._session.systs
+        spec = self._session.spec
+
+        # 1. Trigger Continuum if needed
+        if spec.norm is None:
+            logging.info("Flux not normalized. Triggering continuum estimate...")
+            from astrocook.recipes.continuum import RecipeContinuumV2
+            cont_sess = RecipeContinuumV2(self._session).estimate_auto()
+            spec = cont_sess.spec 
+        
+        logging.info(f"Populating {len(series_map)} systems...")
+
+        # 2. Iterate and Build
+        for sys_id in sorted(series_map.keys()):
+            series = series_map[sys_id]
+            z_val = z_map.get(sys_id, 0.0)
+            
+            # A. Add Single Component (e.g. 'CIV')
+            running_systs = running_systs.add_component(series, z_val, logN=13.5, b=15.0)
+            
+            # B. Immediate Local Fit
+            # Even though it's one component, VoigtFitter will fit all lines in the doublet
+            if running_systs.components:
+                target_uuid = running_systs.components[-1].uuid
+                
+                try:
+                    with running_systs.fitting_context([target_uuid], group_depth=0):
+                        fitter = VoigtFitterV2(spec, running_systs)
+                        new_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=20.0, verbose=0)
+                        
+                        if res and res.success:
+                            running_systs = new_systs
+                except Exception as e:
+                    logging.warning(f"Fit failed for {series}: {e}")
+
+        # 3. Cleanup and Model Generation
+        if running_systs.constraint_model:
+            running_systs.constraint_model.set_active_components(None)
+
+        final_fitter = VoigtFitterV2(spec, running_systs)
+        _, model_flux = final_fitter.compute_model_flux()
+        
+        # 4. Return Result
+        from astrocook.core.structures import DataColumnV2
+        import dataclasses
+        from copy import deepcopy
+        
+        new_aux_cols = deepcopy(spec._data.aux_cols)
+        new_aux_cols['model'] = DataColumnV2(
+            values=model_flux,
+            unit=spec.y.unit,
+            description="Voigt Fit Model"
+        )
+        new_spec_data = dataclasses.replace(spec._data, aux_cols=new_aux_cols)
+        new_spec = spec.__class__(new_spec_data) 
+        
+        return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
                       logN: str = '13.5', b: str = '10.0', btur: str = '0.0',

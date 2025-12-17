@@ -1955,33 +1955,47 @@ class SpectrumV2:
 
         logging.info(f"Finalized {len(reliable_ids)} identified regions.")
         
-        # ---
-        # 6. Save results for populating
-        # ---
+        # --- 6. Save results for populating (Systems Logic) ---
         final_vis_map = np.zeros_like(region_id_map_merged)
-        series_map_for_populating = {} # {rid: series_name}
-        z_map_for_populating = {}      # {rid: z_test}
+        system_series_map = {}
+        system_z_map = {}
+        sys_id_counter = 1
         
-        identifications_for_meta = {} # {rid: [(series, score)]}
+        # Helper to avoid adding the same system twice (e.g. once detected via 1548, once via 1550)
+        # We store a tuple (SystemName, Rounded_Z) to detect duplicates
+        processed_systems = set()
 
-        comp_id_counter = 1
+        # Iterate reliable_ids (which are keyed by Region ID)
         for rid, candidates in reliable_ids.items():
             final_vis_map[region_id_map_merged == rid] = rid
             
-            # --- *** MODIFIED: Flatten list for component creation *** ---
-            meta_cands = []
             for (component_name, score, z_test) in candidates:
-                # Use a *new* unique ID for each component, not the region ID
-                series_map_for_populating[comp_id_counter] = component_name
-                z_map_for_populating[comp_id_counter] = z_test
-                meta_cands.append((component_name, score))
-                comp_id_counter += 1
-            
-            identifications_for_meta[rid] = meta_cands
+                
+                # Deduce System Name from component_name (e.g. CIV_1548 -> CIV)
+                system_name = component_name
+                
+                # Check if it belongs to a multiplet
+                for mult, members in STANDARD_MULTIPLETS.items():
+                    if component_name in members:
+                        system_name = mult
+                        break
+                
+                # Create a unique key for this system at this redshift
+                # Rounding z to 4 decimal places prevents floating point duplicates
+                z_round = round(z_test, 4)
+                uniq_key = (system_name, z_round)
+                
+                if uniq_key not in processed_systems:
+                    system_series_map[sys_id_counter] = system_name
+                    system_z_map[sys_id_counter] = z_test
+                    
+                    # Store metadata for the GUI (optional, for viewing)
+                    # We might want to store the score too
+                    
+                    sys_id_counter += 1
+                    processed_systems.add(uniq_key)
 
-        # ---
-        # 7. Create Final Data Core (saving maps for Step 6)
-        # ---
+        # --- 7. Create Final Data Core ---
         new_meta = spec.meta
         new_aux_cols = deepcopy(spec._data.aux_cols)
 
@@ -2004,13 +2018,12 @@ class SpectrumV2:
             logging.error(f"Failed to serialize region identifications: {e}")
             new_meta['region_identifications'] = None
 
-        # --- *** Store maps for Step 6 (Populating) *** ---
+        # Serialize the SYSTEM maps
         try:
-            new_meta['series_map_json'] = json.dumps(series_map_for_populating)
-            new_meta['z_map_json'] = json.dumps(z_map_for_populating)
+            new_meta['series_map_json'] = json.dumps(system_series_map)
+            new_meta['z_map_json'] = json.dumps(system_z_map)
         except Exception as e:
-             logging.error(f"Failed to serialize component maps: {e}")
-        # --- *** END *** ---
+            logging.error(f"Failed to serialize component maps: {e}")
         
         final_data_core = dataclasses.replace(
             spec._data, 

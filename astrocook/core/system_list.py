@@ -333,26 +333,13 @@ class SystemListV2:
     def add_component(self, series: str, z: float, logN: float = 13.5, 
                       b: float = 10.0, btur: float = 0.0) -> 'SystemListV2':
         """
-        Manually add a single component to the list.
-
-        Parameters
-        ----------
-        series : str
-            Transition or Multiplet name (e.g. 'Ly_a', 'CIV').
-        z : float
-            Redshift.
-        logN : float, optional
-            Column density (log10), default 13.5.
-        b : float, optional
-            Doppler parameter (km/s), default 10.0.
-        btur : float, optional
-            Turbulent broadening (km/s), default 0.0.
-
-        Returns
-        -------
-        SystemListV2
-            A new instance containing the added component.
+        Adds a single component to the list.
+        
+        Note: If 'series' is a multiplet name (e.g. 'CIV'), the VoigtFitter 
+        will automatically model it as all member lines sharing these parameters.
         """
+        from astrocook.core.structures import ComponentDataV2
+
         current_components = self._data.components
         next_id = 1
         if current_components:
@@ -364,9 +351,11 @@ class SystemListV2:
             logN=logN, dlogN=None,
             b=b, db=None,
             btur=btur, dbtur=None,
-            func='voigt', series=series
+            func='voigt', 
+            series=series # Simply store 'CIV'
         )
         
+        # Standard append logic (no expansion, no linking)
         new_component_list = current_components + [new_comp]
         new_id_map = dict(self._data.v1_id_to_uuid_map)
         new_id_map[next_id] = new_comp.uuid
