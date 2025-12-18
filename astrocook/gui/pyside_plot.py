@@ -403,6 +403,8 @@ class SpectrumPlotWidget(QWidget):
     def __init__(self, initial_session_state: Optional['SessionV2'], main_window_ref):
         super().__init__()
         self.main_window = main_window_ref
+
+        self._paused_tool_mode = None
         
         # This style applies to any QToolTip triggered from this widget
         self.setStyleSheet("""
@@ -1840,9 +1842,41 @@ class SpectrumPlotWidget(QWidget):
     def on_press(self, event):
         if not event.inaxes: return
         
-        # 1. Gate: Ignore if toolbar is active
+        # 1. DETECT KNOT HIT
+        hit_knot = False
+        nearest_idx = None
+        
+        # Only check for knots if we are actually editing continuum
+        if self._edit_mode_active and event.inaxes == self.canvas.axes:
+            click_x, click_y = event.xdata, event.ydata
+            
+            # Transform to pixels for precise hit testing (radius 10px)
+            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
+            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
+            
+            if len(knot_pixels) > 0:
+                dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
+                nearest_idx = np.argmin(dists)
+                if dists[nearest_idx] < 10: 
+                    hit_knot = True
+
+        # 2. TOOLBAR CONFLICT GATE
         if hasattr(self, 'toolbar') and self.toolbar.mode != '':
-            return
+            # Toolbar is active (Pan or Zoom)
+            
+            if hit_knot:
+                # User specifically clicked a knot -> OVERRIDE TOOLBAR
+                self._paused_tool_mode = self.toolbar.mode # Remember what was on
+                
+                # Turn off the tool internally so it doesn't process the drag
+                if self.toolbar.mode == 'pan/zoom': 
+                    self.toolbar.pan()
+                elif self.toolbar.mode == 'zoom rect': 
+                    self.toolbar.zoom()
+            else:
+                # User clicked empty space -> LET TOOLBAR WORK
+                # We return immediately so the navigation tool gets the event
+                return
 
         # 2. CONTINUUM EDITING LOGIC (High Priority)
         if self._edit_mode_active and event.inaxes == self.canvas.axes:
@@ -1940,15 +1974,18 @@ class SpectrumPlotWidget(QWidget):
         return False
     
     def on_release(self, event):
-        # --- FIX: Gating Logic ---
-        if hasattr(self, 'toolbar') and self.toolbar.mode != '':
-            return
-        
-        # 1. Handle Continuum Editor Release
-        if self._edit_mode_active and self._active_knot_idx is not None:
-            logging.debug(f"Released knot {self._active_knot_idx}")
-            self._active_knot_idx = None  # <--- This "drops" the knot
-            return  # Stop processing further (e.g. region selection)
+        # 1. Drop the knot
+        if self._active_knot_idx is not None:
+            self._active_knot_idx = None
+            
+        # --- [START NEW BLOCK] ---
+        # 2. Restore Toolbar if we paused it
+        if hasattr(self, '_paused_tool_mode') and self._paused_tool_mode:
+            if self._paused_tool_mode == 'pan/zoom': 
+                self.toolbar.pan()
+            elif self._paused_tool_mode == 'zoom rect': 
+                self.toolbar.zoom()
+            self._paused_tool_mode = None
 
         # 2. Handle Existing Region Selection Logic
         if self._selection_start_x is not None:
