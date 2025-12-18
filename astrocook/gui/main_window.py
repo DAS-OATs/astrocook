@@ -694,6 +694,13 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(smooth_col_action)
         self.smooth_column_action = smooth_col_action; self.smooth_column_action.setEnabled(False)
 
+        # --- NEW: delete Action ---
+        delete_action = QAction("&Delete Elements...", self)
+        delete_action.setToolTip("Delete columns or clear the line list")
+        delete_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "delete"))
+        edit_menu.addAction(delete_action)
+        self.delete_action = delete_action; self.delete_action.setEnabled(False)
+
         edit_menu.addSeparator()
 
         # split Action
@@ -3177,6 +3184,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
+        if hasattr(self, 'delete_action'): self.delete_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)
         if hasattr(self, 'coadd_action'): self.coadd_action.setEnabled(enable_recipes)

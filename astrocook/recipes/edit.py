@@ -1,11 +1,13 @@
 from astropy import units as au
 from copy import deepcopy
+import dataclasses
 import logging
 import numpy as np
 import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List
 
-from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2, SystemListDataV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.system_list import SystemListV2
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -68,6 +70,14 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "renorm_model", "type": bool, "default": False, "doc": "If smoothing 'cont', also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "edit_cb.html#smooth_column" # Placeholder URL
+    },
+    "delete": {
+        "brief": "Delete elements.",
+        "details": "Remove columns from the spectrum or clear the line list.",
+        "params": [
+            {"name": "targets", "type": str, "default": "", "doc": "Comma-separated list of items to delete (e.g. 'cont, lines')"}
+        ],
+        "url": "edit_cb.html#delete"
     },
     "split": {
         "brief": "Split spectrum by expression.",
@@ -527,7 +537,76 @@ class RecipeEditV2:
         except Exception as e:
             logging.error(f"Failed during smooth_column: {e}", exc_info=True)
             return 0
+        
+    def delete(self, targets: str) -> 'SessionV2':
+        """
+        Deletes specified columns or the system (line) list.
 
+        Parameters
+        ----------
+        targets : str
+            Comma-separated names of columns to delete (e.g. 'cont', 'model') 
+            or 'lines'/'systems' to clear the system list.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the elements removed.
+        """
+        target_list = [t.strip() for t in targets.split(',') if t.strip()]
+        if not target_list:
+            return self._session
+
+        # 1. Start with current state references
+        current_spec = self._session.spec
+        new_systs = self._session.systs
+        
+        cols_to_delete = []
+        
+        # 2. Parse Targets
+        for t in target_list:
+            # Handle System List clearing
+            if t in ['lines', 'systems']:
+                # [FIX 1] Pass empty data container to constructor
+                new_systs = SystemListV2(SystemListDataV2())
+                logging.info("Marked system list for deletion.")
+            else:
+                # Assume it's a column name
+                cols_to_delete.append(t)
+
+        # 3. Apply Column Deletions (Immutable V2 Way)
+        new_spec = current_spec
+        
+        if cols_to_delete:
+            # We must modify the aux_cols dictionary directly
+            new_aux_cols = deepcopy(current_spec._data.aux_cols)
+            modified = False
+            
+            for col in cols_to_delete:
+                # Protect core columns
+                if col in ['x', 'y', 'dy', 'xmin', 'xmax']:
+                    logging.warning(f"Delete: Cannot delete core column '{col}'.")
+                elif col in new_aux_cols:
+                    # [FIX 2] Delete directly from the dictionary
+                    del new_aux_cols[col]
+                    modified = True
+                    logging.info(f"Deleted column: {col}")
+                else:
+                    logging.warning(f"Delete: Column '{col}' not found.")
+            
+            if modified:
+                # Rebuild SpectrumDataV2 with new aux_cols
+                new_data = dataclasses.replace(current_spec._data, aux_cols=new_aux_cols)
+                
+                # Create new SpectrumV2 wrapper
+                # (Use type(current_spec) to respect subclassing if any)
+                new_spec = type(current_spec)(
+                    new_data, 
+                    history=current_spec.history + [f"Deleted {cols_to_delete}"]
+                )
+
+        return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+    
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
         Splits the spectrum, creating a new session with a subset of the data.
