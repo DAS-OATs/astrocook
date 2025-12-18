@@ -1570,6 +1570,11 @@ class SpectrumPlotWidget(QWidget):
         Slow handler called by timer (hover stop).
         Calculates Component, Region, and Data info and displays the unified tooltip.
         """
+        # 0. CHECK MODIFIERS: Disable tooltip if Ctrl/Cmd is held
+        modifiers = QApplication.keyboardModifiers()
+        if (modifiers & Qt.ControlModifier):
+            return
+        
         if not event or not event.xdata or not event.ydata:
             return
         
@@ -1842,6 +1847,69 @@ class SpectrumPlotWidget(QWidget):
     def on_press(self, event):
         if not event.inaxes: return
         
+        # --- 0. CHECK MODIFIERS ---
+        # Use Qt directly to reliably detect 'Ctrl' key even if plot focus is fuzzy
+        modifiers = QApplication.keyboardModifiers()
+        is_ctrl_held = (modifiers & Qt.ControlModifier)
+
+        # --- 1. CONTEXT MENU (CTRL + RIGHT CLICK) ---
+        # We handle this FIRST. If user wants the menu, we pause everything else.
+        if event.button == 3 and is_ctrl_held:
+            
+            # A. Pause Toolbar (if active) to prevent artifacts
+            paused_mode = None
+            if hasattr(self, 'toolbar') and self.toolbar.mode != '':
+                paused_mode = self.toolbar.mode
+                if self.toolbar.mode == 'pan/zoom': 
+                    self.toolbar.pan() # Toggle off
+                elif self.toolbar.mode == 'zoom rect': 
+                    self.toolbar.zoom() # Toggle off
+
+            # B. Prepare Menu
+            found_comp = None
+            xlim = event.inaxes.get_xlim(); tol = (xlim[1] - xlim[0]) * 0.015 
+            for ax, x_pos, comp in self._tick_visuals:
+                if ax == event.inaxes and abs(event.xdata - x_pos) < tol: found_comp = comp; break
+            
+            menu = QMenu(self)
+            
+            # --- Menu Items ---
+            if found_comp:
+                act_inspect = QAction(f"Inspect {found_comp.series} (Group View)", menu)
+                if self.main_window: act_inspect.triggered.connect(lambda checked=False, u=found_comp.uuid: self.main_window.open_inspector_on_component(u))
+                menu.addAction(act_inspect)
+                menu.addSeparator()
+
+            z_click = self.calculate_z_from_x(event.xdata)
+            if z_click is not None and self.main_window and self.main_window.cursor_show_checkbox.isChecked():
+                series_str = self.main_window.cursor_series_input.text()
+                act_add = QAction(f"Add {series_str} at z={z_click:.5f}", menu)
+                act_add.triggered.connect(lambda checked=False, z=z_click, s=series_str: self.main_window._on_recipe_requested("absorbers", "add_component", {'series': s, 'z': z}, {}))
+                menu.addAction(act_add)
+                
+                act_zem = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
+                act_zem.triggered.connect(lambda checked=False, z=z_click: self.main_window._on_recipe_requested("edit", "set_properties", {"z_em": str(z)}, {}))
+                menu.addAction(act_zem)
+
+            # --- NEW: Split Action ---
+            menu.addSeparator()
+            act_split = QAction("Split from Current Zoom", menu)
+            act_split.setToolTip("Create a new session containing only the visible spectral region.")
+            if self.main_window:
+                act_split.triggered.connect(lambda: self.main_window.launch_split_from_current_view())
+            menu.addAction(act_split)
+
+            # C. Execute Menu
+            if not menu.isEmpty(): 
+                menu.exec(QCursor.pos())
+
+            # D. Restore Toolbar immediately
+            if paused_mode:
+                if paused_mode == 'pan/zoom': self.toolbar.pan()
+                elif paused_mode == 'zoom rect': self.toolbar.zoom()
+
+            return True # Consume event
+        
         # 1. DETECT KNOT HIT
         hit_knot = False
         nearest_idx = None
@@ -1977,7 +2045,10 @@ class SpectrumPlotWidget(QWidget):
             act_split.triggered.connect(lambda: self.main_window.launch_split_from_current_view())
             menu.addAction(act_split)
 
-            if not menu.isEmpty(): menu.exec(QCursor.pos()); return True
+            if not menu.isEmpty(): 
+                menu.exec(QCursor.pos())
+                
+                return True
 
         return False
     
