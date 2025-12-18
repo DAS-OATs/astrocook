@@ -74,13 +74,26 @@ def _local_convolve_flux(flux, x, resol, resol_unit='R'):
         logging.error(f"SystemInspector: Convolution failed: {e}")
         return flux
 
-# --- 1. Table Configuration ---
+# --- 1. Table Configuration (UPDATED) ---
+# We removed the separate error columns (dz, dlogN, db)
 COL_MAP = {
-    "ID": "id", "Transitions": "series", "z": "z", "logN": "logN", 
-    "b": "b", "btur": "btur", "dz": "dz", "dlogN": "dlogN", "db": "db"
+    "ID": "id", 
+    "Trans.": "series", 
+    "z": "z", 
+    "logN": "logN", 
+    "b": "b", 
+    "btur": "btur"
 }
 COLUMNS = list(COL_MAP.keys())
-EDITABLE_COLS = {"Transitions", "z", "logN", "b", "btur"}
+EDITABLE_COLS = {"z", "logN", "b", "btur"}
+
+# Mapping to find the error attribute for a given value attribute
+ERR_MAP = {
+    "z": "dz",
+    "logN": "dlogN",
+    "b": "db",
+    "btur": "dbtur"
+}
 
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
@@ -201,11 +214,61 @@ class SystemTableModel(QAbstractTableModel):
              tooltip_html += "</div>"
              return tooltip_html
 
-        if role in (Qt.DisplayRole, Qt.EditRole):
+        # 3. DISPLAY & EDIT LOGIC (Refined)
+        if role == Qt.DisplayRole or role == Qt.EditRole:
             val = getattr(comp, attr, None)
-            if role == Qt.DisplayRole and isinstance(val, float):
-                return f"{val:.6f}" if attr == 'z' else f"{val:.3f}" if attr in ['logN', 'dlogN'] else f"{val:.2f}"
-            return str(val) if val is not None else ""
+            
+            # Formatting Rules
+            val_fmt = "{}"
+            err_fmt = "{}"
+            
+            if attr == 'z':
+                val_fmt = "{:.6f}"
+                err_fmt = "{:.2e}"  # Scientific notation for dz
+            elif attr == 'logN':
+                val_fmt = "{:.3f}"
+                err_fmt = "{:.3f}"
+            elif attr == 'b':
+                val_fmt = "{:.2f}"
+                err_fmt = "{:.2f}"
+            elif attr == 'btur':
+                val_fmt = "{:.2f}"
+                err_fmt = "{:.2f}"
+
+            # --- EDIT ROLE: Clean Value Only ---
+            if role == Qt.EditRole:
+                if isinstance(val, (int, float)):
+                    return val_fmt.format(val)
+                return str(val) if val is not None else ""
+            
+            # --- DISPLAY ROLE: Value ± Error ---
+            if role == Qt.DisplayRole:
+                if val is None: return ""
+                
+                # Format Main Value
+                if isinstance(val, (int, float)):
+                    val_str = val_fmt.format(val)
+                else:
+                    val_str = str(val)
+
+                # Append Error if it exists (and we are in a parameter column)
+                if attr in ERR_MAP and isinstance(val, (int, float)):
+                    err_attr = ERR_MAP[attr]
+                    err_val = getattr(comp, err_attr, None)
+                    
+                    if err_val is not None and np.isfinite(err_val) and err_val > 0:
+                        err_str = err_fmt.format(err_val)
+                        return f"{val_str} ± {err_str}"
+                
+                return val_str
+
+        # 4. Sorting (Raw Float)
+        if role == Qt.UserRole:
+            val = getattr(comp, attr, 0)
+            if val is None: return -np.inf
+            try: return float(val)
+            except: return str(val)
+
         if role == Qt.TextAlignmentRole: return Qt.AlignCenter
         return None
 
@@ -257,10 +320,17 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         return comp.uuid in self.allowed_uuids
 
     def lessThan(self, left, right):
-        l_data = self.sourceModel().data(left, Qt.DisplayRole)
-        r_data = self.sourceModel().data(right, Qt.DisplayRole)
-        try: return float(l_data) < float(r_data)
-        except (ValueError, TypeError): return str(l_data) < str(r_data)
+        l_data = self.sourceModel().data(left, Qt.UserRole)
+        r_data = self.sourceModel().data(right, Qt.UserRole)
+        
+        # Handle Nones/Types safely
+        if l_data is None: l_data = -np.inf
+        if r_data is None: r_data = -np.inf
+        
+        try: 
+            return float(l_data) < float(r_data)
+        except (ValueError, TypeError): 
+            return str(l_data) < str(r_data)
         
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
@@ -758,7 +828,13 @@ class VelocityPlotWidget(QWidget):
             if event.inaxes == ax and abs(event.xdata - v_pos) < tol_v:
                 c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
                 c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
-                tooltip_text = (f"ID: {comp.id} | {comp.series}\nz: {comp.z:.5f}\nChi2: {c_chi2}\nRes: {c_resol}")
+                tooltip_text = (
+                    f"<div style='font-size: 13px'>"
+                    f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
+                    f"<b>z:</b> {comp.z:.5f}<br>"
+                    f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+                    f"</div>"
+                )
                 break
         
         if tooltip_text: QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
