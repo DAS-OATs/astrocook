@@ -1965,6 +1965,35 @@ class SpectrumPlotWidget(QWidget):
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
 
+    def _generate_velocity_knots(self, x_full, stride_kms):
+        """
+        Helper: Generates indices for knots spaced by `stride_kms` in velocity.
+        """
+        # Constants
+        c_kms = 299792.458
+        
+        # 1. Convert wavelength grid to relative velocity (starting at 0)
+        # v = c * ln(lambda / lambda_0)
+        # We assume x_full is in Angstroms/nm (linear wavelength)
+        v_rel = c_kms * np.log(x_full / x_full[0])
+        
+        # 2. Create the target velocity grid
+        # From 0 to max_velocity, step = stride_kms
+        target_v = np.arange(0, v_rel[-1], stride_kms)
+        
+        # 3. Find the indices in the real data that are closest to these velocities
+        # searchsorted finds the insertion points to maintain order
+        indices = np.searchsorted(v_rel, target_v)
+        
+        # 4. Ensure the last point is included
+        if indices[-1] != len(x_full) - 1:
+            indices = np.append(indices, len(x_full) - 1)
+            
+        # 5. Sanity check: Ensure unique indices (in case stride is smaller than 1 pixel)
+        indices = np.unique(indices)
+        
+        return indices
+
     def start_continuum_edit(self, initial_stride=500):
         if not self.main_window.active_history: return
         
@@ -1981,10 +2010,7 @@ class SpectrumPlotWidget(QWidget):
         else:
             y_source = spec.y.value
             
-        stride = int(initial_stride)
-        indices = np.arange(0, len(x_full), stride, dtype=int)
-        if indices[-1] != len(x_full) - 1:
-            indices = np.append(indices, len(x_full) - 1)
+        indices = self._generate_velocity_knots(x_full, float(initial_stride))
             
         self._knots_x = x_full[indices]
         self._knots_y = y_source[indices]
@@ -2123,9 +2149,7 @@ class SpectrumPlotWidget(QWidget):
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
         
-        indices = np.arange(0, len(x_full), int(stride), dtype=int)
-        if indices[-1] != len(x_full) - 1:
-            indices = np.append(indices, len(x_full) - 1)
+        indices = self._generate_velocity_knots(x_full, float(stride))
             
         new_knots_x = x_full[indices]
         

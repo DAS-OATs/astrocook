@@ -1564,8 +1564,10 @@ class MainWindowV2(QMainWindow):
 
             self.edit_cont_button.setText("Save")
             self.stride_slider.setEnabled(True)
+            
+            # Update label with units
             current_stride = self._get_log_stride(self.stride_slider.value())
-            self.stride_label.setText(f"Spacing: {current_stride} px")
+            self.stride_label.setText(f"Spacing: {current_stride:.0f} km/s")
             
         else:
             # --- STOPPING & SAVING ---
@@ -1637,7 +1639,7 @@ class MainWindowV2(QMainWindow):
         stride = self._get_log_stride(slider_pos)
 
         # Update the text label live
-        self.stride_label.setText(f"Spacing: {stride} px")
+        self.stride_label.setText(f"Spacing: {stride:.0f} km/s")
 
         # Update the plot (using your previously fixed method)
         if hasattr(self.plot_viewer, '_edit_mode_active') and self.plot_viewer._edit_mode_active:
@@ -1654,17 +1656,24 @@ class MainWindowV2(QMainWindow):
             self.plot_viewer.end_stride_interaction()
 
     def _get_log_stride(self, slider_value):
-        """Maps linear slider (0-100) to logarithmic stride (10-5000)."""
-        min_val = 100
-        max_val = 5000
+        """
+        Maps linear slider (0-100) to logarithmic stride in km/s.
+        Range: ~100 km/s to ~20,000 km/s.
+        """
+        min_val = 100.0   # Minimum spacing (High detail)
+        max_val = 20000.0 # Maximum spacing (Smooth / Power law)
+        
+        # Logarithmic mapping
         # Formula: y = min * (max/min)^(x/100)
         stride = min_val * (max_val / min_val) ** (slider_value / 100.0)
-        return int(stride)
-
+        return stride # Returns float (km/s)
+    
     def _set_slider_from_stride(self, stride):
-        """Inverse mapping: Stride -> Slider Position (for defaults)."""
-        min_val = 10
-        max_val = 2000
+        """Inverse mapping: Stride (km/s) -> Slider Position."""
+        min_val = 100.0
+        max_val = 20000.0
+        
+        # Clamp values
         if stride < min_val: stride = min_val
         if stride > max_val: stride = max_val
 
