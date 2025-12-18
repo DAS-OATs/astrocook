@@ -90,7 +90,7 @@ class SystemListV2:
             # Use the clean rebuilt map
             clean_parsed = new_parsed
             constraints_dirty = True
-            logging.info("SystemListV2: Hydrated constraints from clean JSON map.")
+            logging.debug("SystemListV2: Hydrated constraints from clean JSON map.")
         
         # 3. Legacy Fallback: If V2 map empty, Sanitize Parsed Map & Populate V2
         elif clean_parsed:
