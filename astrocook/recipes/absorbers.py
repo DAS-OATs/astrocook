@@ -173,6 +173,29 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
     },
+    "update_constraints_column": {
+        "brief": "Bulk update constraints.",
+        "details": "Freeze or unfreeze a specific parameter for ALL components.",
+        "params": [
+            {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b, btur)"},
+            {"name": "is_free", "type": bool, "default": True, "doc": "Set to True (free) or False (frozen)."}
+        ],
+        "url": "absorbers_cb.html#update_constraints_column",
+        "gui_hidden": True
+    },
+    "add_linked_system": {
+        "brief": "Add linked system.",
+        "details": "Add multiple components (e.g. CIV, SiIV) and link their redshifts.",
+        "params": [
+            {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated list of series."},
+            {"name": "z", "type": float, "default": 0.0, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": 13.5, "doc": "Column Density"},
+            {"name": "b", "type": float, "default": 10.0, "doc": "Doppler parameter"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window"}
+        ],
+        "url": "absorbers_cb.html#add_linked_system",
+        "gui_hidden": True
+    },
     "optimize_system": {
         "brief": "Optimize system (Iterative Fit).",
         "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
@@ -904,6 +927,92 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed update_constraint: {e}", exc_info=True)
             return 0
+
+    def update_constraints_column(self, param: str, is_free: bool) -> 'SessionV2':
+        """
+        Updates the constraint status (free/frozen) for a specific parameter
+        across ALL components in the session.
+        """
+        if not self._session.systs: return 0
+        
+        current_systs = self._session.systs
+        # Iterate over all components and apply the update_constraint logic
+        # Since update_constraint returns a NEW system list, we chain the updates.
+        
+        # Optimization: We can modify the map directly if we access the underlying dict,
+        # but let's use the API loop to be safe, modifying the wrapper in place.
+        
+        running_systs = current_systs
+        
+        for c in current_systs.components:
+            # We explicitly pass None for expression/target to clear links if setting to free,
+            # or preserve them if just freezing? 
+            # Usually "Freeze All" implies breaking links or just fixing values.
+            # The `update_constraint` logic handles "is_free=True/False" by updating the flag.
+            
+            # Note: If is_free=True, update_constraint clears links.
+            # If is_free=False, it keeps links if they exist, or just freezes value.
+            running_systs = running_systs.update_constraint(
+                c.uuid, param, is_free=is_free
+            )
+            
+        return self._session.with_new_system_list(running_systs)
+
+    def add_linked_system(self, series_list: str, z: float, logN: float = 13.5, 
+                          b: float = 10.0, z_window_kms: float = 20.0) -> 'SessionV2':
+        """
+        Adds multiple components and links the redshifts of the subsequent ones 
+        to the first one in the list.
+        """
+        series_names = [s.strip() for s in series_list.split(',') if s.strip()]
+        if not series_names: return 0
+        
+        current_session = self._session
+        
+        # 1. Add Primary (The Anchor)
+        primary_series = series_names[0]
+        logging.info(f"Adding Primary: {primary_series} at z={z:.5f}")
+        
+        # Use existing add_component recipe logic to handle creation
+        # (This handles empty list creation etc.)
+        # But we need the UUID, so we call the SystemList API directly
+        
+        if current_session.systs is None:
+            from astrocook.core.structures import SystemListDataV2
+            from astrocook.core.system_list import SystemListV2
+            new_systs = SystemListV2(SystemListDataV2())
+        else:
+            new_systs = current_session.systs
+            
+        # Add Primary
+        new_systs = new_systs.add_component(primary_series, z, logN, b)
+        primary_uuid = new_systs.components[-1].uuid
+        
+        # 2. Add Secondaries (Linked)
+        secondary_uuids = []
+        
+        for s_name in series_names[1:]:
+            logging.info(f"Adding Linked: {s_name}")
+            new_systs = new_systs.add_component(s_name, z, logN, b)
+            sec_uuid = new_systs.components[-1].uuid
+            secondary_uuids.append(sec_uuid)
+            
+            # Link Z to Primary
+            expr = f"p['{primary_uuid}'].z"
+            new_systs = new_systs.update_constraint(
+                sec_uuid, 'z', is_free=False, expression=expr, target_uuid=primary_uuid
+            )
+            
+        # 3. Create Temp Session & Fit
+        # We fit the Primary (which pulls in the linked secondaries via grouping)
+        temp_session = current_session.with_new_system_list(new_systs)
+        temp_recipe = RecipeAbsorbersV2(temp_session)
+        
+        logging.info(f"Fitting linked system group...")
+        # Fit centered on Primary
+        final_session = temp_recipe.fit_component(primary_uuid, z_window_kms=str(z_window_kms))
+        
+        return final_session
 
     def optimize_system(self, uuid: str, max_components: str = '5', 
                         threshold_sigma: str = '2.5', aic_penalty: str = '0.0',

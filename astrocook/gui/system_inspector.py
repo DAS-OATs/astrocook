@@ -923,29 +923,61 @@ class VelocityPlotWidget(QWidget):
                 c_kms = 299792.458
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
-                # Determine series name (e.g. CIV_1548 -> CIV)
-                series = trans_name
+                # 1. Identify the Group of the clicked panel
+                # Always prefer the Multiplet name (e.g. SiIV) over the line name (SiIV_1402)
+                group_primary = trans_name
+                for g, members in STANDARD_MULTIPLETS.items():
+                    if trans_name in members:
+                        group_primary = g; break
                 
-                # Check if this transition belongs to a multiplet group
-                found_group = None
-                if series not in STANDARD_MULTIPLETS:
+                # 2. Identify all OTHER visible groups
+                visible_other_groups = set()
+                
+                for t in self._all_transitions:
+                    g_name = t
                     for g, members in STANDARD_MULTIPLETS.items():
-                        if series in members:
-                            found_group = g
-                            break
+                        if t in members: g_name = g; break
+                    
+                    # Only add if it is DISTINCT from the primary group
+                    if g_name != group_primary:
+                        visible_other_groups.add(g_name)
                 
-                # [FIX] Only promote to Group Name if siblings are actually visible.
-                # If I only see CII_1334, I want to add CII_1334, not the whole CII group.
-                if found_group:
-                    siblings_visible = any(m in self._all_transitions for m in STANDARD_MULTIPLETS[found_group] if m != trans_name)
-                    if siblings_visible:
-                        series = found_group
+                # 3. Add Linked Action (Only if other groups exist)
+                # If visible_other_groups is empty, it means we are only looking at 
+                # lines from the same group (e.g. SiIV_1393 and SiIV_1402).
+                # In that case, "Add SiIV" (Standard) is sufficient.
                 
-                # Add Action
-                act_add = QAction(f"Add {series} at z={z_new:.5f}", menu)
+                if visible_other_groups:
+                    # Sort for consistency
+                    others_sorted = sorted(list(visible_other_groups))
+                    
+                    # Construct list: Primary, Others...
+                    combined_list_str = f"{group_primary}," + ",".join(others_sorted)
+                    
+                    # Label: "Add SiIV-CIV-NV..."
+                    label_str = f"{group_primary}-" + "-".join(others_sorted)
+                    
+                    act_link = QAction(f"Add {label_str} at z={z_new:.5f} (linked z)", menu)
+                    act_link.triggered.connect(lambda checked=False, sl=combined_list_str, z=z_new: 
+                        self.inspector.main_window._on_recipe_requested(
+                            "absorbers", "add_linked_system",
+                            {
+                                'series_list': sl, 'z': z,
+                                'logN': self.cursor_logN, 'b': self.cursor_b
+                            }, {}
+                        )
+                    )
+                    menu.addAction(act_link)
+                    has_actions = True
+
+                menu.addSeparator()
+
+                # 4. Standard Single Add (Always available)
+                # This adds the Primary Group (e.g. "Add SiIV")
+                act_add = QAction(f"Add {group_primary} at z={z_new:.5f}", menu)
                 act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                     "absorbers", "add_component", {
-                        'series': series, 'z': z_new,
+                        'series': group_primary, 'z': z_new,
                         'logN': self.cursor_logN, 'b': self.cursor_b
                     }, {}))
                 
@@ -1427,6 +1459,19 @@ class SystemInspector(QWidget):
                 m.addAction(act)
             
             m.addSeparator()
+            act_freeze_all = QAction(f"Freeze All '{col_name}'", m)
+            act_freeze_all.triggered.connect(
+                lambda: self._bulk_toggle_constraint(param_attr, False)
+            )
+            m.addAction(act_freeze_all)
+
+            act_free_all = QAction(f"Unfreeze All '{col_name}'", m)
+            act_free_all.triggered.connect(
+                lambda: self._bulk_toggle_constraint(param_attr, True)
+            )
+            m.addAction(act_free_all)
+
+            m.addSeparator()
 
         # Set Resolution Action
         act_resol = QAction("Set R for this component...", m)
@@ -1553,6 +1598,14 @@ class SystemInspector(QWidget):
                     "expression": expression,
                     "target_uuid": target_uuid # <--- Pass it
                 }, 
+                {}
+            )
+    
+    def _bulk_toggle_constraint(self, param, is_free):
+        if self.main_window:
+            self.main_window._on_recipe_requested(
+                "absorbers", "update_constraints_column",
+                {"param": param, "is_free": is_free},
                 {}
             )
     

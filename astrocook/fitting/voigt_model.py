@@ -214,6 +214,8 @@ class VoigtModelConstraintV2:
                      v2_constraint_obj = dataclasses.replace(v2_constraint_obj, is_free=effective_is_free)
             else:
                 effective_is_free = True and (not force_freeze)
+                if param_name == 'btur':
+                    effective_is_free = False
                 is_free[i] = effective_is_free
                 v2_constraint_obj = ParameterConstraintV2(is_free=effective_is_free)
 
