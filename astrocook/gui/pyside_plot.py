@@ -1000,18 +1000,20 @@ class SpectrumPlotWidget(QWidget):
                         # Create a boolean mask where regions exist
                         region_mask = (aux_data > 0)
                         
-                        # Use a blended transform to shade the full vertical extent
-                        # X in data coordinates, Y in axes coordinates (0 to 1)
-                        trans = ax.get_xaxis_transform()
-                        
-                        # Fill with a subtle color (e.g., teal/cyan with low alpha)
-                        ax.fill_between(x_data, 0.05, 0.95, # 0 to 1 in axes coords covers full height
-                                        where=region_mask,
-                                        color='teal', alpha=0.05, 
-                                        transform=trans,
-                                        label='Detected Regions',
-                                        rasterized=True)
-
+                        # Only plot/label if there are actually regions to show
+                        if np.any(region_mask):
+                            # Use a blended transform to shade the full vertical extent
+                            # X in data coordinates, Y in axes coordinates (0 to 1)
+                            trans = ax.get_xaxis_transform()
+                            
+                            # Fill with a subtle color (e.g., teal/cyan with low alpha)
+                            ax.fill_between(x_data, 0.05, 0.95, # 0 to 1 in axes coords covers full height
+                                            where=region_mask,
+                                            color='teal', alpha=0.05, 
+                                            transform=trans,
+                                            label='Detected Regions',
+                                            rasterized=True)
+    
                     # Plot based on data type
                     elif aux_data.dtype.kind in 'fiu': # Float or Int
                         if is_scatter:

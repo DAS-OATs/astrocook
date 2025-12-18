@@ -250,7 +250,7 @@ class RecipeAbsorbersV2:
         # We create a temporary session with a restricted mask to force identify_lines
         # to ignore specific regions.
         
-        session_for_id = self._session
+        session_current = self._session
         
         # --- 0. FORCE MASK REGENERATION ---
         # Always generate a fresh mask to ensure it matches current z_em/flux state.
@@ -258,8 +258,8 @@ class RecipeAbsorbersV2:
         logging.info(f"Generating fresh '{mask_col}'...")
         try:
             from astrocook.recipes.continuum import RecipeContinuumV2
-            rec_cont = RecipeContinuumV2(session_for_id)
-            session_for_id = rec_cont.find_absorbed(
+            rec_cont = RecipeContinuumV2(session_current)
+            session_current = rec_cont.find_absorbed(
                 smooth_len_lya="5000.0", 
                 smooth_len_out="400.0",
                 kappa="2.0",
@@ -268,14 +268,64 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Mask generation failed: {e}")
             return 0
-
-        target_mask_col = mask_col
+        
+        # --- 0.5 SMART CLEAN: Remove OLD components in this region ---
+        # This ensures re-execution is idempotent (no duplicates).
+        if region_limit != "None" and session_current.systs:
+            try:
+                spec = session_current.spec
+                obs_min, obs_max = spec.get_region_bounds(region_limit)
+                
+                from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+                
+                # 1. Identify Survivors
+                surviving_comps = []
+                deleted_count = 0
+                
+                for c in session_current.systs.components:
+                    # Resolve Wavelength
+                    lam_rest = None
+                    if c.series in ATOM_DATA:
+                        lam_rest = ATOM_DATA[c.series]['wave']
+                    elif c.series in STANDARD_MULTIPLETS:
+                         # Use primary line for location check
+                         prim = STANDARD_MULTIPLETS[c.series][0]
+                         if prim in ATOM_DATA:
+                             lam_rest = ATOM_DATA[prim]['wave']
+                    
+                    should_delete = False
+                    if lam_rest:
+                        lam_obs = lam_rest * (1 + c.z) * au.Angstrom
+                        # Check overlap
+                        if obs_min <= lam_obs <= obs_max:
+                            should_delete = True
+                    
+                    if should_delete:
+                        deleted_count += 1
+                    else:
+                        surviving_comps.append(c)
+                
+                # 2. Bulk Delete
+                if deleted_count > 0:
+                    logging.info(f"Clean Start: Removed {deleted_count} existing components in '{region_limit}'.")
+                    
+                    import dataclasses
+                    from astrocook.core.system_list import SystemListV2
+                    
+                    # Create new system list with only survivors
+                    new_data = dataclasses.replace(session_current.systs._data, components=surviving_comps)
+                    new_systs = SystemListV2(new_data)
+                    session_current = session_current.with_new_system_list(new_systs)
+                    
+            except Exception as e:
+                logging.warning(f"Smart clean failed: {e}")
         
         # --- 1. PREPARE REGION MASK (Using SSOT) ---
+        target_mask_col = mask_col
         if region_limit != "None":
-            spec = session_for_id.spec
             
             try:
+                spec = session_current.spec
                 # 1. Get Bounds (e.g. Ly-beta to Ly-alpha)
                 obs_min, obs_max = spec.get_region_bounds(region_limit)
                 logging.debug(f"Applying {region_limit} mask: {obs_min:.1f} - {obs_max:.1f}")
@@ -295,10 +345,10 @@ class RecipeAbsorbersV2:
                 mask_vals[x_ang > max_ang] = False
                 
                 # 4. Inject
-                new_spec = session_for_id.spec.update_column(
+                new_spec = session_current.spec.update_column(
                     target_mask_col, mask_vals, unit=au.dimensionless_unscaled
                 )
-                session_for_id = session_for_id.with_new_spectrum(new_spec)
+                session_current = session_current.with_new_spectrum(new_spec)
                 
             except ValueError as e:
                 # Handle missing z_em or bad region name gracefully
@@ -306,11 +356,15 @@ class RecipeAbsorbersV2:
                 # Proceed without masking (fallback to full spectrum)
         
         # --- 2. IDENTIFY (using the masked session) ---
-        if self._is_stop_requested(): return self._session
         logging.info("Step 1/3: Scanning spectrum for candidate pairs...")
         
+        # Capture the OLD abs_ids before they are overwritten
+        old_abs_ids = None
+        if session_current.spec.has_aux_column('abs_ids'):
+            old_abs_ids = session_current.spec.get_column('abs_ids').value.copy()
+            
         # Create a temp recipe wrapper for the masked session
-        rec_temp = RecipeAbsorbersV2(session_for_id)
+        rec_temp = RecipeAbsorbersV2(session_current)
         
         session_step1 = rec_temp.identify_lines(
             multiplets=multiplets, 
@@ -323,6 +377,24 @@ class RecipeAbsorbersV2:
         )
         
         logging.info(">> PROGRESS: 30")
+        if self._is_stop_requested(): return self._session
+
+        # --- 2.5 MERGE IDENTIFICATION IDs (Additive Visualization) ---
+        if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
+            try:
+                new_ids = session_step1.spec.get_column('abs_ids').value
+                # If new_ids has a value (detected region), keep it.
+                # If it's 0 (empty), restore the old ID (from previous recipe).
+                merged_ids = np.where(new_ids != 0, new_ids, old_abs_ids)
+                
+                # Inject back
+                spec_merged = session_step1.spec.update_column(
+                    'abs_ids', merged_ids, unit=au.dimensionless_unscaled
+                )
+                session_step1 = session_step1.with_new_spectrum(spec_merged)
+                logging.debug("Merged new identifications with existing ones.")
+            except Exception as e:
+                logging.warning(f"Failed to merge abs_ids: {e}")
         
         # Check results
         spec_meta = session_step1.spec.meta
@@ -335,7 +407,6 @@ class RecipeAbsorbersV2:
             return self._session
 
         # --- 3. POPULATE ---
-        if self._is_stop_requested(): return self._session
         logging.info("Step 2/3: Creating component models...")
         rec_step2 = RecipeAbsorbersV2(session_step1)
         session_step2 = rec_step2.populate_from_identification(
@@ -345,9 +416,9 @@ class RecipeAbsorbersV2:
         )
 
         logging.info(">> PROGRESS: 50")
-
-        # --- 4. REFIT ALL ---
         if self._is_stop_requested(): return self._session
+        
+        # --- 4. REFIT ALL ---
         logging.info("Step 3/3: Re-fitting all systems...")
         rec_step3 = RecipeAbsorbersV2(session_step2)
         final_session = rec_step3.refit_all(
@@ -357,6 +428,16 @@ class RecipeAbsorbersV2:
             max_group_size='25',
             region_limit=region_limit
         )
+        
+        # Handle the case where refit_all returns 0 (Empty/Clean)
+        # Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)
+        if final_session == 0:
+            logging.info("Refit skipped (no components to fit). Returning clean state.")
+            return session_step2
+
+        # Check for stop request on the valid final session
+
+        if self._is_stop_requested(): return self._session
         
         logging.info("Component pipeline complete.")
         return final_session
@@ -390,6 +471,7 @@ class RecipeAbsorbersV2:
             mask_col='abs_mask',
             region_limit='lya_forest' # <--- FORCE FOREST
         )
+        if self._is_stop_requested(): return self._session
         
         # 2. Cleanup Phase (Interlopers)
         logging.info(">> PROGRESS: 0")
@@ -1016,9 +1098,9 @@ class RecipeAbsorbersV2:
                     if peek_comp:
                         series_str = peek_comp.series
                         z_str = f"{peek_comp.z:.4f}"
-                        logging.info(f"Re-fitting System {i+1}/{total_units}: {series_str} at z={z_str}")
+                        logging.info(f"Fitting System {i+1}/{total_units}: {series_str} at z={z_str}")
                     else:
-                        logging.info(f"Re-fitting Group {i+1}/{total_units}...")
+                        logging.info(f"Fitting Group {i+1}/{total_units}...")
 
                 if not target_uuids: continue
                 

@@ -2517,6 +2517,15 @@ class MainWindowV2(QMainWindow):
         """Slot called when Stop button is clicked."""
         if hasattr(self, '_current_worker') and self._current_worker:
             self._current_worker.stop()
+            
+            # Update UI immediately
+            if self.progress_dialog and hasattr(self.progress_dialog, 'stop_btn'):
+                self.progress_dialog.stop_btn.setEnabled(False)
+                self.progress_dialog.stop_btn.setText("Stopping...")
+                self.progress_dialog.status_label.setText("Aborting process...")
+        else:
+            # If state is weird (no worker), just close
+            self._cleanup_progress_ui()
 
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
@@ -2822,17 +2831,32 @@ class MainWindowV2(QMainWindow):
 
     # --- *** 5. NEW: Callback slots for single recipes *** ---
     def _cleanup_progress_ui(self):
-        """Helper to remove log handlers and close dialogs."""
-        # 1. Detach Log Handler if it exists
-        if hasattr(self, 'qt_log_handler') and self.qt_log_handler:
-            logging.getLogger().removeHandler(self.qt_log_handler)
-            self.qt_log_handler = None
-            self.log_bridge = None
+        try:
+            # 1. Detach Log Handler
+            if hasattr(self, 'qt_log_handler') and self.qt_log_handler:
+                # Remove from root logger to be sure
+                logging.getLogger().removeHandler(self.qt_log_handler)
+                self.qt_log_handler = None
+                self.log_bridge = None
 
-        # 2. Close Dialog safely
-        self._safely_close_progress_dialog()
+            # 2. Close Dialog safely
+            self._safely_close_progress_dialog()
+            
+        except Exception as e:
+            logging.error(f"Error cleaning up progress UI: {e}")
+            # Fallback: force close if something failed
+            if self.progress_dialog:
+                self.progress_dialog.close()
+                self.progress_dialog = None
 
     def _on_recipe_finished(self, result_data: tuple):
+        """Slot called when the RecipeWorker succeeds."""
+        # 1. Cleanup UI immediately
+        self._cleanup_progress_ui()
+        
+        # 2. Restore Cursor (Important!)
+        QApplication.restoreOverrideCursor()
+
         new_session_state, recipe_name, params = result_data
         
         # [NEW] Check if operation was cancelled (returned same object or flagged)
@@ -2842,15 +2866,9 @@ class MainWindowV2(QMainWindow):
             # Just ensure GUI reflects the ACTIVE history state (which hasn't changed)
             self._update_view_for_session(self.active_history.current_state)
             return
-        
-        """Slot called when the RecipeWorker succeeds."""
-        # [CHANGE] Use new cleanup helper
-        self._cleanup_progress_ui()
 
-        # Set the "Wait" cursor for the whole application
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        
-        # Schedule the heavy GUI update
+        # 3. Schedule the data processing
+        # We pass the data to the processor
         QTimer.singleShot(10, lambda: self._process_recipe_result(result_data))
 
     def _on_recipe_error(self, error_data: tuple):
@@ -3187,16 +3205,39 @@ class MainWindowV2(QMainWindow):
 
     def _safely_close_progress_dialog(self):
         """
-        Helper to close the progress dialog safely, deferring the action
-        to avoid macOS 'modalSession exited prematurely' warnings.
+        Aggressively close and destroy the progress dialog.
+        Uses a QTimer to ensure this happens on the next event loop cycle,
+        clearing any pending update signals first.
         """
-        if self.progress_dialog:
-            # 1. Grab a local reference and clear the main attribute immediately
-            dlg = self.progress_dialog
-            self.progress_dialog = None
-            
-            # 2. Defer the actual .close() call to the next event loop iteration
-            QTimer.singleShot(0, dlg.close)
+        if not self.progress_dialog:
+            return
+
+        dialog_ref = self.progress_dialog  # Capture local reference
+        self.progress_dialog = None        # Clear instance ref immediately
+        
+        def _destroy():
+            try:
+                logging.debug("Force-closing progress dialog...")
+                
+                # 1. Break Log Connections (Stop incoming text)
+                if hasattr(self, 'log_bridge') and self.log_bridge:
+                    try:
+                        self.log_bridge.new_log_message.disconnect(dialog_ref.update_log)
+                    except:
+                        pass 
+
+                # 2. Hard Close
+                dialog_ref.hide()               # Visual removal
+                dialog_ref.done(QDialog.Rejected) # Logical rejection
+                dialog_ref.close()              # Event close
+                dialog_ref.deleteLater()        # Memory cleanup
+                
+            except Exception as e:
+                logging.error(f"Error destroying dialog: {e}")
+
+        # Execute on the next frame of the GUI loop (0ms delay)
+        # This allows pending log signals to flush safely before we kill the receiver.
+        QTimer.singleShot(0, _destroy)
 
     def _on_debug_plot_requested(self, plot_data: dict):
         """

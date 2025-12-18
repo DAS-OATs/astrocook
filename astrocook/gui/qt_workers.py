@@ -83,7 +83,6 @@ class RecipeWorker(QRunnable):
             if not recipe_instance:
                 raise AttributeError(f"Session object has no attribute '{self.category}'")
 
-
             recipe_method = getattr(recipe_instance, self.recipe_name, None)
             if not callable(recipe_method):
                 raise AttributeError(f"Recipe instance has no callable method '{self.recipe_name}'")
@@ -95,22 +94,24 @@ class RecipeWorker(QRunnable):
             # 3. Run the recipe
             new_session_state = recipe_method(**self.params)
 
+            if self._is_stopped or getattr(self.session, '_stop_flag', False):
+                logging.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
+                
+                # Use the returned session (likely the original one) or fallback
+                result_session = new_session_state if new_session_state else self.session
+                
+                # [CRITICAL] Tag the RESULT object so MainWindow knows to abort history update
+                result_session._stop_flag = True
+                
+                self.signals.finished.emit((result_session, self.recipe_name, self.params))
+                return
+
             if not new_session_state or new_session_state == 0:
                 raise ValueError(f"Recipe failed to execute (returned 0). Check logs.")
-                
-            # [NEW] Check if stop was requested during execution
-            if getattr(self.session, '_stop_flag', False):
-                logging.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
-                # We emit finished normally. The result (new_session_state) 
-                # will be the ORIGINAL session because the recipe aborted itself.
-                # The Main Window will check the flag and decide not to update history.
-                self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
-                return
             
-            # 4. Success! Emit the new state
-            #    We also pass back the params (for logging) and recipe name
+            # 4. Success!
             self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
-
+            
         except Exception as e:
             # 5. Failure! Emit the error
             
