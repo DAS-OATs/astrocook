@@ -257,7 +257,7 @@ class MainWindowV2(QMainWindow):
     def _setup_empty_view(self):
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-        label = QLabel("Welcome to Astrocook v2!\n\nUse 'File > Open Spectrum...'")
+        label = QLabel("Welcome to Astrocook v2!\n\nUse 'File > Open Session...'")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         font = label.font() # Get the current font
@@ -603,7 +603,7 @@ class MainWindowV2(QMainWindow):
         # --- File and View operations ---
 
         # --- File Menu Actions
-        open_action = QAction("&Open Spectrum...", self); open_action.setShortcut("Ctrl+O"); open_action.triggered.connect(self._on_open_spectrum)
+        open_action = QAction("&Open Session...", self); open_action.setShortcut("Ctrl+O"); open_action.triggered.connect(self._on_open_spectrum)
         file_menu.addAction(open_action)
         save_action = QAction("&Save Session...", self); save_action.setShortcut("Ctrl+S"); save_action.triggered.connect(self._on_save_session); 
         save_action.setEnabled(False)
@@ -704,7 +704,7 @@ class MainWindowV2(QMainWindow):
         edit_menu.addSeparator()
 
         # split Action
-        split_action = QAction("S&plit Spectrum...", self)
+        split_action = QAction("S&plit Out Region...", self)
         split_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "split"))
         edit_menu.addAction(split_action)
         self.split_action = split_action; split_action.setEnabled(False)
