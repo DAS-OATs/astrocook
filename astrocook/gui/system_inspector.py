@@ -1448,6 +1448,15 @@ class SystemInspector(QWidget):
         self.raise_()
         self.activateWindow()
 
+    def _get_selected_components(self) -> List[ComponentDataV2]:
+        rows = self.table_view.selectionModel().selectedRows()
+        comps = []
+        for idx in rows:
+            src = self.proxy_model.mapToSource(idx)
+            c = self.table_model.get_component_at(src.row())
+            if c: comps.append(c)
+        return comps
+
     def _on_context_menu(self, pos):
         index = self.table_view.indexAt(pos)
         if not index.isValid(): return
@@ -1460,104 +1469,168 @@ class SystemInspector(QWidget):
 
         if not clicked_comp: return
         
+        selected_comps = self._get_selected_components()
+        
+        # Guard: If right-clicking outside the selection, reset selection to clicked row
+        # (Standard GUI behavior: Right-click selects the target if not already selected)
+        if clicked_comp not in selected_comps:
+            selected_comps = [clicked_comp]
+            
+        count = len(selected_comps)
+        is_multi = count > 1
+        suffix = f" ({count} items)" if is_multi else ""
+        
         m = QMenu(self)
         
-        # 2. Check Selection State (Is it a Link Operation?)
-        # Get all selected rows (mapped to source model)
-        sel_rows = self.table_view.selectionModel().selectedRows()
-        source_rows = [self.proxy_model.mapToSource(idx).row() for idx in sel_rows]
-        unique_rows = list(set(source_rows))
-        
-        # LINKING LOGIC: Exactly 2 rows selected, and we clicked on a parameter column
-        if len(unique_rows) == 2 and col_name in ['z', 'logN', 'b', 'btur']:
-            # Identify Dependent (Clicked) vs Independent (The other one)
-            other_row = unique_rows[0] if unique_rows[0] != idx_source.row() else unique_rows[1]
-            source_comp = self.table_model.get_component_at(other_row)
+        # 1. Linking Logic (Strictly 2 items)
+        if count == 2 and col_name in ['z', 'logN', 'b', 'btur']:
+            # ... (Existing Link Logic - only works for exactly 2) ...
+            # Identify Source vs Target (Clicked is Target)
+            source_comp = selected_comps[0] if selected_comps[0] != clicked_comp else selected_comps[1]
             
-            if source_comp:
-                m.addSection("Parameter Linking")
-                
-                # A. Link by Value (Identity)
-                expr_val = f"p['{source_comp.uuid}'].{param_attr}"
-                act_link = QAction(f"Link {col_name} to {source_comp.series} (Value)", m)
-                act_link.triggered.connect(
-                    lambda: self._toggle_constraint(
-                        clicked_comp.uuid, param_attr, False, expr_val, source_comp.uuid # <--- Pass Source UUID
-                    )
+            m.addSection("Parameter Linking")
+            
+            expr_val = f"p['{source_comp.uuid}'].{param_attr}"
+            act_link = QAction(f"Link {col_name} to {source_comp.series} (Value)", m)
+            act_link.triggered.connect(
+                lambda: self._toggle_constraint(
+                    clicked_comp.uuid, param_attr, False, expr_val, source_comp.uuid
                 )
-                m.addAction(act_link)
-                
-                # B. Link by Temperature (Thermal) - Only for 'b'
-                if col_name == 'b':
-                    m_dep = self._get_mass(clicked_comp.series)
-                    m_src = self._get_mass(source_comp.series)
-                    
-                    if m_dep and m_src:
-                        mass_ratio = np.sqrt(m_src / m_dep)
-                        expr_therm = f"p['{source_comp.uuid}'].b * {mass_ratio:.4f}"
-                        
-                        act_therm = QAction(f"Link {col_name} to {source_comp.series} (Thermal)", m)
-                        act_therm.triggered.connect(
-                            lambda: self._toggle_constraint(
-                                clicked_comp.uuid, param_attr, False, expr_therm, source_comp.uuid # <--- Pass Source UUID
-                            )
+            )
+            m.addAction(act_link)
+            
+            if col_name == 'b':
+                m_dep = self._get_mass(clicked_comp.series)
+                m_src = self._get_mass(source_comp.series)
+                if m_dep and m_src:
+                    mass_ratio = np.sqrt(m_src / m_dep)
+                    expr_therm = f"p['{source_comp.uuid}'].b * {mass_ratio:.4f}"
+                    act_therm = QAction(f"Link {col_name} to {source_comp.series} (Thermal)", m)
+                    act_therm.triggered.connect(
+                        lambda: self._toggle_constraint(
+                            clicked_comp.uuid, param_attr, False, expr_therm, source_comp.uuid
                         )
-                        m.addAction(act_therm)
-                
-                m.addSeparator()
+                    )
+                    m.addAction(act_therm)
+            m.addSeparator()
 
-        # 3. Standard Constraint Actions (Freeze/Unfreeze)
-        # (Only show if we are NOT in linking mode, or as secondary options)
+        # 2. Constraint Actions (Multi-aware)
         if col_name in ['z', 'logN', 'b', 'btur']:
-            is_frozen = False
-            is_linked = False
             
-            if self.current_session and self.current_session.systs.constraint_model:
-                c_map = self.current_session.systs.constraint_model.v2_constraints_by_uuid
-                if clicked_comp.uuid in c_map and param_attr in c_map[clicked_comp.uuid]:
-                    cons = c_map[clicked_comp.uuid][param_attr]
-                    if not cons.is_free: is_frozen = True
-                    if cons.expression: is_linked = True
-            
-            if is_linked:
-                # Option to break link
-                act = QAction(f"Unlink '{col_name}' (Set Free)", m)
-                # Pass None for target_uuid to clear it
-                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None, None))
-                m.addAction(act)
-            elif is_frozen:
-                act = QAction(f"Unfreeze '{col_name}'", m)
-                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None))
-                m.addAction(act)
+            if is_multi:
+                # --- Batch Actions ---
+                act_freeze_sel = QAction(f"Freeze '{col_name}'{suffix}", m)
+                act_freeze_sel.triggered.connect(
+                    lambda: self._toggle_constraint_list(selected_comps, param_attr, False)
+                )
+                m.addAction(act_freeze_sel)
+
+                act_free_sel = QAction(f"Unfreeze '{col_name}'{suffix}", m)
+                act_free_sel.triggered.connect(
+                    lambda: self._toggle_constraint_list(selected_comps, param_attr, True)
+                )
+                m.addAction(act_free_sel)
+                
             else:
-                act = QAction(f"Freeze '{col_name}'", m)
-                act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, False, None))
-                m.addAction(act)
+                # --- Single Item Context (Smarter toggles) ---
+                is_frozen = False
+                is_linked = False
+                if self.current_session and self.current_session.systs.constraint_model:
+                    c_map = self.current_session.systs.constraint_model.v2_constraints_by_uuid
+                    if clicked_comp.uuid in c_map and param_attr in c_map[clicked_comp.uuid]:
+                        cons = c_map[clicked_comp.uuid][param_attr]
+                        if not cons.is_free: is_frozen = True
+                        if cons.expression: is_linked = True
+                
+                if is_linked:
+                    act = QAction(f"Unlink '{col_name}' (Set Free)", m)
+                    act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None, None))
+                    m.addAction(act)
+                elif is_frozen:
+                    act = QAction(f"Unfreeze '{col_name}'", m)
+                    act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, True, None))
+                    m.addAction(act)
+                else:
+                    act = QAction(f"Freeze '{col_name}'", m)
+                    act.triggered.connect(lambda: self._toggle_constraint(clicked_comp.uuid, param_attr, False, None))
+                    m.addAction(act)
+
+            # Global Column Actions (Always available)
+            m.addSeparator()
+            act_freeze_col = QAction(f"Freeze All '{col_name}' (Column)", m)
+            act_freeze_col.triggered.connect(lambda: self._bulk_toggle_constraint(param_attr, False))
+            m.addAction(act_freeze_col)
+            
+            act_free_col = QAction(f"Unfreeze All '{col_name}' (Column)", m)
+            act_free_col.triggered.connect(lambda: self._bulk_toggle_constraint(param_attr, True))
+            m.addAction(act_free_col)
             
             m.addSeparator()
-            act_freeze_all = QAction(f"Freeze All '{col_name}'", m)
-            act_freeze_all.triggered.connect(
-                lambda: self._bulk_toggle_constraint(param_attr, False)
-            )
-            m.addAction(act_freeze_all)
 
-            act_free_all = QAction(f"Unfreeze All '{col_name}'", m)
-            act_free_all.triggered.connect(
-                lambda: self._bulk_toggle_constraint(param_attr, True)
-            )
-            m.addAction(act_free_all)
-
-            m.addSeparator()
-
-        # Set Resolution Action
-        act_resol = QAction("Set R for this component...", m)
+        # Set Resolution (Multi-aware via internal logic)
+        act_resol = QAction(f"Set R...{suffix}", m)
         act_resol.triggered.connect(self._set_component_resolution)
         m.addAction(act_resol)
 
-        m.addAction("Refit Selected", self._refit)
+        m.addSeparator()
+        
+        # 3. Operations (Multi-aware)
+        act_refit = QAction(f"Refit Selected{suffix}", m)
+        act_refit.triggered.connect(lambda: self._refit_list(selected_comps))
+        m.addAction(act_refit)
+
         m.addAction("Refit All", self._refit_all)
-        m.addAction("Delete", self._delete)
+        
+        act_del = QAction(f"Delete{suffix}", m)
+        act_del.triggered.connect(lambda: self._delete_list(selected_comps))
+        m.addAction(act_del)
+
         m.exec(self.table_view.mapToGlobal(pos))
+
+    # --- [NEW] Batch Helper Methods ---
+
+    def _toggle_constraint_list(self, comps, param, is_free):
+        """Iterates list and applies constraint update."""
+        for c in comps:
+            self._toggle_constraint(c.uuid, param, is_free, None, None)
+
+    def _refit_list(self, comps):
+        """Iterates list and triggers fit_component."""
+        if self.main_window:
+            for c in comps:
+                # Note: This queues multiple recipes. 
+                # Ideally we'd have a batch recipe, but this is safe and robust.
+                self.main_window._on_recipe_requested(
+                    "absorbers", "fit_component", {"uuid": c.uuid}, {}
+                )
+
+    def _delete_list(self, comps):
+        """Batch delete with a single confirmation dialog."""
+        if not comps or not self.main_window: return
+        
+        count = len(comps)
+        if count == 1:
+            # Simple message for single
+            c = comps[0]
+            txt = f"Series: {c.series}\nRedshift: {c.z:.5f}"
+        else:
+            # Summary message for multiple
+            txt = f"You are about to delete {count} components."
+
+        confirm = self.main_window._show_custom_message(
+            title="Delete Components",
+            header=f"Delete {count} component(s)?",
+            text=txt,
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            default_btn=QMessageBox.StandardButton.No,
+            parent=self
+        )
+        
+        if confirm == QMessageBox.Yes:
+            for c in comps:
+                self.main_window._on_recipe_requested(
+                    "absorbers", "delete_component", {"uuid": c.uuid}, {}
+                )
 
     # Method to set resolution for specific components
     def _set_component_resolution(self):
