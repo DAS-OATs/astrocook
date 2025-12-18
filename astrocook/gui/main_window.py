@@ -3085,25 +3085,34 @@ class MainWindowV2(QMainWindow):
         # Placeholder function called by the QAction
         print("Launching Rebin Dialog...")
 
-    def launch_split_from_region(self, xmin: float, xmax: float):
+    def launch_split_from_current_view(self):
         """
-        Launches the 'split' recipe dialog pre-filled with a region expression.
+        Launches the 'split' recipe using the current plot view limits (zoom).
         """
-        # 1. Turn off the selection mode in the plot widget
-        if self.plot_viewer:
-             self.plot_viewer.toggle_region_selector()
-             
+        if not self.plot_viewer or not self.active_history:
+            return
+
+        # 1. Get current X-limits from the plot (always in nm in Astrocook V2?)
+        # We check _update_limit_boxes_from_plot to confirm logic: 
+        # "xlim_nm = self.plot_viewer.canvas.axes.get_xlim()"
+        try:
+            xlim_nm = self.plot_viewer.canvas.axes.get_xlim()
+            xmin, xmax = xlim_nm[0], xlim_nm[1]
+        except Exception as e:
+            logging.error(f"Could not get plot limits: {e}")
+            return
+
         # 2. Build the expression string
-        # Using the current x-axis unit label from the plot for clarity,
-        # although the data 'x' is always native (likely nm).
-        # Assuming xmin/xmax passed here are already in native units from the plot.
+        # Note: 'x' in the data is typically nm. 
         expression = f"(x > {xmin:.4f}) & (x < {xmax:.4f})"
         
+        logging.info(f"Splitting from view: {expression}")
+
         # 3. Launch the dialog with these params pre-filled
         self._launch_recipe_dialog(
             "edit", 
             "split", 
-            initial_params={"expression": expression} # We need to support this!
+            initial_params={"expression": expression}
         )
 
     def _update_ui_state(self, is_valid_session, is_startup=False):

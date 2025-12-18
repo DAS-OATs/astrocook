@@ -1969,6 +1969,14 @@ class SpectrumPlotWidget(QWidget):
                 act_zem.triggered.connect(lambda checked=False, z=z_click: self.main_window._on_recipe_requested("edit", "set_properties", {"z_em": str(z)}, {}))
                 menu.addAction(act_zem)
 
+            menu.addSeparator()
+            
+            act_split = QAction("Split from Current Zoom", menu)
+            act_split.setToolTip("Create a new session containing only the visible spectral region.")
+            # Connect to the Main Window method we just created
+            act_split.triggered.connect(lambda: self.main_window.launch_split_from_current_view())
+            menu.addAction(act_split)
+
             if not menu.isEmpty(): menu.exec(QCursor.pos()); return True
 
         return False
@@ -2265,8 +2273,7 @@ class AstrocookToolbar(NavigationToolbar):
         # We rely on the base class finding 'hand' and 'magnifying_glass' equivalent icons.
         ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'), 
         ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-        ('Select', 'Select region', 'toggle_select_mode', 'toggle_select_mode'),
-
+        
         (None, None, None, None), # Separator placeholder
         ('Save', 'Save the figure', 'filesave', 'save_figure'),
     ]
