@@ -2610,78 +2610,113 @@ class MainWindowV2(QMainWindow):
     def _process_recipe_result(self, result_data: tuple):
         """The actual GUI update."""
         try:
-            new_session_state, recipe_name, params = result_data
+            new_session_payload, recipe_name, params = result_data
             
-            # 1. Logging
-            try:
-                if isinstance(self.active_history.log_manager, HistoryLogV2):
-                    params_to_log = params.copy()
-                    params_to_log.pop('alias_map', None) 
-                    self.active_history.log_manager.add_entry(recipe_name, params_to_log)
-            except Exception: pass
+            # --- 1. HANDLE MULTI-RETURN (LISTS) ---
+            # Normalize payload to a list so we can loop
+            if isinstance(new_session_payload, list):
+                new_sessions = new_session_payload
+            else:
+                new_sessions = [new_session_payload]
 
-            # 2. Identify Lines Logic
-            auto_show_col = None
-            if recipe_name in ['identify_lines', 'doublets_auto', 'populate_from_identification']:
-                # Check if the column exists in the new session
-                if new_session_state.spec.has_aux_column('abs_ids'):
-                    auto_show_col = 'abs_ids'
-                elif new_session_state.spec.has_aux_column('abs_mask'):
-                    auto_show_col = 'abs_mask'
+            # Store the ORIGINAL active history (the parent of these operations)
+            # This is critical for "Sibling" branching (A->B, A->C) instead of "Chain" (A->B->C)
+            original_parent_history = self.active_history
 
-            should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
-
-            if recipe_name == 'set_properties':
+            # Loop through all returned sessions
+            for i, new_session_state in enumerate(new_sessions):
                 
-                if 'resol' in params:
-                    raw_val = str(params['resol'])
-                    
-                    if raw_val != '_current_':
-                        try:
-                            new_res = float(raw_val)
-                            
-                            if new_session_state.systs and new_session_state.systs.components:
-                                
-                                # 1. Force Update All Components
-                                updated_comps = []
-                                for i, c in enumerate(new_session_state.systs.components):
-                                    # Create a fresh copy
-                                    new_c = dataclasses.replace(c, resol=new_res)
-                                    updated_comps.append(new_c)
-                                    # Log the first one to verify
+                # [SAFETY CHECK] If operation was cancelled
+                if getattr(new_session_state, '_stop_flag', False):
+                    logging.info("Operation cancelled. Reverting.")
+                    if i == len(new_sessions) - 1: # Only update view on last one
+                        self._update_view_for_session(self.active_history.current_state)
+                    continue
 
-                                # 2. Rebuild Session
-                                if updated_comps:
-                                    # Replace data core
-                                    new_syst_data = dataclasses.replace(new_session_state.systs._data, components=updated_comps)
-                                    
-                                    # Re-instantiate SystemListV2
-                                    # IMPORTANT: Ensure SystemListV2 is imported or accessible via class
-                                    SystemListClass = new_session_state.systs.__class__
-                                    new_systs = SystemListClass(new_syst_data)
-                                    
-                                    # Restore constraints if present
-                                    if new_session_state.systs.constraint_model:
-                                        new_systs.constraint_model = new_session_state.systs.constraint_model
+                # --- 2. LOGGING (Only once or per item?) ---
+                # Let's log for every item to be safe, or just once if params are shared.
+                # Since params are shared, maybe just log once? 
+                # Existing logic logs every time this runs.
+                try:
+                    if i == 0 and isinstance(original_parent_history.log_manager, HistoryLogV2):
+                        # Log the command once on the parent
+                        params_to_log = params.copy()
+                        params_to_log.pop('alias_map', None) 
+                        original_parent_history.log_manager.add_entry(recipe_name, params_to_log)
+                except Exception: pass
 
-                                    # Update Session
-                                    new_session_state = new_session_state.with_new_system_list(new_systs)
-                        except Exception as e:
-                            logging.error(f"Propagation crashed: {e}", exc_info=True)
+                # --- 3. IDENTIFY LINES LOGIC ---
+                auto_show_col = None
+                if recipe_name in ['identify_lines', 'doublets_auto', 'populate_from_identification']:
+                    if new_session_state.spec.has_aux_column('abs_ids'):
+                        auto_show_col = 'abs_ids'
+                    elif new_session_state.spec.has_aux_column('abs_mask'):
+                        auto_show_col = 'abs_mask'
 
-            original_history_index = self.session_histories.index(self.active_history)
-            branching = is_branching_recipe(recipe_name)
-            
-            # Now pass the (potentially updated) session state to the GUI handler
-            self.update_gui_session_state(
-                new_session_state,
-                original_session_index=original_history_index, 
-                is_branching=branching,
-                auto_show_aux=auto_show_col,
-                force_autoscale=should_autoscale
-            )
-            
-            # --- Warnings Logic ---
+                should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
+
+                if recipe_name == 'set_properties':
+
+                    if 'resol' in params:
+                        raw_val = str(params['resol'])
+
+                        if raw_val != '_current_':
+                            try:
+                                new_res = float(raw_val)
+
+                                if new_session_state.systs and new_session_state.systs.components:
+
+                                    # 1. Force Update All Components
+                                    updated_comps = []
+                                    for i, c in enumerate(new_session_state.systs.components):
+                                        # Create a fresh copy
+                                        new_c = dataclasses.replace(c, resol=new_res)
+                                        updated_comps.append(new_c)
+                                        # Log the first one to verify
+
+                                    # 2. Rebuild Session
+                                    if updated_comps:
+                                        # Replace data core
+                                        new_syst_data = dataclasses.replace(new_session_state.systs._data, components=updated_comps)
+
+                                        # Re-instantiate SystemListV2
+                                        # IMPORTANT: Ensure SystemListV2 is imported or accessible via class
+                                        SystemListClass = new_session_state.systs.__class__
+                                        new_systs = SystemListClass(new_syst_data)
+
+                                        # Restore constraints if present
+                                        if new_session_state.systs.constraint_model:
+                                            new_systs.constraint_model = new_session_state.systs.constraint_model
+
+                                        # Update Session
+                                        new_session_state = new_session_state.with_new_system_list(new_systs)
+                            except Exception as e:
+                                logging.error(f"Propagation crashed: {e}", exc_info=True)
+
+                original_history_index = self.session_histories.index(original_parent_history)
+                branching = is_branching_recipe(recipe_name)
+                
+                # --- 4. PREPARE PARENT FOR BRANCHING ---
+                # If we are branching multiple times (e.g. extract_preset="lya, red"), 
+                # we must ensure the 'active_history' is reset to the PARENT 
+                # before creating the next branch.
+                if branching and len(new_sessions) > 1:
+                    self.active_history = original_parent_history
+
+                # --- 5. UPDATE GUI ---
+                self.update_gui_session_state(
+                    new_session_state,
+                    original_session_index=original_history_index, 
+                    is_branching=branching,
+                    auto_show_aux=auto_show_col,
+                    force_autoscale=should_autoscale
+                )
+
+            # After loop, the *last* created session will be active (set by update_gui_session_state).
+            # This is usually the desired behavior.
+
+            # --- 6. WARNINGS (Run once at the end) ---
+            # (Keep existing warning logic using self.active_history or original params)
             warn_resolution = False
             warn_refit = False
 

@@ -561,40 +561,62 @@ class RecipeEditV2:
         # 3. Return a NEW SessionV2 instance (GUI handles branching)
         return self._session.with_new_spectrum(new_spec_v2)
     
-    def extract_preset(self, region: str = 'lya_forest') -> 'SessionV2':
+    def extract_preset(self, region: str = 'lya_forest') -> Union['SessionV2', List['SessionV2']]:
         """
-        Extracts a standard spectral region based on emission redshift (z_em).
-
-        Useful for quickly isolating the Lyman-alpha forest.
+        Extracts standard spectral regions based on emission redshift (z_em).
+        Accepts a single region or a comma-separated list (e.g. 'lya_forest, red_side').
 
         Parameters
         ----------
         region : str
-            Preset identifier:
-            * ``'lya_forest'``: Between Ly-beta and Ly-alpha emission.
-            * ``'all_ly_forest'``: From Lyman limit to Ly-alpha emission.
-            * ``'red_side'``: Everything redward of Ly-alpha emission.
+            Preset identifier(s): 'lya_forest', 'all_ly_forest', 'red_side'.
 
         Returns
         -------
-        SessionV2
-            A new session containing the extracted region.
+        SessionV2 or List[SessionV2]
+            New session(s) containing the extracted region(s).
         """
-        try:
-            obs_min, obs_max = self._session.spec.get_region_bounds(region)
-        except ValueError as e:
-            logging.error(e)
-            return 0
-            
-        # Convert to the spectrum's native unit for the string expression
-        spec_unit = self._session.spec.x.unit
-        v_min = obs_min.to(spec_unit).value
-        v_max = obs_max.to(spec_unit).value
+        # Parse inputs (split by comma and strip whitespace)
+        region_list = [r.strip() for r in region.split(',') if r.strip()]
         
-        expression = f"(x > {v_min:.4f}) & (x < {v_max:.4f})"
-        logging.info(f"Extracting '{region}': {expression} (z_em={self._session.spec._data.z_em:.4f})")
+        results = []
         
-        return self.split(expression=expression)
+        for reg in region_list:
+            try:
+                # Calculate bounds
+                obs_min, obs_max = self._session.spec.get_region_bounds(reg)
+                
+                # Convert to native units for expression
+                spec_unit = self._session.spec.x.unit
+                v_min = obs_min.to(spec_unit).value
+                v_max = obs_max.to(spec_unit).value
+                
+                # Build expression
+                expression = f"(x > {v_min:.4f}) & (x < {v_max:.4f})"
+                logging.info(f"Extracting '{reg}': {expression} (z_em={self._session.spec._data.z_em:.4f})")
+                
+                # Create the split session
+                new_session = self.split(expression=expression)
+                
+                # (Optional) Store the intended suffix name in the session metadata 
+                # so the GUI could potentially use it later (though GUI currently auto-names branches)
+                # new_session.name += f"_{reg}" 
+                
+                results.append(new_session)
+                
+            except ValueError as e:
+                logging.error(f"Skipping region '{reg}': {e}")
+            except Exception as e:
+                logging.error(f"Failed to extract '{reg}': {e}", exc_info=True)
+
+        if not results:
+            return 0 # Return failure code if nothing worked
+
+        # Return single object if one, or list if multiple
+        if len(results) == 1:
+            return results[0]
+        
+        return results
     
     def trim_common(self, others_names: str, z_target: str, trans_self: str, 
                     trans_others: str, window_kms: str = '500.0') -> 'SessionV2':
