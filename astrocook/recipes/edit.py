@@ -4,7 +4,7 @@ import dataclasses
 import logging
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2, SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
@@ -140,114 +140,38 @@ class RecipeEditV2:
         self._session = session_v2
         self._tag = 'cb'
 
-    def _resample_and_replace_match(self, match_obj: re.Match, 
-                                  alias_map: Dict[str, str], 
-                                  extra_vars: Dict[str, np.ndarray]) -> str:
+    def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> Tuple[str, Dict[str, np.ndarray]]:
         """
-        Internal helper for regex substitution in multi-session expressions.
-        
-        This function is called for every pattern match like 's1.y'. It finds
-        the referenced session, resamples its data onto the current session's
-        grid, adds the data to ``extra_vars``, and returns a safe variable name.
-        """
-        alias = match_obj.group(1)
-        col_name = match_obj.group(2)
-        
-        if alias not in alias_map:
-            return match_obj.group(0)
-
-        safe_var_name = f"{alias}_{col_name}" # e.g., "s1_y"
-        
-        if safe_var_name in extra_vars:
-            return safe_var_name
-
-        try:
-            # 1. Find the target session
-            full_name = alias_map[alias]
-            target_hist = None
-            gui = self._session._gui
-            if not (gui and hasattr(gui, 'session_histories')):
-                raise RuntimeError("GUI context not found.")
-                
-            for hist in gui.session_histories:
-                if hist.display_name == full_name:
-                    target_hist = hist
-                    break
-            
-            if not target_hist:
-                raise ValueError(f"Could not find session '{full_name}' for alias '{alias}'.")
-            
-            target_spec = target_hist.current_state.spec
-            current_spec = self._session.spec
-
-            if len(target_spec.x) > len(current_spec.x):
-                logging.warning(f"Oversampling: Target '{alias}' grid ({len(target_spec.x)} pts) "
-                                f"is finer than current grid ({len(current_spec.x)} pts).")
-            
-            # 2. Get the *current* spec's grid (in nm)
-            current_x_grid_nm = current_spec.x.to_value(au.nm)
-            
-            # 3. Call the lightweight API method
-            logging.debug(f"Auto-resampling {alias}.{col_name} onto current grid...")
-            resampled_array = target_spec.get_resampled_column(
-                col_name,
-                current_x_grid_nm
-            )
-            
-            # --- *** THIS IS THE FIX *** ---
-            # 4. Check if the column was non-numerical
-            if resampled_array is None:
-                # Raise a clear error that the user will see in the dialog
-                raise ValueError(f"Column '{col_name}' in session '{alias}' is non-numerical and cannot be used in expression.")
-            # --- *** END FIX *** ---
-                
-            # 5. Add the new array to our extra_vars dict
-            extra_vars[safe_var_name] = resampled_array
-            
-            return safe_var_name 
-            
-        except Exception as e:
-            # This will now catch our new ValueError
-            logging.error(f"Failed to resample {alias}.{col_name}: {e}", exc_info=True)
-            # Re-raise the error so the recipe can catch it
-            raise e
-    
-    def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> (str, Dict[str, np.ndarray]):
-        """
-        Parses an expression string to handle multi-session variable references.
-
-        It scans for patterns like ``s1.y``, resamples the data from session ``s1``
-        onto the current grid, and rewrites the expression to use local variable names.
-
-        Parameters
-        ----------
-        expression : str
-            The user-provided expression (e.g. ``"y - s1.y"``).
-        alias_map : dict
-            Mapping of aliases to full session names (e.g. ``{'s1': 'QSO_1423'}``).
-
-        Returns
-        -------
-        final_expression : str
-            Rewritten expression (e.g. ``"y - s1_y"``).
-        extra_vars : dict
-            Dictionary of resampled arrays to be passed to ``numexpr``.
+        Resolves aliases to Spectrum objects via the GUI, then delegates 
+        parsing/resampling to the Core.
         """
         if not alias_map:
-            return expression, {} # No aliases, nothing to do
+            return expression, {}
 
-        extra_vars = {}
-
-        try:
-            replacer = lambda m: self._resample_and_replace_match(m, alias_map, extra_vars)
-            final_expression = SESSION_VAR_REGEX.sub(replacer, expression)
-        except Exception as e:
-            # Propagate the clear error message (e.g., "Cannot resample...")
-            raise e
+        # 1. Resolve Aliases to Objects (GUI Logic)
+        resolved_specs = {}
         
-        # --- *** END FIX *** ---
+        # Access the GUI context
+        gui = getattr(self._session, '_gui', None)
+        if not gui or not hasattr(gui, 'session_histories'):
+            # If running in script without GUI, we can't resolve aliases easily 
+            # unless we passed the objects directly. For now, assume GUI context or fail gracefully.
+            if alias_map:
+                logging.warning("GUI context missing: Cannot resolve multi-session aliases.")
+            return expression, {}
 
-        return final_expression, extra_vars
+        for alias, full_name in alias_map.items():
+            found = False
+            for hist in gui.session_histories:
+                if hist.display_name == full_name:
+                    resolved_specs[alias] = hist.current_state.spec
+                    found = True
+                    break
+            if not found:
+                logging.warning(f"Could not find session '{full_name}' for alias '{alias}'.")
+
+        # 2. Delegate to Core (Business Logic)
+        return self._session.spec.prepare_expression_context(expression, resolved_specs)
     
     def _parse_resolution_string(self, resol_str: str) -> float:
         """
@@ -541,70 +465,26 @@ class RecipeEditV2:
     def delete(self, targets: str) -> 'SessionV2':
         """
         Deletes specified columns or the system (line) list.
-
-        Parameters
-        ----------
-        targets : str
-            Comma-separated names of columns to delete (e.g. 'cont', 'model') 
-            or 'lines'/'systems' to clear the system list.
-
-        Returns
-        -------
-        SessionV2
-            A new session with the elements removed.
         """
         target_list = [t.strip() for t in targets.split(',') if t.strip()]
         if not target_list:
             return self._session
 
-        # 1. Start with current state references
-        current_spec = self._session.spec
+        # 1. Handle System List
         new_systs = self._session.systs
-        
-        cols_to_delete = []
-        
-        # 2. Parse Targets
-        for t in target_list:
-            # Handle System List clearing
-            if t in ['lines', 'systems']:
-                # [FIX 1] Pass empty data container to constructor
-                new_systs = SystemListV2(SystemListDataV2())
-                logging.info("Marked system list for deletion.")
-            else:
-                # Assume it's a column name
-                cols_to_delete.append(t)
+        if 'lines' in target_list or 'systems' in target_list:
+            # Re-initialize empty
+            new_systs = SystemListV2(SystemListDataV2())
+            logging.info("Marked system list for deletion.")
+            # Remove keywords from list to avoid trying to delete them as columns
+            target_list = [t for t in target_list if t not in ['lines', 'systems']]
 
-        # 3. Apply Column Deletions (Immutable V2 Way)
-        new_spec = current_spec
-        
-        if cols_to_delete:
-            # We must modify the aux_cols dictionary directly
-            new_aux_cols = deepcopy(current_spec._data.aux_cols)
-            modified = False
+        # 2. Handle Columns via Core API
+        if target_list:
+            new_spec = self._session.spec.remove_columns(target_list)
+        else:
+            new_spec = self._session.spec
             
-            for col in cols_to_delete:
-                # Protect core columns
-                if col in ['x', 'y', 'dy', 'xmin', 'xmax']:
-                    logging.warning(f"Delete: Cannot delete core column '{col}'.")
-                elif col in new_aux_cols:
-                    # [FIX 2] Delete directly from the dictionary
-                    del new_aux_cols[col]
-                    modified = True
-                    logging.info(f"Deleted column: {col}")
-                else:
-                    logging.warning(f"Delete: Column '{col}' not found.")
-            
-            if modified:
-                # Rebuild SpectrumDataV2 with new aux_cols
-                new_data = dataclasses.replace(current_spec._data, aux_cols=new_aux_cols)
-                
-                # Create new SpectrumV2 wrapper
-                # (Use type(current_spec) to respect subclassing if any)
-                new_spec = type(current_spec)(
-                    new_data, 
-                    history=current_spec.history + [f"Deleted {cols_to_delete}"]
-                )
-
         return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
     
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':

@@ -6,6 +6,7 @@ import json
 import logging
 import numexpr as ne
 import numpy as np
+import re
 from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -544,6 +545,70 @@ class SpectrumV2:
         return obs_min, obs_max
 
     # --- Methods implementing the API ---
+
+    def remove_columns(self, col_names: List[str]) -> 'SpectrumV2':
+        """
+        Returns a NEW SpectrumV2 with specified auxiliary columns removed.
+        """
+        new_aux_cols = deepcopy(self._data.aux_cols)
+        removed = []
+        
+        for col in col_names:
+            if col in new_aux_cols:
+                del new_aux_cols[col]
+                removed.append(col)
+            elif col in ['x', 'y', 'dy', 'xmin', 'xmax']:
+                logging.warning(f"Cannot delete core column '{col}'.")
+            else:
+                logging.warning(f"Column '{col}' not found.")
+        
+        if not removed:
+            return self
+
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
+        new_history = self.history + [f"Deleted columns: {removed}"]
+        return SpectrumV2(data=new_data, history=new_history)
+
+    def prepare_expression_context(self, expression: str, 
+                                   other_specs: Dict[str, 'SpectrumV2']) -> Tuple[str, Dict[str, np.ndarray]]:
+        """
+        Parses expression for 'alias.col' patterns, resamples data from other_specs,
+        and returns the parsed expression and the dictionary of arrays.
+        """
+        # Regex for "alias.column"
+        regex = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
+        extra_vars = {}
+        
+        # We need the current grid in nm for resampling
+        current_grid_nm = self.x.to_value(au.nm)
+        
+        def replacer(match):
+            alias = match.group(1)
+            col_name = match.group(2)
+            
+            if alias not in other_specs:
+                return match.group(0) # Not a known alias, ignore
+                
+            safe_var_name = f"{alias}_{col_name}"
+            if safe_var_name in extra_vars:
+                return safe_var_name
+            
+            target_spec = other_specs[alias]
+            
+            # Resample target column onto current grid
+            try:
+                resampled = target_spec.get_resampled_column(col_name, current_grid_nm)
+                if resampled is None:
+                    raise ValueError(f"Column '{col_name}' in session '{alias}' cannot be used (non-numerical).")
+                
+                extra_vars[safe_var_name] = resampled
+                return safe_var_name
+            except Exception as e:
+                # We raise here to stop the process if a variable is invalid
+                raise ValueError(f"Failed to resample {alias}.{col_name}: {e}")
+
+        final_expr = regex.sub(replacer, expression)
+        return final_expr, extra_vars
 
     def apply_expression(self, target_col: str, expression: str, 
                          extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED

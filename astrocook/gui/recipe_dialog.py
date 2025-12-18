@@ -305,7 +305,7 @@ class RecipeDialog(QDialog):
                 display_label = item_name
                 
                 if item_name == "systems":
-                    btn_style = "QPushButton { text-align: center; padding: 3px 5px; color: darkred; font-weight: bold; }"
+                    btn_style = "QPushButton { text-align: center; padding: 3px 5px; font-weight: bold; }"
                     display_label = "systems (lines)"
 
                 button = QPushButton(display_label)
