@@ -2237,6 +2237,45 @@ class SpectrumV2:
         
         return float(z_grid[best_idx])
     
+    def mask_region(self, mask_col: str, 
+                    obs_min: au.Quantity, obs_max: au.Quantity) -> 'SpectrumV2':
+        """
+        Updates a mask column, setting it to False outside the specified bounds.
+        """
+        col = self.get_column(mask_col)
+        if col is None:
+            logging.warning(f"Mask column '{mask_col}' not found.")
+            return self
+
+        # Work in Angstroms for consistency
+        x_ang = self.x.to(au.Angstrom).value
+        min_ang = obs_min.to(au.Angstrom).value
+        max_ang = obs_max.to(au.Angstrom).value
+        
+        # Copy and Modify
+        new_mask = col.value.astype(bool).copy()
+        new_mask[x_ang < min_ang] = False
+        new_mask[x_ang > max_ang] = False
+        
+        return self.update_column(mask_col, new_mask)
+
+    def merge_column(self, col_name: str, other_values: np.ndarray) -> 'SpectrumV2':
+        """
+        Merges new values into an existing column. 
+        Strategy: Use new value if it's non-zero, otherwise keep old value.
+        """
+        old_col = self.get_column(col_name)
+        if old_col is None:
+            # If column doesn't exist, just create it with the new values
+            return self.update_column(col_name, other_values, unit=au.dimensionless_unscaled)
+            
+        old_values = old_col.value
+        
+        # Merge Logic: new > 0 ? new : old
+        merged = np.where(other_values != 0, other_values, old_values)
+        
+        return self.update_column(col_name, merged)
+    
     def update_model(self, model_flux: np.ndarray) -> 'SpectrumV2':
         """
         Updates the 'model' auxiliary column with new flux values.

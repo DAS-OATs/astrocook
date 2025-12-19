@@ -53,7 +53,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s) to keep."},
-            {"name": "z_window_kms", "type": float, "default": 50.0, "doc": "Fit window (km/s)."}
+            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window (km/s)."}
         ],
         "url": "absorbers_cb.html#lya_auto"
     },
@@ -306,40 +306,16 @@ class RecipeAbsorbersV2:
             except Exception as e:
                 logging.warning(f"Smart clean failed: {e}")
         
-        # --- 1. PREPARE REGION MASK (Using SSOT) ---
+        # --- 1. PREPARE REGION MASK ---
         target_mask_col = mask_col
         if region_limit != "None":
-            
             try:
-                spec = session_current.spec
-                # 1. Get Bounds (e.g. Ly-beta to Ly-alpha)
-                obs_min, obs_max = spec.get_region_bounds(region_limit)
-                logging.debug(f"Applying {region_limit} mask: {obs_min:.1f} - {obs_max:.1f}")
-
-                # 2. Get Data Arrays
-                # We work in Angstroms for the mask logic (internal convention)
-                x_ang = spec.x.to(au.Angstrom).value
-                min_ang = obs_min.to(au.Angstrom).value
-                max_ang = obs_max.to(au.Angstrom).value
-                
-                # 3. Modify Mask
-                # Copy original mask
-                mask_vals = spec.get_column(mask_col).value.astype(bool).copy()
-                
-                # STRICT MASKING: False if OUTSIDE bounds
-                mask_vals[x_ang < min_ang] = False
-                mask_vals[x_ang > max_ang] = False
-                
-                # 4. Inject
-                new_spec = session_current.spec.update_column(
-                    target_mask_col, mask_vals, unit=au.dimensionless_unscaled
-                )
+                obs_min, obs_max = session_current.spec.get_region_bounds(region_limit)
+                # Public API Call (Logic moved to Core)
+                new_spec = session_current.spec.mask_region(mask_col, obs_min, obs_max)
                 session_current = session_current.with_new_spectrum(new_spec)
-                
             except ValueError as e:
-                # Handle missing z_em or bad region name gracefully
                 logging.warning(f"Region masking skipped: {e}")
-                # Proceed without masking (fallback to full spectrum)
         
         # --- 2. IDENTIFY (using the masked session) ---
         logging.info("Step 1/3: Scanning spectrum for candidate pairs...")
@@ -365,31 +341,22 @@ class RecipeAbsorbersV2:
         logging.info(">> PROGRESS: 30")
         if self._is_stop_requested(): return self._session
 
-        # --- 2.5 MERGE IDENTIFICATION IDs (Additive Visualization) ---
+        # --- 2.5 MERGE IDENTIFICATION IDs ---
         if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
             try:
                 new_ids = session_step1.spec.get_column('abs_ids').value
-                # If new_ids has a value (detected region), keep it.
-                # If it's 0 (empty), restore the old ID (from previous recipe).
-                merged_ids = np.where(new_ids != 0, new_ids, old_abs_ids)
-                
-                # Inject back
-                spec_merged = session_step1.spec.update_column(
-                    'abs_ids', merged_ids, unit=au.dimensionless_unscaled
-                )
-                session_step1 = session_step1.with_new_spectrum(spec_merged)
-                logging.debug("Merged new identifications with existing ones.")
+                # Public API Call (Logic moved to Core)
+                new_spec = session_step1.spec.merge_column('abs_ids', new_ids)
+                session_step1 = session_step1.with_new_spectrum(new_spec)
             except Exception as e:
                 logging.warning(f"Failed to merge abs_ids: {e}")
-        
-        # Check results
+
         spec_meta = session_step1.spec.meta
         series_map_json = spec_meta.get('series_map_json')
         z_map_json = spec_meta.get('z_map_json')
         
         if not series_map_json:
-            logging.warning("components_auto: No candidates found in region.")
-            # Return original session (undoing the temp mask creation)
+            logging.warning("components_auto: No candidates found.")
             return self._session
 
         # --- 3. POPULATE ---
@@ -442,7 +409,7 @@ class RecipeAbsorbersV2:
         )
 
     def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                 z_window_kms: str = "50.0") -> 'SessionV2':
+                 z_window_kms: str = "100.0") -> 'SessionV2':
         """
         Wrapper: Auto-detect Ly-alpha in the Forest.
         """
