@@ -482,6 +482,16 @@ class VelocityPlotWidget(QWidget):
     def on_mouse_release(self, event):
         """Triggers a data refresh when the mouse is released during Panning."""
         if self.toolbar.mode:
+            # We must sync self._xlim with the axes' current state (set by the Zoom tool).
+            # If we don't, _update_plot() will wipe the figure and rebuild it using 
+            # the OLD limits, cancelling the zoom.
+            if self.axes and len(self.axes) > 0:
+                # Get the limits from the first axis (they are shared)
+                self._xlim = self.axes[0].get_xlim()
+                
+                # Update the text boxes in the Inspector UI
+                self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
+
             self._update_plot()
 
     def resizeEvent(self, event):
@@ -950,7 +960,14 @@ class VelocityPlotWidget(QWidget):
         1. If clicked on a Tick -> Focus on that component (Group View).
         2. If clicked on Background -> Add new component.
         """
-        if event.button == 3 and event.inaxes: 
+        if not event.inaxes: return
+
+        # --- 0. CHECK MODIFIERS ---
+        # Use Qt directly to reliably detect 'Ctrl' key even if plot focus is fuzzy
+        modifiers = QApplication.keyboardModifiers()
+        is_ctrl_held = (modifiers & Qt.ControlModifier)
+
+        if event.button == 3 and is_ctrl_held: 
             menu = QMenu(self)
             has_actions = False
             
