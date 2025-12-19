@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from typing import List, Optional
 
 from ..core.structures import ComponentDataV2
-from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from ..core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- [CHANGE] Robust Convolution Import with Local Fallback ---
@@ -1002,7 +1002,7 @@ class VelocityPlotWidget(QWidget):
                 # 1. Identify the Group of the clicked panel
                 # Always prefer the Multiplet name (e.g. SiIV) over the line name (SiIV_1402)
                 group_primary = trans_name
-                for g, members in STANDARD_MULTIPLETS.items():
+                for g, members in METAL_MULTIPLETS.items():
                     if trans_name in members:
                         group_primary = g; break
                 
@@ -1011,7 +1011,7 @@ class VelocityPlotWidget(QWidget):
                 
                 for t in self._all_transitions:
                     g_name = t
-                    for g, members in STANDARD_MULTIPLETS.items():
+                    for g, members in METAL_MULTIPLETS.items():
                         if t in members: g_name = g; break
                     
                     # Only add if it is DISTINCT from the primary group
