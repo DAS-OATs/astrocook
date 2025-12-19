@@ -475,7 +475,11 @@ class RecipeEditV2:
         """
         Imports systems from another session.
         """
-        # 1. Find the source session object from the GUI list
+        import numpy as np
+        from astrocook.core.structures import SystemListDataV2
+        from astrocook.core.system_list import SystemListV2
+
+        # 1. Find the source session
         target_hist = None
         if hasattr(self._session, '_gui'):
             for hist in self._session._gui.session_histories:
@@ -485,7 +489,7 @@ class RecipeEditV2:
         
         if not target_hist:
             logging.error(f"Session '{source_session}' not found.")
-            return 0
+            return self._session
 
         source_systs = target_hist.current_state.systs
         if not source_systs or not source_systs.components:
@@ -496,16 +500,35 @@ class RecipeEditV2:
         if append and self._session.systs:
             base_systs = self._session.systs
         else:
-            # Create empty if replacing or if current is None
-            from astrocook.core.structures import SystemListDataV2
-            from astrocook.core.system_list import SystemListV2
             base_systs = SystemListV2(SystemListDataV2())
 
-        # 3. Merge
+        # 3. Filter Source Components (Delegated to Core)
+        if self._session.spec and len(self._session.spec.x) > 0:
+            try:
+                xmin = np.min(self._session.spec.x.value)
+                xmax = np.max(self._session.spec.x.value)
+                
+                # [REFACTORED] The heavy lifting is now here
+                filtered_source_systs = source_systs.filter_by_range(xmin, xmax)
+                
+                skipped = len(source_systs.components) - len(filtered_source_systs.components)
+                if skipped > 0:
+                    logging.info(f"Skipped {skipped} systems outside spectral range.")
+                    
+                source_systs = filtered_source_systs # Swap reference to filtered version
+                
+            except Exception as e:
+                logging.warning(f"Could not filter systems by range: {e}")
+
+        if not source_systs.components:
+            logging.warning("No systems fell within the target spectral range.")
+            return self._session
+
+        # 4. Merge
         logging.info(f"Importing {len(source_systs.components)} systems from '{source_session}'...")
         new_systs = base_systs.merge(source_systs, copy_uuids=False)
         
-        # 4. Return new session
+        # 5. Return new session
         return self._session.with_new_system_list(new_systs)
         
     def delete(self, targets: str) -> 'SessionV2':

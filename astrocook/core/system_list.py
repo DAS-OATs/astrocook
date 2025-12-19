@@ -967,3 +967,63 @@ class SystemListV2:
         logging.info(f"Filtered {deleted_count} components.")
         new_data = dataclasses.replace(self._data, components=valid_comps)
         return SystemListV2(new_data)
+    
+    def filter_by_range(self, xmin_nm: float, xmax_nm: float) -> 'SystemListV2':
+        """
+        Returns a new SystemListV2 containing only components that fall 
+        within the specified wavelength range [xmin, xmax] (in nm).
+        Handles both single lines (CIV 1548) and doublet tags (CIV).
+        """
+        import numpy as np
+        import astropy.units as au
+        import dataclasses
+        from astrocook.core.atomic_data import xem_d, STANDARD_MULTIPLETS
+        
+        valid_components = []
+        
+        # Ensure limits are valid
+        if not np.isfinite(xmin_nm) or not np.isfinite(xmax_nm):
+            return self
+
+        for c in self.components:
+            is_in_range = False
+            
+            # 1. Identify which lines this component represents
+            lines_to_check = []
+            
+            # Case A: It's a specific line (e.g., "CIV 1548")
+            if c.series in xem_d:
+                lines_to_check.append(c.series)
+            
+            # Case B: It's a Multiplet Tag (e.g., "CIV")
+            elif c.series in STANDARD_MULTIPLETS:
+                lines_to_check.extend(STANDARD_MULTIPLETS[c.series])
+                
+            # Case C: Try normalized name (e.g., "CIV 1548" vs "CIV_1548")
+            else:
+                norm = c.series.replace(' ', '_')
+                if norm in xem_d:
+                    lines_to_check.append(norm)
+
+            # 2. Check if ANY line falls in range
+            if not lines_to_check:
+                # If we can't identify the line physics, we default to KEEPING it
+                # (Safe fallback for custom markers)
+                is_in_range = True
+            else:
+                for line in lines_to_check:
+                    if line in xem_d:
+                        lam_rest_nm = xem_d[line].to(au.nm).value
+                        lam_obs = lam_rest_nm * (1.0 + c.z)
+                        
+                        # Check bounds (1.0 nm padding)
+                        if (xmin_nm - 1.0) <= lam_obs <= (xmax_nm + 1.0):
+                            is_in_range = True
+                            break
+            
+            if is_in_range:
+                valid_components.append(c)
+
+        # Return new instance with filtered data
+        new_data = dataclasses.replace(self._data, components=valid_components)
+        return SystemListV2(new_data)
