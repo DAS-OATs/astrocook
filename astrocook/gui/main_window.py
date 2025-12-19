@@ -2934,32 +2934,51 @@ class MainWindowV2(QMainWindow):
         """Slot called when the RecipeWorker fails."""
         title, message, trace = error_data
         
-        # [CHANGE] Use new cleanup helper
+        # 1. Cleanup UI
         self._cleanup_progress_ui()
             
         if trace:
-            QMessageBox.critical(self, title, message)
-        else:
-            # User error: Offer to try again
-            # --- *** START MODIFICATION *** ---
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle(title)
+            # --- CASE A: System Crash (Show Traceback) ---
+            # We format the traceback as a code block for readability
+            # Replace newlines with <br> for HTML rendering if not using <pre>
+            # But <pre> is safer for code.
             
-            msg_box.setText(title) # Grassetto (es. "Recipe Failed")
-            msg_box.setInformativeText(message) # Normale (es. "Param X is invalid...")
-            msg_box.setIconPixmap(QPixmap(resource_path(os.path.join("assets", "icon_3d_HR.png"))).scaled(64,64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            # Truncate trace if massive
+            if len(trace) > 2000:
+                display_trace = trace[:2000] + "\n... (traceback truncated)"
+            else:
+                display_trace = trace
 
-            # Add standard buttons + a custom "Try Again"
-            try_again_btn = msg_box.addButton("Try Again", QMessageBox.AcceptRole)
-            msg_box.addButton(QMessageBox.Cancel)
-            msg_box.setDefaultButton(try_again_btn)
+            full_text = (
+                f"{message}<br><br>"
+                f"<b>Traceback:</b>"
+                f"<pre style='font-size: 10pt; background-color: #f0f0f0; padding: 5px;'>{display_trace}</pre>"
+            )
+
+            self._show_custom_message(
+                title="Internal Error",
+                header=title, # e.g. "Recipe Error: fit_continuum"
+                text=full_text,
+                buttons=QMessageBox.StandardButton.Ok,
+                icon_name="icon_3d_HR.png" # Or a warning icon if you have one
+            )
+
+        else:
+            # --- CASE B: User Error (Offer Retry) ---
+            # e.g. "Param X is invalid"
             
-            msg_box.exec()
+            ret = self._show_custom_message(
+                title="Recipe Failed",
+                header=title,   # e.g. "Recipe Aborted"
+                text=message,   # e.g. "Value must be positive."
+                buttons=QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel,
+                default_btn=QMessageBox.StandardButton.Retry
+            )
             
-            if msg_box.clickedButton() == try_again_btn:
+            # If user clicked Retry (mapped from "Try Again"), re-launch
+            if ret == QMessageBox.StandardButton.Retry:
                 if self._last_attempted_recipe:
-                    logging.info("User clicked 'Try Again', re-launching dialog.")
-                    # Re-launch the dialog
+                    logging.info("User clicked Retry, re-launching dialog.")
                     self._launch_recipe_dialog(
                         self._last_attempted_recipe['category'],
                         self._last_attempted_recipe['recipe_name']
