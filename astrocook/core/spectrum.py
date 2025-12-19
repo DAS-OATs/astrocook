@@ -7,6 +7,7 @@ import logging
 import numexpr as ne
 import numpy as np
 import re
+from scipy.interpolate import CubicSpline
 from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -1766,6 +1767,66 @@ class SpectrumV2:
         # 3. Return new SpectrumV2
         new_history = self.history + [f"Fitted power-law (regions={regions_str})"]
         return SpectrumV2(data=new_data, history=new_history)
+    
+    def update_continuum_from_knots(self, knots_x: List[float], knots_y: List[float], 
+                                    renorm_model: bool = True) -> 'SpectrumV2':
+        """
+        Updates the continuum using a Cubic Spline through the provided knots.
+        Optionally re-normalizes the 'model' column to preserve flux/continuum ratio.
+        """
+        # 1. Validation (Safe for numpy arrays)
+        # Check for None first, then length. Avoid "if not knots_x" on arrays.
+        if knots_x is None or len(knots_x) == 0:
+            logging.warning("Invalid knots provided (empty).")
+            return self
+            
+        if len(knots_x) != len(knots_y):
+            logging.warning(f"Knots length mismatch: x({len(knots_x)}) != y({len(knots_y)})")
+            return self
+
+        # 2. Create Spline
+        try:
+            # Sort knots to prevent spline errors
+            knots_x_arr = np.array(knots_x)
+            knots_y_arr = np.array(knots_y)
+            sorter = np.argsort(knots_x_arr)
+            
+            cs = CubicSpline(knots_x_arr[sorter], knots_y_arr[sorter])
+            
+            # Evaluate on current grid
+            x_axis = self.x.value
+            new_cont = cs(x_axis)
+        except Exception as e:
+            logging.error(f"Failed to generate spline from knots: {e}")
+            return self
+
+        # 3. Update 'cont' column
+        new_spec = self.update_column('cont', new_cont, description="Spline from manual knots")
+        
+        # 4. Handle Model Renormalization
+        if renorm_model and new_spec.has_aux_column('model'):
+            old_cont_col = self.get_column('cont')
+            old_model_col = self.get_column('model')
+            
+            # We can use the helper we used in smooth_column/fit_continuum
+            # Note: We access _data directly inside the class for the helper
+            new_model_data_col = self._renormalize_model(
+                old_cont_vals=old_cont_col.value,
+                new_cont_vals=new_cont,
+                old_model_col=self._data.aux_cols['model']
+            )
+            
+            if new_model_data_col:
+                # We use internal update logic to avoid creating two SpectrumV2 objects
+                new_aux = deepcopy(new_spec._data.aux_cols)
+                new_aux['model'] = new_model_data_col
+                new_data = dataclasses.replace(new_spec._data, aux_cols=new_aux)
+                new_spec = SpectrumV2(new_data, new_spec.history)
+                logging.info("Model renormalized to match new continuum.")
+
+        # 5. History
+        new_spec.history.append("Updated continuum from knots")
+        return new_spec
 
     def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> 'SpectrumV2':
         """
