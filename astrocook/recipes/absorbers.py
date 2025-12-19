@@ -216,7 +216,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
         "params": [
             {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations per group"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window around lines (km/s)"},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window around lines (km/s)"},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
             {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"},
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."}
@@ -951,7 +951,7 @@ class RecipeAbsorbersV2:
              return 0
         
 
-    def refit_all(self, max_nfev: str = '100', z_window_kms: str = '20.0', 
+    def refit_all(self, max_nfev: str = '100', z_window_kms: str = '100.0', 
                   group_depth: str = '0', max_group_size: str = '20',
                   region_limit: str = "None") -> 'SessionV2':
         """

@@ -71,6 +71,15 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
+    "import_systems": {
+        "brief": "Import systems from session.",
+        "details": "Copy absorption systems from another open session into this one.",
+        "params": [
+            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the session to import from."},
+            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."}
+        ],
+        "url": "absorbers_cb.html#import_systems"
+    },
     "delete": {
         "brief": "Delete elements.",
         "details": "Remove columns from the spectrum or clear the line list.",
@@ -461,6 +470,43 @@ class RecipeEditV2:
         except Exception as e:
             logging.error(f"Failed during smooth_column: {e}", exc_info=True)
             return 0
+        
+    def import_systems(self, source_session: str, append: bool = True) -> 'SessionV2':
+        """
+        Imports systems from another session.
+        """
+        # 1. Find the source session object from the GUI list
+        target_hist = None
+        if hasattr(self._session, '_gui'):
+            for hist in self._session._gui.session_histories:
+                if hist.display_name == source_session:
+                    target_hist = hist
+                    break
+        
+        if not target_hist:
+            logging.error(f"Session '{source_session}' not found.")
+            return 0
+
+        source_systs = target_hist.current_state.systs
+        if not source_systs or not source_systs.components:
+            logging.warning(f"Source session '{source_session}' has no systems.")
+            return self._session
+
+        # 2. Prepare current list
+        if append and self._session.systs:
+            base_systs = self._session.systs
+        else:
+            # Create empty if replacing or if current is None
+            from astrocook.core.structures import SystemListDataV2
+            from astrocook.core.system_list import SystemListV2
+            base_systs = SystemListV2(SystemListDataV2())
+
+        # 3. Merge
+        logging.info(f"Importing {len(source_systs.components)} systems from '{source_session}'...")
+        new_systs = base_systs.merge(source_systs, copy_uuids=False)
+        
+        # 4. Return new session
+        return self._session.with_new_system_list(new_systs)
         
     def delete(self, targets: str) -> 'SessionV2':
         """

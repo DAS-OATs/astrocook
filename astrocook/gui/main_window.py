@@ -694,7 +694,15 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(smooth_col_action)
         self.smooth_column_action = smooth_col_action; self.smooth_column_action.setEnabled(False)
 
-        # --- NEW: delete Action ---
+        # import_systems Action
+        import_sys_action = QAction("&Import Systems...", self)
+        import_sys_action.setToolTip("Copy absorption systems from another open session.")
+        # Note: We call the 'absorbers' category because that's where the recipe logic lives
+        import_sys_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "import_systems"))
+        edit_menu.addAction(import_sys_action)
+        self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
+
+        # delete Action
         delete_action = QAction("&Delete Elements...", self)
         delete_action.setToolTip("Delete columns or clear the line list")
         delete_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "delete"))
@@ -3184,6 +3192,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
+        if hasattr(self, 'import_systems_action'): self.import_systems_action.setEnabled(enable_recipes)
         if hasattr(self, 'delete_action'): self.delete_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)

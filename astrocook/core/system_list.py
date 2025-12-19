@@ -689,6 +689,46 @@ class SystemListV2:
         aic = chi2_static + 2 * k_free
         return aic
     
+    def merge(self, other: 'SystemListV2', copy_uuids: bool = False) -> 'SystemListV2':
+        """
+        Merges components from another system list into this one.
+        
+        Parameters
+        ----------
+        other : SystemListV2
+            The source list to copy from.
+        copy_uuids : bool
+            If True, keeps original UUIDs (risky if merging into self).
+            If False, regenerates UUIDs to avoid conflicts.
+        """
+        from astrocook.core.structures import ComponentDataV2
+        import uuid
+
+        current_comps = list(self.components)
+        
+        # Determine next ID for V1 compatibility
+        next_id = 1
+        if current_comps:
+            next_id = max(c.id for c in current_comps) + 1
+
+        for c in other.components:
+            # Prepare the arguments we want to change
+            changes = {'id': next_id}
+            
+            if not copy_uuids:
+                changes['uuid'] = str(uuid.uuid4())
+            
+            # [FIX] Apply changes using replace() instead of direct assignment
+            new_c = dataclasses.replace(c, **changes)
+            
+            current_comps.append(new_c)
+            next_id += 1
+
+        # Create new data core
+        new_data = dataclasses.replace(self._data, components=current_comps)
+        
+        return SystemListV2(new_data)
+    
     def optimize_hierarchy(self, spec: 'SpectrumV2', uuid_seed: str, 
                            max_components: int = 5, threshold_sigma: float = 2.5,
                            aic_penalty: float = 0.0, z_window_kms: float = 100.0,
