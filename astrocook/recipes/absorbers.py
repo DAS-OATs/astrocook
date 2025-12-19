@@ -292,53 +292,16 @@ class RecipeAbsorbersV2:
             logging.error(f"Mask generation failed: {e}")
             return 0
         
-        # --- 0.5 SMART CLEAN: Remove OLD components in this region ---
-        # This ensures re-execution is idempotent (no duplicates).
+        # --- 0.5 SMART CLEAN (Refactored) ---
         if region_limit != "None" and session_current.systs:
             try:
                 spec = session_current.spec
+                # Get bounds as Quantities
                 obs_min, obs_max = spec.get_region_bounds(region_limit)
                 
-                from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
-                
-                # 1. Identify Survivors
-                surviving_comps = []
-                deleted_count = 0
-                
-                for c in session_current.systs.components:
-                    # Resolve Wavelength
-                    lam_rest = None
-                    if c.series in ATOM_DATA:
-                        lam_rest = ATOM_DATA[c.series]['wave']
-                    elif c.series in STANDARD_MULTIPLETS:
-                         # Use primary line for location check
-                         prim = STANDARD_MULTIPLETS[c.series][0]
-                         if prim in ATOM_DATA:
-                             lam_rest = ATOM_DATA[prim]['wave']
-                    
-                    should_delete = False
-                    if lam_rest:
-                        lam_obs = lam_rest * (1 + c.z) * au.Angstrom
-                        # Check overlap
-                        if obs_min <= lam_obs <= obs_max:
-                            should_delete = True
-                    
-                    if should_delete:
-                        deleted_count += 1
-                    else:
-                        surviving_comps.append(c)
-                
-                # 2. Bulk Delete
-                if deleted_count > 0:
-                    logging.info(f"Clean Start: Removed {deleted_count} existing components in '{region_limit}'.")
-                    
-                    import dataclasses
-                    from astrocook.core.system_list import SystemListV2
-                    
-                    # Create new system list with only survivors
-                    new_data = dataclasses.replace(session_current.systs._data, components=surviving_comps)
-                    new_systs = SystemListV2(new_data)
-                    session_current = session_current.with_new_system_list(new_systs)
+                # Delegate logic to SystemListV2
+                new_systs = session_current.systs.remove_in_region(obs_min, obs_max)
+                session_current = session_current.with_new_system_list(new_systs)
                     
             except Exception as e:
                 logging.warning(f"Smart clean failed: {e}")
@@ -502,42 +465,34 @@ class RecipeAbsorbersV2:
         
         try:
             min_b_val = float(min_b)
-            systs = final_session.systs
             
-            valid_comps = []
-            deleted_count = 0
+            # Use new Core method
+            # Logic: Keep if (NOT Ly_a) OR (Ly_a AND b >= min_b)
+            condition = lambda c: (c.series != 'Ly_a') or (c.b >= min_b_val)
             
-            for c in systs.components:
-                is_lya = (c.series == 'Ly_a')
-                if is_lya and c.b < min_b_val:
-                    deleted_count += 1
-                    continue
-                valid_comps.append(c)
-            
-            #if deleted_count > 0:
-            #    logging.info(f"Rejected {deleted_count} lines (too narrow).")
-            #    
-            #    import dataclasses
-            #    from astrocook.core.system_list import SystemListV2
-            #    new_data = dataclasses.replace(systs._data, components=valid_comps)
-            #    new_systs = SystemListV2(new_data)
-            #    final_session = final_session.with_new_system_list(new_systs)
-            #    
-            #    # 3. Final Refit
-            #    logging.info("Refining fit for confirmed systems...")
-            #    rec_polish = RecipeAbsorbersV2(final_session)
-            #    final_session = rec_polish.refit_all(
-            #        max_nfev='200',
-            #        z_window_kms=z_window_kms,
-            #        group_depth='1',
-            #        max_group_size='25'
-            #    )
-            #else:
-            #    logging.info("No interlopers found. Clean.")
-            #    logging.info(">> PROGRESS: 100")
+            if final_session.systs:
+                new_systs = final_session.systs.filter_by_criteria(condition)
+                
+                # Check if components were actually removed
+                if len(new_systs.components) < len(final_session.systs.components):
+                     logging.info("Refining fit after removing narrow lines...")
+                     
+                     # Update session with filtered list
+                     final_session = final_session.with_new_system_list(new_systs)
+                     
+                     # Refit
+                     rec_polish = RecipeAbsorbersV2(final_session)
+                     final_session = rec_polish.refit_all(
+                        max_nfev='200',
+                        z_window_kms=z_window_kms,
+                        group_depth='1',
+                        max_group_size='25'
+                     )
+                else:
+                     logging.info("No interlopers found. Clean.")
 
         except Exception as e:
-            logging.warning(f"lya_auto cleanup failed: {e}")
+            logging.warning(f"lya_auto cleanup failed: {e}", exc_info=True)
 
         return final_session
 
@@ -736,26 +691,15 @@ class RecipeAbsorbersV2:
             # A. Add Single Component (e.g. 'CIV')
             running_systs = running_systs.add_component(series, z_val, logN=13.5, b=15.0)
 
-        # 3. Cleanup and Model Generation
+        # 3. Cleanup and Model Generation (Refactored)
         if running_systs.constraint_model:
             running_systs.constraint_model.set_active_components(None)
 
         final_fitter = VoigtFitterV2(spec, running_systs)
         _, model_flux = final_fitter.compute_model_flux()
         
-        # 4. Return Result
-        from astrocook.core.structures import DataColumnV2
-        import dataclasses
-        from copy import deepcopy
-        
-        new_aux_cols = deepcopy(spec._data.aux_cols)
-        new_aux_cols['model'] = DataColumnV2(
-            values=model_flux,
-            unit=spec.y.unit,
-            description="Voigt Fit Model"
-        )
-        new_spec_data = dataclasses.replace(spec._data, aux_cols=new_aux_cols)
-        new_spec = spec.__class__(new_spec_data) 
+        # Delegate to SpectrumV2
+        new_spec = spec.update_model(model_flux)
         
         return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
@@ -807,22 +751,10 @@ class RecipeAbsorbersV2:
             fitter = VoigtFitterV2(self._session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            from astrocook.core.structures import DataColumnV2
-            from copy import deepcopy
-            import dataclasses
+            # Delegate to SpectrumV2
+            new_spec = self._session.spec.update_model(model_flux)
             
-            new_aux_cols = deepcopy(self._session.spec._data.aux_cols)
-            new_aux_cols['model'] = DataColumnV2(
-                values=model_flux,
-                unit=self._session.spec.y.unit,
-                description="Voigt Fit Model"
-            )
-            
-            new_spec_data = dataclasses.replace(self._session.spec._data, aux_cols=new_aux_cols)
-            new_spec = self._session.spec.__class__(new_spec_data) 
-            session_with_spec = self._session.with_new_spectrum(new_spec)
-            return session_with_spec.with_new_system_list(new_systs)
-
+            return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
         except Exception as e:
             logging.error(f"Failed delete_component: {e}", exc_info=True)
             return 0
@@ -873,21 +805,10 @@ class RecipeAbsorbersV2:
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)
 
-            from astrocook.core.structures import DataColumnV2
-            from copy import deepcopy
-            import dataclasses
+            # Delegate to SpectrumV2
+            new_spec = current_session.spec.update_model(model_flux)
             
-            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
-            new_aux_cols['model'] = DataColumnV2(
-                values=model_flux,
-                unit=current_session.spec.y.unit,
-                description="Voigt Fit Model"
-            )
-            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
-            new_spec = current_session.spec.__class__(new_spec_data) 
-            
-            session_with_spec = current_session.with_new_spectrum(new_spec)
-            return session_with_spec.with_new_system_list(new_systs)
+            return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
@@ -1053,21 +974,11 @@ class RecipeAbsorbersV2:
             fitter = VoigtFitterV2(current_session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            from astrocook.core.structures import DataColumnV2
-            from copy import deepcopy
-            import dataclasses
-            
-            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
-            new_aux_cols['model'] = DataColumnV2(
-                values=model_flux,
-                unit=current_session.spec.y.unit,
-                description="Voigt Fit Model"
-            )
-            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
-            new_spec = current_session.spec.__class__(new_spec_data) 
+            # Delegate to SpectrumV2
+            new_spec = current_session.spec.update_model(model_flux)
             
             return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
-            
+                        
         except Exception as e:
              logging.error(f"optimize_system failed: {e}", exc_info=True)
              return 0
@@ -1263,20 +1174,9 @@ class RecipeAbsorbersV2:
             final_fitter = VoigtFitterV2(current_session.spec, final_systs)
             _, model_flux = final_fitter.compute_model_flux()
 
-            from astrocook.core.structures import DataColumnV2
-            from copy import deepcopy
+            # Delegate to SpectrumV2
+            new_spec = current_session.spec.update_model(model_flux)
             
-            new_aux_cols = deepcopy(current_session.spec._data.aux_cols)
-            new_aux_cols['model'] = DataColumnV2(
-                values=model_flux,
-                unit=current_session.spec.y.unit,
-                description="Voigt Fit Model"
-            )
-            
-            new_spec_data = dataclasses.replace(current_session.spec._data, aux_cols=new_aux_cols)
-            new_spec = current_session.spec.__class__(new_spec_data) 
-            
-            logging.info("Refit All: Complete.")
             return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
 
         except Exception as e:

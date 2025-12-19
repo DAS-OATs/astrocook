@@ -611,7 +611,7 @@ class VoigtFitterV2:
         return np.sum(tau_matrix, axis=0)
 
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
-            z_window_kms: float = 20.0, verbose: int = 1) -> Tuple[SystemListV2, np.ndarray, Any]:
+            z_window_kms: float = 20.0, verbose: int = 0) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
         Executes the optimization using scipy.optimize.least_squares.
         Includes spatial pre-filtering and vectorization setup for speed.

@@ -868,3 +868,62 @@ class SystemListV2:
                 break
         
         return best_systs
+    
+    def remove_in_region(self, obs_min: au.Quantity, obs_max: au.Quantity) -> 'SystemListV2':
+        """
+        Removes components whose primary line center falls within the observed wavelength range.
+        Used for cleaning up regions before auto-fitting.
+        """
+        surviving_comps = []
+        deleted_count = 0
+        
+        for c in self.components:
+            # Resolve Rest Wavelength
+            lam_rest = None
+            if c.series in ATOM_DATA:
+                lam_rest = ATOM_DATA[c.series]['wave']
+            elif c.series in STANDARD_MULTIPLETS:
+                 # Use primary line for location check
+                 prim = STANDARD_MULTIPLETS[c.series][0]
+                 if prim in ATOM_DATA:
+                     lam_rest = ATOM_DATA[prim]['wave']
+            
+            should_delete = False
+            if lam_rest:
+                # Convert to Angstrom Quantity for comparison
+                lam_obs = lam_rest * (1 + c.z) * au.Angstrom
+                if obs_min <= lam_obs <= obs_max:
+                    should_delete = True
+            
+            if should_delete:
+                deleted_count += 1
+            else:
+                surviving_comps.append(c)
+        
+        if deleted_count == 0:
+            return self
+
+        logging.info(f"Smart clean: Removed {deleted_count} components in region {obs_min:.1f}-{obs_max:.1f}")
+        new_data = dataclasses.replace(self._data, components=surviving_comps)
+        return SystemListV2(new_data)
+
+    def filter_by_criteria(self, condition_func) -> 'SystemListV2':
+        """
+        Filters components based on a lambda function.
+        Example: systs.filter_by_criteria(lambda c: c.b > 10.0)
+        """
+        valid_comps = []
+        deleted_count = 0
+        
+        for c in self.components:
+            if condition_func(c):
+                valid_comps.append(c)
+            else:
+                deleted_count += 1
+                
+        if deleted_count == 0:
+            return self
+            
+        logging.info(f"Filtered {deleted_count} components.")
+        new_data = dataclasses.replace(self._data, components=valid_comps)
+        return SystemListV2(new_data)

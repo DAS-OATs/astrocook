@@ -2237,6 +2237,27 @@ class SpectrumV2:
         
         return float(z_grid[best_idx])
     
+    def update_model(self, model_flux: np.ndarray) -> 'SpectrumV2':
+        """
+        Updates the 'model' auxiliary column with new flux values.
+        Helper to avoid boilerplate in recipes.
+        """
+        # Create DataColumnV2 (inheriting unit from flux)
+        new_col = DataColumnV2(
+            values=model_flux,
+            unit=self._data.y.unit,
+            description="Voigt Fit Model"
+        )
+        
+        # Immutable Update
+        new_aux = deepcopy(self._data.aux_cols)
+        new_aux['model'] = new_col
+        new_data = dataclasses.replace(self._data, aux_cols=new_aux)
+        
+        # We don't necessarily add a history entry for every model update 
+        # as it happens very frequently during interactive fitting.
+        return SpectrumV2(data=new_data, history=self.history)
+    
     def x_convert(self, z_ref: float, xunit: au.Unit) -> 'SpectrumV2':
         """
         API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
