@@ -143,21 +143,12 @@ class SystemTableModel(QAbstractTableModel):
         
         # 1. Background (Group Highlighting)
         if role == Qt.BackgroundRole:
-            # Primary (Selected) is now handled by QTableView stylesheet (Orange)
-            # We only paint the Secondary (Group) background here.
-            
-            # NOTE: If we paint background for Primary here, it might conflict or blend.
-            # Since QTableView draws selection ON TOP, we usually don't need to return
-            # a color for the selected item here, unless we want it to show when focus is lost.
-            # However, to be safe and avoid conflicts, let's only return the Group color.
-            
             if comp.uuid in self._secondary_uuids:
-                # Blue with Alpha (R, G, B, A) -> (41, 107, 255, 50)
                 return QColor(245, 161, 0, 50) 
-            
             return None
 
         # --- CONSTRAINTS CHECK ---
+        # (We calculate this upfront so we can use it for Font, Tooltip, AND Display)
         is_constrained_col = col_name in ['z', 'logN', 'b', 'btur']
         c_data = None
         is_free = True
@@ -177,8 +168,8 @@ class SystemTableModel(QAbstractTableModel):
                 font.setItalic(True); return font
             return None
 
+        # 2. Tooltip (Keep existing logic)
         if role == Qt.ToolTipRole:
-             # (Your updated HTML tooltip logic from previous step goes here)
              c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
              c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
              tooltip_html = (
@@ -197,6 +188,7 @@ class SystemTableModel(QAbstractTableModel):
                                 target_name = c_ref.series; target_z = f" (z={c_ref.z:.5f})"; break
                     import re
                     expr_display = c_data.expression if c_data.expression else "Direct Link"
+                    # Clean up expression for display
                     def replacer(match):
                         uid = match.group(1)
                         for c_ref in self._components:
@@ -218,22 +210,17 @@ class SystemTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole or role == Qt.EditRole:
             val = getattr(comp, attr, None)
             
-            # Formatting Rules
             val_fmt = "{}"
             err_fmt = "{}"
             
             if attr == 'z':
-                val_fmt = "{:.6f}"
-                err_fmt = "{:.2e}"  # Scientific notation for dz
+                val_fmt = "{:.6f}"; err_fmt = "{:.2e}"
             elif attr == 'logN':
-                val_fmt = "{:.3f}"
-                err_fmt = "{:.3f}"
+                val_fmt = "{:.3f}"; err_fmt = "{:.3f}"
             elif attr == 'b':
-                val_fmt = "{:.2f}"
-                err_fmt = "{:.2f}"
+                val_fmt = "{:.2f}"; err_fmt = "{:.2f}"
             elif attr == 'btur':
-                val_fmt = "{:.2f}"
-                err_fmt = "{:.2f}"
+                val_fmt = "{:.2f}"; err_fmt = "{:.2f}"
 
             # --- EDIT ROLE: Clean Value Only ---
             if role == Qt.EditRole:
@@ -245,20 +232,23 @@ class SystemTableModel(QAbstractTableModel):
             if role == Qt.DisplayRole:
                 if val is None: return ""
                 
-                # Format Main Value
                 if isinstance(val, (int, float)):
                     val_str = val_fmt.format(val)
                 else:
                     val_str = str(val)
 
-                # Append Error if it exists (and we are in a parameter column)
+                # Append Error if it exists... AND if not linked!
                 if attr in ERR_MAP and isinstance(val, (int, float)):
-                    err_attr = ERR_MAP[attr]
-                    err_val = getattr(comp, err_attr, None)
                     
-                    if err_val is not None and np.isfinite(err_val) and err_val > 0:
-                        err_str = err_fmt.format(err_val)
-                        return f"{val_str} ± {err_str}"
+                    # --- [FIX] Suppress error if linked ---
+                    if not is_linked: 
+                        err_attr = ERR_MAP[attr]
+                        err_val = getattr(comp, err_attr, None)
+                        
+                        if err_val is not None and np.isfinite(err_val) and err_val > 0:
+                            err_str = err_fmt.format(err_val)
+                            return f"{val_str} ± {err_str}"
+                    # --------------------------------------
                 
                 return val_str
 
@@ -967,7 +957,11 @@ class VelocityPlotWidget(QWidget):
         modifiers = QApplication.keyboardModifiers()
         is_ctrl_held = (modifiers & Qt.ControlModifier)
 
-        if event.button == 3 and is_ctrl_held: 
+        # Check if a toolbar mode (Zoom/Pan) is currently active
+        is_tool_active = bool(self.toolbar.mode)
+
+        # Condition: Right Click (Button 3) AND (Ctrl held OR No tool active)
+        if event.button == 3 and (is_ctrl_held or not is_tool_active):
             menu = QMenu(self)
             has_actions = False
             

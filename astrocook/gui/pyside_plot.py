@@ -1852,9 +1852,11 @@ class SpectrumPlotWidget(QWidget):
         modifiers = QApplication.keyboardModifiers()
         is_ctrl_held = (modifiers & Qt.ControlModifier)
 
-        # --- 1. CONTEXT MENU (CTRL + RIGHT CLICK) ---
-        # We handle this FIRST. If user wants the menu, we pause everything else.
-        if event.button == 3 and is_ctrl_held:
+        # Check if a toolbar mode (Zoom/Pan) is currently active
+        is_tool_active = bool(self.toolbar.mode)
+
+        # Condition: Right Click (Button 3) AND (Ctrl held OR No tool active)
+        if event.button == 3 and (is_ctrl_held or not is_tool_active):
             
             # A. Pause Toolbar (if active) to prevent artifacts
             paused_mode = None
