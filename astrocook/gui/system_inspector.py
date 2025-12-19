@@ -1230,6 +1230,9 @@ class SystemInspector(QWidget):
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
         layout.addWidget(splitter)
+
+        # Add helper to set style based on state
+        self._update_trans_box_visuals()
     
     def _on_manual_edit(self, text):
         """
@@ -1242,6 +1245,9 @@ class SystemInspector(QWidget):
         else:
             self._manual_trans_edit = True
             self._manual_base_text = text
+
+        # Add helper to set style based on state
+        self._update_trans_box_visuals()
 
     def set_session(self, session):
         """
@@ -1367,10 +1373,14 @@ class SystemInspector(QWidget):
         if primary_comp and self.current_session:
             new_txt = ""
             
+            # Use dict.fromkeys to preserve order while removing duplicates
+            unique_series = list(dict.fromkeys([c.series for c in selected_comps if c.series]))
+            series_str = ", ".join(unique_series)
+
             if not self._manual_trans_edit:
                 # --- MODE A: Auto-Replace ---
-                # The box simply reflects the selection.
-                new_txt = primary_comp.series
+                # The box reflects the FULL selection.
+                new_txt = series_str
                 # Update the BASE so if the user starts typing now, 
                 # they append to the CURRENT selection.
                 self._manual_base_text = new_txt 
@@ -1394,6 +1404,9 @@ class SystemInspector(QWidget):
             self.trans_in.setText(new_txt)
             self.z_in.setText(f"{primary_comp.z:.5f}")
             
+            # Add helper to set style based on state
+            self._update_trans_box_visuals()
+
             # Update Internal State & Plot
             self._parse(new_txt)
             self.vel_plot.plot_system(self.current_session, primary_comp, selected_comps)
@@ -1822,3 +1835,34 @@ class SystemInspector(QWidget):
         
         # 5. Update Proxy Filter (Show entire group)
         self.proxy_model.set_allowed_uuids(all_group_uuids)
+
+    def _update_trans_box_visuals(self):
+        """Updates the text color of the Trans box to indicate Auto vs Manual mode."""
+        pal = QApplication.palette()
+        base_col = pal.color(pal.ColorRole.Base).name()
+        text_col = pal.color(pal.ColorRole.Text)
+        
+        # Calculate colors
+        if self._manual_trans_edit:
+            # Manual Mode: Standard Full Color
+            col_str = text_col.name()
+            font_weight = "bold"
+        else:
+            # Auto Mode: Dimmed (50% Alpha)
+            # We can't use hex alpha easily in all Qt versions, so we use rgba
+            col_str = f"rgba({text_col.red()},{text_col.green()},{text_col.blue()},0.6)"
+            font_weight = "normal"
+
+        self.trans_in.setStyleSheet(f"""
+            QLineEdit {{
+                padding: 3px;
+                border-radius: 4px;
+                background: {base_col};
+                color: {col_str};
+                font-weight: {font_weight};
+            }}
+            QLineEdit:focus {{
+                border: 1px solid #296bff;
+                color: {text_col.name()}; /* Always bright when focused for editing */
+            }}
+        """)
