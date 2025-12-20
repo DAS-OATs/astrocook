@@ -484,31 +484,46 @@ class SystemListV2:
         
         return SystemListV2(new_data)
 
-    def delete_component(self, uuid: str) -> 'SystemListV2':
+    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SystemListV2':
         """
-        Removes a component and cleans up any constraints linking to it.
+        Removes one or multiple components and cleans up constraints linking to them.
+        Accepts either a single 'uuid' or a list 'uuids'.
         """
-        # 1. Remove the component
-        new_components = [c for c in self.components if c.uuid != uuid]
-        
-        # 2. [FIX] Clean up Hanging Links (Sanitize Constraints)
-        # Scan all constraints. If any target the deleted UUID, reset them to Free.
+        import dataclasses
         from astrocook.core.structures import ParameterConstraintV2
+
+        # 1. Normalize input to a Set of targets
+        targets = set()
+        if uuid: targets.add(uuid)
+        if uuids: targets.update(uuids)
+        
+        if not targets:
+            return self
+
+        # 2. Remove the components
+        new_components = [c for c in self.components if c.uuid not in targets]
+        
+        # 3. Clean up Hanging Links (Sanitize Constraints)
+        # Scan all constraints. If any target ANY deleted UUID, reset them to Free.
         
         current_v2_map = {k: v.copy() for k, v in self._data.v2_constraints_map.items()}
         current_parsed = dict(self._data.parsed_constraints)
         
-        # We need to find which (u, p) pairs need resetting
         to_reset = []
         
         for u_src, params in current_v2_map.items():
             for p_name, constr in params.items():
-                # Check for explicit target_uuid match
-                if constr.target_uuid == uuid:
+                
+                # Check for direct target match in the set of deleted UUIDs
+                if constr.target_uuid in targets:
                     to_reset.append((u_src, p_name))
-                # Check for expression reference (regex search)
-                elif constr.expression and uuid in constr.expression:
-                    to_reset.append((u_src, p_name))
+                
+                # Check for expression reference (if expression contains any deleted UUID)
+                elif constr.expression:
+                    # Quick check: is any deleted UUID inside the expression string?
+                    # (A regex would be safer, but uuid strings are usually unique enough)
+                    if any(deleted_uuid in constr.expression for deleted_uuid in targets):
+                        to_reset.append((u_src, p_name))
 
         for u_src, p_name in to_reset:
             logging.info(f"Removing broken link from {u_src}.{p_name} (target deleted).")
@@ -521,7 +536,7 @@ class SystemListV2:
             # Update Parsed Map
             current_parsed[(u_src, p_name)] = clean_constr
 
-        # 3. Create new data
+        # 4. Create new data
         new_data = dataclasses.replace(self._data, 
                                        components=new_components,
                                        parsed_constraints=current_parsed,

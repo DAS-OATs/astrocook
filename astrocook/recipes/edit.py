@@ -531,30 +531,30 @@ class RecipeEditV2:
         # 5. Return new session
         return self._session.with_new_system_list(new_systs)
         
-    def delete(self, targets: str) -> 'SessionV2':
+    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
         """
-        Deletes specified columns or the system (line) list.
+        Deletes one or multiple components by UUID.
         """
-        target_list = [t.strip() for t in targets.split(',') if t.strip()]
-        if not target_list:
-            return self._session
-
-        # 1. Handle System List
-        new_systs = self._session.systs
-        if 'lines' in target_list or 'systems' in target_list:
-            # Re-initialize empty
-            new_systs = SystemListV2(SystemListDataV2())
-            logging.info("Marked system list for deletion.")
-            # Remove keywords from list to avoid trying to delete them as columns
-            target_list = [t for t in target_list if t not in ['lines', 'systems']]
-
-        # 2. Handle Columns via Core API
-        if target_list:
-            new_spec = self._session.spec.remove_columns(target_list)
-        else:
-            new_spec = self._session.spec
+        try:
+            # 1. Delegate to Core (pass both args, let Core handle normalization)
+            # This returns a new SystemListV2 with items removed and constraints cleaned.
+            new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
             
-        return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+            # 2. Recompute Model Flux (Once)
+            # Note: If you deleted everything, new_systs might be empty, 
+            # VoigtFitterV2 handles empty lists gracefully (returns continuum).
+            fitter = VoigtFitterV2(self._session.spec, new_systs)
+            _, model_flux = fitter.compute_model_flux()
+            
+            # 3. Update Spectrum
+            new_spec = self._session.spec.update_model(model_flux)
+            
+            # 4. Return new Session
+            return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed delete_component: {e}", exc_info=True)
+            return self._session # Return original session on failure, don't return 0
     
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """

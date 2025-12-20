@@ -130,13 +130,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "delete_component": {
-        "brief": "Delete component.",
-        "details": "Remove a component from the list.",
+        "brief": "Delete component(s).",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True}
-        ],
-        "url": "absorbers_cb.html#delete_component",
-        "gui_hidden": True
+            {"name": "uuid", "type": str, "default": None, "gui_hidden": True},
+            {"name": "uuids", "type": list, "default": None, "gui_hidden": True}
+        ]
     },
     "detect_anchor": {
         "brief": "Detect doublet anchor redshift.",
@@ -344,10 +342,25 @@ class RecipeAbsorbersV2:
         # --- 2.5 MERGE IDENTIFICATION IDs ---
         if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
             try:
+                # 1. Get the newly generated IDs
                 new_ids = session_step1.spec.get_column('abs_ids').value
-                # Public API Call (Logic moved to Core)
-                new_spec = session_step1.spec.merge_column('abs_ids', new_ids)
-                session_step1 = session_step1.with_new_spectrum(new_spec)
+                
+                # 2. Shift new IDs to avoid collisions
+                import numpy as np
+                max_old = np.max(old_abs_ids) if len(old_abs_ids) > 0 else 0
+                shifted_new = np.zeros_like(new_ids)
+                mask_new = new_ids > 0
+                shifted_new[mask_new] = new_ids[mask_new] + max_old
+                
+                # 3. Combine: Keep OLD, fill gaps with NEW
+                final_ids = old_abs_ids.copy()
+                fill_mask = (shifted_new > 0) & (final_ids == 0)
+                final_ids[fill_mask] = shifted_new[fill_mask]
+                
+                # 4. Save
+                final_spec = session_step1.spec.update_column('abs_ids', final_ids)
+                session_step1 = session_step1.with_new_spectrum(final_spec)
+                
             except Exception as e:
                 logging.warning(f"Failed to merge abs_ids: {e}")
 
@@ -712,19 +725,26 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed update_component: {e}"); return 0
 
-    def delete_component(self, uuid: str) -> 'SessionV2':
+    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
+        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        
         try:
-            new_systs = self._session.systs.delete_component(uuid)
+            # 1. Delegate to SystemListV2 (which we updated to handle lists)
+            # We pass both arguments; SystemListV2 handles the set logic.
+            new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
+            
+            # 2. Recompute Model (Only once!)
             fitter = VoigtFitterV2(self._session.spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            # Delegate to SpectrumV2
+            # 3. Update Spectrum
             new_spec = self._session.spec.update_model(model_flux)
             
             return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+            
         except Exception as e:
             logging.error(f"Failed delete_component: {e}", exc_info=True)
-            return 0
+            return self._session
 
     def detect_anchor(self, sibling_name: str, trans_self: str, trans_sibling: str) -> float:
         try:

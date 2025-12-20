@@ -1634,11 +1634,9 @@ class SystemInspector(QWidget):
         
         count = len(comps)
         if count == 1:
-            # Simple message for single
             c = comps[0]
             txt = f"Series: {c.series}\nRedshift: {c.z:.5f}"
         else:
-            # Summary message for multiple
             txt = f"You are about to delete {count} components."
 
         confirm = self.main_window._show_custom_message(
@@ -1651,10 +1649,12 @@ class SystemInspector(QWidget):
         )
         
         if confirm == QMessageBox.Yes:
-            for c in comps:
-                self.main_window._on_recipe_requested(
-                    "absorbers", "delete_component", {"uuid": c.uuid}, {}
-                )
+            # --- [FIX] Send single batch request with ALL uuids ---
+            uuid_list = [c.uuid for c in comps]
+            
+            self.main_window._on_recipe_requested(
+                "absorbers", "delete_component", {"uuids": uuid_list}, {}
+            )
 
     # Method to set resolution for specific components
     def _set_component_resolution(self):
