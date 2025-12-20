@@ -412,6 +412,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_peaks</span><span class="p">,</span> <span class="n">savgol_filter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">erf</span><span class="p">,</span> <span class="n">erfinv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">binned_statistic</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">get_multiplet_velocity_lags</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">xem_d</span>
@@ -428,12 +429,12 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.convert_axis_velocity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_axis_velocity</span><span class="p">(</span>
     <span class="n">x_quantity</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> 
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="c1"># Renamed from zem</span>
+    <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="c1"># Renamed from zem</span>
     <span class="n">target_unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts X-axis data between wavelength (nm) and velocity (km/s) space,</span>
-<span class="sd">    using the V1 zero-point logic (Ly-alpha rest-frame relative to z_rf).</span>
+<span class="sd">    using the V1 zero-point logic (Ly-alpha rest-frame relative to z_ref).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="n">v_c</span> <span class="o">=</span> <span class="n">c_light</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
@@ -441,12 +442,12 @@
     <span class="c1"># Define a custom conversion function</span>
     <span class="c1"># Lambda to Velocity (Forward)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">lambda_to_v</span><span class="p">(</span><span class="n">lambda_val</span><span class="p">):</span>
-        <span class="c1"># Use z_rf as the zero-point for the velocity conversion</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lambda_val</span> <span class="o">/</span> <span class="p">(</span><span class="n">XEM_LYA</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_rf</span><span class="p">)))</span> <span class="o">*</span> <span class="n">v_c</span>
+        <span class="c1"># Use z_ref as the zero-point for the velocity conversion</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lambda_val</span> <span class="o">/</span> <span class="p">(</span><span class="n">XEM_LYA</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_ref</span><span class="p">)))</span> <span class="o">*</span> <span class="n">v_c</span>
 
     <span class="c1"># Velocity to Lambda (Reverse)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">v_to_lambda</span><span class="p">(</span><span class="n">v_val</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">v_val</span> <span class="o">/</span> <span class="n">v_c</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">XEM_LYA</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_rf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">v_val</span> <span class="o">/</span> <span class="n">v_c</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">XEM_LYA</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_ref</span><span class="p">))</span>
 
     <span class="n">custom_equiv</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">lambda_to_v</span><span class="p">,</span> <span class="n">v_to_lambda</span><span class="p">),</span>
@@ -461,7 +462,7 @@
 
 <div class="viewcode-block" id="convert_x_axis">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.convert_x_axis">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_x_axis</span><span class="p">(</span><span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_x_axis</span><span class="p">(</span><span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs X-axis conversion based on V1 logic and returns new Quantity arrays.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -472,9 +473,9 @@
     
     <span class="k">if</span> <span class="n">xunit</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> <span class="ow">or</span> <span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">):</span>
         <span class="c1"># Use the V2 dedicated velocity conversion logic</span>
-        <span class="n">x_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_rf</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
-        <span class="n">xmin_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">z_rf</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
-        <span class="n">xmax_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">z_rf</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
+        <span class="n">x_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
+        <span class="n">xmin_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
+        <span class="n">xmax_new</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
         
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Simple wavelength-to-wavelength</span>
@@ -535,7 +536,7 @@
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="c1"># std in km/s</span>
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Smooths a flux array using a Gaussian filter with a given std in km/s.</span>
@@ -546,7 +547,7 @@
         <span class="c1"># 2. Convert x-axis to km/s to get pixel size</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># We need the x-axis as a Quantity to convert it</span>
-            <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             <span class="n">avg_dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x_kms</span><span class="p">))</span>
             
             <span class="c1"># 3. Convert smoothing std (km/s) to pixels</span>
@@ -564,141 +565,246 @@
     <span class="k">return</span> <span class="n">y_final</span></div>
 
 
+<div class="viewcode-block" id="compute_flux_scaling">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.compute_flux_scaling">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_flux_scaling</span><span class="p">(</span>
+    <span class="n">x_ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">y_ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">x_in</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">y_in</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">smooth_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span>  <span class="c1"># The &quot;Heavy&quot; Smoothing Kernel</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a flux scaling factor by comparing heavily smoothed versions of the spectra.</span>
+<span class="sd">    </span>
+<span class="sd">    Strategy:</span>
+<span class="sd">    1. Resample both spectra onto a coarse velocity grid (~50 km/s).</span>
+<span class="sd">    2. Apply a large Gaussian smooth (smooth_window_kms) to wash out local features.</span>
+<span class="sd">    3. Compute the ratio of the smoothed profiles.</span>
+<span class="sd">    4. Fit a polynomial (if order &gt;= 0) or return the spline (if order &lt; 0).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">correction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">y_in</span><span class="p">)</span>
+
+    <span class="c1"># 1. Identify Global Overlap</span>
+    <span class="n">x_min_ov</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_ref</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_in</span><span class="p">))</span>
+    <span class="n">x_max_ov</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_ref</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_in</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="n">x_max_ov</span> <span class="o">&lt;=</span> <span class="n">x_min_ov</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">correction</span>
+
+    <span class="c1"># 2. Define a Coarse Calculation Grid (Linear in Velocity / Log Lambda)</span>
+    <span class="c1"># We use ~50 km/s pixels. This is high enough to trace the continuum </span>
+    <span class="c1"># but low enough to make smoothing instant.</span>
+    <span class="c1"># c_kms = 299792.458</span>
+    <span class="c1"># d_log_lam = 50.0 / c_kms</span>
+    <span class="c1"># num_bins = int(np.log(x_max_ov / x_min_ov) / d_log_lam)</span>
+    
+    <span class="c1"># Simple Linear Approximation (sufficient for scaling)</span>
+    <span class="c1"># Average x ~ 500nm -&gt; 50km/s is ~0.08 nm.</span>
+    <span class="n">step_nm</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_min_ov</span> <span class="o">+</span> <span class="n">x_max_ov</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">50.0</span> <span class="o">/</span> <span class="mf">300000.0</span><span class="p">)</span>
+    <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">x_max_ov</span> <span class="o">-</span> <span class="n">x_min_ov</span><span class="p">)</span> <span class="o">/</span> <span class="n">step_nm</span><span class="p">)</span>
+    <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">num_bins</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="c1"># Safety floor</span>
+
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_min_ov</span><span class="p">,</span> <span class="n">x_max_ov</span><span class="p">,</span> <span class="n">num_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">bin_centers</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bin_edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="c1"># 3. Bin the Spectra (Handling &quot;Shredded&quot; Pixels naturally)</span>
+    <span class="c1"># We ignore NaNs and negative fluxes to get a clean continuum estimate.</span>
+    <span class="n">mask_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_ref</span> <span class="o">&gt;=</span> <span class="n">x_min_ov</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x_ref</span> <span class="o">&lt;=</span> <span class="n">x_max_ov</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y_ref</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_ref</span><span class="p">)</span>
+    <span class="n">mask_in</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_in</span> <span class="o">&gt;=</span> <span class="n">x_min_ov</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x_in</span> <span class="o">&lt;=</span> <span class="n">x_max_ov</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y_in</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_in</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_ref</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_in</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">correction</span>
+
+    <span class="c1"># binned_statistic handles unsorted/overlapped arrays automatically</span>
+    <span class="n">ref_binned</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">binned_statistic</span><span class="p">(</span><span class="n">x_ref</span><span class="p">[</span><span class="n">mask_ref</span><span class="p">],</span> <span class="n">y_ref</span><span class="p">[</span><span class="n">mask_ref</span><span class="p">],</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+    <span class="n">in_binned</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">binned_statistic</span><span class="p">(</span><span class="n">x_in</span><span class="p">[</span><span class="n">mask_in</span><span class="p">],</span> <span class="n">y_in</span><span class="p">[</span><span class="n">mask_in</span><span class="p">],</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)</span>
+
+    <span class="c1"># 4. Handle Gaps (Interpolate over empty bins)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fill_nans</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span> <span class="k">return</span> <span class="n">arr</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">))[</span><span class="n">mask</span><span class="p">],</span> <span class="n">arr</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+
+    <span class="n">ref_filled</span> <span class="o">=</span> <span class="n">fill_nans</span><span class="p">(</span><span class="n">ref_binned</span><span class="p">)</span>
+    <span class="n">in_filled</span> <span class="o">=</span> <span class="n">fill_nans</span><span class="p">(</span><span class="n">in_binned</span><span class="p">)</span>
+
+    <span class="c1"># 5. Heavy Gaussian Smoothing</span>
+    <span class="c1"># Convert window (km/s) to bin pixels.</span>
+    <span class="c1"># We used 50 km/s bins, so sigma ~ window / 50.</span>
+    <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">smooth_window_kms</span> <span class="o">/</span> <span class="mf">50.0</span>
+    
+    <span class="n">ref_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">ref_filled</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
+    <span class="n">in_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">in_filled</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
+
+    <span class="c1"># 6. Compute Ratio of Smoothed Profiles</span>
+    <span class="c1"># Avoid div by zero</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_smooth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">correction</span>
+
+    <span class="n">ratio_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">ref_smooth</span><span class="p">)</span>
+    <span class="n">ratio_grid</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref_smooth</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">/</span> <span class="n">in_smooth</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+    
+    <span class="c1"># 7. Generate Correction Model</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Spline Interpolation (Follows the smooth ratio exactly)</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">,</span> <span class="n">ratio_grid</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">interp</span><span class="p">(</span><span class="n">x_in</span><span class="p">)</span>
+        
+    <span class="k">elif</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Robust Scalar (Median of the smooth ratio)</span>
+        <span class="n">scalar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">ratio_grid</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">y_in</span><span class="p">,</span> <span class="n">scalar</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Polynomial Fit to the smooth ratio</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">ratio_grid</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">order</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.polynomial.polynomial</span><span class="w"> </span><span class="kn">import</span> <span class="n">polyval</span>
+        <span class="c1"># Note: np.polyfit returns coeffs highest-to-lowest. </span>
+        <span class="c1"># numpy.polynomial.polynomial.polyval expects lowest-to-highest.</span>
+        <span class="c1"># We use np.polyval (standard) for consistency with polyfit.</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">x_in</span><span class="p">)</span></div>
+
+    
+
 <div class="viewcode-block" id="rebin_spectrum">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.rebin_spectrum">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rebin_spectrum</span><span class="p">(</span>
         <span class="n">x_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">xmin_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">xmax_in</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
-        <span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="c1"># Still pass the full data for y/dy/aux_cols</span>
+        <span class="n">spec_data</span><span class="p">:</span> <span class="n">SpectrumDataV2</span><span class="p">,</span>
         <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> 
-        <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span> <span class="c1"># Pass the unit used for calculation</span>
+        <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
         <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Pure function to rebin spectrum data. MUST contain the logic from Spectrum._rebin (V1).</span>
-<span class="sd">    Returns new arrays for x, xmin, xmax, y, dy.</span>
+<span class="sd">    High-performance vectorized rebinning (Inverse/Drizzle method)</span>
+<span class="sd">    with Iterative Local Sigma Clipping.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># --- V1 Pre-Processing and Initialization ---</span>
-    
-    <span class="c1"># NOTE: In V1, the spectrum was converted in-place before rebinning. </span>
-    <span class="c1"># In V2, we work with the current units but create the output in the target dx unit.</span>
-    
-    <span class="c1"># Target unit is derived from dx, assuming its value represents the intended unit (e.g., km/s)</span>
-    <span class="n">xunit_target</span> <span class="o">=</span> <span class="n">dx</span><span class="o">.</span><span class="n">unit</span> 
-        
-    <span class="c1"># X-axis inputs (Already converted to calc_unit by SpectrumV2.rebin)</span>
-    <span class="n">x_value</span> <span class="o">=</span> <span class="n">x_in</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">xmin_value</span> <span class="o">=</span> <span class="n">xmin_in</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">xmax_value</span> <span class="o">=</span> <span class="n">xmax_in</span><span class="o">.</span><span class="n">value</span>
+    <span class="c1"># 1. Prepare Units and Arrays</span>
+    <span class="n">xunit_target</span> <span class="o">=</span> <span class="n">dx</span><span class="o">.</span><span class="n">unit</span>
+    <span class="n">z_ref</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">z_em</span> <span class="k">if</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">z_em</span> <span class="k">else</span> <span class="mf">0.0</span>
 
-    <span class="c1"># Y-axis inputs (Extracted from the V2 Data Core)</span>
-    <span class="n">y_value</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">dy_value</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">value</span>
-    <span class="n">y_unit</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">unit</span>
-    
-    <span class="c1"># Calculation unit is derived from the dx input</span>
-    <span class="n">dx_value</span> <span class="o">=</span> <span class="n">dx</span><span class="o">.</span><span class="n">value</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_to_target_val</span><span class="p">(</span><span class="n">q</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">xunit_target</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 
-    <span class="c1"># 1. Handling xstart</span>
-    <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Use the minimum of the input data (which is already in x_value, the calculation space)</span>
-        <span class="n">xstart_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x_value</span><span class="p">)</span> 
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># If provided, convert the input Quantity (xstart) to the NumPy value in the calculation unit.</span>
-        <span class="c1"># Note: We rely on the upstream call ensuring xstart is convertible to calc_unit.</span>
-        <span class="n">xstart_value</span> <span class="o">=</span> <span class="n">xstart</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">xunit_target</span><span class="p">,</span> <span class="n">equivalencies</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">equivalencies</span><span class="o">.</span><span class="n">spectral</span><span class="p">())</span><span class="o">.</span><span class="n">value</span>
+    <span class="c1"># Output Grid</span>
+    <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">xstart_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">_to_target_val</span><span class="p">(</span><span class="n">x_in</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">xstart_val</span> <span class="o">=</span> <span class="n">_to_target_val</span><span class="p">(</span><span class="n">xstart</span><span class="p">)</span>
 
-    <span class="c1"># 2. Handling xend</span>
-    <span class="k">if</span> <span class="n">xend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Use the maximum of the input data</span>
-        <span class="n">xend_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x_value</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Convert the input Quantity (xend) to the NumPy value in the calculation unit.</span>
-        <span class="n">xend_value</span> <span class="o">=</span> <span class="n">xend</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">xunit_target</span><span class="p">,</span> <span class="n">equivalencies</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">equivalencies</span><span class="o">.</span><span class="n">spectral</span><span class="p">())</span><span class="o">.</span><span class="n">value</span>
-
-    <span class="c1"># Create new bin centers (x_out) and boundaries</span>
-    <span class="n">x_out_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xstart_value</span><span class="p">,</span> <span class="n">xend_value</span><span class="p">,</span> <span class="n">dx_value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">xend</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">xend_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">_to_target_val</span><span class="p">(</span><span class="n">x_in</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span> <span class="n">xend_val</span> <span class="o">=</span> <span class="n">_to_target_val</span><span class="p">(</span><span class="n">xend</span><span class="p">)</span>
+        
+    <span class="n">dx_val</span> <span class="o">=</span> <span class="n">dx</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">xunit_target</span><span class="p">)</span>
+    <span class="n">edges_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xstart_val</span><span class="p">,</span> <span class="n">xend_val</span> <span class="o">+</span> <span class="n">dx_val</span><span class="p">,</span> <span class="n">dx_val</span><span class="p">)</span>
+    <span class="n">x_out_val</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">edges_out</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edges_out</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">N_out</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_out_val</span><span class="p">)</span>
     
-    <span class="c1"># Helper to create xmin/xmax for the new array (V1 logic simplified)</span>
-    <span class="n">mean_val</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_out_value</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">x_out_value</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">xmin_out_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_out_value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">dx_value</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mean_val</span><span class="p">)</span>
-    <span class="n">xmax_out_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_val</span><span class="p">,</span> <span class="n">x_out_value</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dx_value</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">x_out_value</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xmin_out_value</span> <span class="o">+</span> <span class="n">xmax_out_value</span><span class="p">)</span>
-
-    <span class="c1"># Initialize output arrays</span>
-    <span class="n">y_out_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">x_out_value</span><span class="p">)</span>
-    <span class="n">dy_out_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">x_out_value</span><span class="p">)</span>
+    <span class="c1"># Input Arrays</span>
+    <span class="n">xmin_in_val</span> <span class="o">=</span> <span class="n">_to_target_val</span><span class="p">(</span><span class="n">xmin_in</span><span class="p">)</span>
+    <span class="n">xmax_in_val</span> <span class="o">=</span> <span class="n">_to_target_val</span><span class="p">(</span><span class="n">xmax_in</span><span class="p">)</span>
+    <span class="n">x_in_val</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">xmin_in_val</span> <span class="o">+</span> <span class="n">xmax_in_val</span><span class="p">)</span> <span class="c1"># Center for interpolation</span>
     
-    <span class="c1"># --- V1 Core Rebinning Loop (Weighted Average) ---</span>
+    <span class="n">y_val</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+    <span class="n">dy_val</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
     
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">xmin_out_value</span><span class="p">,</span> <span class="n">xmax_out_value</span><span class="p">)):</span>
-        <span class="c1"># Find all input bins that overlap with the new output bin [m, M]</span>
-        <span class="n">im</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">xmax_value</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
-        <span class="n">iM</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_right</span><span class="p">(</span><span class="n">xmin_value</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span>
+    <span class="c1"># Initial Mask (NaNs and bad pixels)</span>
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_val</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">xmax_in_val</span> <span class="o">&gt;</span> <span class="n">xmin_in_val</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dy_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    
+    <span class="c1"># --- HELPER: Core Drizzle Logic ---</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_drizzle_pass</span><span class="p">(</span><span class="n">mask_in</span><span class="p">):</span>
+        <span class="c1"># Filter inputs</span>
+        <span class="n">xmin_v</span> <span class="o">=</span> <span class="n">xmin_in_val</span><span class="p">[</span><span class="n">mask_in</span><span class="p">]</span>
+        <span class="n">xmax_v</span> <span class="o">=</span> <span class="n">xmax_in_val</span><span class="p">[</span><span class="n">mask_in</span><span class="p">]</span>
+        <span class="n">y_v</span> <span class="o">=</span> <span class="n">y_val</span><span class="p">[</span><span class="n">mask_in</span><span class="p">]</span>
+        <span class="n">dy_v</span> <span class="o">=</span> <span class="n">dy_val</span><span class="p">[</span><span class="n">mask_in</span><span class="p">]</span>
         
-        <span class="c1"># Calculate the fractional overlap for each input bin</span>
-        <span class="n">frac</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">xmax_value</span><span class="p">[</span><span class="n">im</span><span class="p">:</span><span class="n">iM</span><span class="p">])</span> <span class="o">-</span> 
-                <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">xmin_value</span><span class="p">[</span><span class="n">im</span><span class="p">:</span><span class="n">iM</span><span class="p">]))</span> <span class="o">/</span> <span class="n">dx_value</span>
+        <span class="c1"># Map Inputs to Outputs</span>
+        <span class="n">idx_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">edges_out</span><span class="p">,</span> <span class="n">xmin_v</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">idx_end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">edges_out</span><span class="p">,</span> <span class="n">xmax_v</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         
-        <span class="c1"># Select data and error arrays for the overlapping region</span>
-        <span class="n">ysel</span> <span class="o">=</span> <span class="n">y_value</span><span class="p">[</span><span class="n">im</span><span class="p">:</span><span class="n">iM</span><span class="p">]</span>
-        <span class="n">dysel</span> <span class="o">=</span> <span class="n">dy_value</span><span class="p">[</span><span class="n">im</span><span class="p">:</span><span class="n">iM</span><span class="p">]</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_out</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_out</span><span class="p">)</span>
         
-        <span class="c1"># Filter for non-NaN input flux data</span>
-        <span class="n">not_nan_w</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ysel</span><span class="p">)</span>
-        <span class="n">ysel</span> <span class="o">=</span> <span class="n">ysel</span><span class="p">[</span><span class="n">not_nan_w</span><span class="p">]</span>
-        <span class="n">dysel</span> <span class="o">=</span> <span class="n">dysel</span><span class="p">[</span><span class="n">not_nan_w</span><span class="p">]</span>
-        <span class="n">frac</span> <span class="o">=</span> <span class="n">frac</span><span class="p">[</span><span class="n">not_nan_w</span><span class="p">]</span>
+        <span class="n">max_span</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">idx_end</span> <span class="o">-</span> <span class="n">idx_start</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
         
-        <span class="c1"># Optional Kappa-Sigma Clipping (V1 logic)</span>
-        <span class="k">if</span> <span class="n">kappa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ysel</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">clipped</span> <span class="o">=</span> <span class="n">sigma_clip</span><span class="p">(</span><span class="n">ysel</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="c1"># Find indices where data was not masked</span>
-            <span class="n">not_masked_w</span> <span class="o">=</span> <span class="o">~</span><span class="n">clipped</span><span class="o">.</span><span class="n">mask</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">max_span</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">target_bin_indices</span> <span class="o">=</span> <span class="n">idx_start</span> <span class="o">+</span> <span class="n">k</span>
+            <span class="n">active</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_bin_indices</span> <span class="o">&lt;=</span> <span class="n">idx_end</span><span class="p">)</span> <span class="o">&amp;</span> \
+                     <span class="p">(</span><span class="n">target_bin_indices</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> \
+                     <span class="p">(</span><span class="n">target_bin_indices</span> <span class="o">&lt;</span> <span class="n">N_out</span><span class="p">)</span>
             
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">not_masked_w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ysel</span> <span class="o">=</span> <span class="n">ysel</span><span class="p">[</span><span class="n">not_masked_w</span><span class="p">]</span>
-                <span class="n">dysel</span> <span class="o">=</span> <span class="n">dysel</span><span class="p">[</span><span class="n">not_masked_w</span><span class="p">]</span>
-                <span class="n">frac</span> <span class="o">=</span> <span class="n">frac</span><span class="p">[</span><span class="n">not_masked_w</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">active</span><span class="p">):</span> <span class="k">continue</span>
+            
+            <span class="n">valid_sub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">active</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">bin_idx</span> <span class="o">=</span> <span class="n">target_bin_indices</span><span class="p">[</span><span class="n">valid_sub</span><span class="p">]</span>
+            
+            <span class="n">bin_edge_left</span> <span class="o">=</span> <span class="n">edges_out</span><span class="p">[</span><span class="n">bin_idx</span><span class="p">]</span>
+            <span class="n">bin_edge_right</span> <span class="o">=</span> <span class="n">edges_out</span><span class="p">[</span><span class="n">bin_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="n">ov_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">xmin_v</span><span class="p">[</span><span class="n">valid_sub</span><span class="p">],</span> <span class="n">bin_edge_left</span><span class="p">)</span>
+            <span class="n">ov_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">xmax_v</span><span class="p">[</span><span class="n">valid_sub</span><span class="p">],</span> <span class="n">bin_edge_right</span><span class="p">)</span>
+            
+            <span class="n">overlap_width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ov_max</span> <span class="o">-</span> <span class="n">ov_min</span><span class="p">)</span>
+            <span class="n">frac</span> <span class="o">=</span> <span class="n">overlap_width</span> <span class="o">/</span> <span class="n">dx_val</span>
+            
+            <span class="n">sigma_sq</span> <span class="o">=</span> <span class="n">dy_v</span><span class="p">[</span><span class="n">valid_sub</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">frac</span> <span class="o">/</span> <span class="n">sigma_sq</span>
+            
+            <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">y_v</span><span class="p">[</span><span class="n">valid_sub</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">den</span><span class="p">,</span> <span class="n">bin_idx</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">num</span><span class="p">,</span> <span class="n">den</span>
 
-        <span class="c1"># Final weighted average calculation</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">frac</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># V1 logic: If dy=0 or is missing, use frac as weight (simple average)</span>
-            <span class="c1"># If dy exists, use 1/dy^2 * frac as weight (weighted average)</span>
-            
-            <span class="c1"># Filter out zero errors (which lead to infinite weights)</span>
-            <span class="n">safe_error_w</span> <span class="o">=</span> <span class="p">(</span><span class="n">dysel</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dysel</span><span class="p">))</span>
-            
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">safe_error_w</span><span class="p">):</span>
-                <span class="c1"># Weighted average using variance (1/dy^2) and fractional overlap</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="n">frac</span><span class="p">[</span><span class="n">safe_error_w</span><span class="p">]</span> <span class="o">/</span> <span class="n">dysel</span><span class="p">[</span><span class="n">safe_error_w</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">y_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">ysel</span><span class="p">[</span><span class="n">safe_error_w</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-                
-                <span class="c1"># Propagate error (weighted variance calculation - V1 logic simplified)</span>
-                <span class="c1"># V1 used a simplified error propagation that summed weights:</span>
-                <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">sum_weights</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">dy_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">weights</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dysel</span><span class="p">[</span><span class="n">safe_error_w</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="n">sum_weights</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">dy_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">filling</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Simple average weighted by fractional overlap</span>
-                <span class="n">y_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">ysel</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">frac</span><span class="p">)</span>
-                <span class="n">dy_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">filling</span> <span class="c1"># Cannot calculate error without dy_in</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># No data in this bin</span>
-            <span class="n">y_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">filling</span>
-            <span class="n">dy_out_value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">filling</span>
-            
-    <span class="c1"># --- Final V2 Output ---</span>
+    <span class="c1"># --- PASS 1: Consensus ---</span>
+    <span class="n">num1</span><span class="p">,</span> <span class="n">den1</span> <span class="o">=</span> <span class="n">_drizzle_pass</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">)</span>
     
-    <span class="c1"># Convert final NumPy arrays back to Quantities</span>
-    <span class="n">x_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">x_out_value</span><span class="p">,</span> <span class="n">xunit_target</span><span class="p">)</span>
-    <span class="n">xmin_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xmin_out_value</span><span class="p">,</span> <span class="n">xunit_target</span><span class="p">)</span>
-    <span class="n">xmax_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xmax_out_value</span><span class="p">,</span> <span class="n">xunit_target</span><span class="p">)</span>
-    <span class="n">y_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">y_out_value</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span>
-    <span class="n">dy_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">dy_out_value</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span>
+    <span class="c1"># --- ITERATIVE LOCAL CLIPPING ---</span>
+    <span class="k">if</span> <span class="n">kappa</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># 1. Compute Model (Pass 1 Result)</span>
+        <span class="n">valid_bins</span> <span class="o">=</span> <span class="n">den1</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">y_model_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_out</span><span class="p">)</span>
+        <span class="n">y_model_grid</span><span class="p">[</span><span class="n">valid_bins</span><span class="p">]</span> <span class="o">=</span> <span class="n">num1</span><span class="p">[</span><span class="n">valid_bins</span><span class="p">]</span> <span class="o">/</span> <span class="n">den1</span><span class="p">[</span><span class="n">valid_bins</span><span class="p">]</span>
+        
+        <span class="c1"># 2. Interpolate Model to Input Coordinates</span>
+        <span class="c1"># Use nearest neighbor or linear to map output bin value to input pixel</span>
+        <span class="c1"># (Linear is safer for sub-pixel accuracy)</span>
+        <span class="n">model_interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x_out_val</span><span class="p">,</span> <span class="n">y_model_grid</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> 
+                                <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        
+        <span class="n">y_predicted</span> <span class="o">=</span> <span class="n">model_interp</span><span class="p">(</span><span class="n">x_in_val</span><span class="p">)</span>
+        
+        <span class="c1"># 3. Compute Residuals (Local deviation)</span>
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_val</span> <span class="o">-</span> <span class="n">y_predicted</span><span class="p">)</span>
+        
+        <span class="c1"># 4. Clip</span>
+        <span class="c1"># We assume &#39;dy_val&#39; is the sigma. </span>
+        <span class="c1"># Points &gt; kappa * sigma away from the consensus are rejected.</span>
+        <span class="n">is_outlier</span> <span class="o">=</span> <span class="n">residuals</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">dy_val</span><span class="p">)</span>
+        
+        <span class="c1"># Update Mask (Keep original valid points that are NOT outliers)</span>
+        <span class="n">valid_mask</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">is_outlier</span>
+
+    <span class="c1"># --- PASS 2: Final Rebinning ---</span>
+    <span class="n">num_final</span><span class="p">,</span> <span class="n">den_final</span> <span class="o">=</span> <span class="n">_drizzle_pass</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">)</span>
+
+    <span class="c1"># Finalize Output</span>
+    <span class="n">valid_out</span> <span class="o">=</span> <span class="n">den_final</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">y_out_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">N_out</span><span class="p">,</span> <span class="n">filling</span><span class="p">)</span>
+    <span class="n">dy_out_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">N_out</span><span class="p">,</span> <span class="n">filling</span><span class="p">)</span>
     
-    <span class="c1"># Return the new immutable data required by SpectrumV2</span>
+    <span class="n">y_out_val</span><span class="p">[</span><span class="n">valid_out</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_final</span><span class="p">[</span><span class="n">valid_out</span><span class="p">]</span> <span class="o">/</span> <span class="n">den_final</span><span class="p">[</span><span class="n">valid_out</span><span class="p">]</span>
+    <span class="n">dy_out_val</span><span class="p">[</span><span class="n">valid_out</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">den_final</span><span class="p">[</span><span class="n">valid_out</span><span class="p">])</span>
+    
+    <span class="c1"># Reconstruct Quantities</span>
+    <span class="n">x_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">x_out_val</span><span class="p">,</span> <span class="n">xunit_target</span><span class="p">)</span>
+    <span class="n">xmin_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">edges_out</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">xunit_target</span><span class="p">)</span>
+    <span class="n">xmax_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">edges_out</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">xunit_target</span><span class="p">)</span>
+    <span class="n">y_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">y_out_val</span><span class="p">,</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+    <span class="n">dy_out</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">dy_out_val</span><span class="p">,</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+    
     <span class="k">return</span> <span class="n">x_out</span><span class="p">,</span> <span class="n">xmin_out</span><span class="p">,</span> <span class="n">xmax_out</span><span class="p">,</span> <span class="n">y_out</span><span class="p">,</span> <span class="n">dy_out</span></div>
 
 
@@ -760,96 +866,123 @@
     <span class="n">maxiter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Pure function to find absorbed regions, porting the V1 &#39;clip_flux&#39; logic.</span>
-<span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        mask_abs (np.ndarray): A boolean mask where True means &quot;unabsorbed&quot;.</span>
+<span class="sd">    Finds absorbed regions using iterative clipping with robust V1 parity logic.</span>
+<span class="sd">    Fixes:</span>
+<span class="sd">      1. Window size calculated from min(dv) instead of mean(dv) to preserve narrow features.</span>
+<span class="sd">      2. Interpolation performed in wavelength space, not index space.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># --- 1. Initial Masking ---</span>
     <span class="n">mask_unabs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
     <span class="n">valid_data</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
     <span class="n">mask_unabs</span><span class="p">[</span><span class="o">~</span><span class="n">valid_data</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">mask_unabs</span><span class="p">[</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">dy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Low S/N</span>
     
+    <span class="c1"># Exclude low S/N regions from being &#39;continuum anchors&#39;</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">mask_unabs</span><span class="p">[</span><span class="n">y</span> <span class="o">&lt;=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">dy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> 
+    
+    <span class="c1"># Define Ly-alpha proximity</span>
     <span class="k">if</span> <span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;z_em is 0.0. Cannot split at Ly-alpha. Using &#39;smooth_len_out&#39; for all regions.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;z_em is 0.0. Using &#39;smooth_len_out&#39; for all regions.&quot;</span><span class="p">)</span>
         <span class="n">lya_prox_nm</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Calculate Ly-alpha proximity region (V1 logic)</span>
-        <span class="n">prox</span> <span class="o">=</span> <span class="mi">5000</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
-        <span class="n">lya_obs</span> <span class="o">=</span> <span class="n">XEM_LYA</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span>
-        <span class="n">lya_prox_nm</span> <span class="o">=</span> <span class="p">(</span><span class="n">lya_obs</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">prox</span> <span class="o">/</span> <span class="n">c_light</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="c1"># We need the global XEM_LYA constant here. </span>
+        <span class="c1"># Ensure it is imported or defined as 121.567 * au.nm</span>
+        <span class="n">lya_obs</span> <span class="o">=</span> <span class="p">(</span><span class="mf">121.567</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span> 
+        <span class="n">prox_kms</span> <span class="o">=</span> <span class="mi">5000</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
+        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
+        <span class="n">lya_prox_nm</span> <span class="o">=</span> <span class="n">lya_obs</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">prox_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span>
 
-    <span class="c1"># --- 2. Handle Template (Stubbed) ---</span>
+    <span class="c1"># --- 2. Handle Template (Placeholder) ---</span>
     <span class="n">y_proc</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
-        <span class="c1"># V1 logic: y_proc = y / template_interp</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Template correction is not yet implemented. Skipping.&quot;</span><span class="p">)</span>
-        <span class="c1"># We would need to pass in the qso_composite data</span>
-        <span class="k">pass</span>
+        <span class="k">pass</span> <span class="c1"># Template logic would go here</span>
 
-    <span class="c1"># --- 3. Calculate pixel size in km/s (dv) ---</span>
-    <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="c1"># --- 3. Calculate pixel size (dv) &amp; Setup X ---</span>
+    <span class="c1"># We need dv in km/s for window size calculation</span>
+    <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_ref</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
     <span class="n">dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x_kms</span><span class="p">)</span>
+    <span class="n">x_val</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="c1"># Work with raw values for speed</span>
 
-    <span class="c1"># --- 4. Define Lya-forest and outside regions ---</span>
-    <span class="c1"># We must operate on the *full* array, not a slice</span>
-    <span class="n">in_lya_forest</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">lya_prox_nm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">mask_unabs</span>
-    <span class="n">out_of_forest</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">lya_prox_nm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">mask_unabs</span>
+    <span class="c1"># --- 4. Define Regions ---</span>
+    <span class="c1"># Convert mask to arrays for boolean indexing</span>
+    <span class="n">in_lya_forest</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">lya_prox_nm</span><span class="p">)</span>
+    <span class="n">out_of_forest</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">lya_prox_nm</span><span class="p">)</span>
     
     <span class="n">intervals</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span><span class="n">in_lya_forest</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">),</span>
         <span class="p">(</span><span class="n">out_of_forest</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">)</span>
     <span class="p">]</span>
     
-    <span class="n">mask_clipped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span> <span class="c1"># Mask of *newly* clipped points</span>
+    <span class="n">mask_clipped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span> 
 
     <span class="c1"># --- 5. Iterative Clipping Loop ---</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiter</span><span class="p">):</span>
         
         <span class="n">y_rm_full</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         
-        <span class="c1"># --- 6. Process Lya and Outside regions separately ---</span>
-        <span class="k">for</span> <span class="n">mask_interval</span><span class="p">,</span> <span class="n">smooth_len</span> <span class="ow">in</span> <span class="n">intervals</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_interval</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span> <span class="c1"># Skip if this region is empty</span>
-                
-            <span class="c1"># Combine current interval mask with *not-yet-clipped* mask</span>
+        <span class="k">for</span> <span class="n">region_bool</span><span class="p">,</span> <span class="n">smooth_len</span> <span class="ow">in</span> <span class="n">intervals</span><span class="p">:</span>
+            <span class="c1"># Combine geometric region with the current unabsorbed mask</span>
+            <span class="n">mask_interval</span> <span class="o">=</span> <span class="n">region_bool</span> <span class="o">&amp;</span> <span class="n">mask_unabs</span>
+            
+            <span class="c1"># Points belonging to this interval AND not yet clipped locally</span>
             <span class="n">current_mask</span> <span class="o">=</span> <span class="n">mask_interval</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">mask_clipped</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">current_mask</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span> <span class="c1"># Safety check</span>
+            
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">current_mask</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span> 
                 <span class="k">continue</span>
                 
-            <span class="n">y_interval</span> <span class="o">=</span> <span class="n">y_proc</span><span class="p">[</span><span class="n">current_mask</span><span class="p">]</span>
+            <span class="c1"># V1 FIX: Use np.min(dv) for a conservative (smaller pixels -&gt; larger window)</span>
+            <span class="c1"># Use abs() because dv can be negative if spectrum is flipped</span>
+            <span class="n">dv_segment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dv</span><span class="p">[</span><span class="n">current_mask</span><span class="p">])</span>
+            <span class="n">min_dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dv_segment</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dv_segment</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="k">if</span> <span class="n">min_dv</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">min_dv</span> <span class="o">=</span> <span class="mf">1.0</span> 
             
-            <span class="c1"># Convert smoothing length (km/s) to pixel window</span>
-            <span class="n">avg_dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dv</span><span class="p">[</span><span class="n">current_mask</span><span class="p">])</span>
-            <span class="n">hwindow</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">smooth_len</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> <span class="o">/</span> <span class="n">avg_dv</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="c1"># V1 logic: h = len/dv/8</span>
-            <span class="n">hwindow</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">hwindow</span><span class="p">)</span> <span class="c1"># Ensure window is at least 1</span>
+            <span class="c1"># V1 Logic: window = length / min_dv / 8</span>
+            <span class="c1"># (The &#39;/8&#39; is a V1 heuristic for &#39;local&#39; smoothing)</span>
+            <span class="n">smooth_val</span> <span class="o">=</span> <span class="n">smooth_len</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">hwindow</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">smooth_val</span> <span class="o">/</span> <span class="n">min_dv</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="n">hwindow</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">hwindow</span><span class="p">)</span> <span class="c1"># Safety floor</span>
+            
+            <span class="n">y_interval</span> <span class="o">=</span> <span class="n">y_proc</span><span class="p">[</span><span class="n">current_mask</span><span class="p">]</span>
             
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_interval</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">hwindow</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">y_rm_interval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">y_interval</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y_interval</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">y_rm_interval</span> <span class="o">=</span> <span class="n">running_mean</span><span class="p">(</span><span class="n">y_interval</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">hwindow</span><span class="p">)</span>
             
-            <span class="c1"># Interpolate this mean back to the interval&#39;s indices</span>
-            <span class="n">indices_full</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
-            <span class="n">indices_interval</span> <span class="o">=</span> <span class="n">indices_full</span><span class="p">[</span><span class="n">current_mask</span><span class="p">]</span>
-            <span class="n">y_rm_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">indices_full</span><span class="p">[</span><span class="n">mask_interval</span><span class="p">],</span> <span class="n">indices_interval</span><span class="p">,</span> <span class="n">y_rm_interval</span><span class="p">)</span>
+            <span class="c1"># V1 FIX: Interpolate using X coordinates, not indices</span>
+            <span class="c1"># We interpolate the running mean (defined on &#39;current_mask&#39;) </span>
+            <span class="c1"># onto the full unabsorbed set (&#39;mask_interval&#39;)</span>
+            <span class="n">x_target</span> <span class="o">=</span> <span class="n">x_val</span><span class="p">[</span><span class="n">mask_interval</span><span class="p">]</span>      
+            <span class="n">x_source</span> <span class="o">=</span> <span class="n">x_val</span><span class="p">[</span><span class="n">current_mask</span><span class="p">]</span>       
             
-            <span class="c1"># Store the result</span>
+            <span class="c1"># np.interp requires sorted x. </span>
+            <span class="k">if</span> <span class="n">x_source</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x_source</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">y_rm_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_target</span><span class="p">,</span> <span class="n">x_source</span><span class="p">,</span> <span class="n">y_rm_interval</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Handle descending x-axis</span>
+                <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x_source</span><span class="p">)</span>
+                <span class="n">y_rm_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_target</span><span class="p">,</span> <span class="n">x_source</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="n">y_rm_interval</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">])</span>
+            
             <span class="n">y_rm_full</span><span class="p">[</span><span class="n">mask_interval</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_rm_interp</span>
 
-        <span class="c1"># 7. Find new outliers across the *whole* spectrum</span>
-        <span class="n">is_outlier</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_proc</span> <span class="o">-</span> <span class="n">y_rm_full</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="o">-</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span>
-        <span class="n">is_outlier</span><span class="p">[</span><span class="o">~</span><span class="n">mask_unabs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Don&#39;t clip already-masked points</span>
+        <span class="c1"># 6. Find new outliers</span>
+        <span class="c1"># Compare raw data against the smoothed model</span>
+        <span class="c1"># V1 Logic: outlier if y &lt; model - kappa * sigma</span>
+        <span class="c1"># (We rely on NaNs in y_rm_full to skip invalid regions)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+            <span class="n">is_outlier</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_proc</span> <span class="o">-</span> <span class="n">y_rm_full</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="o">-</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span>
         
+        <span class="c1"># Only mark as outlier if it was previously considered valid/unabsorbed</span>
+        <span class="n">is_outlier</span><span class="p">[</span><span class="o">~</span><span class="n">mask_unabs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span> 
+        
+        <span class="c1"># Check convergence</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">is_outlier</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clipping converged after </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> iterations.&quot;</span><span class="p">)</span>
             <span class="k">break</span>
         
-        <span class="n">mask_clipped</span> <span class="o">=</span> <span class="n">mask_clipped</span> <span class="o">|</span> <span class="n">is_outlier</span> <span class="c1"># Add new outliers to the clipped mask</span>
-        <span class="n">mask_unabs</span> <span class="o">=</span> <span class="n">mask_unabs</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">is_outlier</span>  <span class="c1"># Update the master unabsorbed mask</span>
+        <span class="n">mask_clipped</span> <span class="o">=</span> <span class="n">mask_clipped</span> <span class="o">|</span> <span class="n">is_outlier</span> 
+        <span class="n">mask_unabs</span> <span class="o">=</span> <span class="n">mask_unabs</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">is_outlier</span>
         
         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">maxiter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clipping did not converge after </span><span class="si">{</span><span class="n">maxiter</span><span class="si">}</span><span class="s2"> iterations.&quot;</span><span class="p">)</span>
@@ -857,50 +990,62 @@
     <span class="k">return</span> <span class="o">~</span><span class="n">mask_unabs</span></div>
 
 
-<div class="viewcode-block" id="fit_continuum_interp">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.fit_continuum_interp">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum_interp</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<div class="viewcode-block" id="compute_auto_fudge">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.compute_auto_fudge">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_auto_fudge</span><span class="p">(</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">mask_abs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">fudge</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">smooth_std_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">500.0</span><span class="p">,</span> <span class="c1"># std in km/s</span>
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">cont_model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates a scalar fudge factor to center the continuum residuals.</span>
+<span class="sd">    Fixes the &#39;Low Bias&#39; issue where sigma-clipped continuums sit too low.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask_unabs</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_abs</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask_unabs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span> 
+        <span class="k">return</span> <span class="mf">1.0</span>
+    
+    <span class="n">y_valid</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">mask_unabs</span><span class="p">]</span>
+    <span class="n">model_valid</span> <span class="o">=</span> <span class="n">cont_model</span><span class="p">[</span><span class="n">mask_unabs</span><span class="p">]</span>
+    
+    <span class="c1"># Calculate Residuals (Data - Model)</span>
+    <span class="c1"># If model is low, residuals are positive.</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">residuals</span> <span class="o">=</span> <span class="n">y_valid</span> <span class="o">-</span> <span class="n">model_valid</span>
+    
+    <span class="c1"># Use Median to be robust against non-Gaussian outliers</span>
+    <span class="n">avg_residual</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">residuals</span><span class="p">)</span>
+    <span class="n">avg_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">model_valid</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">avg_model</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">avg_model</span><span class="p">):</span> 
+        <span class="k">return</span> <span class="mf">1.0</span>
+    
+    <span class="c1"># V1 Logic: fudge = 1 + (residual / model)</span>
+    <span class="n">fudge_factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">avg_residual</span> <span class="o">/</span> <span class="n">avg_model</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge_factor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="interpolate_continuum_mask">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_operations.html#astrocook.core.spectrum_operations.interpolate_continuum_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolate_continuum_mask</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">mask_abs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Fits a continuum by interpolating unabsorbed points and smoothing.</span>
-<span class="sd">    Based on V1 &#39;clip_flux&#39; logic.</span>
+<span class="sd">    Interpolates the unabsorbed points to create a raw continuum guess.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
     <span class="n">mask_unabs</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_abs</span>
-
-    <span class="c1"># 1. Get unabsorbed points</span>
     <span class="n">x_unabs</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">mask_unabs</span><span class="p">]</span>
     <span class="n">y_unabs</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">mask_unabs</span><span class="p">]</span>
     
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_unabs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot fit continuum: &lt; 2 unabsorbed points found.&quot;</span><span class="p">)</span>
         
-    <span class="c1"># 2. Interpolate unabsorbed points back to the full grid</span>
+    <span class="c1"># Simple linear interpolation over the gaps</span>
     <span class="n">cont_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unabs</span><span class="p">,</span> <span class="n">y_unabs</span><span class="p">)</span>
-    
-    <span class="c1"># 3. Apply fudge factor</span>
-    <span class="n">cont_interp</span> <span class="o">*=</span> <span class="n">fudge</span>
-    
-    <span class="c1"># 4. Smooth the result (V1&#39;s _gauss_convolve)</span>
-    <span class="k">if</span> <span class="n">smooth_std_kms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="c1"># Convert x-axis to km/s to get pixel size</span>
-        <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">avg_dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x_kms</span><span class="p">))</span>
-        
-        <span class="c1"># Convert smoothing std (km/s) to pixels</span>
-        <span class="n">smooth_std_pix</span> <span class="o">=</span> <span class="n">smooth_std_kms</span> <span class="o">/</span> <span class="n">avg_dv</span>
-        
-        <span class="n">cont_final</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">cont_interp</span><span class="p">,</span> <span class="n">smooth_std_pix</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">cont_final</span> <span class="o">=</span> <span class="n">cont_interp</span>
-        
-    <span class="k">return</span> <span class="n">cont_final</span></div>
+    <span class="k">return</span> <span class="n">cont_interp</span></div>
 
 
 <div class="viewcode-block" id="fit_powerlaw_to_regions">
@@ -1029,7 +1174,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">merge_regions_by_velocity</span><span class="p">(</span>
     <span class="n">region_map</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">merge_dv</span><span class="p">:</span> <span class="nb">float</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1043,7 +1188,7 @@
 
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># 1. Get velocity axis</span>
-        <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot merge regions: failed to convert x-axis to km/s: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">num_regions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">region_map</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
@@ -1238,7 +1383,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_kinematic_doublet_candidates</span><span class="p">(</span>
     <span class="n">region_map</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span>
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">multiplet_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
@@ -1260,7 +1405,7 @@
         <span class="n">dv_kms</span> <span class="o">=</span> <span class="n">lags_kms</span><span class="p">[</span><span class="n">secondary_line</span><span class="p">]</span> <span class="c1"># e.g., ~498 km/s for CIV</span>
         
         <span class="c1"># 2. Get x-axis in velocity space</span>
-        <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">x_kms</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref</span><span class="p">,</span> <span class="n">target_unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
         <span class="c1"># 3. Create a &quot;shifted&quot; region map</span>
         <span class="c1"># Interpolate the region map onto an axis shifted by dv_kms</span>
@@ -1502,6 +1647,7 @@
     <span class="n">all_peaks_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     
     <span class="k">return</span> <span class="n">all_peaks_list</span></div>
+
 
 </pre></div>
 

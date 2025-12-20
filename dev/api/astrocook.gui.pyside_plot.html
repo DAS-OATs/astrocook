@@ -531,8 +531,8 @@ the currently active cursor series.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.show_data_tooltip">
 <span class="sig-name descname"><span class="pre">show_data_tooltip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.show_data_tooltip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.show_data_tooltip" title="Link to this definition">#</a></dt>
-<dd><p>Finds the data point nearest to the mouse and shows a tooltip
-containing ONLY the data for lines near the cursor.</p>
+<dd><p>Slow handler called by timer (hover stop).
+Calculates Component, Region, and Data info and displays the unified tooltip.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -556,6 +556,47 @@ containing ONLY the data for lines near the cursor.</p>
 <span class="sig-name descname"><span class="pre">on_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.on_release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_release" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.start_continuum_edit">
+<span class="sig-name descname"><span class="pre">start_continuum_edit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.start_continuum_edit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.start_continuum_edit" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.stop_continuum_edit">
+<span class="sig-name descname"><span class="pre">stop_continuum_edit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.stop_continuum_edit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.stop_continuum_edit" title="Link to this definition">#</a></dt>
+<dd><p>Cleans up the editor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.on_background_draw">
+<span class="sig-name descname"><span class="pre">on_background_draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.on_background_draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_background_draw" title="Link to this definition">#</a></dt>
+<dd><p>Called on every Matplotlib draw (Pan, Zoom, Resize).
+We capture the ‘clean’ background (Grid+Spectrum) BEFORE painting our artists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.begin_stride_interaction">
+<span class="sig-name descname"><span class="pre">begin_stride_interaction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.begin_stride_interaction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.begin_stride_interaction" title="Link to this definition">#</a></dt>
+<dd><p>Called when user starts clicking the slider. Caches the current high-fidelity knots.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.end_stride_interaction">
+<span class="sig-name descname"><span class="pre">end_stride_interaction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.end_stride_interaction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.end_stride_interaction" title="Link to this definition">#</a></dt>
+<dd><p>Called when user releases the slider.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.update_continuum_stride">
+<span class="sig-name descname"><span class="pre">update_continuum_stride</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stride</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.update_continuum_stride"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.update_continuum_stride" title="Link to this definition">#</a></dt>
+<dd><p>Resamples the continuum using the Backup (if dragging) or Current (if single step).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.update_spline_preview">
+<span class="sig-name descname"><span class="pre">update_spline_preview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/gui/pyside_plot.html#SpectrumPlotWidget.update_spline_preview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.update_spline_preview" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.gui.pyside_plot.SpectrumPlotWidget.staticMetaObject">
 <span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;SpectrumPlotWidget&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QWidget&quot;:</span> <span class="pre">)</span></em><a class="headerlink" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.staticMetaObject" title="Link to this definition">#</a></dt>
@@ -571,7 +612,7 @@ containing ONLY the data for lines near the cursor.</p>
 to remove unwanted buttons and simplify the interface.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.gui.pyside_plot.AstrocookToolbar.toolitems">
-<span class="sig-name descname"><span class="pre">toolitems</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('Home',</span> <span class="pre">'Reset</span> <span class="pre">original</span> <span class="pre">view',</span> <span class="pre">'home',</span> <span class="pre">'home'),</span> <span class="pre">('Back',</span> <span class="pre">'Back</span> <span class="pre">to</span> <span class="pre">previous</span> <span class="pre">view',</span> <span class="pre">'back',</span> <span class="pre">'back'),</span> <span class="pre">('Forward',</span> <span class="pre">'Forward</span> <span class="pre">to</span> <span class="pre">next</span> <span class="pre">view',</span> <span class="pre">'forward',</span> <span class="pre">'forward'),</span> <span class="pre">(None,</span> <span class="pre">None,</span> <span class="pre">None,</span> <span class="pre">None),</span> <span class="pre">('Pan',</span> <span class="pre">'Pan</span> <span class="pre">axes</span> <span class="pre">with</span> <span class="pre">left</span> <span class="pre">mouse,</span> <span class="pre">zoom</span> <span class="pre">with</span> <span class="pre">right',</span> <span class="pre">'move',</span> <span class="pre">'pan'),</span> <span class="pre">('Zoom',</span> <span class="pre">'Zoom</span> <span class="pre">to</span> <span class="pre">rectangle',</span> <span class="pre">'zoom_to_rect',</span> <span class="pre">'zoom'),</span> <span class="pre">('Select',</span> <span class="pre">'Select</span> <span class="pre">region',</span> <span class="pre">'toggle_select_mode',</span> <span class="pre">'toggle_select_mode'),</span> <span class="pre">(None,</span> <span class="pre">None,</span> <span class="pre">None,</span> <span class="pre">None),</span> <span class="pre">('Save',</span> <span class="pre">'Save</span> <span class="pre">the</span> <span class="pre">figure',</span> <span class="pre">'filesave',</span> <span class="pre">'save_figure')]</span></em><a class="headerlink" href="#astrocook.gui.pyside_plot.AstrocookToolbar.toolitems" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">toolitems</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('Home',</span> <span class="pre">'Reset</span> <span class="pre">original</span> <span class="pre">view',</span> <span class="pre">'home',</span> <span class="pre">'home'),</span> <span class="pre">('Back',</span> <span class="pre">'Back</span> <span class="pre">to</span> <span class="pre">previous</span> <span class="pre">view',</span> <span class="pre">'back',</span> <span class="pre">'back'),</span> <span class="pre">('Forward',</span> <span class="pre">'Forward</span> <span class="pre">to</span> <span class="pre">next</span> <span class="pre">view',</span> <span class="pre">'forward',</span> <span class="pre">'forward'),</span> <span class="pre">(None,</span> <span class="pre">None,</span> <span class="pre">None,</span> <span class="pre">None),</span> <span class="pre">('Pan',</span> <span class="pre">'Pan</span> <span class="pre">axes</span> <span class="pre">with</span> <span class="pre">left</span> <span class="pre">mouse,</span> <span class="pre">zoom</span> <span class="pre">with</span> <span class="pre">right',</span> <span class="pre">'move',</span> <span class="pre">'pan'),</span> <span class="pre">('Zoom',</span> <span class="pre">'Zoom</span> <span class="pre">to</span> <span class="pre">rectangle',</span> <span class="pre">'zoom_to_rect',</span> <span class="pre">'zoom'),</span> <span class="pre">(None,</span> <span class="pre">None,</span> <span class="pre">None,</span> <span class="pre">None),</span> <span class="pre">('Save',</span> <span class="pre">'Save</span> <span class="pre">the</span> <span class="pre">figure',</span> <span class="pre">'filesave',</span> <span class="pre">'save_figure')]</span></em><a class="headerlink" href="#astrocook.gui.pyside_plot.AstrocookToolbar.toolitems" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -665,6 +706,13 @@ data state, respecting normalization.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_mouse_move"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.on_mouse_move()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_press"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.on_press()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_release"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.on_release()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.start_continuum_edit"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.start_continuum_edit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.stop_continuum_edit"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.stop_continuum_edit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.on_background_draw"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.on_background_draw()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.begin_stride_interaction"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.begin_stride_interaction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.end_stride_interaction"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.end_stride_interaction()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.update_continuum_stride"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.update_continuum_stride()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.update_spline_preview"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.update_spline_preview()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.gui.pyside_plot.SpectrumPlotWidget.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">SpectrumPlotWidget.staticMetaObject</span></code></a></li>
 </ul>
 </li>

@@ -481,52 +481,15 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit" title="Link to this definition">#</a></dt>
-<dd><p>Executes the optimization using scipy.optimize.least_squares.</p>
-<p>This method:
-1.  Determines the <strong>Fit Mask</strong>: Only pixels within <code class="docutils literal notranslate"><span class="pre">z_window_kms</span></code> of the</p>
-<blockquote>
-<div><p>target lines are used for chi-squared calculation.</p>
-</div></blockquote>
-<ol class="arabic simple" start="2">
-<li><p>Refines the initial guess using <code class="docutils literal notranslate"><span class="pre">_smart_guess</span></code>.</p></li>
-<li><p>Runs the optimizer.</p></li>
-<li><p>Computes parameter errors from the covariance matrix.</p></li>
-<li><p>Updates the components in the system list.</p></li>
-</ol>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>max_nfev</strong> (<em>int</em>) – Maximum number of function evaluations allowed.</p></li>
-<li><p><strong>method</strong> (<em>str</em>) – Optimization algorithm (‘trf’, ‘dogbox’, ‘lm’).</p></li>
-<li><p><strong>z_window_kms</strong> (<em>float</em>) – Velocity window (km/s) around line centers to include in the fit mask.</p></li>
-<li><p><strong>verbose</strong> (<em>int</em>) – Verbosity level for the optimizer.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>new_system_list</strong> (<em>SystemListV2</em>) – A new list containing the best-fit component parameters.</p></li>
-<li><p><strong>final_model_flux</strong> (<em>np.ndarray</em>) – The flux array of the best-fit model (convolved and multiplied by continuum).</p></li>
-<li><p><strong>res</strong> (<em>OptimizeResult</em>) – The raw result object from <code class="docutils literal notranslate"><span class="pre">scipy.optimize</span></code>.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit" title="Link to this definition">#</a></dt>
+<dd><p>Executes the optimization using scipy.optimize.least_squares.
+Includes spatial pre-filtering and vectorization setup for speed.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux">
 <span class="sig-name descname"><span class="pre">compute_model_flux</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.compute_model_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux" title="Link to this definition">#</a></dt>
 <dd><p>Computes the model flux for the <em>current</em> parameters without running a fit.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>x_ang</strong> (<em>np.ndarray</em>) – The wavelength grid in Angstroms.</p></li>
-<li><p><strong>y_model</strong> (<em>np.ndarray</em>) – The model flux (physical units) over the full spectral range.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>

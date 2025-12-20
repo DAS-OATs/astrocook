@@ -407,87 +407,100 @@
 <dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.continuum.</span></span><span class="sig-name descname"><span class="pre">RecipeContinuumV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Recipes for estimating and fitting the quasar continuum.
-Accessed via <code class="docutils literal notranslate"><span class="pre">session.continuum</span></code>.</p>
+<p>Recipes for estimating and fitting the quasar continuum.</p>
+<p>These methods are accessed via the <code class="docutils literal notranslate"><span class="pre">session.continuum</span></code> attribute and delegate
+heavy logic to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed">
-<span class="sig-name descname"><span class="pre">find_absorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5000.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'400.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.find_absorbed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed" title="Link to this definition">#</a></dt>
-<dd><p>Identify absorbed regions using an iterative sigma-clipping algorithm.</p>
-<p>This recipe creates a boolean mask (<code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>) where True indicates
-pixels that are statistically likely to be absorption features rather
-than continuum.</p>
+<dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">
+<span class="sig-name descname"><span class="pre">estimate_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5000.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'400.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'1.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'500.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.estimate_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto" title="Link to this definition">#</a></dt>
+<dd><p>Auto-estimate continuum (single-click).</p>
+<p>A single-click recipe that runs <code class="docutils literal notranslate"><span class="pre">find_absorbed</span></code> and then <code class="docutils literal notranslate"><span class="pre">fit_continuum</span></code>
+in sequence, based on the V1 ‘clip_flux’ algorithm.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>smooth_len_lya</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Smoothing length (km/s) used for the initial continuum guess in the
-Lyman-alpha forest region (blue side of Ly-alpha emission).</p></li>
-<li><p><strong>smooth_len_out</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Smoothing length (km/s) used redward of the Ly-alpha emission.</p></li>
-<li><p><strong>kappa</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Sigma threshold. Flux below <code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">-</span> <span class="pre">kappa</span> <span class="pre">*</span> <span class="pre">sigma</span></code> is considered absorbed.</p></li>
-<li><p><strong>template</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – If ‘True’, use a PCA template for the initial guess (Not Implemented).</p></li>
+<li><p><strong>smooth_len_lya</strong> (<em>str</em><em>, </em><em>optional</em>) – Smoothing length (km/s) for initial guess in the Ly-alpha forest.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'5000.0'</span></code>.</p></li>
+<li><p><strong>smooth_len_out</strong> (<em>str</em><em>, </em><em>optional</em>) – Smoothing length (km/s) for initial guess outside the forest.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'400.0'</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma threshold for finding absorption. Defaults to <code class="docutils literal notranslate"><span class="pre">'2.0'</span></code>.</p></li>
+<li><p><strong>fudge</strong> (<em>str</em><em>, </em><em>optional</em>) – A multiplicative factor. Can be a float (e.g., <code class="docutils literal notranslate"><span class="pre">'1.0'</span></code>) or <code class="docutils literal notranslate"><span class="pre">'auto'</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">'auto'</span></code>, the factor is calculated to center the continuum residuals.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'1.0'</span></code>.</p></li>
+<li><p><strong>smooth_std</strong> (<em>str</em><em>, </em><em>optional</em>) – Standard deviation (km/s) for the final Gaussian smoothing.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'500.0'</span></code>.</p></li>
+<li><p><strong>template</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, use a QSO template (Not Implemented). Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
+<li><p><strong>renorm_model</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, re-normalize the ‘model’ column to match the new continuum.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'True'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> column added/updated.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated continuum
+and absorption mask, or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed">
+<span class="sig-name descname"><span class="pre">find_absorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5000.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'400.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.find_absorbed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed" title="Link to this definition">#</a></dt>
+<dd><p>Find absorbed regions (V1 logic).</p>
+<p>Runs the V1 ‘clip_flux’ kappa-sigma algorithm (with Ly-alpha forest split)
+to create a boolean mask (<code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>) where True indicates absorption.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.find_absorbed" title="astrocook.core.spectrum.SpectrumV2.find_absorbed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.find_absorbed()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smooth_len_lya</strong> (<em>str</em><em>, </em><em>optional</em>) – Smoothing length (km/s) for initial guess in the Ly-alpha forest.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'5000.0'</span></code>.</p></li>
+<li><p><strong>smooth_len_out</strong> (<em>str</em><em>, </em><em>optional</em>) – Smoothing length (km/s) for initial guess outside the forest.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'400.0'</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma threshold for clipping. Flux below <code class="docutils literal notranslate"><span class="pre">mean</span> <span class="pre">-</span> <span class="pre">kappa</span> <span class="pre">*</span> <span class="pre">sigma</span></code> is
+considered absorbed. Defaults to <code class="docutils literal notranslate"><span class="pre">'2.0'</span></code>.</p></li>
+<li><p><strong>template</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, use a QSO template (Not Implemented). Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>
+column added/updated, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum">
-<span class="sig-name descname"><span class="pre">fit_continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'1.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'500.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.fit_continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum" title="Link to this definition">#</a></dt>
-<dd><p>Fit a continuum to the unabsorbed regions of the spectrum.</p>
-<p>This recipe interpolates across the regions identified by <code class="docutils literal notranslate"><span class="pre">mask_col</span></code>
-and applies a Gaussian smoothing to produce the final continuum.</p>
+<span class="sig-name descname"><span class="pre">fit_continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'500.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.fit_continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum" title="Link to this definition">#</a></dt>
+<dd><p>Fit continuum to mask (V1 logic).</p>
+<p>Interpolates unabsorbed regions from a mask, optionally applies an auto-fudge
+factor to center residuals, and smooths the result.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.fit_continuum" title="astrocook.core.spectrum.SpectrumV2.fit_continuum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_continuum()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fudge</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – A multiplicative factor to adjust the continuum level manually.</p></li>
-<li><p><strong>smooth_std</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Standard deviation (km/s) of the Gaussian kernel used to smooth
-the interpolated spline.</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em>) – Name of the mask column to use (default: <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>).</p></li>
-<li><p><strong>renorm_model</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – If ‘True’, any existing absorption model (<code class="docutils literal notranslate"><span class="pre">model</span></code> column) is
-re-normalized to match the new continuum level.</p></li>
+<li><p><strong>fudge</strong> (<em>str</em><em>, </em><em>optional</em>) – Fudge factor. Can be a float (e.g., <code class="docutils literal notranslate"><span class="pre">'1.0'</span></code>) or <code class="docutils literal notranslate"><span class="pre">'auto'</span></code>.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'auto'</span></code>.</p></li>
+<li><p><strong>smooth_std</strong> (<em>str</em><em>, </em><em>optional</em>) – Final Gaussian smoothing standard deviation (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">'500.0'</span></code>.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column to use (True=Absorbed). Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
+<li><p><strong>renorm_model</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, re-normalize the ‘model’ column. Defaults to <code class="docutils literal notranslate"><span class="pre">'True'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the <code class="docutils literal notranslate"><span class="pre">cont</span></code> column added/updated.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">cont</span></code>
+column added/updated, or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">
-<span class="sig-name descname"><span class="pre">estimate_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5000.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'400.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'1.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'500.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.estimate_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto" title="Link to this definition">#</a></dt>
-<dd><p>Automatically estimate the continuum in a single step.</p>
-<p>This recipe chains <code class="docutils literal notranslate"><span class="pre">find_absorbed</span></code> and <code class="docutils literal notranslate"><span class="pre">fit_continuum</span></code> together.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>smooth_len_lya</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Smoothing length (km/s) for initial guess (Ly-alpha forest).</p></li>
-<li><p><strong>smooth_len_out</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Smoothing length (km/s) for initial guess (redward).</p></li>
-<li><p><strong>kappa</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Sigma threshold for finding absorption.</p></li>
-<li><p><strong>fudge</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Manual adjustment factor for the final continuum.</p></li>
-<li><p><strong>smooth_std</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Final smoothing width (km/s).</p></li>
-<li><p><strong>template</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – Use PCA template (Not Implemented).</p></li>
-<li><p><strong>renorm_model</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – Re-normalize existing model?</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with both <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> and <code class="docutils literal notranslate"><span class="pre">cont</span></code> columns updated.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -495,19 +508,47 @@ re-normalized to match the new continuum level.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.fit_powerlaw">
 <span class="sig-name descname"><span class="pre">fit_powerlaw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">regions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5,</span> <span class="pre">134.5-136.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'3.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.fit_powerlaw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.fit_powerlaw" title="Link to this definition">#</a></dt>
-<dd><p>Fit a power-law continuum to specified rest-frame spectral windows.</p>
-<p>This method fits a linear model in log-log space (flux vs wavelength)
-to the data within the given regions, excluding outliers via sigma-clipping.</p>
+<dd><p>Fit power-law continuum.</p>
+<p>Fits a power-law (linear in log-log space) to user-defined, unabsorbed
+rest-frame regions. Creates the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> column.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.fit_powerlaw" title="astrocook.core.spectrum.SpectrumV2.fit_powerlaw"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_powerlaw()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>regions</strong> (<em>str</em>) – Comma-separated list of wavelength ranges in nm (rest-frame).
-Example: <code class="docutils literal notranslate"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5'</span></code>.</p></li>
-<li><p><strong>kappa</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Sigma threshold for clipping outliers within the fitting regions.</p></li>
+<li><p><strong>regions</strong> (<em>str</em><em>, </em><em>optional</em>) – Comma-separated rest-frame wavelength regions (nm).
+Example: <code class="docutils literal notranslate"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5'</span></code>.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5,</span> <span class="pre">134.5-136.0'</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma threshold for clipping outliers within regions. Defaults to <code class="docutils literal notranslate"><span class="pre">'3.0'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> column added/updated.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>
+column added/updated, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.continuum.RecipeContinuumV2.update_from_knots">
+<span class="sig-name descname"><span class="pre">update_from_knots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knots_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knots_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/continuum.html#RecipeContinuumV2.update_from_knots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.continuum.RecipeContinuumV2.update_from_knots" title="Link to this definition">#</a></dt>
+<dd><p>Update continuum from manual knots.</p>
+<p>Interpolates a Cubic Spline through manually placed knots and updates the
+continuum.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots" title="astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>knots_x</strong> (<em>list</em>) – List of x coordinates (wavelength/velocity) for the knots.</p></li>
+<li><p><strong>knots_y</strong> (<em>list</em>) – List of y coordinates (flux) for the knots.</p></li>
+<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, re-normalize the ‘model’ column to match the new continuum.
+Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the updated continuum.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
@@ -550,10 +591,11 @@ Example: <code class="docutils literal notranslate"><span class="pre">'128.0-129
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.estimate_auto()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.find_absorbed()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.fit_continuum()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.estimate_auto()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.fit_powerlaw"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.fit_powerlaw()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.continuum.RecipeContinuumV2.update_from_knots"><code class="docutils literal notranslate"><span class="pre">RecipeContinuumV2.update_from_knots()</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -462,7 +462,7 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_state</span><span class="p">()</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized VoigtModelConstraintV2 with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p_free_vector</span><span class="p">)</span><span class="si">}</span><span class="s2"> free parameters.&quot;</span><span class="p">)</span></div>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized VoigtModelConstraintV2 with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p_free_vector</span><span class="p">)</span><span class="si">}</span><span class="s2"> free parameters.&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="VoigtModelConstraintV2.set_active_components">
@@ -493,7 +493,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Use the shared logic from the SystemList</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_state</span><span class="p">()</span></div>
 
@@ -624,6 +624,8 @@
                      <span class="n">v2_constraint_obj</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">v2_constraint_obj</span><span class="p">,</span> <span class="n">is_free</span><span class="o">=</span><span class="n">effective_is_free</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">effective_is_free</span> <span class="o">=</span> <span class="kc">True</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">force_freeze</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">param_name</span> <span class="o">==</span> <span class="s1">&#39;btur&#39;</span><span class="p">:</span>
+                    <span class="n">effective_is_free</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="n">is_free</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_is_free</span>
                 <span class="n">v2_constraint_obj</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="n">effective_is_free</span><span class="p">)</span>
 

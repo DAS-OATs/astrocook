@@ -405,7 +405,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Slot</span>
 
 <div class="viewcode-block" id="AppController">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppController</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The Public API exposed to In-App Scripts.</span>
@@ -416,14 +416,14 @@
     <span class="n">refresh_request</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">()</span>
 
 <div class="viewcode-block" id="AppController.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController.__init__">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">main_window</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mw</span> <span class="o">=</span> <span class="n">main_window</span></div>
 
 
 <div class="viewcode-block" id="AppController.get_session">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController.get_session">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController.get_session">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a loaded session by its tab name.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mw</span><span class="o">.</span><span class="n">tab_widget</span><span class="o">.</span><span class="n">count</span><span class="p">()):</span>
@@ -437,14 +437,14 @@
 
 
 <div class="viewcode-block" id="AppController.get_active_session">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController.get_active_session">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController.get_active_session">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_active_session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the currently visible session.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mw</span><span class="o">.</span><span class="n">get_current_session</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="AppController.run_recipe">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController.run_recipe">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController.run_recipe">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_recipe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Executes a recipe on a session.</span>
@@ -465,7 +465,7 @@
 
 
 <div class="viewcode-block" id="AppController.create_tab">
-<a class="viewcode-back" href="../../../api/astrocook.gui.html#astrocook.gui.scripting.AppController.create_tab">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.gui.scripting.html#astrocook.gui.scripting.AppController.create_tab">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds a result session back to the GUI as a new tab.&quot;&quot;&quot;</span>
         <span class="c1"># Must use QMetaObject.invokeMethod if running from a thread,</span>

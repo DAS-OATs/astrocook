@@ -461,7 +461,6 @@
         <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dy_col</span><span class="p">,</span> 
         <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span> 
         <span class="n">meta</span><span class="o">=</span><span class="n">meta_v1</span><span class="p">,</span>
-        <span class="n">z_rf</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">v1_spectrum_instance</span><span class="p">,</span> <span class="s1">&#39;_rfz&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
         <span class="n">z_em</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">v1_spectrum_instance</span><span class="p">,</span> <span class="s1">&#39;_zem&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="p">)</span></div>
 
@@ -523,7 +522,6 @@
             <span class="n">col_unit</span> <span class="o">=</span> <span class="n">col_data</span><span class="o">.</span><span class="n">unit</span> <span class="k">if</span> <span class="n">col_data</span><span class="o">.</span><span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
             <span class="n">aux_cols</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">col_data</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">col_unit</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Auxiliary column: </span><span class="si">{</span><span class="n">colname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             
-    <span class="n">z_rf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;Z_RF&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
     <span class="n">z_em</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;Z_EM&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
     
     <span class="n">resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -536,7 +534,7 @@
     <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
         <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span> 
         <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dy_col</span><span class="p">,</span> 
-        <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="n">resol_val</span>
+        <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="n">resol_val</span>
     <span class="p">)</span>
 
 <div class="viewcode-block" id="load_spec_data_v2_from_archive">
@@ -664,7 +662,6 @@
         <span class="n">t</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">data_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">data_col</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
     <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">spec_data</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
     <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Astrocook V2&#39;</span>
-    <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Z_RF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">z_rf</span>
     <span class="n">t</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;Z_EM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spec_data</span><span class="o">.</span><span class="n">z_em</span>
     <span class="k">return</span> <span class="n">t</span>
 

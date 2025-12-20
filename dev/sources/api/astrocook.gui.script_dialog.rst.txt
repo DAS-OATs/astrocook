@@ -1,0 +1,7 @@
+astrocook.gui.script\_dialog module
+===================================
+
+.. automodule:: astrocook.gui.script_dialog
+   :members:
+   :show-inheritance:
+   :undoc-members:

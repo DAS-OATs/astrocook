@@ -497,7 +497,7 @@
             <span class="c1"># Use the clean rebuilt map</span>
             <span class="n">clean_parsed</span> <span class="o">=</span> <span class="n">new_parsed</span>
             <span class="n">constraints_dirty</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SystemListV2: Hydrated constraints from clean JSON map.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SystemListV2: Hydrated constraints from clean JSON map.&quot;</span><span class="p">)</span>
         
         <span class="c1"># 3. Legacy Fallback: If V2 map empty, Sanitize Parsed Map &amp; Populate V2</span>
         <span class="k">elif</span> <span class="n">clean_parsed</span><span class="p">:</span>
@@ -751,26 +751,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">13.5</span><span class="p">,</span> 
                       <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Manually add a single component to the list.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        series : str</span>
-<span class="sd">            Transition or Multiplet name (e.g. &#39;Ly_a&#39;, &#39;CIV&#39;).</span>
-<span class="sd">        z : float</span>
-<span class="sd">            Redshift.</span>
-<span class="sd">        logN : float, optional</span>
-<span class="sd">            Column density (log10), default 13.5.</span>
-<span class="sd">        b : float, optional</span>
-<span class="sd">            Doppler parameter (km/s), default 10.0.</span>
-<span class="sd">        btur : float, optional</span>
-<span class="sd">            Turbulent broadening (km/s), default 0.0.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SystemListV2</span>
-<span class="sd">            A new instance containing the added component.</span>
+<span class="sd">        Adds a single component to the list.</span>
+<span class="sd">        </span>
+<span class="sd">        Note: If &#39;series&#39; is a multiplet name (e.g. &#39;CIV&#39;), the VoigtFitter </span>
+<span class="sd">        will automatically model it as all member lines sharing these parameters.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
+
         <span class="n">current_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span>
         <span class="n">next_id</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">current_components</span><span class="p">:</span>
@@ -782,9 +769,11 @@
             <span class="n">logN</span><span class="o">=</span><span class="n">logN</span><span class="p">,</span> <span class="n">dlogN</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">btur</span><span class="o">=</span><span class="n">btur</span><span class="p">,</span> <span class="n">dbtur</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">func</span><span class="o">=</span><span class="s1">&#39;voigt&#39;</span><span class="p">,</span> <span class="n">series</span><span class="o">=</span><span class="n">series</span>
+            <span class="n">func</span><span class="o">=</span><span class="s1">&#39;voigt&#39;</span><span class="p">,</span> 
+            <span class="n">series</span><span class="o">=</span><span class="n">series</span> <span class="c1"># Simply store &#39;CIV&#39;</span>
         <span class="p">)</span>
         
+        <span class="c1"># Standard append logic (no expansion, no linking)</span>
         <span class="n">new_component_list</span> <span class="o">=</span> <span class="n">current_components</span> <span class="o">+</span> <span class="p">[</span><span class="n">new_comp</span><span class="p">]</span>
         <span class="n">new_id_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v1_id_to_uuid_map</span><span class="p">)</span>
         <span class="n">new_id_map</span><span class="p">[</span><span class="n">next_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_comp</span><span class="o">.</span><span class="n">uuid</span>
@@ -925,31 +914,46 @@
 
 <div class="viewcode-block" id="SystemListV2.delete_component">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes a component and cleans up any constraints linking to it.</span>
+<span class="sd">        Removes one or multiple components and cleans up constraints linking to them.</span>
+<span class="sd">        Accepts either a single &#39;uuid&#39; or a list &#39;uuids&#39;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># 1. Remove the component</span>
-        <span class="n">new_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="o">!=</span> <span class="n">uuid</span><span class="p">]</span>
-        
-        <span class="c1"># 2. [FIX] Clean up Hanging Links (Sanitize Constraints)</span>
-        <span class="c1"># Scan all constraints. If any target the deleted UUID, reset them to Free.</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterConstraintV2</span>
+
+        <span class="c1"># 1. Normalize input to a Set of targets</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">uuid</span><span class="p">:</span> <span class="n">targets</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">targets</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">targets</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># 2. Remove the components</span>
+        <span class="n">new_components</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">]</span>
+        
+        <span class="c1"># 3. Clean up Hanging Links (Sanitize Constraints)</span>
+        <span class="c1"># Scan all constraints. If any target ANY deleted UUID, reset them to Free.</span>
         
         <span class="n">current_v2_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v2_constraints_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="n">current_parsed</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">parsed_constraints</span><span class="p">)</span>
         
-        <span class="c1"># We need to find which (u, p) pairs need resetting</span>
         <span class="n">to_reset</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">u_src</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">current_v2_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">p_name</span><span class="p">,</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="c1"># Check for explicit target_uuid match</span>
-                <span class="k">if</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span>
+                
+                <span class="c1"># Check for direct target match in the set of deleted UUIDs</span>
+                <span class="k">if</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
                     <span class="n">to_reset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">))</span>
-                <span class="c1"># Check for expression reference (regex search)</span>
-                <span class="k">elif</span> <span class="n">constr</span><span class="o">.</span><span class="n">expression</span> <span class="ow">and</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">constr</span><span class="o">.</span><span class="n">expression</span><span class="p">:</span>
-                    <span class="n">to_reset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">))</span>
+                
+                <span class="c1"># Check for expression reference (if expression contains any deleted UUID)</span>
+                <span class="k">elif</span> <span class="n">constr</span><span class="o">.</span><span class="n">expression</span><span class="p">:</span>
+                    <span class="c1"># Quick check: is any deleted UUID inside the expression string?</span>
+                    <span class="c1"># (A regex would be safer, but uuid strings are usually unique enough)</span>
+                    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">deleted_uuid</span> <span class="ow">in</span> <span class="n">constr</span><span class="o">.</span><span class="n">expression</span> <span class="k">for</span> <span class="n">deleted_uuid</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">):</span>
+                        <span class="n">to_reset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span> <span class="ow">in</span> <span class="n">to_reset</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing broken link from </span><span class="si">{</span><span class="n">u_src</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">p_name</span><span class="si">}</span><span class="s2"> (target deleted).&quot;</span><span class="p">)</span>
@@ -962,7 +966,7 @@
             <span class="c1"># Update Parsed Map</span>
             <span class="n">current_parsed</span><span class="p">[(</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">clean_constr</span>
 
-        <span class="c1"># 3. Create new data</span>
+        <span class="c1"># 4. Create new data</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> 
                                        <span class="n">components</span><span class="o">=</span><span class="n">new_components</span><span class="p">,</span>
                                        <span class="n">parsed_constraints</span><span class="o">=</span><span class="n">current_parsed</span><span class="p">,</span>
@@ -999,7 +1003,11 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
         
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-        <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+        <span class="c1"># 1. Sort components by Z for fast searching</span>
+        <span class="n">sorted_comps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sorted_comps</span><span class="p">}</span>
+        <span class="n">z_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sorted_comps</span><span class="p">])</span>
+        
         <span class="c1"># Access constraints if available, else empty</span>
         <span class="n">constraints_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v2_constraints_map</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">&#39;v2_constraints_map&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
 
@@ -1054,13 +1062,30 @@
         
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_depth</span><span class="p">):</span>
             <span class="n">added_count</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="c1"># Get current member objects</span>
             <span class="n">current_members</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">group_uuids</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">comp_map</span><span class="p">]</span>
             
-            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="c1"># 2. Define &quot;Safe&quot; Z-Window for candidates</span>
+            <span class="c1"># (Conservative: Max possible metal line offset is ~20000 km/s, e.g. Ly-a vs CIV)</span>
+            <span class="c1"># For pure overlapping, 500 km/s is enough. For constraints, we use the map.</span>
+            <span class="c1"># We filter based on kinematic proximity to ANY current member.</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">current_members</span><span class="p">:</span> <span class="k">break</span>
+            
+            <span class="n">min_z</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">current_members</span><span class="p">)</span>
+            <span class="n">max_z</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">current_members</span><span class="p">)</span>
+            
+            <span class="c1"># Expand window by 0.1 (huge buffer for multiplet separation like Ly-a &lt;-&gt; CIV)</span>
+            <span class="n">z_lower</span> <span class="o">=</span> <span class="n">min_z</span> <span class="o">-</span> <span class="mf">0.1</span>
+            <span class="n">z_upper</span> <span class="o">=</span> <span class="n">max_z</span> <span class="o">+</span> <span class="mf">0.1</span>
+            
+            <span class="c1"># 3. Fast Slice using numpy searchsorted</span>
+            <span class="n">idx_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">z_values</span><span class="p">,</span> <span class="n">z_lower</span><span class="p">)</span>
+            <span class="n">idx_end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">z_values</span><span class="p">,</span> <span class="n">z_upper</span><span class="p">)</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="n">sorted_comps</span><span class="p">[</span><span class="n">idx_start</span><span class="p">:</span><span class="n">idx_end</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">group_uuids</span><span class="p">:</span> <span class="k">continue</span>
                 
-                <span class="c1"># Check against ALL current group members</span>
                 <span class="n">is_connected</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">current_members</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">are_overlapping</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
@@ -1074,7 +1099,7 @@
             <span class="k">if</span> <span class="n">added_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">break</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seed_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seed_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">group_uuids</span></div>
 
 
@@ -1112,6 +1137,49 @@
         <span class="c1"># 3. Calculate AIC</span>
         <span class="n">aic</span> <span class="o">=</span> <span class="n">chi2static</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k_free</span>
         <span class="k">return</span> <span class="n">aic</span>
+    
+<div class="viewcode-block" id="SystemListV2.merge">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.merge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merges components from another system list into this one.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : SystemListV2</span>
+<span class="sd">            The source list to copy from.</span>
+<span class="sd">        copy_uuids : bool</span>
+<span class="sd">            If True, keeps original UUIDs (risky if merging into self).</span>
+<span class="sd">            If False, regenerates UUIDs to avoid conflicts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+        <span class="n">current_comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+        
+        <span class="c1"># Determine next ID for V1 compatibility</span>
+        <span class="n">next_id</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">current_comps</span><span class="p">:</span>
+            <span class="n">next_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">current_comps</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="c1"># Prepare the arguments we want to change</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">next_id</span><span class="p">}</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">copy_uuids</span><span class="p">:</span>
+                <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+            
+            <span class="c1"># [FIX] Apply changes using replace() instead of direct assignment</span>
+            <span class="n">new_c</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
+            
+            <span class="n">current_comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_c</span><span class="p">)</span>
+            <span class="n">next_id</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Create new data core</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">current_comps</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+
     
 <div class="viewcode-block" id="SystemListV2.optimize_hierarchy">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.optimize_hierarchy">[docs]</a>
@@ -1294,6 +1362,134 @@
                 <span class="k">break</span>
         
         <span class="k">return</span> <span class="n">best_systs</span></div>
+
+    
+<div class="viewcode-block" id="SystemListV2.remove_in_region">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.remove_in_region">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_in_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes components whose primary line center falls within the observed wavelength range.</span>
+<span class="sd">        Used for cleaning up regions before auto-fitting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">surviving_comps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="c1"># Resolve Rest Wavelength</span>
+            <span class="n">lam_rest</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+                <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+                 <span class="c1"># Use primary line for location check</span>
+                 <span class="n">prim</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                 <span class="k">if</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+                     <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">prim</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+            
+            <span class="n">should_delete</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">lam_rest</span><span class="p">:</span>
+                <span class="c1"># Convert to Angstrom Quantity for comparison</span>
+                <span class="n">lam_obs</span> <span class="o">=</span> <span class="n">lam_rest</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span>
+                <span class="k">if</span> <span class="n">obs_min</span> <span class="o">&lt;=</span> <span class="n">lam_obs</span> <span class="o">&lt;=</span> <span class="n">obs_max</span><span class="p">:</span>
+                    <span class="n">should_delete</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="k">if</span> <span class="n">should_delete</span><span class="p">:</span>
+                <span class="n">deleted_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">surviving_comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Smart clean: Removed </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components in region </span><span class="si">{</span><span class="n">obs_min</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">obs_max</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">surviving_comps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SystemListV2.filter_by_criteria">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_criteria">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters components based on a lambda function.</span>
+<span class="sd">        Example: systs.filter_by_criteria(lambda c: c.b &gt; 10.0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid_comps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">condition_func</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+                <span class="n">valid_comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">deleted_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+            
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filtered </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components.&quot;</span><span class="p">)</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">valid_comps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SystemListV2.filter_by_range">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_range">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmin_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xmax_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a new SystemListV2 containing only components that fall </span>
+<span class="sd">        within the specified wavelength range [xmin, xmax] (in nm).</span>
+<span class="sd">        Handles both single lines (CIV 1548) and doublet tags (CIV).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">xem_d</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+        
+        <span class="n">valid_components</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Ensure limits are valid</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">xmin_nm</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">xmax_nm</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">is_in_range</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1"># 1. Identify which lines this component represents</span>
+            <span class="n">lines_to_check</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="c1"># Case A: It&#39;s a specific line (e.g., &quot;CIV 1548&quot;)</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span>
+                <span class="n">lines_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+            
+            <span class="c1"># Case B: It&#39;s a Multiplet Tag (e.g., &quot;CIV&quot;)</span>
+            <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+                <span class="n">lines_to_check</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">])</span>
+                
+            <span class="c1"># Case C: Try normalized name (e.g., &quot;CIV 1548&quot; vs &quot;CIV_1548&quot;)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">norm</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span>
+                    <span class="n">lines_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+
+            <span class="c1"># 2. Check if ANY line falls in range</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">lines_to_check</span><span class="p">:</span>
+                <span class="c1"># If we can&#39;t identify the line physics, we default to KEEPING it</span>
+                <span class="c1"># (Safe fallback for custom markers)</span>
+                <span class="n">is_in_range</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines_to_check</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span>
+                        <span class="n">lam_rest_nm</span> <span class="o">=</span> <span class="n">xem_d</span><span class="p">[</span><span class="n">line</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                        <span class="n">lam_obs</span> <span class="o">=</span> <span class="n">lam_rest_nm</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                        
+                        <span class="c1"># Check bounds (1.0 nm padding)</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">xmin_nm</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">lam_obs</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">xmax_nm</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">):</span>
+                            <span class="n">is_in_range</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+            
+            <span class="k">if</span> <span class="n">is_in_range</span><span class="p">:</span>
+                <span class="n">valid_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+        <span class="c1"># Return new instance with filtered data</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">valid_components</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

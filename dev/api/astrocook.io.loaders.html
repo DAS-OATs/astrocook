@@ -415,6 +415,31 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.detect_file_format">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">detect_file_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#detect_file_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.detect_file_format" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.load_pypeit_coadd">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_pypeit_coadd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_pypeit_coadd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_pypeit_coadd" title="Link to this definition">#</a></dt>
+<dd><p>Loader for PypeIt ‘Coadd’ 1D files.
+Features: Sorts wavelength and removes negative/bad values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.load_pypeit_spec1d_multi">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_pypeit_spec1d_multi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_pypeit_spec1d_multi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_pypeit_spec1d_multi" title="Link to this definition">#</a></dt>
+<dd><p>Loader for PypeIt ‘spec1d’ Multi-Extension FITS.
+Stitches echelle orders (extensions named ‘ORDERxxxx’) into one structure.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.load_pypeit_stack">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_pypeit_stack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_pypeit_stack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_pypeit_stack" title="Link to this definition">#</a></dt>
+<dd><p>Loader for PypeIt ‘OrderStack’ files (Arrays stored in a single table row).</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="astrocook.io.loaders.load_simple_csv">
 <span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_simple_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_simple_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_simple_csv" title="Link to this definition">#</a></dt>
 <dd><p>Example V2 Loader: Reads a 3-column CSV (wave, flux, err).</p>
@@ -428,10 +453,23 @@ Handles files where data rows might be split across lines or mixed with tags.</p
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.load_espresso_s2d_fits">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_espresso_s2d_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_espresso_s2d_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_espresso_s2d_fits" title="Link to this definition">#</a></dt>
+<dd><p>Loader for ESPRESSO S2D (Order-by-Order) FITS files.
+Correctly handles pixel widths by computing them in 2D before flattening.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="astrocook.io.loaders.load_xshooter_fits">
 <span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_xshooter_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_xshooter_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_xshooter_fits" title="Link to this definition">#</a></dt>
 <dd><p>Loader for ESO X-Shooter 1D spectra (Binary Table FITS).
 Expects columns: WAVE, FLUX, ERR, QUAL (optional).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.io.loaders.load_generic_spectrum">
+<span class="sig-prename descclassname"><span class="pre">astrocook.io.loaders.</span></span><span class="sig-name descname"><span class="pre">load_generic_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/io/loaders.html#load_generic_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.io.loaders.load_generic_spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Fallback loader.</p>
 </dd></dl>
 
 </section>
@@ -467,9 +505,15 @@ Expects columns: WAVE, FLUX, ERR, QUAL (optional).</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.register_loader"><code class="docutils literal notranslate"><span class="pre">register_loader()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.get_loader"><code class="docutils literal notranslate"><span class="pre">get_loader()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.detect_file_format"><code class="docutils literal notranslate"><span class="pre">detect_file_format()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_pypeit_coadd"><code class="docutils literal notranslate"><span class="pre">load_pypeit_coadd()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_pypeit_spec1d_multi"><code class="docutils literal notranslate"><span class="pre">load_pypeit_spec1d_multi()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_pypeit_stack"><code class="docutils literal notranslate"><span class="pre">load_pypeit_stack()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_simple_csv"><code class="docutils literal notranslate"><span class="pre">load_simple_csv()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_ascii_with_resvel_header"><code class="docutils literal notranslate"><span class="pre">load_ascii_with_resvel_header()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_espresso_s2d_fits"><code class="docutils literal notranslate"><span class="pre">load_espresso_s2d_fits()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_xshooter_fits"><code class="docutils literal notranslate"><span class="pre">load_xshooter_fits()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.io.loaders.load_generic_spectrum"><code class="docutils literal notranslate"><span class="pre">load_generic_spectrum()</span></code></a></li>
 </ul>
   </nav></div>
 

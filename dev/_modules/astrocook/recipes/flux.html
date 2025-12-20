@@ -485,7 +485,9 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeFluxV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Recipes for manipulating spectral flux and grid sampling.</span>
-<span class="sd">    Accessed via ``session.flux``.</span>
+
+<span class="sd">    These methods are accessed via the ``session.flux`` attribute and delegate</span>
+<span class="sd">    logic to :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="RecipeFluxV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.__init__">[docs]</a>
@@ -501,23 +503,27 @@
                               <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;running_std&#39;</span><span class="p">,</span> 
                               <span class="n">window_pix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;21&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates a running standard deviation (RMS) on a column.</span>
+<span class="sd">        Calculate running standard deviation.</span>
 
-<span class="sd">        Useful for estimating local noise directly from the data.</span>
+<span class="sd">        Calculates a running Root-Mean-Square (RMS) on a specific column to estimate</span>
+<span class="sd">        local error or variability.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calculate_running_std`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        input_col : str</span>
-<span class="sd">            The column to analyze (default: ``&#39;y&#39;``).</span>
-<span class="sd">        output_col : str</span>
-<span class="sd">            The name of the new column to create.</span>
-<span class="sd">        window_pix : str (int)</span>
-<span class="sd">            The width of the running window in pixels (must be odd).</span>
+<span class="sd">        input_col : str, optional</span>
+<span class="sd">            The column to use for StdDev calculation (e.g., ``&#39;y&#39;``). Defaults to ``&#39;y&#39;``.</span>
+<span class="sd">        output_col : str, optional</span>
+<span class="sd">            Name of the new column to create (e.g., ``&#39;running_std&#39;``).</span>
+<span class="sd">            Defaults to ``&#39;running_std&#39;``.</span>
+<span class="sd">        window_pix : str, optional</span>
+<span class="sd">            Total window size in pixels (should be odd). Defaults to ``&#39;21&#39;``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session with the calculated column added.</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,</span>
+<span class="sd">            or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_pix</span><span class="p">)</span>
@@ -550,17 +556,22 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.smooth">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies Gaussian smoothing to the spectrum.</span>
+<span class="sd">        Smooth spectrum.</span>
+
+<span class="sd">        Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),</span>
+<span class="sd">        and auxiliary columns.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.smooth`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        sigma_kms : str (float)</span>
-<span class="sd">            Standard deviation of the Gaussian kernel in km/s.</span>
+<span class="sd">        sigma_kms : str, optional</span>
+<span class="sd">            Standard deviation for Gaussian kernel in km/s. Defaults to ``&#39;100.0&#39;``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session with smoothed flux, error, and auxiliary columns.</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns,</span>
+<span class="sd">            or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sigma_kms_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma_kms</span><span class="p">)</span>
@@ -583,29 +594,36 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span><span class="p">,</span>
               <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5.0&#39;</span><span class="p">,</span> <span class="n">filling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nan&#39;</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Rebins the spectrum to a uniform grid.</span>
+<span class="sd">        Rebin spectrum.</span>
+
+<span class="sd">        Applies a new binning to a spectrum with a constant bin size.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.rebin`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        xstart : str (float)</span>
-<span class="sd">            Start wavelength/velocity. &#39;None&#39; uses data minimum.</span>
-<span class="sd">        xend : str (float)</span>
-<span class="sd">            End wavelength/velocity. &#39;None&#39; uses data maximum.</span>
-<span class="sd">        dx : str (float)</span>
-<span class="sd">            Step size.</span>
-<span class="sd">        xunit : str</span>
-<span class="sd">            Unit for step size (e.g. ``&#39;km/s&#39;``, ``&#39;nm&#39;``).</span>
-<span class="sd">        kappa : str (float)</span>
-<span class="sd">            Sigma clipping threshold within bins. &#39;None&#39; to disable.</span>
-<span class="sd">        filling : str (float)</span>
-<span class="sd">            Value to use for gaps (default: ``&#39;nan&#39;``).</span>
-<span class="sd">        norm : str (bool)</span>
-<span class="sd">            (Unused legacy flag, kept for compatibility).</span>
+<span class="sd">        xstart : str, optional</span>
+<span class="sd">            Start wavelength/velocity. ``&#39;None&#39;`` for auto (data minimum).</span>
+<span class="sd">            Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        xend : str, optional</span>
+<span class="sd">            End wavelength/velocity. ``&#39;None&#39;`` for auto (data maximum).</span>
+<span class="sd">            Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        dx : str, optional</span>
+<span class="sd">            Step size in x. Defaults to ``&#39;10.0&#39;``.</span>
+<span class="sd">        xunit : str, optional</span>
+<span class="sd">            Unit of wavelength or velocity for the step size (e.g., ``&#39;km/s&#39;``, ``&#39;nm&#39;``).</span>
+<span class="sd">            Defaults to ``&#39;km/s&#39;``.</span>
+<span class="sd">        kappa : str, optional</span>
+<span class="sd">            Sigma clipping threshold for binning. ``&#39;None&#39;`` for off. Defaults to ``&#39;5.0&#39;``.</span>
+<span class="sd">        filling : str, optional</span>
+<span class="sd">            Value to fill regions without data. Defaults to ``&#39;nan&#39;``.</span>
+<span class="sd">        norm : str, optional</span>
+<span class="sd">            (Legacy flag, currently unused). Defaults to ``&#39;False&#39;``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session with the rebinned spectrum.</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum,</span>
+<span class="sd">            or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># 4. Perform Type Casting</span>
@@ -639,20 +657,22 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.resample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Resamples the spectrum onto the grid of another open session.</span>
+<span class="sd">        Resample on another grid.</span>
 
-<span class="sd">        This is a prerequisite for arithmetic operations between two spectra</span>
-<span class="sd">        (e.g. subtraction or ratio).</span>
+<span class="sd">        Resamples this spectrum onto the exact wavelength grid of another open session.</span>
+<span class="sd">        This is often a prerequisite for multi-session arithmetic.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.resample_on_grid`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        target_session : str</span>
-<span class="sd">            The name of the session whose grid should be adopted.</span>
+<span class="sd">            Name of the session to use as the grid source.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session interpolated to the target grid.</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid,</span>
+<span class="sd">            or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span> <span class="ow">or</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No target session was selected for resampling.&quot;</span><span class="p">)</span>
@@ -691,19 +711,22 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SDSS_r=17.0&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Flux calibration using photometric magnitudes.</span>
+<span class="sd">        Flux calibrate (multi-band).</span>
 
-<span class="sd">        Warps the spectrum to match the observed magnitudes in specified bands.</span>
+<span class="sd">        Warps the spectrum SED to match multiple photometric points.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calibrate`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        magnitudes : str</span>
-<span class="sd">            Comma-separated pairs of ``Filter=Mag`` (e.g. ``&quot;SDSS_g=17.5, SDSS_r=17.0&quot;``).</span>
+<span class="sd">        magnitudes : str, optional</span>
+<span class="sd">            List of &#39;Filter=Mag&#39; pairs separated by commas (e.g., ``&quot;SDSS_g=17.5, SDSS_r=17.0&quot;``).</span>
+<span class="sd">            Defaults to ``&quot;SDSS_r=17.0&quot;``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new session with calibrated flux.</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux,</span>
+<span class="sd">            or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># The API layer now handles all the complexity</span>

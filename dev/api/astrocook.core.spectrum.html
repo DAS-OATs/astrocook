@@ -474,6 +474,25 @@ or None if the column does not exist.</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.norm">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.norm" title="Link to this definition">#</a></dt>
+<dd><p>Returns the normalization vector (Continuum * Telluric).</p>
+<p>Logic:
+1. If cont exists:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Returns cont * telluric (if telluric exists).</p></li>
+<li><p>Returns cont (otherwise).</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>If cont is missing:
+- Returns 1.0 (if flux median is ~1, assuming pre-normalized).
+- Returns None (if flux is physical, signaling need for continuum fitting).</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.model">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.model" title="Link to this definition">#</a></dt>
 <dd><p>Returns the ‘model’ auxiliary column as an Astropy Quantity,
@@ -512,6 +531,13 @@ for compatibility with GUI/V1 logic (like gui_table.py).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.update_column">
+<span class="sig-name descname"><span class="pre">update_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.update_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.update_column" title="Link to this definition">#</a></dt>
+<dd><p>Returns a NEW SpectrumV2 instance with the specified column updated or added.
+Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.to_v1_spectrum">
 <span class="sig-name descname"><span class="pre">to_v1_spectrum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Spectrum</span></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.to_v1_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum" title="Link to this definition">#</a></dt>
 <dd><p>Converts the immutable SpectrumV2 (API + Data Core) back into a mutable
@@ -520,22 +546,45 @@ SpectrumV1 object for saving.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.with_properties">
-<span class="sig-name descname"><span class="pre">with_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.with_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.with_properties" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">with_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.with_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.with_properties" title="Link to this definition">#</a></dt>
 <dd><p>API: Returns a NEW SpectrumV2 instance with updated properties.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>z_em</strong> (<em>float</em>) – Emission Redshift.</p></li>
-<li><p><strong>resol</strong> (<em>float</em>) – Resolving Power R (lambda / d_lambda).</p></li>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics">
+<span class="sig-name descname"><span class="pre">sanitize_legacy_tellurics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.sanitize_legacy_tellurics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics" title="Link to this definition">#</a></dt>
+<dd><p>Patches legacy spectra where ‘cont’ included tellurics and ‘cont_no_telluric’
+stored the intrinsic continuum.</p>
+<p>Logic:
+1. If ‘cont_no_telluric’ exists:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Overwrite ‘cont’ with ‘cont_no_telluric’ (Intrinsic).</p></li>
+<li><p>Remove ‘cont_no_telluric’.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance containing the updated metadata.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Returns a new SpectrumV2 instance (or self if no changes needed).</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.get_region_bounds">
+<span class="sig-name descname"><span class="pre">get_region_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Quantity</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.get_region_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.get_region_bounds" title="Link to this definition">#</a></dt>
+<dd><p>Returns observed (xmin, xmax) for a standard region based on z_em.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.remove_columns">
+<span class="sig-name descname"><span class="pre">remove_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.remove_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.remove_columns" title="Link to this definition">#</a></dt>
+<dd><p>Returns a NEW SpectrumV2 with specified auxiliary columns removed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.prepare_expression_context">
+<span class="sig-name descname"><span class="pre">prepare_expression_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_specs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.prepare_expression_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.prepare_expression_context" title="Link to this definition">#</a></dt>
+<dd><p>Parses expression for ‘alias.col’ patterns, resamples data from other_specs,
+and returns the parsed expression and the dictionary of arrays.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -613,6 +662,13 @@ Concatenates x, y, dy, and all auxiliary columns.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.scale_flux">
+<span class="sig-name descname"><span class="pre">scale_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.scale_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.scale_flux" title="Link to this definition">#</a></dt>
+<dd><p>Scales the flux (y, dy) and relevant auxiliary columns (cont, model)
+by a multiplicative factor. Returns a new SpectrumV2 instance.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -698,6 +754,14 @@ Concatenates x, y, dy, and all auxiliary columns.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.coadd">
+<span class="sig-name descname"><span class="pre">coadd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">others</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xstart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equalize_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.coadd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.coadd" title="Link to this definition">#</a></dt>
+<dd><p>Co-adds this spectrum with a list of other spectra onto a new common grid.</p>
+<p>Handles scaling, unit conversion, “drizzle” rebinning, and
+converts the result back to the original wavelength unit.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.resample_on_grid">
 <span class="sig-name descname"><span class="pre">resample_on_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_grid_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">nan</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.resample_on_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.resample_on_grid" title="Link to this definition">#</a></dt>
 <dd><p>Resamples this spectrum onto the exact wavelength grid of another spectrum.</p>
@@ -757,49 +821,15 @@ Concatenates x, y, dy, and all auxiliary columns.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.find_absorbed">
 <span class="sig-name descname"><span class="pre">find_absorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.find_absorbed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.find_absorbed" title="Link to this definition">#</a></dt>
-<dd><p>Finds unabsorbed regions and adds/updates the ‘abs_mask’ column.</p>
-<p>This method uses an iterative sigma-clipping approach to identify regions
-of the spectrum that are significantly below the estimated continuum level.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>smooth_len_lya</strong> (<em>Quantity</em>) – Smoothing length for the Ly-alpha forest (e.g. 5000 km/s).</p></li>
-<li><p><strong>smooth_len_out</strong> (<em>Quantity</em>) – Smoothing length outside the Ly-alpha forest (e.g. 400 km/s).</p></li>
-<li><p><strong>kappa</strong> (<em>float</em>) – Sigma-clipping threshold.</p></li>
-<li><p><strong>template</strong> (<em>bool</em>) – Whether to use a QSO template (not implemented).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance containing the ‘abs_mask’ column.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
+<dd><p>API Method: Identifies absorbed regions.
+Calls pure function: find_absorbed_regions</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.fit_continuum">
-<span class="sig-name descname"><span class="pre">fit_continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.fit_continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.fit_continuum" title="Link to this definition">#</a></dt>
-<dd><p>Fits a continuum to the unabsorbed regions.</p>
-<p>Uses a spline interpolation through the ‘unabsorbed’ pixels defined by
-<code class="docutils literal notranslate"><span class="pre">mask_col</span></code>, followed by Gaussian smoothing.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fudge</strong> (<em>float</em>) – Multiplicative factor applied to the continuum level.</p></li>
-<li><p><strong>smooth_std_kms</strong> (<em>float</em>) – Standard deviation of the Gaussian smoothing kernel (km/s).</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em>) – Name of the mask column (True=Absorbed, False=Continuum).</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, re-normalizes the ‘model’ column to match the new continuum.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance containing the ‘cont’ column.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">fit_continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.fit_continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.fit_continuum" title="Link to this definition">#</a></dt>
+<dd><p>Fits a continuum to the unabsorbed regions.
+Orchestrates: Interpolate -&gt; Auto-Fudge -&gt; Smooth -&gt; Renormalize Model.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -820,6 +850,13 @@ of the spectrum that are significantly below the estimated continuum level.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots">
+<span class="sig-name descname"><span class="pre">update_continuum_from_knots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knots_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knots_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.update_continuum_from_knots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots" title="Link to this definition">#</a></dt>
+<dd><p>Updates the continuum using a Cubic Spline through the provided knots.
+Optionally re-normalizes the ‘model’ column to preserve flux/continuum ratio.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -847,31 +884,10 @@ of the spectrum that are significantly below the estimated continuum level.</p>
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.identify_lines">
 <span class="sig-name descname"><span class="pre">identify_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplet_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix_region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bypass_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_rating</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.identify_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.identify_lines" title="Link to this definition">#</a></dt>
 <dd><p>Identifies absorption lines by correlating regions with multiplet templates.</p>
-<p>This method employs a multi-step algorithm:
-1.  Detects and merges absorption regions in velocity space.
-2.  Scans for kinematic doublets (e.g. CIV, SiIV) redward of Ly-alpha.
-3.  Scans for Ly-alpha/Ly-beta pairs in the forest.
-4.  Scores candidates using an R^2 correlation metric.
-5.  Populates metadata with candidate identifications.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>multiplet_list</strong> (<em>list</em><em> of </em><em>str</em>) – List of multiplets to search for (e.g. <code class="docutils literal notranslate"><span class="pre">['CIV',</span> <span class="pre">'SiIV']</span></code>).</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em>) – Name of the absorption mask column.</p></li>
-<li><p><strong>min_pix_region</strong> (<em>int</em>) – Minimum pixels to consider a region.</p></li>
-<li><p><strong>merge_dv</strong> (<em>float</em>) – Maximum velocity separation (km/s) to merge adjacent regions.</p></li>
-<li><p><strong>score_threshold</strong> (<em>float</em>) – Minimum R^2 score (0-1) to accept a candidate.</p></li>
-<li><p><strong>bypass_scoring</strong> (<em>bool</em>) – If True, accept all kinematic matches regardless of score.</p></li>
-<li><p><strong>debug_rating</strong> (<em>bool</em>) – If True, produce debug plots for the rating process.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with ‘abs_ids’ column and identification metadata.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
+<p>Uses a de-blending strategy:
+1. Detects merged absorption regions.
+2. Within each region, finds local minima (peaks in inverted flux).
+3. Creates a candidate system for each minimum.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -888,8 +904,28 @@ between this spectrum and another.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.mask_region">
+<span class="sig-name descname"><span class="pre">mask_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.mask_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.mask_region" title="Link to this definition">#</a></dt>
+<dd><p>Updates a mask column, setting it to False outside the specified bounds.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.merge_column">
+<span class="sig-name descname"><span class="pre">merge_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.merge_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.merge_column" title="Link to this definition">#</a></dt>
+<dd><p>Merges new values into an existing column.
+Strategy: Use new value if it’s non-zero, otherwise keep old value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.update_model">
+<span class="sig-name descname"><span class="pre">update_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.update_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.update_model" title="Link to this definition">#</a></dt>
+<dd><p>Updates the ‘model’ auxiliary column with new flux values.
+Helper to avoid boilerplate in recipes.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.x_convert">
-<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_rf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.x_convert" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.x_convert" title="Link to this definition">#</a></dt>
 <dd><p>API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
 (Replaces V1’s mutable _x_convert)</p>
 </dd></dl>
@@ -946,32 +982,44 @@ between this spectrum and another.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.y"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.y</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.dy"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.dy</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.cont"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.cont</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.norm"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.norm</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.model"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.model</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.meta"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.meta</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.t"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.t</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.has_aux_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.has_aux_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_column()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.update_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.to_v1_spectrum()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.with_properties"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.with_properties()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.sanitize_legacy_tellurics()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_region_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_region_bounds()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.remove_columns"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.remove_columns()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.prepare_expression_context"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.prepare_expression_context()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.apply_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.apply_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.mask_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.calc_intersection_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calc_intersection_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.stitch"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.stitch()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.split"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.split()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.scale_flux"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.scale_flux()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calculate_running_std()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.smooth"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.smooth_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.rebin"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.rebin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.coadd"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.coadd()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resample_on_grid()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_resampled_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_resampled_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.calibrate"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calibrate()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.find_absorbed"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.find_absorbed()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.fit_continuum"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_continuum()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.fit_powerlaw"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_powerlaw()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_continuum_from_knots()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.detect_absorptions"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_absorptions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.identify_lines"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.identify_lines()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_velocity_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_velocity_bounds()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.detect_doublet_z"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_doublet_z()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.mask_region"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_region()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.merge_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.merge_column()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.update_model"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_model()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.x_convert"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.x_convert()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.y_convert"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.y_convert()</span></code></a></li>
 </ul>

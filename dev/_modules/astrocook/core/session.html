@@ -472,10 +472,19 @@
     <span class="n">archive_root</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="n">v2_metadata</span> <span class="o">=</span> <span class="kc">None</span>
     
-    <span class="c1"># --- 1. CHECK V2 NATIVE LOADERS FIRST ---</span>
+    <span class="c1"># --- CHECK V2 NATIVE LOADERS FIRST ---</span>
     <span class="c1"># Import the getter from the new module</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span>
-    
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span><span class="p">,</span> <span class="n">detect_file_format</span>
+
+    <span class="c1"># --- AUTO-DETECT FORMAT ---</span>
+    <span class="k">if</span> <span class="n">format_name</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span> <span class="ow">or</span> <span class="n">format_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">format_name</span> <span class="o">=</span> <span class="n">detect_file_format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-detected format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; for </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Format detection failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">), defaulting to &#39;generic_spectrum&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">format_name</span> <span class="o">=</span> <span class="s1">&#39;generic_spectrum&#39;</span>
+
     <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using V2 Native Loader for format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -569,6 +578,13 @@
             <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span>
         <span class="p">)</span>
         
+        <span class="c1"># Ensure &#39;cont&#39; is intrinsic and &#39;telluric_model&#39; is separate</span>
+        <span class="k">if</span> <span class="n">new_session</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">new_session</span> <span class="o">=</span> <span class="n">new_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">sanitize_legacy_tellurics</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to sanitize legacy tellurics: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
         <span class="k">return</span> <span class="n">new_session</span> 
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> 

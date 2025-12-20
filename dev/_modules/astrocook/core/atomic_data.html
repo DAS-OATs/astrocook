@@ -543,7 +543,7 @@
 
 <span class="c1"># --- 2. Standard Multiplet Definitions ---</span>
 <span class="c1"># Gives a clean way to refer to groups without ambiguity.</span>
-<span class="n">STANDARD_MULTIPLETS</span> <span class="o">=</span> <span class="p">{</span>
+<span class="n">METAL_MULTIPLETS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># Doublets (strongest first for primary ID)</span>
     <span class="s1">&#39;CIV&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;CIV_1548&#39;</span><span class="p">,</span> <span class="s1">&#39;CIV_1550&#39;</span><span class="p">],</span>
     <span class="s1">&#39;SiIV&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;SiIV_1393&#39;</span><span class="p">,</span> <span class="s1">&#39;SiIV_1402&#39;</span><span class="p">],</span>
@@ -559,12 +559,16 @@
     <span class="s1">&#39;FeII&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;FeII_2382&#39;</span><span class="p">,</span> <span class="s1">&#39;FeII_2600&#39;</span><span class="p">,</span> <span class="s1">&#39;FeII_2344&#39;</span><span class="p">,</span> <span class="s1">&#39;FeII_2586&#39;</span><span class="p">,</span> <span class="s1">&#39;FeII_1608&#39;</span><span class="p">,</span> <span class="s1">&#39;FeII_2374&#39;</span><span class="p">],</span>
     <span class="s1">&#39;NI&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;NI_1200&#39;</span><span class="p">,</span> <span class="s1">&#39;NI_1199&#39;</span><span class="p">,</span> <span class="s1">&#39;NI_1201&#39;</span><span class="p">],</span>
     <span class="s1">&#39;CrII&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;CrII_2056&#39;</span><span class="p">,</span> <span class="s1">&#39;CrII_2062&#39;</span><span class="p">,</span> <span class="s1">&#39;CrII_2066&#39;</span><span class="p">],</span> <span class="c1"># &lt;&lt;&lt; *** ADDED ***</span>
+<span class="p">}</span>
 
+<span class="n">HYDROGEN_MULTIPLETS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># Series</span>
     <span class="s1">&#39;Lyman&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Ly_a&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_b&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_g&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_d&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_e&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_6&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_7&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_8&#39;</span><span class="p">],</span>
     <span class="s1">&#39;Ly_a&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Ly_a&#39;</span><span class="p">],</span> 
     <span class="s1">&#39;Ly_ab&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Ly_a&#39;</span><span class="p">,</span> <span class="s1">&#39;Ly_b&#39;</span><span class="p">],</span> 
 <span class="p">}</span>
+
+<span class="n">STANDARD_MULTIPLETS</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">METAL_MULTIPLETS</span><span class="p">,</span> <span class="o">**</span><span class="n">HYDROGEN_MULTIPLETS</span><span class="p">}</span>
 
 <span class="c1"># Built from ATOM_DATA to be used by V2 functions.</span>
 <span class="c1"># This replaces the dependency on legacy.vars.xem_d</span>

@@ -44,8 +44,6 @@
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.recipes.edit';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -409,8 +407,10 @@
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.edit.</span></span><span class="sig-name descname"><span class="pre">RecipeEditV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Recipes for general structure editing and arithmetic operations.
-Accessed via <code class="docutils literal notranslate"><span class="pre">session.edit</span></code>.</p>
+<p>Recipes for general structure editing and arithmetic operations.</p>
+<p>These methods are accessed via the <code class="docutils literal notranslate"><span class="pre">session.edit</span></code> attribute and delegate
+heavy logic to the Core structures <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>
+and <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemListV2</span></code></a>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.__init__" title="Link to this definition">#</a></dt>
@@ -418,43 +418,51 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.set_properties">
-<span class="sig-name descname"><span class="pre">set_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.set_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.set_properties" title="Link to this definition">#</a></dt>
-<dd><p>Sets the core physical properties of the session.</p>
+<span class="sig-name descname"><span class="pre">set_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.set_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.set_properties" title="Link to this definition">#</a></dt>
+<dd><p>Set session properties.</p>
+<p>Set core session properties like name, object, redshift, and resolution.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.with_properties" title="astrocook.core.spectrum.SpectrumV2.with_properties"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.with_properties()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>z_em</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Emission redshift of the source.</p></li>
-<li><p><strong>resol</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Resolving power <span class="math notranslate nohighlight">\(R = \lambda / \Delta\lambda\)</span> (e.g. “50000”).
-Can also be a pixel FWHM proxy (e.g. “3px” or “3.5 pixel”) to estimate R
-from the median sampling.
-If “0.0”, the recipe will try to read it from metadata.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – The session Name (display label). Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
+<li><p><strong>object</strong> (<em>str</em><em>, </em><em>optional</em>) – The object Name (header target). Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
+<li><p><strong>z_em</strong> (<em>str</em><em>, </em><em>optional</em>) – Emission Redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
+<li><p><strong>resol</strong> (<em>str</em><em>, </em><em>optional</em>) – Resolving Power R (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) OR Pixel FWHM (e.g., <code class="docutils literal notranslate"><span class="pre">'3px'</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session instance with updated metadata.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated properties,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.x_convert">
-<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_rf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'km/s'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.x_convert" title="Link to this definition">#</a></dt>
-<dd><p>Converts the X-axis (wavelength/velocity) to a new unit.</p>
+<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'km/s'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.x_convert" title="Link to this definition">#</a></dt>
+<dd><p>Convert X axis.</p>
+<p>Convert the x axis units and zero point to wavelength or velocity units.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.x_convert" title="astrocook.core.spectrum.SpectrumV2.x_convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.x_convert()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>z_rf</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Rest-frame redshift used for velocity conversions.</p></li>
-<li><p><strong>xunit</strong> (<em>str</em>) – Target unit (e.g. <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>, <code class="docutils literal notranslate"><span class="pre">'Angstrom'</span></code>, <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>).</p></li>
+<li><p><strong>z_ref</strong> (<em>str</em><em>, </em><em>optional</em>) – Reference redshift for velocity conversion. Defaults to <code class="docutils literal notranslate"><span class="pre">'0.0'</span></code>
+(can use <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> to use the session’s z_em).</p></li>
+<li><p><strong>xunit</strong> (<em>str</em><em>, </em><em>optional</em>) – Unit of wavelength or velocity (e.g., <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>, <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the converted X-axis.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the converted X-axis,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -462,16 +470,19 @@ If “0.0”, the recipe will try to read it from metadata.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.y_convert">
 <span class="sig-name descname"><span class="pre">y_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'erg/(nm</span> <span class="pre">s</span> <span class="pre">cm^2)'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.y_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.y_convert" title="Link to this definition">#</a></dt>
-<dd><p>Converts the Y-axis (flux) to a new unit.</p>
+<dd><p>Convert Y axis units.</p>
+<p>Converts the flux and error arrays to the specified unit.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.y_convert" title="astrocook.core.spectrum.SpectrumV2.y_convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.y_convert()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>yunit</strong> (<em>str</em>) – Target flux unit.</p>
+<dd class="field-odd"><p><strong>yunit</strong> (<em>str</em><em>, </em><em>optional</em>) – Target unit of flux density. Defaults to <code class="docutils literal notranslate"><span class="pre">'erg/(nm</span> <span class="pre">s</span> <span class="pre">cm^2)'</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the converted Y-axis.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the converted Y-axis,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -479,23 +490,24 @@ If “0.0”, the recipe will try to read it from metadata.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.apply_expression">
 <span class="sig-name descname"><span class="pre">apply_expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alias_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.apply_expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.apply_expression" title="Link to this definition">#</a></dt>
-<dd><p>Applies a numerical expression to columns (arithmetic).</p>
-<p>Supports basic math (<code class="docutils literal notranslate"><span class="pre">+</span> <span class="pre">-</span> <span class="pre">*</span> <span class="pre">/</span></code>) and NumPy functions (<code class="docutils literal notranslate"><span class="pre">log</span></code>, <code class="docutils literal notranslate"><span class="pre">sqrt</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, etc.).
-Also supports <strong>multi-session operations</strong> via aliases (e.g., <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">-</span> <span class="pre">s1.y</span></code>).</p>
+<dd><p>Apply expression to columns.</p>
+<p>Apply a NumPy-style expression. Use column names (x, y, cont…) as variables.
+Supports multi-session arithmetic via aliases.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.apply_expression" title="astrocook.core.spectrum.SpectrumV2.apply_expression"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.apply_expression()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_col</strong> (<em>str</em>) – The column to create or overwrite (e.g. <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ratio'</span></code>).</p></li>
-<li><p><strong>expression</strong> (<em>str</em>) – The mathematical expression string (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;y</span> <span class="pre">/</span> <span class="pre">cont&quot;</span></code>).</p></li>
-<li><p><strong>alias_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – A mapping of aliases to session names for cross-session math.
-(Provided automatically by the GUI dialog).</p></li>
+<li><p><strong>target_col</strong> (<em>str</em>) – Target column (to be overwritten or created).</p></li>
+<li><p><strong>expression</strong> (<em>str</em>) – Expression to evaluate (e.g., <code class="docutils literal notranslate"><span class="pre">'y</span> <span class="pre">/</span> <span class="pre">cont'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y</span> <span class="pre">*</span> <span class="pre">2.0'</span></code>).</p></li>
+<li><p><strong>alias_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of aliases to session names (e.g. <code class="docutils literal notranslate"><span class="pre">{'s1':</span> <span class="pre">'Session</span> <span class="pre">1'}</span></code>).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the computed column.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the computed column,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -503,17 +515,69 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.mask_expression">
 <span class="sig-name descname"><span class="pre">mask_expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alias_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.mask_expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.mask_expression" title="Link to this definition">#</a></dt>
-<dd><p>Masks a column (sets values to NaN) based on a boolean expression.</p>
+<dd><p>Mask column by expression.</p>
+<p>Mask a target column by setting values to NaN where the expression is True.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.mask_expression" title="astrocook.core.spectrum.SpectrumV2.mask_expression"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.mask_expression()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_col</strong> (<em>str</em>) – The column to apply the mask to.</p></li>
-<li><p><strong>expression</strong> (<em>str</em>) – A boolean expression (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;x</span> <span class="pre">&gt;</span> <span class="pre">500&quot;</span></code>). Where True, the data is masked.</p></li>
-<li><p><strong>alias_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping for multi-session variables.</p></li>
+<li><p><strong>target_col</strong> (<em>str</em>) – Target column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">'y'</span></code>).</p></li>
+<li><p><strong>expression</strong> (<em>str</em>) – Boolean expression (e.g., <code class="docutils literal notranslate"><span class="pre">'(x</span> <span class="pre">&lt;</span> <span class="pre">300)</span> <span class="pre">|</span> <span class="pre">(x</span> <span class="pre">&gt;</span> <span class="pre">400)'</span></code>, <code class="docutils literal notranslate"><span class="pre">'dy</span> <span class="pre">&lt;=</span> <span class="pre">0'</span></code>).</p></li>
+<li><p><strong>alias_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping of aliases to session names.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the masked data.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the masked column,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.smooth_column">
+<span class="sig-name descname"><span class="pre">smooth_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.smooth_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.smooth_column" title="Link to this definition">#</a></dt>
+<dd><p>Smooth a single column.</p>
+<p>Apply a Gaussian filter to a single data column.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth_column" title="astrocook.core.spectrum.SpectrumV2.smooth_column"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.smooth_column()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Target column to smooth. Defaults to <code class="docutils literal notranslate"><span class="pre">'dy'</span></code>.</p></li>
+<li><p><strong>sigma_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Standard deviation for Gaussian kernel (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">'100.0'</span></code>.</p></li>
+<li><p><strong>renorm_model</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code> and smoothing <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, the <code class="docutils literal notranslate"><span class="pre">'model'</span></code> column is
+re-normalized. Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the smoothed column,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.import_systems">
+<span class="sig-name descname"><span class="pre">import_systems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.import_systems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.import_systems" title="Link to this definition">#</a></dt>
+<dd><p>Import systems from session.</p>
+<p>Copy absorption systems from another open session into this one, filtering
+those that fall outside the current spectral range.
+Delegates filtering to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_range" title="astrocook.core.system_list.SystemListV2.filter_by_range"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.filter_by_range()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_session</strong> (<em>str</em>) – Name of the session to import from.</p></li>
+<li><p><strong>append</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds to existing systems. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, replaces them.
+Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with imported systems.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
@@ -522,19 +586,18 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.smooth_column">
-<span class="sig-name descname"><span class="pre">smooth_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.smooth_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.smooth_column" title="Link to this definition">#</a></dt>
-<dd><p>Applies Gaussian smoothing to a single column.</p>
+<dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.delete" title="Link to this definition">#</a></dt>
+<dd><p>Delete elements.</p>
+<p>Remove columns from the spectrum or clear the line list.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_columns" title="astrocook.core.spectrum.SpectrumV2.remove_columns"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.remove_columns()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>target_col</strong> (<em>str</em>) – The name of the column to smooth.</p></li>
-<li><p><strong>sigma_kms</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Standard deviation of the Gaussian kernel in km/s.</p></li>
-<li><p><strong>renorm_model</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – If ‘True’ and <code class="docutils literal notranslate"><span class="pre">target_col</span></code> is ‘cont’, re-normalize the ‘model’ column.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>targets</strong> (<em>str</em>) – Comma-separated list of items to delete (e.g. <code class="docutils literal notranslate"><span class="pre">'cont,</span> <span class="pre">lines'</span></code>).
+Use <code class="docutils literal notranslate"><span class="pre">'lines'</span></code> or <code class="docutils literal notranslate"><span class="pre">'systems'</span></code> to clear the component list.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the smoothed column.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the elements removed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
@@ -545,40 +608,46 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.split">
 <span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alias_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.split"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.split" title="Link to this definition">#</a></dt>
-<dd><p>Splits the spectrum, creating a new session with a subset of the data.</p>
+<dd><p>Split spectrum by expression.</p>
+<p>Extract a portion of the spectrum into a new session using a boolean expression.
+Only rows where the expression is True are kept.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.split" title="astrocook.core.spectrum.SpectrumV2.split"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.split()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expression</strong> (<em>str</em>) – A boolean expression defining the rows to KEEP (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;x</span> <span class="pre">&gt;</span> <span class="pre">121.6&quot;</span></code>).</p></li>
+<li><p><strong>expression</strong> (<em>str</em>) – Boolean expression to select data (e.g., <code class="docutils literal notranslate"><span class="pre">'(x</span> <span class="pre">&gt;</span> <span class="pre">400)</span> <span class="pre">&amp;</span> <span class="pre">(x</span> <span class="pre">&lt;</span> <span class="pre">500)'</span></code>).</p></li>
 <li><p><strong>alias_map</strong> (<em>dict</em><em>, </em><em>optional</em>) – Mapping for multi-session variables.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session containing only the selected data points.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> containing the subset of data,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.extract_preset">
-<span class="sig-name descname"><span class="pre">extract_preset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lya_forest'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.extract_preset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.extract_preset" title="Link to this definition">#</a></dt>
-<dd><p>Extracts a standard spectral region based on emission redshift (z_em).</p>
-<p>Useful for quickly isolating the Lyman-alpha forest.</p>
+<span class="sig-name descname"><span class="pre">extract_preset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lya_forest'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.extract_preset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.extract_preset" title="Link to this definition">#</a></dt>
+<dd><p>Extract region by preset.</p>
+<p>Extract a specific standard region (like the Ly-alpha forest) into a new
+session, based on the current emission redshift (z_em).
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_region_bounds" title="astrocook.core.spectrum.SpectrumV2.get_region_bounds"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.get_region_bounds()</span></code></a>
+and <a class="reference internal" href="#astrocook.recipes.edit.RecipeEditV2.split" title="astrocook.recipes.edit.RecipeEditV2.split"><code class="xref py py-meth docutils literal notranslate"><span class="pre">split()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>region</strong> (<em>str</em>) – Preset identifier:
-* <code class="docutils literal notranslate"><span class="pre">'lya_forest'</span></code>: Between Ly-beta and Ly-alpha emission.
-* <code class="docutils literal notranslate"><span class="pre">'all_ly_forest'</span></code>: From Lyman limit to Ly-alpha emission.
-* <code class="docutils literal notranslate"><span class="pre">'red_side'</span></code>: Everything redward of Ly-alpha emission.</p>
+<dd class="field-odd"><p><strong>region</strong> (<em>str</em><em>, </em><em>optional</em>) – Preset region identifier. Options: <code class="docutils literal notranslate"><span class="pre">'lya_forest'</span></code>, <code class="docutils literal notranslate"><span class="pre">'all_ly_forest'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'red_side'</span></code>. Can be a comma-separated list. Defaults to <code class="docutils literal notranslate"><span class="pre">'lya_forest'</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session containing the extracted region.</p>
+<dd class="field-even"><p>One or more new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> instances,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or List[<a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a>] or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -586,22 +655,26 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.trim_common">
 <span class="sig-name descname"><span class="pre">trim_common</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">others_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_others</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'500.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.trim_common"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.trim_common" title="Link to this definition">#</a></dt>
-<dd><p>Trims the current session to the velocity intersection shared by itself and ‘others’.</p>
+<dd><p>Trim to common velocity coverage.</p>
+<p>Trims the current session to the velocity range shared by a list of other
+sessions (intersection).
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calc_intersection_expression" title="astrocook.core.spectrum.SpectrumV2.calc_intersection_expression"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calc_intersection_expression()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>others_names</strong> (<em>str</em>) – Comma-separated names of other sessions loaded in the GUI (e.g., “QSO_OVI, QSO_CIV”).</p></li>
-<li><p><strong>z_target</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Target redshift for velocity conversion.</p></li>
-<li><p><strong>trans_self</strong> (<em>str</em>) – Transition name for the current session (e.g., “Ly_a”).</p></li>
-<li><p><strong>trans_others</strong> (<em>str</em>) – Comma-separated transition names for the other sessions (e.g., “OVI_1031, CIV_1548”).</p></li>
-<li><p><strong>window_kms</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Maximum half-width of the velocity window in km/s.</p></li>
+<li><p><strong>others_names</strong> (<em>str</em>) – Comma-separated names of other sessions.</p></li>
+<li><p><strong>z_target</strong> (<em>str</em>) – Target redshift (float parsed from string).</p></li>
+<li><p><strong>trans_self</strong> (<em>str</em>) – Transition for current session (e.g. <code class="docutils literal notranslate"><span class="pre">'Ly_a'</span></code>).</p></li>
+<li><p><strong>trans_others</strong> (<em>str</em>) – Comma-separated transitions for other sessions.</p></li>
+<li><p><strong>window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Symmetric window width in km/s. Defaults to <code class="docutils literal notranslate"><span class="pre">'500.0'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session trimmed to the common coverage.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> trimmed to the common coverage,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -609,19 +682,53 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.stitch">
 <span class="sig-name descname"><span class="pre">stitch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other_sessions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.stitch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.stitch" title="Link to this definition">#</a></dt>
-<dd><p>Merges the current session with a list of other sessions.</p>
+<dd><p>Merge multiple sessions.</p>
+<p>Concatenates the current session with a list of other sessions.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.stitch" title="astrocook.core.spectrum.SpectrumV2.stitch"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.stitch()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>other_sessions</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><em>str</em><em>]</em><em>]</em>) – A list of SessionV2 objects OR strings (names of sessions loaded in the GUI).</p></li>
-<li><p><strong>sort</strong> (<em>bool</em>) – If True, sorts the final spectrum by wavelength.</p></li>
+<li><p><strong>other_sessions</strong> (<em>list</em>) – A list of <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> objects OR strings
+(names of sessions loaded in the GUI).</p></li>
+<li><p><strong>sort</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, sorts the final spectrum by wavelength. Defaults to True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session containing the merged data.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> containing the merged data,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.coadd">
+<span class="sig-name descname"><span class="pre">coadd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xstart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.01'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'nm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equalize_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.coadd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.coadd" title="Link to this definition">#</a></dt>
+<dd><p>Co-add multiple sessions.</p>
+<p>Stitches multiple sessions together and rebins them onto a single common
+grid in one pass (Inverse Variance Weighting).
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.coadd" title="astrocook.core.spectrum.SpectrumV2.coadd"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.coadd()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session_names</strong> (<em>str</em>) – Comma-separated names of sessions to co-add.</p></li>
+<li><p><strong>xstart</strong> (<em>str</em><em>, </em><em>optional</em>) – Start wavelength. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for auto. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>xend</strong> (<em>str</em><em>, </em><em>optional</em>) – End wavelength. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for auto. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>dx</strong> (<em>str</em><em>, </em><em>optional</em>) – Step size for the final grid. Defaults to <code class="docutils literal notranslate"><span class="pre">'0.01'</span></code>.</p></li>
+<li><p><strong>xunit</strong> (<em>str</em><em>, </em><em>optional</em>) – Unit for the step size (e.g., <code class="docutils literal notranslate"><span class="pre">'nm'</span></code> or <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma clipping threshold. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for off. Defaults to <code class="docutils literal notranslate"><span class="pre">'5.0'</span></code>.</p></li>
+<li><p><strong>equalize_order</strong> (<em>str</em><em>, </em><em>optional</em>) – Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'0'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> containing the co-added spectrum,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -667,10 +774,13 @@ Also supports <strong>multi-session operations</strong> via aliases (e.g., <code
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.apply_expression"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.apply_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.mask_expression"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.mask_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.smooth_column"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.smooth_column()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.import_systems"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.import_systems()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.delete"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.delete()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.split"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.split()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.extract_preset"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.extract_preset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.trim_common"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.trim_common()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.stitch"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.stitch()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.edit.RecipeEditV2.coadd"><code class="docutils literal notranslate"><span class="pre">RecipeEditV2.coadd()</span></code></a></li>
 </ul>
 </li>
 </ul>

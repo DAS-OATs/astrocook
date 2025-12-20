@@ -451,7 +451,297 @@
     
     <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">),</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
 
+<div class="viewcode-block" id="detect_file_format">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.detect_file_format">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_file_format</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">path_lower</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.acs&#39;</span><span class="p">,</span> <span class="s1">&#39;.acs2&#39;</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="s2">&quot;archive&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;readonly&#39;</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+            <span class="n">ext_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">]</span>
+            
+            <span class="c1"># 1. PypeIt spec1d (Multi-Extension Order-by-Order)</span>
+            <span class="c1"># Look for HDU names like &#39;OBJ...-ORDER...&#39;</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s1">&#39;ORDER&#39;</span> <span class="ow">in</span> <span class="n">en</span> <span class="k">for</span> <span class="n">en</span> <span class="ow">in</span> <span class="n">ext_names</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;pypeit_spec1d_multi&quot;</span>
+
+            <span class="c1"># 2. PypeIt Coadds/Stacks</span>
+            <span class="k">if</span> <span class="s1">&#39;SPECTRUM&#39;</span> <span class="ow">in</span> <span class="n">ext_names</span><span class="p">:</span>
+                <span class="n">cols</span> <span class="o">=</span> <span class="n">hdul</span><span class="p">[</span><span class="s1">&#39;SPECTRUM&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">names</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="s1">&#39;wave_stack&#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="s2">&quot;pypeit_stack&quot;</span>
+                <span class="k">if</span> <span class="s1">&#39;ivar&#39;</span> <span class="ow">in</span> <span class="n">cols</span> <span class="ow">or</span> <span class="s1">&#39;sigma&#39;</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="s2">&quot;pypeit_coadd&quot;</span>
+
+            <span class="c1"># 3. ESPRESSO S2D</span>
+            <span class="k">if</span> <span class="s1">&#39;SCIDATA&#39;</span> <span class="ow">in</span> <span class="n">ext_names</span> <span class="ow">and</span> \
+               <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="ow">in</span> <span class="n">ext_names</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;WAVEDATA_VAC_BARY&#39;</span><span class="p">,</span> <span class="s1">&#39;WAVEDATA_AIR&#39;</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="s2">&quot;espresso_s2d_fits&quot;</span>
+
+            <span class="c1"># 4. X-Shooter Binary Table (Standard ESO)</span>
+            <span class="n">instrume</span> <span class="o">=</span> <span class="n">hdul</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;INSTRUME&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;XSHOOTER&#39;</span> <span class="ow">in</span> <span class="n">instrume</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;BinTableHDU&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">hdul</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])):</span>
+                <span class="k">return</span> <span class="s2">&quot;xshooter_fits&quot;</span>
+            
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">VerifyError</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># CSV/ASCII checks</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+        <span class="n">head_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">head</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">&quot;RESVEL&quot;</span> <span class="ow">in</span> <span class="n">head_str</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;ascii_resvel_header&quot;</span>
+        <span class="k">if</span> <span class="n">path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">):</span> <span class="k">return</span> <span class="s2">&quot;simple_csv&quot;</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="s2">&quot;generic_spectrum&quot;</span></div>
+
+
 <span class="c1"># --- Loader Implementations ---</span>
+
+<div class="viewcode-block" id="load_pypeit_coadd">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_pypeit_coadd">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;pypeit_coadd&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_pypeit_coadd</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loader for PypeIt &#39;Coadd&#39; 1D files.</span>
+<span class="sd">    Features: Sorts wavelength and removes negative/bad values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">hdu</span><span class="o">=</span><span class="s1">&#39;SPECTRUM&#39;</span><span class="p">)</span>
+        
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        
+        <span class="c1"># Error handling: prefer sigma, fallback to IVAR</span>
+        <span class="k">if</span> <span class="s1">&#39;sigma&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">elif</span> <span class="s1">&#39;ivar&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">ivar</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ivar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">ivar</span><span class="p">)</span>
+            <span class="n">dy</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dy</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            
+        <span class="n">mask_in</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="k">if</span> <span class="s1">&#39;mask&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="c1"># --- CRITICAL FIX: CLEAN AND SORT ---</span>
+        <span class="c1"># 1. Filter invalid wavelengths (&lt;= 0) and NaNs</span>
+        <span class="n">valid_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span>
+        <span class="n">mask_in</span> <span class="o">=</span> <span class="n">mask_in</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span>
+        
+        <span class="c1"># 2. Sort by Wavelength</span>
+        <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">mask_in</span> <span class="o">=</span> <span class="n">mask_in</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        
+        <span class="c1"># 3. Units</span>
+        <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3000</span><span class="p">:</span> 
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="mf">10.0</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+
+        <span class="n">y_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
+        
+        <span class="c1"># 4. Build Structure</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">,</span> <span class="s2">&quot;Wavelength&quot;</span><span class="p">)</span>
+        <span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;quality&#39;</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">mask_in</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;PypeIt Mask&quot;</span><span class="p">)}</span>
+
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">hdul</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pypeit_coadd&#39;</span>
+
+        <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span> 
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">meta</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load PypeIt Coadd: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="load_pypeit_spec1d_multi">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_pypeit_spec1d_multi">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;pypeit_spec1d_multi&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_pypeit_spec1d_multi</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loader for PypeIt &#39;spec1d&#39; Multi-Extension FITS.</span>
+<span class="sd">    Stitches echelle orders (extensions named &#39;ORDERxxxx&#39;) into one structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">x_list</span><span class="p">,</span> <span class="n">y_list</span><span class="p">,</span> <span class="n">dy_list</span><span class="p">,</span> <span class="n">mask_list</span><span class="p">,</span> <span class="n">order_list</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">hdul</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+            
+            <span class="c1"># Iterate over all HDUs</span>
+            <span class="k">for</span> <span class="n">hdu</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">:</span>
+                <span class="c1"># Identify Order extensions</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hdu</span><span class="p">,</span> <span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">BinTableHDU</span><span class="p">,</span> <span class="n">fits</span><span class="o">.</span><span class="n">TableHDU</span><span class="p">))</span> <span class="ow">and</span> <span class="s1">&#39;ORDER&#39;</span> <span class="ow">in</span> <span class="n">hdu</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                    
+                    <span class="c1"># Extract Order Number from name (e.g. &quot;...ORDER0030&quot;)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">order_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ORDER(\d+)&#39;</span><span class="p">,</span> <span class="n">hdu</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="n">order_num</span> <span class="o">=</span> <span class="mi">0</span>
+                        
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">hdu</span><span class="o">.</span><span class="n">data</span>
+                    
+                    <span class="c1"># Grab Optimal Extraction columns (OPT_*)</span>
+                    <span class="k">if</span> <span class="s1">&#39;OPT_WAVE&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span> <span class="k">continue</span>
+                    
+                    <span class="n">wave</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;OPT_WAVE&#39;</span><span class="p">]</span>
+                    <span class="n">flux</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;OPT_FLAM&#39;</span><span class="p">]</span> <span class="c1"># Flux density</span>
+                    
+                    <span class="c1"># Error (SIG preferred)</span>
+                    <span class="k">if</span> <span class="s1">&#39;OPT_FLAM_SIG&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                        <span class="n">err</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;OPT_FLAM_SIG&#39;</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="s1">&#39;OPT_FLAM_IVAR&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                        <span class="n">ivar</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;OPT_FLAM_IVAR&#39;</span><span class="p">]</span>
+                        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                            <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">ivar</span><span class="p">)</span>
+                        <span class="n">err</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">err</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span>
+                        
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;OPT_MASK&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;OPT_MASK&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">names</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                    
+                    <span class="c1"># Filter valid pixels within the order immediately</span>
+                    <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">wave</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span>
+                    
+                    <span class="n">x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+                    <span class="n">y_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flux</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+                    <span class="n">dy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">err</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+                    <span class="n">mask_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+                    <span class="n">order_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">order_num</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">x_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid &#39;ORDER&#39; extensions found in PypeIt spec1d file.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Concatenate all orders</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">x_list</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">y_list</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">dy_list</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">mask_list</span><span class="p">)</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">order_list</span><span class="p">)</span>
+
+        <span class="c1"># Sort the stitched result by wavelength</span>
+        <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+
+        <span class="c1"># Units</span>
+        <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3000</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="mf">10.0</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+        
+        <span class="n">y_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
+        
+        <span class="c1"># Build structure</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">,</span> <span class="s2">&quot;Wavelength&quot;</span><span class="p">)</span>
+        <span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        
+        <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;quality&#39;</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;PypeIt Mask&quot;</span><span class="p">),</span>
+            <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;Echelle Order&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pypeit_spec1d_multi&#39;</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;plot_style&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scatter&#39;</span> <span class="c1"># Suggest scatter for echelle data</span>
+
+        <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span> 
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">meta</span>
+        <span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load PypeIt spec1d Multi-Order: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="load_pypeit_stack">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_pypeit_stack">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;pypeit_stack&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_pypeit_stack</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loader for PypeIt &#39;OrderStack&#39; files (Arrays stored in a single table row).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Load the table, accessing the first row immediately</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">hdu</span><span class="o">=</span><span class="s1">&#39;SPECTRUM&#39;</span><span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># The data is in the cells of the first row</span>
+
+        <span class="c1"># 1. Wavelength</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;wave_stack&#39;</span><span class="p">]</span>
+        <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3000</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="mf">10.0</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+
+        <span class="c1"># 2. Flux</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;flux_stack&#39;</span><span class="p">]</span>
+        <span class="n">y_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
+
+        <span class="c1"># 3. Error</span>
+        <span class="k">if</span> <span class="s1">&#39;sigma_stack&#39;</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+             <span class="n">dy</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;sigma_stack&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s1">&#39;ivar_stack&#39;</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+             <span class="n">ivar</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;ivar_stack&#39;</span><span class="p">]</span>
+             <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                 <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">ivar</span><span class="p">)</span>
+             <span class="n">dy</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dy</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">else</span><span class="p">:</span>
+             <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="c1"># 4. Aux</span>
+        <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="s1">&#39;mask_stack&#39;</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">aux_cols</span><span class="p">[</span><span class="s1">&#39;quality&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;mask_stack&#39;</span><span class="p">],</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;PypeIt Stack Mask&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 5. Metadata</span>
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">hdul</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pypeit_stack&#39;</span>
+
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span> 
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">meta</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load PypeIt Stack: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
 
 <div class="viewcode-block" id="load_simple_csv">
 <a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_simple_csv">[docs]</a>
@@ -602,6 +892,123 @@
         <span class="k">raise</span></div>
 
 
+<div class="viewcode-block" id="load_espresso_s2d_fits">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_espresso_s2d_fits">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;espresso_s2d_fits&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_espresso_s2d_fits</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loader for ESPRESSO S2D (Order-by-Order) FITS files.</span>
+<span class="sd">    Correctly handles pixel widths by computing them in 2D before flattening.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">hdul</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">hdul</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+            
+            <span class="c1"># Helper to safely get data or return None</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">hdul</span><span class="p">:</span> <span class="k">return</span> <span class="n">hdul</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+            <span class="n">wave_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;WAVEDATA_VAC_BARY&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wave_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">wave_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;WAVEDATA_AIR&#39;</span><span class="p">)</span> <span class="c1"># Fallback</span>
+            
+            <span class="n">sci_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;SCIDATA&#39;</span><span class="p">)</span>
+            <span class="n">err_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;ERRDATA&#39;</span><span class="p">)</span>
+            <span class="n">qual_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;QUALDATA&#39;</span><span class="p">)</span>
+            <span class="n">tell_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;TELLURIC_CORRECTION&#39;</span><span class="p">)</span> 
+
+            <span class="k">if</span> <span class="n">wave_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sci_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Essential extensions (WAVEDATA, SCIDATA) missing.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># --- CRITICAL FIX START ---</span>
+            <span class="c1"># 1. Compute pixel widths and limits in 2D (per order)</span>
+            <span class="c1"># This preserves the physical dispersion of the instrument.</span>
+            <span class="n">pixel_widths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">wave_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            
+            <span class="c1"># Divide Flux and Error by dlambda to get Flux Density</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+                <span class="n">sci_data</span> <span class="o">=</span> <span class="n">sci_data</span> <span class="o">/</span> <span class="n">pixel_widths</span>
+                <span class="k">if</span> <span class="n">err_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">err_data</span> <span class="o">=</span> <span class="n">err_data</span> <span class="o">/</span> <span class="n">pixel_widths</span>
+            
+            <span class="c1"># Calculate physical edges (2D)</span>
+            <span class="n">half_widths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pixel_widths</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+            <span class="n">xmin_data</span> <span class="o">=</span> <span class="n">wave_data</span> <span class="o">-</span> <span class="n">half_widths</span>
+            <span class="n">xmax_data</span> <span class="o">=</span> <span class="n">wave_data</span> <span class="o">+</span> <span class="n">half_widths</span>
+            <span class="c1"># --- CRITICAL FIX END ---</span>
+
+            <span class="c1"># 2. Create &#39;Order&#39; Index Array</span>
+            <span class="n">n_orders</span><span class="p">,</span> <span class="n">n_pixels</span> <span class="o">=</span> <span class="n">wave_data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">order_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_orders</span><span class="p">),</span> <span class="n">n_pixels</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_orders</span><span class="p">,</span> <span class="n">n_pixels</span><span class="p">)</span>
+
+            <span class="c1"># 3. Flatten (Ravel) 2D arrays into 1D</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">wave_data</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">sci_data</span><span class="p">)</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">err_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">err_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">qual_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">qual_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">order_idx</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">tell_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">tell_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            
+            <span class="c1"># Flatten the pre-computed limits (convert to nm)</span>
+            <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">xmin_data</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span>
+            <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">xmax_data</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span>
+
+            <span class="c1"># 4. Filter Valid Wavelengths</span>
+            <span class="n">valid_wave</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">o</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">],</span> <span class="n">dy</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">],</span> <span class="n">o</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">]</span>
+            <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">xmin</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">valid_wave</span><span class="p">]</span>
+
+            <span class="c1"># 5. Sort by Wavelength</span>
+            <span class="c1"># We sort everything to keep V2 algorithms happy, but we carry </span>
+            <span class="c1"># the physically correct xmin/xmax with us.</span>
+            <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">xmin</span> <span class="o">=</span> <span class="n">xmin</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="n">xmax</span> <span class="o">=</span> <span class="n">xmax</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">]</span>
+
+            <span class="c1"># 6. Apply Quality Cut</span>
+            <span class="n">good_quality</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">o</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">good_quality</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">good_quality</span><span class="p">],</span> <span class="n">dy</span><span class="p">[</span><span class="n">good_quality</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="n">good_quality</span><span class="p">],</span> <span class="n">o</span><span class="p">[</span><span class="n">good_quality</span><span class="p">]</span>
+            <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">xmin</span><span class="p">[</span><span class="n">good_quality</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[</span><span class="n">good_quality</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">good_quality</span><span class="p">]</span>
+
+            <span class="c1"># 7. Units and Columns</span>
+            <span class="n">x_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+            <span class="n">y_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span>
+
+            <span class="c1"># DO NOT call _auto_limits(x). Use our pre-computed columns.</span>
+            <span class="n">xmin_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+            <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+
+            <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;quality&#39;</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;Quality Flag&quot;</span><span class="p">),</span>
+                <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;Echelle Order Index&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">aux_cols</span><span class="p">[</span><span class="s1">&#39;telluric_corr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="s2">&quot;Telluric Correction&quot;</span><span class="p">)</span>
+
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ORIGIN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;espresso_s2d_loader&#39;</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;plot_style&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scatter&#39;</span> 
+
+            <span class="k">return</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">),</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span> <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">),</span>
+                <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
+                <span class="n">meta</span><span class="o">=</span><span class="n">meta</span>
+            <span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load ESPRESSO S2D: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+    
 <div class="viewcode-block" id="load_xshooter_fits">
 <a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_xshooter_fits">[docs]</a>
 <span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;xshooter_fits&quot;</span><span class="p">)</span>
@@ -664,6 +1071,15 @@
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load X-Shooter FITS: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="load_generic_spectrum">
+<a class="viewcode-back" href="../../../api/astrocook.io.loaders.html#astrocook.io.loaders.load_generic_spectrum">[docs]</a>
+<span class="nd">@register_loader</span><span class="p">(</span><span class="s2">&quot;generic_spectrum&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_generic_spectrum</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumDataV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fallback loader.&quot;&quot;&quot;</span>
+    <span class="c1"># ... (Keep your existing fallback logic here) ...</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Generic loader not fully implemented in this snippet.&quot;</span><span class="p">)</span></div>
 
 </pre></div>
 

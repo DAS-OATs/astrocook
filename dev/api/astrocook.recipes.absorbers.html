@@ -407,62 +407,456 @@
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">RecipeAbsorbersV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Recipes for identification, fitting, and management of absorption lines.
-Accessed via <code class="docutils literal notranslate"><span class="pre">session.absorbers</span></code>.</p>
+<p>Recipes for identification, fitting, and management of absorption lines.</p>
+<p>These methods are accessed via the <code class="docutils literal notranslate"><span class="pre">session.absorbers</span></code> attribute and delegate
+logic to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemListV2</span></code></a>,
+<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>, and the fitting engine.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto">
+<span class="sig-name descname"><span class="pre">components_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CIV,SiIV,MgII,Ly_ab'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix_region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'3'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.components_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto" title="Link to this definition">#</a></dt>
+<dd><p>Auto-detect and fit components.</p>
+<p>The Master Pipeline: Identifies candidates (doublets or singles), populates
+them as systems, and refits the spectrum. Supports masking by region.
+Delegates to <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines"><code class="xref py py-meth docutils literal notranslate"><span class="pre">identify_lines()</span></code></a>, <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification"><code class="xref py py-meth docutils literal notranslate"><span class="pre">populate_from_identification()</span></code></a>,
+and <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">refit_all()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>multiplets</strong> (<em>str</em><em>, </em><em>optional</em>) – Comma-separated list of multiplets to search for. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,MgII,Ly_ab&quot;</span></code>.</p></li>
+<li><p><strong>score_threshold</strong> (<em>str</em><em>, </em><em>optional</em>) – Min R^2 score (0-1) to accept a candidate. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.5&quot;</span></code>.</p></li>
+<li><p><strong>merge_dv</strong> (<em>str</em><em>, </em><em>optional</em>) – Max velocity (km/s) to merge adjacent regions. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>min_pix_region</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum width in pixels to count as a region. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;3&quot;</span></code>.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column (True=Absorbed). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;abs_mask&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Velocity window for fitting (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+<li><p><strong>region_limit</strong> (<em>str</em><em>, </em><em>optional</em>) – Limit search to <code class="docutils literal notranslate"><span class="pre">'red_side'</span></code>, <code class="docutils literal notranslate"><span class="pre">'lya_forest'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;None&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with detected systems,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.doublets_auto">
+<span class="sig-name descname"><span class="pre">doublets_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CIV,SiIV,MgII'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.doublets_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.doublets_auto" title="Link to this definition">#</a></dt>
+<dd><p>Auto-fit metal doublets (Red Side).</p>
+<p>Wrapper for <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">components_auto()</span></code></a> targeted at the red side (z &lt; z_em).
+Finds CIV, SiIV, MgII.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>multiplets</strong> (<em>str</em><em>, </em><em>optional</em>) – Multiplets to search for. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,MgII&quot;</span></code>.</p></li>
+<li><p><strong>score_threshold</strong> (<em>str</em><em>, </em><em>optional</em>) – Min R^2 score (0-1). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.5&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Fit window (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with detected doublets.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.lya_auto">
+<span class="sig-name descname"><span class="pre">lya_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.lya_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.lya_auto" title="Link to this definition">#</a></dt>
+<dd><p>Auto-fit Ly-alpha forest.</p>
+<p>Wrapper for <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">components_auto()</span></code></a> targeted at the forest. Includes
+filtering of interlopers based on the b-parameter.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_criteria" title="astrocook.core.system_list.SystemListV2.filter_by_criteria"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.filter_by_criteria()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>score_threshold</strong> (<em>str</em><em>, </em><em>optional</em>) – Lower threshold for single lines (R^2). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.1&quot;</span></code>.</p></li>
+<li><p><strong>min_b</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum b parameter (km/s) to keep. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Fit window (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;100.0&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the forest model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.forest_auto">
+<span class="sig-name descname"><span class="pre">forest_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.forest_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.forest_auto" title="Link to this definition">#</a></dt>
+<dd><p>Auto-fit full Lyman series.</p>
+<p>Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit)
+simultaneously. Uses ‘Ly_a’ detection but maps it to ‘Lyman’ series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>score_threshold</strong> (<em>str</em><em>, </em><em>optional</em>) – Threshold for detection. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.1&quot;</span></code>.</p></li>
+<li><p><strong>min_b</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum b parameter (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Fit window (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with Lyman series systems.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.metals_auto">
+<span class="sig-name descname"><span class="pre">metals_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CIV,SiIV,NV,OVI,CII,MgII'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aic_penalty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.metals_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.metals_auto" title="Link to this definition">#</a></dt>
+<dd><p>Check for associated metals.</p>
+<p>Scans existing systems and attempts to add other common metal ions
+(e.g., NV, SiIV) at the same redshift, keeping them if fit quality holds.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_component" title="astrocook.core.system_list.SystemListV2.add_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.add_component()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ions</strong> (<em>str</em><em>, </em><em>optional</em>) – Comma-separated list of ions to check. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,NV,OVI,CII,MgII&quot;</span></code>.</p></li>
+<li><p><strong>aic_penalty</strong> (<em>str</em><em>, </em><em>optional</em>) – AIC improvement required to keep a new ion (Not currently used in logic).
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;5.0&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Fit window (km/s) for local island fitting. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with added metals,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines">
-<span class="sig-name descname"><span class="pre">identify_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CIV,SiIV,MgII,Ly_ab'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix_region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'3'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bypass_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_rating</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_populate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.identify_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">identify_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CIV,SiIV,MgII,Ly_ab'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix_region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'3'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bypass_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_rating</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.identify_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines" title="Link to this definition">#</a></dt>
+<dd><p>Identify likely absorption systems.</p>
+<p>Finds absorption regions, computes correlation signals for multiplets, and
+identifies the most likely candidates using a scoring system.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.identify_lines" title="astrocook.core.spectrum.SpectrumV2.identify_lines"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.identify_lines()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>multiplets</strong> (<em>str</em><em>, </em><em>optional</em>) – Multiplets to search for (comma-separated). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,MgII,Ly_ab&quot;</span></code>.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask column (True=Unabsorbed, used to find absorptions). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;abs_mask&quot;</span></code>.</p></li>
+<li><p><strong>min_pix_region</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum width in pixels to count as a region. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;3&quot;</span></code>.</p></li>
+<li><p><strong>merge_dv</strong> (<em>str</em><em>, </em><em>optional</em>) – Max velocity (km/s) to merge adjacent regions. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>score_threshold</strong> (<em>str</em><em>, </em><em>optional</em>) – Min R^2 score (0 to 1) to accept a doublet candidate. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.5&quot;</span></code>.</p></li>
+<li><p><strong>bypass_scoring</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, accept all kinematic candidates ignoring score.
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;False&quot;</span></code>.</p></li>
+<li><p><strong>debug_rating</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, show debug plots. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;False&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with identification maps
+in metadata, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification">
 <span class="sig-name descname"><span class="pre">populate_from_identification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region_id_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_ids'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series_map_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_map_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.populate_from_identification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Populate components from identification.</p>
+<p>Populates the system list using the regions and candidates found by
+<a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines"><code class="xref py py-meth docutils literal notranslate"><span class="pre">identify_lines()</span></code></a>. Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_component" title="astrocook.core.system_list.SystemListV2.add_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.add_component()</span></code></a>
+and <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_model" title="astrocook.core.spectrum.SpectrumV2.update_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.update_model()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>region_id_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Column containing region IDs. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;abs_ids&quot;</span></code>.</p></li>
+<li><p><strong>series_map_json</strong> (<em>str</em><em>, </em><em>optional</em>) – JSON string mapping Region ID -&gt; Series Name.</p></li>
+<li><p><strong>z_map_json</strong> (<em>str</em><em>, </em><em>optional</em>) – JSON string mapping Region ID -&gt; Redshift.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with populated systems
+and updated model, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.add_component">
 <span class="sig-name descname"><span class="pre">add_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Ly_a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'13.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btur</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.add_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_component" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Add a single component.</p>
+<p>Adds a new manual Voigt component at a specific redshift and auto-fits it.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_component" title="astrocook.core.system_list.SystemListV2.add_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.add_component()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series</strong> (<em>str</em><em>, </em><em>optional</em>) – Transition or Multiplet name (e.g. <code class="docutils literal notranslate"><span class="pre">'CIV'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;Ly_a&quot;</span></code>.</p></li>
+<li><p><strong>z</strong> (<em>str</em><em>, </em><em>optional</em>) – Redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.0&quot;</span></code>.</p></li>
+<li><p><strong>logN</strong> (<em>str</em><em>, </em><em>optional</em>) – Column Density (log cm^-2). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;13.5&quot;</span></code>.</p></li>
+<li><p><strong>b</strong> (<em>str</em><em>, </em><em>optional</em>) – Doppler parameter (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>btur</strong> (<em>str</em><em>, </em><em>optional</em>) – Turbulent broadening (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.0&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Max shift for initial fit (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the added component,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component">
-<span class="sig-name descname"><span class="pre">update_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.update_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">update_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.update_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component" title="Link to this definition">#</a></dt>
+<dd><p>Update component parameters.</p>
+<p>Modifies the physical parameters of an existing component.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_component" title="astrocook.core.system_list.SystemListV2.update_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.update_component()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em>) – Component UUID.</p></li>
+<li><p><strong>z</strong> (<em>str</em><em>, </em><em>optional</em>) – Redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>logN</strong> (<em>str</em><em>, </em><em>optional</em>) – Column Density (log). Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>b</strong> (<em>str</em><em>, </em><em>optional</em>) – Doppler parameter (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>series</strong> (<em>str</em><em>, </em><em>optional</em>) – Series name. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>resol</strong> (<em>str</em><em>, </em><em>optional</em>) – Resolution (R or FWHM). Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated component,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component">
-<span class="sig-name descname"><span class="pre">delete_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.delete_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">delete_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.delete_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component" title="Link to this definition">#</a></dt>
+<dd><p>Delete component(s).</p>
+<p>Removes specified components and updates the model.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component" title="astrocook.core.system_list.SystemListV2.delete_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.delete_component()</span></code></a>
+and <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_model" title="astrocook.core.spectrum.SpectrumV2.update_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.update_model()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – UUID of a single component to delete.</p></li>
+<li><p><strong>uuids</strong> (<em>list</em><em>, </em><em>optional</em>) – List of UUIDs to delete.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with components removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_anchor">
 <span class="sig-name descname"><span class="pre">detect_anchor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sibling_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_sibling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.detect_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_anchor" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_doublet_anchor">
-<span class="sig-name descname"><span class="pre">detect_doublet_anchor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sibling_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_primary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_secondary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.detect_doublet_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_doublet_anchor" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Detect doublet anchor redshift.</p>
+<p>Finds the redshift of maximum overlap between this session and a sibling
+session (useful for doublet identification across orders/exposures).
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.detect_doublet_z" title="astrocook.core.spectrum.SpectrumV2.detect_doublet_z"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.detect_doublet_z()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sibling_name</strong> (<em>str</em>) – Name of the sibling session.</p></li>
+<li><p><strong>trans_self</strong> (<em>str</em>) – Transition in this session (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1031'</span></code>).</p></li>
+<li><p><strong>trans_sibling</strong> (<em>str</em>) – Transition in sibling session (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1037'</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The detected redshift, or 0.0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.fit_component">
 <span class="sig-name descname"><span class="pre">fit_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2000'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.fit_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.fit_component" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Fit component.</p>
+<p>Fits the selected component (and its connected neighbors) using the Voigt engine.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.fitting_context" title="astrocook.core.system_list.SystemListV2.fitting_context"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.fitting_context()</span></code></a>
+and <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">astrocook.fitting.voigt_fitter.VoigtFitterV2</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em>) – Target Component UUID.</p></li>
+<li><p><strong>max_nfev</strong> (<em>str</em><em>, </em><em>optional</em>) – Max iterations for the optimizer. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;2000&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Max velocity shift allowed during fit (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20.0&quot;</span></code>.</p></li>
+<li><p><strong>group_depth</strong> (<em>str</em><em>, </em><em>optional</em>) – Grouping depth (1=Neighbors, 2=FoF). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;2&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated parameters
+and model, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraint">
 <span class="sig-name descname"><span class="pre">update_constraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.update_constraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraint" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Update constraint.</p>
+<p>Freeze, unfreeze, or link component parameters.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_constraint" title="astrocook.core.system_list.SystemListV2.update_constraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.update_constraint()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em>) – Component UUID.</p></li>
+<li><p><strong>param</strong> (<em>str</em>) – Parameter name (<code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>).</p></li>
+<li><p><strong>is_free</strong> (<em>bool</em><em>, </em><em>optional</em>) – Is the parameter free to vary?</p></li>
+<li><p><strong>expression</strong> (<em>str</em><em>, </em><em>optional</em>) – Math expression for linking (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;p['uuid'].z&quot;</span></code>).</p></li>
+<li><p><strong>target_uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – UUID of the source component (for linking tracking).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated constraints,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraints_column">
+<span class="sig-name descname"><span class="pre">update_constraints_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.update_constraints_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraints_column" title="Link to this definition">#</a></dt>
+<dd><p>Bulk update constraints.</p>
+<p>Updates the constraint status (free/frozen) for a specific parameter
+across ALL components in the session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> (<em>str</em>) – Parameter name (<code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, <code class="docutils literal notranslate"><span class="pre">btur</span></code>).</p></li>
+<li><p><strong>is_free</strong> (<em>bool</em>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> (free) or <code class="docutils literal notranslate"><span class="pre">False</span></code> (frozen).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated constraints,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.add_linked_system">
+<span class="sig-name descname"><span class="pre">add_linked_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">13.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.add_linked_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_linked_system" title="Link to this definition">#</a></dt>
+<dd><p>Add linked system.</p>
+<p>Add multiple components (e.g. CIV, SiIV) and link their redshifts to the
+first component in the list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series_list</strong> (<em>str</em>) – Comma-separated list of series (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV&quot;</span></code>).</p></li>
+<li><p><strong>z</strong> (<em>float</em>) – Redshift.</p></li>
+<li><p><strong>logN</strong> (<em>float</em><em>, </em><em>optional</em>) – Column Density. Defaults to <code class="docutils literal notranslate"><span class="pre">13.5</span></code>.</p></li>
+<li><p><strong>b</strong> (<em>float</em><em>, </em><em>optional</em>) – Doppler parameter. Defaults to <code class="docutils literal notranslate"><span class="pre">10.0</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – Fit window. Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with linked components
+fitted, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system">
 <span class="sig-name descname"><span class="pre">optimize_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aic_penalty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'2'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.optimize_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Optimize system (Iterative Fit).</p>
+<p>Iteratively adds components to a system to minimize residuals using the
+Akaike Information Criterion (AIC).
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.optimize_hierarchy" title="astrocook.core.system_list.SystemListV2.optimize_hierarchy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.optimize_hierarchy()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em>) – Target Component UUID (seed).</p></li>
+<li><p><strong>max_components</strong> (<em>str</em><em>, </em><em>optional</em>) – Max extra components to try. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;5&quot;</span></code>.</p></li>
+<li><p><strong>threshold_sigma</strong> (<em>str</em><em>, </em><em>optional</em>) – Residual threshold (sigma) to trigger new component. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;2.5&quot;</span></code>.</p></li>
+<li><p><strong>aic_penalty</strong> (<em>str</em><em>, </em><em>optional</em>) – Min AIC improvement to accept new component. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0.0&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Velocity window (km/s) to analyze. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;100.0&quot;</span></code>.</p></li>
+<li><p><strong>min_dv</strong> (<em>str</em><em>, </em><em>optional</em>) – Min separation (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;10.0&quot;</span></code>.</p></li>
+<li><p><strong>group_depth</strong> (<em>str</em><em>, </em><em>optional</em>) – Grouping depth. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;2&quot;</span></code>.</p></li>
+<li><p><strong>patience</strong> (<em>str</em><em>, </em><em>optional</em>) – Trials allowed without AIC improvement. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;2&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with optimized systems,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all">
+<span class="sig-name descname"><span class="pre">refit_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_group_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'20'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.refit_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all" title="Link to this definition">#</a></dt>
+<dd><p>Refit all systems.</p>
+<p>Iteratively fits all disjoint groups of components (islands) in the spectrum.
+Uses chunking for large groups.
+Delegates to <a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group" title="astrocook.core.system_list.SystemListV2.get_connected_group"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.system_list.SystemListV2.get_connected_group()</span></code></a>
+and <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">astrocook.fitting.voigt_fitter.VoigtFitterV2</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_nfev</strong> (<em>str</em><em>, </em><em>optional</em>) – Max iterations per group. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;100&quot;</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Fit window around lines (km/s). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;100.0&quot;</span></code>.</p></li>
+<li><p><strong>group_depth</strong> (<em>str</em><em>, </em><em>optional</em>) – Grouping depth (0=Iterative Single, 1=Neighbors). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;0&quot;</span></code>.</p></li>
+<li><p><strong>max_group_size</strong> (<em>str</em><em>, </em><em>optional</em>) – Max components per fit group (chunking). Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;20&quot;</span></code>.</p></li>
+<li><p><strong>region_limit</strong> (<em>str</em><em>, </em><em>optional</em>) – Limit fitting to <code class="docutils literal notranslate"><span class="pre">'red_side'</span></code> or <code class="docutils literal notranslate"><span class="pre">'lya_forest'</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;None&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with all systems refitted,
+or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -499,16 +893,23 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.components_auto()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.doublets_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.doublets_auto()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.lya_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.lya_auto()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.forest_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.forest_auto()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.metals_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.metals_auto()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.identify_lines"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.identify_lines()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.populate_from_identification()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_component"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.add_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.update_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.delete_component"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.delete_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_anchor"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.detect_anchor()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.detect_doublet_anchor"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.detect_doublet_anchor()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.fit_component"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.fit_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.update_constraint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_constraints_column"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.update_constraints_column()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_linked_system"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.add_linked_system()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.optimize_system()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.refit_all()</span></code></a></li>
 </ul>
 </li>
 </ul>

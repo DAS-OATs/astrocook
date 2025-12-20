@@ -542,7 +542,6 @@
     <span class="n">meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     
     <span class="c1"># Session properties</span>
-    <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Redshift del rest frame (was rf_z)</span>
     <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Emission redshift</span>
     <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Median resolution</span>
 
@@ -557,7 +556,6 @@
                        <span class="n">xmax_values</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                        <span class="n">aux_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># {&#39;col_name&#39;: (values, unit, desc)}</span>
                        <span class="n">meta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                       <span class="n">z_rf</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
                        <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumDataV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Factory method to create a SpectrumDataV2 from raw NumPy arrays.</span>
@@ -604,7 +602,6 @@
                    <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dy_col</span><span class="p">,</span> 
                    <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span> 
                    <span class="n">meta</span><span class="o">=</span><span class="n">meta</span> <span class="k">if</span> <span class="n">meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span>
-                   <span class="n">z_rf</span><span class="o">=</span><span class="n">z_rf</span><span class="p">,</span>
                    <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">)</span></div>
 </div>
 

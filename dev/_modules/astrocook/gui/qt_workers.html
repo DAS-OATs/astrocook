@@ -467,9 +467,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">category</span> <span class="o">=</span> <span class="n">category</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span> <span class="o">=</span> <span class="n">recipe_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alias_map</span> <span class="o">=</span> <span class="n">alias_map</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alias_map</span> <span class="o">=</span> <span class="n">alias_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_stopped</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
+<div class="viewcode-block" id="RecipeWorker.stop">
+<a class="viewcode-back" href="../../../api/astrocook.gui.qt_workers.html#astrocook.gui.qt_workers.RecipeWorker.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thread-safe method to request a stop.&quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping recipe &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="si">}</span><span class="s2">&#39;...&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_stopped</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="c1"># Inject the stop flag into the session object so recipes can see it</span>
+        <span class="c1"># This acts as a &#39;shared variable&#39; between GUI thread and Physics thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">_stop_flag</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+        
 <div class="viewcode-block" id="RecipeWorker.run">
 <a class="viewcode-back" href="../../../api/astrocook.gui.qt_workers.html#astrocook.gui.qt_workers.RecipeWorker.run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -477,11 +490,13 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RecipeWorker: Running </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+            <span class="c1"># Reset stop flag on session start</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">_stop_flag</span> <span class="o">=</span> <span class="kc">False</span>
+            
             <span class="c1"># 1. Find the recipe method</span>
             <span class="n">recipe_instance</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">recipe_instance</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Session object has no attribute &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-
 
             <span class="n">recipe_method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">recipe_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">recipe_method</span><span class="p">):</span>
@@ -494,13 +509,24 @@
             <span class="c1"># 3. Run the recipe</span>
             <span class="n">new_session_state</span> <span class="o">=</span> <span class="n">recipe_method</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stopped</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="s1">&#39;_stop_flag&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recipe &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="si">}</span><span class="s2">&#39; was stopped by user.&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Use the returned session (likely the original one) or fallback</span>
+                <span class="n">result_session</span> <span class="o">=</span> <span class="n">new_session_state</span> <span class="k">if</span> <span class="n">new_session_state</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span>
+                
+                <span class="c1"># [CRITICAL] Tag the RESULT object so MainWindow knows to abort history update</span>
+                <span class="n">result_session</span><span class="o">.</span><span class="n">_stop_flag</span> <span class="o">=</span> <span class="kc">True</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="n">result_session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
+                <span class="k">return</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="n">new_session_state</span> <span class="ow">or</span> <span class="n">new_session_state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Recipe failed to execute (returned 0). Check logs.&quot;</span><span class="p">)</span>
-                
-            <span class="c1"># 4. Success! Emit the new state</span>
-            <span class="c1">#    We also pass back the params (for logging) and recipe name</span>
+            
+            <span class="c1"># 4. Success!</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">signals</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">((</span><span class="n">new_session_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
-
+            
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="c1"># 5. Failure! Emit the error</span>
             

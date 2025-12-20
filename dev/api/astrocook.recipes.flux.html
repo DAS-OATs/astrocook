@@ -407,8 +407,9 @@
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.flux.</span></span><span class="sig-name descname"><span class="pre">RecipeFluxV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Recipes for manipulating spectral flux and grid sampling.
-Accessed via <code class="docutils literal notranslate"><span class="pre">session.flux</span></code>.</p>
+<p>Recipes for manipulating spectral flux and grid sampling.</p>
+<p>These methods are accessed via the <code class="docutils literal notranslate"><span class="pre">session.flux</span></code> attribute and delegate
+logic to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.__init__" title="Link to this definition">#</a></dt>
@@ -417,21 +418,25 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.calculate_running_std">
 <span class="sig-name descname"><span class="pre">calculate_running_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'running_std'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'21'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.calculate_running_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std" title="Link to this definition">#</a></dt>
-<dd><p>Calculates a running standard deviation (RMS) on a column.</p>
-<p>Useful for estimating local noise directly from the data.</p>
+<dd><p>Calculate running standard deviation.</p>
+<p>Calculates a running Root-Mean-Square (RMS) on a specific column to estimate
+local error or variability.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calculate_running_std" title="astrocook.core.spectrum.SpectrumV2.calculate_running_std"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calculate_running_std()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_col</strong> (<em>str</em>) – The column to analyze (default: <code class="docutils literal notranslate"><span class="pre">'y'</span></code>).</p></li>
-<li><p><strong>output_col</strong> (<em>str</em>) – The name of the new column to create.</p></li>
-<li><p><strong>window_pix</strong> (<em>str</em><em> (</em><em>int</em><em>)</em>) – The width of the running window in pixels (must be odd).</p></li>
+<li><p><strong>input_col</strong> (<em>str</em><em>, </em><em>optional</em>) – The column to use for StdDev calculation (e.g., <code class="docutils literal notranslate"><span class="pre">'y'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'y'</span></code>.</p></li>
+<li><p><strong>output_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the new column to create (e.g., <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>.</p></li>
+<li><p><strong>window_pix</strong> (<em>str</em><em>, </em><em>optional</em>) – Total window size in pixels (should be odd). Defaults to <code class="docutils literal notranslate"><span class="pre">'21'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the calculated column added.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the calculated column added,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -439,16 +444,20 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.smooth">
 <span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'100.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.smooth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.smooth" title="Link to this definition">#</a></dt>
-<dd><p>Applies Gaussian smoothing to the spectrum.</p>
+<dd><p>Smooth spectrum.</p>
+<p>Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),
+and auxiliary columns.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth" title="astrocook.core.spectrum.SpectrumV2.smooth"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.smooth()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sigma_kms</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Standard deviation of the Gaussian kernel in km/s.</p>
+<dd class="field-odd"><p><strong>sigma_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Standard deviation for Gaussian kernel in km/s. Defaults to <code class="docutils literal notranslate"><span class="pre">'100.0'</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with smoothed flux, error, and auxiliary columns.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with smoothed columns,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -456,24 +465,30 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.rebin">
 <span class="sig-name descname"><span class="pre">rebin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'10.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'km/s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'5.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'nan'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.rebin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.rebin" title="Link to this definition">#</a></dt>
-<dd><p>Rebins the spectrum to a uniform grid.</p>
+<dd><p>Rebin spectrum.</p>
+<p>Applies a new binning to a spectrum with a constant bin size.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.rebin" title="astrocook.core.spectrum.SpectrumV2.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.rebin()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xstart</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Start wavelength/velocity. ‘None’ uses data minimum.</p></li>
-<li><p><strong>xend</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – End wavelength/velocity. ‘None’ uses data maximum.</p></li>
-<li><p><strong>dx</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Step size.</p></li>
-<li><p><strong>xunit</strong> (<em>str</em>) – Unit for step size (e.g. <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>, <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>).</p></li>
-<li><p><strong>kappa</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Sigma clipping threshold within bins. ‘None’ to disable.</p></li>
-<li><p><strong>filling</strong> (<em>str</em><em> (</em><em>float</em><em>)</em>) – Value to use for gaps (default: <code class="docutils literal notranslate"><span class="pre">'nan'</span></code>).</p></li>
-<li><p><strong>norm</strong> (<em>str</em><em> (</em><em>bool</em><em>)</em>) – (Unused legacy flag, kept for compatibility).</p></li>
+<li><p><strong>xstart</strong> (<em>str</em><em>, </em><em>optional</em>) – Start wavelength/velocity. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for auto (data minimum).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>xend</strong> (<em>str</em><em>, </em><em>optional</em>) – End wavelength/velocity. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for auto (data maximum).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>dx</strong> (<em>str</em><em>, </em><em>optional</em>) – Step size in x. Defaults to <code class="docutils literal notranslate"><span class="pre">'10.0'</span></code>.</p></li>
+<li><p><strong>xunit</strong> (<em>str</em><em>, </em><em>optional</em>) – Unit of wavelength or velocity for the step size (e.g., <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>, <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma clipping threshold for binning. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for off. Defaults to <code class="docutils literal notranslate"><span class="pre">'5.0'</span></code>.</p></li>
+<li><p><strong>filling</strong> (<em>str</em><em>, </em><em>optional</em>) – Value to fill regions without data. Defaults to <code class="docutils literal notranslate"><span class="pre">'nan'</span></code>.</p></li>
+<li><p><strong>norm</strong> (<em>str</em><em>, </em><em>optional</em>) – (Legacy flag, currently unused). Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the rebinned spectrum.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the rebinned spectrum,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -481,18 +496,20 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.resample">
 <span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.resample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.resample" title="Link to this definition">#</a></dt>
-<dd><p>Resamples the spectrum onto the grid of another open session.</p>
-<p>This is a prerequisite for arithmetic operations between two spectra
-(e.g. subtraction or ratio).</p>
+<dd><p>Resample on another grid.</p>
+<p>Resamples this spectrum onto the exact wavelength grid of another open session.
+This is often a prerequisite for multi-session arithmetic.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.resample_on_grid" title="astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.resample_on_grid()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target_session</strong> (<em>str</em>) – The name of the session whose grid should be adopted.</p>
+<dd class="field-odd"><p><strong>target_session</strong> (<em>str</em>) – Name of the session to use as the grid source.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session interpolated to the target grid.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> interpolated to the target grid,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -500,17 +517,20 @@ Accessed via <code class="docutils literal notranslate"><span class="pre">sessio
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">
 <span class="sig-name descname"><span class="pre">calibrate_from_magnitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">magnitudes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SDSS_r=17.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.calibrate_from_magnitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes" title="Link to this definition">#</a></dt>
-<dd><p>Flux calibration using photometric magnitudes.</p>
-<p>Warps the spectrum to match the observed magnitudes in specified bands.</p>
+<dd><p>Flux calibrate (multi-band).</p>
+<p>Warps the spectrum SED to match multiple photometric points.
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calibrate" title="astrocook.core.spectrum.SpectrumV2.calibrate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calibrate()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>magnitudes</strong> (<em>str</em>) – Comma-separated pairs of <code class="docutils literal notranslate"><span class="pre">Filter=Mag</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_g=17.5,</span> <span class="pre">SDSS_r=17.0&quot;</span></code>).</p>
+<dd class="field-odd"><p><strong>magnitudes</strong> (<em>str</em><em>, </em><em>optional</em>) – List of ‘Filter=Mag’ pairs separated by commas (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_g=17.5,</span> <span class="pre">SDSS_r=17.0&quot;</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_r=17.0&quot;</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with calibrated flux.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with calibrated flux,
+or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
