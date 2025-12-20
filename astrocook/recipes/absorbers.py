@@ -226,7 +226,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
 class RecipeAbsorbersV2:
     """
     Recipes for identification, fitting, and management of absorption lines.
-    Accessed via ``session.absorbers``.
+
+    These methods are accessed via the ``session.absorbers`` attribute and delegate
+    logic to :class:`~astrocook.core.system_list.SystemListV2`,
+    :class:`~astrocook.core.spectrum.SpectrumV2`, and the fitting engine.
     """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
@@ -261,8 +264,36 @@ class RecipeAbsorbersV2:
                       z_window_kms: str = "20.0",
                       region_limit: str = "None") -> 'SessionV2':
         """
-        The Master Pipeline: Identifies, Populates, and Fits components.
-        Supports masking by region ('red_side' or 'lya_forest').
+        Auto-detect and fit components.
+
+        The Master Pipeline: Identifies candidates (doublets or singles), populates
+        them as systems, and refits the spectrum. Supports masking by region.
+        Delegates to :meth:`identify_lines`, :meth:`populate_from_identification`,
+        and :meth:`refit_all`.
+
+        Parameters
+        ----------
+        multiplets : str, optional
+            Comma-separated list of multiplets to search for. Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
+        score_threshold : str, optional
+            Min R^2 score (0-1) to accept a candidate. Defaults to ``"0.5"``.
+        merge_dv : str, optional
+            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
+        min_pix_region : str, optional
+            Minimum width in pixels to count as a region. Defaults to ``"3"``.
+        mask_col : str, optional
+            Name of the mask column (True=Absorbed). Defaults to ``"abs_mask"``.
+        z_window_kms : str, optional
+            Velocity window for fitting (km/s). Defaults to ``"20.0"``.
+        region_limit : str, optional
+            Limit search to ``'red_side'``, ``'lya_forest'``, or ``'None'``.
+            Defaults to ``"None"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with detected systems,
+            or 0 on failure.
         """
         logging.info(">> PROGRESS: 0")
         logging.info(f"Initializing component search ({region_limit})...")
@@ -412,7 +443,24 @@ class RecipeAbsorbersV2:
                       score_threshold: str = "0.5",
                       z_window_kms: str = "20.0") -> 'SessionV2':
         """
-        Wrapper: Auto-detect metal doublets on the Red Side.
+        Auto-fit metal doublets (Red Side).
+
+        Wrapper for :meth:`components_auto` targeted at the red side (z < z_em).
+        Finds CIV, SiIV, MgII.
+
+        Parameters
+        ----------
+        multiplets : str, optional
+            Multiplets to search for. Defaults to ``"CIV,SiIV,MgII"``.
+        score_threshold : str, optional
+            Min R^2 score (0-1). Defaults to ``"0.5"``.
+        z_window_kms : str, optional
+            Fit window (km/s). Defaults to ``"20.0"``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with detected doublets.
         """
         return self.components_auto(
             multiplets=multiplets,
@@ -424,7 +472,25 @@ class RecipeAbsorbersV2:
     def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
                  z_window_kms: str = "100.0") -> 'SessionV2':
         """
-        Wrapper: Auto-detect Ly-alpha in the Forest.
+        Auto-fit Ly-alpha forest.
+
+        Wrapper for :meth:`components_auto` targeted at the forest. Includes
+        filtering of interlopers based on the b-parameter.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.filter_by_criteria`.
+
+        Parameters
+        ----------
+        score_threshold : str, optional
+            Lower threshold for single lines (R^2). Defaults to ``"0.1"``.
+        min_b : str, optional
+            Minimum b parameter (km/s) to keep. Defaults to ``"10.0"``.
+        z_window_kms : str, optional
+            Fit window (km/s). Defaults to ``"100.0"``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the forest model.
         """
         logging.info(">> PROGRESS: 0")
         logging.info("Initializing Lyman-alpha forest analysis...")
@@ -479,7 +545,24 @@ class RecipeAbsorbersV2:
     def forest_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
                     z_window_kms: str = "20.0") -> 'SessionV2':
         """
-        Pipeline for the full Lyman series. 
+        Auto-fit full Lyman series.
+
+        Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit)
+        simultaneously. Uses 'Ly_a' detection but maps it to 'Lyman' series.
+
+        Parameters
+        ----------
+        score_threshold : str, optional
+            Threshold for detection. Defaults to ``"0.1"``.
+        min_b : str, optional
+            Minimum b parameter (km/s). Defaults to ``"10.0"``.
+        z_window_kms : str, optional
+            Fit window (km/s). Defaults to ``"20.0"``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with Lyman series systems.
         """
         logging.info("Starting 'forest_auto' pipeline...")
         
@@ -525,7 +608,27 @@ class RecipeAbsorbersV2:
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0") -> 'SessionV2':
         """
-        Scans existing systems and tries to add other metal ions at the same redshift.
+        Check for associated metals.
+
+        Scans existing systems and attempts to add other common metal ions
+        (e.g., NV, SiIV) at the same redshift, keeping them if fit quality holds.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`.
+
+        Parameters
+        ----------
+        ions : str, optional
+            Comma-separated list of ions to check. Defaults to ``"CIV,SiIV,NV,OVI,CII,MgII"``.
+        aic_penalty : str, optional
+            AIC improvement required to keep a new ion (Not currently used in logic).
+            Defaults to ``"5.0"``.
+        z_window_kms : str, optional
+            Fit window (km/s) for local island fitting. Defaults to ``"20.0"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with added metals,
+            or 0 on failure.
         """
         try:
             ion_list = [i.strip() for i in ions.split(',')]
@@ -604,6 +707,37 @@ class RecipeAbsorbersV2:
                        score_threshold: str = '0.5',
                        bypass_scoring: str = 'False',
                        debug_rating: str = 'False') -> 'SessionV2':
+        """
+        Identify likely absorption systems.
+
+        Finds absorption regions, computes correlation signals for multiplets, and
+        identifies the most likely candidates using a scoring system.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.identify_lines`.
+
+        Parameters
+        ----------
+        multiplets : str, optional
+            Multiplets to search for (comma-separated). Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
+        mask_col : str, optional
+            Mask column (True=Unabsorbed, used to find absorptions). Defaults to ``"abs_mask"``.
+        min_pix_region : str, optional
+            Minimum width in pixels to count as a region. Defaults to ``"3"``.
+        merge_dv : str, optional
+            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
+        score_threshold : str, optional
+            Min R^2 score (0 to 1) to accept a doublet candidate. Defaults to ``"0.5"``.
+        bypass_scoring : str, optional
+            If ``'True'``, accept all kinematic candidates ignoring score.
+            Defaults to ``"False"``.
+        debug_rating : str, optional
+            If ``'True'``, show debug plots. Defaults to ``"False"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with identification maps
+            in metadata, or 0 on failure.
+        """
         try:
             min_pix_i = int(min_pix_region)
             merge_dv_f = float(merge_dv)
@@ -634,7 +768,26 @@ class RecipeAbsorbersV2:
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
                        series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
         """
-        Populates the system list from identification maps.
+        Populate components from identification.
+
+        Populates the system list using the regions and candidates found by
+        :meth:`identify_lines`. Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`
+        and :meth:`astrocook.core.spectrum.SpectrumV2.update_model`.
+
+        Parameters
+        ----------
+        region_id_col : str, optional
+            Column containing region IDs. Defaults to ``"abs_ids"``.
+        series_map_json : str, optional
+            JSON string mapping Region ID -> Series Name.
+        z_map_json : str, optional
+            JSON string mapping Region ID -> Redshift.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with populated systems
+            and updated model, or 0 on failure.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
@@ -686,6 +839,33 @@ class RecipeAbsorbersV2:
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
                       logN: str = '13.5', b: str = '10.0', btur: str = '0.0',
                       z_window_kms: str = '20.0') -> 'SessionV2':
+        """
+        Add a single component.
+
+        Adds a new manual Voigt component at a specific redshift and auto-fits it.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`.
+
+        Parameters
+        ----------
+        series : str, optional
+            Transition or Multiplet name (e.g. ``'CIV'``). Defaults to ``"Ly_a"``.
+        z : str, optional
+            Redshift. Defaults to ``"0.0"``.
+        logN : str, optional
+            Column Density (log cm^-2). Defaults to ``"13.5"``.
+        b : str, optional
+            Doppler parameter (km/s). Defaults to ``"10.0"``.
+        btur : str, optional
+            Turbulent broadening (km/s). Defaults to ``"0.0"``.
+        z_window_kms : str, optional
+            Max shift for initial fit (km/s). Defaults to ``"20.0"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the added component,
+            or 0 on failure.
+        """
         try:
             z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
             z_win_f = float(z_window_kms)
@@ -712,6 +892,33 @@ class RecipeAbsorbersV2:
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
                          b: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
+        """
+        Update component parameters.
+
+        Modifies the physical parameters of an existing component.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_component`.
+
+        Parameters
+        ----------
+        uuid : str
+            Component UUID.
+        z : str, optional
+            Redshift. Defaults to ``'None'``.
+        logN : str, optional
+            Column Density (log). Defaults to ``'None'``.
+        b : str, optional
+            Doppler parameter (km/s). Defaults to ``'None'``.
+        series : str, optional
+            Series name. Defaults to ``'None'``.
+        resol : str, optional
+            Resolution (R or FWHM). Defaults to ``'None'``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated component,
+            or 0 on failure.
+        """
         try:
             changes = {}
             if z != 'None': changes['z'] = float(z)
@@ -726,6 +933,25 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed update_component: {e}"); return 0
 
     def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
+        """
+        Delete component(s).
+
+        Removes specified components and updates the model.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.delete_component`
+        and :meth:`astrocook.core.spectrum.SpectrumV2.update_model`.
+
+        Parameters
+        ----------
+        uuid : str, optional
+            UUID of a single component to delete.
+        uuids : list, optional
+            List of UUIDs to delete.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with components removed.
+        """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
         
         try:
@@ -747,6 +973,27 @@ class RecipeAbsorbersV2:
             return self._session
 
     def detect_anchor(self, sibling_name: str, trans_self: str, trans_sibling: str) -> float:
+        """
+        Detect doublet anchor redshift.
+
+        Finds the redshift of maximum overlap between this session and a sibling
+        session (useful for doublet identification across orders/exposures).
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.detect_doublet_z`.
+
+        Parameters
+        ----------
+        sibling_name : str
+            Name of the sibling session.
+        trans_self : str
+            Transition in this session (e.g., ``'OVI_1031'``).
+        trans_sibling : str
+            Transition in sibling session (e.g., ``'OVI_1037'``).
+
+        Returns
+        -------
+        float
+            The detected redshift, or 0.0 on failure.
+        """
         try:
             sibling_session = None
             if hasattr(self._session, '_gui'):
@@ -770,6 +1017,30 @@ class RecipeAbsorbersV2:
             return 0.0
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
+        """
+        Fit component.
+
+        Fits the selected component (and its connected neighbors) using the Voigt engine.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.fitting_context`
+        and :class:`astrocook.fitting.voigt_fitter.VoigtFitterV2`.
+
+        Parameters
+        ----------
+        uuid : str
+            Target Component UUID.
+        max_nfev : str, optional
+            Max iterations for the optimizer. Defaults to ``"2000"``.
+        z_window_kms : str, optional
+            Max velocity shift allowed during fit (km/s). Defaults to ``"20.0"``.
+        group_depth : str, optional
+            Grouping depth (1=Neighbors, 2=FoF). Defaults to ``"2"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated parameters
+            and model, or 0 on failure.
+        """
         try:
             max_nfev_i = int(max_nfev)
             z_win_f = float(z_window_kms)
@@ -802,6 +1073,31 @@ class RecipeAbsorbersV2:
         
     def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
                           expression: str = None, target_uuid: str = None) -> 'SessionV2':
+        """
+        Update constraint.
+
+        Freeze, unfreeze, or link component parameters.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_constraint`.
+
+        Parameters
+        ----------
+        uuid : str
+            Component UUID.
+        param : str
+            Parameter name (``z``, ``logN``, ``b``).
+        is_free : bool, optional
+            Is the parameter free to vary?
+        expression : str, optional
+            Math expression for linking (e.g., ``"p['uuid'].z"``).
+        target_uuid : str, optional
+            UUID of the source component (for linking tracking).
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated constraints,
+            or 0 on failure.
+        """
         try:
             new_systs = self._session.systs.update_constraint(
                 uuid, param, is_free, expression, target_uuid
@@ -838,8 +1134,23 @@ class RecipeAbsorbersV2:
 
     def update_constraints_column(self, param: str, is_free: bool) -> 'SessionV2':
         """
+        Bulk update constraints.
+
         Updates the constraint status (free/frozen) for a specific parameter
         across ALL components in the session.
+
+        Parameters
+        ----------
+        param : str
+            Parameter name (``z``, ``logN``, ``b``, ``btur``).
+        is_free : bool
+            Set to ``True`` (free) or ``False`` (frozen).
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated constraints,
+            or 0 on failure.
         """
         if not self._session.systs: return 0
         
@@ -869,8 +1180,29 @@ class RecipeAbsorbersV2:
     def add_linked_system(self, series_list: str, z: float, logN: float = 13.5, 
                           b: float = 10.0, z_window_kms: float = 20.0) -> 'SessionV2':
         """
-        Adds multiple components and links the redshifts of the subsequent ones 
-        to the first one in the list.
+        Add linked system.
+
+        Add multiple components (e.g. CIV, SiIV) and link their redshifts to the
+        first component in the list.
+
+        Parameters
+        ----------
+        series_list : str
+            Comma-separated list of series (e.g., ``"CIV,SiIV"``).
+        z : float
+            Redshift.
+        logN : float, optional
+            Column Density. Defaults to ``13.5``.
+        b : float, optional
+            Doppler parameter. Defaults to ``10.0``.
+        z_window_kms : float, optional
+            Fit window. Defaults to ``20.0``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with linked components
+            fitted, or 0 on failure.
         """
         series_names = [s.strip() for s in series_list.split(',') if s.strip()]
         if not series_names: return 0
@@ -926,6 +1258,38 @@ class RecipeAbsorbersV2:
                         threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
                         z_window_kms: str = '100.0', min_dv: str = '10.0',
                         group_depth: str = '2', patience: str = '2') -> 'SessionV2':
+        """
+        Optimize system (Iterative Fit).
+
+        Iteratively adds components to a system to minimize residuals using the
+        Akaike Information Criterion (AIC).
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.optimize_hierarchy`.
+
+        Parameters
+        ----------
+        uuid : str
+            Target Component UUID (seed).
+        max_components : str, optional
+            Max extra components to try. Defaults to ``"5"``.
+        threshold_sigma : str, optional
+            Residual threshold (sigma) to trigger new component. Defaults to ``"2.5"``.
+        aic_penalty : str, optional
+            Min AIC improvement to accept new component. Defaults to ``"0.0"``.
+        z_window_kms : str, optional
+            Velocity window (km/s) to analyze. Defaults to ``"100.0"``.
+        min_dv : str, optional
+            Min separation (km/s). Defaults to ``"10.0"``.
+        group_depth : str, optional
+            Grouping depth. Defaults to ``"2"``.
+        patience : str, optional
+            Trials allowed without AIC improvement. Defaults to ``"2"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with optimized systems,
+            or 0 on failure.
+        """
         try:
             max_c = int(max_components); thresh = float(threshold_sigma)
             aic_p = float(aic_penalty); z_win = float(z_window_kms)
@@ -975,7 +1339,31 @@ class RecipeAbsorbersV2:
                   group_depth: str = '0', max_group_size: str = '20',
                   region_limit: str = "None") -> 'SessionV2':
         """
-        Refits components using Chunking.
+        Refit all systems.
+
+        Iteratively fits all disjoint groups of components (islands) in the spectrum.
+        Uses chunking for large groups.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.get_connected_group`
+        and :class:`astrocook.fitting.voigt_fitter.VoigtFitterV2`.
+
+        Parameters
+        ----------
+        max_nfev : str, optional
+            Max iterations per group. Defaults to ``"100"``.
+        z_window_kms : str, optional
+            Fit window around lines (km/s). Defaults to ``"100.0"``.
+        group_depth : str, optional
+            Grouping depth (0=Iterative Single, 1=Neighbors). Defaults to ``"0"``.
+        max_group_size : str, optional
+            Max components per fit group (chunking). Defaults to ``"20"``.
+        region_limit : str, optional
+            Limit fitting to ``'red_side'`` or ``'lya_forest'``. Defaults to ``"None"``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with all systems refitted,
+            or 0 on failure.
         """
         try:
             max_nfev_i = int(max_nfev)

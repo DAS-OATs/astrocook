@@ -81,7 +81,9 @@ FLUX_RECIPES_SCHEMAS = {
 class RecipeFluxV2:
     """
     Recipes for manipulating spectral flux and grid sampling.
-    Accessed via ``session.flux``.
+
+    These methods are accessed via the ``session.flux`` attribute and delegate
+    logic to :class:`~astrocook.core.spectrum.SpectrumV2`.
     """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
@@ -92,23 +94,27 @@ class RecipeFluxV2:
                               output_col: str = 'running_std', 
                               window_pix: str = '21') -> 'SessionV2':
         """
-        Calculates a running standard deviation (RMS) on a column.
+        Calculate running standard deviation.
 
-        Useful for estimating local noise directly from the data.
+        Calculates a running Root-Mean-Square (RMS) on a specific column to estimate
+        local error or variability.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calculate_running_std`.
 
         Parameters
         ----------
-        input_col : str
-            The column to analyze (default: ``'y'``).
-        output_col : str
-            The name of the new column to create.
-        window_pix : str (int)
-            The width of the running window in pixels (must be odd).
+        input_col : str, optional
+            The column to use for StdDev calculation (e.g., ``'y'``). Defaults to ``'y'``.
+        output_col : str, optional
+            Name of the new column to create (e.g., ``'running_std'``).
+            Defaults to ``'running_std'``.
+        window_pix : str, optional
+            Total window size in pixels (should be odd). Defaults to ``'21'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the calculated column added.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,
+            or 0 on failure.
         """
         try:
             window_pix_i = int(window_pix)
@@ -138,17 +144,22 @@ class RecipeFluxV2:
 
     def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
         """
-        Applies Gaussian smoothing to the spectrum.
+        Smooth spectrum.
+
+        Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),
+        and auxiliary columns.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.smooth`.
 
         Parameters
         ----------
-        sigma_kms : str (float)
-            Standard deviation of the Gaussian kernel in km/s.
+        sigma_kms : str, optional
+            Standard deviation for Gaussian kernel in km/s. Defaults to ``'100.0'``.
 
         Returns
         -------
-        SessionV2
-            A new session with smoothed flux, error, and auxiliary columns.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns,
+            or 0 on failure.
         """
         try:
             sigma_kms_f = float(sigma_kms)
@@ -168,29 +179,36 @@ class RecipeFluxV2:
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
               kappa: str = '5.0', filling: str = 'nan', norm: str = 'False') -> 'SessionV2':
         """
-        Rebins the spectrum to a uniform grid.
+        Rebin spectrum.
+
+        Applies a new binning to a spectrum with a constant bin size.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.rebin`.
 
         Parameters
         ----------
-        xstart : str (float)
-            Start wavelength/velocity. 'None' uses data minimum.
-        xend : str (float)
-            End wavelength/velocity. 'None' uses data maximum.
-        dx : str (float)
-            Step size.
-        xunit : str
-            Unit for step size (e.g. ``'km/s'``, ``'nm'``).
-        kappa : str (float)
-            Sigma clipping threshold within bins. 'None' to disable.
-        filling : str (float)
-            Value to use for gaps (default: ``'nan'``).
-        norm : str (bool)
-            (Unused legacy flag, kept for compatibility).
+        xstart : str, optional
+            Start wavelength/velocity. ``'None'`` for auto (data minimum).
+            Defaults to ``'None'``.
+        xend : str, optional
+            End wavelength/velocity. ``'None'`` for auto (data maximum).
+            Defaults to ``'None'``.
+        dx : str, optional
+            Step size in x. Defaults to ``'10.0'``.
+        xunit : str, optional
+            Unit of wavelength or velocity for the step size (e.g., ``'km/s'``, ``'nm'``).
+            Defaults to ``'km/s'``.
+        kappa : str, optional
+            Sigma clipping threshold for binning. ``'None'`` for off. Defaults to ``'5.0'``.
+        filling : str, optional
+            Value to fill regions without data. Defaults to ``'nan'``.
+        norm : str, optional
+            (Legacy flag, currently unused). Defaults to ``'False'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the rebinned spectrum.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum,
+            or 0 on failure.
         """
 
         # 4. Perform Type Casting
@@ -221,20 +239,22 @@ class RecipeFluxV2:
     
     def resample(self, target_session: str = 'None') -> 'SessionV2':
         """
-        Resamples the spectrum onto the grid of another open session.
+        Resample on another grid.
 
-        This is a prerequisite for arithmetic operations between two spectra
-        (e.g. subtraction or ratio).
+        Resamples this spectrum onto the exact wavelength grid of another open session.
+        This is often a prerequisite for multi-session arithmetic.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.resample_on_grid`.
 
         Parameters
         ----------
         target_session : str
-            The name of the session whose grid should be adopted.
+            Name of the session to use as the grid source.
 
         Returns
         -------
-        SessionV2
-            A new session interpolated to the target grid.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid,
+            or 0 on failure.
         """
         if target_session == 'None' or target_session == '':
             logging.error("No target session was selected for resampling.")
@@ -270,19 +290,22 @@ class RecipeFluxV2:
         
     def calibrate_from_magnitudes(self, magnitudes: str = "SDSS_r=17.0") -> 'SessionV2':
         """
-        Flux calibration using photometric magnitudes.
+        Flux calibrate (multi-band).
 
-        Warps the spectrum to match the observed magnitudes in specified bands.
+        Warps the spectrum SED to match multiple photometric points.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calibrate`.
 
         Parameters
         ----------
-        magnitudes : str
-            Comma-separated pairs of ``Filter=Mag`` (e.g. ``"SDSS_g=17.5, SDSS_r=17.0"``).
+        magnitudes : str, optional
+            List of 'Filter=Mag' pairs separated by commas (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``).
+            Defaults to ``"SDSS_r=17.0"``.
 
         Returns
         -------
-        SessionV2
-            A new session with calibrated flux.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux,
+            or 0 on failure.
         """
         try:
             # The API layer now handles all the complexity

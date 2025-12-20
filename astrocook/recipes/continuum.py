@@ -74,7 +74,9 @@ CONTINUUM_RECIPES_SCHEMAS = {
 class RecipeContinuumV2:
     """
     Recipes for estimating and fitting the quasar continuum.
-    Accessed via ``session.continuum``.
+
+    These methods are accessed via the ``session.continuum`` attribute and delegate
+    heavy logic to :class:`~astrocook.core.spectrum.SpectrumV2`.
     """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
@@ -84,32 +86,39 @@ class RecipeContinuumV2:
                       kappa: str = '2.0', fudge: str = '1.0', 
                       smooth_std: str = '500.0', template: str = 'False', renorm_model: str = 'True') -> 'SessionV2':
         """
-        Automatically estimate the continuum in a single step.
+        Auto-estimate continuum (single-click).
 
-        This recipe chains ``find_absorbed`` and ``fit_continuum`` together.
+        A single-click recipe that runs ``find_absorbed`` and then ``fit_continuum``
+        in sequence, based on the V1 'clip_flux' algorithm.
 
         Parameters
         ----------
-        smooth_len_lya : str (float)
-            Smoothing length (km/s) for initial guess (Ly-alpha forest).
-        smooth_len_out : str (float)
-            Smoothing length (km/s) for initial guess (redward).
-        kappa : str (float)
-            Sigma threshold for finding absorption.
-        fudge : str
-            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
-            If 'auto', the factor is calculated to center the continuum residuals.
-        smooth_std : str (float)
-            Final smoothing width (km/s).
-        template : str (bool)
-            Use PCA template (Not Implemented).
-        renorm_model : str (bool)
-            Re-normalize existing model?
+        smooth_len_lya : str, optional
+            Smoothing length (km/s) for initial guess in the Ly-alpha forest.
+            Defaults to ``'5000.0'``.
+        smooth_len_out : str, optional
+            Smoothing length (km/s) for initial guess outside the forest.
+            Defaults to ``'400.0'``.
+        kappa : str, optional
+            Sigma threshold for finding absorption. Defaults to ``'2.0'``.
+        fudge : str, optional
+            A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.
+            If ``'auto'``, the factor is calculated to center the continuum residuals.
+            Defaults to ``'1.0'``.
+        smooth_std : str, optional
+            Standard deviation (km/s) for the final Gaussian smoothing.
+            Defaults to ``'500.0'``.
+        template : str, optional
+            If ``'True'``, use a QSO template (Not Implemented). Defaults to ``'False'``.
+        renorm_model : str, optional
+            If ``'True'``, re-normalize the 'model' column to match the new continuum.
+            Defaults to ``'True'``.
 
         Returns
         -------
-        SessionV2
-            A new session with both ``abs_mask`` and ``cont`` columns updated.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated continuum
+            and absorption mask, or 0 on failure.
         """
         try:
             smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
@@ -158,28 +167,31 @@ class RecipeContinuumV2:
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
                         kappa: str = '2.0', template: str = 'False') -> 'SessionV2':
         """
-        Identify absorbed regions using an iterative sigma-clipping algorithm.
+        Find absorbed regions (V1 logic).
 
-        This recipe creates a boolean mask (``abs_mask``) where True indicates
-        pixels that are statistically likely to be absorption features rather
-        than continuum.
+        Runs the V1 'clip_flux' kappa-sigma algorithm (with Ly-alpha forest split)
+        to create a boolean mask (``abs_mask``) where True indicates absorption.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.find_absorbed`.
 
         Parameters
         ----------
-        smooth_len_lya : str (float)
-            Smoothing length (km/s) used for the initial continuum guess in the 
-            Lyman-alpha forest region (blue side of Ly-alpha emission).
-        smooth_len_out : str (float)
-            Smoothing length (km/s) used redward of the Ly-alpha emission.
-        kappa : str (float)
-            Sigma threshold. Flux below ``mean - kappa * sigma`` is considered absorbed.
-        template : str (bool)
-            If 'True', use a PCA template for the initial guess (Not Implemented).
+        smooth_len_lya : str, optional
+            Smoothing length (km/s) for initial guess in the Ly-alpha forest.
+            Defaults to ``'5000.0'``.
+        smooth_len_out : str, optional
+            Smoothing length (km/s) for initial guess outside the forest.
+            Defaults to ``'400.0'``.
+        kappa : str, optional
+            Sigma threshold for clipping. Flux below ``mean - kappa * sigma`` is
+            considered absorbed. Defaults to ``'2.0'``.
+        template : str, optional
+            If ``'True'``, use a QSO template (Not Implemented). Defaults to ``'False'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the ``abs_mask`` column added/updated.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the ``abs_mask``
+            column added/updated, or 0 on failure.
         """
         try:
             smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
@@ -210,26 +222,29 @@ class RecipeContinuumV2:
     def fit_continuum(self, fudge: str = 'auto', smooth_std: str = '500.0', 
                       mask_col: str = 'abs_mask', renorm_model: str = 'True') -> 'SessionV2':
         """
-        Fit a continuum to the unabsorbed regions.
+        Fit continuum to mask (V1 logic).
+
+        Interpolates unabsorbed regions from a mask, optionally applies an auto-fudge
+        factor to center residuals, and smooths the result.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.fit_continuum`.
 
         Parameters
         ----------
-        fudge : str
-            A multiplicative factor. Can be a float (e.g. '1.0') or 'auto'. 
-            If 'auto', the factor is calculated to center the continuum residuals.
-        smooth_std : str (float)
-            Standard deviation (km/s) of the Gaussian kernel used to smooth 
-            the interpolated spline.
-        mask_col : str
-            Name of the mask column to use (default: ``'abs_mask'``).
-        renorm_model : str (bool)
-            If 'True', any existing absorption model (``model`` column) is 
-            re-normalized to match the new continuum level.
+        fudge : str, optional
+            Fudge factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.
+            Defaults to ``'auto'``.
+        smooth_std : str, optional
+            Final Gaussian smoothing standard deviation (km/s). Defaults to ``'500.0'``.
+        mask_col : str, optional
+            Name of the mask column to use (True=Absorbed). Defaults to ``'abs_mask'``.
+        renorm_model : str, optional
+            If ``'True'``, re-normalize the 'model' column. Defaults to ``'True'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the ``cont`` column added/updated.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the ``cont``
+            column added/updated, or 0 on failure.
         """
         try:
             smooth_std_f = float(smooth_std)
@@ -260,23 +275,26 @@ class RecipeContinuumV2:
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
                      kappa: str = '3.0') -> 'SessionV2':
         """
-        Fit a power-law continuum to specified rest-frame spectral windows.
+        Fit power-law continuum.
 
-        This method fits a linear model in log-log space (flux vs wavelength)
-        to the data within the given regions, excluding outliers via sigma-clipping.
+        Fits a power-law (linear in log-log space) to user-defined, unabsorbed
+        rest-frame regions. Creates the ``cont_pl`` column.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.fit_powerlaw`.
 
         Parameters
         ----------
-        regions : str
-            Comma-separated list of wavelength ranges in nm (rest-frame).
+        regions : str, optional
+            Comma-separated rest-frame wavelength regions (nm).
             Example: ``'128.0-129.0, 131.5-132.5'``.
-        kappa : str (float)
-            Sigma threshold for clipping outliers within the fitting regions.
+            Defaults to ``'128.0-129.0, 131.5-132.5, 134.5-136.0'``.
+        kappa : str, optional
+            Sigma threshold for clipping outliers within regions. Defaults to ``'3.0'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the ``cont_pl`` column added/updated.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the ``cont_pl``
+            column added/updated, or 0 on failure.
         """
         if self._session.spec._data.z_em == 0.0:
             logging.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "
@@ -297,7 +315,26 @@ class RecipeContinuumV2:
     
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':
         """
-        Updates the continuum based on a list of interactive knots.
+        Update continuum from manual knots.
+
+        Interpolates a Cubic Spline through manually placed knots and updates the
+        continuum.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots`.
+
+        Parameters
+        ----------
+        knots_x : list
+            List of x coordinates (wavelength/velocity) for the knots.
+        knots_y : list
+            List of y coordinates (flux) for the knots.
+        renorm_model : bool, optional
+            If ``True``, re-normalize the 'model' column to match the new continuum.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the updated continuum.
         """
         # 1. Delegate Business Logic to Core
         new_spec = self._session.spec.update_continuum_from_knots(
