@@ -2569,6 +2569,11 @@ class MainWindowV2(QMainWindow):
 
         self._ask_to_renormalize_model(recipe_name, params)
 
+        # Attach Warning Capturing (for ALL recipes)
+        self.warning_capture_handler = WarningCaptureHandler()
+        # We assume standard formatting is fine, or set a formatter if you wish
+        logging.getLogger().addHandler(self.warning_capture_handler)
+
         # --- NEW DIALOG LOGIC START ---
         
         # 1. Clean up old dialogs
@@ -2768,6 +2773,29 @@ class MainWindowV2(QMainWindow):
                     self._suppress_refit_warning = True
                     logging.info("User suppressed refit warnings for this session.")
 
+            # [NEW] Show Captured Warnings (if any)
+            if hasattr(self, '_captured_warnings') and self._captured_warnings:
+                # Filter out duplicate messages to be clean
+                unique_warnings = list(dict.fromkeys(self._captured_warnings))
+
+                # Don't show if it's just the "Recipe Aborted" warning we handle elsewhere
+                real_warnings = [w for w in unique_warnings if "Recipe" not in w and "Aborted" not in w]
+
+                if real_warnings:
+                    count = len(real_warnings)
+                    msg_text = f"The recipe finished, but generated {count} warning(s):<ul>"
+                    for w in real_warnings:
+                        msg_text += f"<li>{w}</li>"
+                    msg_text += "</ul>"
+
+                    self._show_custom_message(
+                        title="Warnings Issued",
+                        header="Process completed with warnings",
+                        text=msg_text,
+                        buttons=QMessageBox.StandardButton.Ok,
+                        icon_name="icon_3d_HR.png" # or a warning icon
+                    )
+
             # --- Resume Pending Action ---
             if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
                 pending = self._pending_recipe_on_properties_set
@@ -2890,6 +2918,13 @@ class MainWindowV2(QMainWindow):
 
     # --- *** 5. NEW: Callback slots for single recipes *** ---
     def _cleanup_progress_ui(self):
+        # [NEW] Retrieve and Detach Warnings
+        self._captured_warnings = []
+        if hasattr(self, 'warning_capture_handler') and self.warning_capture_handler:
+            self._captured_warnings = self.warning_capture_handler.warnings[:] # Copy list
+            logging.getLogger().removeHandler(self.warning_capture_handler)
+            self.warning_capture_handler = None
+
         try:
             # 1. Detach Log Handler
             if hasattr(self, 'qt_log_handler') and self.qt_log_handler:
@@ -2937,6 +2972,15 @@ class MainWindowV2(QMainWindow):
         # 1. Cleanup UI
         self._cleanup_progress_ui()
             
+        # [NEW] Append warnings to the message
+        if hasattr(self, '_captured_warnings') and self._captured_warnings:
+            unique_warnings = list(dict.fromkeys(self._captured_warnings))
+            if unique_warnings:
+                message += "<br><br><b>Previous Warnings:</b><ul>"
+                for w in unique_warnings:
+                    message += f"<li>{w}</li>"
+                message += "</ul>"
+
         if trace:
             # --- CASE A: System Crash (Show Traceback) ---
             # We format the traceback as a code block for readability
@@ -3550,3 +3594,13 @@ class RecipeProgressDialog(QDialog):
         self.status_label.setText("Attempting to stop gracefully...")
         # Emit signal to parent
         self.stop_requested.emit()
+class WarningCaptureHandler(logging.Handler):
+    """Captures warning messages to a list for GUI display."""
+    def __init__(self):
+        super().__init__()
+        self.warnings = []
+        
+    def emit(self, record):
+        # Only capture meaningful warnings (skip debug/info)
+        if record.levelno >= logging.WARNING:
+            self.warnings.append(self.format(record))
