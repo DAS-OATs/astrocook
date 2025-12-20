@@ -143,7 +143,10 @@ SESSION_VAR_REGEX = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
 class RecipeEditV2:
     """
     Recipes for general structure editing and arithmetic operations.
-    Accessed via ``session.edit``.
+
+    These methods are accessed via the ``session.edit`` attribute and delegate
+    heavy logic to the Core structures :class:`~astrocook.core.spectrum.SpectrumV2`
+    and :class:`~astrocook.core.system_list.SystemListV2`.
     """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
@@ -151,8 +154,30 @@ class RecipeEditV2:
 
     def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> Tuple[str, Dict[str, np.ndarray]]:
         """
-        Resolves aliases to Spectrum objects via the GUI, then delegates 
-        parsing/resampling to the Core.
+        Internal helper to resolve session aliases and delegate parsing to the Core.
+
+        This prepares the context for multi-session arithmetic (e.g., subtracting
+        one spectrum from another) by resolving GUI session names to actual
+        Spectrum objects.
+
+        Parameters
+        ----------
+        expression : str
+            The raw expression string provided by the user (e.g. ``"y - s1.y"``).
+        alias_map : dict
+            A dictionary mapping aliases (e.g. ``"s1"``) to full session names.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            1. **final_expression** (*str*): The processed expression compatible with ``numexpr``.
+            2. **extra_vars** (*dict*): A dictionary of numpy arrays representing the
+               resampled data from other sessions.
+
+        See Also
+        --------
+        :meth:`astrocook.core.spectrum.SpectrumV2.prepare_expression_context`
         """
         if not alias_map:
             return expression, {}
@@ -184,10 +209,20 @@ class RecipeEditV2:
     
     def _parse_resolution_string(self, resol_str: str) -> float:
         """
-        Parses user input for resolution. 
-        Accepts: 
-          - Raw float (e.g. "50000") -> R
-          - "3px", "3.5 px", "3 pixels" -> Estimates R from pixel sampling.
+        Parses user input for resolution.
+
+        Accepts either a raw floating point number (R) or a pixel width string
+        (e.g., "3px") which is converted to R based on the current spectral sampling.
+
+        Parameters
+        ----------
+        resol_str : str
+            Input string, either a raw number (R) or a pixel width (e.g., "3px").
+
+        Returns
+        -------
+        float
+            The resolving power R. Returns 0.0 if parsing fails or spectrum is invalid.
         """
         clean_str = resol_str.strip().lower()
         
@@ -236,7 +271,28 @@ class RecipeEditV2:
     def set_properties(self, name: str = '_current_', object: str = '_current_', 
                        z_em: str = '_current_', resol: str = '_current_') -> Optional['SessionV2']:
         """
-        Sets the core physical properties and metadata of the session.
+        Set session properties.
+
+        Set core session properties like name, object, redshift, and resolution.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.with_properties`.
+
+        Parameters
+        ----------
+        name : str, optional
+            The session Name (display label). Defaults to ``'_current_'`` (no change).
+        object : str, optional
+            The object Name (header target). Defaults to ``'_current_'`` (no change).
+        z_em : str, optional
+            Emission Redshift. Defaults to ``'_current_'`` (no change).
+        resol : str, optional
+            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``).
+            Defaults to ``'_current_'`` (no change).
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated properties,
+            or 0 on failure.
         """
         # 1. Parse numerical inputs (z_em, resol)
         try:
@@ -281,19 +337,25 @@ class RecipeEditV2:
 
     def x_convert(self, z_ref: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
-        Converts the X-axis (wavelength/velocity) to a new unit.
+        Convert X axis.
+
+        Convert the x axis units and zero point to wavelength or velocity units.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.x_convert`.
 
         Parameters
         ----------
-        z_ref : str (float)
-            Reference redshift used for velocity conversions.
-        xunit : str
-            Target unit (e.g. ``'nm'``, ``'Angstrom'``, ``'km/s'``).
+        z_ref : str, optional
+            Reference redshift for velocity conversion. Defaults to ``'0.0'``
+            (can use ``'_current_'`` to use the session's z_em).
+        xunit : str, optional
+            Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).
+            Defaults to ``'km/s'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the converted X-axis.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the converted X-axis,
+            or 0 on failure.
         """
         # Handle default logic here
         if z_ref == '_current_':
@@ -320,17 +382,21 @@ class RecipeEditV2:
     
     def y_convert(self, yunit: str = 'erg/(nm s cm^2)') -> Optional['SessionV2']:
         """
-        Converts the Y-axis (flux) to a new unit.
+        Convert Y axis units.
+
+        Converts the flux and error arrays to the specified unit.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.y_convert`.
 
         Parameters
         ----------
-        yunit : str
-            Target flux unit.
+        yunit : str, optional
+            Target unit of flux density. Defaults to ``'erg/(nm s cm^2)'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the converted Y-axis.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the converted Y-axis,
+            or 0 on failure.
         """
         # C. Parameter Validation and Type Casting
         try:
@@ -347,25 +413,26 @@ class RecipeEditV2:
     
     def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        Applies a numerical expression to columns (arithmetic).
+        Apply expression to columns.
 
-        Supports basic math (``+ - * /``) and NumPy functions (``log``, ``sqrt``, ``min``, etc.).
-        Also supports **multi-session operations** via aliases (e.g., ``y - s1.y``).
+        Apply a NumPy-style expression. Use column names (x, y, cont...) as variables.
+        Supports multi-session arithmetic via aliases.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.apply_expression`.
 
         Parameters
         ----------
         target_col : str
-            The column to create or overwrite (e.g. ``'y'``, ``'ratio'``).
+            Target column (to be overwritten or created).
         expression : str
-            The mathematical expression string (e.g. ``"y / cont"``).
+            Expression to evaluate (e.g., ``'y / cont'``, ``'y * 2.0'``).
         alias_map : dict, optional
-            A mapping of aliases to session names for cross-session math.
-            (Provided automatically by the GUI dialog).
+            Mapping of aliases to session names (e.g. ``{'s1': 'Session 1'}``).
 
         Returns
         -------
-        SessionV2
-            A new session with the computed column.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the computed column,
+            or 0 on failure.
         """
         expression = expression.strip()
         if not expression:
@@ -391,21 +458,25 @@ class RecipeEditV2:
             
     def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        Masks a column (sets values to NaN) based on a boolean expression.
+        Mask column by expression.
+
+        Mask a target column by setting values to NaN where the expression is True.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.mask_expression`.
 
         Parameters
         ----------
         target_col : str
-            The column to apply the mask to.
+            Target column to mask (e.g., ``'y'``).
         expression : str
-            A boolean expression (e.g. ``"x > 500"``). Where True, the data is masked.
+            Boolean expression (e.g., ``'(x < 300) | (x > 400)'``, ``'dy <= 0'``).
         alias_map : dict, optional
-            Mapping for multi-session variables.
+            Mapping of aliases to session names.
 
         Returns
         -------
-        SessionV2
-            A new session with the masked data.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the masked column,
+            or 0 on failure.
         """
         expression = expression.strip()
         if not expression:
@@ -431,21 +502,26 @@ class RecipeEditV2:
 
     def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
         """
-        Applies Gaussian smoothing to a single column.
+        Smooth a single column.
+
+        Apply a Gaussian filter to a single data column.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.smooth_column`.
 
         Parameters
         ----------
-        target_col : str
-            The name of the column to smooth.
-        sigma_kms : str (float)
-            Standard deviation of the Gaussian kernel in km/s.
-        renorm_model : str (bool)
-            If 'True' and ``target_col`` is 'cont', re-normalize the 'model' column.
+        target_col : str, optional
+            Target column to smooth. Defaults to ``'dy'``.
+        sigma_kms : str, optional
+            Standard deviation for Gaussian kernel (km/s). Defaults to ``'100.0'``.
+        renorm_model : str, optional
+            If ``'True'`` and smoothing ``'cont'``, the ``'model'`` column is
+            re-normalized. Defaults to ``'False'``.
 
         Returns
         -------
-        SessionV2
-            A new session with the smoothed column.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with the smoothed column,
+            or 0 on failure.
         """
         try:
             sigma_kms_f = float(sigma_kms)
@@ -473,7 +549,24 @@ class RecipeEditV2:
         
     def import_systems(self, source_session: str, append: bool = True) -> 'SessionV2':
         """
-        Imports systems from another session.
+        Import systems from session.
+
+        Copy absorption systems from another open session into this one, filtering
+        those that fall outside the current spectral range.
+        Delegates filtering to :meth:`astrocook.core.system_list.SystemListV2.filter_by_range`.
+
+        Parameters
+        ----------
+        source_session : str
+            Name of the session to import from.
+        append : bool, optional
+            If ``True``, adds to existing systems. If ``False``, replaces them.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with imported systems.
         """
         import numpy as np
         from astrocook.core.structures import SystemListDataV2
@@ -531,46 +624,65 @@ class RecipeEditV2:
         # 5. Return new session
         return self._session.with_new_system_list(new_systs)
         
-    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
+    def delete(self, targets: str) -> 'SessionV2':
         """
-        Deletes one or multiple components by UUID.
+        Delete elements.
+
+        Remove columns from the spectrum or clear the line list.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.remove_columns`.
+
+        Parameters
+        ----------
+        targets : str
+            Comma-separated list of items to delete (e.g. ``'cont, lines'``).
+            Use ``'lines'`` or ``'systems'`` to clear the component list.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the elements removed.
         """
-        try:
-            # 1. Delegate to Core (pass both args, let Core handle normalization)
-            # This returns a new SystemListV2 with items removed and constraints cleaned.
-            new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
+        target_list = [t.strip() for t in targets.split(',') if t.strip()]
+        if not target_list:
+            return self._session
+
+        # 1. Handle System List
+        new_systs = self._session.systs
+        if 'lines' in target_list or 'systems' in target_list:
+            # Re-initialize empty
+            new_systs = SystemListV2(SystemListDataV2())
+            logging.info("Marked system list for deletion.")
+            # Remove keywords from list to avoid trying to delete them as columns
+            target_list = [t for t in target_list if t not in ['lines', 'systems']]
+
+        # 2. Handle Columns via Core API
+        if target_list:
+            new_spec = self._session.spec.remove_columns(target_list)
+        else:
+            new_spec = self._session.spec
             
-            # 2. Recompute Model Flux (Once)
-            # Note: If you deleted everything, new_systs might be empty, 
-            # VoigtFitterV2 handles empty lists gracefully (returns continuum).
-            fitter = VoigtFitterV2(self._session.spec, new_systs)
-            _, model_flux = fitter.compute_model_flux()
-            
-            # 3. Update Spectrum
-            new_spec = self._session.spec.update_model(model_flux)
-            
-            # 4. Return new Session
-            return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
-            
-        except Exception as e:
-            logging.error(f"Failed delete_component: {e}", exc_info=True)
-            return self._session # Return original session on failure, don't return 0
+        return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
     
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
-        Splits the spectrum, creating a new session with a subset of the data.
+        Split spectrum by expression.
+
+        Extract a portion of the spectrum into a new session using a boolean expression.
+        Only rows where the expression is True are kept.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.split`.
 
         Parameters
         ----------
         expression : str
-            A boolean expression defining the rows to KEEP (e.g. ``"x > 121.6"``).
+            Boolean expression to select data (e.g., ``'(x > 400) & (x < 500)'``).
         alias_map : dict, optional
             Mapping for multi-session variables.
 
         Returns
         -------
-        SessionV2
-            A new session containing only the selected data points.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` containing the subset of data,
+            or 0 on failure.
         """
         expression = expression.strip()
         if not expression:
@@ -591,18 +703,24 @@ class RecipeEditV2:
     
     def extract_preset(self, region: str = 'lya_forest') -> Union['SessionV2', List['SessionV2']]:
         """
-        Extracts standard spectral regions based on emission redshift (z_em).
-        Accepts a single region or a comma-separated list (e.g. 'lya_forest, red_side').
+        Extract region by preset.
+
+        Extract a specific standard region (like the Ly-alpha forest) into a new
+        session, based on the current emission redshift (z_em).
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.get_region_bounds`
+        and :meth:`split`.
 
         Parameters
         ----------
-        region : str
-            Preset identifier(s): 'lya_forest', 'all_ly_forest', 'red_side'.
+        region : str, optional
+            Preset region identifier. Options: ``'lya_forest'``, ``'all_ly_forest'``,
+            ``'red_side'``. Can be a comma-separated list. Defaults to ``'lya_forest'``.
 
         Returns
         -------
-        SessionV2 or List[SessionV2]
-            New session(s) containing the extracted region(s).
+        SessionV2 or List[SessionV2] or int
+            One or more new :class:`~astrocook.core.session.SessionV2` instances,
+            or 0 on failure.
         """
         # Parse inputs (split by comma and strip whitespace)
         region_list = [r.strip() for r in region.split(',') if r.strip()]
@@ -649,25 +767,30 @@ class RecipeEditV2:
     def trim_common(self, others_names: str, z_target: str, trans_self: str, 
                     trans_others: str, window_kms: str = '500.0') -> 'SessionV2':
         """
-        Trims the current session to the velocity intersection shared by itself and 'others'.
+        Trim to common velocity coverage.
+
+        Trims the current session to the velocity range shared by a list of other
+        sessions (intersection).
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calc_intersection_expression`.
 
         Parameters
         ----------
         others_names : str
-            Comma-separated names of other sessions loaded in the GUI (e.g., "QSO_OVI, QSO_CIV").
-        z_target : str (float)
-            Target redshift for velocity conversion.
+            Comma-separated names of other sessions.
+        z_target : str
+            Target redshift (float parsed from string).
         trans_self : str
-            Transition name for the current session (e.g., "Ly_a").
+            Transition for current session (e.g. ``'Ly_a'``).
         trans_others : str
-            Comma-separated transition names for the other sessions (e.g., "OVI_1031, CIV_1548").
-        window_kms : str (float)
-            Maximum half-width of the velocity window in km/s.
+            Comma-separated transitions for other sessions.
+        window_kms : str, optional
+            Symmetric window width in km/s. Defaults to ``'500.0'``.
 
         Returns
         -------
-        SessionV2
-            A new session trimmed to the common coverage.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` trimmed to the common coverage,
+            or 0 on failure.
         """
         try:
             # 1. Parse Inputs
@@ -718,19 +841,24 @@ class RecipeEditV2:
     
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
         """
-        Merges the current session with a list of other sessions.
+        Merge multiple sessions.
+
+        Concatenates the current session with a list of other sessions.
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.stitch`.
 
         Parameters
         ----------
-        other_sessions : List[Union[SessionV2, str]]
-            A list of SessionV2 objects OR strings (names of sessions loaded in the GUI).
-        sort : bool
-            If True, sorts the final spectrum by wavelength.
+        other_sessions : list
+            A list of :class:`~astrocook.core.session.SessionV2` objects OR strings
+            (names of sessions loaded in the GUI).
+        sort : bool, optional
+            If True, sorts the final spectrum by wavelength. Defaults to True.
 
         Returns
         -------
-        SessionV2
-            A new session containing the merged data.
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` containing the merged data,
+            or 0 on failure.
         """
         # Delayed import to avoid circular dependency
         from astrocook.core.session import SessionV2 
@@ -779,7 +907,35 @@ class RecipeEditV2:
               dx: str = '0.01', xunit: str = 'nm', kappa: str = '5.0', 
               equalize_order: str = '0') -> Dict[str, Any]:
         """
-        Co-adds multiple sessions by delegating to SpectrumV2.coadd.
+        Co-add multiple sessions.
+
+        Stitches multiple sessions together and rebins them onto a single common
+        grid in one pass (Inverse Variance Weighting).
+        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.coadd`.
+
+        Parameters
+        ----------
+        session_names : str
+            Comma-separated names of sessions to co-add.
+        xstart : str, optional
+            Start wavelength. ``'None'`` for auto. Defaults to ``'None'``.
+        xend : str, optional
+            End wavelength. ``'None'`` for auto. Defaults to ``'None'``.
+        dx : str, optional
+            Step size for the final grid. Defaults to ``'0.01'``.
+        xunit : str, optional
+            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'nm'``.
+        kappa : str, optional
+            Sigma clipping threshold. ``'None'`` for off. Defaults to ``'5.0'``.
+        equalize_order : str, optional
+            Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear).
+            Defaults to ``'0'``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` containing the co-added spectrum,
+            or 0 on failure.
         """
         
         names_list = [n.strip() for n in session_names.split(',') if n.strip()]
