@@ -413,9 +413,9 @@
     <span class="n">QLocale</span><span class="p">,</span>
     <span class="n">QPropertyAnimation</span><span class="p">,</span> <span class="n">QEasingCurve</span><span class="p">,</span> <span class="n">QRect</span><span class="p">,</span> <span class="n">QPoint</span><span class="p">,</span>
     <span class="n">QParallelAnimationGroup</span><span class="p">,</span>
-    <span class="n">QSize</span><span class="p">,</span> <span class="n">QStringListModel</span><span class="p">,</span> <span class="n">QThreadPool</span><span class="p">,</span> <span class="n">QTimer</span>
+    <span class="n">QSize</span><span class="p">,</span> <span class="n">QStringListModel</span><span class="p">,</span> <span class="n">QThreadPool</span><span class="p">,</span> <span class="n">QTimer</span><span class="p">,</span> <span class="n">QUrl</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAction</span><span class="p">,</span> <span class="n">QDoubleValidator</span><span class="p">,</span> <span class="n">QKeySequence</span><span class="p">,</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">QPixmap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAction</span><span class="p">,</span> <span class="n">QDoubleValidator</span><span class="p">,</span> <span class="n">QKeySequence</span><span class="p">,</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">QPixmap</span><span class="p">,</span> <span class="n">QDesktopServices</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">QAbstractItemView</span><span class="p">,</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QCheckBox</span><span class="p">,</span> <span class="n">QComboBox</span><span class="p">,</span> <span class="n">QDialog</span><span class="p">,</span> <span class="n">QDialogButtonBox</span><span class="p">,</span> <span class="n">QFileDialog</span><span class="p">,</span> <span class="n">QInputDialog</span><span class="p">,</span>
     <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QMainWindow</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QGridLayout</span><span class="p">,</span> <span class="n">QFormLayout</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QLineEdit</span><span class="p">,</span> <span class="n">QListView</span><span class="p">,</span> 
@@ -495,6 +495,12 @@
 <a class="viewcode-back" href="../../../api/astrocook.gui.main_window.html#astrocook.gui.main_window.MainWindowV2.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_sessions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">SessionV2</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">SessionV2</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">initial_log_object</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LogManager</span><span class="p">]):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Forces the app name to be &quot;Astrocook&quot; instead of &quot;Python&quot;</span>
+        <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">app</span><span class="p">:</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">setApplicationName</span><span class="p">(</span><span class="s2">&quot;Astrocook&quot;</span><span class="p">)</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">setApplicationDisplayName</span><span class="p">(</span><span class="s2">&quot;Astrocook&quot;</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SessionHistory</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># List of history managers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active_history</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SessionHistory</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Reference to the selected manager</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session_model</span> <span class="o">=</span> <span class="n">QStringListModel</span><span class="p">()</span>
@@ -1015,6 +1021,9 @@
         <span class="n">flux_menu</span> <span class="o">=</span> <span class="n">menu_bar</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Flux&quot;</span><span class="p">)</span>
         <span class="n">continuum_menu</span> <span class="o">=</span> <span class="n">menu_bar</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Continuum&quot;</span><span class="p">)</span>
         <span class="n">absorbers_menu</span> <span class="o">=</span> <span class="n">menu_bar</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Absorbers&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 3. Help Menu</span>
+        <span class="n">help_menu</span> <span class="o">=</span> <span class="n">menu_bar</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="s2">&quot;&amp;Help&quot;</span><span class="p">)</span>
         
         <span class="c1"># --- File and View operations ---</span>
 
@@ -1265,6 +1274,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">refit_all_action</span> <span class="o">=</span> <span class="n">refit_all_action</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all_action</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_undo_redo_actions</span><span class="p">()</span>
+
+        <span class="c1"># --- HELP MENU ACTIONS ---</span>
+        
+        <span class="c1"># 1. Documentation Action (Keeps the menu alive on macOS)</span>
+        <span class="n">doc_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;Online Documentation&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">doc_action</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="n">QKeySequence</span><span class="o">.</span><span class="n">HelpContents</span><span class="p">)</span> <span class="c1"># Standard F1 / Cmd+? shortcut</span>
+        <span class="n">doc_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_docs</span><span class="p">)</span>
+        <span class="n">help_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">doc_action</span><span class="p">)</span>
+
+        <span class="n">help_menu</span><span class="o">.</span><span class="n">addSeparator</span><span class="p">()</span>
+
+        <span class="c1"># 2. About Action (Will move to App Menu on macOS)</span>
+        <span class="n">about_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s2">&quot;&amp;About Astrocook...&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">about_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_about_requested</span><span class="p">)</span>
+        <span class="n">help_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">about_action</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_set_custom_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Reads values from limit boxes and applies them to the plot. &quot;&quot;&quot;</span>
@@ -2597,6 +2621,17 @@
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during in-place session rename: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_about_requested</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Launches the About dialog.&quot;&quot;&quot;</span>
+        <span class="n">dlg</span> <span class="o">=</span> <span class="n">AboutDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">exec</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_open_docs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens the online documentation in the default browser.&quot;&quot;&quot;</span>
+        <span class="c1"># Replace with your actual documentation URL (e.g., ReadTheDocs or GitHub Wiki)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://das-oats.github.io/astrocook/dev/&quot;</span> 
+        <span class="n">QDesktopServices</span><span class="o">.</span><span class="n">openUrl</span><span class="p">(</span><span class="n">QUrl</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_view_system_inspector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;system_inspector&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_inspector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -4068,6 +4103,118 @@
         <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">levelno</span> <span class="o">&gt;=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">record</span><span class="p">))</span></div>
 </div>
+
+
+<div class="viewcode-block" id="AboutDialog">
+<a class="viewcode-back" href="../../../api/astrocook.gui.main_window.html#astrocook.gui.main_window.AboutDialog">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AboutDialog</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dialog to display application information, credits, and citation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AboutDialog.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.gui.main_window.html#astrocook.gui.main_window.AboutDialog.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;About Astrocook&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+        
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="c1"># --- Logo ---</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Reusing the resource path logic from MainWindow</span>
+            <span class="n">icon_path</span> <span class="o">=</span> <span class="n">resource_path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;assets&quot;</span><span class="p">,</span> <span class="s2">&quot;logo_3d_HR.png&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">icon_path</span><span class="p">):</span>
+                <span class="n">logo_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">()</span>
+                <span class="n">pixmap</span> <span class="o">=</span> <span class="n">QPixmap</span><span class="p">(</span><span class="n">icon_path</span><span class="p">)</span><span class="o">.</span><span class="n">scaled</span><span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">KeepAspectRatio</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">SmoothTransformation</span><span class="p">)</span>
+                <span class="n">logo_lbl</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">pixmap</span><span class="p">)</span>
+                <span class="n">logo_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+                <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">logo_lbl</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> 
+            <span class="k">pass</span>
+
+        <span class="c1"># --- Title &amp; Version ---</span>
+        <span class="n">title_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Astrocook V2&quot;</span><span class="p">)</span>
+        <span class="n">title_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;font-size: 20pt; font-weight: bold; color: #296bff;&quot;</span><span class="p">)</span>
+        <span class="n">title_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="c1">#layout.addWidget(title_lbl)</span>
+
+        <span class="n">copy_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;© 2017-2026 Guido Cupani&quot;</span><span class="p">)</span>
+        <span class="n">copy_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;font-size: 14pt; color: #296bff;&quot;</span><span class="p">)</span>
+        <span class="n">copy_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">copy_lbl</span><span class="p">)</span>
+
+        <span class="c1"># Try to import version, else fallback</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">ver</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="n">ver</span> <span class="o">=</span> <span class="s2">&quot;2.0 (Beta)&quot;</span>
+
+        <span class="n">ver_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Version: </span><span class="si">{</span><span class="n">ver</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">ver_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;font-weight: bold; color: #f5a100;&quot;</span><span class="p">)</span>
+        <span class="n">ver_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">ver_lbl</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="n">tagline_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;A thousand recipes to cook a spectrum&quot;</span><span class="p">)</span>
+        <span class="n">tagline_lbl</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;font-size: 16pt; font-weight: bold;&quot;</span><span class="p">)</span>
+        <span class="n">tagline_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">tagline_lbl</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="c1"># --- Description / Credits ---</span>
+        <span class="n">credits_html</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;Developed by &lt;b&gt;Guido Cupani&lt;/b&gt;&lt;br&gt;at INAF–Osservatorio Astronomico di Trieste.&lt;/p&gt;&quot;</span>
+            <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;&lt;b&gt;Many thanks&lt;/b&gt; to (in alphabetical order):&lt;br&gt;Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,&lt;br&gt;Valentina D&#39;Odorico, Francesco Guarneri, Elena Marcuzzo,&lt;br&gt; Stefano Alberto Russo, Andrea Trost.&lt;/p&gt;&quot;</span>
+            <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;Partly funded by the PRIN PNRR project&lt;br&gt;“Next generation computing &amp; data technologies&lt;br&gt;to probe the cosmic metal content”.&lt;/p&gt;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">credits_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">credits_html</span><span class="p">)</span>
+        <span class="n">credits_lbl</span><span class="o">.</span><span class="n">setWordWrap</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">credits_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">credits_lbl</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+        <span class="c1"># --- Buttons ---</span>
+        <span class="c1"># Create the standard Dialog Button Box</span>
+        <span class="n">btn_box</span> <span class="o">=</span> <span class="n">QDialogButtonBox</span><span class="p">(</span><span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">Ok</span><span class="p">)</span>
+        <span class="n">btn_box</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">)</span>
+
+        <span class="c1"># 1. Report Issue Button (GitHub)</span>
+        <span class="n">issue_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Report Issue&quot;</span><span class="p">)</span>
+        <span class="n">issue_btn</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s2">&quot;Open the GitHub Issues page to report bugs or request features&quot;</span><span class="p">)</span>
+        <span class="n">issue_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_github_issues</span><span class="p">)</span>
+        <span class="n">btn_box</span><span class="o">.</span><span class="n">addButton</span><span class="p">(</span><span class="n">issue_btn</span><span class="p">,</span> <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">ActionRole</span><span class="p">)</span>
+        
+        <span class="c1"># 2. Cite Button (ADS)</span>
+        <span class="n">cite_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Cite on ADS&quot;</span><span class="p">)</span>
+        <span class="n">cite_btn</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s2">&quot;Open the NASA ADS citation export page for Astrocook&quot;</span><span class="p">)</span>
+        <span class="n">cite_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_ads_citation</span><span class="p">)</span>
+        
+        <span class="c1"># Add &quot;Cite&quot; to the button box with ActionRole </span>
+        <span class="c1"># (This usually places it to the left of the OK button)</span>
+        <span class="n">btn_box</span><span class="o">.</span><span class="n">addButton</span><span class="p">(</span><span class="n">cite_btn</span><span class="p">,</span> <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">ActionRole</span><span class="p">)</span>
+
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">btn_box</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_open_ads_citation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens the ADS export citation page in the default browser.&quot;&quot;&quot;</span>
+        <span class="c1"># URL for the 2020 Astronomy and Computing paper</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/exportcitation&quot;</span>
+        <span class="n">QDesktopServices</span><span class="o">.</span><span class="n">openUrl</span><span class="p">(</span><span class="n">QUrl</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_open_github_issues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens the GitHub Issues page in the default browser.&quot;&quot;&quot;</span>
+        <span class="c1"># Update this URL if the repo is under a different organization</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/DAS-OATs/astrocook/issues&quot;</span>
+        <span class="n">QDesktopServices</span><span class="o">.</span><span class="n">openUrl</span><span class="p">(</span><span class="n">QUrl</span><span class="p">(</span><span class="n">url</span><span class="p">))</span></div>
 
 </pre></div>
 
