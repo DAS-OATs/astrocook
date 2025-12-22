@@ -14,15 +14,15 @@ class VoigtModelConstraintV2:
     Manages parameter constraints and vector mapping for Voigt fitting.
 
     This class acts as a bridge between the high-level, object-oriented representation
-    of absorption systems (:class:`~astrocook.core.system_list.SystemListV2`) and the 
-    flat parameter arrays required by numerical optimizers (like ``scipy.optimize.least_squares``).
+    of absorption systems (:class:`~astrocook.core.system_list.SystemListV2`) and the
+    flat parameter arrays required by numerical optimizers.
 
     It handles:
-    1.  **Selective Fitting:** Identifying which components are "active" (free to vary) 
+    1.  **Selective Fitting**: Identifying which components are "active" (free to vary)
         and which are "frozen" based on user selection and grouping logic.
-    2.  **Parameter Linking:** Evaluating mathematical expressions to link parameters 
+    2.  **Parameter Linking**: Evaluating mathematical expressions to link parameters
         (e.g., tying the redshift of two components together).
-    3.  **Vectorization:** Converting component objects to a flat vector ``p`` and back.
+    3.  **Vectorization**: Converting component objects to a flat vector ``p`` and back.
 
     Parameters
     ----------
@@ -60,24 +60,25 @@ class VoigtModelConstraintV2:
 
     def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2):
         """
-        Defines the set of components to be fit (the "Fluid Group").
+        Define the set of components to be fit (the "Fluid Group").
 
-        When fitting a specific line, we must also fit any lines that are:
+        When fitting a specific line, the fitter must also include any lines that are:
         1.  Physically linked (via parameter constraints).
         2.  Spectrally overlapping (blended).
-        
-        This method calculates that group and marks all other components as "frozen"
-        (fixed parameters) for the upcoming fit.
+
+        This method calculates that connected group and marks all other components
+        as "frozen" (fixed parameters) for the upcoming fit.
 
         Parameters
         ----------
         target_uuids : list of str, optional
-            The UUIDs of the components the user explicitly selected. 
-            If None, ALL components are considered active.
+            The UUIDs of the components the user explicitly selected.
+            If ``None``, ALL components are considered active.
         group_depth : int, optional
             How many degrees of separation to traverse when finding connected components.
-            1 = Direct neighbors only.
-            2 = Neighbors of neighbors (Friends of Friends).
+            - ``1``: Direct neighbors/links only.
+            - ``2``: Neighbors of neighbors (Friends of Friends).
+            Defaults to ``2``.
         """
         if target_uuids is None:
             self._active_uuids = None
@@ -268,27 +269,32 @@ class VoigtModelConstraintV2:
 
     @property
     def p_free_vector(self) -> np.ndarray:
-        """The 1D array of currently free (varying) parameters."""
+        """
+        The 1D array of currently free (varying) parameters.
+
+        This vector serves as the input ``x`` for the optimizer. It excludes
+        fixed parameters and dependent (linked) parameters.
+        """
         return self._p_free_vector
         
     def map_p_free_to_full(self, p_free_fitted: np.ndarray) -> np.ndarray:
         """
-        Reconstructs the full parameter vector from the free parameters.
-        
+        Reconstruct the full parameter vector from the free parameters.
+
         This method:
-        1. Places the free parameter values into their correct positions.
+        1. Places the free parameter values into their correct positions in the full vector.
         2. Leaves fixed parameters at their initial values.
-        3. Evaluates and applies all linked parameter expressions (e.g. ``z2 = z1``).
+        3. Evaluates and applies all linked parameter expressions (e.g., ``z2 = p['uuid1'].z``).
 
         Parameters
         ----------
         p_free_fitted : np.ndarray
-            The vector of optimized free parameters.
+            The vector of optimized free parameters (output from optimizer).
 
         Returns
         -------
         np.ndarray
-            The full vector containing all parameters for all components.
+            The full vector containing all parameters (z, logN, b, btur) for all components.
         """
         # 1. Fill Free Parameters
         p_full = self._initial_p_vector.copy()
@@ -337,7 +343,16 @@ class VoigtModelConstraintV2:
     
     def get_bounds(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Returns lower and upper bounds for the free parameters.
+        Return lower and upper bounds for the free parameters.
+
+        Extracts the physical limits (e.g., b > 0) for every parameter currently
+        in the free vector.
+
+        Returns
+        -------
+        tuple
+            A tuple ``(lower_bounds, upper_bounds)``, each being a numpy array
+            matching the size of ``p_free_vector``.
         """
         lower = []
         upper = []

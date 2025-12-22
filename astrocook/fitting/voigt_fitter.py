@@ -18,25 +18,30 @@ from .voigt_model import VoigtModelConstraintV2
 def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
     """
     Convolves a flux array with a Gaussian kernel defined by resolution.
-    
+
+    Handles both constant resolution (scalar) and variable resolution (array)
+    across the wavelength grid.
+
     Parameters
     ----------
     flux : np.ndarray
-        The flux array (0 to 1 normalized, or physical).
+        The input flux array (either normalized 0-1 or physical units).
     x_ang : np.ndarray
-        The wavelength grid in Angstroms (must match flux length).
-    resol : Any
-        Resolution value. Can be:
-        - Scalar (float): Constant resolution (R or km/s).
-        - Array (np.ndarray): Pixel-by-pixel resolution (must match flux length).
-    resol_unit : str
-        'R' for Resolving Power (lambda / d_lambda).
-        'km/s' for FWHM velocity.
-        
+        The wavelength grid in Angstroms. Must match ``flux`` length.
+    resol : float or np.ndarray
+        Resolution value(s).
+        - If float: Constant resolution across the spectrum.
+        - If array: Pixel-by-pixel resolution (must match ``flux`` length).
+    resol_unit : str, optional
+        Unit of the resolution value:
+        - ``'R'``: Resolving Power (:math:`R = \lambda / \Delta\lambda`).
+        - ``'km/s'``: FWHM velocity.
+        Defaults to ``'R'``.
+
     Returns
     -------
     np.ndarray
-        The convolved flux.
+        The convolved flux array with the same shape as input.
     """
     if len(flux) == 0: return flux
     if len(flux) != len(x_ang):
@@ -110,18 +115,18 @@ class VoigtFitterV2:
     """
     Engine for fitting Voigt profiles to spectral data.
 
-    This class handles:
-    1.  Resolution logic (determining R/FWHM from metadata).
-    2.  Dynamic masking (fitting only relevant pixels).
-    3.  Optimization (using ``scipy.optimize.least_squares``).
-    4.  Error estimation (covariance matrix inversion).
+    This class orchestrates the optimization process. It handles:
+    1.  **Resolution Logic**: determining effective resolution (R or FWHM) from columns or metadata.
+    2.  **Dynamic Masking**: identifying relevant pixels for the fit to speed up computation.
+    3.  **Optimization**: utilizing ``scipy.optimize.least_squares`` to minimize residuals.
+    4.  **Vectorization**: calculating optical depths for multiple lines simultaneously.
 
     Parameters
     ----------
     spectrum : SpectrumV2
-        The spectrum data to fit.
+        The spectral data to fit. Must have a valid normalization (continuum) or be pre-normalized.
     system_list : SystemListV2
-        The list of components to model.
+        The list of absorption components to model.
     """
     def __init__(self, spectrum: SpectrumV2, system_list: SystemListV2):
         self._spectrum = spectrum
@@ -613,8 +618,34 @@ class VoigtFitterV2:
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 0) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
-        Executes the optimization using scipy.optimize.least_squares.
-        Includes spatial pre-filtering and vectorization setup for speed.
+        Execute the Voigt profile optimization.
+
+        Performs a least-squares fit of the active components to the spectrum.
+        Includes automatic spatial pre-filtering (fitting only pixels near the lines)
+        and vectorized optical depth calculation.
+
+        Parameters
+        ----------
+        max_nfev : int, optional
+            Maximum number of function evaluations for the optimizer. Defaults to ``2000``.
+        method : str, optional
+            Optimization method (e.g., ``'trf'``, ``'lm'``). Defaults to ``'trf'``.
+        z_window_kms : float, optional
+            Velocity window (km/s) around component centers to include in the fit mask.
+            Defaults to ``20.0``.
+        verbose : int, optional
+            Verbosity level for ``scipy.optimize.least_squares``. Defaults to ``0``.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):
+               A new system list containing the optimized parameter values and errors.
+            2. **final_model_flux** (*np.ndarray*):
+               The full model flux array (physical units), evaluated on the entire grid.
+            3. **res** (*OptimizeResult*):
+               The raw result object from ``scipy.optimize``.
         """
         logging.debug(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
@@ -924,7 +955,17 @@ class VoigtFitterV2:
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Computes the model flux for the *current* parameters without running a fit.
+        Compute the model flux for the current parameters.
+
+        Calculates the Voigt profile model based on the current state of the
+        system list, without performing any fitting/optimization.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            1. **wavelength** (*np.ndarray*): The wavelength grid in Angstroms.
+            2. **model_flux** (*np.ndarray*): The computed model flux (physical units).
         """
         p_current_free = self._constraints.p_free_vector
         temp_x = self._x_calc
