@@ -44,6 +44,8 @@
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/getting_started';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -54,7 +56,7 @@
         </script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="API Reference" href="../reference.html" />
+    <link rel="next" title="Editing Data" href="editing_data.html" />
     <link rel="prev" title="Tutorials" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -356,6 +358,10 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
 </ul>
 </div>
 </nav></div>
@@ -418,110 +424,93 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="getting-started">
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h1>
-<p>Welcome to <strong>Astrocook</strong>! This guide will walk you through the graphical interface, from loading your first spectrum to performing basic analysis.</p>
-<section id="launching-the-application">
-<h2>1. Launching the Application<a class="headerlink" href="#launching-the-application" title="Link to this heading">#</a></h2>
-<p>Start Astrocook from your terminal:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>astrocook
-</pre></div>
-</div>
-<p>The Main Window will appear, divided into three sections:</p>
+<p>Welcome to Astrocook V2! This guide will walk you through the basics of the interface: loading data, exploring your spectra, and managing your analysis sessions.</p>
+<section id="loading-a-spectrum">
+<h2>1. Loading a Spectrum<a class="headerlink" href="#loading-a-spectrum" title="Link to this heading">#</a></h2>
+<p>Let’s begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>).</p>
 <ol class="arabic simple">
-<li><p><strong>Session List (Left):</strong> Tracks the history of your modifications (Undo/Redo steps).</p></li>
-<li><p><strong>Plot Area (Center):</strong> Interactive visualization of the spectrum.</p></li>
-<li><p><strong>Plot Controls (Right):</strong> Toggles for errors, continuum, models, and redshift cursors.</p></li>
+<li><p>Launch Astrocook. You will be greeted by the welcome screen.</p></li>
+<li><p>Go to the menu bar and select <strong>File &gt; Open Session…</strong> (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+O</span></code>).</p></li>
+<li><p>Select your spectrum file. You can select multiple files at once if you want to load several observations simultaneously.</p></li>
 </ol>
+<p>Once loaded, the interface will come alive. The central area displays your spectrum, while two sidebars provide control over your data and visualization.</p>
+<img alt="The main Astrocook interface with a spectrum loaded" class="align-center" src="static/getting_started_plot_controls.png" />
 </section>
-<section id="loading-data">
-<h2>2. Loading Data<a class="headerlink" href="#loading-data" title="Link to this heading">#</a></h2>
-<p>To load a spectrum, go to <strong>File &gt; Open Spectrum…</strong> or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code>.
-Astrocook supports:</p>
+<section id="navigating-the-plot">
+<h2>2. Navigating the Plot<a class="headerlink" href="#navigating-the-plot" title="Link to this heading">#</a></h2>
+<p>The central plot is interactive. You can explore the details of your spectrum using the toolbar located directly above the graph (standard Matplotlib controls):</p>
 <ul class="simple">
-<li><p><strong>FITS files</strong> (<code class="docutils literal notranslate"><span class="pre">.fits</span></code>)</p></li>
-<li><p><strong>Astrocook Sessions</strong> (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>)</p></li>
+<li><p><strong>Pan</strong>: Click the “Cross arrow” icon to click and drag the spectrum.</p></li>
+<li><p><strong>Zoom</strong>: Click the “Magnifying glass” icon to draw a rectangle and zoom into a specific feature.</p></li>
+<li><p><strong>Home</strong>: Click the “Home” icon to reset the view to the full range.</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>When you load a file, Astrocook automatically creates a new <strong>Session</strong>. You can have multiple sessions open simultaneously (e.g., to compare different quasars).</p>
-</div>
-</section>
-<section id="the-plot-interface">
-<h2>3. The Plot Interface<a class="headerlink" href="#the-plot-interface" title="Link to this heading">#</a></h2>
-<p>Once data is loaded, the Right Sidebar becomes active. Here you can toggle visibility for different data components:</p>
-<ul class="simple">
-<li><p><strong>1-sigma error:</strong> Toggles the grey shading representing flux uncertainty.</p></li>
-<li><p><strong>Continuum:</strong> Toggles the dashed line for the fitted continuum.</p></li>
-<li><p><strong>Absorption model:</strong> Toggles the red line showing Voigt profile fits.</p></li>
-<li><p><strong>Systems:</strong> Toggles vertical markers for identified absorption systems.</p></li>
-</ul>
-<section id="navigation">
-<h3>Navigation<a class="headerlink" href="#navigation" title="Link to this heading">#</a></h3>
-<ul class="simple">
-<li><p><strong>Pan:</strong> Click and drag with the <strong>Left Mouse Button</strong>.</p></li>
-<li><p><strong>Zoom:</strong> Right-click and drag to define a zoom rectangle.</p></li>
-<li><p><strong>Reset:</strong> Click the <strong>Home</strong> icon in the toolbar to reset the view.</p></li>
-</ul>
-</section>
-</section>
-<section id="basic-analysis-smoothing">
-<h2>4. Basic Analysis: Smoothing<a class="headerlink" href="#basic-analysis-smoothing" title="Link to this heading">#</a></h2>
-<p>Let’s improve the signal-to-noise ratio visually by smoothing the spectrum.</p>
-<ol class="arabic simple">
-<li><p>Go to <strong>Flux &gt; Smooth Spectrum…</strong>.</p></li>
-<li><p>A dialog will appear asking for parameters.</p></li>
-<li><p><strong>Sigma (km/s):</strong> Enter <code class="docutils literal notranslate"><span class="pre">100.0</span></code>.</p></li>
-<li><p>Click <strong>Run</strong>.</p></li>
-</ol>
-<p>Astrocook processes this “Recipe” in the background. Notice that a new entry appears in the <strong>Session List</strong> on the left.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p><strong>Undo/Redo:</strong>
-If you don’t like the result, simply press <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (Undo) or click the previous state in the Session List. Astrocook saves the full state of the spectrum at every step!</p>
+<p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
 </div>
 </section>
-<section id="estimating-the-continuum">
-<h2>5. Estimating the Continuum<a class="headerlink" href="#estimating-the-continuum" title="Link to this heading">#</a></h2>
-<p>To analyze absorption lines, we need to normalize the spectrum.</p>
-<ol class="arabic simple">
-<li><p>Go to <strong>Continuum &gt; Auto-estimate Continuum…</strong>.</p></li>
-<li><p>Leave the default parameters (e.g., Kappa=2.0) and click <strong>Run</strong>.</p></li>
-<li><p>The blue line (Flux) will now be overlaid with a black dashed line (Continuum).</p></li>
-</ol>
-<p>To view the normalized flux:</p>
-<ol class="arabic simple">
-<li><p>Look at the <strong>Plot Controls</strong> (Right Sidebar).</p></li>
-<li><p>Check the box <strong>Normalize F</strong>.</p></li>
-<li><p>The Y-axis changes to <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">/</span> <span class="pre">Continuum</span></code>.</p></li>
-</ol>
+<section id="customizing-the-view-right-sidebar">
+<h2>3. Customizing the View (Right Sidebar)<a class="headerlink" href="#customizing-the-view-right-sidebar" title="Link to this heading">#</a></h2>
+<p>Look to the right side of the window. This is the <strong>Plot Controls</strong> panel. Here you can tweak how the data is displayed without altering the data itself.</p>
+<section id="toggles">
+<h3>Toggles<a class="headerlink" href="#toggles" title="Link to this heading">#</a></h3>
+<p>You can show or hide specific layers of the plot:</p>
+<ul class="simple">
+<li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
+<li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
+<li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
+<li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
+</ul>
 </section>
-<section id="advanced-scripting-api">
-<h2>Advanced: Scripting API<a class="headerlink" href="#advanced-scripting-api" title="Link to this heading">#</a></h2>
-<p>Every action you take in the GUI corresponds to a command in the Astrocook API. You can automate your workflow using Python scripts.</p>
-<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
-<summary class="sd-summary-title sd-card-header">
-<span class="sd-summary-text">Click to see the Python Code equivalent</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
-<p class="sd-card-text">The actions above can be replicated in a script using the <code class="docutils literal notranslate"><span class="pre">SessionV2</span></code> API:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
-
-<span class="c1"># 1. Load the session</span>
-<span class="n">sess</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="o">.</span><span class="n">open_new</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;spec_qso.fits&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;QSO_1&quot;</span><span class="p">,</span> <span class="n">gui_context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">format_name</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span><span class="p">)</span>
-
-<span class="c1"># 2. Smooth the flux (Flux Menu)</span>
-<span class="c1"># This returns a NEW session object (the API is immutable)</span>
-<span class="n">sess</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
-
-<span class="c1"># 3. Auto-estimate Continuum (Continuum Menu)</span>
-<span class="n">sess</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">continuum</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">(</span>
-    <span class="n">smooth_len_lya</span><span class="o">=</span><span class="mf">5000.0</span><span class="p">,</span> 
-    <span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span>
-<span class="p">)</span>
-
-<span class="c1"># 4. Save the result</span>
-<span class="n">sess</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;output_session.acs2&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</details></section>
+<section id="axis-controls">
+<h3>Axis Controls<a class="headerlink" href="#axis-controls" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Units</strong>: You can switch the X-axis display between <code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>, and <code class="docutils literal notranslate"><span class="pre">micron</span></code> on the fly.</p></li>
+<li><p><strong>Log Scale</strong>: Useful for visualizing data with high dynamic range; check <strong>Logarithmic F</strong> to switch the Y-axis.</p></li>
+<li><p><strong>Flux vs. SNR</strong>: Check <strong>Show SNR</strong> to inspect the Signal-to-Noise ratio instead of the flux.</p></li>
+</ul>
+</section>
+<section id="the-redshift-cursor">
+<h3>The Redshift Cursor<a class="headerlink" href="#the-redshift-cursor" title="Link to this heading">#</a></h3>
+<p>This is a handy tool for quick visual inspection.</p>
+<ol class="arabic simple">
+<li><p>In the <strong>Redshift Cursor</strong> section, enter a transition name (e.g., <code class="docutils literal notranslate"><span class="pre">Ly_a</span></code>, <code class="docutils literal notranslate"><span class="pre">CIV</span></code>, <code class="docutils literal notranslate"><span class="pre">MgII</span></code>) and a redshift <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p></li>
+<li><p>Check the <strong>Show Cursor Lines</strong> box.</p></li>
+<li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to slide the cursor along the spectrum.</p></li>
+</ol>
+<img alt="The Plot Controls sidebar" class="align-center" src="static/getting_started_main_view.png" />
+</section>
+</section>
+<section id="session-management-left-sidebar">
+<h2>4. Session Management (Left Sidebar)<a class="headerlink" href="#session-management-left-sidebar" title="Link to this heading">#</a></h2>
+<p>The panel on the left is your <strong>Session List</strong>. Each file you load becomes a “Session”.</p>
+<section id="switching-sessions">
+<h3>Switching Sessions<a class="headerlink" href="#switching-sessions" title="Link to this heading">#</a></h3>
+<p>If you loaded multiple spectra, click on their names in this list to switch the main view instantly.</p>
+</section>
+<section id="session-info-properties">
+<h3>Session Info &amp; Properties<a class="headerlink" href="#session-info-properties" title="Link to this heading">#</a></h3>
+<p>Right-click on any session in the list to open the context menu. Select <strong>View Info</strong> to open the Session Inspector. Here you can see (and edit) critical metadata:</p>
+<ul class="simple">
+<li><p><strong>Object Name</strong></p></li>
+<li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong>: Crucial for many recipes like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis.</p></li>
+<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong>: Essential for accurate Voigt profile fitting.</p></li>
+</ul>
+</section>
+<section id="saving-and-closing">
+<h3>Saving and Closing<a class="headerlink" href="#saving-and-closing" title="Link to this heading">#</a></h3>
+<p>When you have finished your analysis (or if you want to save your progress):</p>
+<ol class="arabic simple">
+<li><p><strong>Save</strong>: Go to <strong>File &gt; Save Session…</strong> or right-click the session in the list. This saves your work as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> file, preserving all your continuum fits and line lists.</p></li>
+<li><p><strong>Close</strong>: You can close a specific session via the right-click menu, or close the active session via <strong>File &gt; Close Session</strong>.</p></li>
+</ol>
+<img alt="The Session List with context menu" class="align-center" src="static/getting_started_session_list.png" />
+</section>
+</section>
+<section id="what-s-next">
+<h2>What’s Next?<a class="headerlink" href="#what-s-next" title="Link to this heading">#</a></h2>
+<p>Now that you are comfortable with the interface, you are ready to manipulate your data. Check out the <a class="reference internal" href="editing_data.html"><span class="std std-doc">Editing Data</span></a> tutorial to learn how to clean up your spectra.</p>
+</section>
 </section>
 
 
@@ -544,11 +533,11 @@ If you don’t like the result, simply press <code class="docutils literal notra
       </div>
     </a>
     <a class="right-next"
-       href="../reference.html"
+       href="editing_data.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">API Reference</p>
+        <p class="prev-next-title">Editing Data</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -571,15 +560,21 @@ If you don’t like the result, simply press <code class="docutils literal notra
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#launching-the-application">1. Launching the Application</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-data">2. Loading Data</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-plot-interface">3. The Plot Interface</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#navigation">Navigation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-a-spectrum">1. Loading a Spectrum</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#navigating-the-plot">2. Navigating the Plot</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customizing-the-view-right-sidebar">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#toggles">Toggles</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-redshift-cursor">The Redshift Cursor</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-analysis-smoothing">4. Basic Analysis: Smoothing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#estimating-the-continuum">5. Estimating the Continuum</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-scripting-api">Advanced: Scripting API</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#session-management-left-sidebar">4. Session Management (Left Sidebar)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switching-sessions">Switching Sessions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#session-info-properties">Session Info &amp; Properties</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-closing">Saving and Closing</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s Next?</a></li>
 </ul>
   </nav></div>
 

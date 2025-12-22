@@ -2,13 +2,13 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="./" >
+<html lang="en" data-content_root="../" >
 
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>API Reference &#8212; Astrocook 2.0.0 documentation</title>
+    <title>Continuum Fitting &#8212; Astrocook 2.0.0 documentation</title>
   
   
   
@@ -27,24 +27,26 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=18537e06" />
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=18537e06" />
   
   <!-- So that users can add custom icons -->
-  <script src="static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script src="../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="static/documentation_options.js?v=51b770b3"></script>
-    <script src="static/doctools.js?v=9bcbadda"></script>
-    <script src="static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'reference';</script>
+    <script src="../static/documentation_options.js?v=51b770b3"></script>
+    <script src="../static/doctools.js?v=9bcbadda"></script>
+    <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/continuum_fitting';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
@@ -52,10 +54,10 @@
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="astrocook.core package" href="api/astrocook.core.html" />
-    <link rel="prev" title="Absorption Systems" href="tutorials/absorption_systems.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Absorption Systems" href="absorption_systems.html" />
+    <link rel="prev" title="Flux Operations" href="flux_operations.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -77,7 +79,7 @@
   <dialog id="pst-search-dialog">
     
 <form class="bd-search d-flex align-items-center"
-      action="search.html"
+      action="../search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -113,7 +115,7 @@
     
   
 
-<a class="navbar-brand logo" href="index.html">
+<a class="navbar-brand logo" href="../index.html">
   
   
   
@@ -124,8 +126,8 @@
       
     
     
-    <img src="static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
-    <img src="static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
   
   
     <p class="title logo__title">Astrocook</p>
@@ -143,21 +145,21 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="installation.html">
+  <a class="nav-link nav-internal" href="../installation.html">
     Installation
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
     API Reference
   </a>
 </li>
@@ -272,21 +274,21 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="installation.html">
+  <a class="nav-link nav-internal" href="../installation.html">
     Installation
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
     API Reference
   </a>
 </li>
@@ -354,33 +356,12 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="api/astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.session.html">astrocook.core.session module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.structures.html">astrocook.core.structures module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
-</ul>
-</details></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">High-level analysis recipes available in the menus</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="api/astrocook.recipes.html">astrocook.recipes package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
-</ul>
-</details></li>
-</ul>
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling and fitting logic</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="api/astrocook.fitting.html">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
-</ul>
-</details></li>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
 </ul>
 </div>
 </nav></div>
@@ -417,11 +398,14 @@
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
-      <a href="index.html" class="nav-link" aria-label="Home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">API Reference</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Continuum Fitting</span></li>
   </ul>
 </nav>
 </div>
@@ -438,39 +422,86 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="api-reference">
-<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h1>
-<p>Astrocook is organized into the following sub-packages:</p>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api/astrocook.core.html">astrocook.core package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.core.html#module-astrocook.core">Module contents</a></li>
+  <section class="tex2jax_ignore mathjax_ignore" id="continuum-fitting">
+<h1>Continuum Fitting<a class="headerlink" href="#continuum-fitting" title="Link to this heading">#</a></h1>
+<p>A robust continuum fit is the backbone of any absorption line analysis. Astrocook provides both automated algorithms for quick estimation and interactive tools for fine-tuning. This tutorial covers the <strong>Continuum</strong> menu and the manual editing tools.</p>
+<section id="automatic-estimation">
+<h2>1. Automatic Estimation<a class="headerlink" href="#automatic-estimation" title="Link to this heading">#</a></h2>
+<p>For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Continuum &gt; Auto-estimate Continuum…</strong>.</p></li>
+<li><p>Adjust the parameters if necessary:</p>
+<ul class="simple">
+<li><p>Smoothing (Ly-a / Out): Defines the scale of the smoothing spline. The default <code class="docutils literal notranslate"><span class="pre">5000</span></code> km/s for the Ly-alpha forest and <code class="docutils literal notranslate"><span class="pre">400</span></code> km/s for the red side usually work well.</p></li>
+<li><p>Kappa: The sigma threshold for clipping absorption (default <code class="docutils literal notranslate"><span class="pre">2.0</span></code>). Lower values make the algorithm more aggressive at finding lines.</p></li>
+<li><p>Fudge: Leave as <code class="docutils literal notranslate"><span class="pre">auto</span></code>. This calculates a correction factor to ensure the residuals of the unabsorbed regions are centered on zero.</p></li>
 </ul>
 </li>
+<li><p>Click <strong>Run</strong>.</p></li>
+</ol>
+<p>Astrocook will generate a new continuum curve (black dashed line). If you have a <code class="docutils literal notranslate"><span class="pre">model</span></code> (absorption lines) already defined, it will automatically re-normalize it to match the new continuum.</p>
+<img alt="Applying a mathematical expression to a column" class="align-center" src="static/continuum_auto.png" />
+<section id="step-by-step-method">
+<h3>Step-by-Step Method<a class="headerlink" href="#step-by-step-method" title="Link to this heading">#</a></h3>
+<p>If you need more control, you can run the process in two steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Continuum &gt; Find Absorbed Regions…</strong>: Creates a mask (<code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>) separating line/continuum.</p></li>
+<li><p><strong>Continuum &gt; Fit Continuum to Mask…</strong>: Interpolates the continuum only over the unmasked regions. This allows you to manually edit the <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> (via <a class="reference internal" href="editing_data.html#arithmetic-on-column"><span class="std std-ref">Apply Expression</span></a>) between steps if the automatic masking missed something.</p></li>
+</ol>
+</section>
+</section>
+<section id="interactive-manual-editing">
+<h2>2. Interactive Manual Editing<a class="headerlink" href="#interactive-manual-editing" title="Link to this heading">#</a></h2>
+<p>Automatic fits sometimes fail near complex emission lines or spectral edges. You can correct these manually using the <strong>Right Sidebar</strong>.</p>
+<section id="starting-the-editor">
+<h3>Starting the Editor<a class="headerlink" href="#starting-the-editor" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Look at the <strong>Edit Continuum</strong> section in the right sidebar.</p></li>
+<li><p>Click the <strong>Start</strong> button.</p></li>
+<li><p><strong>Knots</strong> (black dots) will appear along the current continuum.</p></li>
+</ol>
+</section>
+<section id="modifying-knots">
+<h3>Modifying Knots<a class="headerlink" href="#modifying-knots" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Move</strong>: Left-click and drag a knot to adjust the continuum level at that wavelength.</p></li>
+<li><p><strong>Add</strong>: Right-click anywhere on the plot to add a new knot.</p></li>
+<li><p><strong>Remove</strong>: Right-click on an existing knot to delete it.</p></li>
 </ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">High-level analysis recipes available in the menus</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api/astrocook.recipes.html">astrocook.recipes package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.recipes.html#module-astrocook.recipes">Module contents</a></li>
+</section>
+<section id="controlling-stiffness-the-slider">
+<h3>Controlling Stiffness (The Slider)<a class="headerlink" href="#controlling-stiffness-the-slider" title="Link to this heading">#</a></h3>
+<p>The slider next to the Start button controls the <strong>knot density</strong> (spacing).</p>
+<ul class="simple">
+<li><p><strong>Slide Left</strong>: Increases density (knots are closer). This allows the continuum to follow sharper variations (e.g., on top of emission lines).</p></li>
+<li><p><strong>Slide Right</strong>: Decreases density. This makes the continuum smoother and stiffer.</p></li>
+</ul>
+<p><strong>Warning:</strong> Changing the slider re-samples the knots. If you have moved specific knots, adjusting the slider might reset their positions to the grid.</p>
+<img alt="Applying a mathematical expression to a column" class="align-center" src="static/continuum_manual_edit.png" />
+</section>
+<section id="saving">
+<h3>Saving<a class="headerlink" href="#saving" title="Link to this heading">#</a></h3>
+<p>When you are satisfied with the shape:</p>
+<ol class="arabic simple">
+<li><p>Click the <strong>Save</strong> button (which replaced “Start”).</p></li>
+<li><p>The new continuum is saved to the session, and the knots disappear.</p></li>
+</ol>
+</section>
+</section>
+<section id="power-law-fitting">
+<h2>3. Power-Law Fitting<a class="headerlink" href="#power-law-fitting" title="Link to this heading">#</a></h2>
+<p>For quasars, it is often useful to fit a power-law continuum (<span class="math notranslate nohighlight">\(F_\lambda\propto\lambda^{-\alpha}\)</span>) to estimate the underlying emission before determining the detailed shape.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Continuum &gt; Fit Power-Law…</strong>.</p></li>
+<li><p><strong>Regions:</strong> Enter a list of comma-separated wavelength ranges (in <strong>rest-frame</strong> nm) known to be free of emission lines.</p>
+<ul class="simple">
+<li><p>Default: <code class="docutils literal notranslate"><span class="pre">128.0-129.0,</span> <span class="pre">131.5-132.5,</span> <span class="pre">134.5-136.0</span></code> (standard windows outside the Lyman forest).</p></li>
 </ul>
 </li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling and fitting logic</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api/astrocook.fitting.html">astrocook.fitting package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.fitting.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/astrocook.fitting.html#module-astrocook.fitting">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
+<li><p>Click <strong>Run</strong>.</p></li>
+</ol>
+<p>This creates a new column <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> which you can view or use as a baseline for further fitting.</p>
+</section>
 </section>
 
 
@@ -484,20 +515,20 @@
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="tutorials/absorption_systems.html"
+       href="flux_operations.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Absorption Systems</p>
+        <p class="prev-next-title">Flux Operations</p>
       </div>
     </a>
     <a class="right-next"
-       href="api/astrocook.core.html"
+       href="absorption_systems.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook.core package</p>
+        <p class="prev-next-title">Absorption Systems</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -513,10 +544,33 @@
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-estimation">1. Automatic Estimation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-by-step-method">Step-by-Step Method</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-manual-editing">2. Interactive Manual Editing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#starting-the-editor">Starting the Editor</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-knots">Modifying Knots</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-stiffness-the-slider">Controlling Stiffness (The Slider)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving">Saving</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#power-law-fitting">3. Power-Law Fitting</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="sources/reference.md.txt"
+      <li><a href="../sources/tutorials/continuum_fitting.md.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div></div>
@@ -534,8 +588,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">

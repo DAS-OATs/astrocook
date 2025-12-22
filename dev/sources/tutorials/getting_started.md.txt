@@ -1,100 +1,94 @@
 # Getting Started
 
-Welcome to **Astrocook**! This guide will walk you through the graphical interface, from loading your first spectrum to performing basic analysis.
+Welcome to Astrocook V2! This guide will walk you through the basics of the interface: loading data, exploring your spectra, and managing your analysis sessions.
 
-## 1. Launching the Application
+## 1. Loading a Spectrum
 
-Start Astrocook from your terminal:
+Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`).
 
-```bash
-astrocook
+1.  Launch Astrocook. You will be greeted by the welcome screen.
+2.  Go to the menu bar and select **File > Open Session...** (or press `Ctrl+O` / `Cmd+O`).
+3.  Select your spectrum file. You can select multiple files at once if you want to load several observations simultaneously.
+
+Once loaded, the interface will come alive. The central area displays your spectrum, while two sidebars provide control over your data and visualization.
+
+```{image} ../_static/getting_started_plot_controls.png
+:alt: The main Astrocook interface with a spectrum loaded
+:align: center
 ```
 
-The Main Window will appear, divided into three sections:
+## 2. Navigating the Plot
 
-1.  **Session List (Left):** Tracks the history of your modifications (Undo/Redo steps).
-2.  **Plot Area (Center):** Interactive visualization of the spectrum.
-3.  **Plot Controls (Right):** Toggles for errors, continuum, models, and redshift cursors.
+The central plot is interactive. You can explore the details of your spectrum using the toolbar located directly above the graph (standard Matplotlib controls):
 
-## 2\. Loading Data
-
-To load a spectrum, go to **File \> Open Spectrum...** or press `Ctrl+O`.
-Astrocook supports:
-
-  * **FITS files** (`.fits`)
-  * **Astrocook Sessions** (`.acs`, `.acs2`)
-
-:::{note}
-When you load a file, Astrocook automatically creates a new **Session**. You can have multiple sessions open simultaneously (e.g., to compare different quasars).
-:::
-
-## 3\. The Plot Interface
-
-Once data is loaded, the Right Sidebar becomes active. Here you can toggle visibility for different data components:
-
-  * **1-sigma error:** Toggles the grey shading representing flux uncertainty.
-  * **Continuum:** Toggles the dashed line for the fitted continuum.
-  * **Absorption model:** Toggles the red line showing Voigt profile fits.
-  * **Systems:** Toggles vertical markers for identified absorption systems.
-
-### Navigation
-
-  * **Pan:** Click and drag with the **Left Mouse Button**.
-  * **Zoom:** Right-click and drag to define a zoom rectangle.
-  * **Reset:** Click the **Home** icon in the toolbar to reset the view.
-
-## 4\. Basic Analysis: Smoothing
-
-Let's improve the signal-to-noise ratio visually by smoothing the spectrum.
-
-1.  Go to **Flux \> Smooth Spectrum...**.
-2.  A dialog will appear asking for parameters.
-3.  **Sigma (km/s):** Enter `100.0`.
-4.  Click **Run**.
-
-Astrocook processes this "Recipe" in the background. Notice that a new entry appears in the **Session List** on the left.
+- **Pan**: Click the "Cross arrow" icon to click and drag the spectrum.
+- **Zoom**: Click the "Magnifying glass" icon to draw a rectangle and zoom into a specific feature.
+- **Home**: Click the "Home" icon to reset the view to the full range.
 
 :::{tip}
-**Undo/Redo:**
-If you don't like the result, simply press `Ctrl+Z` (Undo) or click the previous state in the Session List. Astrocook saves the full state of the spectrum at every step\!
+Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!
 :::
 
-## 5\. Estimating the Continuum
+## 3. Customizing the View (Right Sidebar)
 
-To analyze absorption lines, we need to normalize the spectrum.
+Look to the right side of the window. This is the **Plot Controls** panel. Here you can tweak how the data is displayed without altering the data itself.
 
-1.  Go to **Continuum \> Auto-estimate Continuum...**.
-2.  Leave the default parameters (e.g., Kappa=2.0) and click **Run**.
-3.  The blue line (Flux) will now be overlaid with a black dashed line (Continuum).
+### Toggles
 
-To view the normalized flux:
+You can show or hide specific layers of the plot:
 
-1.  Look at the **Plot Controls** (Right Sidebar).
-2.  Check the box **Normalize F**.
-3.  The Y-axis changes to `F / Continuum`.
+- **1-sigma error**: Hides the grey error shading.
+- **Normalization**: Hides the continuum level (dashed black line).
+- **Absorption model**: Hides the Voigt profile fits (solid red line).
+- **Systems**: Hides the vertical tick marks indicating identified systems.
 
-## Advanced: Scripting API
+### Axis Controls
 
-Every action you take in the GUI corresponds to a command in the Astrocook API. You can automate your workflow using Python scripts.
+- **Units**: You can switch the X-axis display between `nm`, `Angstrom`, and `micron` on the fly.
+- **Log Scale**: Useful for visualizing data with high dynamic range; check **Logarithmic F** to switch the Y-axis.
+- **Flux vs. SNR**: Check **Show SNR** to inspect the Signal-to-Noise ratio instead of the flux.
 
-:::{dropdown} Click to see the Python Code equivalent
-The actions above can be replicated in a script using the `SessionV2` API:
+### The Redshift Cursor
 
-```python
-from astrocook import SessionV2
+This is a handy tool for quick visual inspection.
 
-# 1. Load the session
-sess = SessionV2.open_new(file_path="spec_qso.fits", name="QSO_1", gui_context=None, format_name="generic")
+1. In the **Redshift Cursor** section, enter a transition name (e.g., `Ly_a`, `CIV`, `MgII`) and a redshift `z`.
+2. Check the **Show Cursor Lines** box.
+3. Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the `z` value to slide the cursor along the spectrum.
 
-# 2. Smooth the flux (Flux Menu)
-# This returns a NEW session object (the API is immutable)
-sess = sess.flux.smooth(sigma_kms=100.0)
+```{image} ../_static/getting_started_main_view.png
+:alt: The Plot Controls sidebar
+:align: center
+```
 
-# 3. Auto-estimate Continuum (Continuum Menu)
-sess = sess.continuum.estimate_auto(
-    smooth_len_lya=5000.0, 
-    kappa=2.0
-)
+## 4. Session Management (Left Sidebar)
 
-# 4. Save the result
-sess.save("output_session.acs2")
+The panel on the left is your **Session List**. Each file you load becomes a "Session".
+
+### Switching Sessions
+
+If you loaded multiple spectra, click on their names in this list to switch the main view instantly.
+
+### Session Info & Properties
+
+Right-click on any session in the list to open the context menu. Select **View Info** to open the Session Inspector. Here you can see (and edit) critical metadata:
+
+- **Object Name**
+- **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
+- **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
+
+### Saving and Closing
+
+When you have finished your analysis (or if you want to save your progress):
+
+1. **Save**: Go to **File > Save Session...** or right-click the session in the list. This saves your work as an `.acs2` file, preserving all your continuum fits and line lists.
+2. **Close**: You can close a specific session via the right-click menu, or close the active session via **File > Close Session**.
+
+```{image} ../_static/getting_started_session_list.png
+:alt: The Session List with context menu
+:align: center
+```
+
+## What's Next?
+
+Now that you are comfortable with the interface, you are ready to manipulate your data. Check out the [Editing Data](editing_data.md) tutorial to learn how to clean up your spectra.
