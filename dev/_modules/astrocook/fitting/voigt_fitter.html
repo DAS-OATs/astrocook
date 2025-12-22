@@ -422,25 +422,30 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">convolve_flux</span><span class="p">(</span><span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">x_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">resol_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;R&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convolves a flux array with a Gaussian kernel defined by resolution.</span>
-<span class="sd">    </span>
+
+<span class="sd">    Handles both constant resolution (scalar) and variable resolution (array)</span>
+<span class="sd">    across the wavelength grid.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    flux : np.ndarray</span>
-<span class="sd">        The flux array (0 to 1 normalized, or physical).</span>
+<span class="sd">        The input flux array (either normalized 0-1 or physical units).</span>
 <span class="sd">    x_ang : np.ndarray</span>
-<span class="sd">        The wavelength grid in Angstroms (must match flux length).</span>
-<span class="sd">    resol : Any</span>
-<span class="sd">        Resolution value. Can be:</span>
-<span class="sd">        - Scalar (float): Constant resolution (R or km/s).</span>
-<span class="sd">        - Array (np.ndarray): Pixel-by-pixel resolution (must match flux length).</span>
-<span class="sd">    resol_unit : str</span>
-<span class="sd">        &#39;R&#39; for Resolving Power (lambda / d_lambda).</span>
-<span class="sd">        &#39;km/s&#39; for FWHM velocity.</span>
-<span class="sd">        </span>
+<span class="sd">        The wavelength grid in Angstroms. Must match ``flux`` length.</span>
+<span class="sd">    resol : float or np.ndarray</span>
+<span class="sd">        Resolution value(s).</span>
+<span class="sd">        - If float: Constant resolution across the spectrum.</span>
+<span class="sd">        - If array: Pixel-by-pixel resolution (must match ``flux`` length).</span>
+<span class="sd">    resol_unit : str, optional</span>
+<span class="sd">        Unit of the resolution value:</span>
+<span class="sd">        - ``&#39;R&#39;``: Resolving Power (:math:`R = \lambda / \Delta\lambda`).</span>
+<span class="sd">        - ``&#39;km/s&#39;``: FWHM velocity.</span>
+<span class="sd">        Defaults to ``&#39;R&#39;``.</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    np.ndarray</span>
-<span class="sd">        The convolved flux.</span>
+<span class="sd">        The convolved flux array with the same shape as input.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">flux</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">):</span>
@@ -517,18 +522,18 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Engine for fitting Voigt profiles to spectral data.</span>
 
-<span class="sd">    This class handles:</span>
-<span class="sd">    1.  Resolution logic (determining R/FWHM from metadata).</span>
-<span class="sd">    2.  Dynamic masking (fitting only relevant pixels).</span>
-<span class="sd">    3.  Optimization (using ``scipy.optimize.least_squares``).</span>
-<span class="sd">    4.  Error estimation (covariance matrix inversion).</span>
+<span class="sd">    This class orchestrates the optimization process. It handles:</span>
+<span class="sd">    1.  **Resolution Logic**: determining effective resolution (R or FWHM) from columns or metadata.</span>
+<span class="sd">    2.  **Dynamic Masking**: identifying relevant pixels for the fit to speed up computation.</span>
+<span class="sd">    3.  **Optimization**: utilizing ``scipy.optimize.least_squares`` to minimize residuals.</span>
+<span class="sd">    4.  **Vectorization**: calculating optical depths for multiple lines simultaneously.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    spectrum : SpectrumV2</span>
-<span class="sd">        The spectrum data to fit.</span>
+<span class="sd">        The spectral data to fit. Must have a valid normalization (continuum) or be pre-normalized.</span>
 <span class="sd">    system_list : SystemListV2</span>
-<span class="sd">        The list of components to model.</span>
+<span class="sd">        The list of absorption components to model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="VoigtFitterV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__">[docs]</a>
@@ -1025,8 +1030,34 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;trf&#39;</span><span class="p">,</span> 
             <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemListV2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes the optimization using scipy.optimize.least_squares.</span>
-<span class="sd">        Includes spatial pre-filtering and vectorization setup for speed.</span>
+<span class="sd">        Execute the Voigt profile optimization.</span>
+
+<span class="sd">        Performs a least-squares fit of the active components to the spectrum.</span>
+<span class="sd">        Includes automatic spatial pre-filtering (fitting only pixels near the lines)</span>
+<span class="sd">        and vectorized optical depth calculation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        max_nfev : int, optional</span>
+<span class="sd">            Maximum number of function evaluations for the optimizer. Defaults to ``2000``.</span>
+<span class="sd">        method : str, optional</span>
+<span class="sd">            Optimization method (e.g., ``&#39;trf&#39;``, ``&#39;lm&#39;``). Defaults to ``&#39;trf&#39;``.</span>
+<span class="sd">        z_window_kms : float, optional</span>
+<span class="sd">            Velocity window (km/s) around component centers to include in the fit mask.</span>
+<span class="sd">            Defaults to ``20.0``.</span>
+<span class="sd">        verbose : int, optional</span>
+<span class="sd">            Verbosity level for ``scipy.optimize.least_squares``. Defaults to ``0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing:</span>
+<span class="sd">            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):</span>
+<span class="sd">               A new system list containing the optimized parameter values and errors.</span>
+<span class="sd">            2. **final_model_flux** (*np.ndarray*):</span>
+<span class="sd">               The full model flux array (physical units), evaluated on the entire grid.</span>
+<span class="sd">            3. **res** (*OptimizeResult*):</span>
+<span class="sd">               The raw result object from ``scipy.optimize``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting Voigt Fit (Window=</span><span class="si">{</span><span class="n">z_window_kms</span><span class="si">}</span><span class="s2"> km/s)...&quot;</span><span class="p">)</span>
         <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">p_free_vector</span>
@@ -1339,7 +1370,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_model_flux</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes the model flux for the *current* parameters without running a fit.</span>
+<span class="sd">        Compute the model flux for the current parameters.</span>
+
+<span class="sd">        Calculates the Voigt profile model based on the current state of the</span>
+<span class="sd">        system list, without performing any fitting/optimization.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing:</span>
+<span class="sd">            1. **wavelength** (*np.ndarray*): The wavelength grid in Angstroms.</span>
+<span class="sd">            2. **model_flux** (*np.ndarray*): The computed model flux (physical units).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">p_current_free</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">p_free_vector</span>
         <span class="n">temp_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span>

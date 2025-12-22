@@ -16,13 +16,10 @@ Subpackages
 Submodules
 ----------
 
-astrocook.settings module
--------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: astrocook.settings
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   astrocook.settings
 
 Module contents
 ---------------

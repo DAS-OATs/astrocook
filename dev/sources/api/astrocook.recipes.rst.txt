@@ -4,37 +4,13 @@ astrocook.recipes package
 Submodules
 ----------
 
-astrocook.recipes.absorbers module
-----------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: astrocook.recipes.absorbers
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.recipes.continuum module
-----------------------------------
-
-.. automodule:: astrocook.recipes.continuum
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.recipes.edit module
------------------------------
-
-.. automodule:: astrocook.recipes.edit
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.recipes.flux module
------------------------------
-
-.. automodule:: astrocook.recipes.flux
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   astrocook.recipes.absorbers
+   astrocook.recipes.continuum
+   astrocook.recipes.edit
+   astrocook.recipes.flux
 
 Module contents
 ---------------

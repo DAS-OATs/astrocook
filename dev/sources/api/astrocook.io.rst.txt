@@ -4,29 +4,12 @@ astrocook.io package
 Submodules
 ----------
 
-astrocook.io.adapter module
----------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: astrocook.io.adapter
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.io.loaders module
----------------------------
-
-.. automodule:: astrocook.io.loaders
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.io.v1\_stubs module
------------------------------
-
-.. automodule:: astrocook.io.v1_stubs
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   astrocook.io.adapter
+   astrocook.io.loaders
+   astrocook.io.v1_stubs
 
 Module contents
 ---------------

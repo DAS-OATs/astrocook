@@ -4,21 +4,11 @@ astrocook.fitting package
 Submodules
 ----------
 
-astrocook.fitting.voigt\_fitter module
---------------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: astrocook.fitting.voigt_fitter
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-astrocook.fitting.voigt\_model module
--------------------------------------
-
-.. automodule:: astrocook.fitting.voigt_model
-   :members:
-   :show-inheritance:
-   :undoc-members:
+   astrocook.fitting.voigt_fitter
+   astrocook.fitting.voigt_model
 
 Module contents
 ---------------

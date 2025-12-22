@@ -44,6 +44,8 @@
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.fitting.voigt_fitter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -54,6 +56,8 @@
         </script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="astrocook.fitting.voigt_model module" href="astrocook.fitting.voigt_model.html" />
+    <link rel="prev" title="astrocook.fitting package" href="astrocook.fitting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -154,7 +158,7 @@
 </li>
 
 
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../reference.html">
     API Reference
   </a>
@@ -253,10 +257,8 @@
       
       
       
-        
-      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -285,7 +287,7 @@
 </li>
 
 
-<li class="nav-item ">
+<li class="nav-item current active">
   <a class="nav-link nav-internal" href="../reference.html">
     API Reference
   </a>
@@ -349,6 +351,43 @@
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">High-level analysis recipes available in the menus</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.recipes.html">astrocook.recipes package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling and fitting logic</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.fitting.html">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">astrocook.fitting.voigt_fitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
       <div class="sidebar-primary-item">
@@ -384,6 +423,12 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="astrocook.fitting.html" class="nav-link">astrocook.fitting package</a></li>
+    
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.voigt_fitter module</span></li>
   </ul>
 </nav>
@@ -407,20 +452,24 @@
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.convolve_flux">
 <span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">convolve_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'R'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#convolve_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.convolve_flux" title="Link to this definition">#</a></dt>
 <dd><p>Convolves a flux array with a Gaussian kernel defined by resolution.</p>
+<p>Handles both constant resolution (scalar) and variable resolution (array)
+across the wavelength grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>flux</strong> (<em>np.ndarray</em>) – The flux array (0 to 1 normalized, or physical).</p></li>
-<li><p><strong>x_ang</strong> (<em>np.ndarray</em>) – The wavelength grid in Angstroms (must match flux length).</p></li>
-<li><p><strong>resol</strong> (<em>Any</em>) – Resolution value. Can be:
-- Scalar (float): Constant resolution (R or km/s).
-- Array (np.ndarray): Pixel-by-pixel resolution (must match flux length).</p></li>
-<li><p><strong>resol_unit</strong> (<em>str</em>) – ‘R’ for Resolving Power (lambda / d_lambda).
-‘km/s’ for FWHM velocity.</p></li>
+<li><p><strong>flux</strong> (<em>np.ndarray</em>) – The input flux array (either normalized 0-1 or physical units).</p></li>
+<li><p><strong>x_ang</strong> (<em>np.ndarray</em>) – The wavelength grid in Angstroms. Must match <code class="docutils literal notranslate"><span class="pre">flux</span></code> length.</p></li>
+<li><p><strong>resol</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Resolution value(s).
+- If float: Constant resolution across the spectrum.
+- If array: Pixel-by-pixel resolution (must match <code class="docutils literal notranslate"><span class="pre">flux</span></code> length).</p></li>
+<li><p><strong>resol_unit</strong> (<em>str</em><em>, </em><em>optional</em>) – Unit of the resolution value:
+- <code class="docutils literal notranslate"><span class="pre">'R'</span></code>: Resolving Power (<span class="math notranslate nohighlight">\(R = \lambda / \Delta\lambda\)</span>).
+- <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>: FWHM velocity.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'R'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The convolved flux.</p>
+<dd class="field-even"><p>The convolved flux array with the same shape as input.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>np.ndarray</p>
@@ -433,16 +482,16 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">VoigtFitterV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spectrum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Engine for fitting Voigt profiles to spectral data.</p>
-<p>This class handles:
-1.  Resolution logic (determining R/FWHM from metadata).
-2.  Dynamic masking (fitting only relevant pixels).
-3.  Optimization (using <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code>).
-4.  Error estimation (covariance matrix inversion).</p>
+<p>This class orchestrates the optimization process. It handles:
+1.  <strong>Resolution Logic</strong>: determining effective resolution (R or FWHM) from columns or metadata.
+2.  <strong>Dynamic Masking</strong>: identifying relevant pixels for the fit to speed up computation.
+3.  <strong>Optimization</strong>: utilizing <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code> to minimize residuals.
+4.  <strong>Vectorization</strong>: calculating optical depths for multiple lines simultaneously.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spectrum</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectrum data to fit.</p></li>
-<li><p><strong>system_list</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The list of components to model.</p></li>
+<li><p><strong>spectrum</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectral data to fit. Must have a valid normalization (continuum) or be pre-normalized.</p></li>
+<li><p><strong>system_list</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The list of absorption components to model.</p></li>
 </ul>
 </dd>
 </dl>
@@ -454,14 +503,56 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit" title="Link to this definition">#</a></dt>
-<dd><p>Executes the optimization using scipy.optimize.least_squares.
-Includes spatial pre-filtering and vectorization setup for speed.</p>
+<dd><p>Execute the Voigt profile optimization.</p>
+<p>Performs a least-squares fit of the active components to the spectrum.
+Includes automatic spatial pre-filtering (fitting only pixels near the lines)
+and vectorized optical depth calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_nfev</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of function evaluations for the optimizer. Defaults to <code class="docutils literal notranslate"><span class="pre">2000</span></code>.</p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – Optimization method (e.g., <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>, <code class="docutils literal notranslate"><span class="pre">'lm'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity window (km/s) around component centers to include in the fit mask.
+Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbosity level for <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A tuple containing:
+1. <strong>new_system_list</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemListV2</span></code></a>):</p>
+<blockquote>
+<div><p>A new system list containing the optimized parameter values and errors.</p>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p><strong>final_model_flux</strong> (<em>np.ndarray</em>):
+The full model flux array (physical units), evaluated on the entire grid.</p></li>
+<li><p><strong>res</strong> (<em>OptimizeResult</em>):
+The raw result object from <code class="docutils literal notranslate"><span class="pre">scipy.optimize</span></code>.</p></li>
+</ol>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux">
 <span class="sig-name descname"><span class="pre">compute_model_flux</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.compute_model_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux" title="Link to this definition">#</a></dt>
-<dd><p>Computes the model flux for the <em>current</em> parameters without running a fit.</p>
+<dd><p>Compute the model flux for the current parameters.</p>
+<p>Calculates the Voigt profile model based on the current state of the
+system list, without performing any fitting/optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple containing:
+1. <strong>wavelength</strong> (<em>np.ndarray</em>): The wavelength grid in Angstroms.
+2. <strong>model_flux</strong> (<em>np.ndarray</em>): The computed model flux (physical units).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -478,6 +569,24 @@ Includes spatial pre-filtering and vectorization setup for speed.</p>
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="astrocook.fitting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">astrocook.fitting package</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="astrocook.fitting.voigt_model.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">astrocook.fitting.voigt_model module</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               

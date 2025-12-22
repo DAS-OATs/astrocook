@@ -418,15 +418,15 @@
 <span class="sd">    Manages parameter constraints and vector mapping for Voigt fitting.</span>
 
 <span class="sd">    This class acts as a bridge between the high-level, object-oriented representation</span>
-<span class="sd">    of absorption systems (:class:`~astrocook.core.system_list.SystemListV2`) and the </span>
-<span class="sd">    flat parameter arrays required by numerical optimizers (like ``scipy.optimize.least_squares``).</span>
+<span class="sd">    of absorption systems (:class:`~astrocook.core.system_list.SystemListV2`) and the</span>
+<span class="sd">    flat parameter arrays required by numerical optimizers.</span>
 
 <span class="sd">    It handles:</span>
-<span class="sd">    1.  **Selective Fitting:** Identifying which components are &quot;active&quot; (free to vary) </span>
+<span class="sd">    1.  **Selective Fitting**: Identifying which components are &quot;active&quot; (free to vary)</span>
 <span class="sd">        and which are &quot;frozen&quot; based on user selection and grouping logic.</span>
-<span class="sd">    2.  **Parameter Linking:** Evaluating mathematical expressions to link parameters </span>
+<span class="sd">    2.  **Parameter Linking**: Evaluating mathematical expressions to link parameters</span>
 <span class="sd">        (e.g., tying the redshift of two components together).</span>
-<span class="sd">    3.  **Vectorization:** Converting component objects to a flat vector ``p`` and back.</span>
+<span class="sd">    3.  **Vectorization**: Converting component objects to a flat vector ``p`` and back.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -469,24 +469,25 @@
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_active_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Defines the set of components to be fit (the &quot;Fluid Group&quot;).</span>
+<span class="sd">        Define the set of components to be fit (the &quot;Fluid Group&quot;).</span>
 
-<span class="sd">        When fitting a specific line, we must also fit any lines that are:</span>
+<span class="sd">        When fitting a specific line, the fitter must also include any lines that are:</span>
 <span class="sd">        1.  Physically linked (via parameter constraints).</span>
 <span class="sd">        2.  Spectrally overlapping (blended).</span>
-<span class="sd">        </span>
-<span class="sd">        This method calculates that group and marks all other components as &quot;frozen&quot;</span>
-<span class="sd">        (fixed parameters) for the upcoming fit.</span>
+
+<span class="sd">        This method calculates that connected group and marks all other components</span>
+<span class="sd">        as &quot;frozen&quot; (fixed parameters) for the upcoming fit.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        target_uuids : list of str, optional</span>
-<span class="sd">            The UUIDs of the components the user explicitly selected. </span>
-<span class="sd">            If None, ALL components are considered active.</span>
+<span class="sd">            The UUIDs of the components the user explicitly selected.</span>
+<span class="sd">            If ``None``, ALL components are considered active.</span>
 <span class="sd">        group_depth : int, optional</span>
 <span class="sd">            How many degrees of separation to traverse when finding connected components.</span>
-<span class="sd">            1 = Direct neighbors only.</span>
-<span class="sd">            2 = Neighbors of neighbors (Friends of Friends).</span>
+<span class="sd">            - ``1``: Direct neighbors/links only.</span>
+<span class="sd">            - ``2``: Neighbors of neighbors (Friends of Friends).</span>
+<span class="sd">            Defaults to ``2``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">target_uuids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
@@ -678,29 +679,34 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">p_free_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The 1D array of currently free (varying) parameters.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The 1D array of currently free (varying) parameters.</span>
+
+<span class="sd">        This vector serves as the input ``x`` for the optimizer. It excludes</span>
+<span class="sd">        fixed parameters and dependent (linked) parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p_free_vector</span>
         
 <div class="viewcode-block" id="VoigtModelConstraintV2.map_p_free_to_full">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2.map_p_free_to_full">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">map_p_free_to_full</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_free_fitted</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reconstructs the full parameter vector from the free parameters.</span>
-<span class="sd">        </span>
+<span class="sd">        Reconstruct the full parameter vector from the free parameters.</span>
+
 <span class="sd">        This method:</span>
-<span class="sd">        1. Places the free parameter values into their correct positions.</span>
+<span class="sd">        1. Places the free parameter values into their correct positions in the full vector.</span>
 <span class="sd">        2. Leaves fixed parameters at their initial values.</span>
-<span class="sd">        3. Evaluates and applies all linked parameter expressions (e.g. ``z2 = z1``).</span>
+<span class="sd">        3. Evaluates and applies all linked parameter expressions (e.g., ``z2 = p[&#39;uuid1&#39;].z``).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        p_free_fitted : np.ndarray</span>
-<span class="sd">            The vector of optimized free parameters.</span>
+<span class="sd">            The vector of optimized free parameters (output from optimizer).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        np.ndarray</span>
-<span class="sd">            The full vector containing all parameters for all components.</span>
+<span class="sd">            The full vector containing all parameters (z, logN, b, btur) for all components.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Fill Free Parameters</span>
         <span class="n">p_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_p_vector</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -752,7 +758,16 @@
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2.get_bounds">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns lower and upper bounds for the free parameters.</span>
+<span class="sd">        Return lower and upper bounds for the free parameters.</span>
+
+<span class="sd">        Extracts the physical limits (e.g., b &gt; 0) for every parameter currently</span>
+<span class="sd">        in the free vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple ``(lower_bounds, upper_bounds)``, each being a numpy array</span>
+<span class="sd">            matching the size of ``p_free_vector``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">lower</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">upper</span> <span class="o">=</span> <span class="p">[]</span>
