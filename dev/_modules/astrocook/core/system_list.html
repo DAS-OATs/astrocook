@@ -422,8 +422,8 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    API layer for managing component lists, constraints, and fitting.</span>
 
-<span class="sd">    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2` </span>
-<span class="sd">    and provides methods to add, update, delete, and group components. It also </span>
+<span class="sd">    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2`</span>
+<span class="sd">    and provides methods to add, update, delete, and group components. It also</span>
 <span class="sd">    initializes the constraint model used by the fitting engine.</span>
 
 <span class="sd">    Parameters</span>
@@ -651,7 +651,17 @@
     <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fitting_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Safely sets the active fitting mask and guarantees cleanup.</span>
+<span class="sd">        Context manager for safe fitting.</span>
+
+<span class="sd">        Temporarily sets the active fitting mask on the constraint model and</span>
+<span class="sd">        guarantees cleanup (resetting the mask) even if errors occur.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        active_uuids : list of str, optional</span>
+<span class="sd">            List of UUIDs to set as active.</span>
+<span class="sd">        group_depth : int, optional</span>
+<span class="sd">            Grouping depth for finding connected components. Defaults to ``2``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
             <span class="k">yield</span>
@@ -701,11 +711,11 @@
 <span class="sd">        spec : SpectrumV2</span>
 <span class="sd">            The spectrum containing the region definitions.</span>
 <span class="sd">        region_id_col : str</span>
-<span class="sd">            Name of the column containing region IDs (e.g., &#39;abs_ids&#39;).</span>
+<span class="sd">            Name of the column containing region IDs (e.g., ``&#39;abs_ids&#39;``).</span>
 <span class="sd">        series_map : dict</span>
-<span class="sd">            Mapping {region_id: series_name}.</span>
+<span class="sd">            Mapping ``{region_id: series_name}``.</span>
 <span class="sd">        z_map : dict</span>
-<span class="sd">            Mapping {region_id: redshift}.</span>
+<span class="sd">            Mapping ``{region_id: redshift}``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -751,10 +761,19 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">13.5</span><span class="p">,</span> 
                       <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a single component to the list.</span>
-<span class="sd">        </span>
-<span class="sd">        Note: If &#39;series&#39; is a multiplet name (e.g. &#39;CIV&#39;), the VoigtFitter </span>
-<span class="sd">        will automatically model it as all member lines sharing these parameters.</span>
+<span class="sd">        Return a new SystemList with properties of a specific component updated.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            The UUID of the component to update.</span>
+<span class="sd">        **changes : dict</span>
+<span class="sd">            Keyword arguments for the fields to change (e.g. ``z=2.5``, ``logN=14.0``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with the updated component.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 
@@ -789,7 +808,19 @@
 <div class="viewcode-block" id="SystemListV2.get_component_by_uuid">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_component_by_uuid">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_component_by_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a component object by its UUID.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a component object by its UUID.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str</span>
+<span class="sd">            The unique identifier of the component.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ComponentDataV2 or None</span>
+<span class="sd">            The component object, or None if not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span> <span class="k">return</span> <span class="n">c</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -799,14 +830,19 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a new SystemList with properties of a specific component updated.</span>
-<span class="sd">        </span>
+<span class="sd">        Return a new SystemList with properties of a specific component updated.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        uuid : str</span>
 <span class="sd">            The UUID of the component to update.</span>
 <span class="sd">        **changes : dict</span>
-<span class="sd">            Keyword arguments for the fields to change (e.g. z=2.5, logN=14.0).</span>
+<span class="sd">            Keyword arguments for the fields to change (e.g. ``z=2.5``, ``logN=14.0``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with the updated component.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
@@ -837,14 +873,14 @@
                           <span class="n">expression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                           <span class="n">target_uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the constraint for a specific component parameter.</span>
+<span class="sd">        Update the constraint for a specific component parameter.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        uuid : str</span>
 <span class="sd">            The component UUID.</span>
 <span class="sd">        param : str</span>
-<span class="sd">            The parameter name (e.g., &#39;z&#39;, &#39;logN&#39;, &#39;b&#39;).</span>
+<span class="sd">            The parameter name (e.g., ``&#39;z&#39;``, ``&#39;logN&#39;``).</span>
 <span class="sd">        is_free : bool, optional</span>
 <span class="sd">            If True, parameter varies freely. If False, it is fixed or linked.</span>
 <span class="sd">        expression : str, optional</span>
@@ -916,8 +952,19 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes one or multiple components and cleans up constraints linking to them.</span>
-<span class="sd">        Accepts either a single &#39;uuid&#39; or a list &#39;uuids&#39;.</span>
+<span class="sd">        Remove component(s) and clean up constraints linking to them.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuid : str, optional</span>
+<span class="sd">            Single UUID to delete.</span>
+<span class="sd">        uuids : list, optional</span>
+<span class="sd">            List of UUIDs to delete.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with components removed and constraints cleaned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterConstraintV2</span>
@@ -978,22 +1025,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Finds a set of components that must be fitted together.</span>
+<span class="sd">        Find a set of components that must be fitted together.</span>
 
 <span class="sd">        This method traverses relationships to find all &quot;fluid neighbors&quot; of</span>
-<span class="sd">        the seed components. Connections are formed by:</span>
-<span class="sd">        1.  **Parameter Linking:** If A is linked to B, they are grouped.</span>
-<span class="sd">        2.  **Spectral Overlap:** If A&#39;s lines overlap with B&#39;s lines within 4 sigma.</span>
-<span class="sd">        3.  **Kinematic Proximity:** If A and B are the same species and close in velocity.</span>
+<span class="sd">        the seed components (via links, spectral overlap, or kinematic proximity).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        seed_uuids : list of str</span>
 <span class="sd">            The UUIDs of the components initially selected for fitting.</span>
 <span class="sd">        max_depth : int, optional</span>
-<span class="sd">            How many degrees of separation to traverse.</span>
-<span class="sd">            1 = Direct neighbors only.</span>
-<span class="sd">            2 = Neighbors of neighbors (Friends of Friends).</span>
+<span class="sd">            How many degrees of separation to traverse. Defaults to ``2``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1142,15 +1184,20 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.merge">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Merges components from another system list into this one.</span>
-<span class="sd">        </span>
+<span class="sd">        Merge components from another system list into this one.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        other : SystemListV2</span>
 <span class="sd">            The source list to copy from.</span>
-<span class="sd">        copy_uuids : bool</span>
+<span class="sd">        copy_uuids : bool, optional</span>
 <span class="sd">            If True, keeps original UUIDs (risky if merging into self).</span>
-<span class="sd">            If False, regenerates UUIDs to avoid conflicts.</span>
+<span class="sd">            If False, regenerates UUIDs to avoid conflicts. Defaults to ``False``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new merged system list.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
@@ -1368,8 +1415,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.remove_in_region">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_in_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes components whose primary line center falls within the observed wavelength range.</span>
-<span class="sd">        Used for cleaning up regions before auto-fitting.</span>
+<span class="sd">        Remove components whose center falls within the observed wavelength range.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obs_min, obs_max : Quantity</span>
+<span class="sd">            The wavelength bounds.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with components removed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">surviving_comps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1409,8 +1465,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_criteria">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Filters components based on a lambda function.</span>
-<span class="sd">        Example: systs.filter_by_criteria(lambda c: c.b &gt; 10.0)</span>
+<span class="sd">        Remove components whose center falls within the observed wavelength range.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obs_min, obs_max : Quantity</span>
+<span class="sd">            The wavelength bounds.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with components removed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">valid_comps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1433,9 +1498,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_range">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmin_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xmax_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a new SystemListV2 containing only components that fall </span>
-<span class="sd">        within the specified wavelength range [xmin, xmax] (in nm).</span>
-<span class="sd">        Handles both single lines (CIV 1548) and doublet tags (CIV).</span>
+<span class="sd">        Return a new SystemListV2 containing only components within the range.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xmin_nm, xmax_nm : float</span>
+<span class="sd">            Wavelength range in nanometers.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with filtered components.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>

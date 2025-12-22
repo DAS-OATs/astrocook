@@ -449,7 +449,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.core.session.load_session_from_file">
 <span class="sig-prename descclassname"><span class="pre">astrocook.core.session.</span></span><span class="sig-name descname"><span class="pre">load_session_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">archive_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#load_session_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.load_session_from_file" title="Link to this definition">#</a></dt>
-<dd><p>Orchestrates the loading of a session from a file or archive.</p>
+<dd><p>Orchestrate the loading of a session from a file or archive.</p>
 <p>This function handles various input formats, including legacy Astrocook V1 archives (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>),
 modern V2 archives (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>), and raw FITS files. It automatically handles
 V1-to-V2 migration of structures.</p>
@@ -461,7 +461,7 @@ V1-to-V2 migration of structures.</p>
 <li><p><strong>gui_context</strong> (<em>Any</em>) – A reference to the main GUI window (for logging and dialog parenting),
 or a mock object if running in a script.</p></li>
 <li><p><strong>format_name</strong> (<em>str</em>) – A format identifier string (e.g., <code class="docutils literal notranslate"><span class="pre">'generic_spectrum'</span></code>, <code class="docutils literal notranslate"><span class="pre">'eso_midas'</span></code>)
-used to select the appropriate loader for raw files.</p></li>
+used to select the appropriate loader for raw files. Use <code class="docutils literal notranslate"><span class="pre">'auto'</span></code> to attempt detection.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -535,7 +535,7 @@ updated data structures.</p>
 <dd><p>Access to editing recipes (e.g., <code class="docutils literal notranslate"><span class="pre">set_properties</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_x_axis</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2" title="astrocook.recipes.edit.RecipeEditV2">RecipeEditV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2" title="astrocook.recipes.edit.RecipeEditV2">astrocook.recipes.edit.RecipeEditV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -546,7 +546,7 @@ updated data structures.</p>
 <dd><p>Access to flux manipulation recipes (e.g., <code class="docutils literal notranslate"><span class="pre">smooth</span></code>, <code class="docutils literal notranslate"><span class="pre">rebin</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2" title="astrocook.recipes.flux.RecipeFluxV2">RecipeFluxV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2" title="astrocook.recipes.flux.RecipeFluxV2">astrocook.recipes.flux.RecipeFluxV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -557,7 +557,7 @@ updated data structures.</p>
 <dd><p>Access to continuum estimation and fitting recipes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2" title="astrocook.recipes.continuum.RecipeContinuumV2">RecipeContinuumV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2" title="astrocook.recipes.continuum.RecipeContinuumV2">astrocook.recipes.continuum.RecipeContinuumV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -568,7 +568,7 @@ updated data structures.</p>
 <dd><p>Access to line identification and fitting recipes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="astrocook.recipes.absorbers.RecipeAbsorbersV2">RecipeAbsorbersV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="astrocook.recipes.absorbers.RecipeAbsorbersV2">astrocook.recipes.absorbers.RecipeAbsorbersV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -592,14 +592,14 @@ updated data structures.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.open_new">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">open_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.open_new"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.open_new" title="Link to this definition">#</a></dt>
-<dd><p>Factory method: Creates a new SessionV2 by loading data from a file.</p>
+<dd><p>Factory method: Create a new SessionV2 by loading data from a file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_path</strong> (<em>str</em>) – The system path to the file (FITS or ACS/ACS2 archive).</p></li>
 <li><p><strong>name</strong> (<em>str</em>) – The name to give the new session.</p></li>
 <li><p><strong>gui_context</strong> (<em>Any</em>) – The GUI parent object (used for logging/dialogs).</p></li>
-<li><p><strong>format_name</strong> (<em>str</em>) – Hint for the file format loader (e.g. ‘generic_spectrum’).</p></li>
+<li><p><strong>format_name</strong> (<em>str</em>) – Hint for the file format loader (e.g. <code class="docutils literal notranslate"><span class="pre">'generic_spectrum'</span></code>).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -614,7 +614,7 @@ updated data structures.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.with_new_spectrum">
 <span class="sig-name descname"><span class="pre">with_new_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_spectrum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.with_new_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.with_new_spectrum" title="Link to this definition">#</a></dt>
-<dd><p>Returns a new SessionV2 instance with an updated spectrum.</p>
+<dd><p>Return a new SessionV2 instance with an updated spectrum.</p>
 <p>This is used by recipes that modify spectral data (e.g., smoothing,
 continuum fitting) to ensure history preservation.</p>
 <dl class="field-list simple">
@@ -633,7 +633,7 @@ continuum fitting) to ensure history preservation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.with_new_system_list">
 <span class="sig-name descname"><span class="pre">with_new_system_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.with_new_system_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.with_new_system_list" title="Link to this definition">#</a></dt>
-<dd><p>Returns a new SessionV2 instance with an updated system list.</p>
+<dd><p>Return a new SessionV2 instance with an updated system list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>new_systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The new system list object.</p>
@@ -650,7 +650,7 @@ continuum fitting) to ensure history preservation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.save" title="Link to this definition">#</a></dt>
-<dd><p>Saves the current session state to a file.</p>
+<dd><p>Save the current session state to a file.</p>
 <p>This method supports two formats:</p>
 <ol class="arabic simple">
 <li><p><strong>.acs2 (Recommended)</strong>: A zipped archive containing the full session state,

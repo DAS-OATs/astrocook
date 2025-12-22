@@ -532,13 +532,15 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'v1_leg
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.structures.DataColumnV2.quantity">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span></em><a class="headerlink" href="#astrocook.core.structures.DataColumnV2.quantity" title="Link to this definition">#</a></dt>
-<dd><p>Returns the data as an Astropy Quantity.</p>
+<dd><p>Return the column data as an Astropy Quantity.</p>
+<p>Combines the numerical values and the physical unit.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.structures.DataColumnV2.value">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#astrocook.core.structures.DataColumnV2.value" title="Link to this definition">#</a></dt>
-<dd><p>Alias for .values to support legacy/Astropy-style access.</p>
+<dd><p>Return the raw numerical array.</p>
+<p>Alias for <code class="docutils literal notranslate"><span class="pre">.values</span></code> to support legacy/Astropy-style access.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -565,7 +567,6 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <li><p><strong>dy</strong> (<a class="reference internal" href="#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – The 1-sigma uncertainty on <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p></li>
 <li><p><strong>aux_cols</strong> (<em>dict</em><em> of </em><a class="reference internal" href="#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – Additional columns (e.g. <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, <code class="docutils literal notranslate"><span class="pre">'model'</span></code>, <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>).</p></li>
 <li><p><strong>meta</strong> (<em>dict</em>) – Header keywords and other metadata.</p></li>
-<li><p><strong>z_rf</strong> (<em>float</em>) – Rest-frame redshift used for velocity conversions.</p></li>
 <li><p><strong>z_em</strong> (<em>float</em>) – Emission redshift of the target object.</p></li>
 <li><p><strong>resol</strong> (<em>float</em>) – Median resolving power <span class="math notranslate nohighlight">\(R = \lambda / \Delta\lambda\)</span>.</p></li>
 </ul>
@@ -623,17 +624,16 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x_values</strong> (<em>np.ndarray</em>) – Raw data arrays.</p></li>
-<li><p><strong>y_values</strong> (<em>np.ndarray</em>) – Raw data arrays.</p></li>
-<li><p><strong>dy_values</strong> (<em>np.ndarray</em>) – Raw data arrays.</p></li>
-<li><p><strong>x_unit</strong> (<em>astropy.units.Unit</em>) – Units for the spatial and flux axes.</p></li>
-<li><p><strong>y_unit</strong> (<em>astropy.units.Unit</em>) – Units for the spatial and flux axes.</p></li>
-<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Bin edges. If None, defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code>.</p></li>
-<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Bin edges. If None, defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code>.</p></li>
+<li><p><strong>x_values</strong> (<em>np.ndarray</em>) – Wavelength/Velocity data.</p></li>
+<li><p><strong>x_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the x-axis.</p></li>
+<li><p><strong>y_values</strong> (<em>np.ndarray</em>) – Flux data.</p></li>
+<li><p><strong>y_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the y-axis (and dy).</p></li>
+<li><p><strong>dy_values</strong> (<em>np.ndarray</em>) – Error data.</p></li>
+<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
 <li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
 <li><p><strong>meta</strong> (<em>dict</em><em>, </em><em>optional</em>) – Metadata dictionary.</p></li>
-<li><p><strong>z_rf</strong> (<em>float</em><em>, </em><em>optional</em>) – Redshift properties.</p></li>
-<li><p><strong>z_em</strong> (<em>float</em><em>, </em><em>optional</em>) – Redshift properties.</p></li>
+<li><p><strong>z_em</strong> (<em>float</em><em>, </em><em>optional</em>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1131,13 +1131,13 @@ to handle branching history (undo/redo logic).</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.is_v2_log">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_v2_log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.is_v2_log" title="Link to this definition">#</a></dt>
-<dd><p>Always True for this class.</p>
+<dd><p>Return True, indicating this is a V2-native log structure.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.add_entry">
 <span class="sig-name descname"><span class="pre">add_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipe_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/structures.html#HistoryLogV2.add_entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.add_entry" title="Link to this definition">#</a></dt>
-<dd><p>Adds a new log entry, truncating any ‘future’ history (from Undo actions).</p>
+<dd><p>Add a new log entry, truncating any ‘future’ history (from Undo actions).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1151,13 +1151,13 @@ to handle branching history (undo/redo logic).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/astrocook/core/structures.html#HistoryLogV2.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.undo" title="Link to this definition">#</a></dt>
-<dd><p>Moves the history pointer back one step.</p>
+<dd><p>Add a new log entry, truncating any ‘future’ history (from Undo actions).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if undo was successful, False if already at the beginning.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recipe_name</strong> (<em>str</em>) – The name of the recipe executed.</p></li>
+<li><p><strong>params</strong> (<em>dict</em>) – The parameters used for the recipe.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1165,7 +1165,7 @@ to handle branching history (undo/redo logic).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.redo">
 <span class="sig-name descname"><span class="pre">redo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/astrocook/core/structures.html#HistoryLogV2.redo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.redo" title="Link to this definition">#</a></dt>
-<dd><p>Moves the history pointer forward one step.</p>
+<dd><p>Move the history pointer forward one step.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>True if redo was successful, False if already at the latest entry.</p>
@@ -1185,6 +1185,11 @@ to handle branching history (undo/redo logic).</p>
 <p>A read-only wrapper for legacy V1 logs.</p>
 <p>Used to display the history of a session loaded from a V1 archive
 without converting it to the full V2 structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>v1_log_json</strong> (<em>dict</em>) – The raw JSON dictionary from the V1 archive.</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.structures.V1LogArtifact.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1_log_json</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/structures.html#V1LogArtifact.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.structures.V1LogArtifact.__init__" title="Link to this definition">#</a></dt>
@@ -1193,7 +1198,8 @@ without converting it to the full V2 structure.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.structures.V1LogArtifact.is_v2_log">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_v2_log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#astrocook.core.structures.V1LogArtifact.is_v2_log" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Return False, indicating this is a legacy V1 log wrapper.</p>
+</dd></dl>
 
 </dd></dl>
 

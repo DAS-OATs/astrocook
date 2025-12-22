@@ -415,7 +415,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">SessionMetadataV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Core immutable structure for holding constraints, configuration, and history.</span>
-<span class="sd">    </span>
+
 <span class="sd">    This structure is designed to be serialized to a JSON or YAML file within</span>
 <span class="sd">    the .acs archive. It separates the lightweight metadata from the heavy</span>
 <span class="sd">    spectral arrays.</span>
@@ -473,21 +473,29 @@
     
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the data as an Astropy Quantity.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the column data as an Astropy Quantity.</span>
+
+<span class="sd">        Combines the numerical values and the physical unit.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
 
     <span class="c1"># --- [FIX] Compatibility Aliases ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias for .values to support legacy/Astropy-style access.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the raw numerical array.</span>
+
+<span class="sd">        Alias for ``.values`` to support legacy/Astropy-style access.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allows len(column) to work.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of elements in the column.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allows np.array(column) to work.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the raw array representation (for NumPy compatibility).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span></div>
 
 
@@ -517,8 +525,6 @@
 <span class="sd">        Additional columns (e.g. ``&#39;cont&#39;``, ``&#39;model&#39;``, ``&#39;abs_mask&#39;``).</span>
 <span class="sd">    meta : dict</span>
 <span class="sd">        Header keywords and other metadata.</span>
-<span class="sd">    z_rf : float</span>
-<span class="sd">        Rest-frame redshift used for velocity conversions.</span>
 <span class="sd">    z_em : float</span>
 <span class="sd">        Emission redshift of the target object.</span>
 <span class="sd">    resol : float</span>
@@ -562,18 +568,26 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x_values, y_values, dy_values : np.ndarray</span>
-<span class="sd">            Raw data arrays.</span>
-<span class="sd">        x_unit, y_unit : astropy.units.Unit</span>
-<span class="sd">            Units for the spatial and flux axes.</span>
-<span class="sd">        xmin_values, xmax_values : np.ndarray, optional</span>
-<span class="sd">            Bin edges. If None, defaults to ``x_values``.</span>
+<span class="sd">        x_values : np.ndarray</span>
+<span class="sd">            Wavelength/Velocity data.</span>
+<span class="sd">        x_unit : astropy.units.Unit</span>
+<span class="sd">            Unit for the x-axis.</span>
+<span class="sd">        y_values : np.ndarray</span>
+<span class="sd">            Flux data.</span>
+<span class="sd">        y_unit : astropy.units.Unit</span>
+<span class="sd">            Unit for the y-axis (and dy).</span>
+<span class="sd">        dy_values : np.ndarray</span>
+<span class="sd">            Error data.</span>
+<span class="sd">        xmin_values : np.ndarray, optional</span>
+<span class="sd">            Lower bin edges. Defaults to ``x_values`` if None.</span>
+<span class="sd">        xmax_values : np.ndarray, optional</span>
+<span class="sd">            Upper bin edges. Defaults to ``x_values`` if None.</span>
 <span class="sd">        aux_data : dict, optional</span>
 <span class="sd">            Dictionary of auxiliary columns: ``{&#39;name&#39;: (values, unit, description)}``.</span>
 <span class="sd">        meta : dict, optional</span>
 <span class="sd">            Metadata dictionary.</span>
-<span class="sd">        z_rf, z_em : float, optional</span>
-<span class="sd">            Redshift properties.</span>
+<span class="sd">        z_em : float, optional</span>
+<span class="sd">            Emission redshift. Defaults to ``0.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -790,14 +804,14 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_v2_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Always True for this class.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True, indicating this is a V2-native log structure.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="HistoryLogV2.add_entry">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_entry">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a new log entry, truncating any &#39;future&#39; history (from Undo actions).</span>
+<span class="sd">        Add a new log entry, truncating any &#39;future&#39; history (from Undo actions).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -824,12 +838,14 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Moves the history pointer back one step.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if undo was successful, False if already at the beginning.</span>
+<span class="sd">        Add a new log entry, truncating any &#39;future&#39; history (from Undo actions).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        recipe_name : str</span>
+<span class="sd">            The name of the recipe executed.</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            The parameters used for the recipe.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -842,7 +858,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.redo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Moves the history pointer forward one step.</span>
+<span class="sd">        Move the history pointer forward one step.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -867,6 +883,11 @@
 
 <span class="sd">    Used to display the history of a session loaded from a V1 archive</span>
 <span class="sd">    without converting it to the full V2 structure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    v1_log_json : dict</span>
+<span class="sd">        The raw JSON dictionary from the V1 archive.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="V1LogArtifact.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.V1LogArtifact.__init__">[docs]</a>
@@ -876,6 +897,7 @@
     
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_v2_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return False, indicating this is a legacy V1 log wrapper.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
 </pre></div>

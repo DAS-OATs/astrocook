@@ -511,9 +511,9 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">SpectrumV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Composite container for spectral data and operations.</span>
-<span class="sd">    </span>
+
 <span class="sd">    This class wraps the raw data (flux, wavelength, error) and provides</span>
-<span class="sd">    immutable operations that return new SpectrumV2 instances. It serves as</span>
+<span class="sd">    immutable operations that return new ``SpectrumV2`` instances. It serves as</span>
 <span class="sd">    the primary data structure passed between Recipes and the GUI.</span>
 
 <span class="sd">    Parameters</span>
@@ -739,50 +739,6 @@
         <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">col</span><span class="o">.</span><span class="n">quantity</span> <span class="k">if</span> <span class="n">col</span> <span class="k">else</span> <span class="kc">None</span></div>
 
-    
-<div class="viewcode-block" id="SpectrumV2.update_column">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_column">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                      <span class="n">unit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                      <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a NEW SpectrumV2 instance with the specified column updated or added.</span>
-<span class="sd">        Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># 1. Determine Unit (inherit if not provided and col exists)</span>
-        <span class="n">target_unit</span> <span class="o">=</span> <span class="n">unit</span>
-        <span class="k">if</span> <span class="n">target_unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
-                <span class="n">target_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span>
-            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;dy&#39;</span><span class="p">]:</span>
-                <span class="n">target_unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">unit</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Default fallback: match Flux unit</span>
-                <span class="n">target_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span>
-        
-        <span class="c1"># 2. Create the DataColumnV2 object</span>
-        <span class="c1"># (DataColumnV2 is already imported in your spectrum.py)</span>
-        <span class="n">new_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target_unit</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
-        
-        <span class="c1"># 3. Prepare new data structure (Immutable Pattern)</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
-        
-        <span class="c1"># Check Core Columns</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
-            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">new_col</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;dy&#39;</span><span class="p">:</span>
-            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">new_col</span><span class="p">)</span>
-        <span class="c1"># We purposely exclude x/xmin/xmax here to prevent grid mismatches</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Auxiliary Column</span>
-            <span class="n">new_aux</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
-            <span class="n">new_aux</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_col</span>
-            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux</span><span class="p">)</span>
-            
-        <span class="c1"># 4. Return new SpectrumV2</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Updated column &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="SpectrumV2.to_v1_spectrum">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum">[docs]</a>
@@ -845,7 +801,21 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">with_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> 
                         <span class="n">object_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        API: Returns a NEW SpectrumV2 instance with updated properties.</span>
+<span class="sd">        Return a NEW SpectrumV2 instance with updated properties.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_em : float</span>
+<span class="sd">            The emission redshift.</span>
+<span class="sd">        resol : float, optional</span>
+<span class="sd">            Resolution (R). Defaults to ``0.0``.</span>
+<span class="sd">        object_name : str, optional</span>
+<span class="sd">            The object name (header keyword).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with updated metadata.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">new_meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
         
@@ -962,7 +932,28 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_region_bounds">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_region_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns observed (xmin, xmax) for a standard region based on z_em.</span>
+<span class="sd">        Get observed wavelength bounds for a standard spectral region.</span>
+
+<span class="sd">        Calculates the observed wavelength range for a preset region (e.g.,</span>
+<span class="sd">        Ly-alpha forest) based on the object&#39;s emission redshift.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        region : str</span>
+<span class="sd">            The region identifier. Supported presets:</span>
+<span class="sd">            - ``&#39;lya_forest&#39;``: Ly-beta to Ly-alpha.</span>
+<span class="sd">            - ``&#39;all_ly_forest&#39;``: Ly-limit to Ly-alpha.</span>
+<span class="sd">            - ``&#39;red_side&#39;``: Redward of Ly-alpha.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple ``(obs_min, obs_max)`` as Astropy Quantities.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``z_em`` is 0.0 or the region preset is unknown.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">z_em</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
         <span class="k">if</span> <span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
@@ -981,11 +972,82 @@
 
     <span class="c1"># --- Methods implementing the API ---</span>
 
+<div class="viewcode-block" id="SpectrumV2.update_column">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                      <span class="n">unit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                      <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a NEW SpectrumV2 instance with the specified column updated or added.</span>
+
+<span class="sd">        Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of the column to update (e.g., ``&#39;cont&#39;``, ``&#39;model&#39;``).</span>
+<span class="sd">        values : np.ndarray</span>
+<span class="sd">            The numerical data for the column.</span>
+<span class="sd">        unit : astropy.units.Unit, optional</span>
+<span class="sd">            The physical unit. If None, inherits from existing column or defaults to flux unit.</span>
+<span class="sd">        description : str, optional</span>
+<span class="sd">            Description of the column content.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the updated column data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Determine Unit (inherit if not provided and col exists)</span>
+        <span class="n">target_unit</span> <span class="o">=</span> <span class="n">unit</span>
+        <span class="k">if</span> <span class="n">target_unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
+                <span class="n">target_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;dy&#39;</span><span class="p">]:</span>
+                <span class="n">target_unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">unit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Default fallback: match Flux unit</span>
+                <span class="n">target_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span>
+        
+        <span class="c1"># 2. Create the DataColumnV2 object</span>
+        <span class="c1"># (DataColumnV2 is already imported in your spectrum.py)</span>
+        <span class="n">new_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">target_unit</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
+        
+        <span class="c1"># 3. Prepare new data structure (Immutable Pattern)</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># Check Core Columns</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">new_col</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;dy&#39;</span><span class="p">:</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">new_col</span><span class="p">)</span>
+        <span class="c1"># We purposely exclude x/xmin/xmax here to prevent grid mismatches</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Auxiliary Column</span>
+            <span class="n">new_aux</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+            <span class="n">new_aux</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_col</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux</span><span class="p">)</span>
+            
+        <span class="c1"># 4. Return new SpectrumV2</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Updated column &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="SpectrumV2.remove_columns">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_columns">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a NEW SpectrumV2 with specified auxiliary columns removed.</span>
+<span class="sd">        Return a NEW SpectrumV2 with specified auxiliary columns removed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        col_names : list of str</span>
+<span class="sd">            Names of the columns to delete.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the columns removed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
         <span class="n">removed</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1012,8 +1074,25 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">prepare_expression_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                                    <span class="n">other_specs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Parses expression for &#39;alias.col&#39; patterns, resamples data from other_specs,</span>
-<span class="sd">        and returns the parsed expression and the dictionary of arrays.</span>
+<span class="sd">        Prepare context for cross-spectrum arithmetic expressions.</span>
+
+<span class="sd">        Parses an expression for aliases (e.g., ``&quot;s1.y&quot;``), resolves them against</span>
+<span class="sd">        provided spectrum objects, and resamples their data onto the current</span>
+<span class="sd">        spectrum&#39;s grid.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expression : str</span>
+<span class="sd">            The raw expression string (e.g., ``&quot;y - s1.y&quot;``).</span>
+<span class="sd">        other_specs : dict</span>
+<span class="sd">            A dictionary mapping alias names to :class:`SpectrumV2` objects.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing:</span>
+<span class="sd">            1. **final_expr** (*str*): The processed expression with safe variable names.</span>
+<span class="sd">            2. **extra_vars** (*dict*): A dictionary mapping variable names to resampled numpy arrays.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Regex for &quot;alias.column&quot;</span>
         <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)&#39;</span><span class="p">)</span>
@@ -1056,7 +1135,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                          <span class="n">extra_vars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span> <span class="c1"># &lt;&lt;&lt; MODIFIED</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies a numerical expression to columns and returns a new spectrum.</span>
+<span class="sd">        Apply a numerical expression to columns and return a new spectrum.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1139,7 +1218,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">mask_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                         <span class="n">extra_vars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span> <span class="c1"># &lt;&lt;&lt; MODIFIED</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Masks a column based on a boolean expression (sets values to NaN).</span>
+<span class="sd">        Mask a column based on a boolean expression (sets values to NaN).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1218,10 +1297,29 @@
                                      <span class="n">z_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                                      <span class="n">trans_others</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">window_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates the wavelength range corresponding to the velocity intersection </span>
-<span class="sd">        of this spectrum and a list of others.</span>
+<span class="sd">        Calculate the wavelength expression for the velocity intersection of spectra.</span>
 
-<span class="sd">        Returns a string expression suitable for `edit.split`, e.g., &quot;(x &gt; 400) &amp; (x &lt; 500)&quot;.</span>
+<span class="sd">        Determines the wavelength range where this spectrum and a list of others</span>
+<span class="sd">        overlap in velocity space, relative to specific transitions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        others_specs : list of SpectrumV2</span>
+<span class="sd">            List of other spectra to intersect with.</span>
+<span class="sd">        z_target : float</span>
+<span class="sd">            Target redshift for the velocity conversion.</span>
+<span class="sd">        trans_self : str</span>
+<span class="sd">            Transition name for the current spectrum (e.g., ``&#39;Ly_a&#39;``).</span>
+<span class="sd">        trans_others : list of str</span>
+<span class="sd">            List of transition names for the other spectra, corresponding to ``others_specs``.</span>
+<span class="sd">        window_kms : float</span>
+<span class="sd">            Symmetric velocity window width in km/s.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str or None</span>
+<span class="sd">            A boolean expression string (e.g., ``&quot;(x &gt; 400.0) &amp; (x &lt; 500.0)&quot;``) defining the</span>
+<span class="sd">            intersection, or ``None`` if no overlap exists.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># Helper logic (previously in batch_driver)</span>
@@ -1273,8 +1371,21 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.stitch">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_specs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;SpectrumV2&#39;</span><span class="p">],</span> <span class="n">sort</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Merges this spectrum with a list of other spectra.</span>
+<span class="sd">        Merge this spectrum with a list of other spectra.</span>
+
 <span class="sd">        Concatenates x, y, dy, and all auxiliary columns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_specs : list of SpectrumV2</span>
+<span class="sd">            List of other spectrum objects to stitch.</span>
+<span class="sd">        sort : bool, optional</span>
+<span class="sd">            If True, sorts the final arrays by wavelength. Defaults to ``True``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new merged spectrum.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
         
@@ -1350,7 +1461,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.split">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extra_vars</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Splits the spectrum based on a boolean expression.</span>
+<span class="sd">        Split the spectrum based on a boolean expression.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1412,8 +1523,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.scale_flux">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scale_flux</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Scales the flux (y, dy) and relevant auxiliary columns (cont, model) </span>
-<span class="sd">        by a multiplicative factor. Returns a new SpectrumV2 instance.</span>
+<span class="sd">        Scale the flux (y, dy) and relevant auxiliary columns (cont, model).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scale_factor : float or np.ndarray</span>
+<span class="sd">            Multiplicative factor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with scaled flux.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Scale core columns</span>
         <span class="c1"># Handle cases where scale_factor is scalar or array</span>
@@ -1460,14 +1580,14 @@
                               <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                               <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates a running RMS on a column and saves it as a new column.</span>
+<span class="sd">        Calculate a running RMS on a column and save it as a new column.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        input_col : str</span>
-<span class="sd">            Name of the column to calculate statistics on (e.g. &#39;y&#39;).</span>
+<span class="sd">            Name of the column to calculate statistics on (e.g., ``&#39;y&#39;``).</span>
 <span class="sd">        output_col : str</span>
-<span class="sd">            Name of the output column (e.g. &#39;running_std&#39;).</span>
+<span class="sd">            Name of the output column (e.g., ``&#39;running_std&#39;``).</span>
 <span class="sd">        window_pix : int</span>
 <span class="sd">            Width of the window in pixels.</span>
 
@@ -1517,7 +1637,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).</span>
+<span class="sd">        Apply Gaussian smoothing to all flux-like columns (y, dy, cont, model).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1590,7 +1710,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth_column">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">smooth_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies Gaussian smoothing to a single target column.</span>
+<span class="sd">        Apply Gaussian smoothing to a single target column.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1599,7 +1719,7 @@
 <span class="sd">        sigma_kms : float</span>
 <span class="sd">            Standard deviation of the Gaussian kernel in km/s.</span>
 <span class="sd">        renorm_model : bool, optional</span>
-<span class="sd">            If True and ``target_col`` is &#39;cont&#39;, the &#39;model&#39; column will be re-normalized.</span>
+<span class="sd">            If True and ``target_col`` is ``&#39;cont&#39;``, the ``&#39;model&#39;`` column will be re-normalized.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1680,7 +1800,7 @@
               <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> 
               <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Rebins the spectrum to a new uniform grid.</span>
+<span class="sd">        Rebin the spectrum to a new uniform grid.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1789,10 +1909,28 @@
               <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span> 
               <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Co-adds this spectrum with a list of other spectra onto a new common grid.</span>
-<span class="sd">        </span>
-<span class="sd">        Handles scaling, unit conversion, &quot;drizzle&quot; rebinning, and </span>
+<span class="sd">        Co-add this spectrum with a list of other spectra onto a new common grid.</span>
+
+<span class="sd">        Handles scaling, unit conversion, &quot;drizzle&quot; rebinning, and</span>
 <span class="sd">        converts the result back to the original wavelength unit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        others : list of SpectrumV2</span>
+<span class="sd">            List of spectra to add.</span>
+<span class="sd">        xstart, xend : Quantity, optional</span>
+<span class="sd">            Bounds of the new grid.</span>
+<span class="sd">        dx : Quantity</span>
+<span class="sd">            Step size of the new grid.</span>
+<span class="sd">        kappa : float, optional</span>
+<span class="sd">            Sigma clipping threshold. Defaults to ``5.0``.</span>
+<span class="sd">        equalize_order : int, optional</span>
+<span class="sd">            Polynomial order for flux scaling (-1=Off, 0=Scalar). Defaults to ``0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            The resulting co-added spectrum.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">compute_flux_scaling</span><span class="p">,</span> 
@@ -1929,13 +2067,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">resample_on_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_grid_spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> 
                          <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Resamples this spectrum onto the exact wavelength grid of another spectrum.</span>
+<span class="sd">        Resample this spectrum onto the exact wavelength grid of another spectrum.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        target_grid_spec : SpectrumV2</span>
 <span class="sd">            The spectrum whose grid defines the target wavelengths.</span>
-<span class="sd">        fill_value : float</span>
+<span class="sd">        fill_value : float, optional</span>
 <span class="sd">            Value to fill outside the interpolation range (default: NaN).</span>
 
 <span class="sd">        Returns</span>
@@ -1987,17 +2125,19 @@
                              <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Lightweight API to interpolate a single column onto a new x-grid.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        col_name : str</span>
 <span class="sd">            Name of the column to interpolate.</span>
-<span class="sd">        target_x_grid : ndarray</span>
+<span class="sd">        target_x_grid : np.ndarray</span>
 <span class="sd">            Target grid in nanometers.</span>
-<span class="sd">        </span>
+<span class="sd">        fill_value : float, optional</span>
+<span class="sd">            Value to fill outside the interpolation range. Defaults to ``NaN``.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        ndarray</span>
+<span class="sd">        np.ndarray</span>
 <span class="sd">            Interpolated values.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">all_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">_data_dict</span>
@@ -2027,12 +2167,12 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calibrate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calibrates (and warps) the flux to match target photometric magnitudes.</span>
+<span class="sd">        Calibrate (and warp) the flux to match target photometric magnitudes.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        magnitudes : str</span>
-<span class="sd">            Comma-separated pairs of Filter=Mag (e.g. ``&quot;SDSS_g=17.5, SDSS_r=17.0&quot;``).</span>
+<span class="sd">            Comma-separated pairs of ``Filter=Mag`` (e.g., ``&quot;SDSS_g=17.5, SDSS_r=17.0&quot;``).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2076,8 +2216,23 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">find_absorbed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> 
                       <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        API Method: Identifies absorbed regions.</span>
-<span class="sd">        Calls pure function: find_absorbed_regions</span>
+<span class="sd">        Identify absorbed regions using V1 logic.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        smooth_len_lya : Quantity</span>
+<span class="sd">            Smoothing length for the Ly-alpha forest.</span>
+<span class="sd">        smooth_len_out : Quantity</span>
+<span class="sd">            Smoothing length outside the forest.</span>
+<span class="sd">        kappa : float</span>
+<span class="sd">            Sigma clipping threshold.</span>
+<span class="sd">        template : bool</span>
+<span class="sd">            Use PCA template (Not Implemented).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``abs_mask`` column added/updated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Call Pure Function</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">find_absorbed_regions</span><span class="p">(</span>
@@ -2107,8 +2262,25 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">smooth_std_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
                       <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fits a continuum to the unabsorbed regions.</span>
+<span class="sd">        Fit a continuum to the unabsorbed regions.</span>
+
 <span class="sd">        Orchestrates: Interpolate -&gt; Auto-Fudge -&gt; Smooth -&gt; Renormalize Model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fudge : float or str</span>
+<span class="sd">            Fudge factor. Can be a float or ``&#39;auto&#39;``.</span>
+<span class="sd">        smooth_std_kms : float</span>
+<span class="sd">            Smoothing width for the continuum spline in km/s.</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column to use. Defaults to ``&#39;abs_mask&#39;``.</span>
+<span class="sd">        renorm_model : bool, optional</span>
+<span class="sd">            If True, re-normalizes the &#39;model&#39; column to the new continuum.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``cont`` column added/updated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
             <span class="n">interpolate_continuum_mask</span><span class="p">,</span> 
@@ -2219,19 +2391,19 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.fit_powerlaw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_powerlaw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regions_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fits a power-law continuum to specified rest-frame regions.</span>
+<span class="sd">        Fit a power-law continuum to specified rest-frame regions.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        regions_str : str</span>
 <span class="sd">            Comma-separated list of regions (e.g. ``&#39;128.0-129.0, 131.5-132.5&#39;``).</span>
-<span class="sd">        kappa : float</span>
-<span class="sd">            Sigma-clipping threshold for removing outliers within regions.</span>
+<span class="sd">        kappa : float, optional</span>
+<span class="sd">            Sigma-clipping threshold. Defaults to ``3.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance containing the &#39;cont_pl&#39; column.</span>
+<span class="sd">            A new instance containing the ``cont_pl`` column.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># 1. Call the pure function</span>
@@ -2264,8 +2436,21 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update_continuum_from_knots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knots_x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">knots_y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> 
                                     <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the continuum using a Cubic Spline through the provided knots.</span>
-<span class="sd">        Optionally re-normalizes the &#39;model&#39; column to preserve flux/continuum ratio.</span>
+<span class="sd">        Update the continuum using a Cubic Spline through provided knots.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        knots_x : list of float</span>
+<span class="sd">            X-coordinates of the knots.</span>
+<span class="sd">        knots_y : list of float</span>
+<span class="sd">            Y-coordinates of the knots.</span>
+<span class="sd">        renorm_model : bool, optional</span>
+<span class="sd">            If True, re-normalizes the &#39;model&#39; column.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the updated continuum.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Validation (Safe for numpy arrays)</span>
         <span class="c1"># Check for None first, then length. Avoid &quot;if not knots_x&quot; on arrays.</span>
@@ -2326,21 +2511,21 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.detect_absorptions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">detect_absorptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> <span class="n">min_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Detects absorption regions based on a boolean mask.</span>
+<span class="sd">        Detect absorption regions based on a boolean mask.</span>
 
 <span class="sd">        Groups adjacent pixels marked as &#39;absorbed&#39; into discrete regions.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        mask_col : str</span>
-<span class="sd">            Name of the mask column (True=Absorbed).</span>
-<span class="sd">        min_pix : int</span>
-<span class="sd">            Minimum number of pixels to form a valid region.</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column. Defaults to ``&#39;abs_mask&#39;``.</span>
+<span class="sd">        min_pix : int, optional</span>
+<span class="sd">            Minimum pixels to form a region. Defaults to ``3``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with the &#39;region_id&#39; column updated.</span>
+<span class="sd">            A new instance with the ``region_id`` column updated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Get the mask</span>
         <span class="k">if</span> <span class="n">mask_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
@@ -2393,14 +2578,32 @@
                        <span class="n">bypass_scoring</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                        <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Identifies absorption lines by correlating regions with multiplet templates.</span>
-<span class="sd">        </span>
-<span class="sd">        Uses a de-blending strategy:</span>
-<span class="sd">        1. Detects merged absorption regions.</span>
-<span class="sd">        2. Within each region, finds local minima (peaks in inverted flux).</span>
-<span class="sd">        3. Creates a candidate system for each minimum.</span>
+<span class="sd">        Identify absorption lines by correlating regions with multiplet templates.</span>
+
+<span class="sd">        Uses a de-blending strategy to separate merged features.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        multiplet_list : list of str</span>
+<span class="sd">            List of multiplets to search for.</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column.</span>
+<span class="sd">        min_pix_region : int, optional</span>
+<span class="sd">            Minimum pixels for a region.</span>
+<span class="sd">        merge_dv : float, optional</span>
+<span class="sd">            Velocity threshold for merging regions (km/s).</span>
+<span class="sd">        score_threshold : float, optional</span>
+<span class="sd">            R^2 score threshold for identification.</span>
+<span class="sd">        bypass_scoring : bool, optional</span>
+<span class="sd">            Accept all candidates if True.</span>
+<span class="sd">        debug_rating : bool, optional</span>
+<span class="sd">            Show debug plots if True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``abs_ids`` column and identification metadata.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
         <span class="c1"># This is the &#39;self&#39; spectrum object</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="n">z_em</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
@@ -2687,7 +2890,19 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_velocity_bounds">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_velocity_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">trans</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates the min/max velocity coverage of this spectrum relative to a target.</span>
+<span class="sd">        Calculate the min/max velocity coverage of this spectrum relative to a target.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_target : float</span>
+<span class="sd">            The target redshift.</span>
+<span class="sd">        trans : str</span>
+<span class="sd">            Transition name (e.g., ``&#39;Ly_a&#39;``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (min_velocity, max_velocity) in km/s. Returns ``(-inf, inf)`` if invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">trans</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         
@@ -2708,8 +2923,24 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">detect_doublet_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> 
                          <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_other</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Finds the redshift of maximum coincidence (product of absorption depths)</span>
-<span class="sd">        between this spectrum and another.</span>
+<span class="sd">        Find the redshift of maximum coincidence between this spectrum and another.</span>
+
+<span class="sd">        Calculates the cross-correlation (product of absorption depths) to align</span>
+<span class="sd">        two spectra covering different lines of a doublet.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_spec : SpectrumV2</span>
+<span class="sd">            The other spectrum object.</span>
+<span class="sd">        trans_self : str</span>
+<span class="sd">            Transition in this spectrum (e.g., ``&#39;OVI_1031&#39;``).</span>
+<span class="sd">        trans_other : str</span>
+<span class="sd">            Transition in the other spectrum (e.g., ``&#39;OVI_1037&#39;``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The detected redshift, or 0.0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
         <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
@@ -2748,7 +2979,21 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">mask_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                     <span class="n">obs_min</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates a mask column, setting it to False outside the specified bounds.</span>
+<span class="sd">        Update a mask column, setting it to False outside the specified bounds.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mask_col : str</span>
+<span class="sd">            Name of the mask column.</span>
+<span class="sd">        obs_min : Quantity</span>
+<span class="sd">            Minimum observed wavelength.</span>
+<span class="sd">        obs_max : Quantity</span>
+<span class="sd">            Maximum observed wavelength.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the updated mask.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="n">mask_col</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2772,8 +3017,21 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.merge_column">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">merge_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">other_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Merges new values into an existing column. </span>
+<span class="sd">        Merge new values into an existing column.</span>
+
 <span class="sd">        Strategy: Use new value if it&#39;s non-zero, otherwise keep old value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        col_name : str</span>
+<span class="sd">            Name of the column.</span>
+<span class="sd">        other_values : np.ndarray</span>
+<span class="sd">            Array of new values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with merged data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">old_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">old_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2792,8 +3050,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_model">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the &#39;model&#39; auxiliary column with new flux values.</span>
-<span class="sd">        Helper to avoid boilerplate in recipes.</span>
+<span class="sd">        Update the &#39;model&#39; auxiliary column with new flux values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_flux : np.ndarray</span>
+<span class="sd">            The new model flux array.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the updated model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Create DataColumnV2 (inheriting unit from flux)</span>
         <span class="n">new_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
@@ -2816,8 +3083,19 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.x_convert">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        API: Converts the X-axis units and returns a NEW SpectrumV2 instance.</span>
-<span class="sd">        (Replaces V1&#39;s mutable _x_convert)</span>
+<span class="sd">        Convert the X-axis units and return a NEW SpectrumV2 instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_ref : float</span>
+<span class="sd">            Reference redshift for velocity conversion.</span>
+<span class="sd">        xunit : astropy.units.Unit</span>
+<span class="sd">            Target unit (e.g., ``nm``, ``km/s``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the converted X-axis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># 1. Execute pure conversion logic</span>
@@ -2844,8 +3122,17 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.y_convert">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">y_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        API: Converts the Y-axis units and returns a NEW SpectrumV2 instance.</span>
-<span class="sd">        (Replaces V1&#39;s mutable _y_convert)</span>
+<span class="sd">        Convert the Y-axis units and return a NEW SpectrumV2 instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        yunit : astropy.units.Unit</span>
+<span class="sd">            Target flux unit.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with converted Y-axis and error.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># 1. Execute pure conversion logic</span>

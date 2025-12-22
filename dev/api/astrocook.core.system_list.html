@@ -519,7 +519,17 @@ Useful for quick inspection or V1 compatibility.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.fitting_context">
 <span class="sig-name descname"><span class="pre">fitting_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.fitting_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.fitting_context" title="Link to this definition">#</a></dt>
-<dd><p>Safely sets the active fitting mask and guarantees cleanup.</p>
+<dd><p>Context manager for safe fitting.</p>
+<p>Temporarily sets the active fitting mask on the constraint model and
+guarantees cleanup (resetting the mask) even if errors occur.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>active_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – List of UUIDs to set as active.</p></li>
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Grouping depth for finding connected components. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -536,9 +546,9 @@ Useful for quick inspection or V1 compatibility.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectrum containing the region definitions.</p></li>
-<li><p><strong>region_id_col</strong> (<em>str</em>) – Name of the column containing region IDs (e.g., ‘abs_ids’).</p></li>
-<li><p><strong>series_map</strong> (<em>dict</em>) – Mapping {region_id: series_name}.</p></li>
-<li><p><strong>z_map</strong> (<em>dict</em>) – Mapping {region_id: redshift}.</p></li>
+<li><p><strong>region_id_col</strong> (<em>str</em>) – Name of the column containing region IDs (e.g., <code class="docutils literal notranslate"><span class="pre">'abs_ids'</span></code>).</p></li>
+<li><p><strong>series_map</strong> (<em>dict</em>) – Mapping <code class="docutils literal notranslate"><span class="pre">{region_id:</span> <span class="pre">series_name}</span></code>.</p></li>
+<li><p><strong>z_map</strong> (<em>dict</em>) – Mapping <code class="docutils literal notranslate"><span class="pre">{region_id:</span> <span class="pre">redshift}</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -553,27 +563,56 @@ Useful for quick inspection or V1 compatibility.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.add_component">
 <span class="sig-name descname"><span class="pre">add_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">13.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btur</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.add_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.add_component" title="Link to this definition">#</a></dt>
-<dd><p>Adds a single component to the list.</p>
-<p>Note: If ‘series’ is a multiplet name (e.g. ‘CIV’), the VoigtFitter
-will automatically model it as all member lines sharing these parameters.</p>
+<dd><p>Return a new SystemList with properties of a specific component updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em>) – The UUID of the component to update.</p></li>
+<li><p><strong>**changes</strong> (<em>dict</em>) – Keyword arguments for the fields to change (e.g. <code class="docutils literal notranslate"><span class="pre">z=2.5</span></code>, <code class="docutils literal notranslate"><span class="pre">logN=14.0</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the updated component.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.get_component_by_uuid">
 <span class="sig-name descname"><span class="pre">get_component_by_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2" title="astrocook.core.structures.ComponentDataV2"><span class="pre">ComponentDataV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.get_component_by_uuid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.get_component_by_uuid" title="Link to this definition">#</a></dt>
-<dd><p>Retrieves a component object by its UUID.</p>
+<dd><p>Retrieve a component object by its UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>uuid</strong> (<em>str</em>) – The unique identifier of the component.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The component object, or None if not found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2" title="astrocook.core.structures.ComponentDataV2">ComponentDataV2</a> or None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.update_component">
 <span class="sig-name descname"><span class="pre">update_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">changes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.update_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.update_component" title="Link to this definition">#</a></dt>
-<dd><p>Returns a new SystemList with properties of a specific component updated.</p>
+<dd><p>Return a new SystemList with properties of a specific component updated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>uuid</strong> (<em>str</em>) – The UUID of the component to update.</p></li>
-<li><p><strong>**changes</strong> (<em>dict</em>) – Keyword arguments for the fields to change (e.g. z=2.5, logN=14.0).</p></li>
+<li><p><strong>**changes</strong> (<em>dict</em>) – Keyword arguments for the fields to change (e.g. <code class="docutils literal notranslate"><span class="pre">z=2.5</span></code>, <code class="docutils literal notranslate"><span class="pre">logN=14.0</span></code>).</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the updated component.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -581,12 +620,12 @@ will automatically model it as all member lines sharing these parameters.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.update_constraint">
 <span class="sig-name descname"><span class="pre">update_constraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.update_constraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.update_constraint" title="Link to this definition">#</a></dt>
-<dd><p>Updates the constraint for a specific component parameter.</p>
+<dd><p>Update the constraint for a specific component parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>uuid</strong> (<em>str</em>) – The component UUID.</p></li>
-<li><p><strong>param</strong> (<em>str</em>) – The parameter name (e.g., ‘z’, ‘logN’, ‘b’).</p></li>
+<li><p><strong>param</strong> (<em>str</em>) – The parameter name (e.g., <code class="docutils literal notranslate"><span class="pre">'z'</span></code>, <code class="docutils literal notranslate"><span class="pre">'logN'</span></code>).</p></li>
 <li><p><strong>is_free</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, parameter varies freely. If False, it is fixed or linked.</p></li>
 <li><p><strong>expression</strong> (<em>str</em><em>, </em><em>optional</em>) – Mathematical string for linking (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;p['target_uuid'].z&quot;</span></code>).</p></li>
 <li><p><strong>target_uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – UUID of the component this parameter is linked to.</p></li>
@@ -604,26 +643,34 @@ will automatically model it as all member lines sharing these parameters.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.delete_component">
 <span class="sig-name descname"><span class="pre">delete_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.delete_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.delete_component" title="Link to this definition">#</a></dt>
-<dd><p>Removes one or multiple components and cleans up constraints linking to them.
-Accepts either a single ‘uuid’ or a list ‘uuids’.</p>
+<dd><p>Remove component(s) and clean up constraints linking to them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – Single UUID to delete.</p></li>
+<li><p><strong>uuids</strong> (<em>list</em><em>, </em><em>optional</em>) – List of UUIDs to delete.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with components removed and constraints cleaned.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.get_connected_group">
 <span class="sig-name descname"><span class="pre">get_connected_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.get_connected_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="Link to this definition">#</a></dt>
-<dd><p>Finds a set of components that must be fitted together.</p>
+<dd><p>Find a set of components that must be fitted together.</p>
 <p>This method traverses relationships to find all “fluid neighbors” of
-the seed components. Connections are formed by:
-1.  <strong>Parameter Linking:</strong> If A is linked to B, they are grouped.
-2.  <strong>Spectral Overlap:</strong> If A’s lines overlap with B’s lines within 4 sigma.
-3.  <strong>Kinematic Proximity:</strong> If A and B are the same species and close in velocity.</p>
+the seed components (via links, spectral overlap, or kinematic proximity).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>seed_uuids</strong> (<em>list</em><em> of </em><em>str</em>) – The UUIDs of the components initially selected for fitting.</p></li>
-<li><p><strong>max_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse.
-1 = Direct neighbors only.
-2 = Neighbors of neighbors (Friends of Friends).</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -638,14 +685,20 @@ the seed components. Connections are formed by:
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.merge">
 <span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.merge" title="Link to this definition">#</a></dt>
-<dd><p>Merges components from another system list into this one.</p>
+<dd><p>Merge components from another system list into this one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>other</strong> (<a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The source list to copy from.</p></li>
-<li><p><strong>copy_uuids</strong> (<em>bool</em>) – If True, keeps original UUIDs (risky if merging into self).
-If False, regenerates UUIDs to avoid conflicts.</p></li>
+<li><p><strong>copy_uuids</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, keeps original UUIDs (risky if merging into self).
+If False, regenerates UUIDs to avoid conflicts. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new merged system list.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -697,23 +750,61 @@ existing components. Lower this to de-blend close doublets (default: 10.0).</p><
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.remove_in_region">
 <span class="sig-name descname"><span class="pre">remove_in_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.remove_in_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.remove_in_region" title="Link to this definition">#</a></dt>
-<dd><p>Removes components whose primary line center falls within the observed wavelength range.
-Used for cleaning up regions before auto-fitting.</p>
+<dd><p>Remove components whose center falls within the observed wavelength range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs_min</strong> (<em>Quantity</em>) – The wavelength bounds.</p></li>
+<li><p><strong>obs_max</strong> (<em>Quantity</em>) – The wavelength bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with components removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.filter_by_criteria">
 <span class="sig-name descname"><span class="pre">filter_by_criteria</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition_func</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.filter_by_criteria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.filter_by_criteria" title="Link to this definition">#</a></dt>
-<dd><p>Filters components based on a lambda function.
-Example: systs.filter_by_criteria(lambda c: c.b &gt; 10.0)</p>
+<dd><p>Remove components whose center falls within the observed wavelength range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs_min</strong> (<em>Quantity</em>) – The wavelength bounds.</p></li>
+<li><p><strong>obs_max</strong> (<em>Quantity</em>) – The wavelength bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with components removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.filter_by_range">
 <span class="sig-name descname"><span class="pre">filter_by_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xmin_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.filter_by_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.filter_by_range" title="Link to this definition">#</a></dt>
-<dd><p>Returns a new SystemListV2 containing only components that fall
-within the specified wavelength range [xmin, xmax] (in nm).
-Handles both single lines (CIV 1548) and doublet tags (CIV).</p>
+<dd><p>Return a new SystemListV2 containing only components within the range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xmin_nm</strong> (<em>float</em>) – Wavelength range in nanometers.</p></li>
+<li><p><strong>xmax_nm</strong> (<em>float</em>) – Wavelength range in nanometers.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with filtered components.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

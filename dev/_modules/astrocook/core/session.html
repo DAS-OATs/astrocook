@@ -435,7 +435,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Orchestrates the loading of a session from a file or archive.</span>
+<span class="sd">    Orchestrate the loading of a session from a file or archive.</span>
 
 <span class="sd">    This function handles various input formats, including legacy Astrocook V1 archives (``.acs``),</span>
 <span class="sd">    modern V2 archives (``.acs2``), and raw FITS files. It automatically handles</span>
@@ -452,12 +452,12 @@
 <span class="sd">        or a mock object if running in a script.</span>
 <span class="sd">    format_name : str</span>
 <span class="sd">        A format identifier string (e.g., ``&#39;generic_spectrum&#39;``, ``&#39;eso_midas&#39;``)</span>
-<span class="sd">        used to select the appropriate loader for raw files.</span>
+<span class="sd">        used to select the appropriate loader for raw files. Use ``&#39;auto&#39;`` to attempt detection.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    SessionV2 or int</span>
-<span class="sd">        The loaded :class:`SessionV2` object if successful.</span>
+<span class="sd">        The loaded :class:`~astrocook.core.session.SessionV2` object if successful.</span>
 <span class="sd">        Returns ``0`` (integer) if the loading process failed.</span>
 
 <span class="sd">    Raises</span>
@@ -625,13 +625,13 @@
 <span class="sd">        The main container for spectral data (flux, wavelength, error, etc.).</span>
 <span class="sd">    systs : astrocook.core.system_list.SystemListV2, optional</span>
 <span class="sd">        The container for identified absorption systems and Voigt profile components.</span>
-<span class="sd">    edit : RecipeEditV2</span>
+<span class="sd">    edit : astrocook.recipes.edit.RecipeEditV2</span>
 <span class="sd">        Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).</span>
-<span class="sd">    flux : RecipeFluxV2</span>
+<span class="sd">    flux : astrocook.recipes.flux.RecipeFluxV2</span>
 <span class="sd">        Access to flux manipulation recipes (e.g., ``smooth``, ``rebin``).</span>
-<span class="sd">    continuum : RecipeContinuumV2</span>
+<span class="sd">    continuum : astrocook.recipes.continuum.RecipeContinuumV2</span>
 <span class="sd">        Access to continuum estimation and fitting recipes.</span>
-<span class="sd">    absorbers : RecipeAbsorbersV2</span>
+<span class="sd">    absorbers : astrocook.recipes.absorbers.RecipeAbsorbersV2</span>
 <span class="sd">        Access to line identification and fitting recipes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="SessionV2.__init__">
@@ -688,7 +688,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>        
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Factory method: Creates a new SessionV2 by loading data from a file.</span>
+<span class="sd">        Factory method: Create a new SessionV2 by loading data from a file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -699,7 +699,7 @@
 <span class="sd">        gui_context : Any</span>
 <span class="sd">            The GUI parent object (used for logging/dialogs).</span>
 <span class="sd">        format_name : str</span>
-<span class="sd">            Hint for the file format loader (e.g. &#39;generic_spectrum&#39;).</span>
+<span class="sd">            Hint for the file format loader (e.g. ``&#39;generic_spectrum&#39;``).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -723,16 +723,16 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_spectrum">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a new SessionV2 instance with an updated spectrum.</span>
-<span class="sd">        </span>
+<span class="sd">        Return a new SessionV2 instance with an updated spectrum.</span>
+
 <span class="sd">        This is used by recipes that modify spectral data (e.g., smoothing,</span>
 <span class="sd">        continuum fitting) to ensure history preservation.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        new_spectrum : SpectrumV2</span>
 <span class="sd">            The new spectral data object.</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
@@ -755,13 +755,13 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_system_list">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_new_system_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a new SessionV2 instance with an updated system list.</span>
-<span class="sd">        </span>
+<span class="sd">        Return a new SessionV2 instance with an updated system list.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        new_systs : SystemListV2</span>
 <span class="sd">            The new system list object.</span>
-<span class="sd">            </span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
@@ -786,13 +786,13 @@
              <span class="n">initial_session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
              <span class="n">models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Saves the current session state to a file.</span>
+<span class="sd">        Save the current session state to a file.</span>
 
 <span class="sd">        This method supports two formats:</span>
-<span class="sd">        </span>
-<span class="sd">        1. **.acs2 (Recommended)**: A zipped archive containing the full session state, </span>
+
+<span class="sd">        1. **.acs2 (Recommended)**: A zipped archive containing the full session state,</span>
 <span class="sd">           metadata, and (optionally) the original data if ``initial_session`` is provided.</span>
-<span class="sd">        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with </span>
+<span class="sd">        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with</span>
 <span class="sd">           Astrocook V1.</span>
 
 <span class="sd">        Parameters</span>
@@ -800,8 +800,8 @@
 <span class="sd">        file_path : str</span>
 <span class="sd">            The destination path. The extension (``.acs`` vs ``.acs2``) determines the format.</span>
 <span class="sd">        initial_session : SessionV2, optional</span>
-<span class="sd">            The state of the session *before* any modifications. This is required </span>
-<span class="sd">            when saving to ``.acs2`` format to ensure the archive contains the </span>
+<span class="sd">            The state of the session *before* any modifications. This is required</span>
+<span class="sd">            when saving to ``.acs2`` format to ensure the archive contains the</span>
 <span class="sd">            original raw data for reproducibility.</span>
 <span class="sd">        models : bool, optional</span>
 <span class="sd">            Flag for V1 backward compatibility (unused in V2 native saves).</span>
