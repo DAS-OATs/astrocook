@@ -11,7 +11,7 @@ import uuid
 class SessionMetadataV2:
     """
     Core immutable structure for holding constraints, configuration, and history.
-    
+
     This structure is designed to be serialized to a JSON or YAML file within
     the .acs archive. It separates the lightweight metadata from the heavy
     spectral arrays.
@@ -66,21 +66,29 @@ class DataColumnV2:
     
     @property
     def quantity(self) -> au.Quantity:
-        """Returns the data as an Astropy Quantity."""
+        """
+        Return the column data as an Astropy Quantity.
+
+        Combines the numerical values and the physical unit.
+        """
         return au.Quantity(self.values, self.unit)
 
     # --- [FIX] Compatibility Aliases ---
     @property
     def value(self) -> np.ndarray:
-        """Alias for .values to support legacy/Astropy-style access."""
+        """
+        Return the raw numerical array.
+
+        Alias for ``.values`` to support legacy/Astropy-style access.
+        """
         return self.values
 
     def __len__(self):
-        """Allows len(column) to work."""
+        """Return the number of elements in the column."""
         return len(self.values)
     
     def __array__(self):
-        """Allows np.array(column) to work."""
+        """Return the raw array representation (for NumPy compatibility)."""
         return self.values
 
 @dataclass(frozen=True)
@@ -107,8 +115,6 @@ class SpectrumDataV2:
         Additional columns (e.g. ``'cont'``, ``'model'``, ``'abs_mask'``).
     meta : dict
         Header keywords and other metadata.
-    z_rf : float
-        Rest-frame redshift used for velocity conversions.
     z_em : float
         Emission redshift of the target object.
     resol : float
@@ -150,18 +156,26 @@ class SpectrumDataV2:
 
         Parameters
         ----------
-        x_values, y_values, dy_values : np.ndarray
-            Raw data arrays.
-        x_unit, y_unit : astropy.units.Unit
-            Units for the spatial and flux axes.
-        xmin_values, xmax_values : np.ndarray, optional
-            Bin edges. If None, defaults to ``x_values``.
+        x_values : np.ndarray
+            Wavelength/Velocity data.
+        x_unit : astropy.units.Unit
+            Unit for the x-axis.
+        y_values : np.ndarray
+            Flux data.
+        y_unit : astropy.units.Unit
+            Unit for the y-axis (and dy).
+        dy_values : np.ndarray
+            Error data.
+        xmin_values : np.ndarray, optional
+            Lower bin edges. Defaults to ``x_values`` if None.
+        xmax_values : np.ndarray, optional
+            Upper bin edges. Defaults to ``x_values`` if None.
         aux_data : dict, optional
             Dictionary of auxiliary columns: ``{'name': (values, unit, description)}``.
         meta : dict, optional
             Metadata dictionary.
-        z_rf, z_em : float, optional
-            Redshift properties.
+        z_em : float, optional
+            Emission redshift. Defaults to ``0.0``.
 
         Returns
         -------
@@ -359,12 +373,12 @@ class HistoryLogV2:
 
     @property
     def is_v2_log(self) -> bool:
-        """Always True for this class."""
+        """Return True, indicating this is a V2-native log structure."""
         return True
 
     def add_entry(self, recipe_name: str, params: Dict[str, Any]):
         """
-        Adds a new log entry, truncating any 'future' history (from Undo actions).
+        Add a new log entry, truncating any 'future' history (from Undo actions).
 
         Parameters
         ----------
@@ -388,12 +402,14 @@ class HistoryLogV2:
 
     def undo(self) -> bool:
         """
-        Moves the history pointer back one step.
-        
-        Returns
-        -------
-        bool
-            True if undo was successful, False if already at the beginning.
+        Add a new log entry, truncating any 'future' history (from Undo actions).
+
+        Parameters
+        ----------
+        recipe_name : str
+            The name of the recipe executed.
+        params : dict
+            The parameters used for the recipe.
         """
         if self.current_index > -1:
             self.current_index -= 1
@@ -403,7 +419,7 @@ class HistoryLogV2:
 
     def redo(self) -> bool:
         """
-        Moves the history pointer forward one step.
+        Move the history pointer forward one step.
 
         Returns
         -------
@@ -424,10 +440,16 @@ class V1LogArtifact:
 
     Used to display the history of a session loaded from a V1 archive
     without converting it to the full V2 structure.
+
+    Parameters
+    ----------
+    v1_log_json : dict
+        The raw JSON dictionary from the V1 archive.
     """
     def __init__(self, v1_log_json: dict):
         self.v1_json = v1_log_json
     
     @property
     def is_v2_log(self) -> bool:
+        """Return False, indicating this is a legacy V1 log wrapper."""
         return False

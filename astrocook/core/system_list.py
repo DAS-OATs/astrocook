@@ -18,8 +18,8 @@ class SystemListV2:
     """
     API layer for managing component lists, constraints, and fitting.
 
-    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2` 
-    and provides methods to add, update, delete, and group components. It also 
+    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2`
+    and provides methods to add, update, delete, and group components. It also
     initializes the constraint model used by the fitting engine.
 
     Parameters
@@ -242,7 +242,17 @@ class SystemListV2:
     @contextlib.contextmanager
     def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2):
         """
-        Safely sets the active fitting mask and guarantees cleanup.
+        Context manager for safe fitting.
+
+        Temporarily sets the active fitting mask on the constraint model and
+        guarantees cleanup (resetting the mask) even if errors occur.
+
+        Parameters
+        ----------
+        active_uuids : list of str, optional
+            List of UUIDs to set as active.
+        group_depth : int, optional
+            Grouping depth for finding connected components. Defaults to ``2``.
         """
         if not self.constraint_model:
             yield
@@ -286,11 +296,11 @@ class SystemListV2:
         spec : SpectrumV2
             The spectrum containing the region definitions.
         region_id_col : str
-            Name of the column containing region IDs (e.g., 'abs_ids').
+            Name of the column containing region IDs (e.g., ``'abs_ids'``).
         series_map : dict
-            Mapping {region_id: series_name}.
+            Mapping ``{region_id: series_name}``.
         z_map : dict
-            Mapping {region_id: redshift}.
+            Mapping ``{region_id: redshift}``.
 
         Returns
         -------
@@ -333,10 +343,19 @@ class SystemListV2:
     def add_component(self, series: str, z: float, logN: float = 13.5, 
                       b: float = 10.0, btur: float = 0.0) -> 'SystemListV2':
         """
-        Adds a single component to the list.
-        
-        Note: If 'series' is a multiplet name (e.g. 'CIV'), the VoigtFitter 
-        will automatically model it as all member lines sharing these parameters.
+        Return a new SystemList with properties of a specific component updated.
+
+        Parameters
+        ----------
+        uuid : str
+            The UUID of the component to update.
+        **changes : dict
+            Keyword arguments for the fields to change (e.g. ``z=2.5``, ``logN=14.0``).
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with the updated component.
         """
         from astrocook.core.structures import ComponentDataV2
 
@@ -368,21 +387,38 @@ class SystemListV2:
         return SystemListV2(new_data_core)
     
     def get_component_by_uuid(self, uuid: str) -> Optional[ComponentDataV2]:
-        """Retrieves a component object by its UUID."""
+        """
+        Retrieve a component object by its UUID.
+
+        Parameters
+        ----------
+        uuid : str
+            The unique identifier of the component.
+
+        Returns
+        -------
+        ComponentDataV2 or None
+            The component object, or None if not found.
+        """
         for c in self.components:
             if c.uuid == uuid: return c
         return None
 
     def update_component(self, uuid: str, **changes) -> 'SystemListV2':
         """
-        Returns a new SystemList with properties of a specific component updated.
-        
+        Return a new SystemList with properties of a specific component updated.
+
         Parameters
         ----------
         uuid : str
             The UUID of the component to update.
         **changes : dict
-            Keyword arguments for the fields to change (e.g. z=2.5, logN=14.0).
+            Keyword arguments for the fields to change (e.g. ``z=2.5``, ``logN=14.0``).
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with the updated component.
         """
         new_components = []
         found = False
@@ -410,14 +446,14 @@ class SystemListV2:
                           expression: Optional[str] = None,
                           target_uuid: Optional[str] = None) -> 'SystemListV2':
         """
-        Updates the constraint for a specific component parameter.
+        Update the constraint for a specific component parameter.
 
         Parameters
         ----------
         uuid : str
             The component UUID.
         param : str
-            The parameter name (e.g., 'z', 'logN', 'b').
+            The parameter name (e.g., ``'z'``, ``'logN'``).
         is_free : bool, optional
             If True, parameter varies freely. If False, it is fixed or linked.
         expression : str, optional
@@ -486,8 +522,19 @@ class SystemListV2:
 
     def delete_component(self, uuid: str = None, uuids: list = None) -> 'SystemListV2':
         """
-        Removes one or multiple components and cleans up constraints linking to them.
-        Accepts either a single 'uuid' or a list 'uuids'.
+        Remove component(s) and clean up constraints linking to them.
+
+        Parameters
+        ----------
+        uuid : str, optional
+            Single UUID to delete.
+        uuids : list, optional
+            List of UUIDs to delete.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with components removed and constraints cleaned.
         """
         import dataclasses
         from astrocook.core.structures import ParameterConstraintV2
@@ -545,22 +592,17 @@ class SystemListV2:
 
     def get_connected_group(self, seed_uuids: List[str], max_depth: int = 2) -> Set[str]:
         """
-        Finds a set of components that must be fitted together.
+        Find a set of components that must be fitted together.
 
         This method traverses relationships to find all "fluid neighbors" of
-        the seed components. Connections are formed by:
-        1.  **Parameter Linking:** If A is linked to B, they are grouped.
-        2.  **Spectral Overlap:** If A's lines overlap with B's lines within 4 sigma.
-        3.  **Kinematic Proximity:** If A and B are the same species and close in velocity.
+        the seed components (via links, spectral overlap, or kinematic proximity).
 
         Parameters
         ----------
         seed_uuids : list of str
             The UUIDs of the components initially selected for fitting.
         max_depth : int, optional
-            How many degrees of separation to traverse.
-            1 = Direct neighbors only.
-            2 = Neighbors of neighbors (Friends of Friends).
+            How many degrees of separation to traverse. Defaults to ``2``.
 
         Returns
         -------
@@ -706,15 +748,20 @@ class SystemListV2:
     
     def merge(self, other: 'SystemListV2', copy_uuids: bool = False) -> 'SystemListV2':
         """
-        Merges components from another system list into this one.
-        
+        Merge components from another system list into this one.
+
         Parameters
         ----------
         other : SystemListV2
             The source list to copy from.
-        copy_uuids : bool
+        copy_uuids : bool, optional
             If True, keeps original UUIDs (risky if merging into self).
-            If False, regenerates UUIDs to avoid conflicts.
+            If False, regenerates UUIDs to avoid conflicts. Defaults to ``False``.
+
+        Returns
+        -------
+        SystemListV2
+            A new merged system list.
         """
         from astrocook.core.structures import ComponentDataV2
         import uuid
@@ -926,8 +973,17 @@ class SystemListV2:
     
     def remove_in_region(self, obs_min: au.Quantity, obs_max: au.Quantity) -> 'SystemListV2':
         """
-        Removes components whose primary line center falls within the observed wavelength range.
-        Used for cleaning up regions before auto-fitting.
+        Remove components whose center falls within the observed wavelength range.
+
+        Parameters
+        ----------
+        obs_min, obs_max : Quantity
+            The wavelength bounds.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with components removed.
         """
         surviving_comps = []
         deleted_count = 0
@@ -964,8 +1020,17 @@ class SystemListV2:
 
     def filter_by_criteria(self, condition_func) -> 'SystemListV2':
         """
-        Filters components based on a lambda function.
-        Example: systs.filter_by_criteria(lambda c: c.b > 10.0)
+        Remove components whose center falls within the observed wavelength range.
+
+        Parameters
+        ----------
+        obs_min, obs_max : Quantity
+            The wavelength bounds.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with components removed.
         """
         valid_comps = []
         deleted_count = 0
@@ -985,9 +1050,17 @@ class SystemListV2:
     
     def filter_by_range(self, xmin_nm: float, xmax_nm: float) -> 'SystemListV2':
         """
-        Returns a new SystemListV2 containing only components that fall 
-        within the specified wavelength range [xmin, xmax] (in nm).
-        Handles both single lines (CIV 1548) and doublet tags (CIV).
+        Return a new SystemListV2 containing only components within the range.
+
+        Parameters
+        ----------
+        xmin_nm, xmax_nm : float
+            Wavelength range in nanometers.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with filtered components.
         """
         import numpy as np
         import astropy.units as au

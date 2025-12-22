@@ -101,9 +101,9 @@ class TableAdapterV2(object):
 class SpectrumV2:
     """
     Composite container for spectral data and operations.
-    
+
     This class wraps the raw data (flux, wavelength, error) and provides
-    immutable operations that return new SpectrumV2 instances. It serves as
+    immutable operations that return new ``SpectrumV2`` instances. It serves as
     the primary data structure passed between Recipes and the GUI.
 
     Parameters
@@ -320,47 +320,6 @@ class SpectrumV2:
         """Accede a una colonna ausiliaria per la GUI (es. 'cont')."""
         col = self._data.aux_cols.get(name)
         return col.quantity if col else None
-    
-    def update_column(self, name: str, values: np.ndarray, 
-                      unit: Optional[au.Unit] = None,
-                      description: str = "") -> 'SpectrumV2':
-        """
-        Returns a NEW SpectrumV2 instance with the specified column updated or added.
-        Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).
-        """
-        # 1. Determine Unit (inherit if not provided and col exists)
-        target_unit = unit
-        if target_unit is None:
-            if name in self._data.aux_cols:
-                target_unit = self._data.aux_cols[name].unit
-            elif name in ['y', 'dy']:
-                target_unit = getattr(self._data, name).unit
-            else:
-                # Default fallback: match Flux unit
-                target_unit = self._data.y.unit
-        
-        # 2. Create the DataColumnV2 object
-        # (DataColumnV2 is already imported in your spectrum.py)
-        new_col = DataColumnV2(values, target_unit, description)
-        
-        # 3. Prepare new data structure (Immutable Pattern)
-        new_data = None
-        
-        # Check Core Columns
-        if name == 'y':
-            new_data = dataclasses.replace(self._data, y=new_col)
-        elif name == 'dy':
-            new_data = dataclasses.replace(self._data, dy=new_col)
-        # We purposely exclude x/xmin/xmax here to prevent grid mismatches
-        else:
-            # Auxiliary Column
-            new_aux = deepcopy(self._data.aux_cols)
-            new_aux[name] = new_col
-            new_data = dataclasses.replace(self._data, aux_cols=new_aux)
-            
-        # 4. Return new SpectrumV2
-        new_history = self.history + [f"Updated column '{name}'"]
-        return SpectrumV2(data=new_data, history=new_history)
 
     def to_v1_spectrum(self) -> SpectrumV1:
         """
@@ -418,7 +377,21 @@ class SpectrumV2:
     def with_properties(self, z_em: float, resol: float = 0.0, 
                         object_name: Optional[str] = None) -> 'SpectrumV2':
         """
-        API: Returns a NEW SpectrumV2 instance with updated properties.
+        Return a NEW SpectrumV2 instance with updated properties.
+
+        Parameters
+        ----------
+        z_em : float
+            The emission redshift.
+        resol : float, optional
+            Resolution (R). Defaults to ``0.0``.
+        object_name : str, optional
+            The object name (header keyword).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with updated metadata.
         """
         new_meta = deepcopy(self._data.meta)
         
@@ -529,7 +502,28 @@ class SpectrumV2:
     
     def get_region_bounds(self, region: str) -> Tuple[au.Quantity, au.Quantity]:
         """
-        Returns observed (xmin, xmax) for a standard region based on z_em.
+        Get observed wavelength bounds for a standard spectral region.
+
+        Calculates the observed wavelength range for a preset region (e.g.,
+        Ly-alpha forest) based on the object's emission redshift.
+
+        Parameters
+        ----------
+        region : str
+            The region identifier. Supported presets:
+            - ``'lya_forest'``: Ly-beta to Ly-alpha.
+            - ``'all_ly_forest'``: Ly-limit to Ly-alpha.
+            - ``'red_side'``: Redward of Ly-alpha.
+
+        Returns
+        -------
+        tuple
+            A tuple ``(obs_min, obs_max)`` as Astropy Quantities.
+
+        Raises
+        ------
+        ValueError
+            If ``z_em`` is 0.0 or the region preset is unknown.
         """
         z_em = self._data.z_em
         if z_em == 0.0:
@@ -547,9 +541,77 @@ class SpectrumV2:
 
     # --- Methods implementing the API ---
 
+    def update_column(self, name: str, values: np.ndarray, 
+                      unit: Optional[au.Unit] = None,
+                      description: str = "") -> 'SpectrumV2':
+        """
+        Return a NEW SpectrumV2 instance with the specified column updated or added.
+
+        Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).
+
+        Parameters
+        ----------
+        name : str
+            Name of the column to update (e.g., ``'cont'``, ``'model'``).
+        values : np.ndarray
+            The numerical data for the column.
+        unit : astropy.units.Unit, optional
+            The physical unit. If None, inherits from existing column or defaults to flux unit.
+        description : str, optional
+            Description of the column content.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the updated column data.
+        """
+        # 1. Determine Unit (inherit if not provided and col exists)
+        target_unit = unit
+        if target_unit is None:
+            if name in self._data.aux_cols:
+                target_unit = self._data.aux_cols[name].unit
+            elif name in ['y', 'dy']:
+                target_unit = getattr(self._data, name).unit
+            else:
+                # Default fallback: match Flux unit
+                target_unit = self._data.y.unit
+        
+        # 2. Create the DataColumnV2 object
+        # (DataColumnV2 is already imported in your spectrum.py)
+        new_col = DataColumnV2(values, target_unit, description)
+        
+        # 3. Prepare new data structure (Immutable Pattern)
+        new_data = None
+        
+        # Check Core Columns
+        if name == 'y':
+            new_data = dataclasses.replace(self._data, y=new_col)
+        elif name == 'dy':
+            new_data = dataclasses.replace(self._data, dy=new_col)
+        # We purposely exclude x/xmin/xmax here to prevent grid mismatches
+        else:
+            # Auxiliary Column
+            new_aux = deepcopy(self._data.aux_cols)
+            new_aux[name] = new_col
+            new_data = dataclasses.replace(self._data, aux_cols=new_aux)
+            
+        # 4. Return new SpectrumV2
+        new_history = self.history + [f"Updated column '{name}'"]
+        return SpectrumV2(data=new_data, history=new_history)
+
     def remove_columns(self, col_names: List[str]) -> 'SpectrumV2':
         """
-        Returns a NEW SpectrumV2 with specified auxiliary columns removed.
+        Return a NEW SpectrumV2 with specified auxiliary columns removed.
+
+        Parameters
+        ----------
+        col_names : list of str
+            Names of the columns to delete.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the columns removed.
         """
         new_aux_cols = deepcopy(self._data.aux_cols)
         removed = []
@@ -573,8 +635,25 @@ class SpectrumV2:
     def prepare_expression_context(self, expression: str, 
                                    other_specs: Dict[str, 'SpectrumV2']) -> Tuple[str, Dict[str, np.ndarray]]:
         """
-        Parses expression for 'alias.col' patterns, resamples data from other_specs,
-        and returns the parsed expression and the dictionary of arrays.
+        Prepare context for cross-spectrum arithmetic expressions.
+
+        Parses an expression for aliases (e.g., ``"s1.y"``), resolves them against
+        provided spectrum objects, and resamples their data onto the current
+        spectrum's grid.
+
+        Parameters
+        ----------
+        expression : str
+            The raw expression string (e.g., ``"y - s1.y"``).
+        other_specs : dict
+            A dictionary mapping alias names to :class:`SpectrumV2` objects.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            1. **final_expr** (*str*): The processed expression with safe variable names.
+            2. **extra_vars** (*dict*): A dictionary mapping variable names to resampled numpy arrays.
         """
         # Regex for "alias.column"
         regex = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
@@ -614,7 +693,7 @@ class SpectrumV2:
     def apply_expression(self, target_col: str, expression: str, 
                          extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
         """
-        Applies a numerical expression to columns and returns a new spectrum.
+        Apply a numerical expression to columns and return a new spectrum.
 
         Parameters
         ----------
@@ -694,7 +773,7 @@ class SpectrumV2:
     def mask_expression(self, target_col: str, expression: str, 
                         extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
         """
-        Masks a column based on a boolean expression (sets values to NaN).
+        Mask a column based on a boolean expression (sets values to NaN).
 
         Parameters
         ----------
@@ -770,10 +849,29 @@ class SpectrumV2:
                                      z_target: float, trans_self: str, 
                                      trans_others: List[str], window_kms: float) -> Optional[str]:
         """
-        Calculates the wavelength range corresponding to the velocity intersection 
-        of this spectrum and a list of others.
+        Calculate the wavelength expression for the velocity intersection of spectra.
 
-        Returns a string expression suitable for `edit.split`, e.g., "(x > 400) & (x < 500)".
+        Determines the wavelength range where this spectrum and a list of others
+        overlap in velocity space, relative to specific transitions.
+
+        Parameters
+        ----------
+        others_specs : list of SpectrumV2
+            List of other spectra to intersect with.
+        z_target : float
+            Target redshift for the velocity conversion.
+        trans_self : str
+            Transition name for the current spectrum (e.g., ``'Ly_a'``).
+        trans_others : list of str
+            List of transition names for the other spectra, corresponding to ``others_specs``.
+        window_kms : float
+            Symmetric velocity window width in km/s.
+
+        Returns
+        -------
+        str or None
+            A boolean expression string (e.g., ``"(x > 400.0) & (x < 500.0)"``) defining the
+            intersection, or ``None`` if no overlap exists.
         """
         
         # Helper logic (previously in batch_driver)
@@ -822,8 +920,21 @@ class SpectrumV2:
 
     def stitch(self, other_specs: List['SpectrumV2'], sort: bool = True) -> 'SpectrumV2':
         """
-        Merges this spectrum with a list of other spectra.
+        Merge this spectrum with a list of other spectra.
+
         Concatenates x, y, dy, and all auxiliary columns.
+
+        Parameters
+        ----------
+        other_specs : list of SpectrumV2
+            List of other spectrum objects to stitch.
+        sort : bool, optional
+            If True, sorts the final arrays by wavelength. Defaults to ``True``.
+
+        Returns
+        -------
+        SpectrumV2
+            A new merged spectrum.
         """
         from copy import deepcopy
         
@@ -896,7 +1007,7 @@ class SpectrumV2:
 
     def split(self, expression: str, extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2':
         """
-        Splits the spectrum based on a boolean expression.
+        Split the spectrum based on a boolean expression.
 
         Parameters
         ----------
@@ -955,8 +1066,17 @@ class SpectrumV2:
     
     def scale_flux(self, scale_factor: Union[float, np.ndarray]) -> 'SpectrumV2':
         """
-        Scales the flux (y, dy) and relevant auxiliary columns (cont, model) 
-        by a multiplicative factor. Returns a new SpectrumV2 instance.
+        Scale the flux (y, dy) and relevant auxiliary columns (cont, model).
+
+        Parameters
+        ----------
+        scale_factor : float or np.ndarray
+            Multiplicative factor.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with scaled flux.
         """
         # 1. Scale core columns
         # Handle cases where scale_factor is scalar or array
@@ -1000,14 +1120,14 @@ class SpectrumV2:
                               output_col: str, 
                               window_pix: int) -> 'SpectrumV2':
         """
-        Calculates a running RMS on a column and saves it as a new column.
+        Calculate a running RMS on a column and save it as a new column.
 
         Parameters
         ----------
         input_col : str
-            Name of the column to calculate statistics on (e.g. 'y').
+            Name of the column to calculate statistics on (e.g., ``'y'``).
         output_col : str
-            Name of the output column (e.g. 'running_std').
+            Name of the output column (e.g., ``'running_std'``).
         window_pix : int
             Width of the window in pixels.
 
@@ -1054,7 +1174,7 @@ class SpectrumV2:
 
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
-        Applies Gaussian smoothing to all flux-like columns (y, dy, cont, model).
+        Apply Gaussian smoothing to all flux-like columns (y, dy, cont, model).
 
         Parameters
         ----------
@@ -1124,7 +1244,7 @@ class SpectrumV2:
 
     def smooth_column(self, target_col: str, sigma_kms: float, renorm_model: bool = False) -> 'SpectrumV2':
         """
-        Applies Gaussian smoothing to a single target column.
+        Apply Gaussian smoothing to a single target column.
 
         Parameters
         ----------
@@ -1133,7 +1253,7 @@ class SpectrumV2:
         sigma_kms : float
             Standard deviation of the Gaussian kernel in km/s.
         renorm_model : bool, optional
-            If True and ``target_col`` is 'cont', the 'model' column will be re-normalized.
+            If True and ``target_col`` is ``'cont'``, the ``'model'`` column will be re-normalized.
 
         Returns
         -------
@@ -1211,7 +1331,7 @@ class SpectrumV2:
               dx: au.Quantity, kappa: Optional[float], 
               filling: float) -> 'SpectrumV2':
         """
-        Rebins the spectrum to a new uniform grid.
+        Rebin the spectrum to a new uniform grid.
 
         Parameters
         ----------
@@ -1317,10 +1437,28 @@ class SpectrumV2:
               dx: au.Quantity, kappa: Optional[float] = 5.0, 
               equalize_order: int = 0) -> 'SpectrumV2':
         """
-        Co-adds this spectrum with a list of other spectra onto a new common grid.
-        
-        Handles scaling, unit conversion, "drizzle" rebinning, and 
+        Co-add this spectrum with a list of other spectra onto a new common grid.
+
+        Handles scaling, unit conversion, "drizzle" rebinning, and
         converts the result back to the original wavelength unit.
+
+        Parameters
+        ----------
+        others : list of SpectrumV2
+            List of spectra to add.
+        xstart, xend : Quantity, optional
+            Bounds of the new grid.
+        dx : Quantity
+            Step size of the new grid.
+        kappa : float, optional
+            Sigma clipping threshold. Defaults to ``5.0``.
+        equalize_order : int, optional
+            Polynomial order for flux scaling (-1=Off, 0=Scalar). Defaults to ``0``.
+
+        Returns
+        -------
+        SpectrumV2
+            The resulting co-added spectrum.
         """
         from astrocook.core.spectrum_operations import (
             compute_flux_scaling, 
@@ -1454,13 +1592,13 @@ class SpectrumV2:
     def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
                          fill_value: float = np.nan) -> 'SpectrumV2':
         """
-        Resamples this spectrum onto the exact wavelength grid of another spectrum.
+        Resample this spectrum onto the exact wavelength grid of another spectrum.
 
         Parameters
         ----------
         target_grid_spec : SpectrumV2
             The spectrum whose grid defines the target wavelengths.
-        fill_value : float
+        fill_value : float, optional
             Value to fill outside the interpolation range (default: NaN).
 
         Returns
@@ -1509,17 +1647,19 @@ class SpectrumV2:
                              fill_value: float = np.nan) -> np.ndarray:
         """
         Lightweight API to interpolate a single column onto a new x-grid.
-        
+
         Parameters
         ----------
         col_name : str
             Name of the column to interpolate.
-        target_x_grid : ndarray
+        target_x_grid : np.ndarray
             Target grid in nanometers.
-        
+        fill_value : float, optional
+            Value to fill outside the interpolation range. Defaults to ``NaN``.
+
         Returns
         -------
-        ndarray
+        np.ndarray
             Interpolated values.
         """
         all_cols = self.t._data_dict
@@ -1546,12 +1686,12 @@ class SpectrumV2:
     
     def calibrate(self, magnitudes: str) -> 'SpectrumV2':
         """
-        Calibrates (and warps) the flux to match target photometric magnitudes.
+        Calibrate (and warp) the flux to match target photometric magnitudes.
 
         Parameters
         ----------
         magnitudes : str
-            Comma-separated pairs of Filter=Mag (e.g. ``"SDSS_g=17.5, SDSS_r=17.0"``).
+            Comma-separated pairs of ``Filter=Mag`` (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``).
 
         Returns
         -------
@@ -1592,8 +1732,23 @@ class SpectrumV2:
     def find_absorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
                       kappa: float, template: bool) -> 'SpectrumV2':
         """
-        API Method: Identifies absorbed regions.
-        Calls pure function: find_absorbed_regions
+        Identify absorbed regions using V1 logic.
+
+        Parameters
+        ----------
+        smooth_len_lya : Quantity
+            Smoothing length for the Ly-alpha forest.
+        smooth_len_out : Quantity
+            Smoothing length outside the forest.
+        kappa : float
+            Sigma clipping threshold.
+        template : bool
+            Use PCA template (Not Implemented).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the ``abs_mask`` column added/updated.
         """
         # Call Pure Function
         mask = find_absorbed_regions(
@@ -1620,8 +1775,25 @@ class SpectrumV2:
     def fit_continuum(self, fudge: Union[float, str], smooth_std_kms: float, 
                       mask_col: str = 'abs_mask', renorm_model: bool = False) -> 'SpectrumV2':
         """
-        Fits a continuum to the unabsorbed regions.
+        Fit a continuum to the unabsorbed regions.
+
         Orchestrates: Interpolate -> Auto-Fudge -> Smooth -> Renormalize Model.
+
+        Parameters
+        ----------
+        fudge : float or str
+            Fudge factor. Can be a float or ``'auto'``.
+        smooth_std_kms : float
+            Smoothing width for the continuum spline in km/s.
+        mask_col : str, optional
+            Name of the mask column to use. Defaults to ``'abs_mask'``.
+        renorm_model : bool, optional
+            If True, re-normalizes the 'model' column to the new continuum.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the ``cont`` column added/updated.
         """
         from astrocook.core.spectrum_operations import (
             interpolate_continuum_mask, 
@@ -1729,19 +1901,19 @@ class SpectrumV2:
 
     def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> 'SpectrumV2':
         """
-        Fits a power-law continuum to specified rest-frame regions.
+        Fit a power-law continuum to specified rest-frame regions.
 
         Parameters
         ----------
         regions_str : str
             Comma-separated list of regions (e.g. ``'128.0-129.0, 131.5-132.5'``).
-        kappa : float
-            Sigma-clipping threshold for removing outliers within regions.
+        kappa : float, optional
+            Sigma-clipping threshold. Defaults to ``3.0``.
 
         Returns
         -------
         SpectrumV2
-            A new instance containing the 'cont_pl' column.
+            A new instance containing the ``cont_pl`` column.
         """
         
         # 1. Call the pure function
@@ -1771,8 +1943,21 @@ class SpectrumV2:
     def update_continuum_from_knots(self, knots_x: List[float], knots_y: List[float], 
                                     renorm_model: bool = True) -> 'SpectrumV2':
         """
-        Updates the continuum using a Cubic Spline through the provided knots.
-        Optionally re-normalizes the 'model' column to preserve flux/continuum ratio.
+        Update the continuum using a Cubic Spline through provided knots.
+
+        Parameters
+        ----------
+        knots_x : list of float
+            X-coordinates of the knots.
+        knots_y : list of float
+            Y-coordinates of the knots.
+        renorm_model : bool, optional
+            If True, re-normalizes the 'model' column.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the updated continuum.
         """
         # 1. Validation (Safe for numpy arrays)
         # Check for None first, then length. Avoid "if not knots_x" on arrays.
@@ -1830,21 +2015,21 @@ class SpectrumV2:
 
     def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> 'SpectrumV2':
         """
-        Detects absorption regions based on a boolean mask.
+        Detect absorption regions based on a boolean mask.
 
         Groups adjacent pixels marked as 'absorbed' into discrete regions.
 
         Parameters
         ----------
-        mask_col : str
-            Name of the mask column (True=Absorbed).
-        min_pix : int
-            Minimum number of pixels to form a valid region.
+        mask_col : str, optional
+            Name of the mask column. Defaults to ``'abs_mask'``.
+        min_pix : int, optional
+            Minimum pixels to form a region. Defaults to ``3``.
 
         Returns
         -------
         SpectrumV2
-            A new instance with the 'region_id' column updated.
+            A new instance with the ``region_id`` column updated.
         """
         # 1. Get the mask
         if mask_col not in self._data.aux_cols:
@@ -1894,14 +2079,32 @@ class SpectrumV2:
                        bypass_scoring: bool = False,
                        debug_rating: bool = False) -> 'SpectrumV2':
         """
-        Identifies absorption lines by correlating regions with multiplet templates.
-        
-        Uses a de-blending strategy:
-        1. Detects merged absorption regions.
-        2. Within each region, finds local minima (peaks in inverted flux).
-        3. Creates a candidate system for each minimum.
+        Identify absorption lines by correlating regions with multiplet templates.
+
+        Uses a de-blending strategy to separate merged features.
+
+        Parameters
+        ----------
+        multiplet_list : list of str
+            List of multiplets to search for.
+        mask_col : str, optional
+            Name of the mask column.
+        min_pix_region : int, optional
+            Minimum pixels for a region.
+        merge_dv : float, optional
+            Velocity threshold for merging regions (km/s).
+        score_threshold : float, optional
+            R^2 score threshold for identification.
+        bypass_scoring : bool, optional
+            Accept all candidates if True.
+        debug_rating : bool, optional
+            Show debug plots if True.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the ``abs_ids`` column and identification metadata.
         """
-        
         # This is the 'self' spectrum object
         spec = self
         z_em = spec._data.z_em
@@ -2185,7 +2388,19 @@ class SpectrumV2:
     
     def get_velocity_bounds(self, z_target: float, trans: str) -> tuple:
         """
-        Calculates the min/max velocity coverage of this spectrum relative to a target.
+        Calculate the min/max velocity coverage of this spectrum relative to a target.
+
+        Parameters
+        ----------
+        z_target : float
+            The target redshift.
+        trans : str
+            Transition name (e.g., ``'Ly_a'``).
+
+        Returns
+        -------
+        tuple
+            (min_velocity, max_velocity) in km/s. Returns ``(-inf, inf)`` if invalid.
         """
         if trans not in ATOM_DATA: return -np.inf, np.inf
         
@@ -2203,8 +2418,24 @@ class SpectrumV2:
     def detect_doublet_z(self, other_spec: 'SpectrumV2', 
                          trans_self: str, trans_other: str) -> float:
         """
-        Finds the redshift of maximum coincidence (product of absorption depths)
-        between this spectrum and another.
+        Find the redshift of maximum coincidence between this spectrum and another.
+
+        Calculates the cross-correlation (product of absorption depths) to align
+        two spectra covering different lines of a doublet.
+
+        Parameters
+        ----------
+        other_spec : SpectrumV2
+            The other spectrum object.
+        trans_self : str
+            Transition in this spectrum (e.g., ``'OVI_1031'``).
+        trans_other : str
+            Transition in the other spectrum (e.g., ``'OVI_1037'``).
+
+        Returns
+        -------
+        float
+            The detected redshift, or 0.0 on failure.
         """
         x1, y1 = self.x.value, self.y.value
         x2, y2 = other_spec.x.value, other_spec.y.value
@@ -2240,7 +2471,21 @@ class SpectrumV2:
     def mask_region(self, mask_col: str, 
                     obs_min: au.Quantity, obs_max: au.Quantity) -> 'SpectrumV2':
         """
-        Updates a mask column, setting it to False outside the specified bounds.
+        Update a mask column, setting it to False outside the specified bounds.
+
+        Parameters
+        ----------
+        mask_col : str
+            Name of the mask column.
+        obs_min : Quantity
+            Minimum observed wavelength.
+        obs_max : Quantity
+            Maximum observed wavelength.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the updated mask.
         """
         col = self.get_column(mask_col)
         if col is None:
@@ -2261,8 +2506,21 @@ class SpectrumV2:
 
     def merge_column(self, col_name: str, other_values: np.ndarray) -> 'SpectrumV2':
         """
-        Merges new values into an existing column. 
+        Merge new values into an existing column.
+
         Strategy: Use new value if it's non-zero, otherwise keep old value.
+
+        Parameters
+        ----------
+        col_name : str
+            Name of the column.
+        other_values : np.ndarray
+            Array of new values.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with merged data.
         """
         old_col = self.get_column(col_name)
         if old_col is None:
@@ -2278,8 +2536,17 @@ class SpectrumV2:
     
     def update_model(self, model_flux: np.ndarray) -> 'SpectrumV2':
         """
-        Updates the 'model' auxiliary column with new flux values.
-        Helper to avoid boilerplate in recipes.
+        Update the 'model' auxiliary column with new flux values.
+
+        Parameters
+        ----------
+        model_flux : np.ndarray
+            The new model flux array.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the updated model.
         """
         # Create DataColumnV2 (inheriting unit from flux)
         new_col = DataColumnV2(
@@ -2299,8 +2566,19 @@ class SpectrumV2:
     
     def x_convert(self, z_ref: float, xunit: au.Unit) -> 'SpectrumV2':
         """
-        API: Converts the X-axis units and returns a NEW SpectrumV2 instance.
-        (Replaces V1's mutable _x_convert)
+        Convert the X-axis units and return a NEW SpectrumV2 instance.
+
+        Parameters
+        ----------
+        z_ref : float
+            Reference redshift for velocity conversion.
+        xunit : astropy.units.Unit
+            Target unit (e.g., ``nm``, ``km/s``).
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the converted X-axis.
         """
         
         # 1. Execute pure conversion logic
@@ -2324,8 +2602,17 @@ class SpectrumV2:
 
     def y_convert(self, yunit: au.Unit) -> 'SpectrumV2':
         """
-        API: Converts the Y-axis units and returns a NEW SpectrumV2 instance.
-        (Replaces V1's mutable _y_convert)
+        Convert the Y-axis units and return a NEW SpectrumV2 instance.
+
+        Parameters
+        ----------
+        yunit : astropy.units.Unit
+            Target flux unit.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with converted Y-axis and error.
         """
         
         # 1. Execute pure conversion logic

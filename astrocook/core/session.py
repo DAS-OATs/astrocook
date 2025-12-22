@@ -31,7 +31,7 @@ LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
 
 def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
     """
-    Orchestrates the loading of a session from a file or archive.
+    Orchestrate the loading of a session from a file or archive.
 
     This function handles various input formats, including legacy Astrocook V1 archives (``.acs``),
     modern V2 archives (``.acs2``), and raw FITS files. It automatically handles
@@ -48,12 +48,12 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         or a mock object if running in a script.
     format_name : str
         A format identifier string (e.g., ``'generic_spectrum'``, ``'eso_midas'``)
-        used to select the appropriate loader for raw files.
+        used to select the appropriate loader for raw files. Use ``'auto'`` to attempt detection.
 
     Returns
     -------
     SessionV2 or int
-        The loaded :class:`SessionV2` object if successful.
+        The loaded :class:`~astrocook.core.session.SessionV2` object if successful.
         Returns ``0`` (integer) if the loading process failed.
 
     Raises
@@ -218,13 +218,13 @@ class SessionV2:
         The main container for spectral data (flux, wavelength, error, etc.).
     systs : astrocook.core.system_list.SystemListV2, optional
         The container for identified absorption systems and Voigt profile components.
-    edit : RecipeEditV2
+    edit : astrocook.recipes.edit.RecipeEditV2
         Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).
-    flux : RecipeFluxV2
+    flux : astrocook.recipes.flux.RecipeFluxV2
         Access to flux manipulation recipes (e.g., ``smooth``, ``rebin``).
-    continuum : RecipeContinuumV2
+    continuum : astrocook.recipes.continuum.RecipeContinuumV2
         Access to continuum estimation and fitting recipes.
-    absorbers : RecipeAbsorbersV2
+    absorbers : astrocook.recipes.absorbers.RecipeAbsorbersV2
         Access to line identification and fitting recipes.
     """
     def __init__(self,
@@ -276,7 +276,7 @@ class SessionV2:
     @classmethod
     def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':        
         """
-        Factory method: Creates a new SessionV2 by loading data from a file.
+        Factory method: Create a new SessionV2 by loading data from a file.
 
         Parameters
         ----------
@@ -287,7 +287,7 @@ class SessionV2:
         gui_context : Any
             The GUI parent object (used for logging/dialogs).
         format_name : str
-            Hint for the file format loader (e.g. 'generic_spectrum').
+            Hint for the file format loader (e.g. ``'generic_spectrum'``).
 
         Returns
         -------
@@ -308,16 +308,16 @@ class SessionV2:
 
     def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
         """
-        Returns a new SessionV2 instance with an updated spectrum.
-        
+        Return a new SessionV2 instance with an updated spectrum.
+
         This is used by recipes that modify spectral data (e.g., smoothing,
         continuum fitting) to ensure history preservation.
-        
+
         Parameters
         ----------
         new_spectrum : SpectrumV2
             The new spectral data object.
-            
+
         Returns
         -------
         SessionV2
@@ -337,13 +337,13 @@ class SessionV2:
 
     def with_new_system_list(self, new_systs: SystemListV2) -> 'SessionV2':
         """
-        Returns a new SessionV2 instance with an updated system list.
-        
+        Return a new SessionV2 instance with an updated system list.
+
         Parameters
         ----------
         new_systs : SystemListV2
             The new system list object.
-            
+
         Returns
         -------
         SessionV2
@@ -365,13 +365,13 @@ class SessionV2:
              initial_session: Optional['SessionV2'] = None, 
              models: bool = False):
         """
-        Saves the current session state to a file.
+        Save the current session state to a file.
 
         This method supports two formats:
-        
-        1. **.acs2 (Recommended)**: A zipped archive containing the full session state, 
+
+        1. **.acs2 (Recommended)**: A zipped archive containing the full session state,
            metadata, and (optionally) the original data if ``initial_session`` is provided.
-        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with 
+        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with
            Astrocook V1.
 
         Parameters
@@ -379,8 +379,8 @@ class SessionV2:
         file_path : str
             The destination path. The extension (``.acs`` vs ``.acs2``) determines the format.
         initial_session : SessionV2, optional
-            The state of the session *before* any modifications. This is required 
-            when saving to ``.acs2`` format to ensure the archive contains the 
+            The state of the session *before* any modifications. This is required
+            when saving to ``.acs2`` format to ensure the archive contains the
             original raw data for reproducibility.
         models : bool, optional
             Flag for V1 backward compatibility (unused in V2 native saves).
