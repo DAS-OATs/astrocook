@@ -11,9 +11,9 @@ from PySide6.QtCore import (
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup,
-    QSize, QStringListModel, QThreadPool, QTimer
+    QSize, QStringListModel, QThreadPool, QTimer, QUrl
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap
+from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
@@ -860,6 +860,16 @@ class MainWindowV2(QMainWindow):
         self._update_undo_redo_actions()
 
         # --- HELP MENU ACTIONS ---
+        
+        # 1. Documentation Action (Keeps the menu alive on macOS)
+        doc_action = QAction("&Online Documentation", self)
+        doc_action.setShortcut(QKeySequence.HelpContents) # Standard F1 / Cmd+? shortcut
+        doc_action.triggered.connect(self._open_docs)
+        help_menu.addAction(doc_action)
+
+        help_menu.addSeparator()
+
+        # 2. About Action (Will move to App Menu on macOS)
         about_action = QAction("&About Astrocook...", self)
         about_action.triggered.connect(self._on_about_requested)
         help_menu.addAction(about_action)
@@ -2194,6 +2204,12 @@ class MainWindowV2(QMainWindow):
         """Launches the About dialog."""
         dlg = AboutDialog(self)
         dlg.exec()
+
+    def _open_docs(self):
+        """Opens the online documentation in the default browser."""
+        # Replace with your actual documentation URL (e.g., ReadTheDocs or GitHub Wiki)
+        url = "https://das-oats.github.io/astrocook/dev/" 
+        QDesktopServices.openUrl(QUrl(url))
 
     def _on_view_system_inspector(self):
         if not hasattr(self, 'system_inspector') or self.system_inspector is None:
@@ -3631,19 +3647,21 @@ class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("About Astrocook")
-        self.setFixedWidth(500)
+        self.setFixedWidth(400)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(0)
+        layout.setSpacing(5)
         layout.setContentsMargins(20, 20, 20, 20)
+
+        layout.addSpacing(20)
 
         # --- Logo ---
         try:
             # Reusing the resource path logic from MainWindow
-            icon_path = resource_path(os.path.join("assets", "icon_3d_HR.png"))
+            icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             if os.path.exists(icon_path):
                 logo_lbl = QLabel()
-                pixmap = QPixmap(icon_path).scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = QPixmap(icon_path).scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 logo_lbl.setPixmap(pixmap)
                 logo_lbl.setAlignment(Qt.AlignCenter)
                 layout.addWidget(logo_lbl)
@@ -3654,7 +3672,12 @@ class AboutDialog(QDialog):
         title_lbl = QLabel("Astrocook V2")
         title_lbl.setStyleSheet("font-size: 20pt; font-weight: bold; color: #296bff;")
         title_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_lbl)
+        #layout.addWidget(title_lbl)
+
+        copy_lbl = QLabel("© 2017-2026 Guido Cupani")
+        copy_lbl.setStyleSheet("font-size: 14pt; color: #296bff;")
+        copy_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(copy_lbl)
 
         # Try to import version, else fallback
         try:
@@ -3669,43 +3692,56 @@ class AboutDialog(QDialog):
 
         layout.addSpacing(20)
 
+        tagline_lbl = QLabel("A thousand recipes to cook a spectrum")
+        tagline_lbl.setStyleSheet("font-size: 16pt; font-weight: bold;")
+        tagline_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(tagline_lbl)
+
+        layout.addSpacing(20)
+
         # --- Description / Credits ---
         credits_html = (
-            "<p align='center'><b>A thousand recipes to cook a spectrum</b></p>"
-            "<p align='center'>Developed by <b>Guido Cupani</b> at INAF–Osservatorio Astronomico di Trieste.</p>"
-            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Stefano Alberto Russo, Andrea Trost.</p>"
+            "<p align='center'>Developed by <b>Guido Cupani</b><br>at INAF–Osservatorio Astronomico di Trieste.</p>"
+            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,<br>Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo,<br> Stefano Alberto Russo, Andrea Trost.</p>"
+            "<p align='center'>Partly funded by the PRIN PNRR project<br>“Next generation computing & data technologies<br>to probe the cosmic metal content”.</p>"
         )
         credits_lbl = QLabel(credits_html)
         credits_lbl.setWordWrap(True)
         credits_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(credits_lbl)
 
-        layout.addSpacing(20)
-
-        # --- Citation Section ---
-        layout.addWidget(QLabel("<p align='center'><b>If you use Astrocook, please cite:</b>"))
-        
-        citation_text = (
-            "@ARTICLE{2020A&C....3200398C,\n"
-            "   author = {{Cupani}, G. and {Cristiani}, S. and {D'Odorico}, V. and \n"
-            "             {Vanzella}, E. and {Genova Santos}, R.},\n"
-            "    title = \"{Astrocook: A new software for the analysis of high-resolution quasar spectra}\",\n"
-            "  journal = {Astronomy and Computing},\n"
-            "     year = 2020,\n"
-            "   volume = {32},\n"
-            "      eid = {100398},\n"
-            "      doi = {10.1016/j.ascom.2020.100398}\n"
-            "}"
-        )
-        
-        self.citation_box = QTextEdit()
-        self.citation_box.setPlainText(citation_text)
-        self.citation_box.setReadOnly(True)
-        self.citation_box.setStyleSheet("font-family: monospace; font-size: 11pt; background-color: #f5f5f5;")
-        self.citation_box.setFixedHeight(160)
-        layout.addWidget(self.citation_box)
+        layout.addSpacing(30)
 
         # --- Buttons ---
+        # Create the standard Dialog Button Box
         btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
         btn_box.accepted.connect(self.accept)
+
+        # 1. Report Issue Button (GitHub)
+        issue_btn = QPushButton("Report Issue")
+        issue_btn.setToolTip("Open the GitHub Issues page to report bugs or request features")
+        issue_btn.clicked.connect(self._open_github_issues)
+        btn_box.addButton(issue_btn, QDialogButtonBox.ActionRole)
+        
+        # 2. Cite Button (ADS)
+        cite_btn = QPushButton("Cite on ADS")
+        cite_btn.setToolTip("Open the NASA ADS citation export page for Astrocook")
+        cite_btn.clicked.connect(self._open_ads_citation)
+        
+        # Add "Cite" to the button box with ActionRole 
+        # (This usually places it to the left of the OK button)
+        btn_box.addButton(cite_btn, QDialogButtonBox.ActionRole)
+
         layout.addWidget(btn_box)
+
+    def _open_ads_citation(self):
+        """Opens the ADS export citation page in the default browser."""
+        # URL for the 2020 Astronomy and Computing paper
+        url = "https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/exportcitation"
+        QDesktopServices.openUrl(QUrl(url))
+
+    def _open_github_issues(self):
+        """Opens the GitHub Issues page in the default browser."""
+        # Update this URL if the repo is under a different organization
+        url = "https://github.com/DAS-OATs/astrocook/issues"
+        QDesktopServices.openUrl(QUrl(url))
