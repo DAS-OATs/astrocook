@@ -16,7 +16,7 @@ from astrocook.core.system_list import SystemListV2
 from .voigt_model import VoigtModelConstraintV2
 
 def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
-    """
+    r"""
     Convolves a flux array with a Gaussian kernel defined by resolution.
 
     Handles both constant resolution (scalar) and variable resolution (array)

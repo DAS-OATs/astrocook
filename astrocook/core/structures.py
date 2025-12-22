@@ -93,7 +93,7 @@ class DataColumnV2:
 
 @dataclass(frozen=True)
 class SpectrumDataV2:
-    """
+    r"""
     Immutable core container for all spectral data.
 
     This class holds the "heavy" numerical arrays (flux, wavelength, error)

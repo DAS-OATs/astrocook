@@ -83,6 +83,12 @@ class MockV1GUIContext:
 class MainWindowV2(QMainWindow):
     def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
+        # Forces the app name to be "Astrocook" instead of "Python"
+        app = QApplication.instance()
+        if app:
+            app.setApplicationName("Astrocook")
+            app.setApplicationDisplayName("Astrocook")
+
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
         self.session_model = QStringListModel()
@@ -599,6 +605,9 @@ class MainWindowV2(QMainWindow):
         flux_menu = menu_bar.addMenu("&Flux")
         continuum_menu = menu_bar.addMenu("&Continuum")
         absorbers_menu = menu_bar.addMenu("&Absorbers")
+
+        # 3. Help Menu
+        help_menu = menu_bar.addMenu("&Help")
         
         # --- File and View operations ---
 
@@ -849,6 +858,11 @@ class MainWindowV2(QMainWindow):
         self.refit_all_action = refit_all_action; self.refit_all_action.setEnabled(False)
 
         self._update_undo_redo_actions()
+
+        # --- HELP MENU ACTIONS ---
+        about_action = QAction("&About Astrocook...", self)
+        about_action.triggered.connect(self._on_about_requested)
+        help_menu.addAction(about_action)
 
     def _on_set_custom_limits(self):
         """ Reads values from limit boxes and applies them to the plot. """
@@ -2175,6 +2189,11 @@ class MainWindowV2(QMainWindow):
 
         except Exception as e:
             logging.error(f"Error during in-place session rename: {e}")
+
+    def _on_about_requested(self):
+        """Launches the About dialog."""
+        dlg = AboutDialog(self)
+        dlg.exec()
 
     def _on_view_system_inspector(self):
         if not hasattr(self, 'system_inspector') or self.system_inspector is None:
@@ -3604,3 +3623,89 @@ class WarningCaptureHandler(logging.Handler):
         # Only capture meaningful warnings (skip debug/info)
         if record.levelno >= logging.WARNING:
             self.warnings.append(self.format(record))
+
+class AboutDialog(QDialog):
+    """
+    Dialog to display application information, credits, and citation.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("About Astrocook")
+        self.setFixedWidth(500)
+        
+        layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # --- Logo ---
+        try:
+            # Reusing the resource path logic from MainWindow
+            icon_path = resource_path(os.path.join("assets", "icon_3d_HR.png"))
+            if os.path.exists(icon_path):
+                logo_lbl = QLabel()
+                pixmap = QPixmap(icon_path).scaled(80, 80, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                logo_lbl.setPixmap(pixmap)
+                logo_lbl.setAlignment(Qt.AlignCenter)
+                layout.addWidget(logo_lbl)
+        except Exception: 
+            pass
+
+        # --- Title & Version ---
+        title_lbl = QLabel("Astrocook V2")
+        title_lbl.setStyleSheet("font-size: 20pt; font-weight: bold; color: #296bff;")
+        title_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title_lbl)
+
+        # Try to import version, else fallback
+        try:
+            from astrocook import __version__ as ver
+        except ImportError:
+            ver = "2.0 (Beta)"
+
+        ver_lbl = QLabel(f"Version: {ver}")
+        ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
+        ver_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(ver_lbl)
+
+        layout.addSpacing(20)
+
+        # --- Description / Credits ---
+        credits_html = (
+            "<p align='center'><b>A thousand recipes to cook a spectrum</b></p>"
+            "<p align='center'>Developed by <b>Guido Cupani</b> at INAF–Osservatorio Astronomico di Trieste.</p>"
+            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Stefano Alberto Russo, Andrea Trost.</p>"
+        )
+        credits_lbl = QLabel(credits_html)
+        credits_lbl.setWordWrap(True)
+        credits_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(credits_lbl)
+
+        layout.addSpacing(20)
+
+        # --- Citation Section ---
+        layout.addWidget(QLabel("<p align='center'><b>If you use Astrocook, please cite:</b>"))
+        
+        citation_text = (
+            "@ARTICLE{2020A&C....3200398C,\n"
+            "   author = {{Cupani}, G. and {Cristiani}, S. and {D'Odorico}, V. and \n"
+            "             {Vanzella}, E. and {Genova Santos}, R.},\n"
+            "    title = \"{Astrocook: A new software for the analysis of high-resolution quasar spectra}\",\n"
+            "  journal = {Astronomy and Computing},\n"
+            "     year = 2020,\n"
+            "   volume = {32},\n"
+            "      eid = {100398},\n"
+            "      doi = {10.1016/j.ascom.2020.100398}\n"
+            "}"
+        )
+        
+        self.citation_box = QTextEdit()
+        self.citation_box.setPlainText(citation_text)
+        self.citation_box.setReadOnly(True)
+        self.citation_box.setStyleSheet("font-family: monospace; font-size: 11pt; background-color: #f5f5f5;")
+        self.citation_box.setFixedHeight(160)
+        layout.addWidget(self.citation_box)
+
+        # --- Buttons ---
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        btn_box.accepted.connect(self.accept)
+        layout.addWidget(btn_box)
