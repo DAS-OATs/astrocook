@@ -435,7 +435,10 @@
 <li><p><strong>Install</strong>: Open <code class="docutils literal notranslate"><span class="pre">Astrocook.dmg</span></code> and drag the app to your <code class="docutils literal notranslate"><span class="pre">Applications</span></code> folder.</p></li>
 <li><p><strong>Run</strong>: Double-click <strong>Astrocook</strong> in your Applications.</p></li>
 </ol>
-<p><em>(Note: If you see a security warning, you may need to Right-Click the app and select ‘Open’ the first time, or explicitly authorize the app on System Settings).</em></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you see a security warning, you may need to Right-Click the app and select ‘Open’ the first time, or explicitly authorize the app on System Settings).</p>
+</div>
 </section>
 <section id="developer-installation-python">
 <h2>Developer Installation (Python)<a class="headerlink" href="#developer-installation-python" title="Link to this heading">#</a></h2>
@@ -473,6 +476,10 @@
 <span class="n">source</span> <span class="n">ac2</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>  <span class="c1"># On Windows: ac2\Scripts\activate</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">venv</span></code> command fails, you may need to install the module first (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python3-venv</span></code> on Ubuntu/Debian).</p>
+</div>
 <ol class="arabic simple" start="4">
 <li><p>Install dependencies:</p></li>
 </ol>
@@ -485,6 +492,10 @@
 <p>To launch the GUI from the source code, run this from the root directory:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">astrocook</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">libxcb-cursor0</span></code>).</p>
 </div>
 </section>
 </section>
