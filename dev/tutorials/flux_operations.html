@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=18537e06" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
   <script src="../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -162,6 +162,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -288,6 +295,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../reference.html">
     API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
   </a>
 </li>
 
@@ -437,7 +451,7 @@
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
 <p>The operation creates a <em>new</em> session state with the smoothed flux. The original data is preserved in the history (undo with <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>). Note that the error array (<code class="docutils literal notranslate"><span class="pre">dy</span></code>) is also smoothed to maintain consistency.</p>
-<img alt="Applying a mathematical expression to a column" class="align-center" src="static/flux_smooth.png" />
+<img alt="Applying a mathematical expression to a column" class="align-center" src="../images/flux_smooth.png" />
 </section>
 <section id="rebinning">
 <h2>2. Rebinning<a class="headerlink" href="#rebinning" title="Link to this heading">#</a></h2>
@@ -477,7 +491,7 @@
 <li><p><strong>Output Column:</strong> Name for the new error column (default: <code class="docutils literal notranslate"><span class="pre">running_std</span></code>).</p></li>
 </ol>
 <p>This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.</p>
-<img alt="Applying a mathematical expression to a column" class="align-center" src="static/flux_running_std.png" />
+<img alt="Applying a mathematical expression to a column" class="align-center" src="../images/flux_running_std.png" />
 </section>
 </section>
 

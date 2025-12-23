@@ -1,6 +1,19 @@
 /* Import Space Grotesk from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap');
 
+.no-background, .no-background img {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+    /* NEW: Forces the image to sit on its own line */
+    display: block !important; 
+    
+    /* Optional: Adds a little space between logo and title */
+    margin-bottom: 20px !important; 
+    margin-left: 0 !important;
+}
+
 /* Apply to all headers */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;

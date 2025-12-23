@@ -31,7 +31,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=18537e06" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
   <script src="../../../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -159,6 +159,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -283,6 +290,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../reference.html">
     API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
   </a>
 </li>
 
@@ -4172,11 +4186,13 @@
         <span class="n">credits_html</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;Developed by &lt;b&gt;Guido Cupani&lt;/b&gt;&lt;br&gt;at INAF–Osservatorio Astronomico di Trieste.&lt;/p&gt;&quot;</span>
             <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;&lt;b&gt;Many thanks&lt;/b&gt; to (in alphabetical order):&lt;br&gt;Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,&lt;br&gt;Valentina D&#39;Odorico, Francesco Guarneri, Elena Marcuzzo,&lt;br&gt; Stefano Alberto Russo, Andrea Trost.&lt;/p&gt;&quot;</span>
+            <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;Logo and icon by &lt;a href=&#39;https://claudiacupani.com&#39;&gt;&lt;b&gt;Claudia Cupani&lt;/b&gt;&lt;/a&gt;.&lt;/p&gt;&quot;</span>
             <span class="s2">&quot;&lt;p align=&#39;center&#39;&gt;Partly funded by the PRIN PNRR project&lt;br&gt;“Next generation computing &amp; data technologies&lt;br&gt;to probe the cosmic metal content”.&lt;/p&gt;&quot;</span>
         <span class="p">)</span>
         <span class="n">credits_lbl</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">credits_html</span><span class="p">)</span>
         <span class="n">credits_lbl</span><span class="o">.</span><span class="n">setWordWrap</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">credits_lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">credits_lbl</span><span class="o">.</span><span class="n">setOpenExternalLinks</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">credits_lbl</span><span class="p">)</span>
 
         <span class="n">layout</span><span class="o">.</span><span class="n">addSpacing</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>

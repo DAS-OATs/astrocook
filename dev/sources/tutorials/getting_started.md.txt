@@ -12,7 +12,7 @@ Let's begin by loading some data. Astrocook supports various formats, including 
 
 Once loaded, the interface will come alive. The central area displays your spectrum, while two sidebars provide control over your data and visualization.
 
-```{image} ../_static/getting_started_plot_controls.png
+```{image} ../_static/getting_started_main_view.png
 :alt: The main Astrocook interface with a spectrum loaded
 :align: center
 ```
@@ -56,7 +56,7 @@ This is a handy tool for quick visual inspection.
 2. Check the **Show Cursor Lines** box.
 3. Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the `z` value to slide the cursor along the spectrum.
 
-```{image} ../_static/getting_started_main_view.png
+```{image} ../_static/getting_started_plot_controls.png
 :alt: The Plot Controls sidebar
 :align: center
 ```

@@ -32,7 +32,7 @@
 
     <link rel="stylesheet" type="text/css" href="static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=18537e06" />
+    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
   <script src="static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
@@ -44,6 +44,8 @@
     <script src="static/doctools.js?v=9bcbadda"></script>
     <script src="static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
@@ -158,6 +160,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="reference.html">
     API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="credits.html">
+    Credits
   </a>
 </li>
 
@@ -292,6 +301,13 @@
   </a>
 </li>
 
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="credits.html">
+    Credits
+  </a>
+</li>
+
   </ul>
 </nav></div>
           
@@ -378,9 +394,8 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <p align="lect">
-<img src="static/icon_3d_HR.png" alt="Astrocook Logo" width="200">
-</p>
+  <a class="no-background reference internal image-reference" href="images/icon_3d_HR.png"><img alt="Astrocook Logo" class="no-background align-center" src="images/icon_3d_HR.png" style="width: 200px;" />
+</a>
 <section class="tex2jax_ignore mathjax_ignore" id="welcome-to-astrocook">
 <h1>Welcome to Astrocook!<a class="headerlink" href="#welcome-to-astrocook" title="Link to this heading">#</a></h1>
 <p><strong>Astrocook</strong> is a Python package and GUI for analyzing quasar spectra, built on the modern Scientific Python stack (<strong>PySide6</strong>, <strong>Astropy</strong>, <strong>Matplotlib</strong>).<br />
@@ -391,7 +406,7 @@ It is designed to make spectral analysis—such as continuum fitting, absorption
 <li><p><strong>Interactive GUI</strong>: Zoom, pan, and select regions with a mouse-driven interface.</p></li>
 <li><p><strong>Spectral Operations</strong>: Smooth, rebin, and arithmetic operations (addition, subtraction) on spectra.</p></li>
 <li><p><strong>Continuum Fitting</strong>: Automatic and manual algorithms for defining quasar continua.</p></li>
-<li><p><strong>System Identification</strong>: Smart algorithms to identify absorption systems (Lyα, CIV, MgII, etc.).</p></li>
+<li><p><strong>System Identification</strong>: Smart algorithms to identify absorption systems (Ly-<span class="math notranslate nohighlight">\(\alpha\)</span>, CIV, MgII, etc.).</p></li>
 <li><p><strong>Voigt Profile Fitting</strong>: Integrated fitting engine for complex absorption features.</p></li>
 <li><p><strong>Session Management</strong>: Save and restore your full analysis state (undo/redo supported).</p></li>
 </ul>
@@ -427,11 +442,15 @@ It is designed to make spectral analysis—such as continuum fitting, absorption
 </li>
 </ul>
 </div>
-</section>
-<section id="credits">
-<h2>Credits<a class="headerlink" href="#credits" title="Link to this heading">#</a></h2>
-<p>Astrocook is developed by <strong>Guido Cupani</strong>.<br />
-If you use Astrocook in your research, please cite: <strong><a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/abstract">Cupani et al. 2020</a></strong>.</p>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Credits</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="credits.html#disclaimer">Disclaimer</a></li>
+</ul>
+</li>
+</ul>
+</div>
 </section>
 </section>
 
@@ -477,7 +496,6 @@ If you use Astrocook in your research, please cite: <strong><a class="reference 
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a><ul class="nav section-nav flex-column">
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#credits">Credits</a></li>
 </ul>
   </nav></div>
 
