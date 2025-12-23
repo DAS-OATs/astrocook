@@ -10,7 +10,9 @@ If you are on a Mac and want to use the GUI immediately without managing Python 
 2. **Install**: Open `Astrocook.dmg` and drag the app to your `Applications` folder.
 3. **Run**: Double-click **Astrocook** in your Applications.
 
-*(Note: If you see a security warning, you may need to Right-Click the app and select 'Open' the first time, or explicitly authorize the app on System Settings).*
+:::{note}
+If you see a security warning, you may need to Right-Click the app and select 'Open' the first time, or explicitly authorize the app on System Settings).
+:::
 
 ## Developer Installation (Python)
 
@@ -44,6 +46,10 @@ python -m venv ac2
 source ac2/bin/activate  # On Windows: ac2\Scripts\activate
 ```
 
+:::{note}
+If the `venv` command fails, you may need to install the module first (e.g., `sudo apt install python3-venv` on Ubuntu/Debian).
+:::
+
 4. Install dependencies:
 ```
 pip install -e .
@@ -55,3 +61,7 @@ To launch the GUI from the source code, run this from the root directory:
 ```
 python -m astrocook
 ```
+
+:::{note}
+If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., `sudo apt install libxcb-cursor0`).
+:::

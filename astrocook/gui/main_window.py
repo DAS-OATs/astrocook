@@ -263,7 +263,7 @@ class MainWindowV2(QMainWindow):
     def _setup_empty_view(self):
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-        label = QLabel("Welcome to Astrocook v2!\n\nUse 'File > Open Session...'")
+        label = QLabel("Welcome to Astrocook V2!\n\nUse 'File > Open Session...'")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         font = label.font() # Get the current font
