@@ -3703,11 +3703,13 @@ class AboutDialog(QDialog):
         credits_html = (
             "<p align='center'>Developed by <b>Guido Cupani</b><br>at INAF–Osservatorio Astronomico di Trieste.</p>"
             "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,<br>Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo,<br> Stefano Alberto Russo, Andrea Trost.</p>"
+            "<p align='center'>Logo and icon by <a href='https://claudiacupani.com'><b>Claudia Cupani</b></a>.</p>"
             "<p align='center'>Partly funded by the PRIN PNRR project<br>“Next generation computing & data technologies<br>to probe the cosmic metal content”.</p>"
         )
         credits_lbl = QLabel(credits_html)
         credits_lbl.setWordWrap(True)
         credits_lbl.setAlignment(Qt.AlignCenter)
+        credits_lbl.setOpenExternalLinks(True)
         layout.addWidget(credits_lbl)
 
         layout.addSpacing(30)
