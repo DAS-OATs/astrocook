@@ -38,7 +38,7 @@ sphinx-apidoc -f -e --no-toc -o "$DOCS_DIR/api" "$SOURCE_PACKAGE" \
     astrocook/gui/*.py \
     astrocook/io/*.py
 
-rm docs/api/astrocook.rst docs/api/astrocook.settings.rst docs/api/modules.rst 2> /dev/null
+#rm docs/api/astrocook.rst docs/api/astrocook.settings.rst docs/api/modules.rst 2> /dev/null
 
 # 2. Build the HTML
 echo -e "${BLUE}Step 2: Building HTML...${NC}"
