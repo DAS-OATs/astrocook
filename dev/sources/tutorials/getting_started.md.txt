@@ -45,11 +45,11 @@ You can show or hide specific layers of the plot:
 - **Aux. Column**: Select an additional data column (e.g., `abs_mask`, `running_std`) to overlay on the plot.
 - **Strong emission lines**: Shows markers for major emission lines (e.g., Ly-$\alpha$, CIV). 
   :::{note}
-  This requires defining the emission redshift first (see [Session Properties](#editing-properties)).
+  This requires defining the emission redshift first (see [Setting Session Properties](#editing-properties)).
   :::
 - **Show Iso-Mag Grid**: Overlays curves of constant AB magnitude. 
   :::{note} 
-  This requires flux calibration (see [Flux Operations](flux_operations.md)).
+  This requires flux calibration (see [Flux Calibration](#flux-calibration)).
   :::
 
 ### Axis Controls

@@ -437,8 +437,20 @@
   <section class="tex2jax_ignore mathjax_ignore" id="flux-operations">
 <h1>Flux Operations<a class="headerlink" href="#flux-operations" title="Link to this heading">#</a></h1>
 <p>Once you’ve loaded your data and set the basic properties, you might need to process the flux arrays to increase signal-to-noise ratio (SNR) or prepare for multi-spectrum analysis. This tutorial covers the <strong>Flux</strong> menu operations.</p>
+<section id="calculating-running-statistics">
+<h2>1. Calculating Running Statistics<a class="headerlink" href="#calculating-running-statistics" title="Link to this heading">#</a></h2>
+<p>Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Flux &gt; Calculate Running StdDev…</strong>.</p></li>
+<li><p><strong>Input Column:</strong> Usually <code class="docutils literal notranslate"><span class="pre">y</span></code> (Flux).</p></li>
+<li><p><strong>Window Size:</strong> The number of pixels to use for the sliding window (e.g., <code class="docutils literal notranslate"><span class="pre">21</span></code>).</p></li>
+<li><p><strong>Output Column:</strong> Name for the new error column (default: <code class="docutils literal notranslate"><span class="pre">running_std</span></code>).</p></li>
+</ol>
+<p>This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.</p>
+<img alt="Applying a mathematical expression to a column" class="align-center" src="../images/flux_running_std.png" />
+</section>
 <section id="smoothing">
-<h2>1. Smoothing<a class="headerlink" href="#smoothing" title="Link to this heading">#</a></h2>
+<h2>2. Smoothing<a class="headerlink" href="#smoothing" title="Link to this heading">#</a></h2>
 <p>Smoothing is the simplest way to visualize faint features by reducing high-frequency noise. Astrocook uses a Gaussian kernel for this operation.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Flux &gt; Smooth Spectrum…</strong>.</p></li>
@@ -454,7 +466,7 @@
 <img alt="Applying a mathematical expression to a column" class="align-center" src="../images/flux_smooth.png" />
 </section>
 <section id="rebinning">
-<h2>2. Rebinning<a class="headerlink" href="#rebinning" title="Link to this heading">#</a></h2>
+<h2>3. Rebinning<a class="headerlink" href="#rebinning" title="Link to this heading">#</a></h2>
 <p>Rebinning is more rigorous than smoothing. It combines adjacent pixels into larger bins, conserving the total flux (integrated flux). This is essential when you want to improve SNR for quantitative measurements or reduce the data size.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Flux &gt; Rebin Spectrum…</strong>.</p></li>
@@ -469,7 +481,7 @@
 </div>
 </section>
 <section id="resampling">
-<h2>3. Resampling<a class="headerlink" href="#resampling" title="Link to this heading">#</a></h2>
+<h2>4. Resampling<a class="headerlink" href="#resampling" title="Link to this heading">#</a></h2>
 <p>Resampling is different from rebinning. It interpolates your spectrum onto an arbitrary grid defined by <em>another</em> open session. This is a critical prerequisite for comparing two spectra pixel-by-pixel (e.g., for creating a ratio or difference spectrum).</p>
 <p><strong>Scenario:</strong> You have a high-resolution spectrum (Session A) and a low-resolution standard (Session B), and you want to divide A by B.</p>
 <ol class="arabic simple">
@@ -481,17 +493,24 @@
 </ol>
 <p>Session A will now have exactly the same wavelength points as Session B, allowing you to use <a class="reference internal" href="editing_data.html#editing-arithmetic"><span class="std std-ref">Apply Expression</span></a> to compute <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">/</span> <span class="pre">SessionB.y</span></code>.</p>
 </section>
-<section id="calculating-running-statistics">
-<h2>4. Calculating Running Statistics<a class="headerlink" href="#calculating-running-statistics" title="Link to this heading">#</a></h2>
-<p>Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).</p>
+<section id="flux-calibration">
+<span id="id1"></span><h2>5. Flux Calibration<a class="headerlink" href="#flux-calibration" title="Link to this heading">#</a></h2>
+<p>If your spectrum is not flux-calibrated (or the calibration is off), you can warp it to match known photometric data.</p>
 <ol class="arabic simple">
-<li><p>Go to <strong>Flux &gt; Calculate Running StdDev…</strong>.</p></li>
-<li><p><strong>Input Column:</strong> Usually <code class="docutils literal notranslate"><span class="pre">y</span></code> (Flux).</p></li>
-<li><p><strong>Window Size:</strong> The number of pixels to use for the sliding window (e.g., <code class="docutils literal notranslate"><span class="pre">21</span></code>).</p></li>
-<li><p><strong>Output Column:</strong> Name for the new error column (default: <code class="docutils literal notranslate"><span class="pre">running_std</span></code>).</p></li>
+<li><p>Go to <strong>Flux &gt; Flux Calibrate…</strong>.</p></li>
+<li><p><strong>Magnitudes:</strong> Enter a comma-separated list of <code class="docutils literal notranslate"><span class="pre">Filter=Magnitude</span></code> pairs.</p>
+<ul class="simple">
+<li><p>Example: <code class="docutils literal notranslate"><span class="pre">SDSS_g=19.2,</span> <span class="pre">SDSS_r=18.8</span></code></p></li>
+<li><p>Supported filters include standard optical systems (SDSS, Johnson, etc.).</p></li>
+</ul>
+</li>
+<li><p>Click <strong>Run</strong>.</p></li>
 </ol>
-<p>This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.</p>
-<img alt="Applying a mathematical expression to a column" class="align-center" src="../images/flux_running_std.png" />
+<p>Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>After calibration, check the <strong>Show Iso-Mag Grid</strong> box in the <a class="reference internal" href="getting_started.html#getting-started-customizing"><span class="std std-ref">Plot Controls</span></a> to verify the result against reference magnitude curves.</p>
+</div>
 </section>
 </section>
 
@@ -542,10 +561,11 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing">1. Smoothing</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rebinning">2. Rebinning</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resampling">3. Resampling</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#calculating-running-statistics">4. Calculating Running Statistics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#calculating-running-statistics">1. Calculating Running Statistics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing">2. Smoothing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rebinning">3. Rebinning</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resampling">4. Resampling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flux-calibration">5. Flux Calibration</a></li>
 </ul>
   </nav></div>
 
