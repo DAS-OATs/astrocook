@@ -6,7 +6,7 @@ sphinx-apidoc -f -e --no-toc -o \
     astrocook/core/spectrum_operations.py \
     astrocook/core/system_list_migration.py \
     astrocook/core/utils.py \
-    astrocook/gui \
-    astrocook/io
+    astrocook/gui/*.py \
+    astrocook/io/*.py
 
-rm docs/api/astrocook.rst docs/api/astrocook.settings.rst
+rm docs/api/astrocook.rst docs/api/astrocook.settings.rst docs/api/modules.rst 2> /dev/null

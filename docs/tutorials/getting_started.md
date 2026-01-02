@@ -42,12 +42,27 @@ You can show or hide specific layers of the plot:
 - **Normalization**: Hides the continuum level (dashed black line).
 - **Absorption model**: Hides the Voigt profile fits (solid red line).
 - **Systems**: Hides the vertical tick marks indicating identified systems.
+- **Aux. Column**: Select an additional data column (e.g., `abs_mask`, `running_std`) to overlay on the plot.
+- **Strong emission lines**: Shows markers for major emission lines (e.g., Ly-$\alpha$, CIV). 
+  :::{note}
+  This requires defining the emission redshift first (see [Session Properties](#editing-properties)).
+  :::
+- **Show Iso-Mag Grid**: Overlays curves of constant AB magnitude. 
+  :::{note} 
+  This requires flux calibration (see [Flux Operations](flux_operations.md)).
+  :::
 
 ### Axis Controls
 
 - **Units**: You can switch the X-axis display between `nm`, `Angstrom`, and `micron` on the fly.
-- **Log Scale**: Useful for visualizing data with high dynamic range; check **Logarithmic F** to switch the Y-axis.
-- **Flux vs. SNR**: Check **Show SNR** to inspect the Signal-to-Noise ratio instead of the flux.
+- **Normalize F**: Plots the flux relative to the continuum (showing $f = F / F_\mathrm{cont}$).
+- **Show SNR**: Plots the Signal-to-Noise Ratio instead of flux.
+    * **Error Col.**: When showing SNR, you can select which column to use as the noise estimate (default is `dF`).
+- **Logarithmic $\lambda$**: Switches the X-axis to a logarithmic scale.
+
+### Axis Limits
+
+You can manually set the precise bounds of the plot view. Enter values for **$\lambda$ Min/Max** and **F Min/Max** and press Enter to apply them. These boxes automatically update when you zoom or pan interactively.
 
 ### The Redshift Cursor
 
@@ -61,6 +76,13 @@ This is a handy tool for quick visual inspection.
 :alt: The Plot Controls sidebar
 :align: center
 ```
+
+**Interactive Setting:** You can **Right-click** directly on the plot background to open a context menu. Select **Set emission redshift to z=...** to instantly update the session's $z_{em}$ based on the cursor's current position.
+
+:::{note}
+If the **Zoom** or **Pan** tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold `Ctrl` (or `Cmd` on Mac) while right-clicking to access the context menu.
+:::
+
 
 ## 4. Session Management (Left Sidebar)
 
@@ -77,6 +99,19 @@ Right-click on any session in the list to open the context menu. Select **View I
 - **Object Name**
 - **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
 - **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
+
+### The Log Scripter
+
+Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select **View Log** to open the **Log Scripter**.
+
+This dialog allows you to:
+* **Review History:** See a readable list of every recipe run on this session.
+* **Undo/Redo:** Step back through your analysis history.
+  :::{tip}
+  You can access Undo/Redo also from the **Edit** menu (see [Editing Data](editing_data.md)) or using the standard key combinations `Ctrl+Z`/`Shift+Ctrl+Z` (`Cmd+Z`/`Shift+Cmd+Z` on Mac).
+  :::
+* **Run All:** Re-run the entire analysis pipeline from the original raw data.
+* **Save Script:** Export your workflow as a Python-compatible JSON script for reproducibility.
 
 ### Saving and Closing
 
