@@ -450,6 +450,10 @@
 <li><p>To use an alternative continuum (e.g., a power-law <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>), you must first copy it into the main <code class="docutils literal notranslate"><span class="pre">cont</span></code> column using <strong>Edit &gt; Apply Expression…</strong> (<code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">=</span> <span class="pre">cont_pl</span></code>).</p></li>
 </ul>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> and <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
+</div>
 <section id="ly-alpha-forest">
 <h3>Ly-alpha Forest<a class="headerlink" href="#ly-alpha-forest" title="Link to this heading">#</a></h3>
 <p>If you are analyzing a high-redshift quasar (<span class="math notranslate nohighlight">\(z &gt; 2\)</span>):</p>
@@ -471,6 +475,10 @@
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
 <p>This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> and <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
+</div>
 </section>
 <section id="general-detection">
 <h3>General Detection<a class="headerlink" href="#general-detection" title="Link to this heading">#</a></h3>
@@ -480,11 +488,15 @@
 <li><p>This generates a list of candidate regions but <em>does not</em> fit them immediately.</p></li>
 <li><p>You can then visualize these regions by selecting <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> in the <strong>Aux. Column</strong> dropdown of the Plot Controls.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> and <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
+</div>
 <img alt="The Auto-fit Ly-alpha Forest dialog" class="align-center" src="../images/absorbers_auto_pipeline.png" />
 </section>
 </section>
 <section id="the-system-inspector">
-<h2>2. The System Inspector<a class="headerlink" href="#the-system-inspector" title="Link to this heading">#</a></h2>
+<span id="system-inspector"></span><h2>2. The System Inspector<a class="headerlink" href="#the-system-inspector" title="Link to this heading">#</a></h2>
 <p>Once you have systems (either from a pipeline or added manually), the <strong>System Inspector</strong> is your cockpit for detailed analysis.</p>
 <p>To open it: <strong>View &gt; View System Inspector</strong>, or right-click over a component in the main window to display the context menu.</p>
 <section id="left-panel-system-list">
@@ -514,6 +526,10 @@
 <section id="interactive-fitting-editing">
 <h2>3. Interactive Fitting &amp; Editing<a class="headerlink" href="#interactive-fitting-editing" title="Link to this heading">#</a></h2>
 <p>The System Inspector allows you to modify the model dynamically.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Just like in the main window, if the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the plot toolbar, you must hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code>) while right-clicking to access the context menu.</p>
+</div>
 <section id="adding-components">
 <h3>Adding Components<a class="headerlink" href="#adding-components" title="Link to this heading">#</a></h3>
 <p>If the auto-finder missed a line:</p>
@@ -524,7 +540,7 @@
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Just like in the main window, if the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the plot toolbar, you must hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code>) while right-clicking to access the context menu.</p>
+<p>This recipe requires <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

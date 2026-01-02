@@ -444,7 +444,7 @@
 <p>For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This recipe requires an <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong> to define the smoothing scales. If you haven’t set it yet, Astrocook will prompt you to set it (via <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a>) before running the continuum estimator.</p>
+<p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
 </div>
 <ol class="arabic simple">
 <li><p>Go to <strong>Continuum &gt; Auto-estimate Continuum…</strong>.</p></li>
@@ -515,8 +515,9 @@
 <p>For quasars, it is often useful to fit a power-law continuum (<span class="math notranslate nohighlight">\(F_\lambda\propto\lambda^{-\alpha}\)</span>) to estimate the underlying emission before determining the detailed shape.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This operation assumes your spectrum is <strong>flux calibrated</strong> (the overall shape is physically meaningful) and requires a defined <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong> to locate the rest-frame windows.</p>
+<p>This operation assumes your spectrum is <strong>flux calibrated</strong> (the overall shape is physically meaningful). It also requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
 </div>
+<div class="docutils">
 <ol class="arabic simple">
 <li><p>Go to <strong>Continuum &gt; Fit Power-Law…</strong>.</p></li>
 <li><p><strong>Regions:</strong> Enter a list of comma-separated wavelength ranges (in <strong>rest-frame</strong> nm) known to be free of emission lines.</p>
@@ -527,6 +528,7 @@
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
 <p>This creates a new column <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> which you can view or use as a baseline for further fitting.</p>
+</div>
 </section>
 </section>
 
