@@ -796,7 +796,7 @@ class MainWindowV2(QMainWindow):
 
         continuum_menu.addSeparator()
 
-        find_abs_action = QAction("&Find Aabsorbed Regions...", self)
+        find_abs_action = QAction("&Find Absorbed Regions...", self)
         find_abs_action.setToolTip("Create a 'abs_mask' column using V1 'clip_flux' logic")
         find_abs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_absorbed"))
         continuum_menu.addAction(find_abs_action)
