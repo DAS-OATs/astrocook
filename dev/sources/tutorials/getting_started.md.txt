@@ -108,7 +108,7 @@ This dialog allows you to:
 * **Review History:** See a readable list of every recipe run on this session.
 * **Undo/Redo:** Step back through your analysis history.
   :::{tip}
-  You can access Undo/Redo also from the **Edit** menu (see [Editing Data](editing_data.md)) or using the standard key combinations `Ctrl+Z`/`Shift+Ctrl+Z` (`Cmd+Z`/`Shift+Cmd+Z` on Mac).
+  You can access Undo/Redo also from the **Edit** menu (see [Editing Data](editing_data.md)) or using the standard key combinations `Ctrl+Z`/`Ctrl+Y` (`Cmd+Z`/`Cmd+Shift+Z` on Mac).
   :::
 * **Run All:** Re-run the entire analysis pipeline from the original raw data.
 * **Save Script:** Export your workflow as a Python-compatible JSON script for reproducibility.

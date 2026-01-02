@@ -9,8 +9,6 @@ Subpackages
 
    astrocook.core
    astrocook.fitting
-   astrocook.gui
-   astrocook.io
    astrocook.recipes
 
 Submodules

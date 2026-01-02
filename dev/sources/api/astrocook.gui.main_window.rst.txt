@@ -1,7 +1,0 @@
-astrocook.gui.main\_window module
-=================================
-
-.. automodule:: astrocook.gui.main_window
-   :members:
-   :show-inheritance:
-   :undoc-members:

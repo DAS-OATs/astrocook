@@ -1,7 +1,0 @@
-astrocook.gui.scripting module
-==============================
-
-.. automodule:: astrocook.gui.scripting
-   :members:
-   :show-inheritance:
-   :undoc-members:

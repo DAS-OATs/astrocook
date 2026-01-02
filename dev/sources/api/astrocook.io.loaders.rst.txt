@@ -1,7 +1,0 @@
-astrocook.io.loaders module
-===========================
-
-.. automodule:: astrocook.io.loaders
-   :members:
-   :show-inheritance:
-   :undoc-members:

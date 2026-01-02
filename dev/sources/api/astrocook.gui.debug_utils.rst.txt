@@ -1,7 +1,0 @@
-astrocook.gui.debug\_utils module
-=================================
-
-.. automodule:: astrocook.gui.debug_utils
-   :members:
-   :show-inheritance:
-   :undoc-members:

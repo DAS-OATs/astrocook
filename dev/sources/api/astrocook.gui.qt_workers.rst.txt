@@ -1,7 +1,0 @@
-astrocook.gui.qt\_workers module
-================================
-
-.. automodule:: astrocook.gui.qt_workers
-   :members:
-   :show-inheritance:
-   :undoc-members:

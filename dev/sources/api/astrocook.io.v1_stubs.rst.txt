@@ -1,7 +1,0 @@
-astrocook.io.v1\_stubs module
-=============================
-
-.. automodule:: astrocook.io.v1_stubs
-   :members:
-   :show-inheritance:
-   :undoc-members:

@@ -1,7 +1,0 @@
-astrocook.gui.identification\_viewer\_dialog module
-===================================================
-
-.. automodule:: astrocook.gui.identification_viewer_dialog
-   :members:
-   :show-inheritance:
-   :undoc-members:

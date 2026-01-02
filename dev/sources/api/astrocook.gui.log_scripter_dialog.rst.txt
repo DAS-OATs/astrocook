@@ -1,7 +1,0 @@
-astrocook.gui.log\_scripter\_dialog module
-==========================================
-
-.. automodule:: astrocook.gui.log_scripter_dialog
-   :members:
-   :show-inheritance:
-   :undoc-members:

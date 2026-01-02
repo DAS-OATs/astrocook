@@ -439,8 +439,16 @@
   <section class="tex2jax_ignore mathjax_ignore" id="editing-data">
 <h1>Editing Data<a class="headerlink" href="#editing-data" title="Link to this heading">#</a></h1>
 <p>Spectra rarely come ready-to-use out of the box. You might need to update metadata, rescale flux values, isolate specific regions, or combine multiple exposures. This tutorial covers the <strong>Edit</strong> menu, which serves as the “Swiss Army knife” for these operations.</p>
+<section id="history-management-undo-redo">
+<h2>1. History Management (Undo/Redo)<a class="headerlink" href="#history-management-undo-redo" title="Link to this heading">#</a></h2>
+<p>Astrocook tracks every operation you perform in a session. If you make a mistake or want to test a different parameter:</p>
+<ul class="simple">
+<li><p><strong>Undo</strong>: Press <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>) or select <strong>Edit &gt; Undo</strong>.</p></li>
+<li><p><strong>Redo</strong>: Press <code class="docutils literal notranslate"><span class="pre">Ctrl+Y</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd+Shift+Z</span></code>) or select <strong>Edit &gt; Redo</strong>.</p></li>
+</ul>
+</section>
 <section id="setting-session-properties">
-<span id="editing-properties"></span><h2>1. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
+<span id="editing-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
 <p>Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis) rely on the emission redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>) to determine rest-frame wavelengths.</p>
 <ol class="arabic simple">
 <li><p>Select your session in the <strong>Session List</strong> (left sidebar).</p></li>
@@ -457,17 +465,21 @@
 <img alt="The Set Properties dialog" class="align-center" src="../images/editing_set_properties.png" />
 </section>
 <section id="arithmetic-on-columns">
-<span id="editing-arithmetic"></span><h2>2. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
-<p>Astrocook allows you to perform mathematical operations on your data columns (Flux <code class="docutils literal notranslate"><span class="pre">y</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dy</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">x</span></code>, etc.) using NumPy-style syntax.</p>
-<section id="modifying-flux">
-<h3>Modifying Flux<a class="headerlink" href="#modifying-flux" title="Link to this heading">#</a></h3>
-<p>Suppose you want to rescale your flux by a factor of <span class="math notranslate nohighlight">\(10^{17}\)</span> for easier readability:</p>
+<span id="editing-arithmetic"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
+<p>Astrocook allows you to perform mathematical operations on <strong>any</strong> data column (Flux <code class="docutils literal notranslate"><span class="pre">y</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dy</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">x</span></code>, etc.) using NumPy-style syntax.</p>
+<section id="general-arithmetic">
+<h3>General Arithmetic<a class="headerlink" href="#general-arithmetic" title="Link to this heading">#</a></h3>
+<p>You can modify existing columns or create new ones.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Apply Expression…</strong>.</p></li>
-<li><p><strong>Target Column:</strong> <code class="docutils literal notranslate"><span class="pre">y</span></code> (This is the column we will overwrite).</p></li>
-<li><p><strong>Expression:</strong> <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">*</span> <span class="pre">1e17</span></code> (This multiplies the current values by <span class="math notranslate nohighlight">\(10^{17}\)</span>).</p></li>
-<li><p>Click <strong>Run.</strong></p></li>
+<li><p><strong>Target Column:</strong> Enter the name of the column to overwrite (e.g., <code class="docutils literal notranslate"><span class="pre">y</span></code>) or create (e.g., <code class="docutils literal notranslate"><span class="pre">flux_corr</span></code>).</p></li>
+<li><p><strong>Expression:</strong> Enter your formula (e.g., <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">*</span> <span class="pre">1e17</span></code>).</p></li>
+<li><p>Click <strong>Run</strong>.</p></li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The recipe dialog features <strong>toolbars</strong> above the input fields. Click buttons like <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">log10</span></code>, or <code class="docutils literal notranslate"><span class="pre">sqrt</span></code> to instantly insert them into your expression syntax error-free.</p>
+</div>
 </section>
 <section id="creating-new-columns">
 <h3>Creating New Columns<a class="headerlink" href="#creating-new-columns" title="Link to this heading">#</a></h3>
@@ -480,15 +492,61 @@
 <img alt="Applying a mathematical expression to a column" class="align-center" src="../images/editing_apply_expression.png" />
 </section>
 </section>
+<section id="advanced-operations">
+<h2>4. Advanced Operations<a class="headerlink" href="#advanced-operations" title="Link to this heading">#</a></h2>
+<p>The Edit menu provides specialized tools for cleaning and organizing your data structures.</p>
+<section id="masking-data">
+<h3>Masking Data<a class="headerlink" href="#masking-data" title="Link to this heading">#</a></h3>
+<p>To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Edit &gt; Mask by Expression…</strong>.</p></li>
+<li><p><strong>Target Column:</strong> The column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">y</span></code>).</p></li>
+<li><p><strong>Expression:</strong> A boolean condition (e.g., <code class="docutils literal notranslate"><span class="pre">dy</span> <span class="pre">&lt;=</span> <span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">&lt;</span> <span class="pre">350</span></code>).</p></li>
+<li><p>Values satisfying this condition will be set to <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
+</ol>
+</section>
+<section id="smoothing-single-columns">
+<h3>Smoothing Single Columns<a class="headerlink" href="#smoothing-single-columns" title="Link to this heading">#</a></h3>
+<p>While the Flux menu smooths the whole spectrum, you might want to smooth only a specific auxiliary column (like a noise array or a background fit).</p>
+<ul class="simple">
+<li><p><strong>Edit &gt; Smooth Column…</strong>: Applies a Gaussian filter to a specific target column (e.g., <code class="docutils literal notranslate"><span class="pre">running_std</span></code>).</p></li>
+</ul>
+</section>
+<section id="deleting-elements">
+<h3>Deleting Elements<a class="headerlink" href="#deleting-elements" title="Link to this heading">#</a></h3>
+<p>To clean up your session:</p>
+<ul class="simple">
+<li><p><strong>Edit &gt; Delete Elements…</strong>: Enter a comma-separated list of items to remove.</p>
+<ul>
+<li><p>Column names (e.g., <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">snr</span></code>) to remove data arrays.</p></li>
+<li><p>Keywords <code class="docutils literal notranslate"><span class="pre">lines</span></code> or <code class="docutils literal notranslate"><span class="pre">systems</span></code> to clear the entire absorption system list.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="importing-systems">
+<h3>Importing Systems<a class="headerlink" href="#importing-systems" title="Link to this heading">#</a></h3>
+<p>If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Edit &gt; Import Systems…</strong>.</p></li>
+<li><p><strong>Source Session:</strong> Select the other open session by name.</p></li>
+<li><p><strong>Append:</strong> Check this to add to your current list; uncheck to replace it entirely.</p></li>
+</ol>
+</section>
+</section>
 <section id="slicing-sessions-split-extract">
-<h2>3. Slicing Sessions (Split &amp; Extract)<a class="headerlink" href="#slicing-sessions-split-extract" title="Link to this heading">#</a></h2>
+<h2>5. Slicing Sessions (Split &amp; Extract)<a class="headerlink" href="#slicing-sessions-split-extract" title="Link to this heading">#</a></h2>
 <p>Sometimes you only want to work on a specific piece of a spectrum, such as the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest or a specific metal line.</p>
 <section id="manual-split">
 <h3>Manual Split<a class="headerlink" href="#manual-split" title="Link to this heading">#</a></h3>
 <p>To extract a custom range into a <em>new</em> session:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Split Out Region…</strong>.</p></li>
-<li><p>Enter a boolean expression, such as <code class="docutils literal notranslate"><span class="pre">(x</span> <span class="pre">&gt;</span> <span class="pre">400)</span> <span class="pre">&amp;</span> <span class="pre">(x</span> <span class="pre">&lt;</span> <span class="pre">500)</span></code> (assuming units of nm).</p></li>
+<li><p>Enter a boolean expression. Use the dialog <strong>toolbar</strong> to insert the wavelength variable <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<ul class="simple">
+<li><p>Example: <code class="docutils literal notranslate"><span class="pre">(x</span> <span class="pre">&gt;</span> <span class="pre">400)</span> <span class="pre">&amp;</span> <span class="pre">(x</span> <span class="pre">&lt;</span> <span class="pre">500)</span></code></p></li>
+</ul>
+</li>
 <li><p>A new session containing only that data range will appear in your list.</p></li>
 </ol>
 </section>
@@ -497,13 +555,13 @@
 <p>Astrocook knows standard quasar regions. If your <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> is set:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Extract Preset Region…</strong>.</p></li>
-<li><p>Choose a preset like <code class="docutils literal notranslate"><span class="pre">lya_forest</span></code> (the region between Ly-<span class="math notranslate nohighlight">\(\beta\)</span> and Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> emission).</p></li>
-<li><p>The software automatically calculates the observed wavelength bounds based on <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> and creates a new session for you.</p></li>
+<li><p><strong>Region:</strong> Choose a preset (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest</span></code>) or enter multiple presets separated by commas to extract them all at once (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest,</span> <span class="pre">red_side</span></code>).</p></li>
+<li><p>The software automatically calculates the observed bounds and creates new sessions for each region.</p></li>
 </ol>
 </section>
 </section>
 <section id="combining-sessions-stitch-co-add">
-<h2>4. Combining Sessions (Stitch &amp; Co-add)<a class="headerlink" href="#combining-sessions-stitch-co-add" title="Link to this heading">#</a></h2>
+<h2>6. Combining Sessions (Stitch &amp; Co-add)<a class="headerlink" href="#combining-sessions-stitch-co-add" title="Link to this heading">#</a></h2>
 <p>If you have multiple exposures of the same object, you can combine them directly from the Session List.</p>
 <section id="co-adding-spectra">
 <h3>Co-adding Spectra<a class="headerlink" href="#co-adding-spectra" title="Link to this heading">#</a></h3>
@@ -516,6 +574,10 @@
 <li><p>A dialog will ask for the grid parameters (e.g., step size <code class="docutils literal notranslate"><span class="pre">dx</span></code>).</p></li>
 <li><p>A new, combined session will be created.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can also access this tool via <strong>Edit &gt; Co-add Spectra…</strong>. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.</p>
+</div>
 </section>
 <section id="stitching">
 <h3>Stitching<a class="headerlink" href="#stitching" title="Link to this heading">#</a></h3>
@@ -577,18 +639,26 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-session-properties">1. Setting Session Properties</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#arithmetic-on-columns">2. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-flux">Modifying Flux</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#history-management-undo-redo">1. History Management (Undo/Redo)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-session-properties">2. Setting Session Properties</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#arithmetic-on-columns">3. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#general-arithmetic">General Arithmetic</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-new-columns">Creating New Columns</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#slicing-sessions-split-extract">3. Slicing Sessions (Split &amp; Extract)</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-operations">4. Advanced Operations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masking-data">Masking Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing-single-columns">Smoothing Single Columns</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deleting-elements">Deleting Elements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-systems">Importing Systems</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#slicing-sessions-split-extract">5. Slicing Sessions (Split &amp; Extract)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manual-split">Manual Split</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-extraction-presets">Quick Extraction (Presets)</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#combining-sessions-stitch-co-add">4. Combining Sessions (Stitch &amp; Co-add)</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#combining-sessions-stitch-co-add">6. Combining Sessions (Stitch &amp; Co-add)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#co-adding-spectra">Co-adding Spectra</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#stitching">Stitching</a></li>
 </ul>

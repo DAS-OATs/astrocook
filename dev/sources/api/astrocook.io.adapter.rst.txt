@@ -1,7 +1,0 @@
-astrocook.io.adapter module
-===========================
-
-.. automodule:: astrocook.io.adapter
-   :members:
-   :show-inheritance:
-   :undoc-members:
