@@ -2,7 +2,23 @@
 
 Once you've loaded your data and set the basic properties, you might need to process the flux arrays to increase signal-to-noise ratio (SNR) or prepare for multi-spectrum analysis. This tutorial covers the **Flux** menu operations.
 
-## 1. Smoothing
+## 1. Calculating Running Statistics
+
+Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).
+
+1. Go to **Flux > Calculate Running StdDev...**.
+2. **Input Column:** Usually `y` (Flux).
+3. **Window Size:** The number of pixels to use for the sliding window (e.g., `21`).
+4. **Output Column:** Name for the new error column (default: `running_std`).
+
+This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.
+
+```{image} ../_static/flux_running_std.png
+:alt: Applying a mathematical expression to a column
+:align: center
+```
+
+## 2. Smoothing
 
 Smoothing is the simplest way to visualize faint features by reducing high-frequency noise. Astrocook uses a Gaussian kernel for this operation.
 
@@ -19,7 +35,7 @@ The operation creates a _new_ session state with the smoothed flux. The original
 :align: center
 ```
 
-## 2. Rebinning
+## 3. Rebinning
 
 Rebinning is more rigorous than smoothing. It combines adjacent pixels into larger bins, conserving the total flux (integrated flux). This is essential when you want to improve SNR for quantitative measurements or reduce the data size.
 
@@ -33,7 +49,7 @@ Rebinning is more rigorous than smoothing. It combines adjacent pixels into larg
 Unlike smoothing, rebinning changes the X-axis grid. The new flux values are calculated to preserve the physical energy/counts per bin.
 :::
 
-## 3. Resampling
+## 4. Resampling
 
 Resampling is different from rebinning. It interpolates your spectrum onto an arbitrary grid defined by _another_ open session. This is a critical prerequisite for comparing two spectra pixel-by-pixel (e.g., for creating a ratio or difference spectrum).
 
@@ -47,18 +63,19 @@ Resampling is different from rebinning. It interpolates your spectrum onto an ar
 
 Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](#editing-arithmetic) to compute `y / SessionB.y`.
 
-## 4. Calculating Running Statistics
+(flux-calibration)=
+## 5. Flux Calibration
 
-Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).
+If your spectrum is not flux-calibrated (or the calibration is off), you can warp it to match known photometric data.
 
-1. Go to **Flux > Calculate Running StdDev...**.
-2. **Input Column:** Usually `y` (Flux).
-3. **Window Size:** The number of pixels to use for the sliding window (e.g., `21`).
-4. **Output Column:** Name for the new error column (default: `running_std`).
+1.  Go to **Flux > Flux Calibrate...**.
+2.  **Magnitudes:** Enter a comma-separated list of `Filter=Magnitude` pairs.
+    * Example: `SDSS_g=19.2, SDSS_r=18.8`
+    * Supported filters include standard optical systems (SDSS, Johnson, etc.).
+3.  Click **Run**.
 
-This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.
+Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes.
 
-```{image} ../_static/flux_running_std.png
-:alt: Applying a mathematical expression to a column
-:align: center
-```
+:::{tip}
+After calibration, check the **Show Iso-Mag Grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
+:::
