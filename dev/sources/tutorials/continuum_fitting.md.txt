@@ -6,6 +6,10 @@ A robust continuum fit is the backbone of any absorption line analysis. Astrocoo
 
 For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.
 
+:::{note}
+This recipe requires an **Emission Redshift ($z_\mathrm{em}$)** to define the smoothing scales. If you haven't set it yet, Astrocook will prompt you to set it (via [Set Properties](#editing-properties)) before running the continuum estimator.
+:::
+
 1. Go to **Continuum > Auto-estimate Continuum...**.
 2. Adjust the parameters if necessary:
    - Smoothing (Ly-a / Out): Defines the scale of the smoothing spline. The default `5000` km/s for the Ly-alpha forest and `400` km/s for the red side usually work well.
@@ -31,6 +35,10 @@ If you need more control, you can run the process in two steps:
 ## 2. Interactive Manual Editing
 
 Automatic fits sometimes fail near complex emission lines or spectral edges. You can correct these manually using the **Right Sidebar**.
+
+:::{important}
+Always **run an automatic estimate first** (Step 1). While the manual editor can start from scratch, it is designed to *refine* an existing continuum curve. Starting from raw flux usually produces poor results.
+:::
 
 ### Starting the Editor
 
@@ -70,6 +78,10 @@ When you are satisfied with the shape:
 ## 3. Power-Law Fitting
 
 For quasars, it is often useful to fit a power-law continuum ($F_\lambda\propto\lambda^{-\alpha}$) to estimate the underlying emission before determining the detailed shape.
+
+:::{note}
+This operation assumes your spectrum is **flux calibrated** (the overall shape is physically meaningful) and requires a defined **Emission Redshift ($z_\mathrm{em}$)** to locate the rest-frame windows.
+:::
 
 1. Go to **Continuum > Fit Power-Law...**.
 2. **Regions:** Enter a list of comma-separated wavelength ranges (in **rest-frame** nm) known to be free of emission lines.

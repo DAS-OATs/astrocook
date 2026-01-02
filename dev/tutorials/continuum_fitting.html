@@ -442,6 +442,10 @@
 <section id="automatic-estimation">
 <h2>1. Automatic Estimation<a class="headerlink" href="#automatic-estimation" title="Link to this heading">#</a></h2>
 <p>For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This recipe requires an <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong> to define the smoothing scales. If you haven’t set it yet, Astrocook will prompt you to set it (via <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a>) before running the continuum estimator.</p>
+</div>
 <ol class="arabic simple">
 <li><p>Go to <strong>Continuum &gt; Auto-estimate Continuum…</strong>.</p></li>
 <li><p>Adjust the parameters if necessary:</p>
@@ -467,6 +471,10 @@
 <section id="interactive-manual-editing">
 <h2>2. Interactive Manual Editing<a class="headerlink" href="#interactive-manual-editing" title="Link to this heading">#</a></h2>
 <p>Automatic fits sometimes fail near complex emission lines or spectral edges. You can correct these manually using the <strong>Right Sidebar</strong>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Always <strong>run an automatic estimate first</strong> (Step 1). While the manual editor can start from scratch, it is designed to <em>refine</em> an existing continuum curve. Starting from raw flux usually produces poor results.</p>
+</div>
 <section id="starting-the-editor">
 <h3>Starting the Editor<a class="headerlink" href="#starting-the-editor" title="Link to this heading">#</a></h3>
 <ol class="arabic simple">
@@ -505,6 +513,10 @@
 <section id="power-law-fitting">
 <h2>3. Power-Law Fitting<a class="headerlink" href="#power-law-fitting" title="Link to this heading">#</a></h2>
 <p>For quasars, it is often useful to fit a power-law continuum (<span class="math notranslate nohighlight">\(F_\lambda\propto\lambda^{-\alpha}\)</span>) to estimate the underlying emission before determining the detailed shape.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This operation assumes your spectrum is <strong>flux calibrated</strong> (the overall shape is physically meaningful) and requires a defined <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong> to locate the rest-frame windows.</p>
+</div>
 <ol class="arabic simple">
 <li><p>Go to <strong>Continuum &gt; Fit Power-Law…</strong>.</p></li>
 <li><p><strong>Regions:</strong> Enter a list of comma-separated wavelength ranges (in <strong>rest-frame</strong> nm) known to be free of emission lines.</p>
