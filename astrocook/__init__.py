@@ -4,4 +4,4 @@
 from .core.session import SessionV2
 
 # Expose formatting/version info if needed
-__version__ = "2.0.0-beta"
+__version__ = "2.0.0-beta.1"

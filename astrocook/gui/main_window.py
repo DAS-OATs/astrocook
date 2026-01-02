@@ -3674,7 +3674,7 @@ class AboutDialog(QDialog):
         title_lbl.setAlignment(Qt.AlignCenter)
         #layout.addWidget(title_lbl)
 
-        copy_lbl = QLabel("© 2017-2026 Guido Cupani")
+        copy_lbl = QLabel("© 2026 Guido Cupani")
         copy_lbl.setStyleSheet("font-size: 14pt; color: #296bff;")
         copy_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(copy_lbl)

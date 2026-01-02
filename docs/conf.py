@@ -6,14 +6,20 @@
 import os
 import sys
 
+from astrocook import __version__ as version
+
+myst_substitutions = {
+    "version": version
+}
+
 # -- Path setup --------------------------------------------------------------
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 project = 'Astrocook'
-copyright = '2025, Guido Cupani'
+copyright = '2026, Guido Cupani'
 author = 'Guido Cupani'
-release = '2.0.0'
+release = version
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -46,6 +52,7 @@ myst_enable_extensions = [
     "dollarmath",     # Allows $$ math $$
     "deflist",        # Definition lists
     "html_image",     # Better image handling
+    "substitution",
 ]
 
 # -- PyData Theme Configuration ----------------------------------------------
