@@ -469,20 +469,42 @@
 <section id="toggles">
 <h3>Toggles<a class="headerlink" href="#toggles" title="Link to this heading">#</a></h3>
 <p>You can show or hide specific layers of the plot:</p>
-<ul class="simple">
+<ul>
 <li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
 <li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
 <li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
 <li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
+<li><p><strong>Aux. Column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
+<li><p><strong>Strong emission lines</strong>: Shows markers for major emission lines (e.g., Ly-<span class="math notranslate nohighlight">\(\alpha\)</span>, CIV).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This requires defining the emission redshift first (see <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Session Properties</span></a>).</p>
+</div>
+</li>
+<li><p><strong>Show Iso-Mag Grid</strong>: Overlays curves of constant AB magnitude.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This requires flux calibration (see <a class="reference internal" href="flux_operations.html"><span class="std std-doc">Flux Operations</span></a>).</p>
+</div>
+</li>
 </ul>
 </section>
 <section id="axis-controls">
 <h3>Axis Controls<a class="headerlink" href="#axis-controls" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>Units</strong>: You can switch the X-axis display between <code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>, and <code class="docutils literal notranslate"><span class="pre">micron</span></code> on the fly.</p></li>
-<li><p><strong>Log Scale</strong>: Useful for visualizing data with high dynamic range; check <strong>Logarithmic F</strong> to switch the Y-axis.</p></li>
-<li><p><strong>Flux vs. SNR</strong>: Check <strong>Show SNR</strong> to inspect the Signal-to-Noise ratio instead of the flux.</p></li>
+<li><p><strong>Normalize F</strong>: Plots the flux relative to the continuum (showing <span class="math notranslate nohighlight">\(f = F / F_\mathrm{cont}\)</span>).</p></li>
+<li><p><strong>Show SNR</strong>: Plots the Signal-to-Noise Ratio instead of flux.</p>
+<ul>
+<li><p><strong>Error Col.</strong>: When showing SNR, you can select which column to use as the noise estimate (default is <code class="docutils literal notranslate"><span class="pre">dF</span></code>).</p></li>
 </ul>
+</li>
+<li><p><strong>Logarithmic <span class="math notranslate nohighlight">\(\lambda\)</span></strong>: Switches the X-axis to a logarithmic scale.</p></li>
+</ul>
+</section>
+<section id="axis-limits">
+<h3>Axis Limits<a class="headerlink" href="#axis-limits" title="Link to this heading">#</a></h3>
+<p>You can manually set the precise bounds of the plot view. Enter values for <strong><span class="math notranslate nohighlight">\(\lambda\)</span> Min/Max</strong> and <strong>F Min/Max</strong> and press Enter to apply them. These boxes automatically update when you zoom or pan interactively.</p>
 </section>
 <section id="the-redshift-cursor">
 <h3>The Redshift Cursor<a class="headerlink" href="#the-redshift-cursor" title="Link to this heading">#</a></h3>
@@ -493,6 +515,11 @@
 <li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to slide the cursor along the spectrum.</p></li>
 </ol>
 <img alt="The Plot Controls sidebar" class="align-center" src="../images/getting_started_plot_controls.png" />
+<p><strong>Interactive Setting:</strong> You can <strong>Right-click</strong> directly on the plot background to open a context menu. Select <strong>Set emission redshift to z=…</strong> to instantly update the session’s <span class="math notranslate nohighlight">\(z_{em}\)</span> based on the cursor’s current position.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) while right-clicking to access the context menu.</p>
+</div>
 </section>
 </section>
 <section id="session-management-left-sidebar">
@@ -509,6 +536,22 @@
 <li><p><strong>Object Name</strong></p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong>: Crucial for many recipes like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis.</p></li>
 <li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong>: Essential for accurate Voigt profile fitting.</p></li>
+</ul>
+</section>
+<section id="the-log-scripter">
+<h3>The Log Scripter<a class="headerlink" href="#the-log-scripter" title="Link to this heading">#</a></h3>
+<p>Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select <strong>View Log</strong> to open the <strong>Log Scripter</strong>.</p>
+<p>This dialog allows you to:</p>
+<ul>
+<li><p><strong>Review History:</strong> See a readable list of every recipe run on this session.</p></li>
+<li><p><strong>Undo/Redo:</strong> Step back through your analysis history.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can access Undo/Redo also from the <strong>Edit</strong> menu (see <a class="reference internal" href="editing_data.html"><span class="std std-doc">Editing Data</span></a>) or using the standard key combinations <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Shift+Ctrl+Z</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Shift+Cmd+Z</span></code> on Mac).</p>
+</div>
+</li>
+<li><p><strong>Run All:</strong> Re-run the entire analysis pipeline from the original raw data.</p></li>
+<li><p><strong>Save Script:</strong> Export your workflow as a Python-compatible JSON script for reproducibility.</p></li>
 </ul>
 </section>
 <section id="saving-and-closing">
@@ -579,12 +622,14 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customizing-the-view-right-sidebar">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#toggles">Toggles</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-limits">Axis Limits</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-redshift-cursor">The Redshift Cursor</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#session-management-left-sidebar">4. Session Management (Left Sidebar)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switching-sessions">Switching Sessions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#session-info-properties">Session Info &amp; Properties</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-log-scripter">The Log Scripter</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-closing">Saving and Closing</a></li>
 </ul>
 </li>
