@@ -2,8 +2,15 @@
 
 Spectra rarely come ready-to-use out of the box. You might need to update metadata, rescale flux values, isolate specific regions, or combine multiple exposures. This tutorial covers the **Edit** menu, which serves as the "Swiss Army knife" for these operations.
 
+## 1. History Management (Undo/Redo)
+
+Astrocook tracks every operation you perform in a session. If you make a mistake or want to test a different parameter:
+
+* **Undo**: Press `Ctrl+Z` (or `Cmd+Z`) or select **Edit > Undo**.
+* **Redo**: Press `Ctrl+Y` (or `Cmd+Shift+Z`) or select **Edit > Redo**.
+
 (editing-properties)=
-## 1. Setting Session Properties
+## 2. Setting Session Properties
 
 Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-$\alpha$ forest analysis) rely on the emission redshift ($z_\mathrm{em}$) to determine rest-frame wavelengths.
 
@@ -21,18 +28,22 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 ```
 
 (editing-arithmetic)=
-## 2. Arithmetic on Columns
+## 3. Arithmetic on Columns
 
-Astrocook allows you to perform mathematical operations on your data columns (Flux `y`, Error `dy`, Wavelength `x`, etc.) using NumPy-style syntax.
+Astrocook allows you to perform mathematical operations on **any** data column (Flux `y`, Error `dy`, Wavelength `x`, etc.) using NumPy-style syntax.
 
-### Modifying Flux
+### General Arithmetic
 
-Suppose you want to rescale your flux by a factor of $10^{17}$ for easier readability:
+You can modify existing columns or create new ones.
 
-1. Go to **Edit > Apply Expression...**.
-2. **Target Column:** `y` (This is the column we will overwrite).
-3. **Expression:** `y * 1e17` (This multiplies the current values by $10^{17}$).
-4. Click **Run.**
+1.  Go to **Edit > Apply Expression...**.
+2.  **Target Column:** Enter the name of the column to overwrite (e.g., `y`) or create (e.g., `flux_corr`).
+3.  **Expression:** Enter your formula (e.g., `y * 1e17`).
+4.  Click **Run**.
+
+:::{tip}
+The recipe dialog features **toolbars** above the input fields. Click buttons like `y`, `x`, `log10`, or `sqrt` to instantly insert them into your expression syntax error-free.
+:::
 
 ### Creating New Columns
 
@@ -47,27 +58,59 @@ You can also create new auxiliary columns. For example, to create a column repre
 :align: center
 ```
 
-## 3. Slicing Sessions (Split & Extract)
+## 4. Advanced Operations
+
+The Edit menu provides specialized tools for cleaning and organizing your data structures.
+
+### Masking Data
+
+To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:
+1.  Go to **Edit > Mask by Expression...**.
+2.  **Target Column:** The column to mask (e.g., `y`).
+3.  **Expression:** A boolean condition (e.g., `dy <= 0` or `x < 350`).
+4.  Values satisfying this condition will be set to `NaN`.
+
+### Smoothing Single Columns
+
+While the Flux menu smooths the whole spectrum, you might want to smooth only a specific auxiliary column (like a noise array or a background fit).
+* **Edit > Smooth Column...**: Applies a Gaussian filter to a specific target column (e.g., `running_std`).
+
+### Deleting Elements
+
+To clean up your session:
+* **Edit > Delete Elements...**: Enter a comma-separated list of items to remove.
+    * Column names (e.g., `cont`, `snr`) to remove data arrays.
+    * Keywords `lines` or `systems` to clear the entire absorption system list.
+
+### Importing Systems
+
+If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.
+1.  Go to **Edit > Import Systems...**.
+2.  **Source Session:** Select the other open session by name.
+3.  **Append:** Check this to add to your current list; uncheck to replace it entirely.
+
+## 5. Slicing Sessions (Split & Extract)
 
 Sometimes you only want to work on a specific piece of a spectrum, such as the Ly-$\alpha$ forest or a specific metal line.
 
 ### Manual Split
 
-To extract a custom range into a _new_ session:
+To extract a custom range into a *new* session:
 
-1. Go to **Edit > Split Out Region...**.
-2. Enter a boolean expression, such as `(x > 400) & (x < 500)` (assuming units of nm).
-3. A new session containing only that data range will appear in your list.
+1.  Go to **Edit > Split Out Region...**.
+2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `x`.
+    * Example: `(x > 400) & (x < 500)`
+3.  A new session containing only that data range will appear in your list.
 
 ### Quick Extraction (Presets)
 
 Astrocook knows standard quasar regions. If your $z_\mathrm{em}$ is set:
 
-1. Go to **Edit > Extract Preset Region...**.
-2. Choose a preset like `lya_forest` (the region between Ly-$\beta$ and Ly-$\alpha$ emission).
-3. The software automatically calculates the observed wavelength bounds based on $z_\mathrm{em}$ and creates a new session for you.
+1.  Go to **Edit > Extract Preset Region...**.
+2.  **Region:** Choose a preset (e.g., `lya_forest`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`).
+3.  The software automatically calculates the observed bounds and creates new sessions for each region.
 
-## 4. Combining Sessions (Stitch & Co-add)
+## 6. Combining Sessions (Stitch & Co-add)
 
 If you have multiple exposures of the same object, you can combine them directly from the Session List.
 
@@ -81,6 +124,10 @@ This operation defines common grid and rebins all spectra at once into it (weigh
 4. Choose **Co-add N sessions...**.
 5. A dialog will ask for the grid parameters (e.g., step size `dx`).
 6. A new, combined session will be created.
+
+:::{note}
+You can also access this tool via **Edit > Co-add Spectra...**. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.
+:::
 
 ### Stitching
 
