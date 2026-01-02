@@ -442,6 +442,14 @@
 <section id="automated-detection-pipelines">
 <h2>1. Automated Detection Pipelines<a class="headerlink" href="#automated-detection-pipelines" title="Link to this heading">#</a></h2>
 <p>For most science cases, you should start with one of the automated pipelines in the <strong>Absorbers</strong> menu. These recipes scan the spectrum, identify features, and perform an initial fit.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p><strong>Normalization:</strong> All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the <code class="docutils literal notranslate"><span class="pre">cont</span></code> column (multiplied by <code class="docutils literal notranslate"><span class="pre">telluric_model</span></code> if present) as the reference.</p>
+<ul class="simple">
+<li><p>If no continuum exists, the software assumes the flux <code class="docutils literal notranslate"><span class="pre">y</span></code> is already normalized (median <span class="math notranslate nohighlight">\(\approx\)</span> 1).</p></li>
+<li><p>To use an alternative continuum (e.g., a power-law <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>), you must first copy it into the main <code class="docutils literal notranslate"><span class="pre">cont</span></code> column using <strong>Edit &gt; Apply Expression…</strong> (<code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">=</span> <span class="pre">cont_pl</span></code>).</p></li>
+</ul>
+</div>
 <section id="ly-alpha-forest">
 <h3>Ly-alpha Forest<a class="headerlink" href="#ly-alpha-forest" title="Link to this heading">#</a></h3>
 <p>If you are analyzing a high-redshift quasar (<span class="math notranslate nohighlight">\(z &gt; 2\)</span>):</p>
@@ -478,18 +486,27 @@
 <section id="the-system-inspector">
 <h2>2. The System Inspector<a class="headerlink" href="#the-system-inspector" title="Link to this heading">#</a></h2>
 <p>Once you have systems (either from a pipeline or added manually), the <strong>System Inspector</strong> is your cockpit for detailed analysis.</p>
-<p>To open it: <strong>View &gt; View System Inspector</strong>.</p>
-<p>The window is divided into two parts:</p>
+<p>To open it: <strong>View &gt; View System Inspector</strong>, or right-click over a component in the main window to display the context menu.</p>
+<section id="left-panel-system-list">
+<h3>Left Panel: System List<a class="headerlink" href="#left-panel-system-list" title="Link to this heading">#</a></h3>
+<p>This table lists every component in the model.</p>
 <ul class="simple">
-<li><p><strong>Left (System List)</strong>: A table of all absorption components.</p></li>
-<li><p><strong>Right (Velocity Plot)</strong>: A zoomed-in view of the selected system in velocity space.</p></li>
+<li><p><strong>Edit:</strong> Double-click any cell (<code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>) to modify its value directly.</p></li>
+<li><p><strong>Sort:</strong> Click any column header to sort the list (e.g., by Redshift or Series).</p></li>
+<li><p><strong>Tooltips:</strong> Hover over a row to see detailed fit statistics (<span class="math notranslate nohighlight">\(\chi^2\)</span>) and constraints status.</p></li>
+<li><p><strong>Resolution:</strong> Right-click a component to set a specific <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> for that line, overriding the global session default.</p></li>
+<li><p><strong>Group View:</strong> Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.</p></li>
 </ul>
-<section id="navigating-systems">
-<h3>Navigating Systems<a class="headerlink" href="#navigating-systems" title="Link to this heading">#</a></h3>
+</section>
+<section id="right-panel-velocity-plot">
+<h3>Right Panel: Velocity Plot<a class="headerlink" href="#right-panel-velocity-plot" title="Link to this heading">#</a></h3>
+<p>A zoomed-in view of the selected system in velocity space.</p>
 <ul class="simple">
-<li><p><strong>Select a row</strong> in the table to jump to that component.</p></li>
-<li><p>The Velocity Plot will automatically center on the selected line (e.g., <code class="docutils literal notranslate"><span class="pre">CIV_1548</span></code>) and show all associated transitions (e.g., <code class="docutils literal notranslate"><span class="pre">CIV_1550</span></code>) stacked vertically.</p></li>
-<li><p><strong>Group View</strong>: Check the “Group View” box above the table to filter the list. This hides unrelated systems and shows only the components physically linked to your selection (e.g., all lines in the same doublet).</p></li>
+<li><p><strong>Navigation:</strong> The plot centers on the selected component. You can manually edit the <strong>Redshift (z)</strong> and <strong>Velocity Range (<span class="math notranslate nohighlight">\(\pm v\)</span>)</strong> using the text boxes above the plot.</p></li>
+<li><p><strong>Scroll:</strong> If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.</p></li>
+<li><p><strong>Displayed Lines:</strong> The text box at the top shows which transitions are plotted (e.g., <code class="docutils literal notranslate"><span class="pre">CIV,</span> <span class="pre">SiIV</span></code>). You can type new ions here (comma-separated) to inspect other species at the same redshift.</p></li>
+<li><p><strong>Test Component:</strong> The <code class="docutils literal notranslate"><span class="pre">logN</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> boxes above the plot control the shape of the “ghost” profile attached to your mouse cursor, useful for visually estimating parameters before adding a component.</p></li>
+<li><p><strong>Residuals:</strong> Check the <strong>Resid.</strong> box to show a residual plot below each transition panel.</p></li>
 </ul>
 <img alt="The System Inspector showing a metal doublet" class="align-center" src="../images/absorbers_system_inspector.png" />
 </section>
@@ -505,18 +522,14 @@
 <li><p>Select <strong>Add [Ion] at z=…</strong>.</p></li>
 <li><p>A new component is added and fitted immediately.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Just like in the main window, if the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the plot toolbar, you must hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code>) while right-clicking to access the context menu.</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>If you see multiple transitions in the menu (e.g., <code class="docutils literal notranslate"><span class="pre">Add</span> <span class="pre">CIV-SiIV</span></code>), this will add linked components for both ions at that redshift.</p>
 </div>
-</section>
-<section id="modifying-parameters">
-<h3>Modifying Parameters<a class="headerlink" href="#modifying-parameters" title="Link to this heading">#</a></h3>
-<p>You can edit values directly in the table:</p>
-<ul class="simple">
-<li><p><strong>Double-click</strong> a cell (<code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>) to type a new value.</p></li>
-<li><p>The model (red line) updates instantly to reflect your change.</p></li>
-</ul>
 </section>
 <section id="constraints-fix-free">
 <h3>Constraints (Fix/Free)<a class="headerlink" href="#constraints-fix-free" title="Link to this heading">#</a></h3>
@@ -530,13 +543,22 @@
 </section>
 <section id="parameter-linking">
 <h3>Parameter Linking<a class="headerlink" href="#parameter-linking" title="Link to this heading">#</a></h3>
-<p>Astrocook supports physical linking of parameters (e.g., tying the redshift of a CIV doublet).</p>
+<p>Astrocook supports physical linking of parameters, which is essential for fitting doublets or multiphase systems.</p>
 <ol class="arabic simple">
 <li><p>Select <strong>two</strong> components in the table (hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code>).</p></li>
 <li><p>Right-click on the parameter you want to link (e.g., the <code class="docutils literal notranslate"><span class="pre">z</span></code> column).</p></li>
 <li><p>Select <strong>Link z to [Other Component] (Value)</strong>.</p></li>
 <li><p>The value will turn <strong>bold</strong>, indicating it is dynamically calculated from the other component.</p></li>
 </ol>
+<p><strong>Doppler Parameter Linking:</strong> When linking the Doppler parameter <code class="docutils literal notranslate"><span class="pre">b</span></code>, you have two physical options:</p>
+<ul class="simple">
+<li><p><strong>Link (Value):</strong> Assumes the broadening is dominated by <strong>turbulence</strong> (or the ions have similar mass). The <code class="docutils literal notranslate"><span class="pre">b</span></code> values are forced to be identical.</p></li>
+<li><p><strong>Link (Thermal):</strong> Assumes the broadening is <strong>thermal</strong>. The <code class="docutils literal notranslate"><span class="pre">b</span></code> value is scaled according to the atomic mass ratio of the two ions (<span class="math notranslate nohighlight">\(b \propto m^{-1/2}\)</span>).</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Astrocook also tracks a turbulent broadening parameter <code class="docutils literal notranslate"><span class="pre">btur</span></code> separately. It is available in the table but <strong>frozen (italic)</strong> by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.</p>
+</div>
 </section>
 <section id="refitting">
 <h3>Refitting<a class="headerlink" href="#refitting" title="Link to this heading">#</a></h3>
@@ -604,12 +626,12 @@
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-system-inspector">2. The System Inspector</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#navigating-systems">Navigating Systems</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#left-panel-system-list">Left Panel: System List</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#right-panel-velocity-plot">Right Panel: Velocity Plot</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-fitting-editing">3. Interactive Fitting &amp; Editing</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-components">Adding Components</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-parameters">Modifying Parameters</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#constraints-fix-free">Constraints (Fix/Free)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-linking">Parameter Linking</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refitting">Refitting</a></li>

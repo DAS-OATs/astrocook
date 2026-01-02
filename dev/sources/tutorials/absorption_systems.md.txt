@@ -6,6 +6,12 @@ Detecting and fitting absorption lines is the core mission of Astrocook. The sof
 
 For most science cases, you should start with one of the automated pipelines in the **Absorbers** menu. These recipes scan the spectrum, identify features, and perform an initial fit.
 
+:::{important}
+**Normalization:** All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the `cont` column (multiplied by `telluric_model` if present) as the reference.
+* If no continuum exists, the software assumes the flux `y` is already normalized (median $\approx$ 1).
+* To use an alternative continuum (e.g., a power-law `cont_pl`), you must first copy it into the main `cont` column using **Edit > Apply Expression...** (`cont = cont_pl`).
+:::
+
 ### Ly-alpha Forest
 If you are analyzing a high-redshift quasar ($z > 2$):
 1.  Ensure your [Emission Redshift is set](#editing-properties) correctly.
@@ -39,18 +45,23 @@ For a more generic search (or if you are looking for specific ions):
 
 Once you have systems (either from a pipeline or added manually), the **System Inspector** is your cockpit for detailed analysis.
 
-To open it: **View > View System Inspector**.
+To open it: **View > View System Inspector**, or right-click over a component in the main window to display the context menu.
 
-The window is divided into two parts:
+### Left Panel: System List
+This table lists every component in the model.
+* **Edit:** Double-click any cell (`z`, `logN`, `b`) to modify its value directly.
+* **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
+* **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
+* **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
+* **Group View:** Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.
 
-- **Left (System List)**: A table of all absorption components.
-- **Right (Velocity Plot)**: A zoomed-in view of the selected system in velocity space.
-
-### Navigating Systems
-
-- **Select a row** in the table to jump to that component.
-- The Velocity Plot will automatically center on the selected line (e.g., `CIV_1548`) and show all associated transitions (e.g., `CIV_1550`) stacked vertically.
-- **Group View**: Check the "Group View" box above the table to filter the list. This hides unrelated systems and shows only the components physically linked to your selection (e.g., all lines in the same doublet).
+### Right Panel: Velocity Plot
+A zoomed-in view of the selected system in velocity space.
+* **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
+* **Scroll:** If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.
+* **Displayed Lines:** The text box at the top shows which transitions are plotted (e.g., `CIV, SiIV`). You can type new ions here (comma-separated) to inspect other species at the same redshift.
+* **Test Component:** The `logN` and `b` boxes above the plot control the shape of the "ghost" profile attached to your mouse cursor, useful for visually estimating parameters before adding a component.
+* **Residuals:** Check the **Resid.** box to show a residual plot below each transition panel.
 
 ```{image} ../_static/absorbers_system_inspector.png
 :alt: The System Inspector showing a metal doublet
@@ -69,16 +80,13 @@ If the auto-finder missed a line:
 2. Select **Add [Ion] at z=...**.
 3. A new component is added and fitted immediately.
 
+:::{note}
+Just like in the main window, if the **Zoom** or **Pan** tools are active in the plot toolbar, you must hold `Ctrl` (or `Cmd`) while right-clicking to access the context menu.
+:::
+
 :::{tip}
 If you see multiple transitions in the menu (e.g., `Add CIV-SiIV`), this will add linked components for both ions at that redshift.
 :::
-
-### Modifying Parameters
-
-You can edit values directly in the table:
-
-- **Double-click** a cell (`z`, `logN`, `b`) to type a new value.
-- The model (red line) updates instantly to reflect your change.
 
 ### Constraints (Fix/Free)
 
@@ -91,12 +99,20 @@ To fix a parameter during fitting:
 
 ### Parameter Linking
 
-Astrocook supports physical linking of parameters (e.g., tying the redshift of a CIV doublet).
+Astrocook supports physical linking of parameters, which is essential for fitting doublets or multiphase systems.
 
-1. Select **two** components in the table (hold `Ctrl` or `Cmd`).
-2. Right-click on the parameter you want to link (e.g., the `z` column).
-3. Select **Link z to [Other Component] (Value)**.
-4. The value will turn **bold**, indicating it is dynamically calculated from the other component.
+1.  Select **two** components in the table (hold `Ctrl` or `Cmd`).
+2.  Right-click on the parameter you want to link (e.g., the `z` column).
+3.  Select **Link z to [Other Component] (Value)**.
+4.  The value will turn **bold**, indicating it is dynamically calculated from the other component.
+
+**Doppler Parameter Linking:** When linking the Doppler parameter `b`, you have two physical options:
+- **Link (Value):** Assumes the broadening is dominated by **turbulence** (or the ions have similar mass). The `b` values are forced to be identical.
+- **Link (Thermal):** Assumes the broadening is **thermal**. The `b` value is scaled according to the atomic mass ratio of the two ions ($b \propto m^{-1/2}$).
+
+:::{note}
+Astrocook also tracks a turbulent broadening parameter `btur` separately. It is available in the table but **frozen (italic)** by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.
+:::
 
 ### Refitting
 
