@@ -9,4 +9,4 @@ sphinx-apidoc -f -e --no-toc -o \
     astrocook/gui/*.py \
     astrocook/io/*.py
 
-rm docs/api/astrocook.rst docs/api/astrocook.settings.rst docs/api/modules.rst 2> /dev/null
+rm docs/api/astrocook.rst docs/api/astrocook.settings.rst
