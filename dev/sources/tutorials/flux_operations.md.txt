@@ -45,7 +45,7 @@ Resampling is different from rebinning. It interpolates your spectrum onto an ar
 4. **Target Session:** Select "Session B" from the dropdown list.
 5. Click **Run**.
 
-Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](editing_data.md#arithmetic-on-columns) to compute `y / SessionB.y`.
+Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](#editing-arithmetic) to compute `y / SessionB.y`.
 
 ## 4. Calculating Running Statistics
 

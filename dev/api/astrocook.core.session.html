@@ -522,17 +522,6 @@ updated data structures.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.core.session.SessionV2.spec">
-<span class="sig-name descname"><span class="pre">spec</span></span><a class="headerlink" href="#astrocook.core.session.SessionV2.spec" title="Link to this definition">#</a></dt>
-<dd><p>The main container for spectral data (flux, wavelength, error, etc.).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">astrocook.core.spectrum.SpectrumV2</a>, optional</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.systs">
 <span class="sig-name descname"><span class="pre">systs</span></span><a class="headerlink" href="#astrocook.core.session.SessionV2.systs" title="Link to this definition">#</a></dt>
 <dd><p>The container for identified absorption systems and Voigt profile components.</p>
@@ -593,9 +582,9 @@ updated data structures.</p>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="id0">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spec</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
-<dd><p>The current spectral data object.</p>
+<dt class="sig sig-object py" id="astrocook.core.session.SessionV2.spec">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spec</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#astrocook.core.session.SessionV2.spec" title="Link to this definition">#</a></dt>
+<dd><p>The main container for spectral data (flux, wavelength, error, etc.).</p>
 </dd></dl>
 
 <dl class="py property">
@@ -745,14 +734,13 @@ original raw data for reproducibility.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.load_session_from_file"><code class="docutils literal notranslate"><span class="pre">load_session_from_file()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2"><code class="docutils literal notranslate"><span class="pre">SessionV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.name"><code class="docutils literal notranslate"><span class="pre">SessionV2.name</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.spec"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.systs"><code class="docutils literal notranslate"><span class="pre">SessionV2.systs</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.edit"><code class="docutils literal notranslate"><span class="pre">SessionV2.edit</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.flux"><code class="docutils literal notranslate"><span class="pre">SessionV2.flux</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.continuum"><code class="docutils literal notranslate"><span class="pre">SessionV2.continuum</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.absorbers"><code class="docutils literal notranslate"><span class="pre">SessionV2.absorbers</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.__init__"><code class="docutils literal notranslate"><span class="pre">SessionV2.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.spec"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.lines"><code class="docutils literal notranslate"><span class="pre">SessionV2.lines</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.open_new"><code class="docutils literal notranslate"><span class="pre">SessionV2.open_new()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_spectrum()</span></code></a></li>

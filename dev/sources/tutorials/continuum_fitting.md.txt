@@ -25,7 +25,8 @@ Astrocook will generate a new continuum curve (black dashed line). If you have a
 If you need more control, you can run the process in two steps:
 
 1. **Continuum > Find Absorbed Regions...**: Creates a mask (`abs_mask`) separating line/continuum.
-2. **Continuum > Fit Continuum to Mask...**: Interpolates the continuum only over the unmasked regions. This allows you to manually edit the `abs_mask` (via [Apply Expression](editing_data.md#arithmetic-on-column)) between steps if the automatic masking missed something.
+2. **Continuum > Fit Continuum to Mask...**: Interpolates the continuum only over the unmasked regions. This allows you to manually edit the `abs_mask` (via [Apply Expression](#editing-arithmetic)) between steps if the automatic masking missed something.
+
 
 ## 2. Interactive Manual Editing
 

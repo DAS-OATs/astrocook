@@ -1,7 +1,0 @@
-astrocook.core.atomic\_data module
-==================================
-
-.. automodule:: astrocook.core.atomic_data
-   :members:
-   :show-inheritance:
-   :undoc-members:

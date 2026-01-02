@@ -640,62 +640,47 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">ComponentDataV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Immutable data structure for a single absorption component (Voigt profile).</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    id : int</span>
-<span class="sd">        Internal integer ID (from V1 legacy logic).</span>
-<span class="sd">    z : float</span>
-<span class="sd">        Redshift of the component center.</span>
-<span class="sd">    dz : float, optional</span>
-<span class="sd">        Uncertainty on redshift.</span>
-<span class="sd">    logN : float</span>
-<span class="sd">        Logarithmic column density (cm^-2).</span>
-<span class="sd">    dlogN : float, optional</span>
-<span class="sd">        Uncertainty on logN.</span>
-<span class="sd">    b : float</span>
-<span class="sd">        Doppler broadening parameter (km/s).</span>
-<span class="sd">    db : float, optional</span>
-<span class="sd">        Uncertainty on b.</span>
-<span class="sd">    btur : float</span>
-<span class="sd">        Turbulent broadening contribution (km/s).</span>
-<span class="sd">    func : str</span>
-<span class="sd">        Profile function name (default: ``&#39;voigt&#39;``).</span>
-<span class="sd">    series : str</span>
-<span class="sd">        Atomic series name (e.g., ``&#39;Ly_a&#39;``, ``&#39;CIV&#39;``).</span>
-<span class="sd">    chi2 : float, optional</span>
-<span class="sd">        Reduced Chi-Squared of the fit group this component belongs to.</span>
-<span class="sd">    resol : float, optional</span>
-<span class="sd">        Resolution used for the fit.</span>
-<span class="sd">    uuid : str</span>
-<span class="sd">        A globally unique, stable identifier for V2 constraints and linking.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># ID is required</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Internal integer ID (from V1 legacy logic). &quot;&quot;&quot;</span>
 
     <span class="c1"># Core Physical Parameters (z, logN, b)</span>
-    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Redshift of the component center &quot;&quot;&quot;</span>
     <span class="n">dz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Uncertainty on redshift. &quot;&quot;&quot;</span>
     <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Logarithmic column density (cm^-2). &quot;&quot;&quot;</span>
     <span class="n">dlogN</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Uncertainty on logN. &quot;&quot;&quot;</span>
     <span class="n">b</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Doppler broadening parameter (km/s). &quot;&quot;&quot;</span>
     <span class="n">db</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Uncertainty on b. &quot;&quot;&quot;</span>
     
     <span class="c1"># Turbulance Parameter (from V1)</span>
     <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Turbulent broadening contribution (km/s). &quot;&quot;&quot;</span>
     <span class="n">dbtur</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Uncertainty on btur. &quot;&quot;&quot;</span>
+
     <span class="c1"># Type and identification</span>
     <span class="n">func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;voigt&#39;</span>
-    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Ly_a&#39;</span>    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Profile function name (default: ``&#39;voigt&#39;``). &quot;&quot;&quot;</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Ly_a&#39;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Atomic series name (e.g., ``&#39;Ly_a&#39;``, ``&#39;CIV&#39;``). &quot;&quot;&quot;</span>
 
     <span class="c1"># Fit Metadata</span>
-    <span class="n">chi2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Reduced Chi-Squared of the fit group</span>
+    <span class="n">chi2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Reduced Chi-Squared of the fit group this component belongs to. &quot;&quot;&quot;</span>
     <span class="n">resol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Resolution used for the fit</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Resolution used for the fit. &quot;&quot;&quot;</span>
 
     <span class="c1"># V2 IDENTIFIER: Stable, Global, Immutable</span>
-    <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span></div>
+    <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A globally unique, stable identifier for V2 constraints and linking. &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="ParameterConstraintV2">
@@ -707,29 +692,22 @@
 
 <span class="sd">    Used by the fitting engine to determine if a parameter is free, fixed,</span>
 <span class="sd">    or linked to another component.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    is_free : bool</span>
-<span class="sd">        If True, the parameter varies during minimization.</span>
-<span class="sd">    target_uuid : str, optional</span>
-<span class="sd">        If set, this parameter is linked to the component with this UUID.</span>
-<span class="sd">    expression : str, optional</span>
-<span class="sd">        A mathematical string expression for linking (e.g. ``&quot;p[&#39;{uuid}&#39;].z&quot;``).</span>
-<span class="sd">    v1_target_id : int, optional</span>
-<span class="sd">        Legacy ID of the target component (for debugging/reconstruction only).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># True if the parameter should be varied during minimization.</span>
     <span class="n">is_free</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; If True, the parameter varies during minimization. &quot;&quot;&quot;</span>
     
     <span class="c1"># If not None, indicates a link. Must use UUID of the target component.</span>
     <span class="n">target_uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; If set, this parameter is linked to the component with this UUID. &quot;&quot;&quot;</span>
     
     <span class="c1"># Stores the mathematical expression linking this parameter to the target UUID.</span>
     <span class="n">expression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A mathematical string expression for linking (e.g. ``&quot;p[&#39;{uuid}&#39;].z&quot;``). &quot;&quot;&quot;</span>
     
     <span class="c1"># The original V1 integer ID of the target (for debugging/reconstruction only)</span>
-    <span class="n">v1_target_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">v1_target_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Legacy ID of the target component (for debugging/reconstruction only). &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="SystemListDataV2">
@@ -741,39 +719,29 @@
 
 <span class="sd">    This class replaces the mutable tables used in V1. It holds the list</span>
 <span class="sd">    of components and the maps defining their relationships.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    components : list of ComponentDataV2</span>
-<span class="sd">        The list of absorption components.</span>
-<span class="sd">    v1_header_constraints : dict</span>
-<span class="sd">        Legacy constraints from V1 file headers.</span>
-<span class="sd">    parsed_constraints : dict</span>
-<span class="sd">        Map of (Component UUID, Parameter Name) -&gt; ConstraintDataV2.</span>
-<span class="sd">    v2_constraints_map : dict</span>
-<span class="sd">        Nested map {UUID: {ParamName: Constraint}}.</span>
-<span class="sd">    v1_id_to_uuid_map : dict</span>
-<span class="sd">        Map of integer IDs to V2 UUIDs.</span>
-<span class="sd">    meta : dict</span>
-<span class="sd">        Metadata for the system list.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="n">components</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The list of absorption components. &quot;&quot;&quot;</span>
     <span class="n">v1_header_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Legacy constraints from V1 file headers. &quot;&quot;&quot;</span>
     
     <span class="c1"># Stores a dictionary mapping (Component UUID, Parameter Name) -&gt; ConstraintDataV2</span>
     <span class="n">parsed_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ParameterConstraintV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Map of (Component UUID, Parameter Name) -&gt; ConstraintDataV2. &quot;&quot;&quot;</span>
 
     <span class="c1"># V2-style constraints: {UUID: {ParamName: {...}}}</span>
     <span class="n">v2_constraints_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterConstraintV2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Nested map {UUID: {ParamName: Constraint}}. &quot;&quot;&quot;</span>
     
     <span class="c1"># Add the missing field</span>
     <span class="n">v1_id_to_uuid_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Map of integer IDs to V2 UUIDs. &quot;&quot;&quot;</span>
 
     <span class="c1"># Placeholder for complex V1 structures (mutable state reference, if needed)</span>
     <span class="n">v1_models_t</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span> 
-    <span class="n">meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+    <span class="n">meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Metadata for the system list. &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="LogEntryV2">

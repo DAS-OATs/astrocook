@@ -635,8 +635,6 @@
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
 <span class="sd">        The display name of the session (e.g., filename without extension).</span>
-<span class="sd">    spec : astrocook.core.spectrum.SpectrumV2, optional</span>
-<span class="sd">        The main container for spectral data (flux, wavelength, error, etc.).</span>
 <span class="sd">    systs : astrocook.core.system_list.SystemListV2, optional</span>
 <span class="sd">        The container for identified absorption systems and Voigt profile components.</span>
 <span class="sd">    edit : astrocook.recipes.edit.RecipeEditV2</span>
@@ -691,8 +689,11 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">spec</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectrumV2</span><span class="p">]:</span> 
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The current spectral data object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The main container for spectral data (flux, wavelength, error, etc.).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_spectrum</span>
+    
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span> 

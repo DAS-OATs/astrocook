@@ -440,7 +440,7 @@
 <h1>Editing Data<a class="headerlink" href="#editing-data" title="Link to this heading">#</a></h1>
 <p>Spectra rarely come ready-to-use out of the box. You might need to update metadata, rescale flux values, isolate specific regions, or combine multiple exposures. This tutorial covers the <strong>Edit</strong> menu, which serves as the “Swiss Army knife” for these operations.</p>
 <section id="setting-session-properties">
-<h2>1. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
+<span id="editing-properties"></span><h2>1. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
 <p>Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis) rely on the emission redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>) to determine rest-frame wavelengths.</p>
 <ol class="arabic simple">
 <li><p>Select your session in the <strong>Session List</strong> (left sidebar).</p></li>
@@ -457,7 +457,7 @@
 <img alt="The Set Properties dialog" class="align-center" src="../images/editing_set_properties.png" />
 </section>
 <section id="arithmetic-on-columns">
-<h2>2. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
+<span id="editing-arithmetic"></span><h2>2. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
 <p>Astrocook allows you to perform mathematical operations on your data columns (Flux <code class="docutils literal notranslate"><span class="pre">y</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dy</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">x</span></code>, etc.) using NumPy-style syntax.</p>
 <section id="modifying-flux">
 <h3>Modifying Flux<a class="headerlink" href="#modifying-flux" title="Link to this heading">#</a></h3>
@@ -475,7 +475,7 @@
 <ol class="arabic simple">
 <li><p><strong>Target Column</strong>: <code class="docutils literal notranslate"><span class="pre">snr</span></code> (A new name).</p></li>
 <li><p><strong>Expression:</strong> <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">/</span> <span class="pre">dy</span></code>.</p></li>
-<li><p>Once created, you can visualize this new column using the Aux. Column dropdown in the <a class="reference internal" href="getting_started.html#customizing-the-view-right-sidebar"><span class="std std-ref">Plot Controls</span></a>.</p></li>
+<li><p>Once created, you can visualize this new column using the Aux. Column dropdown in the <a class="reference internal" href="getting_started.html#getting-started-customizing"><span class="std std-ref">Plot Controls</span></a>.</p></li>
 </ol>
 <img alt="Applying a mathematical expression to a column" class="align-center" src="../images/editing_apply_expression.png" />
 </section>

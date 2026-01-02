@@ -537,6 +537,7 @@
 <span class="sd">    Engine for fitting Voigt profiles to spectral data.</span>
 
 <span class="sd">    This class orchestrates the optimization process. It handles:</span>
+
 <span class="sd">    1.  **Resolution Logic**: determining effective resolution (R or FWHM) from columns or metadata.</span>
 <span class="sd">    2.  **Dynamic Masking**: identifying relevant pixels for the fit to speed up computation.</span>
 <span class="sd">    3.  **Optimization**: utilizing ``scipy.optimize.least_squares`` to minimize residuals.</span>
@@ -1066,6 +1067,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        tuple</span>
 <span class="sd">            A tuple containing:</span>
+<span class="sd">            </span>
 <span class="sd">            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):</span>
 <span class="sd">               A new system list containing the optimized parameter values and errors.</span>
 <span class="sd">            2. **final_model_flux** (*np.ndarray*):</span>

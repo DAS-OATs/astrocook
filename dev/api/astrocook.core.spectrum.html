@@ -534,15 +534,11 @@ or None if the column does not exist.</p>
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.norm">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.norm" title="Link to this definition">#</a></dt>
 <dd><p>Returns the normalization vector (Continuum * Telluric).</p>
-<p>Logic:
-1. If cont exists:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>Returns cont * telluric (if telluric exists).</p></li>
-<li><p>Returns cont (otherwise).</p></li>
-</ul>
-</div></blockquote>
-<ol class="arabic simple" start="2">
+<p>Logic:</p>
+<ol class="arabic simple">
+<li><p>If cont exists:
+- Returns cont * telluric (if telluric exists).
+- Returns cont (otherwise).</p></li>
 <li><p>If cont is missing:
 - Returns 1.0 (if flux median is ~1, assuming pre-normalized).
 - Returns None (if flux is physical, signaling need for continuum fitting).</p></li>
@@ -620,15 +616,11 @@ SpectrumV1 object for saving.</p>
 <span class="sig-name descname"><span class="pre">sanitize_legacy_tellurics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/spectrum.html#SpectrumV2.sanitize_legacy_tellurics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics" title="Link to this definition">#</a></dt>
 <dd><p>Patches legacy spectra where ‘cont’ included tellurics and ‘cont_no_telluric’
 stored the intrinsic continuum.</p>
-<p>Logic:
-1. If ‘cont_no_telluric’ exists:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>Overwrite ‘cont’ with ‘cont_no_telluric’ (Intrinsic).</p></li>
-<li><p>Remove ‘cont_no_telluric’.</p></li>
-</ul>
-</div></blockquote>
-<ol class="arabic simple" start="2">
+<p>Logic:</p>
+<ol class="arabic simple">
+<li><p>If ‘cont_no_telluric’ exists:
+- Overwrite ‘cont’ with ‘cont_no_telluric’ (Intrinsic).
+- Remove ‘cont_no_telluric’.</p></li>
 <li><p>Returns a new SpectrumV2 instance (or self if no changes needed).</p></li>
 </ol>
 </dd></dl>

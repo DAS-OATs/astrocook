@@ -468,12 +468,10 @@
 <p>This class acts as a bridge between the high-level, object-oriented representation
 of absorption systems (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemListV2</span></code></a>) and the
 flat parameter arrays required by numerical optimizers.</p>
-<p>It handles:
-1.  <strong>Selective Fitting</strong>: Identifying which components are “active” (free to vary)</p>
-<blockquote>
-<div><p>and which are “frozen” based on user selection and grouping logic.</p>
-</div></blockquote>
-<ol class="arabic simple" start="2">
+<p>It handles:</p>
+<ol class="arabic simple">
+<li><p><strong>Selective Fitting</strong>: Identifying which components are “active” (free to vary)
+and which are “frozen” based on user selection and grouping logic.</p></li>
 <li><p><strong>Parameter Linking</strong>: Evaluating mathematical expressions to link parameters
 (e.g., tying the redshift of two components together).</p></li>
 <li><p><strong>Vectorization</strong>: Converting component objects to a flat vector <code class="docutils literal notranslate"><span class="pre">p</span></code> and back.</p></li>

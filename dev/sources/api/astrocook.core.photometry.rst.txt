@@ -1,7 +1,0 @@
-astrocook.core.photometry module
-================================
-
-.. automodule:: astrocook.core.photometry
-   :members:
-   :show-inheritance:
-   :undoc-members:
