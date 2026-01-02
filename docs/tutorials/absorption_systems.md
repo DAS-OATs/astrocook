@@ -8,7 +8,7 @@ For most science cases, you should start with one of the automated pipelines in 
 
 ### Ly-alpha Forest
 If you are analyzing a high-redshift quasar ($z > 2$):
-1.  Ensure your [Emission Redshift is set](../editing_data.md#1-setting-session-properties) correctly.
+1.  Ensure your [Emission Redshift is set](#editing-properties) correctly.
 2.  Go to **Absorbers > Auto-fit Ly-alpha Forest...**.
 3.  **Threshold:** The default score (`0.1`) is usually fine.
 4.  **Min b:** The minimum Doppler parameter (e.g., `10` km/s) helps filter out noise spikes or unphysically narrow lines (interlopers).

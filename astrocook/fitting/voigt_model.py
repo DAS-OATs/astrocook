@@ -18,6 +18,7 @@ class VoigtModelConstraintV2:
     flat parameter arrays required by numerical optimizers.
 
     It handles:
+    
     1.  **Selective Fitting**: Identifying which components are "active" (free to vary)
         and which are "frozen" based on user selection and grouping logic.
     2.  **Parameter Linking**: Evaluating mathematical expressions to link parameters

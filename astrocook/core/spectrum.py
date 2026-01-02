@@ -162,6 +162,7 @@ class SpectrumV2:
         Returns the normalization vector (Continuum * Telluric).
         
         Logic:
+        
         1. If cont exists: 
            - Returns cont * telluric (if telluric exists).
            - Returns cont (otherwise).
@@ -473,6 +474,7 @@ class SpectrumV2:
         stored the intrinsic continuum.
         
         Logic:
+        
         1. If 'cont_no_telluric' exists:
            - Overwrite 'cont' with 'cont_no_telluric' (Intrinsic).
            - Remove 'cont_no_telluric'.

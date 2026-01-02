@@ -14,6 +14,8 @@
 
 <span style="font-size:120%"><b>A thousand recipes to cook a spectrum</b></span>
 
+[![DOI](https://zenodo.org/badge/78840469.svg)](https://zenodo.org/badge/latestdoi/78840469)
+
 Developed by **Guido Cupani** at INAF–Osservatorio Astronomico di Trieste.
 
 **Many thanks** to (in alphabetical order): Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Stefano Alberto Russo, Andrea Trost.

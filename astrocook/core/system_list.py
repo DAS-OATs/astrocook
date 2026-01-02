@@ -801,6 +801,7 @@ class SystemListV2:
         Akaike Information Criterion (AIC).
 
         This method performs the following steps:
+        
         1.  **Baseline Fit:** Fits the seed component (and its connected group) to establish a baseline AIC.
         2.  **Residual Scan:** Calculates the residuals (Flux - Model) over the specified velocity window.
         3.  **Candidate Detection:** Identifies the strongest un-modeled absorption feature (negative residual).

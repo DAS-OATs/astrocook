@@ -214,8 +214,6 @@ class SessionV2:
     ----------
     name : str
         The display name of the session (e.g., filename without extension).
-    spec : astrocook.core.spectrum.SpectrumV2, optional
-        The main container for spectral data (flux, wavelength, error, etc.).
     systs : astrocook.core.system_list.SystemListV2, optional
         The container for identified absorption systems and Voigt profile components.
     edit : astrocook.recipes.edit.RecipeEditV2
@@ -267,8 +265,11 @@ class SessionV2:
 
     @property
     def spec(self) -> Optional[SpectrumV2]: 
-        """The current spectral data object."""
+        """
+        The main container for spectral data (flux, wavelength, error, etc.).
+        """
         return self._current_spectrum
+    
     @property
     def lines(self):
         return self._lines 

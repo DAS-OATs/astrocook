@@ -116,6 +116,7 @@ class VoigtFitterV2:
     Engine for fitting Voigt profiles to spectral data.
 
     This class orchestrates the optimization process. It handles:
+
     1.  **Resolution Logic**: determining effective resolution (R or FWHM) from columns or metadata.
     2.  **Dynamic Masking**: identifying relevant pixels for the fit to speed up computation.
     3.  **Optimization**: utilizing ``scipy.optimize.least_squares`` to minimize residuals.
@@ -640,6 +641,7 @@ class VoigtFitterV2:
         -------
         tuple
             A tuple containing:
+            
             1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):
                A new system list containing the optimized parameter values and errors.
             2. **final_model_flux** (*np.ndarray*):

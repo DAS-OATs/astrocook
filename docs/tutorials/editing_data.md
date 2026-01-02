@@ -2,6 +2,7 @@
 
 Spectra rarely come ready-to-use out of the box. You might need to update metadata, rescale flux values, isolate specific regions, or combine multiple exposures. This tutorial covers the **Edit** menu, which serves as the "Swiss Army knife" for these operations.
 
+(editing-properties)=
 ## 1. Setting Session Properties
 
 Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-$\alpha$ forest analysis) rely on the emission redshift ($z_\mathrm{em}$) to determine rest-frame wavelengths.
@@ -19,6 +20,7 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 :align: center
 ```
 
+(editing-arithmetic)=
 ## 2. Arithmetic on Columns
 
 Astrocook allows you to perform mathematical operations on your data columns (Flux `y`, Error `dy`, Wavelength `x`, etc.) using NumPy-style syntax.
@@ -38,7 +40,7 @@ You can also create new auxiliary columns. For example, to create a column repre
 
 1. **Target Column**: `snr` (A new name).
 2. **Expression:** `y / dy`.
-3. Once created, you can visualize this new column using the Aux. Column dropdown in the [Plot Controls](getting_started.md#customizing-the-view-right-sidebar).
+3. Once created, you can visualize this new column using the Aux. Column dropdown in the [Plot Controls](#getting-started-customizing).
 
 ```{image} ../_static/editing_apply_expression.png
 :alt: Applying a mathematical expression to a column

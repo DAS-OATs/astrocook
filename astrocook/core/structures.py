@@ -210,62 +210,47 @@ class SpectrumDataV2:
 class ComponentDataV2:
     """
     Immutable data structure for a single absorption component (Voigt profile).
-
-    Attributes
-    ----------
-    id : int
-        Internal integer ID (from V1 legacy logic).
-    z : float
-        Redshift of the component center.
-    dz : float, optional
-        Uncertainty on redshift.
-    logN : float
-        Logarithmic column density (cm^-2).
-    dlogN : float, optional
-        Uncertainty on logN.
-    b : float
-        Doppler broadening parameter (km/s).
-    db : float, optional
-        Uncertainty on b.
-    btur : float
-        Turbulent broadening contribution (km/s).
-    func : str
-        Profile function name (default: ``'voigt'``).
-    series : str
-        Atomic series name (e.g., ``'Ly_a'``, ``'CIV'``).
-    chi2 : float, optional
-        Reduced Chi-Squared of the fit group this component belongs to.
-    resol : float, optional
-        Resolution used for the fit.
-    uuid : str
-        A globally unique, stable identifier for V2 constraints and linking.
     """
     
     # ID is required
     id: int
+    """ Internal integer ID (from V1 legacy logic). """
 
     # Core Physical Parameters (z, logN, b)
-    z: float
+    z: float 
+    """ Redshift of the component center """
     dz: Optional[float] 
+    """ Uncertainty on redshift. """
     logN: float
+    """ Logarithmic column density (cm^-2). """
     dlogN: Optional[float]
+    """ Uncertainty on logN. """
     b: float
+    """ Doppler broadening parameter (km/s). """
     db: Optional[float]
+    """ Uncertainty on b. """
     
     # Turbulance Parameter (from V1)
     btur: float = 0.0
+    """ Turbulent broadening contribution (km/s). """
     dbtur: Optional[float] = None
-    
+    """ Uncertainty on btur. """
+
     # Type and identification
     func: str = 'voigt'
-    series: str = 'Ly_a'    
+    """ Profile function name (default: ``'voigt'``). """
+    series: str = 'Ly_a'
+    """ Atomic series name (e.g., ``'Ly_a'``, ``'CIV'``). """
 
     # Fit Metadata
-    chi2: Optional[float] = None # Reduced Chi-Squared of the fit group
+    chi2: Optional[float] = None
+    """ Reduced Chi-Squared of the fit group this component belongs to. """
     resol: Optional[float] = None # Resolution used for the fit
+    """ Resolution used for the fit. """
 
     # V2 IDENTIFIER: Stable, Global, Immutable
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """ A globally unique, stable identifier for V2 constraints and linking. """
 
 @dataclass(frozen=True)
 class ParameterConstraintV2:
@@ -274,29 +259,22 @@ class ParameterConstraintV2:
 
     Used by the fitting engine to determine if a parameter is free, fixed,
     or linked to another component.
-
-    Attributes
-    ----------
-    is_free : bool
-        If True, the parameter varies during minimization.
-    target_uuid : str, optional
-        If set, this parameter is linked to the component with this UUID.
-    expression : str, optional
-        A mathematical string expression for linking (e.g. ``"p['{uuid}'].z"``).
-    v1_target_id : int, optional
-        Legacy ID of the target component (for debugging/reconstruction only).
     """
     # True if the parameter should be varied during minimization.
     is_free: bool
+    """ If True, the parameter varies during minimization. """
     
     # If not None, indicates a link. Must use UUID of the target component.
     target_uuid: Optional[str] = None
+    """ If set, this parameter is linked to the component with this UUID. """
     
     # Stores the mathematical expression linking this parameter to the target UUID.
     expression: Optional[str] = None
+    """ A mathematical string expression for linking (e.g. ``"p['{uuid}'].z"``). """
     
     # The original V1 integer ID of the target (for debugging/reconstruction only)
     v1_target_id: Optional[int] = None
+    """ Legacy ID of the target component (for debugging/reconstruction only). """
 
 @dataclass(frozen=True)
 class SystemListDataV2:
@@ -305,39 +283,29 @@ class SystemListDataV2:
 
     This class replaces the mutable tables used in V1. It holds the list
     of components and the maps defining their relationships.
-
-    Attributes
-    ----------
-    components : list of ComponentDataV2
-        The list of absorption components.
-    v1_header_constraints : dict
-        Legacy constraints from V1 file headers.
-    parsed_constraints : dict
-        Map of (Component UUID, Parameter Name) -> ConstraintDataV2.
-    v2_constraints_map : dict
-        Nested map {UUID: {ParamName: Constraint}}.
-    v1_id_to_uuid_map : dict
-        Map of integer IDs to V2 UUIDs.
-    meta : dict
-        Metadata for the system list.
     """
     
     components: List[ComponentDataV2] = field(default_factory=list)
+    """ The list of absorption components. """
     v1_header_constraints: Dict[str, Any] = field(default_factory=dict)
+    """ Legacy constraints from V1 file headers. """
     
     # Stores a dictionary mapping (Component UUID, Parameter Name) -> ConstraintDataV2
     parsed_constraints: Dict[Tuple[str, str], ParameterConstraintV2] = field(default_factory=dict)
+    """ Map of (Component UUID, Parameter Name) -> ConstraintDataV2. """
 
     # V2-style constraints: {UUID: {ParamName: {...}}}
     v2_constraints_map: Dict[str, Dict[str, ParameterConstraintV2]] = field(default_factory=dict)
+    """ Nested map {UUID: {ParamName: Constraint}}. """
     
     # Add the missing field
     v1_id_to_uuid_map: Dict[int, str] = field(default_factory=dict)
-
+    """ Map of integer IDs to V2 UUIDs. """
 
     # Placeholder for complex V1 structures (mutable state reference, if needed)
     v1_models_t: Any = None 
     meta: Dict[str, Any] = field(default_factory=dict)
+    """ Metadata for the system list. """
 
 @dataclass
 class LogEntryV2:

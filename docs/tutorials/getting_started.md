@@ -29,6 +29,7 @@ The central plot is interactive. You can explore the details of your spectrum us
 Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!
 :::
 
+(getting-started-customizing)=
 ## 3. Customizing the View (Right Sidebar)
 
 Look to the right side of the window. This is the **Plot Controls** panel. Here you can tweak how the data is displayed without altering the data itself.
