@@ -6,7 +6,7 @@ Astrocook is available as a standalone app for macOS or as a Python package for 
 
 If you are on a Mac and want to use the GUI immediately without managing Python environments:
 
-1. **Download the App**: Go to our **[Latest Release Page](https://github.com/DAS-OATs/astrocook/releases/tag/v2.0.0-beta)** and look for `Astrocook.dmg`.
+1. **Download the App**: Go to our **[Latest Release Page](https://github.com/DAS-OATs/astrocook/releases/latest)** and look for `Astrocook.dmg`.
 2. **Install**: Open `Astrocook.dmg` and drag the app to your `Applications` folder.
 3. **Run**: Double-click **Astrocook** in your Applications.
 
