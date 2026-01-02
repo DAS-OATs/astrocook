@@ -1,7 +1,0 @@
-astrocook.settings module
-=========================
-
-.. automodule:: astrocook.settings
-   :members:
-   :show-inheritance:
-   :undoc-members:
