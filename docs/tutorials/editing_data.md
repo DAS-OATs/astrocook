@@ -110,6 +110,10 @@ Astrocook knows standard quasar regions. If your $z_\mathrm{em}$ is set:
 2.  **Region:** Choose a preset (e.g., `lya_forest`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`).
 3.  The software automatically calculates the observed bounds and creates new sessions for each region.
 
+:::{note}
+This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+:::
+
 ## 6. Combining Sessions (Stitch & Co-add)
 
 If you have multiple exposures of the same object, you can combine them directly from the Session List.

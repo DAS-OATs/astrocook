@@ -12,6 +12,10 @@ For most science cases, you should start with one of the automated pipelines in 
 * To use an alternative continuum (e.g., a power-law `cont_pl`), you must first copy it into the main `cont` column using **Edit > Apply Expression...** (`cont = cont_pl`).
 :::
 
+:::{note}
+This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+:::
+
 ### Ly-alpha Forest
 If you are analyzing a high-redshift quasar ($z > 2$):
 1.  Ensure your [Emission Redshift is set](#editing-properties) correctly.
@@ -30,17 +34,26 @@ For finding distinct metal systems (CIV, SiIV, MgII) redward of the Ly$\alpha$ e
 
 This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios.
 
+:::{note}
+This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+:::
+
 ### General Detection
 For a more generic search (or if you are looking for specific ions):
 1.  Go to **Absorbers > Identify Absorption Lines...**.
 2.  This generates a list of candidate regions but *does not* fit them immediately.
 3.  You can then visualize these regions by selecting `abs_ids` in the **Aux. Column** dropdown of the Plot Controls.
 
+:::{note}
+This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+:::
+
 ```{image} ../_static/absorbers_auto_pipeline.png
 :alt: The Auto-fit Ly-alpha Forest dialog
 :align: center
 ```
 
+(system-inspector)=
 ## 2. The System Inspector
 
 Once you have systems (either from a pipeline or added manually), the **System Inspector** is your cockpit for detailed analysis.
@@ -72,6 +85,10 @@ A zoomed-in view of the selected system in velocity space.
 
 The System Inspector allows you to modify the model dynamically.
 
+:::{note}
+Just like in the main window, if the **Zoom** or **Pan** tools are active in the plot toolbar, you must hold `Ctrl` (or `Cmd`) while right-clicking to access the context menu.
+:::
+
 ### Adding Components
 
 If the auto-finder missed a line:
@@ -81,7 +98,7 @@ If the auto-finder missed a line:
 3. A new component is added and fitted immediately.
 
 :::{note}
-Just like in the main window, if the **Zoom** or **Pan** tools are active in the plot toolbar, you must hold `Ctrl` (or `Cmd`) while right-clicking to access the context menu.
+This recipe requires **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
 :::
 
 :::{tip}

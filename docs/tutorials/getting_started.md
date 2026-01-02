@@ -113,6 +113,15 @@ This dialog allows you to:
 * **Run All:** Re-run the entire analysis pipeline from the original raw data.
 * **Save Script:** Export your workflow as a Python-compatible JSON script for reproducibility.
 
+### View Menu Tools
+
+The **View** menu also provides access to specialized analysis windows:
+
+* **View Session Log**: Opens the Log Scripter (see above).
+* **View System Inspector**: Opens the advanced interface for analyzing absorption lines. *See the [Absorption Systems](#system-inspector) tutorial for a full guide.*
+* **View Identifications**: Opens a summary table of all candidate lines found by the `identify_lines` recipe.
+* **View Script Console**: Opens a Python console for running custom scripts on the current session data.
+
 ### Saving and Closing
 
 When you have finished your analysis (or if you want to save your progress):
