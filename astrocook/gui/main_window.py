@@ -1597,6 +1597,26 @@ class MainWindowV2(QMainWindow):
             # --- STARTING ---
             if not self.active_history: return
 
+            # Check if continuum exists
+            spec = self.active_history.current_state.spec
+            # Check if .cont is None or (if it's a Column) has no values
+            has_cont = spec.cont is not None
+
+            if not has_cont:
+                ret = self._show_custom_message(
+                    title="Continuum Missing",
+                    header="No continuum found to edit.",
+                    text="You need to estimate a continuum before you can edit it manually.\nDo you want to run 'Auto-estimate Continuum' now?",
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                    default_btn=QMessageBox.StandardButton.Yes
+                )
+                
+                if ret == QMessageBox.StandardButton.Yes:
+                    self._launch_recipe_dialog("continuum", "estimate_auto")
+                
+                # Stop here regardless of choice (don't start editor on empty data)
+                return
+
             slider_pos = self.stride_slider.value()
             initial_stride = self._get_log_stride(slider_pos)
             self.plot_viewer.start_continuum_edit(initial_stride=initial_stride)
