@@ -2708,6 +2708,10 @@ class MainWindowV2(QMainWindow):
                     elif new_session_state.spec.has_aux_column('abs_mask'):
                         auto_show_col = 'abs_mask'
 
+                elif recipe_name == 'fit_powerlaw':
+                    if new_session_state.spec.has_aux_column('cont_pl'):
+                        auto_show_col = 'cont_pl'
+
                 should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
 
                 if recipe_name == 'set_properties':
