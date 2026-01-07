@@ -31,20 +31,20 @@ If you need more control, you can run the process in two steps:
 1. **Continuum > Find Absorbed Regions...**: Creates a mask (`abs_mask`) separating line/continuum.
 2. **Continuum > Fit Continuum to Mask...**: Interpolates the continuum only over the unmasked regions. This allows you to manually edit the `abs_mask` (via [Apply Expression](#editing-arithmetic)) between steps if the automatic masking missed something.
 
-
+(continuum-manual)=
 ## 2. Interactive Manual Editing
 
 Automatic fits sometimes fail near complex emission lines or spectral edges. You can correct these manually using the **Right Sidebar**.
-
-:::{important}
-Always **run an automatic estimate first** (Step 1). While the manual editor can start from scratch, it is designed to *refine* an existing continuum curve. Starting from raw flux usually produces poor results.
-:::
 
 ### Starting the Editor
 
 1. Look at the **Edit Continuum** section in the right sidebar.
 2. Click the **Start** button.
 3. **Knots** (black dots) will appear along the current continuum.
+
+   :::{note}
+   If no continuum exists yet, Astrocook will prompt you to run the **Auto-estimate** routine first. You cannot edit the raw flux directly.
+   :::
 
 ### Modifying Knots
 
@@ -54,14 +54,16 @@ Always **run an automatic estimate first** (Step 1). While the manual editor can
 
 - **Remove**: Right-click on an existing knot to delete it.
 
-### Controlling Stiffness (The Slider)
+### Controlling Stiffness (Slider & Spacing)
 
-The slider next to the Start button controls the **knot density** (spacing).
+You can adjust the **knot density** using the slider or the **Spacing** text box.
 
-- **Slide Left**: Increases density (knots are closer). This allows the continuum to follow sharper variations (e.g., on top of emission lines).
-- **Slide Right**: Decreases density. This makes the continuum smoother and stiffer.
+- **Slider**: Drag left to increase density (closer knots) or right to decrease it (smoother curve).
+- **Spacing Box**: Type a precise velocity spacing (in km/s) and press Enter.
 
-**Warning:** Changing the slider re-samples the knots. If you have moved specific knots, adjusting the slider might reset their positions to the grid.
+:::{important}
+Changing the spacing may affect the overall shape of the continuum. If you want to discard your manual moves and revert to the original continuum shape, click the **Reset** button (next to *Save*). This restores the knots to their default distribution based on the saved continuum.
+:::
 
 ```{image} ../_static/continuum_manual_edit.png
 :alt: Applying a mathematical expression to a column
@@ -82,11 +84,10 @@ For quasars, it is often useful to fit a power-law continuum ($F_\lambda\propto\
 :::{note}
 This operation assumes your spectrum is **flux calibrated** (the overall shape is physically meaningful). It also requires **Emission Redshift ($z_{em}$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
 :::
-:::
 
 1. Go to **Continuum > Fit Power-Law...**.
 2. **Regions:** Enter a list of comma-separated wavelength ranges (in **rest-frame** nm) known to be free of emission lines.
    - Default: `128.0-129.0, 131.5-132.5, 134.5-136.0` (standard windows outside the Lyman forest).
 3. Click **Run**.
 
-This creates a new column `cont_pl` which you can view or use as a baseline for further fitting.
+This creates a new column `cont_pl` which is **automatically displayed** on the plot (via the *Aux. Column* selector). You can use it as a baseline for further fitting.

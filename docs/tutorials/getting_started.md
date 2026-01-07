@@ -83,6 +83,9 @@ This is a handy tool for quick visual inspection.
 If the **Zoom** or **Pan** tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold `Ctrl` (or `Cmd` on Mac) while right-clicking to access the context menu.
 :::
 
+### The Continuum Editor
+
+Located at the bottom of the sidebar, this panel allows you to interactively refine the continuum shape using spline knots. See the [Interactive Manual Editing](#continuum-manual) in the Continuum Fitting tutorial for a detailed guide on using the slider, spacing box, and editing tools.
 
 ## 4. Session Management (Left Sidebar)
 
