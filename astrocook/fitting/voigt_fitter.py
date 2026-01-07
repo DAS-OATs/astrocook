@@ -558,11 +558,15 @@ class VoigtFitterV2:
             logN_guess = np.clip(np.log10(N_guess), 12.0, 15.0)
             
             idx_z = free_idx_map[base_idx]
-            idx_logN = free_idx_map[base_idx + 1]
-            idx_b = free_idx_map[base_idx + 2]
             p_refined[idx_z] = new_z
-            p_refined[idx_logN] = logN_guess
-            p_refined[idx_b] = b_guess
+            
+            if is_free_mask[base_idx + 1]:
+                idx_logN = free_idx_map[base_idx + 1]
+                p_refined[idx_logN] = logN_guess
+                
+            if is_free_mask[base_idx + 2]:
+                idx_b = free_idx_map[base_idx + 2]
+                p_refined[idx_b] = b_guess
             logging.info(f"  -> Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
         return p_refined
 
@@ -842,6 +846,10 @@ class VoigtFitterV2:
         
         bounds = (lower_bounds, upper_bounds)
         p0 = self._smart_guess(p0, z_window_kms)
+
+        # Clamp p0 to bounds to prevent "Initial guess outside bounds" error
+        # Because smart_guess might have proposed values that violate strict constraints.
+        p0 = np.clip(p0, lower_bounds, upper_bounds)
 
         # Fit
         res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
