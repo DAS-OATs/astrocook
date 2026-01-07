@@ -2328,6 +2328,43 @@ class SpectrumPlotWidget(QWidget):
         y_u = y_s[unique_indices]
         
         return x_u, y_u
+    
+    def reset_continuum_to_original(self, stride_kms):
+        """
+        Discards all manual edits and re-generates knots from the 
+        underlying session data (spec.cont or spec.y).
+        """
+        if not self._edit_mode_active or not self.main_window.active_history: 
+            return
+
+        logging.info(f"Resetting continuum to original data with stride {stride_kms:.0f} km/s.")
+
+        # 1. Clear any 'dragging' backups
+        self._stride_backup_x = None
+        self._stride_backup_y = None
+
+        # 2. Retrieve the SOURCE data (Original State)
+        # This mirrors the logic in 'start_continuum_edit'
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        if spec.cont is not None:
+            y_source = spec.cont.value
+        else:
+            y_source = spec.y.value
+            
+        # 3. Generate fresh indices based on the requested stride
+        indices = self._generate_velocity_knots(x_full, float(stride_kms))
+        
+        # 4. Overwrite current knots
+        self._knots_x = x_full[indices]
+        self._knots_y = y_source[indices]
+        
+        # 5. Update Visuals
+        self.knot_artist.set_data(self._knots_x, self._knots_y)
+        self.update_spline_preview()
+        
+        # Force redraw
+        self.canvas.draw_idle()
 
 class AstrocookToolbar(NavigationToolbar):
     """

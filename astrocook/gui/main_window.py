@@ -498,33 +498,56 @@ class MainWindowV2(QMainWindow):
         header_continuum.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
         unified_grid.addWidget(header_continuum, 9, 0, 1, 2)
 
-        self.edit_cont_button = QPushButton("Start")
-        self.edit_cont_button.setMaximumWidth(100) # Keep it compact
-        self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
-        unified_grid.addWidget(self.edit_cont_button, 10, 0, 1, 1)
-
-        # 5. The Logarithmic Slider
+        # ROW 10: Slider (Spanning both columns for better control)
         self.stride_slider = QSlider(Qt.Horizontal)
-        self.stride_slider.setMinimum(0)   # Linear representation
-        self.stride_slider.setMaximum(100) # 0 = 10 stride, 100 = 2000 stride
-        self.stride_slider.setEnabled(False) # Disabled until 'Start'
+        self.stride_slider.setMinimum(0)
+        self.stride_slider.setMaximum(100)
+        self.stride_slider.setEnabled(False)
         self.stride_slider.valueChanged.connect(self._on_stride_change)
-        # These detect the start/end of the drag gesture
         self.stride_slider.sliderPressed.connect(self._on_stride_slider_pressed)
         self.stride_slider.sliderReleased.connect(self._on_stride_slider_released)
-        self.stride_slider.setToolTip(
-            "Adjust the density of control points.\n"
-            "Warning: Reducing density may permanently smooth out details if you edit knots afterwards."
-        )
-
-        # Set initial default (e.g., stride 500)
+        self.stride_slider.setToolTip("Adjust density. Drag to smooth/roughen.")
         self._set_slider_from_stride(500)
+        
+        unified_grid.addWidget(self.stride_slider, 10, 0, 1, 2) # Span 2 columns
 
-        unified_grid.addWidget(self.stride_slider, 10, 1, 1, 1)
+        # ROW 11: Spacing Label + Entry
+        self.lbl_spacing = QLabel("Spacing:")
+        self.lbl_spacing.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        unified_grid.addWidget(self.lbl_spacing, 11, 0, 1, 1)
 
-        # 4. Slider Label (Dynamic)
-        self.stride_label = QLabel("")
-        unified_grid.addWidget(self.stride_label, 11, 1, 1, 1)
+        self.stride_entry = QLineEdit()
+        stride_validator = QDoubleValidator(0.0, 20000.0, 0)
+        stride_validator.setLocale(QLocale.C)
+        stride_validator.setNotation(QDoubleValidator.StandardNotation)
+        self.stride_entry.setValidator(stride_validator)
+        self.stride_entry.setAlignment(Qt.AlignLeft)
+        self.stride_entry.setEnabled(False)
+        self.stride_entry.setToolTip("Enter spacing in km/s")
+        self.stride_entry.editingFinished.connect(self._on_stride_text_changed)
+        
+        unified_grid.addWidget(self.stride_entry, 11, 1, 1, 1)
+
+        # ROW 12: Buttons (Start/Save and Reset) inside a sub-layout for equal sizing
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(10) # Gap between buttons
+        button_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.edit_cont_button = QPushButton("Start")
+        self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
+        # SizePolicy: Expanding allows them to share available space equally
+        self.edit_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.edit_cont_button)
+
+        self.reset_cont_button = QPushButton("Reset")
+        self.reset_cont_button.setEnabled(False)
+        self.reset_cont_button.setToolTip("Discard changes and reset to default spacing.")
+        self.reset_cont_button.clicked.connect(self._on_reset_continuum_clicked)
+        self.reset_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.reset_cont_button)
+
+        # Add the sub-layout to the main grid, spanning both columns
+        unified_grid.addLayout(button_layout, 12, 0, 1, 2)
 
         # Add the group to your main sidebar layout
         sidebar_layout.addLayout(unified_grid)
@@ -1619,14 +1642,17 @@ class MainWindowV2(QMainWindow):
 
             slider_pos = self.stride_slider.value()
             initial_stride = self._get_log_stride(slider_pos)
+            self._default_continuum_stride = initial_stride
             self.plot_viewer.start_continuum_edit(initial_stride=initial_stride)
 
             self.edit_cont_button.setText("Save")
             self.stride_slider.setEnabled(True)
-            
+            self.stride_entry.setEnabled(True)
+            self.reset_cont_button.setEnabled(True)
+
             # Update label with units
             current_stride = self._get_log_stride(self.stride_slider.value())
-            self.stride_label.setText(f"Spacing: {current_stride:.0f} km/s")
+            self.stride_entry.setText(f"{current_stride:.0f}")
             
         else:
             # --- STOPPING & SAVING ---
@@ -1638,7 +1664,13 @@ class MainWindowV2(QMainWindow):
             self.edit_cont_button.setText("Start")
             self.edit_cont_button.setStyleSheet("") 
             self.stride_slider.setEnabled(False)
-            self.stride_label.setText("") 
+            self.stride_entry.setEnabled(False)
+            self.reset_cont_button.setEnabled(False)
+            self.stride_entry.clear()
+
+            # Clear the saved default
+            if hasattr(self, '_default_continuum_stride'):
+                del self._default_continuum_stride
 
             # 2. PREPARE RECIPE PARAMETERS
             if knots_x is not None and knots_y is not None and self.active_history:
@@ -1697,12 +1729,42 @@ class MainWindowV2(QMainWindow):
         slider_pos = self.stride_slider.value()
         stride = self._get_log_stride(slider_pos)
 
-        # Update the text label live
-        self.stride_label.setText(f"Spacing: {stride:.0f} km/s")
+        # Update the LineEdit text
+        # Check focus to avoid overwriting user while they are typing (though slider shouldn't move if they are typing)
+        if not self.stride_entry.hasFocus():
+            self.stride_entry.setText(f"{stride:.0f}")
 
         # Update the plot (using your previously fixed method)
         if hasattr(self.plot_viewer, '_edit_mode_active') and self.plot_viewer._edit_mode_active:
             self.plot_viewer.update_continuum_stride(stride)
+
+    def _on_stride_text_changed(self):
+        """Updates slider and plot when user edits the spacing text manually."""
+        try:
+            val = float(self.stride_entry.text())
+        except ValueError:
+            return
+
+        # 1. Clamp value
+        val = max(100.0, min(val, 20000.0))
+        
+        # 2. Update Plot DIRECTLY (High Precision)
+        # We do this manually because the slider (0-100) is too coarse 
+        # to represent specific km/s values accurately.
+        if hasattr(self, 'plot_viewer') and self.plot_viewer._edit_mode_active:
+             self.plot_viewer.update_continuum_stride(val)
+
+        # 3. Sync Slider (Visual Only)
+        # We block signals so the slider doesn't fire back and 
+        # round your precise '1250' down to '1200' via the log conversion.
+        self.stride_slider.blockSignals(True)
+        self._set_slider_from_stride(val)
+        self.stride_slider.blockSignals(False)
+
+        # 4. Update text formatting and drop focus
+        # (Dropping focus is important so the slider works again immediately after)
+        self.stride_entry.setText(f"{val:.0f}")
+        self.stride_entry.clearFocus()
     
     def _on_stride_slider_pressed(self):
         """Lock the current knot shape before resampling."""
@@ -1713,6 +1775,30 @@ class MainWindowV2(QMainWindow):
         """Release the lock."""
         if hasattr(self, 'plot_viewer'):
             self.plot_viewer.end_stride_interaction()
+
+    def _on_reset_continuum_clicked(self):
+        """Resets spacing to default and reloads knots from the original data."""
+        if not hasattr(self, 'plot_viewer') or not self.plot_viewer._edit_mode_active:
+            return
+
+        # 1. Retrieve the default stride
+        default_stride = getattr(self, '_default_continuum_stride', 500.0)
+        
+        # 2. Block signals to prevent intermediate updates (the "flicker")
+        self.stride_slider.blockSignals(True)
+        self.stride_entry.blockSignals(True)
+        
+        try:
+            # 3. Reset UI controls without triggering their slots
+            self.stride_entry.setText(f"{default_stride:.0f}")
+            self._set_slider_from_stride(default_stride)
+        finally:
+            # 4. Always unblock signals
+            self.stride_slider.blockSignals(False)
+            self.stride_entry.blockSignals(False)
+        
+        # 5. Perform the single, authoritative reset update
+        self.plot_viewer.reset_continuum_to_original(default_stride)
 
     def _get_log_stride(self, slider_value):
         """
