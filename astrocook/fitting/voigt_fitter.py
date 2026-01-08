@@ -129,11 +129,12 @@ class VoigtFitterV2:
     system_list : SystemListV2
         The list of absorption components to model.
     """
-    def __init__(self, spectrum: SpectrumV2, system_list: SystemListV2):
+    def __init__(self, spectrum: SpectrumV2, system_list: SystemListV2, check_stop=None):
         self._spectrum = spectrum
         self._system_list = system_list
         self._constraints = system_list.constraint_model
-        
+        self._check_stop = check_stop
+
         # 1. Prepare Data Arrays
         # Convert to Angstroms for internal Voigt calc
         self._x_ang = self._spectrum.x.to(au.Angstrom).value
@@ -426,6 +427,10 @@ class VoigtFitterV2:
         return final_model
 
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
+        # Check for stop request
+        if self._check_stop and self._check_stop():
+            raise RuntimeError("Optimization stopped by user.")
+        
         model = self._compute_model(p_free)
         resid = (self._y_norm_calc - model) / self._dy_norm_calc
         
@@ -567,7 +572,7 @@ class VoigtFitterV2:
             if is_free_mask[base_idx + 2]:
                 idx_b = free_idx_map[base_idx + 2]
                 p_refined[idx_b] = b_guess
-            logging.info(f"  -> Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
+            logging.info(f"Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
         return p_refined
 
     def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray, 

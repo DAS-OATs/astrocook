@@ -1050,15 +1050,25 @@ class RecipeAbsorbersV2:
 
             current_session = self._session
 
-            if current_session.spec.norm is None:
-                logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
-                from astrocook.recipes.continuum import RecipeContinuumV2
-                cont_rec = RecipeContinuumV2(current_session)
-                current_session = cont_rec.estimate_auto()
+            # Define the callback using the recipe's stop check
+            def check_stop(): return self._is_stop_requested()
+
+            try:
+                if current_session.spec.norm is None:
+                    logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
+                    from astrocook.recipes.continuum import RecipeContinuumV2
+                    cont_rec = RecipeContinuumV2(current_session)
+                    current_session = cont_rec.estimate_auto()
+
+                with current_session.systs.fitting_context([uuid], group_depth=depth_i):
+                    fitter = VoigtFitterV2(current_session.spec, current_session.systs, check_stop=check_stop)
+                    new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
             
-            with current_session.systs.fitting_context([uuid], group_depth=depth_i):
-                fitter = VoigtFitterV2(current_session.spec, current_session.systs)
-                new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
+            except RuntimeError as e:
+                if "stopped" in str(e):
+                    logging.info("Fit stopped by user. Reverting to pre-fit state.")
+                    return self._session # Return the session as it was before fitting started
+                raise e # Re-raise if it's a real error
             
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)

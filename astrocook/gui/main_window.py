@@ -2723,11 +2723,16 @@ class MainWindowV2(QMainWindow):
             self.progress_dialog = None
         
         # 2. Decide: Simple Dialog vs. Detailed Dialog
-        long_running_recipes = {'doublets_auto', 'lya_auto', 'forest_auto', 'refit_all', 'metals_auto'}
+        long_running_recipes = {'doublets_auto', 'lya_auto', 'forest_auto', 'refit_all', 'metals_auto', 'add_component', 'fit_component'}
         
         if recipe_name in long_running_recipes:
             # A. Create Detailed Dialog
             self.progress_dialog = RecipeProgressDialog(f"{recipe_name}", self)
+
+            if recipe_name in {'add_component', 'fit_component'}:
+                self.progress_dialog.progress_bar.setRange(0, 0) # Indeterminate mode
+                self.progress_dialog.progress_bar.setTextVisible(False) # Hide "%" text
+                
             self.progress_dialog.stop_requested.connect(self._on_stop_recipe)
             self.progress_dialog.show()
 
