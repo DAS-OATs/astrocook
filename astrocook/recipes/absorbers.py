@@ -220,7 +220,18 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."}
         ],
         "url": "absorbers_cb.html#refit_all"
-    }
+    },
+    "clean_negligible": {
+        "brief": "Remove unphysical/negligible components.",
+        "details": "Removes components that are too weak, too broad, or unphysically narrow.",
+        "params": [
+            {"name": "min_logN", "type": float, "default": 11.5, "doc": "Minimum column density to keep."},
+            {"name": "max_b", "type": float, "default": 80.0, "doc": "Maximum Doppler parameter (km/s)."},
+            {"name": "min_b", "type": float, "default": 3.0, "doc": "Minimum Doppler parameter (km/s)."},
+            {"name": "combined_check", "type": bool, "default": True, "doc": "If True, only removes broad lines if they are ALSO weak (b > max_b AND logN < 13.0)."}
+        ],
+        "url": "absorbers_cb.html#clean_negligible"
+    },
 }
 
 class RecipeAbsorbersV2:
@@ -1567,3 +1578,85 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"refit_all failed: {e}", exc_info=True)
             return 0
+        
+    def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
+                       min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
+        """
+        Clean negligible components.
+
+        Removes unphysical or negligible components from the system list. This is useful 
+        for cleaning up results after automated fitting procedures, which may produce 
+        artifacts such as extremely broad, shallow lines (ghosts) or narrow noise spikes.
+
+        The cleaning criteria are:
+        1. **Narrow Spikes**: Components with ``b < min_b``.
+        2. **Weak Lines**: Components with ``logN < min_logN``.
+        3. **Broad/Ghost Lines**: Components with ``b > max_b``.
+           - If ``combined_check`` is ``True``, broad lines are only removed if they 
+             are *also* weak (``logN < 13.0``). This protects strong, broad features 
+             like DLA wings or OVI absorbers.
+
+        Parameters
+        ----------
+        min_logN : str, optional
+            Minimum column density (log cm\ :sup:`-2`) to keep. Defaults to ``"11.5"``.
+        max_b : str, optional
+            Maximum Doppler parameter (km/s). Components broader than this may be removed. 
+            Defaults to ``"80.0"``.
+        min_b : str, optional
+            Minimum Doppler parameter (km/s). Components narrower than this are always removed. 
+            Defaults to ``"3.0"``.
+        combined_check : str, optional
+            If ``"True"``, broad components (``b > max_b``) are only removed if they are 
+            also weak (``logN < 13.0``). If ``"False"``, all broad components are removed. 
+            Defaults to ``"True"``.
+
+        Returns
+        -------
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the flagged components removed.
+        """
+        try:
+            lim_N = float(min_logN)
+            lim_b_max = float(max_b)
+            lim_b_min = float(min_b)
+            use_combined = (combined_check.lower() == "true")
+        except ValueError:
+            logging.error("Invalid parameters for clean_negligible."); return 0
+
+        if not self._session.systs: return 0
+        
+        to_remove = []
+        for c in self._session.systs.components:
+            # 1. Unphysically Narrow (Noise spikes) -> Always Remove
+            if c.b < lim_b_min:
+                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too narrow (b={c.b:.1f})")
+                to_remove.append(c.uuid)
+                continue
+
+            # 2. Too Weak (Negligible)
+            if c.logN < lim_N:
+                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too weak (logN={c.logN:.2f})")
+                to_remove.append(c.uuid)
+                continue
+
+            # 3. Too Broad (Continuum drifts / Ghosts)
+            if c.b > lim_b_max:
+                if use_combined:
+                    # Only remove if ALSO weak (e.g. logN < 13.0)
+                    # This protects strong, broad features (like DLA wings or broad OVI)
+                    if c.logN < 13.0: 
+                        logging.info(f"Flagged {c.series} (z={c.z:.4f}): Broad & Weak (b={c.b:.1f}, logN={c.logN:.2f})")
+                        to_remove.append(c.uuid)
+                else:
+                    # Unconditional removal
+                    logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too broad (b={c.b:.1f})")
+                    to_remove.append(c.uuid)
+
+        if to_remove:
+            logging.info(f"Removing {len(to_remove)} outlier components...")
+            # Use existing delete method which handles model updates
+            return self.delete_component(uuids=to_remove)
+        else:
+            logging.info("No outliers found.")
+            return self._session

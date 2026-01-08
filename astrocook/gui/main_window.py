@@ -880,6 +880,11 @@ class MainWindowV2(QMainWindow):
         absorbers_menu.addAction(refit_all_action)
         self.refit_all_action = refit_all_action; self.refit_all_action.setEnabled(False)
 
+        clean_negligible_action = QAction("&Clean Negligible Components...", self)
+        clean_negligible_action.setToolTip("Removes components with negligible column densities or broadening.")
+        clean_negligible_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "clean_negligible"))
+        absorbers_menu.addAction(clean_negligible_action)
+        self.clean_negligible_action = clean_negligible_action; self.clean_negligible_action.setEnabled(False)
         self._update_undo_redo_actions()
 
         # --- HELP MENU ACTIONS ---
@@ -2732,7 +2737,7 @@ class MainWindowV2(QMainWindow):
             if recipe_name in {'add_component', 'fit_component'}:
                 self.progress_dialog.progress_bar.setRange(0, 0) # Indeterminate mode
                 self.progress_dialog.progress_bar.setTextVisible(False) # Hide "%" text
-                
+
             self.progress_dialog.stop_requested.connect(self._on_stop_recipe)
             self.progress_dialog.show()
 
@@ -3428,6 +3433,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'metals_auto_action'): self.metals_auto_action.setEnabled(enable_recipes)
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
+        if hasattr(self, 'clean_negligible_action'): self.clean_negligible_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

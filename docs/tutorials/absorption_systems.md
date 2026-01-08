@@ -142,3 +142,13 @@ After manual edits, you often need to re-optimize the fit:
 :alt: Linking parameters via the context menu
 :align: center
 ```
+
+### Cleaning Results
+After running automated pipelines or performing manual fits, your model might contain artifacts such as noise spikes fitted as narrow lines, or continuum undulations fitted as broad, shallow features ("ghosts").
+
+Astrocook provides a dedicated tool to filter these out:
+
+1.  Go to **Absorbers > Clean Negligible Components...**.
+2.  **Min logN:** Components weaker than this threshold (default `11.5`) are removed.
+3.  **Min/Max b:** Components narrower than `min_b` (default `3.0` km/s) or broader than `max_b` (default `80.0` km/s) are flagged.
+4.  **Combined Check:** By default (`True`), broad lines are only removed if they are *also* very weak (`logN < 13.0`). This protects genuine broad features like DLA wings or OVI absorbers from being deleted.
