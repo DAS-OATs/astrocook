@@ -1,12 +1,13 @@
-import logging
+import html
 import json
+import logging
 from PySide6.QtWidgets import (
     QDialog, QMessageBox, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QDialogButtonBox, 
     QListWidgetItem, QFileDialog, QMenu
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QKeySequence, QTextCursor
-from typing import TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Union, Optional, Tuple
 
 # --- V2 Imports ---
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
@@ -32,6 +33,20 @@ ALL_SCHEMAS = {
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
 
+class ClickableTextEdit(QTextEdit):
+    linkActivated = Signal(str)
+
+    def mouseReleaseEvent(self, event):
+        # Use cursorForPosition which is more reliable than anchorAt in editable mode
+        pos = event.position().toPoint()
+        cursor = self.cursorForPosition(pos)
+        fmt = cursor.charFormat()
+        
+        if fmt.isAnchor() and fmt.anchorHref():
+            self.linkActivated.emit(fmt.anchorHref())
+            return # Consume event
+            
+        super().mouseReleaseEvent(event)
 
 class LogScripterDialog(QDialog):
     """
@@ -45,6 +60,8 @@ class LogScripterDialog(QDialog):
         
         self.log_object = log_object # Save the log manager
         self.recipe_map = recipe_map
+
+        self._hidden_data = {}
 
         self.layout = QVBoxLayout(self)
         
@@ -87,11 +104,14 @@ class LogScripterDialog(QDialog):
         self.layout.addLayout(button_layout)
 
         # --- 2. Scripter Text Edit ---
-        self.scripter_edit = QTextEdit()
-        self.scripter_edit.setReadOnly(False) # Make it editable
-        #self.scripter_edit.setFontFamily("Monospace")
-        # Connect textChanged to update the button state
+        # Use custom class and signal
+        self.scripter_edit = ClickableTextEdit() # Used to be QTextEdit()
+        self.scripter_edit.setReadOnly(False)
+        
+        # Connect custom signal (returns string URL directly)
+        self.scripter_edit.linkActivated.connect(self._on_anchor_clicked)
         self.scripter_edit.textChanged.connect(self._update_button_state)
+
         self.layout.addWidget(self.scripter_edit)
 
         # --- 3. Close Button ---
@@ -166,30 +186,122 @@ class LogScripterDialog(QDialog):
         
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
 
-    def _populate_v2_script(self):
-        """Populates the scripter from a HistoryLogV2 object."""
+    def _on_anchor_clicked(self, key: str): # [FIX] Type is str, not QUrl
+        """Replaces the clicked link with the full text."""
+        if key in self._hidden_data:
+            full_text = self._hidden_data[key]
+            doc = self.scripter_edit.document()
+            
+            # Simple cursor strategy: The cursor is already placed by the click.
+            # We just insert the text. 
+            # Note: Deleting the anchor text programmatically is tricky without range.
+            # A robust way is to select the word under cursor if it matches our anchor format.
+            
+            cursor = self.scripter_edit.textCursor()
+            
+            # Heuristic: Select the previous N characters (length of the placeholder)
+            # or simply insert the expanded text.
+            # Better: Toggle behavior.
+            
+            # 1. Insert the Full Text
+            cursor.insertText(full_text)
+            
+            # 2. (Optional) Try to delete the bracketed placeholder if possible.
+            # Given the complexity of finding the exact range of the clicked anchor
+            # in a plain text edit, we accept that the user might need to delete 
+            # the anchor text manually if it lingers, or we just append.
+            # But the ClickableTextEdit usually consumes the click event, 
+            # so the cursor might be at the end of the anchor.
+            
+            # Let's try to remove the anchor text (e.g. [...long value...])
+            # We can search backwards for "[..." and delete.
+            # This is "good enough" for a helper tool.
+
+    def _get_val_repr(self, v) -> Tuple[str, bool]:
+        """
+        Robustly format a value for the script.
+        Returns: (string_representation, is_expandable)
+        """
+        val_repr = ""
         
+        # A. Handle Strings (potential raw code or list-strings)
+        if isinstance(v, str):
+            v_stripped = v.strip()
+            # Check if it looks like a list/array string (e.g. "[1, 2, 3]")
+            # We assume if it starts/ends with brackets, it's meant to be code, not a string literal.
+            if v_stripped.startswith('[') and v_stripped.endswith(']'):
+                val_repr = v_stripped # Raw code, no quotes
+            elif v_stripped.startswith('np.array'):
+                val_repr = v_stripped # Raw code
+            else:
+                val_repr = f"'{v}'" # Normal string, add quotes
+
+        # B. Handle Lists/Tuples/Arrays
+        else:
+            # repr() gives valid python code for lists
+            val_repr = repr(v)
+        
+        # C. Cleanups
+        # Remove numpy types that break simple eval (e.g. np.float64(1.2) -> 1.2)
+        val_repr = val_repr.replace("np.float64(", "").replace(")", "")
+        val_repr = val_repr.replace("np.int64(", "").replace(")", "")
+        
+        # D. Check if expandable
+        # We only collapse if it's long AND looks like a structure (has brackets)
+        is_expandable = len(val_repr) > 150 and ('[' in val_repr)
+        
+        return val_repr, is_expandable
+
+    def _populate_v2_script(self):
+        """Populates the scripter using HTML to collapse long lists."""
         entries = self.log_object.entries
         current_idx = self.log_object.current_index
         
-        if not entries:
-            #self.scripter_edit.setPlainText("# Log is empty.")
-            return
+        if not entries: return
 
-        script_lines = []
+        html_lines = []
+        hidden_counter = 0
+        font_family = self.scripter_edit.font().family()
+        base_style = f"font-family: {font_family}; white-space: pre-wrap;"
+        
+        html_lines.append(f"<div style='{base_style}'>")
+
         for i, entry in enumerate(entries):
-            # Format as "recipe_name(param1=value1, param2='value2')"
-            params_str = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" 
-                                   for k, v in entry.params.items())
-            line = f"{entry.recipe_name}({params_str})"
+            param_parts = []
             
-            # Add comment for "undone" actions
-            if i > current_idx:
-                line = f"# {line}"
-                
-            script_lines.append(line)
+            for k, v in entry.params.items():
+                # [FIX] Use the robust helper
+                val_repr, is_expandable = self._get_val_repr(v)
 
-        self.scripter_edit.setPlainText("\n".join(script_lines))
+                if is_expandable:
+                    key = f"hidden_{hidden_counter}"
+                    hidden_counter += 1
+                    
+                    self._hidden_data[key] = val_repr
+                    
+                    count_lbl = "long value"
+                    if isinstance(v, (list, tuple)): count_lbl = f"{len(v)} items"
+                    elif isinstance(v, str) and ',' in v: count_lbl = f"~{v.count(',')} items"
+                    elif hasattr(v, 'shape'): count_lbl = f"shape {v.shape}"
+                    
+                    # HTML Anchor
+                    val_repr = (f"<a href='{key}' style='color: gray; text-decoration: none; font-weight: bold;'>"
+                                f"[...{count_lbl}...]</a>")
+                else:
+                    val_repr = html.escape(val_repr)
+
+                param_parts.append(f"{k}={val_repr}")
+            
+            params_str = ", ".join(param_parts)
+            line_str = f"{entry.recipe_name}({params_str})"
+            
+            if i > current_idx:
+                html_lines.append(f"<span style='color: green;'># {line_str}</span><br>")
+            else:
+                html_lines.append(f"{line_str}<br>")
+
+        html_lines.append("</div>")
+        self.scripter_edit.setHtml("".join(html_lines))
 
     def _populate_v1_script(self, v1_json: dict):
         """Populates the scripter from a V1 log JSON dictionary."""
@@ -263,7 +375,7 @@ class LogScripterDialog(QDialog):
         if not self.main_window:
             return
             
-        script_text = self.scripter_edit.toPlainText()
+        script_text = self._get_runnable_script()
         
         # Confirmation is now handled by the main window
         self.main_window.run_script(script_text)
@@ -285,7 +397,7 @@ class LogScripterDialog(QDialog):
         
         if file_name:
             try:
-                text_content = self.scripter_edit.toPlainText()
+                text_content = self._get_runnable_script()
                 # Here we could save as JSON, or just plain text.
                 # For now, let's just save the text.
                 # To save as JSON, we'd have to parse the text.
@@ -362,3 +474,27 @@ class LogScripterDialog(QDialog):
         
         # This will now trigger the 'textChanged' signal,
         # which will call _update_button_state automatically.
+
+    def _get_runnable_script(self) -> str:
+        """Reconstructs valid Python script, expanding any remaining anchors."""
+        doc = self.scripter_edit.document()
+        full_script = ""
+        
+        blk = doc.begin()
+        while blk.isValid():
+            it = blk.begin()
+            while not it.atEnd():
+                frag = it.fragment()
+                fmt = frag.charFormat()
+                
+                # Check for hidden value anchor
+                if fmt.isAnchor() and fmt.anchorHref() in self._hidden_data:
+                    full_script += self._hidden_data[fmt.anchorHref()]
+                else:
+                    full_script += frag.text()
+                it += 1
+            
+            if blk.next().isValid(): full_script += "\n"
+            blk = blk.next()
+            
+        return full_script
