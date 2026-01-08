@@ -1069,6 +1069,19 @@ class VelocityPlotWidget(QWidget):
                     }, {}))
                 
                 menu.addAction(act_add)
+
+                # 5. Single Line Add (e.g. "Add CIV_1548")
+                # Only show if the specific line is different from the group name
+                # (Avoids duplicate "Add Ly_a" entries)
+                if trans_name != group_primary:
+                    act_add_single = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
+                    act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                        "absorbers", "add_component", {
+                            'series': trans_name, 'z': z_new,
+                            'logN': self.cursor_logN, 'b': self.cursor_b
+                        }, {}))
+                    menu.addAction(act_add_single)
+
                 has_actions = True
 
             # --- Execute ---
