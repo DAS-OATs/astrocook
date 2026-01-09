@@ -137,6 +137,10 @@ ATOM_DATA = {
     # --- Zinc ---
     'ZnII_2026': {'wave': 202.6137, 'f': 0.501, 'gamma': 4.070e8, 'mass': 65.39}, 
     'ZnII_2062': {'wave': 206.26604, 'f': 0.246, 'gamma': 3.860e8, 'mass': 65.39}, 
+
+    # --- Sodium ---
+    'NaI_5891': {'wave': 589.15833, 'f': 0.6408, 'gamma': 61570000.0, 'mass': 22.9898},
+    'NaI_5897': {'wave': 589.75581, 'f': 0.3201, 'gamma': 61390000.0, 'mass': 22.9898},
 }
 
 # --- 2. Standard Multiplet Definitions ---
@@ -150,13 +154,14 @@ METAL_MULTIPLETS = {
     'MgII': ['MgII_2796', 'MgII_2803'],
     'AlIII': ['AlIII_1854', 'AlIII_1862'],
     'CII': ['CII_1334', 'CII*_1335'],
-    'ZnII': ['ZnII_2026', 'ZnII_2062'], # <<< *** ADDED ***
+    'ZnII': ['ZnII_2026', 'ZnII_2062'], 
+    'NaI': ['NaI_5891', 'NaI_5897'],
     
     # Complex multiplets
     'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII_1304', 'SiII_1808'],
     'FeII': ['FeII_2382', 'FeII_2600', 'FeII_2344', 'FeII_2586', 'FeII_1608', 'FeII_2374'],
     'NI': ['NI_1200', 'NI_1199', 'NI_1201'],
-    'CrII': ['CrII_2056', 'CrII_2062', 'CrII_2066'], # <<< *** ADDED ***
+    'CrII': ['CrII_2056', 'CrII_2062', 'CrII_2066'],
 }
 
 HYDROGEN_MULTIPLETS = {
