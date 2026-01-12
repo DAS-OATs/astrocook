@@ -141,6 +141,10 @@ ATOM_DATA = {
     # --- Sodium ---
     'NaI_5891': {'wave': 589.15833, 'f': 0.6408, 'gamma': 61570000.0, 'mass': 22.9898},
     'NaI_5897': {'wave': 589.75581, 'f': 0.3201, 'gamma': 61390000.0, 'mass': 22.9898},
+
+    # --- Calcium ---
+    'CaII_3934': {'wave': 393.4775, 'f': 0.6267, 'gamma': 144400000.0, 'mass': 40.078},
+    'CaII_3969': {'wave': 396.95901, 'f': 0.3116, 'gamma': 140900000.0, 'mass': 40.078},
 }
 
 # --- 2. Standard Multiplet Definitions ---
@@ -156,6 +160,7 @@ METAL_MULTIPLETS = {
     'CII': ['CII_1334', 'CII*_1335'],
     'ZnII': ['ZnII_2026', 'ZnII_2062'], 
     'NaI': ['NaI_5891', 'NaI_5897'],
+    'CaII': ['CaII_3934', 'CaII_3969'],
     
     # Complex multiplets
     'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII_1304', 'SiII_1808'],
