@@ -2720,17 +2720,25 @@ class MainWindowV2(QMainWindow):
         # We assume standard formatting is fine, or set a formatter if you wish
         logging.getLogger().addHandler(self.warning_capture_handler)
 
-        # --- NEW DIALOG LOGIC START ---
-        
         # 1. Clean up old dialogs
         if self.progress_dialog: 
             self.progress_dialog.close()
             self.progress_dialog = None
         
         # 2. Decide: Simple Dialog vs. Detailed Dialog
-        long_running_recipes = {'doublets_auto', 'lya_auto', 'forest_auto', 'refit_all', 'metals_auto', 'add_component', 'fit_component'}
+        long_running_recipes = {
+            'doublets_auto', 'lya_auto', 'forest_auto', 
+            'refit_all', 'metals_auto', 'add_component', 'fit_component'
+        }
         
-        if recipe_name in long_running_recipes:
+        is_long_running = recipe_name in long_running_recipes
+
+        if recipe_name == 'import_systems':
+            # Check if refit is requested (handles both boolean True and string 'True')
+            if str(params.get('refit', False)) == 'True':
+                is_long_running = True
+
+        if is_long_running:
             # A. Create Detailed Dialog
             self.progress_dialog = RecipeProgressDialog(f"{recipe_name}", self)
 
@@ -2763,7 +2771,6 @@ class MainWindowV2(QMainWindow):
             # No log tapping for short recipes
             self.qt_log_handler = None
 
-        # --- NEW DIALOG LOGIC END ---
 
         # Start Worker (Existing Code)
         worker = RecipeWorker(

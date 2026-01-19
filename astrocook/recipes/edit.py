@@ -76,7 +76,8 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Copy absorption systems from another open session into this one.",
         "params": [
             {"name": "source_session", "type": str, "default": "None", "doc": "Name of the session to import from."},
-            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."}
+            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."},
+            {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems to the new data immediately?"}
         ],
         "url": "absorbers_cb.html#import_systems"
     },
@@ -547,7 +548,7 @@ class RecipeEditV2:
             logging.error(f"Failed during smooth_column: {e}", exc_info=True)
             return 0
         
-    def import_systems(self, source_session: str, append: bool = True) -> 'SessionV2':
+    def import_systems(self, source_session: str, append: bool = True, refit: bool = False) -> 'SessionV2':
         """
         Import systems from session.
 
@@ -562,12 +563,18 @@ class RecipeEditV2:
         append : bool, optional
             If ``True``, adds to existing systems. If ``False``, replaces them.
             Defaults to ``True``.
+        refit : bool, optional
+            If ``True``, runs a refit on the imported systems. Defaults to ``False``.
 
         Returns
         -------
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with imported systems.
         """
+
+        do_append = str(append) == 'True'
+        do_refit = str(refit) == 'True'
+
         import numpy as np
         from astrocook.core.structures import SystemListDataV2
         from astrocook.core.system_list import SystemListV2
@@ -590,7 +597,7 @@ class RecipeEditV2:
             return self._session
 
         # 2. Prepare current list
-        if append and self._session.systs:
+        if do_append and self._session.systs:
             base_systs = self._session.systs
         else:
             base_systs = SystemListV2(SystemListDataV2())
@@ -601,14 +608,13 @@ class RecipeEditV2:
                 xmin = np.min(self._session.spec.x.value)
                 xmax = np.max(self._session.spec.x.value)
                 
-                # [REFACTORED] The heavy lifting is now here
                 filtered_source_systs = source_systs.filter_by_range(xmin, xmax)
                 
                 skipped = len(source_systs.components) - len(filtered_source_systs.components)
                 if skipped > 0:
                     logging.info(f"Skipped {skipped} systems outside spectral range.")
                     
-                source_systs = filtered_source_systs # Swap reference to filtered version
+                source_systs = filtered_source_systs 
                 
             except Exception as e:
                 logging.warning(f"Could not filter systems by range: {e}")
@@ -621,8 +627,35 @@ class RecipeEditV2:
         logging.info(f"Importing {len(source_systs.components)} systems from '{source_session}'...")
         new_systs = base_systs.merge(source_systs, copy_uuids=False)
         
-        # 5. Return new session
-        return self._session.with_new_system_list(new_systs)
+        # Create intermediate session with imported (but unfitted) systems
+        intermediate_session = self._session.with_new_system_list(new_systs)
+
+        # 5. Optional Refit
+        if do_refit:
+            logging.info("Refitting imported systems...")
+            try:
+                # Local import to avoid circular dependency
+                from astrocook.recipes.absorbers import RecipeAbsorbersV2
+                
+                # Wrap the intermediate session in the Absorbers recipe
+                rec_abs = RecipeAbsorbersV2(intermediate_session)
+                
+                # Run refit_all
+                # You can tweak z_window_kms or max_nfev here if needed, 
+                # or expose them as advanced params in the schema.
+                refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1)
+                
+                if refitted_session != 0:
+                    return refitted_session
+                else:
+                    logging.warning("Refit failed. Returning imported systems without fitting.")
+                    return intermediate_session
+            except Exception as e:
+                logging.error(f"Error during import auto-refit: {e}")
+                return intermediate_session
+
+        # Return unfitted result
+        return intermediate_session
         
     def delete(self, targets: str) -> 'SessionV2':
         """
