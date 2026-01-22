@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Continuum Fitting &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>Continuum Fitting &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Flux Operations" href="flux_operations.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -483,18 +483,19 @@
 </section>
 </section>
 <section id="interactive-manual-editing">
-<h2>2. Interactive Manual Editing<a class="headerlink" href="#interactive-manual-editing" title="Link to this heading">#</a></h2>
+<span id="continuum-manual"></span><h2>2. Interactive Manual Editing<a class="headerlink" href="#interactive-manual-editing" title="Link to this heading">#</a></h2>
 <p>Automatic fits sometimes fail near complex emission lines or spectral edges. You can correct these manually using the <strong>Right Sidebar</strong>.</p>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>Always <strong>run an automatic estimate first</strong> (Step 1). While the manual editor can start from scratch, it is designed to <em>refine</em> an existing continuum curve. Starting from raw flux usually produces poor results.</p>
-</div>
 <section id="starting-the-editor">
 <h3>Starting the Editor<a class="headerlink" href="#starting-the-editor" title="Link to this heading">#</a></h3>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p>Look at the <strong>Edit Continuum</strong> section in the right sidebar.</p></li>
 <li><p>Click the <strong>Start</strong> button.</p></li>
-<li><p><strong>Knots</strong> (black dots) will appear along the current continuum.</p></li>
+<li><p><strong>Knots</strong> (black dots) will appear along the current continuum.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If no continuum exists yet, Astrocook will prompt you to run the <strong>Auto-estimate</strong> routine first. You cannot edit the raw flux directly.</p>
+</div>
+</li>
 </ol>
 </section>
 <section id="modifying-knots">
@@ -505,14 +506,17 @@
 <li><p><strong>Remove</strong>: Right-click on an existing knot to delete it.</p></li>
 </ul>
 </section>
-<section id="controlling-stiffness-the-slider">
-<h3>Controlling Stiffness (The Slider)<a class="headerlink" href="#controlling-stiffness-the-slider" title="Link to this heading">#</a></h3>
-<p>The slider next to the Start button controls the <strong>knot density</strong> (spacing).</p>
+<section id="controlling-stiffness-slider-spacing">
+<h3>Controlling Stiffness (Slider &amp; Spacing)<a class="headerlink" href="#controlling-stiffness-slider-spacing" title="Link to this heading">#</a></h3>
+<p>You can adjust the <strong>knot density</strong> using the slider or the <strong>Spacing</strong> text box.</p>
 <ul class="simple">
-<li><p><strong>Slide Left</strong>: Increases density (knots are closer). This allows the continuum to follow sharper variations (e.g., on top of emission lines).</p></li>
-<li><p><strong>Slide Right</strong>: Decreases density. This makes the continuum smoother and stiffer.</p></li>
+<li><p><strong>Slider</strong>: Drag left to increase density (closer knots) or right to decrease it (smoother curve).</p></li>
+<li><p><strong>Spacing Box</strong>: Type a precise velocity spacing (in km/s) and press Enter.</p></li>
 </ul>
-<p><strong>Warning:</strong> Changing the slider re-samples the knots. If you have moved specific knots, adjusting the slider might reset their positions to the grid.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Changing the spacing may affect the overall shape of the continuum. If you want to discard your manual moves and revert to the original continuum shape, click the <strong>Reset</strong> button (next to <em>Save</em>). This restores the knots to their default distribution based on the saved continuum.</p>
+</div>
 <img alt="Applying a mathematical expression to a column" class="align-center" src="../images/continuum_manual_edit.png" />
 </section>
 <section id="saving">
@@ -531,7 +535,6 @@
 <p class="admonition-title">Note</p>
 <p>This operation assumes your spectrum is <strong>flux calibrated</strong> (the overall shape is physically meaningful). It also requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
 </div>
-<div class="docutils">
 <ol class="arabic simple">
 <li><p>Go to <strong>Continuum &gt; Fit Power-Law…</strong>.</p></li>
 <li><p><strong>Regions:</strong> Enter a list of comma-separated wavelength ranges (in <strong>rest-frame</strong> nm) known to be free of emission lines.</p>
@@ -541,8 +544,7 @@
 </li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
-<p>This creates a new column <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> which you can view or use as a baseline for further fitting.</p>
-</div>
+<p>This creates a new column <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> which is <strong>automatically displayed</strong> on the plot (via the <em>Aux. Column</em> selector). You can use it as a baseline for further fitting.</p>
 </section>
 </section>
 
@@ -600,7 +602,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-manual-editing">2. Interactive Manual Editing</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#starting-the-editor">Starting the Editor</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modifying-knots">Modifying Knots</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-stiffness-the-slider">Controlling Stiffness (The Slider)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#controlling-stiffness-slider-spacing">Controlling Stiffness (Slider &amp; Spacing)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving">Saving</a></li>
 </ul>
 </li>

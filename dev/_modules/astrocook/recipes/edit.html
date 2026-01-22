@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.edit &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>astrocook.recipes.edit &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -506,7 +506,8 @@
         <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Copy absorption systems from another open session into this one.&quot;</span><span class="p">,</span>
         <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;source_session&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the session to import from.&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;append&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, adds to existing. If False, replaces them.&quot;</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;append&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, adds to existing. If False, replaces them.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;refit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Refit the systems to the new data immediately?&quot;</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#import_systems&quot;</span>
     <span class="p">},</span>
@@ -1002,7 +1003,7 @@
         
 <div class="viewcode-block" id="RecipeEditV2.import_systems">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.import_systems">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">import_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_session</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_session</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">refit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Import systems from session.</span>
 
@@ -1017,12 +1018,18 @@
 <span class="sd">        append : bool, optional</span>
 <span class="sd">            If ``True``, adds to existing systems. If ``False``, replaces them.</span>
 <span class="sd">            Defaults to ``True``.</span>
+<span class="sd">        refit : bool, optional</span>
+<span class="sd">            If ``True``, runs a refit on the imported systems. Defaults to ``False``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with imported systems.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">do_append</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">append</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+        <span class="n">do_refit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">refit</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+
         <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
@@ -1045,7 +1052,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="c1"># 2. Prepare current list</span>
-        <span class="k">if</span> <span class="n">append</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">do_append</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
             <span class="n">base_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">base_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
@@ -1056,14 +1063,13 @@
                 <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                 <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                 
-                <span class="c1"># [REFACTORED] The heavy lifting is now here</span>
                 <span class="n">filtered_source_systs</span> <span class="o">=</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">filter_by_range</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
                 
                 <span class="n">skipped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">skipped</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> systems outside spectral range.&quot;</span><span class="p">)</span>
                     
-                <span class="n">source_systs</span> <span class="o">=</span> <span class="n">filtered_source_systs</span> <span class="c1"># Swap reference to filtered version</span>
+                <span class="n">source_systs</span> <span class="o">=</span> <span class="n">filtered_source_systs</span> 
                 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not filter systems by range: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1076,8 +1082,35 @@
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems from &#39;</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">&#39;...&quot;</span><span class="p">)</span>
         <span class="n">new_systs</span> <span class="o">=</span> <span class="n">base_systs</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">source_systs</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         
-        <span class="c1"># 5. Return new session</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span></div>
+        <span class="c1"># Create intermediate session with imported (but unfitted) systems</span>
+        <span class="n">intermediate_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+
+        <span class="c1"># 5. Optional Refit</span>
+        <span class="k">if</span> <span class="n">do_refit</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Refitting imported systems...&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Local import to avoid circular dependency</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
+                
+                <span class="c1"># Wrap the intermediate session in the Absorbers recipe</span>
+                <span class="n">rec_abs</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">intermediate_session</span><span class="p">)</span>
+                
+                <span class="c1"># Run refit_all</span>
+                <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
+                <span class="c1"># or expose them as advanced params in the schema.</span>
+                <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">refitted_session</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Refit failed. Returning imported systems without fitting.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">intermediate_session</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during import auto-refit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">intermediate_session</span>
+
+        <span class="c1"># Return unfitted result</span>
+        <span class="k">return</span> <span class="n">intermediate_session</span></div>
 
         
 <div class="viewcode-block" id="RecipeEditV2.delete">

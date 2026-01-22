@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -566,11 +566,12 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="VoigtFitterV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">,</span> <span class="n">system_list</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">,</span> <span class="n">system_list</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">,</span> <span class="n">check_stop</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span> <span class="o">=</span> <span class="n">spectrum</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span> <span class="o">=</span> <span class="n">system_list</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span> <span class="o">=</span> <span class="n">system_list</span><span class="o">.</span><span class="n">constraint_model</span>
-        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_stop</span> <span class="o">=</span> <span class="n">check_stop</span>
+
         <span class="c1"># 1. Prepare Data Arrays</span>
         <span class="c1"># Convert to Angstroms for internal Voigt calc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
@@ -864,6 +865,10 @@
         <span class="k">return</span> <span class="n">final_model</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_residual_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="c1"># Check for stop request</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_stop</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_stop</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Optimization stopped by user.&quot;</span><span class="p">)</span>
+        
         <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_model</span><span class="p">(</span><span class="n">p_free</span><span class="p">)</span>
         <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span> <span class="o">-</span> <span class="n">model</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span>
         
@@ -996,12 +1001,16 @@
             <span class="n">logN_guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N_guess</span><span class="p">),</span> <span class="mf">12.0</span><span class="p">,</span> <span class="mf">15.0</span><span class="p">)</span>
             
             <span class="n">idx_z</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span><span class="p">]</span>
-            <span class="n">idx_logN</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="n">idx_b</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
             <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_z</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_z</span>
-            <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_logN</span><span class="p">]</span> <span class="o">=</span> <span class="n">logN_guess</span>
-            <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_b</span><span class="p">]</span> <span class="o">=</span> <span class="n">b_guess</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Smart Guess: z=</span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">idx_logN</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_logN</span><span class="p">]</span> <span class="o">=</span> <span class="n">logN_guess</span>
+                
+            <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]:</span>
+                <span class="n">idx_b</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_b</span><span class="p">]</span> <span class="o">=</span> <span class="n">b_guess</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Smart Guess: z=</span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">p_refined</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
@@ -1282,6 +1291,10 @@
         
         <span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">lower_bounds</span><span class="p">,</span> <span class="n">upper_bounds</span><span class="p">)</span>
         <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_smart_guess</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">)</span>
+
+        <span class="c1"># Clamp p0 to bounds to prevent &quot;Initial guess outside bounds&quot; error</span>
+        <span class="c1"># Because smart_guess might have proposed values that violate strict constraints.</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">lower_bounds</span><span class="p">,</span> <span class="n">upper_bounds</span><span class="p">)</span>
 
         <span class="c1"># Fit</span>
         <span class="n">res</span> <span class="o">=</span> <span class="n">least_squares</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_residual_function</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev</span><span class="p">,</span> <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;jac&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>

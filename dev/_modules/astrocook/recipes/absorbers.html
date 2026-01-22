@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -650,7 +650,18 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region_limit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Limit fitting to &#39;red_side&#39; or &#39;lya_forest&#39;.&quot;</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#refit_all&quot;</span>
-    <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;clean_negligible&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Remove unphysical/negligible components.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Removes components that are too weak, too broad, or unphysically narrow.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;min_logN&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">11.5</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Minimum column density to keep.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;max_b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Maximum Doppler parameter (km/s).&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;min_b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Minimum Doppler parameter (km/s).&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;combined_check&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, only removes broad lines if they are ALSO weak (b &gt; max_b AND logN &lt; 13.0).&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#clean_negligible&quot;</span>
+    <span class="p">},</span>
 <span class="p">}</span>
 
 <div class="viewcode-block" id="RecipeAbsorbersV2">
@@ -1520,15 +1531,25 @@
 
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-            <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Flux not normalized and no continuum. Triggering estimate_auto...&quot;</span><span class="p">)</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-                <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
-                <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+            <span class="c1"># Define the callback using the recipe&#39;s stop check</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">check_stop</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">()</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Flux not normalized and no continuum. Triggering estimate_auto...&quot;</span><span class="p">)</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
+                    <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
+                    <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+
+                <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">):</span>
+                    <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span> <span class="n">check_stop</span><span class="o">=</span><span class="n">check_stop</span><span class="p">)</span>
+                    <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
             
-            <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">):</span>
-                <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
-                <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;stopped&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Fit stopped by user. Reverting to pre-fit state.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="c1"># Return the session as it was before fitting started</span>
+                <span class="k">raise</span> <span class="n">e</span> <span class="c1"># Re-raise if it&#39;s a real error</span>
             
             <span class="k">if</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
                 <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
@@ -2042,6 +2063,91 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;refit_all failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeAbsorbersV2.clean_negligible">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.clean_negligible">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean_negligible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;11.5&quot;</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;80.0&quot;</span><span class="p">,</span> 
+                       <span class="n">min_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;3.0&quot;</span><span class="p">,</span> <span class="n">combined_check</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;True&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clean negligible components.</span>
+
+<span class="sd">        Removes unphysical or negligible components from the system list. This is useful </span>
+<span class="sd">        for cleaning up results after automated fitting procedures, which may produce </span>
+<span class="sd">        artifacts such as extremely broad, shallow lines (ghosts) or narrow noise spikes.</span>
+
+<span class="sd">        The cleaning criteria are:</span>
+<span class="sd">        1. **Narrow Spikes**: Components with ``b &lt; min_b``.</span>
+<span class="sd">        2. **Weak Lines**: Components with ``logN &lt; min_logN``.</span>
+<span class="sd">        3. **Broad/Ghost Lines**: Components with ``b &gt; max_b``.</span>
+<span class="sd">           - If ``combined_check`` is ``True``, broad lines are only removed if they </span>
+<span class="sd">             are *also* weak (``logN &lt; 13.0``). This protects strong, broad features </span>
+<span class="sd">             like DLA wings or OVI absorbers.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        min_logN : str, optional</span>
+<span class="sd">            Minimum column density (log cm\ :sup:`-2`) to keep. Defaults to ``&quot;11.5&quot;``.</span>
+<span class="sd">        max_b : str, optional</span>
+<span class="sd">            Maximum Doppler parameter (km/s). Components broader than this may be removed. </span>
+<span class="sd">            Defaults to ``&quot;80.0&quot;``.</span>
+<span class="sd">        min_b : str, optional</span>
+<span class="sd">            Minimum Doppler parameter (km/s). Components narrower than this are always removed. </span>
+<span class="sd">            Defaults to ``&quot;3.0&quot;``.</span>
+<span class="sd">        combined_check : str, optional</span>
+<span class="sd">            If ``&quot;True&quot;``, broad components (``b &gt; max_b``) are only removed if they are </span>
+<span class="sd">            also weak (``logN &lt; 13.0``). If ``&quot;False&quot;``, all broad components are removed. </span>
+<span class="sd">            Defaults to ``&quot;True&quot;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the flagged components removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lim_N</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_logN</span><span class="p">)</span>
+            <span class="n">lim_b_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="n">lim_b_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
+            <span class="n">use_combined</span> <span class="o">=</span> <span class="p">(</span><span class="n">combined_check</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Invalid parameters for clean_negligible.&quot;</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="c1"># 1. Unphysically Narrow (Noise spikes) -&gt; Always Remove</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="n">lim_b_min</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too narrow (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># 2. Too Weak (Negligible)</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="o">&lt;</span> <span class="n">lim_N</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too weak (logN=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># 3. Too Broad (Continuum drifts / Ghosts)</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&gt;</span> <span class="n">lim_b_max</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">use_combined</span><span class="p">:</span>
+                    <span class="c1"># Only remove if ALSO weak (e.g. logN &lt; 13.0)</span>
+                    <span class="c1"># This protects strong, broad features (like DLA wings or broad OVI)</span>
+                    <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="o">&lt;</span> <span class="mf">13.0</span><span class="p">:</span> 
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Broad &amp; Weak (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                        <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Unconditional removal</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too broad (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">to_remove</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span><span class="si">}</span><span class="s2"> outlier components...&quot;</span><span class="p">)</span>
+            <span class="c1"># Use existing delete method which handles model updates</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="n">to_remove</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No outliers found.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span></div>
 </div>
 
 </pre></div>

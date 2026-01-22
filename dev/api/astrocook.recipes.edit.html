@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.edit module &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>astrocook.recipes.edit module &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="astrocook.recipes.continuum module" href="astrocook.recipes.continuum.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -634,7 +634,7 @@ or 0 on failure.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEditV2.import_systems">
-<span class="sig-name descname"><span class="pre">import_systems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.import_systems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.import_systems" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">import_systems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/edit.html#RecipeEditV2.import_systems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEditV2.import_systems" title="Link to this definition">#</a></dt>
 <dd><p>Import systems from session.</p>
 <p>Copy absorption systems from another open session into this one, filtering
 those that fall outside the current spectral range.
@@ -645,6 +645,7 @@ Delegates filtering to <a class="reference internal" href="astrocook.core.system
 <li><p><strong>source_session</strong> (<em>str</em>) – Name of the session to import from.</p></li>
 <li><p><strong>append</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, adds to existing systems. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, replaces them.
 Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>refit</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, runs a refit on the imported systems. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Continuum Fitting" href="continuum_fitting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -599,6 +599,17 @@
 </ul>
 <img alt="Linking parameters via the context menu" class="align-center" src="../images/absorbers_linking.png" />
 </section>
+<section id="cleaning-results">
+<h3>Cleaning Results<a class="headerlink" href="#cleaning-results" title="Link to this heading">#</a></h3>
+<p>After running automated pipelines or performing manual fits, your model might contain artifacts such as noise spikes fitted as narrow lines, or continuum undulations fitted as broad, shallow features (“ghosts”).</p>
+<p>Astrocook provides a dedicated tool to filter these out:</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Absorbers &gt; Clean Negligible Components…</strong>.</p></li>
+<li><p><strong>Min logN:</strong> Components weaker than this threshold (default <code class="docutils literal notranslate"><span class="pre">11.5</span></code>) are removed.</p></li>
+<li><p><strong>Min/Max b:</strong> Components narrower than <code class="docutils literal notranslate"><span class="pre">min_b</span></code> (default <code class="docutils literal notranslate"><span class="pre">3.0</span></code> km/s) or broader than <code class="docutils literal notranslate"><span class="pre">max_b</span></code> (default <code class="docutils literal notranslate"><span class="pre">80.0</span></code> km/s) are flagged.</p></li>
+<li><p><strong>Combined Check:</strong> By default (<code class="docutils literal notranslate"><span class="pre">True</span></code>), broad lines are only removed if they are <em>also</em> very weak (<code class="docutils literal notranslate"><span class="pre">logN</span> <span class="pre">&lt;</span> <span class="pre">13.0</span></code>). This protects genuine broad features like DLA wings or OVI absorbers from being deleted.</p></li>
+</ol>
+</section>
 </section>
 </section>
 
@@ -665,6 +676,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#constraints-fix-free">Constraints (Fix/Free)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-linking">Parameter Linking</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refitting">Refitting</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cleaning-results">Cleaning Results</a></li>
 </ul>
 </li>
 </ul>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.absorbers module &#8212; Astrocook 2.0.0-beta.1 documentation</title>
+    <title>astrocook.recipes.absorbers module &#8212; Astrocook 2.0.0-beta.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=edd7a392"></script>
+    <script src="../static/documentation_options.js?v=da2f29f8"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="astrocook.recipes package" href="astrocook.recipes.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.1" />
+  <meta name="docsearch:version" content="2.0.0-beta.2" />
   </head>
   
   
@@ -929,6 +929,46 @@ or 0 on failure.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2.clean_negligible">
+<span class="sig-name descname"><span class="pre">clean_negligible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'11.5'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'80.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'3.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">combined_check</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2.clean_negligible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.clean_negligible" title="Link to this definition">#</a></dt>
+<dd><p>Clean negligible components.</p>
+<p>Removes unphysical or negligible components from the system list. This is useful
+for cleaning up results after automated fitting procedures, which may produce
+artifacts such as extremely broad, shallow lines (ghosts) or narrow noise spikes.</p>
+<p>The cleaning criteria are:
+1. <strong>Narrow Spikes</strong>: Components with <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">&lt;</span> <span class="pre">min_b</span></code>.
+2. <strong>Weak Lines</strong>: Components with <code class="docutils literal notranslate"><span class="pre">logN</span> <span class="pre">&lt;</span> <span class="pre">min_logN</span></code>.
+3. <strong>Broad/Ghost Lines</strong>: Components with <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">&gt;</span> <span class="pre">max_b</span></code>.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">combined_check</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, broad lines are only removed if they
+are <em>also</em> weak (<code class="docutils literal notranslate"><span class="pre">logN</span> <span class="pre">&lt;</span> <span class="pre">13.0</span></code>). This protects strong, broad features
+like DLA wings or OVI absorbers.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_logN</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum column density (log cm<sup>-2</sup>) to keep. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;11.5&quot;</span></code>.</p></li>
+<li><p><strong>max_b</strong> (<em>str</em><em>, </em><em>optional</em>) – Maximum Doppler parameter (km/s). Components broader than this may be removed.
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;80.0&quot;</span></code>.</p></li>
+<li><p><strong>min_b</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum Doppler parameter (km/s). Components narrower than this are always removed.
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;3.0&quot;</span></code>.</p></li>
+<li><p><strong>combined_check</strong> (<em>str</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">&quot;True&quot;</span></code>, broad components (<code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">&gt;</span> <span class="pre">max_b</span></code>) are only removed if they are
+also weak (<code class="docutils literal notranslate"><span class="pre">logN</span> <span class="pre">&lt;</span> <span class="pre">13.0</span></code>). If <code class="docutils literal notranslate"><span class="pre">&quot;False&quot;</span></code>, all broad components are removed.
+Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;True&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the flagged components removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -999,6 +1039,7 @@ or 0 on failure.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_linked_system"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.add_linked_system()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.optimize_system()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.refit_all()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.clean_negligible"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.clean_negligible()</span></code></a></li>
 </ul>
 </li>
 </ul>
