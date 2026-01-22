@@ -37,14 +37,17 @@ class ClickableTextEdit(QTextEdit):
     linkActivated = Signal(str)
 
     def mouseReleaseEvent(self, event):
-        # Use cursorForPosition which is more reliable than anchorAt in editable mode
         pos = event.position().toPoint()
         cursor = self.cursorForPosition(pos)
         fmt = cursor.charFormat()
         
         if fmt.isAnchor() and fmt.anchorHref():
+            # [NEW] Clear selection and emit signal
+            cursor.clearSelection()
+            self.setTextCursor(cursor)
             self.linkActivated.emit(fmt.anchorHref())
-            return # Consume event
+            event.accept()
+            return 
             
         super().mouseReleaseEvent(event)
 
@@ -186,74 +189,90 @@ class LogScripterDialog(QDialog):
         
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
 
-    def _on_anchor_clicked(self, key: str): # [FIX] Type is str, not QUrl
-        """Replaces the clicked link with the full text."""
+    def _on_anchor_clicked(self, key: str):
         if key in self._hidden_data:
             full_text = self._hidden_data[key]
             doc = self.scripter_edit.document()
             
-            # Simple cursor strategy: The cursor is already placed by the click.
-            # We just insert the text. 
-            # Note: Deleting the anchor text programmatically is tricky without range.
-            # A robust way is to select the word under cursor if it matches our anchor format.
-            
-            cursor = self.scripter_edit.textCursor()
-            
-            # Heuristic: Select the previous N characters (length of the placeholder)
-            # or simply insert the expanded text.
-            # Better: Toggle behavior.
-            
-            # 1. Insert the Full Text
-            cursor.insertText(full_text)
-            
-            # 2. (Optional) Try to delete the bracketed placeholder if possible.
-            # Given the complexity of finding the exact range of the clicked anchor
-            # in a plain text edit, we accept that the user might need to delete 
-            # the anchor text manually if it lingers, or we just append.
-            # But the ClickableTextEdit usually consumes the click event, 
-            # so the cursor might be at the end of the anchor.
-            
-            # Let's try to remove the anchor text (e.g. [...long value...])
-            # We can search backwards for "[..." and delete.
-            # This is "good enough" for a helper tool.
+            blk = doc.begin()
+            found = False
+            while blk.isValid():
+                it = blk.begin()
+                while not it.atEnd():
+                    frag = it.fragment()
+                    fmt = frag.charFormat()
+                    if fmt.isAnchor() and fmt.anchorHref() == key:
+                        cursor = self.scripter_edit.textCursor()
+                        cursor.setPosition(frag.position())
+                        cursor.setPosition(frag.position() + frag.length(), QTextCursor.KeepAnchor)
+                        
+                        # [FIX] Force the new text to NOT be an anchor
+                        clean_fmt = QTextCharFormat()
+                        clean_fmt.setAnchor(False)
+                        
+                        cursor.beginEditBlock()
+                        cursor.removeSelectedText()
+                        cursor.insertText(full_text, clean_fmt) 
+                        cursor.endEditBlock()
+                        
+                        found = True
+                        break
+                    it += 1
+                if found: break
+                blk = blk.next()
 
     def _get_val_repr(self, v) -> Tuple[str, bool]:
         """
         Robustly format a value for the script.
-        Returns: (string_representation, is_expandable)
         """
         val_repr = ""
         
-        # A. Handle Strings (potential raw code or list-strings)
+        # --- 1. NUMPY ARRAYS -> LISTS ---
+        if hasattr(v, 'tolist'):
+            try:
+                v = v.tolist()
+            except: pass
+
+        # --- 2. RECOVERY LOGIC (Jumbled Lists) ---
+        # Fixes ['[', '1', ...] or ['[123'] -> "[123]"
+        if isinstance(v, list) and len(v) > 0 and isinstance(v[0], str):
+            if v[0].strip().startswith('['): 
+                try:
+                    # Join list of characters or chunks back into a string
+                    v = "".join(v)
+                except: pass
+
+        # --- 3. STRINGS ---
         if isinstance(v, str):
             v_stripped = v.strip()
-            # Check if it looks like a list/array string (e.g. "[1, 2, 3]")
-            # We assume if it starts/ends with brackets, it's meant to be code, not a string literal.
-            if v_stripped.startswith('[') and v_stripped.endswith(']'):
-                val_repr = v_stripped # Raw code, no quotes
-            elif v_stripped.startswith('np.array'):
-                val_repr = v_stripped # Raw code
+            
+            # If it starts with '[', assume it is a list representation (Raw Code)
+            if v_stripped.startswith('[') or v_stripped.startswith('np.array'):
+                # [FIX] Ensure the list is closed. Truncated logs can miss the ']'.
+                if v_stripped.startswith('[') and not v_stripped.endswith(']'):
+                    v_stripped += ']'
+                
+                val_repr = v_stripped 
             else:
-                val_repr = f"'{v}'" # Normal string, add quotes
+                val_repr = f"'{v}'" # Quote normal strings
 
-        # B. Handle Lists/Tuples/Arrays
+        # --- 4. LISTS/TUPLES ---
         else:
-            # repr() gives valid python code for lists
             val_repr = repr(v)
         
-        # C. Cleanups
-        # Remove numpy types that break simple eval (e.g. np.float64(1.2) -> 1.2)
+        # --- 5. CLEANUP ---
+        # Remove newlines to prevent script breakage
+        val_repr = val_repr.replace('\n', ' ') 
         val_repr = val_repr.replace("np.float64(", "").replace(")", "")
         val_repr = val_repr.replace("np.int64(", "").replace(")", "")
         
-        # D. Check if expandable
-        # We only collapse if it's long AND looks like a structure (has brackets)
-        is_expandable = len(val_repr) > 150 and ('[' in val_repr)
+        # --- 6. EXPANDABLE CHECK ---
+        is_structure = ('[' in val_repr) and (' ' in val_repr or ',' in val_repr)
+        is_expandable = len(val_repr) > 150 and is_structure
         
         return val_repr, is_expandable
 
     def _populate_v2_script(self):
-        """Populates the scripter using HTML to collapse long lists."""
         entries = self.log_object.entries
         current_idx = self.log_object.current_index
         
@@ -284,7 +303,6 @@ class LogScripterDialog(QDialog):
                     elif isinstance(v, str) and ',' in v: count_lbl = f"~{v.count(',')} items"
                     elif hasattr(v, 'shape'): count_lbl = f"shape {v.shape}"
                     
-                    # HTML Anchor
                     val_repr = (f"<a href='{key}' style='color: gray; text-decoration: none; font-weight: bold;'>"
                                 f"[...{count_lbl}...]</a>")
                 else:
@@ -476,7 +494,7 @@ class LogScripterDialog(QDialog):
         # which will call _update_button_state automatically.
 
     def _get_runnable_script(self) -> str:
-        """Reconstructs valid Python script, expanding any remaining anchors."""
+        """Reconstructs valid Python script."""
         doc = self.scripter_edit.document()
         full_script = ""
         
@@ -486,15 +504,16 @@ class LogScripterDialog(QDialog):
             while not it.atEnd():
                 frag = it.fragment()
                 fmt = frag.charFormat()
+                txt = frag.text()
                 
-                # Check for hidden value anchor
-                if fmt.isAnchor() and fmt.anchorHref() in self._hidden_data:
+                # [FIX] Only substitute if it is explicitly a placeholder
+                is_placeholder = txt.startswith('[...') and txt.endswith('...]')
+                
+                if fmt.isAnchor() and fmt.anchorHref() in self._hidden_data and is_placeholder:
                     full_script += self._hidden_data[fmt.anchorHref()]
                 else:
-                    full_script += frag.text()
+                    full_script += txt
                 it += 1
-            
             if blk.next().isValid(): full_script += "\n"
             blk = blk.next()
-            
         return full_script
