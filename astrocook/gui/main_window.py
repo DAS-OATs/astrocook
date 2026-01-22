@@ -3802,7 +3802,7 @@ class AboutDialog(QDialog):
         title_lbl.setAlignment(Qt.AlignCenter)
         #layout.addWidget(title_lbl)
 
-        copy_lbl = QLabel("© 2026 Guido Cupani")
+        copy_lbl = QLabel("© 2017-2026 Guido Cupani")
         copy_lbl.setStyleSheet("font-size: 14pt; color: #296bff;")
         copy_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(copy_lbl)
@@ -3811,7 +3811,7 @@ class AboutDialog(QDialog):
         try:
             from astrocook import __version__ as ver
         except ImportError:
-            ver = "2.0 (Beta)"
+            ver = "v2.0.0-beta.2"
 
         ver_lbl = QLabel(f"Version: {ver}")
         ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
