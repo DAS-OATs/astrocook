@@ -43,6 +43,17 @@ def _auto_limits(x_arr: np.ndarray, x_unit: au.Unit) -> Tuple[DataColumnV2, Data
     
     return DataColumnV2(xmin, x_unit), DataColumnV2(xmax, x_unit)
 
+def _x_unit_heuristics(x_arr: np.ndarray) -> au.Unit:
+    """
+    Heuristic to adjust wavelength unit if necessary.
+    If unit is Angstrom and median > 3000, convert to nm.
+    """
+    x_unit = au.Angstrom
+    if np.median(x_arr) > 3000: 
+        x_arr = x_arr / 10.0
+        x_unit = au.nm
+    return x_arr, x_unit
+
 def detect_file_format(file_path: str) -> str:
     path_lower = file_path.lower()
     if path_lower.endswith(('.acs', '.acs2')):
@@ -247,11 +258,7 @@ def load_pypeit_coadd(file_path: str, **kwargs) -> SpectrumDataV2:
         mask_in = mask_in[sort_idx]
         
         # 3. Units
-        x_unit = au.Angstrom
-        if np.median(x) > 3000: 
-            x = x / 10.0
-            x_unit = au.nm
-
+        x, x_unit = _x_unit_heuristics(x)
         y_unit = au.dimensionless_unscaled
         
         # 4. Build Structure
@@ -346,11 +353,7 @@ def load_pypeit_spec1d_multi(file_path: str, **kwargs) -> SpectrumDataV2:
         o = o[sort_idx]
 
         # Units
-        x_unit = au.Angstrom
-        if np.median(x) > 3000:
-            x = x / 10.0
-            x_unit = au.nm
-        
+        x, x_unit = _x_unit_heuristics(x)        
         y_unit = au.dimensionless_unscaled
         
         # Build structure
@@ -389,11 +392,8 @@ def load_pypeit_stack(file_path: str, **kwargs) -> SpectrumDataV2:
 
         # 1. Wavelength
         x = row['wave_stack']
-        x_unit = au.Angstrom
-        if np.median(x) > 3000:
-            x = x / 10.0
-            x_unit = au.nm
-
+        x, x_unit = _x_unit_heuristics(x)
+        
         # 2. Flux
         y = row['flux_stack']
         y_unit = au.dimensionless_unscaled
@@ -776,7 +776,8 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             else: dy = np.zeros_like(y)
             
             # 2. Units (Hardcoded for X-Shooter standard, or parsed from header)
-            x_unit = au.nm 
+            x, x_unit = _x_unit_heuristics(x)
+            print(x_unit)
             y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
             
             # 3. Build Columns
@@ -880,10 +881,8 @@ def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumDataV2:
 
             # 5. Units & Sort
             # Heuristic: Angstroms vs nm
-            x_unit = au.nm
-            if np.median(x) > 3000:
-                x = x / 10.0 # Convert A -> nm
-                x_unit = au.nm
+            x, x_unit = _x_unit_heuristics(x)
+            y_unit = au.dimensionless_unscaled
             
             # Sort by wavelength (crucial for Astrocook)
             sort_idx = np.argsort(x)
