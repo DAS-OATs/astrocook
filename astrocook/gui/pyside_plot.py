@@ -1612,7 +1612,7 @@ class SpectrumPlotWidget(QWidget):
                 f"<div style='font-size: 13px'>"
                 f"<b>ID:</b> {found_comp.id} | <b>{found_comp.series}</b><br>"
                 f"<b>z:</b> {found_comp.z:.5f}<br>"
-                f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+                f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
                 f"</div>"
             )
 

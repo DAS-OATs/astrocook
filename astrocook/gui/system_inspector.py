@@ -176,7 +176,7 @@ class SystemTableModel(QAbstractTableModel):
                 f"<div style='font-size: 13px'>"
                 f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
                 f"<b>z:</b> {comp.z:.6f}<br>"
-                f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+                f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
              )
              if is_constrained_col:
                 tooltip_html += "<hr style='margin: 4px 0;'>"
@@ -832,7 +832,7 @@ class VelocityPlotWidget(QWidget):
                     f"<div style='font-size: 13px'>"
                     f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
                     f"<b>z:</b> {comp.z:.5f}<br>"
-                    f"<b>{u'\u03c7'}\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
+                    f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
                     f"</div>"
                 )
                 break
