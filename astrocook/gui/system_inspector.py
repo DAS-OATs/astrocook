@@ -1172,6 +1172,12 @@ class SystemInspector(QWidget):
         
         self.table_view.setModel(self.proxy_model)
         self.table_view.setSortingEnabled(True)
+
+        # Default Sort: Redshift (z) Ascending
+        # We dynamically find the index of "z" to be safe against column reordering
+        if "z" in COLUMNS:
+            self.table_view.sortByColumn(COLUMNS.index("z"), Qt.AscendingOrder)
+
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table_view.setAlternatingRowColors(True)
@@ -1335,7 +1341,10 @@ class SystemInspector(QWidget):
         target_uuid = prev_uuid
         
         # Rule: If the max ID increased, a component was likely added. Select it.
-        if max_id_new > max_id_old:
+        # [FIX] Added 'old_comps and' check. 
+        # This ensures we only auto-select the newest ID if we are UPDATING a session 
+        # (e.g. adding a line), not when initially LOADING one.
+        if old_comps and max_id_new > max_id_old:
             for c in new_comps:
                 if c.id == max_id_new:
                     target_uuid = c.uuid
