@@ -1010,69 +1010,45 @@ class VelocityPlotWidget(QWidget):
                 c_kms = 299792.458
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
-                # 1. Identify the Group of the clicked panel
-                # Always prefer the Multiplet name (e.g. SiIV) over the line name (SiIV_1402)
-                group_primary = trans_name
-                for g, members in METAL_MULTIPLETS.items():
+                # --- PREPARATION ---
+
+                # 1. Identify Primary Group (Standard Definition)
+                # Used for Option 1 ("Add Standard Group")
+                group_primary = None
+                group_members = []
+                for g, members in STANDARD_MULTIPLETS.items():
                     if trans_name in members:
-                        group_primary = g; break
+                        group_primary = g
+                        group_members = members
+                        break
                 
-                # 2. Identify all OTHER visible groups
-                visible_other_groups = set()
-                
-                for t in self._all_transitions:
-                    g_name = t
-                    for g, members in METAL_MULTIPLETS.items():
-                        if t in members: g_name = g; break
-                    
-                    # Only add if it is DISTINCT from the primary group
-                    if g_name != group_primary:
-                        visible_other_groups.add(g_name)
-                
-                # 3. Add Linked Action (Only if other groups exist)
-                # If visible_other_groups is empty, it means we are only looking at 
-                # lines from the same group (e.g. SiIV_1393 and SiIV_1402).
-                # In that case, "Add SiIV" (Standard) is sufficient.
-                
-                if visible_other_groups:
-                    # Sort for consistency
-                    others_sorted = sorted(list(visible_other_groups))
-                    
-                    # Construct list: Primary, Others...
-                    combined_list_str = f"{group_primary}," + ",".join(others_sorted)
-                    
-                    # Label: "Add SiIV-CIV-NV..."
-                    label_str = f"{group_primary}-" + "-".join(others_sorted)
-                    
-                    act_link = QAction(f"Add {label_str} at z={z_new:.5f} (linked z)", menu)
-                    act_link.triggered.connect(lambda checked=False, sl=combined_list_str, z=z_new: 
-                        self.inspector.main_window._on_recipe_requested(
-                            "absorbers", "add_linked_system",
-                            {
-                                'series_list': sl, 'z': z,
-                                'logN': self.cursor_logN, 'b': self.cursor_b
-                            }, {}
-                        )
-                    )
-                    menu.addAction(act_link)
-                    has_actions = True
+                # Fallback: Single line group
+                if not group_primary:
+                    group_primary = trans_name
+                    group_members = [trans_name]
 
-                menu.addSeparator()
+                # 2. Identify Active Transitions (Full content of Trans. Box)
+                # This is the candidate list for the Custom Subset
+                active_trans = self._all_transitions
 
-                # 4. Standard Single Add (Always available)
-                # This adds the Primary Group (e.g. "Add SiIV")
-                act_add = QAction(f"Add {group_primary} at z={z_new:.5f}", menu)
-                act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
-                    "absorbers", "add_component", {
-                        'series': group_primary, 'z': z_new,
-                        'logN': self.cursor_logN, 'b': self.cursor_b
-                    }, {}))
-                
-                menu.addAction(act_add)
+                # 3. Check "Manual Edit" State
+                is_manual_mode = self.inspector._manual_trans_edit
 
-                # 5. Single Line Add (e.g. "Add CIV_1548")
-                # Only show if the specific line is different from the group name
-                # (Avoids duplicate "Add Ly_a" entries)
+                # --- MENU CONSTRUCTION ---
+
+                # OPTION 1: STANDARD ADD (Multiplet)
+                # Adds the standard group defined in atomic data (e.g. all 10+ FeII lines)
+                if group_primary in STANDARD_MULTIPLETS:
+                    act_add = QAction(f"Add {group_primary} at z={z_new:.5f}", menu)
+                    act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                        "absorbers", "add_component", {
+                            'series': group_primary, 'z': z_new,
+                            'logN': self.cursor_logN, 'b': self.cursor_b
+                        }, {}))
+                    menu.addAction(act_add)
+
+                # OPTION 2: SINGLE LINE ADD (Transition)
+                # Adds only the specific line clicked (e.g. FeII_2374)
                 if trans_name != group_primary:
                     act_add_single = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
                     act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
@@ -1081,6 +1057,69 @@ class VelocityPlotWidget(QWidget):
                             'logN': self.cursor_logN, 'b': self.cursor_b
                         }, {}))
                     menu.addAction(act_add_single)
+
+                # OPTION 3: ADD SUBSET (V1-style Custom Multiplet)
+                # Uses exactly what is in the text box (active_trans)
+                
+                # Check if the active list is identical to the standard group (Redundancy Check)
+                # If they are identical, Option 1 covers it, so we skip Option 3.
+                is_standard_group = (set(active_trans) == set(group_members))
+                
+                # Condition: Must contain > 1 line, and NOT be the standard group
+                if len(active_trans) > 1 and not is_standard_group:
+                    v1_series_key = ",".join(active_trans)
+                    
+                    label_str = v1_series_key
+                    if len(label_str) > 35: label_str = label_str[:32] + "..."
+
+                    act_vis = QAction(f"Add {label_str} at z={z_new:.5f}", menu)
+                    act_vis.triggered.connect(lambda checked=False, s=v1_series_key, z=z_new: 
+                        self.inspector.main_window._on_recipe_requested(
+                            "absorbers", "add_component", 
+                            {
+                                'series': s, 
+                                'z': z,
+                                'logN': self.cursor_logN, 
+                                'b': self.cursor_b
+                            }, {}
+                        )
+                    )
+                    menu.addAction(act_vis)
+
+                # OPTION 4: LINKED SYSTEM (Dash-separated groups)
+                # Only if in Manual Mode and multiple distinct groups are detected
+                if is_manual_mode:
+                    active_groups = set()
+                    for t in active_trans:
+                        # Find which group this transition belongs to
+                        g_found = t # Default to itself
+                        for g, members in STANDARD_MULTIPLETS.items():
+                            if t in members: 
+                                g_found = g
+                                break
+                        # If not found in standard, try prefix (e.g. FeII from FeII_2222)
+                        if g_found == t:
+                            g_found = t.split('_')[0]
+
+                        active_groups.add(g_found)
+                    
+                    if len(active_groups) > 1:
+                        menu.addSeparator()
+                        groups_sorted = sorted(list(active_groups))
+                        combined_list_str = ",".join(groups_sorted)
+                        label_str = "-".join(groups_sorted)
+                        
+                        act_link = QAction(f"Add {label_str} at z={z_new:.5f} (linked z)", menu)
+                        act_link.triggered.connect(lambda checked=False, sl=combined_list_str, z=z_new: 
+                            self.inspector.main_window._on_recipe_requested(
+                                "absorbers", "add_linked_system",
+                                {
+                                    'series_list': sl, 'z': z,
+                                    'logN': self.cursor_logN, 'b': self.cursor_b
+                                }, {}
+                            )
+                        )
+                        menu.addAction(act_link)
 
                 has_actions = True
 
