@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 from .v1_stubs import load_v1_spec_object, load_v1_systs_object
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,
@@ -22,6 +23,24 @@ from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.system_list import SystemListV2
 # --- V1 Imports ---
 from astrocook.legacy.gui_log import GUILog
+
+# --- Helper for Multiplet Registration ---
+def _register_custom_multiplets(components: List[ComponentDataV2]):
+    """
+    Scans a list of components for V1-style custom multiplets (comma-separated)
+    and registers them into STANDARD_MULTIPLETS so they are recognized by V2.
+    """
+    if not components: return
+
+    for c in components:
+        series = c.series
+        if series and ',' in series and series not in STANDARD_MULTIPLETS:
+            # Parse: "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
+            members = [s.strip() for s in series.split(',') if s.strip()]
+            
+            # Register globally
+            STANDARD_MULTIPLETS[series] = members
+            logging.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
 
 # ... (v1_table_to_data_v2 remains unchanged) ...
 def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
@@ -90,6 +109,11 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
         from astrocook.core.system_list_migration import migrate_system_list_v1_to_v2
         try:
             v1_systs, syst_header = load_v1_systs_object(path_to_load)
+            migrated_data = migrate_system_list_v1_to_v2(v1_systs, syst_header)
+            
+            # [FIX] Register custom multiplets found in V1 data
+            if migrated_data and migrated_data.components:
+                _register_custom_multiplets(migrated_data.components)
             return SystemListV2(data=migrate_system_list_v1_to_v2(v1_systs, syst_header))
         except Exception: return SystemListV2(data=SystemListDataV2())
 
@@ -185,6 +209,8 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
         components.append(comp)
         id_to_uuid_map[comp.id] = comp.uuid
         
+    _register_custom_multiplets(components)
+    
     return components, id_to_uuid_map
 
 # ... (load_systs_data_v2_from_archive, _serialize_v2_metadata remain same) ...
