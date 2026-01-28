@@ -1427,6 +1427,10 @@ class SystemInspector(QWidget):
         # Update the Group Logic (Highlighter + Filter List)
         self._update_group_definition(selected_comps)
 
+        # Update Main Plot Highlights
+        if self.main_window:
+            self.main_window.update_session_highlights(selected_comps)
+
         if primary_comp and self.current_session:
             new_txt = ""
             
