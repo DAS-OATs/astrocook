@@ -1011,115 +1011,111 @@ class VelocityPlotWidget(QWidget):
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
                 # --- PREPARATION ---
-
-                # 1. Identify Primary Group (Standard Definition)
-                # Used for Option 1 ("Add Standard Group")
-                group_primary = None
-                group_members = []
-                for g, members in STANDARD_MULTIPLETS.items():
-                    if trans_name in members:
-                        group_primary = g
-                        group_members = members
-                        break
                 
-                # Fallback: Single line group
-                if not group_primary:
-                    group_primary = trans_name
-                    group_members = [trans_name]
-
-                # 2. Identify Active Transitions (Full content of Trans. Box)
-                # This is the candidate list for the Custom Subset
+                # 1. Get Active Transitions (Content of Trans. Box)
                 active_trans = self._all_transitions
 
-                # 3. Check "Manual Edit" State
-                is_manual_mode = self.inspector._manual_trans_edit
+                # 2. Analyze Species Composition
+                # Group active lines by their Species (e.g. {'FeII': [...], 'CIV': [...]})
+                species_map = {}
+                
+                for t in active_trans:
+                    # Identify Species Tag
+                    g_found = None
+                    for g, members in STANDARD_MULTIPLETS.items():
+                        if t in members: 
+                            g_found = g
+                            break
+                    # Fallback: extract prefix (e.g. 'FeII' from 'FeII_2374')
+                    if not g_found:
+                        g_found = t.split('_')[0]
+                    
+                    if g_found not in species_map:
+                        species_map[g_found] = []
+                    species_map[g_found].append(t)
+
+                unique_species = list(species_map.keys())
+                num_species = len(unique_species)
 
                 # --- MENU CONSTRUCTION ---
 
-                # OPTION 1: STANDARD ADD (Multiplet)
-                # Adds the standard group defined in atomic data (e.g. all 10+ FeII lines)
-                if group_primary in STANDARD_MULTIPLETS:
-                    act_add = QAction(f"Add {group_primary} at z={z_new:.5f}", menu)
-                    act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
-                        "absorbers", "add_component", {
-                            'series': group_primary, 'z': z_new,
-                            'logN': self.cursor_logN, 'b': self.cursor_b
-                        }, {}))
-                    menu.addAction(act_add)
+                # 1. SINGLE LINE ADD (Always Available)
+                # Adds the specific transition under cursor
+                act_add_single = QAction(f"Add {trans_name} (Single Line) at z={z_new:.5f}", menu)
+                act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                    "absorbers", "add_component", {
+                        'series': trans_name, 'z': z_new,
+                        'logN': self.cursor_logN, 'b': self.cursor_b
+                    }, {}))
+                menu.addAction(act_add_single)
 
-                # OPTION 2: SINGLE LINE ADD (Transition)
-                # Adds only the specific line clicked (e.g. FeII_2374)
-                if trans_name != group_primary:
-                    act_add_single = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
-                    act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
-                        "absorbers", "add_component", {
-                            'series': trans_name, 'z': z_new,
-                            'logN': self.cursor_logN, 'b': self.cursor_b
-                        }, {}))
-                    menu.addAction(act_add_single)
+                # LOGIC BRANCHING BASED ON SCENARIOS
 
-                # OPTION 3: ADD SUBSET (V1-style Custom Multiplet)
-                # Uses exactly what is in the text box (active_trans)
-                
-                # Check if the active list is identical to the standard group (Redundancy Check)
-                # If they are identical, Option 1 covers it, so we skip Option 3.
-                is_standard_group = (set(active_trans) == set(group_members))
-                
-                # Condition: Must contain > 1 line, and NOT be the standard group
-                if len(active_trans) > 1 and not is_standard_group:
-                    v1_series_key = ",".join(active_trans)
+                # CASE A: SINGLE SPECIES (e.g. Just CIV or Just FeII)
+                if num_species == 1:
+                    sp_name = unique_species[0]
+                    std_members = STANDARD_MULTIPLETS.get(sp_name, [])
                     
-                    label_str = v1_series_key
-                    if len(label_str) > 35: label_str = label_str[:32] + "..."
+                    # Check definition size: Small (<=2, e.g. CIV) vs Large (>2, e.g. FeII)
+                    is_large_multiplet = len(std_members) > 2
+                    
+                    if not is_large_multiplet:
+                        # SCENARIO 1: Small Multiplet -> STANDARD ADD
+                        # (Adds the full standard group, e.g. CIV)
+                        act_std = QAction(f"Add {sp_name} (Standard) at z={z_new:.5f}", menu)
+                        act_std.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                            "absorbers", "add_component", {
+                                'series': sp_name, 'z': z_new,
+                                'logN': self.cursor_logN, 'b': self.cursor_b
+                            }, {}))
+                        menu.addAction(act_std)
+                    
+                    else:
+                        # SCENARIO 2: Large Multiplet -> ADD SUBSET
+                        # (Adds exactly the active lines as a custom multiplet)
+                        # Only show if subset > 1 (otherwise Single Line covers it)
+                        if len(active_trans) > 1:
+                            v1_series_key = ",".join(active_trans)
+                            label_str = v1_series_key
+                            if len(label_str) > 35: label_str = label_str[:32] + "..."
 
-                    act_vis = QAction(f"Add {label_str} at z={z_new:.5f}", menu)
-                    act_vis.triggered.connect(lambda checked=False, s=v1_series_key, z=z_new: 
+                            act_sub = QAction(f"Add {label_str} (Subset) at z={z_new:.5f}", menu)
+                            act_sub.triggered.connect(lambda checked=False, s=v1_series_key, z=z_new: 
+                                self.inspector.main_window._on_recipe_requested(
+                                    "absorbers", "add_component", 
+                                    {
+                                        'series': s, 
+                                        'z': z,
+                                        'logN': self.cursor_logN, 
+                                        'b': self.cursor_b
+                                    }, {}
+                                )
+                            )
+                            menu.addAction(act_sub)
+
+                # CASE B: MIXED SPECIES (e.g. CIV + FeII)
+                elif num_species > 1:
+                    # SCENARIO 3: Mixed -> LINKED SYSTEM (Active Lines Only)
+                    # Pass the raw list of active transitions to add_linked_system.
+                    # This ensures we link specific visible lines, not whole groups.
+                    
+                    raw_list_str = ",".join(active_trans)
+                    
+                    # Generate label (e.g. "CIV_1548,FeII_2374...")
+                    label_str = raw_list_str
+                    if len(label_str) > 35: label_str = label_str[:32] + "..."
+                    
+                    act_link = QAction(f"Add {label_str} (Linked) at z={z_new:.5f}", menu)
+                    act_link.triggered.connect(lambda checked=False, sl=raw_list_str, z=z_new: 
                         self.inspector.main_window._on_recipe_requested(
-                            "absorbers", "add_component", 
+                            "absorbers", "add_linked_system",
                             {
-                                'series': s, 
-                                'z': z,
-                                'logN': self.cursor_logN, 
-                                'b': self.cursor_b
+                                'series_list': sl, 'z': z,
+                                'logN': self.cursor_logN, 'b': self.cursor_b
                             }, {}
                         )
                     )
-                    menu.addAction(act_vis)
-
-                # OPTION 4: LINKED SYSTEM (Dash-separated groups)
-                # Only if in Manual Mode and multiple distinct groups are detected
-                if is_manual_mode:
-                    active_groups = set()
-                    for t in active_trans:
-                        # Find which group this transition belongs to
-                        g_found = t # Default to itself
-                        for g, members in STANDARD_MULTIPLETS.items():
-                            if t in members: 
-                                g_found = g
-                                break
-                        # If not found in standard, try prefix (e.g. FeII from FeII_2222)
-                        if g_found == t:
-                            g_found = t.split('_')[0]
-
-                        active_groups.add(g_found)
-                    
-                    if len(active_groups) > 1:
-                        menu.addSeparator()
-                        groups_sorted = sorted(list(active_groups))
-                        combined_list_str = ",".join(groups_sorted)
-                        label_str = "-".join(groups_sorted)
-                        
-                        act_link = QAction(f"Add {label_str} at z={z_new:.5f} (linked z)", menu)
-                        act_link.triggered.connect(lambda checked=False, sl=combined_list_str, z=z_new: 
-                            self.inspector.main_window._on_recipe_requested(
-                                "absorbers", "add_linked_system",
-                                {
-                                    'series_list': sl, 'z': z,
-                                    'logN': self.cursor_logN, 'b': self.cursor_b
-                                }, {}
-                            )
-                        )
-                        menu.addAction(act_link)
+                    menu.addAction(act_link)
 
                 has_actions = True
 
