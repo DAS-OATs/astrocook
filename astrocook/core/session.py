@@ -4,6 +4,7 @@ import json
 import logging
 import numpy as np
 import os
+import shutil
 import tarfile 
 import tempfile
 from typing import Any, Optional, Tuple, Union
@@ -68,43 +69,36 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
     archive_root = ""
     v2_metadata = None
     
-    # --- CHECK V2 NATIVE LOADERS FIRST ---
-    # Import the getter from the new module
+    archive_path_lower = archive_path.lower()
+    # PRESERVE: Check for V2 archive early to prevent mis-loading as raw spectrum
+    is_v2_archive = archive_path_lower.endswith('.acs2') or archive_path_lower.endswith('.tar.gz')
+
+    # --- 1. CHECK V2 NATIVE LOADERS (Only for raw files) ---
     from astrocook.io.loaders import get_loader, detect_file_format
 
-    # --- AUTO-DETECT FORMAT ---
-    if format_name == 'auto' or format_name is None:
-        try:
-            format_name = detect_file_format(archive_path)
-            logging.info(f"Auto-detected format '{format_name}' for {os.path.basename(archive_path)}")
-        except Exception as e:
-            logging.warning(f"Format detection failed ({e}), defaulting to 'generic_spectrum'.")
-            format_name = 'generic_spectrum'
+    if not is_v2_archive:
+        if format_name == 'auto' or format_name is None:
+            try:
+                format_name = detect_file_format(archive_path)
+                logging.info(f"Auto-detected format '{format_name}' for {os.path.basename(archive_path)}")
+            except Exception as e:
+                logging.warning(f"Format detection failed ({e}), defaulting to 'generic_spectrum'.")
+                format_name = 'generic_spectrum'
 
-    v2_loader = get_loader(format_name)
-    if v2_loader:
-        logging.info(f"Using V2 Native Loader for format '{format_name}' on {archive_path}")
-        try:
-            # Call the pure loader (returns SpectrumDataV2)
-            spec_data = v2_loader(archive_path)
+        v2_loader = get_loader(format_name)
+        if v2_loader:
+            logging.info(f"Using V2 Native Loader for format '{format_name}' on {archive_path}")
+            try:
+                spec_data = v2_loader(archive_path)
+                spectrum_v2 = SpectrumV2(data=spec_data)
+                return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
+            except Exception as e:
+                logging.error(f"V2 Loader '{format_name}' failed: {e}")
+                return 0
 
-            # Wrap in API object
-            spectrum_v2 = SpectrumV2(data=spec_data)
-
-            # Create session (SystemList empty for raw loads)
-            return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
-
-        except Exception as e:
-            logging.error(f"V2 Loader '{format_name}' failed: {e}")
-            # If specific loader fails, do NOT fall back to generic FITS. Fail hard.
-            return 0
-
-    # --- 2. EXISTING LEGACY LOGIC (ACS/FITS) ---
+    # --- 2. EXISTING LEGACY & ARCHIVE LOGIC ---
     try:
-        archive_path_lower = archive_path.lower()
-        
-        if archive_path_lower.endswith('.acs2') or archive_path_lower.endswith('.tar.gz'):
-            # ... (unpacking logic unchanged) ...
+        if is_v2_archive:
             logging.debug(f"Unpacking V2 archive: {archive_path}")
             temp_dir = tempfile.mkdtemp()
             with tarfile.open(archive_path, 'r:gz') as tar:
@@ -117,11 +111,9 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                     break
             if not spec_file_path:
                  raise FileNotFoundError("Could not find a _spec.fits file in the .acs2 archive.")
-            
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         elif archive_path_lower.endswith('.acs'):
-            # ... (unpacking logic unchanged) ...
             logging.debug(f"Unpacking V1 archive: {archive_path}")
             archive_manager = V1ArchiveManager(archive_path)
             temp_dir = archive_manager.unpack()
@@ -134,13 +126,11 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         else:
-            # Standard FITS fallback
             logging.debug("Loading single FITS file (Legacy Path).")
             temp_dir = None
             archive_root = os.path.splitext(archive_path)[0]
             spec_file_path = archive_path
         
-        # --- V2 METADATA ---
         if temp_dir:
             meta_fname = f"{os.path.basename(archive_root)}_meta.json"
             meta_file_path = os.path.join(temp_dir, meta_fname)
@@ -152,7 +142,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                 except Exception as e:
                     logging.error(f"Failed to load _meta.json: {e}")
 
-        # --- LEGACY LOAD ---
+        # PRESERVE: Legacy Load and Migration
         spectrum_v2 = load_and_migrate_structure(
             archive_root, 'spec', gui_context, format_name, 
             spec_file_path=spec_file_path,
@@ -174,7 +164,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             systs=system_list_v2
         )
         
-        # Ensure 'cont' is intrinsic and 'telluric_model' is separate
+        # PRESERVE: Sanitize tellurics (Essential for alignment)
         if new_session.spec:
             try:
                 new_session = new_session.with_new_spectrum(new_session.spec.sanitize_legacy_tellurics())
