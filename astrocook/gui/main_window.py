@@ -209,6 +209,9 @@ class MainWindowV2(QMainWindow):
             self.active_history = None
             self._update_view_for_session(None, set_current_list_item=False, is_startup=True)
 
+        # Enable drag and drop of files onto the main window
+        self.setAcceptDrops(True)
+
         self._update_undo_redo_actions()
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
 
@@ -3616,7 +3619,7 @@ class MainWindowV2(QMainWindow):
 
         try:
             new_session = load_session_from_file(
-                archive_path=file_name, 
+                archive_path=file_path, 
                 name=session_name, 
                 format_name='auto',  # <--- Let the loader decide
                 gui_context=gui_context
@@ -3649,6 +3652,32 @@ class MainWindowV2(QMainWindow):
         # 2. Delegate focus logic to the inspector
         if self.system_inspector:
             self.system_inspector.focus_on_component(uuid, force_group_view=True)
+
+    def dragEnterEvent(self, event):
+        """Check if the drag contains files."""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Process the dropped files."""
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            for url in urls:
+                file_path = url.toLocalFile()
+                if file_path:
+                    logging.info(f"Dropped file detected: {file_path}")
+                    # Use your existing public method
+                    self.open_session_from_path(file_path)
+        finally:
+            QApplication.restoreOverrideCursor()
+        
+        event.acceptProposedAction()
 
 class LogSignalBridge(QObject):
     """Thread-safe bridge to emit log messages as Qt signals."""

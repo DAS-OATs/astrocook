@@ -35,7 +35,7 @@ class AstroCookApp(QApplication):
 
     def __init__(self, argv):
         super().__init__(argv)
-        self.startup_file = None # To save the file if it arrives during startup
+        self.startup_files = [] # Change to list to handle multiple files
 
     def event(self, event):
         # Intercept the specific macOS event
@@ -43,8 +43,9 @@ class AstroCookApp(QApplication):
             file_path = event.file()
             logging.info(f"MacOS FileOpen Event received: {file_path}")
             
-            # If the main window is not ready yet, save the path for later
-            self.startup_file = file_path
+            # If the main window isn't ready, queue it
+            if not self.activeWindow():
+                self.startup_files.append(file_path)
             
             # Emit the signal anyway (useful if the app is already open)
             self.file_open_requested.emit(file_path)
@@ -176,8 +177,8 @@ def main():
                 files_to_load.extend(matched)
     
     # B. Check for macOS startup event
-    elif hasattr(app, 'startup_file') and app.startup_file:
-        files_to_load.append(app.startup_file)
+    elif hasattr(app, 'startup_files') and app.startup_files:
+        files_to_load.extend(app.startup_files)
 
     # C. Load loop
     for file_path in files_to_load:
