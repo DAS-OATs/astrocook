@@ -123,6 +123,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z", "type": float, "default": None, "doc": "Redshift"},
             {"name": "logN", "type": float, "default": None, "doc": "logN"},
             {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
+            {"name": "btur", "type": float, "default": None, "doc": "btur (km/s)"},
             {"name": "series", "type": str, "default": None, "doc": "Series"},
             {"name": "resol", "type": float, "default": None, "doc": "Resolution (R or FWHM)"}
         ],
@@ -910,7 +911,7 @@ class RecipeAbsorbersV2:
             logging.error(f"Failed add_component: {e}"); return 0
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
-                         b: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
+                         b: str = 'None', btur: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
         """
         Update component parameters.
 
@@ -927,6 +928,8 @@ class RecipeAbsorbersV2:
             Column Density (log). Defaults to ``'None'``.
         b : str, optional
             Doppler parameter (km/s). Defaults to ``'None'``.
+        btur : str, optional
+            Turbulent broadening (km/s). Defaults to ``'None'``.
         series : str, optional
             Series name. Defaults to ``'None'``.
         resol : str, optional
@@ -943,6 +946,7 @@ class RecipeAbsorbersV2:
             if z != 'None': changes['z'] = float(z)
             if logN != 'None': changes['logN'] = float(logN)
             if b != 'None': changes['b'] = float(b)
+            if btur != 'None': changes['btur'] = float(btur)
             if series != 'None': changes['series'] = str(series)
             if resol != 'None': changes['resol'] = float(resol) # Handle resolution update
             
