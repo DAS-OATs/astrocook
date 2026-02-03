@@ -116,7 +116,7 @@ class MainWindowV2(QMainWindow):
 
         self._last_attempted_recipe: Optional[dict] = None
 
-        self._suppress_refit_warning = False
+        self._suppress_refit_warning = True  # The warnings are annoying; can be re-enabled for debugging
 
         #self.setGeometry(100, 100, 450, 150) # Initial small size
         self.resize(1400,900)
