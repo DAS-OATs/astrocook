@@ -3653,6 +3653,17 @@ class MainWindowV2(QMainWindow):
         if self.system_inspector:
             self.system_inspector.focus_on_component(uuid, force_group_view=True)
 
+    def update_session_highlights(self, components: list):
+        """
+        Updates the main plot to highlight the specified components.
+        """
+        if not self.plot_viewer:
+            return
+            
+        # Extract UUIDs for efficient storage
+        uuids = {c.uuid for c in components} if components else set()
+        self.plot_viewer.set_highlights(uuids)
+
     def dragEnterEvent(self, event):
         """Check if the drag contains files."""
         if event.mimeData().hasUrls():

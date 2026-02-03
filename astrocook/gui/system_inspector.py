@@ -1010,42 +1010,103 @@ class VelocityPlotWidget(QWidget):
                 c_kms = 299792.458
                 z_new = (1 + self._plot_center_z) * (1 + v / c_kms) - 1
 
-                # 1. Identify the Group of the clicked panel
-                # Always prefer the Multiplet name (e.g. SiIV) over the line name (SiIV_1402)
-                group_primary = trans_name
-                for g, members in METAL_MULTIPLETS.items():
-                    if trans_name in members:
-                        group_primary = g; break
+                # --- PREPARATION ---
                 
-                # 2. Identify all OTHER visible groups
-                visible_other_groups = set()
+                # 1. Get Active Transitions (Content of Trans. Box)
+                active_trans = self._all_transitions
+
+                # 2. Analyze Species Composition
+                # Group active lines by their Species (e.g. {'FeII': [...], 'CIV': [...]})
+                species_map = {}
                 
-                for t in self._all_transitions:
-                    g_name = t
-                    for g, members in METAL_MULTIPLETS.items():
-                        if t in members: g_name = g; break
+                for t in active_trans:
+                    # Identify Species Tag
+                    g_found = None
+                    for g, members in STANDARD_MULTIPLETS.items():
+                        if t in members: 
+                            g_found = g
+                            break
+                    # Fallback: extract prefix (e.g. 'FeII' from 'FeII_2374')
+                    if not g_found:
+                        g_found = t.split('_')[0]
                     
-                    # Only add if it is DISTINCT from the primary group
-                    if g_name != group_primary:
-                        visible_other_groups.add(g_name)
-                
-                # 3. Add Linked Action (Only if other groups exist)
-                # If visible_other_groups is empty, it means we are only looking at 
-                # lines from the same group (e.g. SiIV_1393 and SiIV_1402).
-                # In that case, "Add SiIV" (Standard) is sufficient.
-                
-                if visible_other_groups:
-                    # Sort for consistency
-                    others_sorted = sorted(list(visible_other_groups))
+                    if g_found not in species_map:
+                        species_map[g_found] = []
+                    species_map[g_found].append(t)
+
+                unique_species = list(species_map.keys())
+                num_species = len(unique_species)
+
+                # --- MENU CONSTRUCTION ---
+
+                # 1. SINGLE LINE ADD (Always Available)
+                # Adds the specific transition under cursor
+                act_add_single = QAction(f"Add {trans_name} (Single Line) at z={z_new:.5f}", menu)
+                act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                    "absorbers", "add_component", {
+                        'series': trans_name, 'z': z_new,
+                        'logN': self.cursor_logN, 'b': self.cursor_b
+                    }, {}))
+                menu.addAction(act_add_single)
+
+                # LOGIC BRANCHING BASED ON SCENARIOS
+
+                # CASE A: SINGLE SPECIES (e.g. Just CIV or Just FeII)
+                if num_species == 1:
+                    sp_name = unique_species[0]
+                    std_members = STANDARD_MULTIPLETS.get(sp_name, [])
                     
-                    # Construct list: Primary, Others...
-                    combined_list_str = f"{group_primary}," + ",".join(others_sorted)
+                    # Check definition size: Small (<=2, e.g. CIV) vs Large (>2, e.g. FeII)
+                    is_large_multiplet = len(std_members) > 2
                     
-                    # Label: "Add SiIV-CIV-NV..."
-                    label_str = f"{group_primary}-" + "-".join(others_sorted)
+                    if not is_large_multiplet:
+                        # SCENARIO 1: Small Multiplet -> STANDARD ADD
+                        # (Adds the full standard group, e.g. CIV)
+                        act_std = QAction(f"Add {sp_name} (Standard) at z={z_new:.5f}", menu)
+                        act_std.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
+                            "absorbers", "add_component", {
+                                'series': sp_name, 'z': z_new,
+                                'logN': self.cursor_logN, 'b': self.cursor_b
+                            }, {}))
+                        menu.addAction(act_std)
                     
-                    act_link = QAction(f"Add {label_str} at z={z_new:.5f} (linked z)", menu)
-                    act_link.triggered.connect(lambda checked=False, sl=combined_list_str, z=z_new: 
+                    else:
+                        # SCENARIO 2: Large Multiplet -> ADD SUBSET
+                        # (Adds exactly the active lines as a custom multiplet)
+                        # Only show if subset > 1 (otherwise Single Line covers it)
+                        if len(active_trans) > 1:
+                            v1_series_key = ",".join(active_trans)
+                            label_str = v1_series_key
+                            if len(label_str) > 35: label_str = label_str[:32] + "..."
+
+                            act_sub = QAction(f"Add {label_str} (Subset) at z={z_new:.5f}", menu)
+                            act_sub.triggered.connect(lambda checked=False, s=v1_series_key, z=z_new: 
+                                self.inspector.main_window._on_recipe_requested(
+                                    "absorbers", "add_component", 
+                                    {
+                                        'series': s, 
+                                        'z': z,
+                                        'logN': self.cursor_logN, 
+                                        'b': self.cursor_b
+                                    }, {}
+                                )
+                            )
+                            menu.addAction(act_sub)
+
+                # CASE B: MIXED SPECIES (e.g. CIV + FeII)
+                elif num_species > 1:
+                    # SCENARIO 3: Mixed -> LINKED SYSTEM (Active Lines Only)
+                    # Pass the raw list of active transitions to add_linked_system.
+                    # This ensures we link specific visible lines, not whole groups.
+                    
+                    raw_list_str = ",".join(active_trans)
+                    
+                    # Generate label (e.g. "CIV_1548,FeII_2374...")
+                    label_str = raw_list_str
+                    if len(label_str) > 35: label_str = label_str[:32] + "..."
+                    
+                    act_link = QAction(f"Add {label_str} (Linked) at z={z_new:.5f}", menu)
+                    act_link.triggered.connect(lambda checked=False, sl=raw_list_str, z=z_new: 
                         self.inspector.main_window._on_recipe_requested(
                             "absorbers", "add_linked_system",
                             {
@@ -1055,32 +1116,6 @@ class VelocityPlotWidget(QWidget):
                         )
                     )
                     menu.addAction(act_link)
-                    has_actions = True
-
-                menu.addSeparator()
-
-                # 4. Standard Single Add (Always available)
-                # This adds the Primary Group (e.g. "Add SiIV")
-                act_add = QAction(f"Add {group_primary} at z={z_new:.5f}", menu)
-                act_add.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
-                    "absorbers", "add_component", {
-                        'series': group_primary, 'z': z_new,
-                        'logN': self.cursor_logN, 'b': self.cursor_b
-                    }, {}))
-                
-                menu.addAction(act_add)
-
-                # 5. Single Line Add (e.g. "Add CIV_1548")
-                # Only show if the specific line is different from the group name
-                # (Avoids duplicate "Add Ly_a" entries)
-                if trans_name != group_primary:
-                    act_add_single = QAction(f"Add {trans_name} at z={z_new:.5f}", menu)
-                    act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
-                        "absorbers", "add_component", {
-                            'series': trans_name, 'z': z_new,
-                            'logN': self.cursor_logN, 'b': self.cursor_b
-                        }, {}))
-                    menu.addAction(act_add_single)
 
                 has_actions = True
 
@@ -1137,6 +1172,12 @@ class SystemInspector(QWidget):
         
         self.table_view.setModel(self.proxy_model)
         self.table_view.setSortingEnabled(True)
+
+        # Default Sort: Redshift (z) Ascending
+        # We dynamically find the index of "z" to be safe against column reordering
+        if "z" in COLUMNS:
+            self.table_view.sortByColumn(COLUMNS.index("z"), Qt.AscendingOrder)
+
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table_view.setAlternatingRowColors(True)
@@ -1300,7 +1341,10 @@ class SystemInspector(QWidget):
         target_uuid = prev_uuid
         
         # Rule: If the max ID increased, a component was likely added. Select it.
-        if max_id_new > max_id_old:
+        # [FIX] Added 'old_comps and' check. 
+        # This ensures we only auto-select the newest ID if we are UPDATING a session 
+        # (e.g. adding a line), not when initially LOADING one.
+        if old_comps and max_id_new > max_id_old:
             for c in new_comps:
                 if c.id == max_id_new:
                     target_uuid = c.uuid
@@ -1382,6 +1426,10 @@ class SystemInspector(QWidget):
 
         # Update the Group Logic (Highlighter + Filter List)
         self._update_group_definition(selected_comps)
+
+        # Update Main Plot Highlights
+        if self.main_window:
+            self.main_window.update_session_highlights(selected_comps)
 
         if primary_comp and self.current_session:
             new_txt = ""

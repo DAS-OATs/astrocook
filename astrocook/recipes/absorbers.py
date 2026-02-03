@@ -881,6 +881,14 @@ class RecipeAbsorbersV2:
             z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
             z_win_f = float(z_window_kms)
         except ValueError: return 0
+
+        if ',' in series and series not in STANDARD_MULTIPLETS:
+            # 1. Parse the string "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
+            members = [s.strip() for s in series.split(',') if s.strip()]
+            
+            # 2. Register globally so the Fitter can find it
+            STANDARD_MULTIPLETS[series] = members
+            logging.info(f"Registered custom multiplet: '{series}' -> {members}")
         
         try:
             if self._session.systs is None:

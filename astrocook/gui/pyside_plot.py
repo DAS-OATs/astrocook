@@ -482,6 +482,9 @@ class SpectrumPlotWidget(QWidget):
         self.knot_artist = None  # Matplotlib Line2D (markers)
         self.spline_artist = None # Matplotlib Line2D (smooth line)
 
+        # --- Highlight State ---
+        self._highlighted_uuids = set()
+
         # Draw initial plot (will read checkbox state from main window)
         self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
 
@@ -1059,6 +1062,7 @@ class SpectrumPlotWidget(QWidget):
                 # ** Create lists to batch coordinates **
                 hi_lines_x = []
                 metal_lines_x = []
+                highlight_lines_x = []
                 zem = getattr(spec, '_zem', 0.0) # Get zem once
 
                 for comp in systs.components:
@@ -1084,6 +1088,9 @@ class SpectrumPlotWidget(QWidget):
                     if not transitions:
                         logging.warning(f"Could not parse series '{comp.series}' for system plot.")
 
+                    # Check if this component is highlighted
+                    is_highlighted = comp.uuid in self._highlighted_uuids
+
                     for t in transitions:
                         if t in xem_d:
                             try:
@@ -1092,6 +1099,12 @@ class SpectrumPlotWidget(QWidget):
 
                             # Check xlim *before* appending to keep lists small
                             if xlim[0] <= x_plot <= xlim[1]:
+                                # If highlighted, add to special list
+                                if is_highlighted:
+                                    highlight_lines_x.append(x_plot)
+                                    # Optional: Skip adding to standard lists if you don't want double drawing
+                                    # continue
+
                                 if t.startswith('Ly_'):
                                     hi_lines_x.append(x_plot)
                                 else:
@@ -1113,6 +1126,18 @@ class SpectrumPlotWidget(QWidget):
                             color='darkgray', alpha=0.9, label="Metal Systems",
                             transform=trans)
 
+                if highlight_lines_x:
+                    # 1. Bold Markers at top
+                    ax.plot(highlight_lines_x, [marker_y_axis_coord] * len(highlight_lines_x),
+                            marker='|', markersize=20, markeredgewidth=2.0, linestyle='None',
+                            color='#f5a100', alpha=1.0, label="Selected", zorder=5,
+                            transform=trans)
+                    
+                    # 2. Faint Vertical Guide Lines (Gold)
+                    # These help trace the line down to the spectrum
+                    for hx in highlight_lines_x:
+                        ax.axvline(hx, color='#f5a100', alpha=0.6, lw=1.0, linestyle=':', zorder=4)
+                        
             # 6. Plot Redshift Cursor
             if self.main_window.cursor_show_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE:
                 try:
@@ -2365,6 +2390,18 @@ class SpectrumPlotWidget(QWidget):
         
         # Force redraw
         self.canvas.draw_idle()
+
+    def set_highlights(self, uuids: set):
+        """Updates the list of highlighted component UUIDs and refreshes the plot."""
+        if self._highlighted_uuids != uuids:
+            self._highlighted_uuids = uuids
+            
+            # Trigger a redraw using the current session state
+            session_state = None
+            if self.main_window and self.main_window.active_history:
+                session_state = self.main_window.active_history.current_state
+            
+            self.plot_spectrum(session_state, force_autoscale=False)
 
 class AstrocookToolbar(NavigationToolbar):
     """
