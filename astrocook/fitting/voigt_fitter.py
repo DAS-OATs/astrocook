@@ -679,14 +679,28 @@ class VoigtFitterV2:
             for comp in active_components:
                 for trans in get_trans_list(comp.series):
                     lam_min, lam_max = self._find_feature_limits(comp.z, trans, z_window_kms=z_window_kms)
-                    if lam_min is not None:
-                        mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
-                        self._fit_mask |= mask_feat
-                    else:
+                    
+                    # 2. [FIX] Check for "Collapsed Window"
+                    # If the smart finder returned a window that is too narrow (< 30 km/s width),
+                    # it likely failed on a weak line. We force the fallback window.
+                    use_fallback = True
+                    if lam_min is not None and lam_max is not None:
+                        c_kms = 299792.458
+                        # Calculate velocity width of the found window
+                        width_v = c_kms * (lam_max - lam_min) / lam_max
+                        if width_v > 30.0: # Minimum safe width
+                            use_fallback = False
+                            mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
+                            self._fit_mask |= mask_feat
+    
+                    # 3. Fallback / Enforce Minimum Width
+                    if use_fallback:
                         lam_0 = ATOM_DATA.get(trans, {}).get('wave')
                         if lam_0:
                             lam_obs = lam_0 * (1.0 + comp.z)
-                            dw = (z_window_kms / c_kms) * lam_obs
+                            # Ensure we use at least the user's z_window_kms, or a safe minimum of 30 km/s
+                            safe_window = max(z_window_kms, 30.0)
+                            dw = (safe_window / c_kms) * lam_obs
                             self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
             self._fit_mask &= self._valid_mask
         
