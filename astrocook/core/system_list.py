@@ -116,8 +116,16 @@ class SystemListV2:
                 # Ensure value is an object (defensive)
                 val_obj = v
                 if isinstance(v, dict):
+                    # If parsing 'btur', default to False. For everything else, True.
+                    # We need to extract the param name from the key.
+                    default_free = True
+                    if isinstance(final_key, tuple) and len(final_key) == 2:
+                        p_name = final_key[1]
+                        if p_name == 'btur':
+                            default_free = False
+
                     val_obj = ParameterConstraintV2(
-                        is_free=v.get('is_free', True),
+                        is_free=v.get('is_free', default_free),
                         target_uuid=v.get('target_uuid'),
                         expression=v.get('expression')
                     )
@@ -490,7 +498,9 @@ class SystemListV2:
             else:
                  base_constraint = existing
         else:
-            base_constraint = ParameterConstraintV2(is_free=True)
+            # Default btur to Frozen, others to Free
+            default_free = False if param == 'btur' else True
+            base_constraint = ParameterConstraintV2(is_free=default_free)
 
         # 3. Apply Changes
         # [FIX] Logic for Unlinking: If we explicitly set is_free=True, 
