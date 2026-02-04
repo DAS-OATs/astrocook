@@ -266,12 +266,27 @@ class SystemListV2:
             yield
             return
 
-        original_active = self.constraint_model._active_uuids
+        # Snapshot original state safely
+        # Copy the set to avoid reference issues
+        original_active = None
+        if self.constraint_model._active_uuids is not None:
+            original_active = set(self.constraint_model._active_uuids)
+
         try:
             self.constraint_model.set_active_components(active_uuids, group_depth=group_depth)
             yield
         finally:
-            self.constraint_model.set_active_components(original_active)
+            # Robust cleanup
+            try:
+                self.constraint_model.set_active_components(original_active)
+            except Exception as e:
+                logging.error(f"fitting_context cleanup failed: {e}. Forcing reset to None.")
+                # Fail-safe: Unlock everything to prevent persistent 'Frozen' state
+                try:
+                    self.constraint_model.set_active_components(None)
+                except Exception:
+                    # Last resort: direct attribute clear
+                    self.constraint_model._active_uuids = None
 
     def to_v1_systlist(self) -> Optional[Table]:
         """Converts the V2 list to a simple V1-compatible table structure."""
