@@ -1701,13 +1701,20 @@ class SystemInspector(QWidget):
 
     def _refit_list(self, comps):
         """Iterates list and triggers fit_component."""
-        if self.main_window:
-            for c in comps:
-                # Note: This queues multiple recipes. 
-                # Ideally we'd have a batch recipe, but this is safe and robust.
-                self.main_window._on_recipe_requested(
-                    "absorbers", "fit_component", {"uuid": c.uuid}, {}
-                )
+        if self.main_window and comps:
+            uuid_list = [c.uuid for c in comps]
+            
+            # We use group_depth='2' (standard FoF) so that selecting a single line 
+            # pulls in its neighbors, just like 'fit_component'.
+            self.main_window._on_recipe_requested(
+                "absorbers", "refit_all", 
+                {
+                    "selected_uuids": uuid_list,
+                    "group_depth": "2",  # Enable neighbor grouping
+                    "max_nfev": "200"    # Standard fit iterations
+                }, 
+                {}
+            )
 
     def _delete_list(self, comps):
         """Batch delete with a single confirmation dialog."""

@@ -229,7 +229,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window around lines (km/s)"},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
             {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"},
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."}
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."},
+            {"name": "selected_uuids", "type": list, "default": None, "gui_hidden": True}
         ],
         "url": "absorbers_cb.html#refit_all"
     },
@@ -1433,7 +1434,8 @@ class RecipeAbsorbersV2:
 
     def refit_all(self, max_nfev: str = '100', z_window_kms: str = '100.0', 
                   group_depth: str = '0', max_group_size: str = '20',
-                  region_limit: str = "None") -> 'SessionV2':
+                  region_limit: str = "None",
+                  selected_uuids: list = None) -> 'SessionV2':
         """
         Refit all systems.
 
@@ -1494,7 +1496,14 @@ class RecipeAbsorbersV2:
             
             uuids_in_region = set()
             
+            # Prepare selection set
+            target_set = set(selected_uuids) if selected_uuids else None
+
             for c in current_session.systs.components:
+                # Check selection first
+                if target_set is not None and c.uuid not in target_set:
+                    continue
+
                 is_valid = True
                 if use_region_filter:
                     # Resolve primary rest wavelength
