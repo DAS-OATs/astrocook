@@ -994,7 +994,7 @@ class SpectrumPlotWidget(QWidget):
             # 4. Plot Model
             if self.main_window.model_checkbox.isChecked():
                 if model_data is not None:
-                    ax.plot(x_data, model_data, ls='-', color=colors[1], lw=1.6, alpha=0.8,label='Absorption model', rasterized=True)
+                    ax.plot(x_data, model_data, ls='-', color=colors[1], lw=1.6, alpha=0.8, label='Absorption model', rasterized=True)
                 # No warning needed
 
             # 4b. Plot Auxiliary Column (Dynamic)

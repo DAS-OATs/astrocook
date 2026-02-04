@@ -737,7 +737,7 @@ class VelocityPlotWidget(QWidget):
             
             if session.spec.model is not None:
                 mod_p = mod_norm[mask]
-                ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.0)
+                ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.6, alpha=0.8)
 
             # --- Plot Components ---
             if self._selected_components:
