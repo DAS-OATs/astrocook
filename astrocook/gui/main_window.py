@@ -337,6 +337,24 @@ class MainWindowV2(QMainWindow):
         self.error_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.error_checkbox)
 
+        # --- Error Style Toggle ---
+        self.error_line_checkbox = QCheckBox("Show error as line")
+        self.error_line_checkbox.setToolTip("If checked, plots the error value (dy) as a line instead of a band.")
+        self.error_line_checkbox.setChecked(True) # Default to Band
+        # Indent to show hierarchy
+        self.error_line_checkbox.setStyleSheet("margin-left: 20px;")
+        
+        # Connect to main replot
+        self.error_line_checkbox.stateChanged.connect(self._trigger_replot)
+        # Also connect to System Inspector update if open
+        self.error_line_checkbox.stateChanged.connect(
+            lambda: self.system_inspector.vel_plot._update_plot() 
+            if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible() 
+            else None
+        )
+        
+        plot_toggles_layout.addWidget(self.error_line_checkbox)
+
         self.continuum_checkbox = QCheckBox("Normalization"); self.continuum_checkbox.setChecked(True)
         self.continuum_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.continuum_checkbox)
@@ -560,6 +578,7 @@ class MainWindowV2(QMainWindow):
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
         self.error_checkbox.setObjectName("PlotControlCheckbox")
+        self.error_line_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
         self.model_checkbox.setObjectName("PlotControlCheckbox")
         self.systems_checkbox.setObjectName("PlotControlCheckbox")

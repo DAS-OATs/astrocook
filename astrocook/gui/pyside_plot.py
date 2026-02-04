@@ -926,31 +926,47 @@ class SpectrumPlotWidget(QWidget):
             # --- Check state from main_window reference ---
             # 2. Plot Error Shading (Conditional)
             if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
-                #ax.fill_between(
-                #    x_data, y_data - dy_data, y_data + dy_data,
-                #    step='mid', color='#aaaaaa', alpha=0.5,
-                #    label='1-sigma error', rasterized=True
-                #)
                 if dx_data is not None and dy_data is not None:
                     label = '1-sigma error'
-                    if is_scatter:
-                        # fmt='none' ensures no connecting lines or extra markers
-                        ax.errorbar(x_data, y_data, xerr=dx_data, 
-                                    fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
-                                    alpha=0.5, rasterized=True, zorder=0.9, label='bin size')
-                        ax.errorbar(x_data, y_data, yerr=dy_data, 
-                                    fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
-                                    alpha=0.5, rasterized=True, zorder=0.9, label=label)
-                    elif use_decimation:
-                        # Use plot() for decimated data (fast)
-                        ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                        ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                    
+                    # --- [NEW] Check Toggle ---
+                    show_err_as_line = False
+                    if hasattr(self.main_window, 'error_line_checkbox'):
+                        show_err_as_line = self.main_window.error_line_checkbox.isChecked()
+                    
+                    if show_err_as_line:
+                        # OPTION A: Plot Error as separate Line (dy)
+                        # We use orange to distinguish it from flux
+                        err_color = '#aaaaaa' 
+                        if is_scatter:
+                             ax.plot(x_data, dy_data, label=label,
+                                     linestyle='None', marker='.', markersize=scatter_ms,
+                                     color=err_color, alpha=0.7, rasterized=True)
+                        elif use_decimation:
+                             ax.plot(x_data, dy_data, lw=0.8, color=err_color, rasterized=True, label=label)
+                        else:
+                             ax.step(x_data, dy_data, where='mid', lw=0.8, color=err_color, rasterized=True, label=label)
+                             
                     else:
-                        # Use step() for non-decimated data (correct)
-                        ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                        ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
+                        # OPTION B: Plot Error as Band around Flux (y +/- dy)
+                        if is_scatter:
+                            # fmt='none' ensures no connecting lines
+                            ax.errorbar(x_data, y_data, xerr=dx_data, 
+                                        fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
+                                        alpha=0.5, rasterized=True, zorder=0.9, label='bin size')
+                            ax.errorbar(x_data, y_data, yerr=dy_data, 
+                                        fmt='none', ecolor='#aaaaaa', elinewidth=0.8, 
+                                        alpha=0.5, rasterized=True, zorder=0.9, label=label)
+                        elif use_decimation:
+                            # Use plot() for decimated data (fast)
+                            ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                            ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                        else:
+                            # Use step() for non-decimated data (correct)
+                            ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
+                            ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
                 else:
-                    logging.warning("Skipping error plot because dy_data is None (this may be a cache bug).")
+                    logging.warning("Skipping error plot because dy_data is None.")
 
             # 1. Plot Main Flux (Uses Matplotlib style defaults for color)
             if is_scatter:
@@ -978,7 +994,7 @@ class SpectrumPlotWidget(QWidget):
             # 4. Plot Model
             if self.main_window.model_checkbox.isChecked():
                 if model_data is not None:
-                    ax.plot(x_data, model_data, ls='-', color=colors[1], lw=0.8, label='Absorption model', rasterized=True)
+                    ax.plot(x_data, model_data, ls='-', color=colors[1], lw=1.6, alpha=0.8,label='Absorption model', rasterized=True)
                 # No warning needed
 
             # 4b. Plot Auxiliary Column (Dynamic)

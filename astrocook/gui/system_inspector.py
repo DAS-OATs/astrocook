@@ -719,8 +719,20 @@ class VelocityPlotWidget(QWidget):
                 # Fallback to Global (Metadata)
                 panel_res_arg, panel_res_unit = self._get_resolution_at(lam_obs)
 
-            ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
-            ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
+            # --- Error Plotting Logic ---
+            # Check toggle state from Main Window
+            show_err_as_line = False
+            if self.inspector.main_window and hasattr(self.inspector.main_window, 'error_line_checkbox'):
+                show_err_as_line = self.inspector.main_window.error_line_checkbox.isChecked()
+
+            if show_err_as_line:
+                # OPTION A: Plot Error as a separate line (e.g. Orange)
+                ax_main.step(v_p, dy_p, where='mid', color='#aaaaaa', lw=1.0, alpha=0.8)
+            else:
+                # OPTION B: Traditional Band (Original)
+                ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
+                ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
+
             ax_main.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
             
             if session.spec.model is not None:
