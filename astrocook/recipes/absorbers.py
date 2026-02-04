@@ -130,6 +130,17 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
     },
+    "update_components": {
+        "brief": "Batch update components.",
+        "params": [
+            {"name": "uuids", "type": list, "default": None, "gui_hidden": True},
+            {"name": "z", "type": float, "default": None},
+            {"name": "logN", "type": float, "default": None},
+            {"name": "b", "type": float, "default": None},
+            {"name": "btur", "type": float, "default": None},
+            {"name": "resol", "type": float, "default": None}
+        ]
+    },
     "delete_component": {
         "brief": "Delete component(s).",
         "params": [
@@ -954,6 +965,58 @@ class RecipeAbsorbersV2:
             return self._session.with_new_system_list(new_systs)
         except Exception as e:
             logging.error(f"Failed update_component: {e}"); return 0
+        
+    def update_components(self, uuids: list, z: str = 'None', logN: str = 'None', 
+                          b: str = 'None', btur: str = 'None',
+                          series: str = 'None', resol: str = 'None') -> 'SessionV2':
+        """
+        Batch update component parameters.
+
+        Modifies the physical parameters of multiple existing components simultaneously.
+        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_components`.
+
+        Parameters
+        ----------
+        uuids : list
+            List of component UUIDs to update.
+        z : str, optional
+            Redshift. Defaults to ``'None'``.
+        logN : str, optional
+            Column Density (log). Defaults to ``'None'``.
+        b : str, optional
+            Doppler parameter (km/s). Defaults to ``'None'``.
+        btur : str, optional
+            Turbulent broadening (km/s). Defaults to ``'None'``.
+        series : str, optional
+            Series name. Defaults to ``'None'``.
+        resol : str, optional
+            Resolution (R or FWHM). Defaults to ``'None'``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` with updated components,
+            or 0 on failure.
+        """
+        try:
+            # Parse values
+            changes = {}
+            if z != 'None': changes['z'] = float(z)
+            if logN != 'None': changes['logN'] = float(logN)
+            if b != 'None': changes['b'] = float(b)
+            if btur != 'None': changes['btur'] = float(btur)
+            if series != 'None': changes['series'] = str(series)
+            if resol != 'None': changes['resol'] = float(resol)
+            
+            if not changes: return self._session
+
+            # Delegate to the new bulk method
+            new_systs = self._session.systs.update_components(uuids, **changes)
+            return self._session.with_new_system_list(new_systs)
+            
+        except Exception as e:
+            logging.error(f"Failed update_components: {e}", exc_info=True)
+            return 0
 
     def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
         """
