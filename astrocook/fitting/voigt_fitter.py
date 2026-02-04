@@ -460,61 +460,105 @@ class VoigtFitterV2:
 
         return final_resid
     
-    def _find_feature_limits(self, z_center: float, trans_name: str, z_window_kms: float = 150.0) -> Tuple[Optional[float], Optional[float]]:
+    def _find_feature_limits(self, z_center: float, trans_name: str, 
+                             z_window_kms: float = 150.0, logN: float = 14.0) -> Tuple[Optional[float], Optional[float]]:
         atom = ATOM_DATA.get(trans_name)
         if not atom: return None, None
         
         lambda_obs = atom['wave'] * (1 + z_center)
         c_kms = 299792.458
         
-        dx_search = (z_window_kms / c_kms) * lambda_obs
+        # --- DLA LOGIC ---
+        is_dla = logN > 19.0
         
+        # 1. Setup Windows
+        # If DLA, force a massive search window (at least 3000 km/s) to catch wings
+        if is_dla:
+            eff_window_kms = max(z_window_kms, 4000.0)
+            continuum_threshold = 0.98 # Must fully recover
+        else:
+            eff_window_kms = z_window_kms
+            continuum_threshold = 0.95
+
+        # 1. Find Center Index
         idx_center = np.searchsorted(self._x_ang, lambda_obs)
-        
+        idx_center = np.clip(idx_center, 0, len(self._x_ang)-1)
+
+        # 2. Determine Search Range (Indices)
         if len(self._x_ang) > 10:
              sample_dx = np.mean(np.diff(self._x_ang[max(0, idx_center-10):min(len(self._x_ang), idx_center+10)]))
         else: sample_dx = 1.0
         
+        dx_search = (eff_window_kms / c_kms) * lambda_obs
         px_width = int(dx_search / sample_dx) if sample_dx > 0 else 50
         
-        start_idx = max(0, idx_center - px_width)
-        end_idx = min(len(self._x_ang), idx_center + px_width)
+        # Absolute safety bounds
+        max_px_width = int((15000.0 / c_kms) * lambda_obs / sample_dx)
         
-        if end_idx - start_idx < 5: return None, None
+        # 3. Prepare Smoothed Flux
+        safe_start = max(0, idx_center - max_px_width)
+        safe_end = min(len(self._x_ang), idx_center + max_px_width)
+        if safe_end - safe_start < 5: return None, None
         
-        y_window = self._y_norm[start_idx:end_idx]
-        dy_window = self._dy_norm[start_idx:end_idx]
-        y_smooth = gaussian_filter1d(y_window, sigma=2.0)
-        
-        center_rel = idx_center - start_idx
-        center_rel = max(0, min(len(y_window)-1, center_rel))
+        y_view = self._y_norm[safe_start:safe_end]
+        dy_view = self._dy_norm[safe_start:safe_end]
+        y_smooth = gaussian_filter1d(y_view, sigma=2.0)
+        center_rel = idx_center - safe_start
+        center_rel = max(0, min(len(y_smooth)-1, center_rel))
 
-        # Scan Left
-        left_boundary = 0
-        lowest_point = y_smooth[center_rel]
-        for i in range(center_rel, -1, -1):
-            val = y_smooth[i]
-            err = dy_window[i]
-            if val < lowest_point: lowest_point = val
-            is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == 0)
-            if val > 0.9: left_boundary = i; break
-            if is_local_max:
-                if (val - lowest_point) > 4.0 * err: left_boundary = i; break
+        # --- Helper: Scan Logic ---
+        def scan_direction(direction):
+            lowest_point = y_smooth[center_rel]
+            step = direction
+            curr = center_rel
+            
+            while 0 <= curr < len(y_smooth):
+                val = y_smooth[curr]
+                err = dy_view[curr]
                 
-        # Scan Right
-        right_boundary = len(y_window) - 1
-        lowest_point = y_smooth[center_rel]
-        for i in range(center_rel, len(y_window)):
-            val = y_smooth[i]
-            err = dy_window[i]
-            if val < lowest_point: lowest_point = val
-            is_local_max = (i > 0 and i < len(y_smooth)-1 and y_smooth[i] >= y_smooth[i-1] and y_smooth[i] >= y_smooth[i+1]) or (i == len(y_window)-1)
-            if val > 0.9: right_boundary = i; break
-            if is_local_max:
-                if (val - lowest_point) > 4.0 * err: right_boundary = i; break
+                if val < lowest_point: lowest_point = val
+                
+                # Check Local Max (Separation between blended lines)
+                is_local_max = False
+                if 0 < curr < len(y_smooth)-1:
+                    if y_smooth[curr] >= y_smooth[curr-1] and y_smooth[curr] >= y_smooth[curr+1]:
+                        is_local_max = True
+                
+                # CRITERIA 1: Continuum Reached
+                if val > continuum_threshold: 
+                    return curr
+                
+                # CRITERIA 2: Separation (Saddle Point)
+                # [FIX] If DLA, IGNORE local maxima (blends). Bulldoze through to find the wing.
+                # If Normal line, stop at peaks to separate blends.
+                if is_local_max and not is_dla:
+                    rise = val - lowest_point
+                    is_significant = rise > 4.0 * err
+                    is_above_mud = val > 0.1 
+                    
+                    if is_significant and is_above_mud:
+                        return curr
 
-        idx_min = max(0, start_idx + left_boundary - 1)
-        idx_max = min(len(self._x_ang) - 1, start_idx + right_boundary + 1)
+                # CRITERIA 3: Distance Limit
+                dist_pix = abs(curr - center_rel)
+                
+                # If DLA, we respect the massive px_width set above (4000 km/s).
+                # If Normal, we respect the user's window, but allow expansion if still deep.
+                if dist_pix > px_width:
+                    if is_dla:
+                        return curr # Hard stop at 4000 km/s
+                    else:
+                        if val > 0.7: return curr # Normal expansion stop
+
+                curr += step
+            return curr
+
+        # 4. Execute Scan
+        left_rel = scan_direction(-1)
+        right_rel = scan_direction(1)
+        
+        idx_min = max(0, safe_start + left_rel - 1)
+        idx_max = min(len(self._x_ang) - 1, safe_start + right_rel + 1)
         
         if idx_max <= idx_min: return None, None
         return self._x_ang[idx_min], self._x_ang[idx_max]
@@ -678,7 +722,11 @@ class VoigtFitterV2:
         else:
             for comp in active_components:
                 for trans in get_trans_list(comp.series):
-                    lam_min, lam_max = self._find_feature_limits(comp.z, trans, z_window_kms=z_window_kms)
+                    lam_min, lam_max = self._find_feature_limits(
+                        comp.z, trans, 
+                        z_window_kms=z_window_kms, 
+                        logN=comp.logN
+                    )
                     
                     # 2. [FIX] Check for "Collapsed Window"
                     # If the smart finder returned a window that is too narrow (< 30 km/s width),
