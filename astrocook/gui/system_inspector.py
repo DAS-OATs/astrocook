@@ -240,15 +240,15 @@ class SystemTableModel(QAbstractTableModel):
                 # Append Error if it exists... AND if not linked!
                 if attr in ERR_MAP and isinstance(val, (int, float)):
                     
-                    # --- [FIX] Suppress error if linked ---
-                    if not is_linked: 
+                    # Suppress error if linked OR frozen
+                    # We only show error if the parameter is truly free to vary
+                    if not is_linked and is_free: 
                         err_attr = ERR_MAP[attr]
                         err_val = getattr(comp, err_attr, None)
                         
                         if err_val is not None and np.isfinite(err_val) and err_val > 0:
                             err_str = err_fmt.format(err_val)
                             return f"{val_str} ± {err_str}"
-                    # --------------------------------------
                 
                 return val_str
 

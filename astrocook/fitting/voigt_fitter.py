@@ -898,9 +898,12 @@ class VoigtFitterV2:
         for i, old_comp in enumerate(old_components):
             idx = i * 4
             
-            dz_new = p_full_errors[idx] if is_free_mask[idx] else old_comp.dz
-            dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else old_comp.dlogN
-            db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else old_comp.db
+            # Zero out errors for fixed parameters
+            # If the parameter was free, take the calculated error.
+            # If it was fixed, set error to 0.0 (clearing stale values).
+            dz_new = p_full_errors[idx] if is_free_mask[idx] else 0.0
+            dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else 0.0
+            db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else 0.0
             
             # Metadata Update
             comp_chi2 = old_comp.chi2
