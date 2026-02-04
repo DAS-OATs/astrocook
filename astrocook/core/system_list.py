@@ -447,6 +447,29 @@ class SystemListV2:
         new_data = dataclasses.replace(self._data, components=new_components)
         return SystemListV2(new_data)
 
+
+    def update_components(self, uuids: List[str], **changes) -> 'SystemListV2':
+        """
+        Batch update parameters for multiple components in a single pass.
+        Much faster than calling update_component repeatedly.
+        """
+        # Convert list to set for O(1) lookups
+        target_uuids = set(uuids)
+        new_components = []
+        
+        # Single pass through the list
+        for c in self.components:
+            if c.uuid in target_uuids:
+                # Apply changes only to valid fields
+                valid_fields = {f.name for f in dataclasses.fields(c)}
+                filtered_changes = {k: v for k, v in changes.items() if k in valid_fields}
+                new_c = dataclasses.replace(c, **filtered_changes)
+                new_components.append(new_c)
+            else:
+                new_components.append(c)
+
+        new_data = dataclasses.replace(self._data, components=new_components)
+        return SystemListV2(new_data)
     
 
     def update_constraint(self, uuid: str, param: str, 

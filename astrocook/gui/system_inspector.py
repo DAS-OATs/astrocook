@@ -1614,6 +1614,14 @@ class SystemInspector(QWidget):
         # 2. Constraint Actions (Multi-aware)
         if col_name in ['z', 'logN', 'b', 'btur']:
             
+            # Allows setting z, logN, b, btur for ALL selected rows to a single value
+            act_set_val = QAction(f"Set value for '{col_name}'...{suffix}", m)
+            act_set_val.triggered.connect(
+                lambda: self._batch_set_value(selected_comps, col_name)
+            )
+            m.addAction(act_set_val)
+            m.addSeparator()
+
             if is_multi:
                 # --- Batch Actions ---
                 act_freeze_sel = QAction(f"Freeze '{col_name}'{suffix}", m)
@@ -1939,3 +1947,40 @@ class SystemInspector(QWidget):
                 color: {text_col.name()}; /* Always bright when focused for editing */
             }}
         """)
+
+    def _batch_set_value(self, comps, col_name):
+        """
+        Prompts for a value (enforcing '.' decimal) and batch-updates components.
+        """
+        if not comps: return
+
+        # 1. Determine default value
+        first_val = getattr(comps[0], col_name, 0.0)
+        
+        # 2. Create Custom Dialog to enforce Locale
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(f"Batch Edit {col_name}")
+        dialog.setLabelText(f"Enter new {col_name} for {len(comps)} components:")
+        dialog.setInputMode(QInputDialog.DoubleInput)
+        dialog.setDoubleValue(float(first_val))
+        dialog.setDoubleDecimals(5)
+        
+        # [FIX] Enforce Standard 'C' Locale (Dot separator)
+        dialog.setLocale(QLocale(QLocale.C)) 
+        
+        # Resize slightly for comfort
+        dialog.resize(300, 150)
+
+        if dialog.exec() == QDialog.Accepted:
+            val = dialog.doubleValue()
+            
+            if self.main_window:
+                # 3. Use the new BULK recipe
+                # We collect all UUIDs and fire ONE recipe request.
+                uuid_list = [c.uuid for c in comps]
+                
+                self.main_window._on_recipe_requested(
+                    "absorbers", "update_components", 
+                    {'uuids': uuid_list, col_name: val}, 
+                    {}
+                )
