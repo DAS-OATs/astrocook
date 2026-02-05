@@ -1434,6 +1434,22 @@ class SpectrumV2:
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return SpectrumV2(data=new_data, history=new_history)
     
+    def equalize_to_reference(self, reference_spec: 'SpectrumV2', order: int = 0) -> 'SpectrumV2':
+        """
+        Scale this spectrum's flux to match a reference spectrum.
+        """
+        from astrocook.core.spectrum_operations import compute_flux_scaling
+        
+        # Compute the scaling model (array) based on the reference
+        scale_model = compute_flux_scaling(
+            reference_spec.x.value, reference_spec.y.value, 
+            self.x.value, self.y.value, 
+            order=order
+        )
+        
+        # Use the existing scale_flux method to apply it
+        return self.scale_flux(scale_model)
+    
     def coadd(self, others: List['SpectrumV2'], 
               xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float] = 5.0, 

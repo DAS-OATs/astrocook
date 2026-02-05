@@ -59,6 +59,14 @@ FLUX_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#rebin"
     },
+    "equalize": {
+        "brief": "Equalize flux to reference.",
+        "details": "Scale the flux of this session to match another 'reference' session.",
+        "params": [
+            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the reference session"},
+            {"name": "order", "type": int, "default": 0, "doc": "Polynomial order (-1=spline, 0=scalar)"}
+        ]
+    },
     "resample": {
         "brief": "Resample on another grid.",
         "details": "Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.",
@@ -236,6 +244,27 @@ class RecipeFluxV2:
         
         # 6. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
+    
+    def equalize(self, reference_session: str = 'None', order: str = '0') -> 'SessionV2':
+        if reference_session in ['None', '']:
+            logging.error("No reference session selected.")
+            return 0
+        try:
+            order_i = int(order)
+            # Find the reference session object via the GUI bridge
+            ref_hist = next((h for h in self._session._gui.session_histories 
+                            if h.display_name == reference_session), None)
+            
+            if not ref_hist:
+                raise ValueError(f"Session '{reference_session}' not found.")
+
+            new_spec = self._session.spec.equalize_to_reference(
+                ref_hist.current_state.spec, order=order_i
+            )
+            return self._session.with_new_spectrum(new_spec)
+        except Exception as e:
+            logging.error(f"Equalize failed: {e}")
+            return 0
     
     def resample(self, target_session: str = 'None') -> 'SessionV2':
         """

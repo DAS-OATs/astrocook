@@ -198,7 +198,7 @@ class RecipeDialog(QDialog):
         main_layout.addWidget(form_widget)
 
         # Trigger Helper Pane
-        if self.recipe_name in ("apply_expression", "mask_expression", "split", "delete", "import_systems", "resample"):
+        if self.recipe_name in ("apply_expression", "mask_expression", "split", "delete", "import_systems", "equalize", "resample"):
             self._setup_usability_pane(main_layout) 
 
         # 3. Buttons
@@ -214,7 +214,7 @@ class RecipeDialog(QDialog):
         available_cols = self._get_available_columns()
         
         # Guard: Only skip if columns missing AND it's not a recipe that works without columns
-        if not available_cols and self.recipe_name not in ("delete", "import_systems", "resample"): return
+        if not available_cols and self.recipe_name not in ("delete", "import_systems", "equalize", "resample"): return
 
         ref_container = QFrame(self)
         ref_container.setObjectName("ReferencePane")
@@ -224,8 +224,16 @@ class RecipeDialog(QDialog):
         ref_layout.setContentsMargins(10, 10, 10, 10)
 
         # --- BLOCK 1: SESSION SELECTION (Import & Resample) ---
-        if self.recipe_name in ("import_systems", "resample"):
-            title = QLabel("<b>Select Target Session:</b>" if self.recipe_name == 'resample' else "<b>Select Source Session:</b>")
+        if self.recipe_name in ("import_systems", "equalize", "resample"):
+            # Update title logic to include Equalize
+            if self.recipe_name == 'resample':
+                title_text = "<b>Select Target Session:</b>"
+            elif self.recipe_name == 'equalize':
+                title_text = "<b>Select Reference Session:</b>"
+            else:
+                title_text = "<b>Select Source Session:</b>"
+                
+            title = QLabel(title_text)
             ref_layout.addWidget(title)
             
             sess_grid_widget = QWidget()
@@ -392,7 +400,7 @@ class RecipeDialog(QDialog):
             return
             
         # Logic for Session Selection (Replace text)
-        if self.recipe_name in ("import_systems", "resample"):
+        if self.recipe_name in ("import_systems", "equalize", "resample"):
             target_widget.setText(text)
             target_widget.setFocus()
             if self.recipe_name == 'resample':

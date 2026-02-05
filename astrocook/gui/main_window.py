@@ -815,6 +815,13 @@ class MainWindowV2(QMainWindow):
         flux_menu.addAction(rebin_action)
         self.rebin_action = rebin_action; rebin_action.setEnabled(False)
 
+        # equalize Action
+        equalize_action = QAction("&Equalize to Reference...", self)
+        equalize_action.setToolTip("Scale this spectrum to match another session's flux level.")
+        equalize_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "equalize"))
+        flux_menu.addAction(equalize_action)
+        self.equalize_action = equalize_action; self.equalize_action.setEnabled(False)
+
         # resample Action
         resample_action = QAction("Re&sample on Grid...", self)
         resample_action.setToolTip("Resample this spectrum onto another session's grid")
@@ -3502,6 +3509,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'calculate_running_std_action'): self.calculate_running_std_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_action'): self.smooth_action.setEnabled(enable_recipes)
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
+        if hasattr(self, 'equalize_action'): self.equalize_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
         if hasattr(self, 'calibrate_action'): self.calibrate_action.setEnabled(enable_recipes)
 
