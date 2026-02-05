@@ -14,8 +14,11 @@ import matplotlib.style as mplstyle
 import matplotlib.ticker as plt_ticker
 import numpy as np
 from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QAction, QCursor, QIcon
-from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget
+from PySide6.QtGui import QAction, QCursor, QIcon, QColor
+from PySide6.QtWidgets import (
+    QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget, QDialog, QDialogButtonBox, QAbstractItemView,
+    QTableWidget, QTableWidgetItem, QHeaderView
+)
 import qtawesome as qta
 import scienceplots
 from scipy.interpolate import CubicSpline
@@ -1942,6 +1945,27 @@ class SpectrumPlotWidget(QWidget):
                 act_split.triggered.connect(lambda: self.main_window.launch_split_from_current_view())
             menu.addAction(act_split)
 
+            # --- [NEW] Inspect Action ---
+            menu.addSeparator()
+            
+            # Find nearest index for the label
+            if self.main_window and self.main_window.active_history:
+                session = self.main_window.active_history.current_state
+                if session and session.spec:
+                    x_full = session.spec.x.value
+                    idx_click = np.searchsorted(x_full, event.xdata)
+                    idx_click = np.clip(idx_click, 0, len(x_full)-1)
+                    
+                    x_val_click = x_full[idx_click]
+                    x_unit = str(session.spec.x.unit)
+                    
+                    act_inspect_data = QAction(f"Inspect Data (near {x_val_click:.4f} {x_unit})", menu)
+                    act_inspect_data.triggered.connect(
+                        lambda checked=False, s=session, i=idx_click: self._open_data_inspector(s, i)
+                    )
+                    menu.addAction(act_inspect_data)
+            # ---------------------------
+
             # C. Execute Menu
             if not menu.isEmpty(): 
                 menu.exec(QCursor.pos())
@@ -2419,6 +2443,29 @@ class SpectrumPlotWidget(QWidget):
             
             self.plot_spectrum(session_state, force_autoscale=False)
 
+    def _open_data_inspector(self, session, center_idx):
+        """Launches the Data Inspector Dialog (Non-blocking)."""
+        # 1. Close existing dialog if it exists
+        # This prevents opening 50 windows if the user keeps clicking
+        if hasattr(self, '_data_inspector_dialog') and self._data_inspector_dialog is not None:
+            try:
+                self._data_inspector_dialog.close()
+            except Exception:
+                pass
+        
+        # 2. Create and Store Reference
+        # We save it to 'self' so Python doesn't garbage-collect it immediately
+        self._data_inspector_dialog = DataInspectorDialog(session, center_idx, window=15, parent=self)
+        
+        # 3. Clean up reference when closed
+        # This ensures we don't hold onto memory unnecessarily
+        self._data_inspector_dialog.finished.connect(
+            lambda: setattr(self, '_data_inspector_dialog', None)
+        )
+        
+        # 4. Show non-modally
+        self._data_inspector_dialog.show()
+
 class AstrocookToolbar(NavigationToolbar):
     """
     Custom Matplotlib toolbar that inherits from NavigationToolbar2QT 
@@ -2496,7 +2543,109 @@ class AstrocookToolbar(NavigationToolbar):
             # Fallback to original behavior
             super().home()
 
-    
+
+class DataInspectorDialog(QDialog):
+    """
+    Non-blocking popup table to inspect raw data values.
+    Styled to match the System Inspector.
+    """
+    def __init__(self, session, center_idx, window=10, parent=None):
+        super().__init__(parent)
+        
+        # 1. Prepare Data & Title
+        spec = session.spec
+        x_val = spec.x.value[center_idx]
+        x_unit = str(spec.x.unit)
+        
+        # [REQ 1] Wavelength in Title
+        self.setWindowTitle(f"Data Inspector (λ = {x_val:.5f} {x_unit})")
+        self.resize(700, 400)
+        
+        layout = QVBoxLayout(self)
+        border_width = 12
+        layout.setContentsMargins(border_width, border_width, border_width, border_width)
+
+        start = max(0, center_idx - window)
+        end = min(len(spec.x), center_idx + window + 1)
+        indices = range(start, end)
+        
+        # Define Columns
+        cols = ['x', 'y', 'dy', 'cont', 'model']
+        if hasattr(spec, '_data') and spec._data.aux_cols:
+            for c in spec._data.aux_cols:
+                if c not in cols: cols.append(c)
+                
+        # 2. Setup Table
+        self.table = QTableWidget()
+        self.table.setRowCount(len(indices))
+        self.table.setColumnCount(len(cols) + 1)
+        self.table.setHorizontalHeaderLabels(['Index'] + cols)
+        
+        self.table.verticalHeader().setVisible(False)
+        header_font = self.table.horizontalHeader().font()
+        header_font.setBold(True)
+        self.table.horizontalHeader().setFont(header_font)
+        self.table.setAlternatingRowColors(True)
+        
+        center_item = None # Reference for scrolling later
+
+        # 3. Populate
+        for row_i, data_idx in enumerate(indices):
+            is_center = (data_idx == center_idx)
+
+            # --- [REQ 3] Highlight Index Column ---
+            item_idx = QTableWidgetItem(str(data_idx))
+            item_idx.setTextAlignment(Qt.AlignCenter)
+            
+            if is_center:
+                item_idx.setBackground(QColor("#f5a100"))
+                font = item_idx.font()
+                font.setBold(True)
+                item_idx.setFont(font)
+                center_item = item_idx # Keep reference
+                
+            self.table.setItem(row_i, 0, item_idx)
+            
+            # Data Columns
+            for col_i, col_name in enumerate(cols):
+                val_str = ""
+                try:
+                    if hasattr(spec, col_name):
+                        col_obj = getattr(spec, col_name)
+                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
+                    else:
+                        col_obj = spec.get_column(col_name)
+                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
+                        
+                    if isinstance(val, (float, np.floating)):
+                        val_str = f"{val:.5e}"
+                    else:
+                        val_str = str(val)
+                except:
+                    val_str = "N/A"
+
+                item = QTableWidgetItem(val_str)
+                item.setTextAlignment(Qt.AlignCenter)
+                
+                # Highlight Row
+                if is_center:
+                    item.setBackground(QColor("#f5a100"))
+                    font = item.font()
+                    font.setBold(True)
+                    item.setFont(font)
+                
+                self.table.setItem(row_i, col_i + 1, item)
+
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        layout.addWidget(self.table)
+        
+        btn_box = QDialogButtonBox(QDialogButtonBox.Close)
+        btn_box.rejected.connect(self.close)
+        layout.addWidget(btn_box)
+
+        # --- [REQ 2] Scroll to Center ---
+        if center_item:
+            self.table.scrollToItem(center_item, QAbstractItemView.PositionAtCenter)
 
 
 # --- Utility Function to Launch the Viewer for Testing ---

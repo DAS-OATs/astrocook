@@ -1192,6 +1192,7 @@ class SystemInspector(QWidget):
 
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.table_view.verticalHeader().setVisible(False)
         self.table_view.setAlternatingRowColors(True)
         self.table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
