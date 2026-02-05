@@ -2546,96 +2546,59 @@ class AstrocookToolbar(NavigationToolbar):
 
 class DataInspectorDialog(QDialog):
     """
-    Non-blocking popup table to inspect raw data values.
-    Styled to match the System Inspector.
+    Non-blocking popup table with Sliding Window scrolling.
+    - Infinite scrolling in both directions.
+    - Constant memory usage (prunes rows as you scroll).
+    - Persistent highlighting of the original center row.
     """
-    def __init__(self, session, center_idx, window=10, parent=None):
+    def __init__(self, session, center_idx, window=20, parent=None):
         super().__init__(parent)
         
-        # 1. Prepare Data & Title
-        spec = session.spec
-        x_val = spec.x.value[center_idx]
-        x_unit = str(spec.x.unit)
+        self.session = session
+        self.spec = session.spec
+        self.center_idx = center_idx  # [MEMORY] Store original target
         
-        # [REQ 1] Wavelength in Title
-        self.setWindowTitle(f"Data Inspector (λ = {x_val:.5f} {x_unit})")
-        self.resize(700, 400)
+        # Sliding Window Config
+        self.chunk_size = 20     # Rows to add per load
+        self.max_rows = 200      # Max rows to keep in memory before pruning
+        
+        # Track current range
+        self.current_start = max(0, center_idx - window)
+        self.current_end = min(len(self.spec.x), center_idx + window + 1)
+        
+        # View Setup
+        x_val = self.spec.x.value[center_idx]
+        x_unit = str(self.spec.x.unit)
+        self.setWindowTitle(f"Data Inspector (x = {x_val:.5f} {x_unit})")
+        self.resize(700, 450)
         
         layout = QVBoxLayout(self)
-        border_width = 12
+        border_width = 10 
         layout.setContentsMargins(border_width, border_width, border_width, border_width)
 
-        start = max(0, center_idx - window)
-        end = min(len(spec.x), center_idx + window + 1)
-        indices = range(start, end)
+        # 1. Setup Table
+        self.table = QTableWidget()
         
         # Define Columns
-        cols = ['x', 'y', 'dy', 'cont', 'model']
-        if hasattr(spec, '_data') and spec._data.aux_cols:
-            for c in spec._data.aux_cols:
-                if c not in cols: cols.append(c)
+        self.cols = ['x', 'y', 'dy', 'cont', 'model']
+        if hasattr(self.spec, '_data') and self.spec._data.aux_cols:
+            for c in self.spec._data.aux_cols:
+                if c not in self.cols: self.cols.append(c)
                 
-        # 2. Setup Table
-        self.table = QTableWidget()
-        self.table.setRowCount(len(indices))
-        self.table.setColumnCount(len(cols) + 1)
-        self.table.setHorizontalHeaderLabels(['Index'] + cols)
+        self.table.setColumnCount(len(self.cols) + 1)
+        self.table.setHorizontalHeaderLabels(['Index'] + self.cols)
         
+        # Styling
         self.table.verticalHeader().setVisible(False)
         header_font = self.table.horizontalHeader().font()
         header_font.setBold(True)
         self.table.horizontalHeader().setFont(header_font)
         self.table.setAlternatingRowColors(True)
         
-        center_item = None # Reference for scrolling later
-
-        # 3. Populate
-        for row_i, data_idx in enumerate(indices):
-            is_center = (data_idx == center_idx)
-
-            # --- [REQ 3] Highlight Index Column ---
-            item_idx = QTableWidgetItem(str(data_idx))
-            item_idx.setTextAlignment(Qt.AlignCenter)
-            
-            if is_center:
-                item_idx.setBackground(QColor("#f5a100"))
-                font = item_idx.font()
-                font.setBold(True)
-                item_idx.setFont(font)
-                center_item = item_idx # Keep reference
-                
-            self.table.setItem(row_i, 0, item_idx)
-            
-            # Data Columns
-            for col_i, col_name in enumerate(cols):
-                val_str = ""
-                try:
-                    if hasattr(spec, col_name):
-                        col_obj = getattr(spec, col_name)
-                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
-                    else:
-                        col_obj = spec.get_column(col_name)
-                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
-                        
-                    if isinstance(val, (float, np.floating)):
-                        val_str = f"{val:.5e}"
-                    else:
-                        val_str = str(val)
-                except:
-                    val_str = "N/A"
-
-                item = QTableWidgetItem(val_str)
-                item.setTextAlignment(Qt.AlignCenter)
-                
-                # Highlight Row
-                if is_center:
-                    item.setBackground(QColor("#f5a100"))
-                    font = item.font()
-                    font.setBold(True)
-                    item.setFont(font)
-                
-                self.table.setItem(row_i, col_i + 1, item)
-
+        # 2. Initial Population
+        self._populate_range(self.current_start, self.current_end, prepend=False)
+        
+        # 3. Scroll & Layout
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         layout.addWidget(self.table)
         
@@ -2643,25 +2606,153 @@ class DataInspectorDialog(QDialog):
         btn_box.rejected.connect(self.close)
         layout.addWidget(btn_box)
 
-        # --- [REQ 2] Scroll to Center ---
-        if center_item:
-            self.table.scrollToItem(center_item, QAbstractItemView.PositionAtCenter)
+        # 4. Scroll to Center initially
+        center_row = center_idx - self.current_start
+        if 0 <= center_row < self.table.rowCount():
+            item = self.table.item(center_row, 0)
+            self.table.scrollToItem(item, QAbstractItemView.PositionAtCenter)
+            
+        # 5. Connect Scroll Signal
+        self.table.verticalScrollBar().valueChanged.connect(self._check_scroll)
 
 
-# --- Utility Function to Launch the Viewer for Testing ---
+    def _populate_range(self, start_idx, end_idx, prepend=False):
+        """
+        Inserts rows. Checks every row against self.center_idx to apply highlight.
+        """
+        indices = range(start_idx, end_idx)
+        if not indices: return
 
-def launch_viewer(session: 'SessionV2'):
-    """Utility to run the viewer application."""
-    import sys
-    
-    # Check if a Qt application instance is already running (crucial for integration)
-    app = QApplication.instance()
-    if not app:
-        app = QApplication(sys.argv)
+        self.table.setSortingEnabled(False)
+        self.table.blockSignals(True) # Optimization
         
-    viewer = SpectrumViewerPySide(session)
-    viewer.show()
-    
-    # If the app was newly created, start the event loop
-    if app and QApplication.instance() == app:
-        sys.exit(app.exec())
+        for i, data_idx in enumerate(indices):
+            if prepend:
+                row_pos = i 
+            else:
+                row_pos = self.table.rowCount()
+                
+            self.table.insertRow(row_pos)
+            
+            # --- Check Highlight ---
+            is_highlight = (data_idx == self.center_idx)
+            
+            # Index Column
+            item_idx = QTableWidgetItem(str(data_idx))
+            item_idx.setTextAlignment(Qt.AlignCenter)
+            if is_highlight:
+                self._apply_highlight(item_idx)
+            self.table.setItem(row_pos, 0, item_idx)
+
+            # Data Columns
+            for col_i, col_name in enumerate(self.cols):
+                val_str = "N/A"
+                try:
+                    if hasattr(self.spec, col_name):
+                        col_obj = getattr(self.spec, col_name)
+                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
+                    else:
+                        col_obj = self.spec.get_column(col_name)
+                        val = col_obj.value[data_idx] if col_obj is not None else np.nan
+                        
+                    if isinstance(val, (float, np.floating)):
+                        val_str = f"{val:.5e}"
+                    else:
+                        val_str = str(val)
+                except:
+                    pass
+
+                item = QTableWidgetItem(val_str)
+                item.setTextAlignment(Qt.AlignCenter)
+                if is_highlight:
+                    self._apply_highlight(item)
+                self.table.setItem(row_pos, col_i + 1, item)
+        
+        self.table.blockSignals(False)
+
+    def _apply_highlight(self, item):
+        """Helper to apply the persistent orange highlight."""
+        item.setBackground(QColor("#f5a100"))
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+
+    def _check_scroll(self, value):
+        """
+        Sliding Window Logic: 
+        - Adds rows to one end.
+        - Prunes from the other.
+        - Counter-adjusts scrollbar to maintain visual stability ('bounce' effect).
+        """
+        vbar = self.table.verticalScrollBar()
+        
+        # Define Thresholds (trigger before hitting the absolute edge for smoothness)
+        # using a small buffer (e.g. 10 pixels) or just check min/max
+        is_top = value <= vbar.minimum()
+        is_bottom = value >= vbar.maximum()
+        
+        if not (is_top or is_bottom):
+            return
+
+        # Optimization: Prevent recursive calls while modifying table
+        self.table.blockSignals(True)
+        vbar.blockSignals(True)
+        
+        try:
+            if is_bottom:
+                # 1. Append New Chunk to Bottom
+                new_start = self.current_end
+                new_end = min(len(self.spec.x), self.current_end + self.chunk_size)
+                
+                if new_end > new_start:
+                    self._populate_range(new_start, new_end, prepend=False)
+                    self.current_end = new_end
+                    
+                    # 2. Prune Top (Sliding Window)
+                    if self.table.rowCount() > self.max_rows:
+                        rows_to_remove = self.chunk_size
+                        
+                        # [FIX] Measure height BEFORE removing to be exact
+                        # (Summing height of rows 0..N ensures accuracy if row heights vary)
+                        pixels_removed = 0
+                        for r in range(rows_to_remove):
+                            pixels_removed += self.table.rowHeight(r)
+                            
+                        # Remove rows from top
+                        for _ in range(rows_to_remove):
+                            self.table.removeRow(0)
+                        self.current_start += rows_to_remove
+                        
+                        # [FIX] Counter-adjust Scrollbar (The "Bounce Back Up")
+                        # The data we were looking at moved UP, so we must scroll UP.
+                        vbar.setValue(vbar.value() - pixels_removed)
+
+            elif is_top:
+                # 1. Prepend New Chunk to Top
+                new_end = self.current_start
+                new_start = max(0, self.current_start - self.chunk_size)
+                
+                if new_end > new_start:
+                    self._populate_range(new_start, new_end, prepend=True)
+                    self.current_start = new_start
+                    
+                    # 2. Counter-adjust Scrollbar (The "Bounce Down")
+                    # We added rows to the top, pushing our data DOWN.
+                    # We must scroll DOWN to keep looking at the same data.
+                    rows_added = new_end - new_start
+                    pixels_added = 0
+                    for r in range(rows_added):
+                        pixels_added += self.table.rowHeight(r)
+                        
+                    vbar.setValue(vbar.value() + pixels_added)
+                    
+                    # 3. Prune Bottom (Sliding Window)
+                    if self.table.rowCount() > self.max_rows:
+                        rows_to_remove = self.chunk_size
+                        for _ in range(rows_to_remove):
+                            self.table.removeRow(self.table.rowCount() - 1)
+                        self.current_end -= rows_to_remove
+                        
+        finally:
+            self.table.blockSignals(False)
+            vbar.blockSignals(False)
