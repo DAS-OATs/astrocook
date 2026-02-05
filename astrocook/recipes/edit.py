@@ -928,6 +928,20 @@ class RecipeEditV2:
         try:
             # 2. Delegate Data Manipulation to Core
             new_spec = self._session.spec.stitch(resolved_specs, sort=sort)
+
+            # Remove NaNs which break the 'step' plot (causing "scatter" look)
+            # We use the public split API to keep valid data only.
+            try:
+                # Check for NaNs in X or Y
+                x_val = new_spec.x.value
+                y_val = new_spec.y.value
+                if not (np.all(np.isfinite(x_val)) and np.all(np.isfinite(y_val))):
+                    logging.info("Stitch: Cleaning up NaNs to fix plot display...")
+                    # Filter: Keep rows where X and Y are finite
+                    # Note: We rely on the core's split expression evaluator
+                    new_spec = new_spec.split("isfinite(x) & isfinite(y)")
+            except Exception as clean_err:
+                logging.warning(f"Stitch cleanup warning: {clean_err}")
             
             # 3. Return New Session
             return self._session.with_new_spectrum(new_spec)
