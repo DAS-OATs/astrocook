@@ -1986,7 +1986,7 @@ class MainWindowV2(QMainWindow):
 
         menu = QMenu(self)
 
-        # --- MULTI-SELECTION CASE (STITCHING) ---
+        # --- MULTI-SELECTION CASE ---
         if len(indexes) > 1:
             # Sort rows to determine primary (the topmost selected)
             selected_rows = sorted([i.row() for i in indexes])
@@ -2017,10 +2017,17 @@ class MainWindowV2(QMainWindow):
             )
             menu.addAction(coadd_action)
             
+            menu.addSeparator()
+        
+            # Close Multiple Sessions
+            close_multi_action = QAction(f"Close {len(indexes)} sessions", self)
+            close_multi_action.triggered.connect(lambda: self._on_close_multiple_sessions(selected_rows))
+            menu.addAction(close_multi_action)
+
             menu.exec(self.session_list_view.mapToGlobal(pos))
             return
 
-        # --- SINGLE SELECTION CASE (Existing Logic) ---
+        # --- SINGLE SELECTION CASE ---
         row = indexes[0].row()
         if not (0 <= row < len(self.session_histories)):
             return
@@ -2052,6 +2059,13 @@ class MainWindowV2(QMainWindow):
             has_ids = history_item.current_state.spec.meta.get('region_identifications') is not None
         view_ids_action.setEnabled(has_ids)
         menu.addAction(view_ids_action)
+
+        menu.addSeparator()
+
+        # Duplicate Session
+        duplicate_action = QAction("Duplicate", self)
+        duplicate_action.triggered.connect(lambda: self._on_duplicate_session(history_item))
+        menu.addAction(duplicate_action)
 
         menu.addSeparator()
         
@@ -2106,6 +2120,46 @@ class MainWindowV2(QMainWindow):
         self._launch_recipe_dialog(
             "edit", "coadd", initial_params={'session_names': all_names_str}
         )
+
+    def _on_duplicate_session(self, history_item: SessionHistory):
+        """Creates a new session entry from the current state of another with unique naming."""
+        if not history_item:
+            return
+
+        current_state = history_item.current_state
+
+        # 1. Deep copy the session state structures
+        new_state = current_state.with_new_spectrum(current_state.spec)
+        new_state = new_state.with_new_system_list(current_state.systs)
+
+        # 2. Logic to find a unique name
+        base_name = current_state.name
+        existing_names = [h.display_name for h in self.session_histories]
+
+        # Check if we are already duplicating a copy
+        if "_copy" in base_name:
+            base_name = base_name.split("_copy")[0]
+
+        counter = 1
+        new_name = f"{base_name}_copy{counter}"
+        while new_name in existing_names:
+            counter += 1
+            new_name = f"{base_name}_copy{counter}"
+
+        new_state.name = new_name
+
+        # 3. Add to the GUI session histories
+        self.add_session(new_state)
+        logging.info(f"Session '{current_state.name}' duplicated as '{new_name}'.")
+    
+    def _on_close_multiple_sessions(self, rows: List[int]):
+        """Closes multiple sessions, handling dirty checks for each."""
+        # We must iterate in reverse order so that removing index 5 
+        # doesn't shift index 2 into a different position
+        for row in sorted(rows, reverse=True):
+            history_to_close = self.session_histories[row]
+            # This calls your existing method which handles the Save/Discard/Cancel dialog
+            self._on_close_session_requested(history_to_close)
     
     def _on_session_info(self, history_item: SessionHistory):
         """ 
