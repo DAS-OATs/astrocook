@@ -220,6 +220,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         # Region Selection State
         self.selection_artist = None # Will hold the axvspan
         self.selection_start_x = None
+        self.persistent_artists = [] # [NEW] List of artists (spans/lines) for multi-measurements
 
         # Connect Matplotlib events
         self.mpl_connect('motion_notify_event', self.on_motion)
@@ -275,6 +276,15 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         for artist in self.cursor_artists:
             try: self.axes.draw_artist(artist); drawn_artists.append(artist)
             except Exception as e: logging.error(f"Error drawing anim artist {artist}: {e}")
+        # [NEW] Persistent artists (centroids/spans already measured)
+        for artist in self.persistent_artists:
+            try: self.axes.draw_artist(artist); drawn_artists.append(artist)
+            except Exception as e: logging.error(f"Error drawing persistent artist: {e}")
+
+        # Active selection span (the yellow one being dragged)
+        if self.selection_artist:
+            try: self.axes.draw_artist(self.selection_artist); drawn_artists.append(self.selection_artist)
+            except Exception as e: logging.error(f"Error drawing Selection Span: {e}")
         if drawn_artists:
             try: self.blit(self.axes.bbox)
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
@@ -315,7 +325,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.selection_artist.remove()
             
             self.selection_artist = self.axes.axvspan(
-                self.selection_start_x, event.xdata, color='yellow', alpha=0.3, zorder=10
+                self.selection_start_x, event.xdata, color='#f5a100', alpha=0.15, zorder=10
             )
             self.draw_idle()
 
@@ -409,22 +419,11 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.draw_idle()
 
     def cleanup_persistent_selection(self):
-        """Helper to remove persistent selection highlight and EW markers."""
-        if hasattr(self, 'persistent_selection_artist') and self.persistent_selection_artist:
-            try: self.persistent_selection_artist.remove()
+        """Helper to remove all persistent selection highlights and EW markers."""
+        for artist in self.persistent_artists:
+            try: artist.remove()
             except Exception: pass
-            self.persistent_selection_artist = None
-
-        if hasattr(self, 'persistent_centroid_artist') and self.persistent_centroid_artist:
-            try: self.persistent_centroid_artist.remove()
-            except Exception: pass
-            self.persistent_centroid_artist = None
-
-        if hasattr(self, 'persistent_ew_artist') and self.persistent_ew_artist:
-            try: self.persistent_ew_artist.remove()
-            except Exception: pass
-            self.persistent_ew_artist = None
-
+        self.persistent_artists = []
         self.draw_idle()
 
 class SpectrumPlotWidget(QWidget):
@@ -495,10 +494,6 @@ class SpectrumPlotWidget(QWidget):
         self._selection_callback = None # [NEW] Callback for generic region selection
         self._selection_realtime_callback = None # [NEW] Callback for real-time drag updates
         self._selection_start_x = None
-        self.selection_artist = None
-        self.persistent_selection_artist = None
-        self.persistent_centroid_artist = None
-        self.persistent_ew_artist = None
         
         # Store the original Matplotlib coordinate formatter ONCE
         self._default_format_coord = self.canvas.axes.format_coord
@@ -2127,15 +2122,16 @@ class SpectrumPlotWidget(QWidget):
         if (event.button == 1 and event.inaxes == self.canvas.axes and 
             self._is_selecting_region):
             
-            # If tool active, MUST have CMD held to override
+            # If selection mode is active, we take priority unless a tool is active AND CMD is NOT held.
+            # (Basically: Selection mode + CMD always wins. Selection mode alone wins if no tool active.)
             if has_tool and not is_cmd:
-                return # Let toolbar handle it
+                return # Let toolbar handle it (Pan/Zoom)
             
-            logging.info(f"on_press: Starting EW selection at x={event.xdata:.3f} (is_cmd={is_cmd})")
+            logging.info(f"on_press: Starting EW selection at x={event.xdata:.3f} (is_cmd={is_cmd}, has_tool={has_tool})")
             # [FIX] Set it on the CANVAS so on_motion sees it!
             self.canvas.selection_start_x = event.xdata
             self.canvas.selection_artist = self.canvas.axes.axvspan(
-                event.xdata, event.xdata, color='yellow', alpha=0.3, zorder=10)
+                event.xdata, event.xdata, color='#f5a100', alpha=0.15, zorder=10)
             self.canvas.draw_idle() 
             return True
 
@@ -2193,19 +2189,23 @@ class SpectrumPlotWidget(QWidget):
             end = event.xdata
             selection_performed = True
             
-            # Keep the highlight! Assign it as persistent
+            # Keep the highlight! Append it to persistent list
             if self.canvas.selection_artist:
-                # Cleanup previous persistent one
-                self.canvas.cleanup_persistent_selection()
-                self.canvas.persistent_selection_artist = self.canvas.selection_artist
+                self.canvas.persistent_artists.append(self.canvas.selection_artist)
+                self.canvas.last_selection_artist = self.canvas.selection_artist
                 self.canvas.selection_artist = None
+                self.canvas.background = None # [NEW] Invalidate background to include new artist
             
             self.canvas.selection_start_x = None
 
             # ... rest of the logic follows
             
             if start is None or end is None or start == end: 
-                self.canvas.cleanup_persistent_selection()
+                # If selection was canceled or empty, clean up the last added artist
+                if self.canvas.persistent_artists:
+                    a = self.canvas.persistent_artists.pop()
+                    try: a.remove()
+                    except: pass
                 return
             
             xmin, xmax = sorted([start, end])

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
+    QTableWidget, QHeaderView, QTableWidgetItem
 )
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -563,10 +564,10 @@ class MainWindowV2(QMainWindow):
         self.ew_start_button.clicked.connect(self._on_ew_start_clicked)
         ew_button_layout.addWidget(self.ew_start_button)
         
-        self.ew_save_button = QPushButton("Save to List")
-        self.ew_save_button.setEnabled(False)
-        self.ew_save_button.clicked.connect(self._on_save_ew_clicked)
-        ew_button_layout.addWidget(self.ew_save_button)
+        self.ew_inspect_button = QPushButton("View List")
+        self.ew_inspect_button.setToolTip("Show and export the list of all computed EWs.")
+        self.ew_inspect_button.clicked.connect(self._on_inspect_ew_clicked)
+        ew_button_layout.addWidget(self.ew_inspect_button)
         
         ew_layout.addLayout(ew_button_layout, 0, 0, 1, 2)
 
@@ -766,7 +767,6 @@ class MainWindowV2(QMainWindow):
         flux_menu = menu_bar.addMenu("&Flux")
         continuum_menu = menu_bar.addMenu("&Continuum")
         absorbers_menu = menu_bar.addMenu("&Absorbers")
-        features_menu = menu_bar.addMenu("&Features")
 
         # 3. Help Menu
         help_menu = menu_bar.addMenu("&Help")
@@ -922,15 +922,6 @@ class MainWindowV2(QMainWindow):
             lambda: self._launch_recipe_dialog("flux", "calculate_running_std")
         )
         flux_menu.addAction(std_action)
-
-        # RECIPES FOR 'FEATURES' MENU
-
-        measure_ew_action = QAction("Measure &Equivalent Width...", self)
-        measure_ew_action.setShortcut("Ctrl+E")
-        measure_ew_action.setToolTip("Interactively measure Equivalent Width by selecting a region.")
-        measure_ew_action.triggered.connect(self._on_measure_ew)
-        features_menu.addAction(measure_ew_action)
-        self.measure_ew_action = measure_ew_action; self.measure_ew_action.setEnabled(False)
         self.calculate_running_std_action = std_action; self.calculate_running_std_action.setEnabled(False)
 
         flux_menu.addSeparator()
@@ -3882,6 +3873,22 @@ class MainWindowV2(QMainWindow):
         uuids = {c.uuid for c in components} if components else set()
         self.plot_viewer.set_highlights(uuids)
 
+    def _on_inspect_ew_clicked(self):
+        """Launches the EW Inspector Dialog."""
+        if not self.active_history:
+            return
+        
+        # Use a persistent attribute to allow non-modal behavior
+        if not hasattr(self, 'ew_inspector_dialog') or self.ew_inspector_dialog is None:
+            self.ew_inspector_dialog = EWInspectorDialog(self.active_history.current_state, parent=self)
+        else:
+            self.ew_inspector_dialog.session = self.active_history.current_state
+            self.ew_inspector_dialog._populate_table()
+            
+        self.ew_inspector_dialog.show()
+        self.ew_inspector_dialog.raise_()
+        self.ew_inspector_dialog.activateWindow()
+
     def dragEnterEvent(self, event):
         """Check if the drag contains files."""
         if event.mimeData().hasUrls():
@@ -3917,12 +3924,11 @@ class MainWindowV2(QMainWindow):
         
         if is_active:
             # Start selection mode
-            self.ew_start_button.setText("Cancel")
+            self.ew_start_button.setText("Close")
             self.ew_min_input.clear()
             self.ew_max_input.clear()
             self.ew_result_input.clear()
             self.ew_centroid_input.clear()
-            self.ew_save_button.setEnabled(False)
             
             # [FIX] Automatically turn off tool modes (Pan/Zoom) to allow selection
             if hasattr(self.plot_viewer, 'toolbar') and self.plot_viewer.toolbar.mode != '':
@@ -3951,12 +3957,13 @@ class MainWindowV2(QMainWindow):
     
     def _on_ew_region_selected(self, xmin, xmax):
         """Callback when region selection is completed (mouse release)."""
-        self.ew_start_button.setChecked(False)
-        self.ew_start_button.setText("Start")
+        # [MOD] Keep the button checked for continuous mode
+        # self.ew_start_button.setChecked(False)
+        # self.ew_start_button.setText("Start")
         
-        # Update Min/Max fields on release (5 decimals per request)
-        self.ew_min_input.setText(f"{xmin:.5f}")
-        self.ew_max_input.setText(f"{xmax:.5f}")
+        # Update Min/Max fields on release (3 decimals for λ to avoid overcrowding)
+        self.ew_min_input.setText(f"{xmin:.3f}")
+        self.ew_max_input.setText(f"{xmax:.3f}")
         
         if not self.active_history:
             return
@@ -3984,28 +3991,43 @@ class MainWindowV2(QMainWindow):
             
             self.ew_result_input.setText(f"{ew:.5f} ± {ew_err:.5f}")
             self.ew_centroid_input.setText(f"{centroid:.5f}")
-            self.ew_save_button.setEnabled(True)
             
-            logging.info(f"EW Measured: {ew} +/- {ew_err} nm (Range: {xmin}-{xmax} nm)")
-
             # [NEW] Visualize Results on Plot
             canvas = self.plot_viewer.canvas
             ax = canvas.axes
             
-            # 1. Centroid vertical line (dashed)
-            canvas.persistent_centroid_artist = ax.axvline(
-                centroid, color='#f5a100', linestyle='--', lw=1.5, zorder=11, label='Centroid'
+            # 1. Centroid vertical line (dotted)
+            c_line = ax.axvline(
+                centroid, color='#f5a100', linestyle=':', lw=1.5, zorder=11, label='Centroid'
             )
+            canvas.persistent_artists.append(c_line)
             
             # 2. EW shaded area (darker orange)
-            # The EW is represented as a region of width EW centered at centroid
-            # reaching from 0 to 1 in normalized units (roughly)
-            # but usually it's better to show it relative to the continuum.
-            # However, for simplicity and visibility, we'll draw it as a span.
-            canvas.persistent_ew_artist = ax.axvspan(
+            e_span = ax.axvspan(
                 centroid - ew/2.0, centroid + ew/2.0, 
-                color='#f5a100', alpha=0.6, zorder=11, label='EW'
+                color='#f5a100', alpha=0.4, zorder=11, label='EW'
             )
+            canvas.persistent_artists.append(e_span)
+            
+            # [FIX] Store artists in results BEFORE saving to list
+            # Include the selection artist from the canvas
+            sel_artist = getattr(canvas, 'last_selection_artist', None)
+            results['_artists'] = [c_line, e_span]
+            if sel_artist:
+                results['_artists'].append(sel_artist)
+                canvas.last_selection_artist = None # Clear it
+            
+            # [MOD] Auto-save to list (now includes artists!)
+            self._on_save_ew_clicked()
+            
+            logging.info(f"EW Measured: {ew} +/- {ew_err} nm (Range: {xmin}-{xmax} nm)")
+            
+            # [FIX] Invalidate background to ensure markers appear in next blit
+            canvas.background = None 
+            
+            # [MOD] Re-activate selection mode immediately for continuous use
+            self.plot_viewer.start_region_selection(self._on_ew_region_selected)
+            
             canvas.draw_idle()
 
         except Exception as e:
@@ -4027,8 +4049,8 @@ class MainWindowV2(QMainWindow):
         count = len(self.active_history.current_state.ew_measurements)
         logging.info(f"EW measurement saved. Total measurements: {count}")
         
-        # Disable save button until next measurement
-        self.ew_save_button.setEnabled(False)
+        # Disable save button until next measurement (Removed in V2 simplify)
+        # self.ew_save_button.setEnabled(False) 
 
     def _on_measure_ew(self):
         """Legacy menu action - now just activates the sidebar button."""
@@ -4261,3 +4283,131 @@ class AboutDialog(QDialog):
         # Update this URL if the repo is under a different organization
         url = "https://github.com/DAS-OATs/astrocook/issues"
         QDesktopServices.openUrl(QUrl(url))
+
+class EWInspectorDialog(QDialog):
+    """
+    Dialog to display and export the list of Equivalent Width measurements.
+    """
+    def __init__(self, session, parent=None):
+        super().__init__(parent)
+        self.session = session
+        self.setWindowTitle("EW List")
+        self.resize(700, 500)
+        
+        self.layout = QVBoxLayout(self)
+        
+        # --- 1. Button Bar ---
+        button_layout = QHBoxLayout()
+        
+        self.export_btn = QPushButton("Save List As...")
+        self.export_btn.setToolTip("Export the EW measurements to a CSV file.")
+        self.export_btn.clicked.connect(self._on_export_clicked)
+        button_layout.addWidget(self.export_btn)
+        
+        button_layout.addStretch()
+        self.layout.addLayout(button_layout)
+        
+        # --- 2. Table ---
+        self.table = QTableWidget()
+        self.cols = ['xmin', 'xmax', 'centroid', 'ew'] # Combine ew and ew_err in one col
+        self.table.setColumnCount(len(self.cols))
+        self.table.setHorizontalHeaderLabels(['λ Min', 'λ Max', 'Centroid', 'EW ± Error'])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
+        
+        self._populate_table()
+        self.layout.addWidget(self.table)
+        
+        # --- 3. Close Button ---
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        button_box.rejected.connect(self.reject)
+        self.layout.addWidget(button_box)
+
+    def _populate_table(self):
+        measurements = getattr(self.session, 'ew_measurements', [])
+        self.table.setRowCount(len(measurements))
+        
+        for i, m in enumerate(measurements):
+            for j, col in enumerate(self.cols):
+                if col == 'ew':
+                    ew = m.get('ew', 0.0)
+                    err = m.get('ew_err', 0.0)
+                    item = QTableWidgetItem(f"{ew:.5f} ± {err:.5f}")
+                else:
+                    val = m.get(col, 0.0)
+                    if isinstance(val, (float, np.floating)):
+                        item = QTableWidgetItem(f"{val:.5f}")
+                    else:
+                        item = QTableWidgetItem(str(val))
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(i, j, item)
+
+    def _on_export_clicked(self):
+        measurements = getattr(self.session, 'ew_measurements', [])
+        if not measurements:
+            QMessageBox.information(self, "No Data", "No EW measurements to export.")
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save EW Measurements", "", "CSV Files (*.csv);;All Files (*)"
+        )
+        
+        if file_path:
+            try:
+                import csv
+                with open(file_path, 'w', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=self.cols)
+                    writer.writeheader()
+                    for m in measurements:
+                        writer.writerow({k: m.get(k, '') for k in self.cols})
+                
+                logging.info(f"EW measurements exported to {file_path}")
+                QMessageBox.information(self, "Export Successful", f"Data exported to {file_path}")
+            except Exception as e:
+                logging.error(f"Failed to export EW: {e}")
+
+    def _show_context_menu(self, pos):
+        menu = QMenu(self)
+        delete_act = menu.addAction("Delete Measurement")
+        delete_act.triggered.connect(self._on_delete_clicked)
+        menu.exec(self.table.mapToGlobal(pos))
+
+    def _on_delete_clicked(self):
+        row = self.table.currentRow()
+        if row < 0: return
+        
+        measurements = getattr(self.session, 'ew_measurements', [])
+        if 0 <= row < len(measurements):
+            # Remove from session
+            m = measurements.pop(row)
+            
+            # Remove artists from plot if present
+            # We must be careful to remove from BOTH the axes and the canvas list
+            artists = m.get('_artists', [])
+            canvas = None
+            if self.parent() and hasattr(self.parent(), 'plot_viewer'):
+                canvas = self.parent().plot_viewer.canvas
+
+            for a in artists:
+                try: 
+                    # 1. Remove from Matplotlib Axes
+                    a.remove()
+                    # 2. Remove from Canvas persistent list to stop blitting redraws
+                    if canvas and a in canvas.persistent_artists:
+                        canvas.persistent_artists.remove(a)
+                except Exception as e:
+                    logging.debug(f"Could not remove artist during deletion: {e}")
+            
+            # Refresh table
+            self._populate_table()
+            
+            # Refresh plot
+            if canvas:
+                canvas.background = None # Invalidate background
+                canvas.draw_idle()
+            
+            logging.info(f"Deleted EW measurement at index {row}")
