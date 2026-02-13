@@ -101,6 +101,10 @@ def detect_file_format(file_path: str) -> str:
             if ('XSHOOTER' in instrume) and 'BinTableHDU' in str(type(hdul[-1])):
                 return "xshooter_fits"
             
+            # 5. PrimaryHDU 1D Image (Simple WCS)
+            if header.get('NAXIS', 0) == 1 and 'CRVAL1' in header and 'CDELT1' in header:
+                return "primary_image_fits" # New format
+            
     except (OSError, fits.VerifyError):
         pass
 
@@ -806,6 +810,64 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
 
     except Exception as e:
         logging.error(f"Failed to load X-Shooter FITS: {e}")
+        raise
+
+@register_loader("primary_image_fits")
+def load_primary_image_fits(file_path: str, **kwargs) -> SpectrumDataV2:
+    """
+    Loader for spectra stored as 1D image in PrimaryHDU with WCS.
+    """
+    try:
+        with fits.open(file_path) as hdul:
+            header = hdul[0].header
+            data = hdul[0].data
+            
+            # 1. Wavelength Construction (Pixel -> Physical)
+            # lambda = CRVAL + (i - (CRPIX - 1)) * CDELT
+            naxis1 = header['NAXIS1']
+            crval = header['CRVAL1']
+            cdelt = header['CDELT1']
+            crpix = header.get('CRPIX1', 1.0)
+            
+            # Generate pixel grid (0-based index)
+            pixels = np.arange(naxis1)
+            x = crval + (pixels - (crpix - 1)) * cdelt
+            
+            # 2. Flux
+            y = data.flatten()
+            
+            # 3. Error (None present, assume 0 or derived?)
+            # Standard practice if missing: 0 or Inf. V2 prefers 0.
+            dy = np.zeros_like(y)
+            
+            # 4. Units
+            # Header said 'Angstrom', so convert to nm if needed.
+            cunit = header.get('CTYPE1', 'Angstrom')
+            if 'Angstrom' in cunit or 'ANGSTROM' in cunit:
+                x = x / 10.0
+                x_unit = au.nm
+            else:
+                x, x_unit = _x_unit_heuristics(x)
+                
+            y_unit = au.dimensionless_unscaled # 'Relative Flux'
+            
+            # 5. Build Structure
+            x_col = DataColumnV2(x, x_unit, "Wavelength")
+            xmin_col, xmax_col = _auto_limits(x, x_unit)
+            
+            meta = dict(header)
+            meta['ORIGIN'] = 'primary_image_fits_loader'
+            
+            return SpectrumDataV2(
+                x=x_col, xmin=xmin_col, xmax=xmax_col,
+                y=DataColumnV2(y, y_unit), 
+                dy=DataColumnV2(dy, y_unit),
+                aux_cols={},
+                meta=meta
+            )
+            
+    except Exception as e:
+        logging.error(f"Failed to load Primary Image FITS: {e}")
         raise
 
 @register_loader("generic_spectrum")

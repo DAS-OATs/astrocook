@@ -51,6 +51,7 @@ from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.recipes.features import FEATURES_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
 for name in ABSORBERS_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'absorbers'
@@ -58,6 +59,8 @@ for name in CONTINUUM_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'continuum'
 for name in EDIT_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'edit'
+for name in FEATURES_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'features'
 for name in FLUX_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'flux'
 # (Add other recipe categories here as they are created)
@@ -444,13 +447,72 @@ class MainWindowV2(QMainWindow):
         unified_grid.setColumnMinimumWidth(0, 80)
         # Column 1: Boxes (Stretch)
         unified_grid.setColumnStretch(1, 1)
+        # Helper function to create collapsible group boxes
+        def create_collapsible_group(title, is_collapsed=False):
+            group = QGroupBox(title)
+            group.setCheckable(True)
+            group.setChecked(not is_collapsed)
+            group.setStyleSheet("""
+                QGroupBox {
+                    font-weight: bold;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    margin-top: 8px;
+                    padding-top: 8px;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 8px;
+                    padding: 0 3px;
+                }
+            """)
+            
+            def toggle_content(checked):
+                if group.layout():
+                    for i in range(group.layout().count()):
+                        item = group.layout().itemAt(i)
+                        w = item.widget()
+                        if w: w.setVisible(checked)
+                        l = item.layout()
+                        if l:
+                            # Recursively hide sub-layouts
+                            for j in range(l.count()):
+                                sub_item = l.itemAt(j)
+                                sub_w = sub_item.widget()
+                                if sub_w: sub_w.setVisible(checked)
+                
+                # Adjust fixed height to collapse/expand
+                if not checked:
+                    # Keep just enough for the title (roughly 25-30px)
+                    group.setMinimumHeight(30)
+                    group.setMaximumHeight(30)
+                else:
+                    group.setMinimumHeight(0)
+                    group.setMaximumHeight(16777215) # Default QWIDGETSIZE_MAX
+            
+            group.toggled.connect(toggle_content)
+            return group
 
-        # -- SECTION 1: Axis Limits --
-        # Header (Span 2 columns)
-        header_limits = QLabel("<b>Axis Limits:</b>")
-        # Add some top margin to separate from previous section
-        header_limits.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_limits, 0, 0, 1, 2)
+        # Helper to apply the initial collapse state after layout is set
+        def apply_initial_collapse(group):
+            # Call the internal toggle_content logic by triggering the signal
+            # or calling the logic directly if we can access it.
+            # Easiest way: force a toggle event
+            checked = group.isChecked()
+            # We need to manually trigger the logic because the signal might not fire 
+            # if we set the same value, or it might have fired before layout was set.
+            # Let's find the slot
+            group.toggled.emit(checked)
+
+        # -- SECTION 1: Axis Limits (Non-collapsible) --
+        # Use a simple layout without a GroupBox border to keep it clean
+        limits_header = QLabel("<b>Axis Limits</b>")
+        limits_header.setStyleSheet("margin-top: 10px; margin-bottom: 2px;")
+        sidebar_layout.addWidget(limits_header)
+        
+        limits_layout = QGridLayout()
+        limits_layout.setSpacing(5)
+        limits_layout.setContentsMargins(10, 0, 10, 0) # Indent slightly
 
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
@@ -466,26 +528,85 @@ class MainWindowV2(QMainWindow):
         self.ymin_input.editingFinished.connect(self._on_set_custom_limits)
         self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
         
-        # Rows 1-4
-        self.lbl_lmin = QLabel("λ Min:")
-        self.lbl_lmax = QLabel("λ Max:")
-        self.lbl_fmin = QLabel("F Min:")
-        self.lbl_fmax = QLabel("F Max:")
+        # λ and F on same rows
+        lbl_lambda = QLabel("λ:")
+        lambda_layout = QHBoxLayout()
+        lambda_layout.setSpacing(3)
+        lambda_layout.addWidget(self.xmin_input)
+        lambda_layout.addWidget(self.xmax_input)
+        
+        limits_layout.addWidget(lbl_lambda, 0, 0)
+        limits_layout.addLayout(lambda_layout, 0, 1)
+        
+        lbl_flux = QLabel("F:")
+        flux_layout = QHBoxLayout()
+        flux_layout.setSpacing(3)
+        flux_layout.addWidget(self.ymin_input)
+        flux_layout.addWidget(self.ymax_input)
+        
+        limits_layout.addWidget(lbl_flux, 1, 0)
+        limits_layout.addLayout(flux_layout, 1, 1)
+        
+        sidebar_layout.addLayout(limits_layout)
 
-        unified_grid.addWidget(self.lbl_lmin, 1, 0)
-        unified_grid.addWidget(self.xmin_input, 1, 1)
-        unified_grid.addWidget(self.lbl_lmax, 2, 0)
-        unified_grid.addWidget(self.xmax_input, 2, 1)
-        unified_grid.addWidget(self.lbl_fmin, 3, 0)
-        unified_grid.addWidget(self.ymin_input, 3, 1)
-        unified_grid.addWidget(self.lbl_fmax, 4, 0)
-        unified_grid.addWidget(self.ymax_input, 4, 1)
+        # -- SECTION 2: Equivalent Width (Collapsible) --
+        ew_group = create_collapsible_group("Equivalent Width")
+        ew_layout = QGridLayout()
+        ew_layout.setSpacing(5)
 
-        # -- SECTION 2: Redshift Cursor --
-        # Header (Span 2 columns)
-        header_cursor = QLabel("<b>Redshift Cursor:</b>")
-        header_cursor.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_cursor, 5, 0, 1, 2)
+        # Start and Save buttons on same row
+        ew_button_layout = QHBoxLayout()
+        ew_button_layout.setSpacing(5)
+        
+        self.ew_start_button = QPushButton("Start")
+        self.ew_start_button.setCheckable(True)
+        self.ew_start_button.clicked.connect(self._on_ew_start_clicked)
+        ew_button_layout.addWidget(self.ew_start_button)
+        
+        self.ew_save_button = QPushButton("Save to List")
+        self.ew_save_button.setEnabled(False)
+        self.ew_save_button.clicked.connect(self._on_save_ew_clicked)
+        ew_button_layout.addWidget(self.ew_save_button)
+        
+        ew_layout.addLayout(ew_button_layout, 0, 0, 1, 2)
+
+        # Min/Max inputs
+        self.ew_min_input = _expand_field(QLineEdit())
+        self.ew_min_input.setPlaceholderText("min")
+        self.ew_min_input.setReadOnly(True)
+        self.ew_max_input = _expand_field(QLineEdit())
+        self.ew_max_input.setPlaceholderText("max")
+        self.ew_max_input.setReadOnly(True)
+        
+        lbl_ew_lambda = QLabel("λ:")
+        ew_lambda_layout = QHBoxLayout()
+        ew_lambda_layout.setSpacing(3)
+        ew_lambda_layout.addWidget(self.ew_min_input)
+        ew_lambda_layout.addWidget(self.ew_max_input)
+        
+        ew_layout.addWidget(lbl_ew_lambda, 1, 0)
+        ew_layout.addLayout(ew_lambda_layout, 1, 1)
+
+        # Results
+        self.ew_result_input = _expand_field(QLineEdit())
+        self.ew_result_input.setPlaceholderText("EW ± error")
+        self.ew_result_input.setReadOnly(True)
+        self.ew_centroid_input = _expand_field(QLineEdit())
+        self.ew_centroid_input.setPlaceholderText("Centroid")
+        self.ew_centroid_input.setReadOnly(True)
+        
+        ew_layout.addWidget(QLabel("EW:"), 2, 0)
+        ew_layout.addWidget(self.ew_result_input, 2, 1)
+        ew_layout.addWidget(QLabel("Centroid:"), 3, 0)
+        ew_layout.addWidget(self.ew_centroid_input, 3, 1)
+
+        ew_group.setLayout(ew_layout)
+        sidebar_layout.addWidget(ew_group)
+
+        # -- SECTION 3: Redshift Cursor (Collapsible, hidden by default) --
+        cursor_group = create_collapsible_group("Redshift Cursor", is_collapsed=True)
+        cursor_layout = QGridLayout()
+        cursor_layout.setSpacing(5)
 
         self.cursor_series_input = _expand_field(QLineEdit("Ly_a"))
         self.cursor_z_input = _expand_field(QLineEdit("0.0"))
@@ -494,32 +615,48 @@ class MainWindowV2(QMainWindow):
         z_validator.setNotation(QDoubleValidator.StandardNotation)
         self.cursor_z_input.setValidator(z_validator)
 
-        # Rows 6-7
-        unified_grid.addWidget(QLabel("Trans.:"), 6, 0)
-        unified_grid.addWidget(self.cursor_series_input, 6, 1)
-        unified_grid.addWidget(QLabel("Redshift:"), 7, 0)
-        unified_grid.addWidget(self.cursor_z_input, 7, 1)
-        
-        # Add the Unified Grid to the sidebar
-        #sidebar_layout.addLayout(unified_grid)
+        cursor_layout.addWidget(QLabel("Trans.:"), 0, 0)
+        cursor_layout.addWidget(self.cursor_series_input, 0, 1)
+        cursor_layout.addWidget(QLabel("Redshift:"), 1, 0)
+        cursor_layout.addWidget(self.cursor_z_input, 1, 1)
 
-        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
-        # Add some margin to the checkbox
-        self.cursor_show_checkbox.setStyleSheet("margin-top: 5px;")
-        unified_grid.addWidget(self.cursor_show_checkbox, 8, 0, 1, 2)
+        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines")
+        self.cursor_show_checkbox.setChecked(False)
+        cursor_layout.addWidget(self.cursor_show_checkbox, 2, 0, 1, 2)
 
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        # Continuum Tools
-        header_continuum = QLabel("<b>Edit Continuum:</b>")
-        # Add some top margin to separate from previous section
-        header_continuum.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_continuum, 9, 0, 1, 2)
+        cursor_group.setLayout(cursor_layout)
+        sidebar_layout.addWidget(cursor_group)
+        apply_initial_collapse(cursor_group)
 
-        # ROW 10: Slider (Spanning both columns for better control)
+        # -- SECTION 4: Edit Continuum (Collapsible, hidden by default) --
+        continuum_group = create_collapsible_group("Edit Continuum", is_collapsed=True)
+        continuum_layout = QGridLayout()
+        continuum_layout.setSpacing(5)
+
+        # Buttons first
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(5)
+
+        self.edit_cont_button = QPushButton("Start")
+        self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
+        self.edit_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.edit_cont_button)
+
+        self.reset_cont_button = QPushButton("Reset")
+        self.reset_cont_button.setEnabled(False)
+        self.reset_cont_button.setToolTip("Discard changes and reset to default spacing.")
+        self.reset_cont_button.clicked.connect(self._on_reset_continuum_clicked)
+        self.reset_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.reset_cont_button)
+
+        continuum_layout.addLayout(button_layout, 0, 0, 1, 2)
+
+        # Slider
         self.stride_slider = QSlider(Qt.Horizontal)
         self.stride_slider.setMinimum(0)
         self.stride_slider.setMaximum(100)
@@ -530,12 +667,11 @@ class MainWindowV2(QMainWindow):
         self.stride_slider.setToolTip("Adjust density. Drag to smooth/roughen.")
         self._set_slider_from_stride(500)
         
-        unified_grid.addWidget(self.stride_slider, 10, 0, 1, 2) # Span 2 columns
+        continuum_layout.addWidget(self.stride_slider, 1, 0, 1, 2)
 
-        # ROW 11: Spacing Label + Entry
+        # Spacing
         self.lbl_spacing = QLabel("Spacing:")
-        self.lbl_spacing.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        unified_grid.addWidget(self.lbl_spacing, 11, 0, 1, 1)
+        continuum_layout.addWidget(self.lbl_spacing, 2, 0)
 
         self.stride_entry = QLineEdit()
         stride_validator = QDoubleValidator(0.0, 20000.0, 0)
@@ -547,31 +683,11 @@ class MainWindowV2(QMainWindow):
         self.stride_entry.setToolTip("Enter spacing in km/s")
         self.stride_entry.editingFinished.connect(self._on_stride_text_changed)
         
-        unified_grid.addWidget(self.stride_entry, 11, 1, 1, 1)
+        continuum_layout.addWidget(self.stride_entry, 2, 1)
 
-        # ROW 12: Buttons (Start/Save and Reset) inside a sub-layout for equal sizing
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(10) # Gap between buttons
-        button_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.edit_cont_button = QPushButton("Start")
-        self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
-        # SizePolicy: Expanding allows them to share available space equally
-        self.edit_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        button_layout.addWidget(self.edit_cont_button)
-
-        self.reset_cont_button = QPushButton("Reset")
-        self.reset_cont_button.setEnabled(False)
-        self.reset_cont_button.setToolTip("Discard changes and reset to default spacing.")
-        self.reset_cont_button.clicked.connect(self._on_reset_continuum_clicked)
-        self.reset_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        button_layout.addWidget(self.reset_cont_button)
-
-        # Add the sub-layout to the main grid, spanning both columns
-        unified_grid.addLayout(button_layout, 12, 0, 1, 2)
-
-        # Add the group to your main sidebar layout
-        sidebar_layout.addLayout(unified_grid)
+        continuum_group.setLayout(continuum_layout)
+        sidebar_layout.addWidget(continuum_group)
+        apply_initial_collapse(continuum_group)
 
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
@@ -650,10 +766,11 @@ class MainWindowV2(QMainWindow):
         flux_menu = menu_bar.addMenu("&Flux")
         continuum_menu = menu_bar.addMenu("&Continuum")
         absorbers_menu = menu_bar.addMenu("&Absorbers")
+        features_menu = menu_bar.addMenu("&Features")
 
         # 3. Help Menu
         help_menu = menu_bar.addMenu("&Help")
-        
+
         # --- File and View operations ---
 
         # --- File Menu Actions
@@ -797,7 +914,23 @@ class MainWindowV2(QMainWindow):
         std_action.triggered.connect(
             lambda: self._launch_recipe_dialog("flux", "calculate_running_std")
         )
+        # RECIPES FOR 'FLUX' MENU
+        
+        std_action = QAction("Calculate Running &StdDev...", self)
+        std_action.setToolTip("Calculate running standard deviation on a column (e.g., y)")
+        std_action.triggered.connect(
+            lambda: self._launch_recipe_dialog("flux", "calculate_running_std")
+        )
         flux_menu.addAction(std_action)
+
+        # RECIPES FOR 'FEATURES' MENU
+
+        measure_ew_action = QAction("Measure &Equivalent Width...", self)
+        measure_ew_action.setShortcut("Ctrl+E")
+        measure_ew_action.setToolTip("Interactively measure Equivalent Width by selecting a region.")
+        measure_ew_action.triggered.connect(self._on_measure_ew)
+        features_menu.addAction(measure_ew_action)
+        self.measure_ew_action = measure_ew_action; self.measure_ew_action.setEnabled(False)
         self.calculate_running_std_action = std_action; self.calculate_running_std_action.setEnabled(False)
 
         flux_menu.addSeparator()
@@ -994,11 +1127,14 @@ class MainWindowV2(QMainWindow):
             self.ymin_input.blockSignals(True)
             self.ymax_input.blockSignals(True)
             
-            # Set text using the converted display values
-            self.xmin_input.setText(f"{display_xlim[0]:.4g}")
-            self.xmax_input.setText(f"{display_xlim[1]:.4g}")
-            self.ymin_input.setText(f"{ylim_plot[0]:.4g}")
-            self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
+            # [FIX] Don't update axis limit inputs if we're in EW selection mode
+            # (prevents conflict with EW λ min/max inputs)
+            if not (hasattr(self, 'ew_start_button') and self.ew_start_button.isChecked()):
+                # Set text using the converted display values (3 decimal places)
+                self.xmin_input.setText(f"{display_xlim[0]:.3f}")
+                self.xmax_input.setText(f"{display_xlim[1]:.3f}")
+                self.ymin_input.setText(f"{ylim_plot[0]:.3f}")
+                self.ymax_input.setText(f"{ylim_plot[1]:.3f}")
             
         except Exception as e:
             logging.warning(f"Failed to update limit boxes: {e}")
@@ -3525,6 +3661,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         if hasattr(self, 'clean_negligible_action'): self.clean_negligible_action.setEnabled(enable_recipes)
+        if hasattr(self, 'measure_ew_action'): self.measure_ew_action.setEnabled(enable_recipes) # [FIX] Enable EW action
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...
@@ -3770,6 +3907,134 @@ class MainWindowV2(QMainWindow):
             QApplication.restoreOverrideCursor()
         
         event.acceptProposedAction()
+
+    def _on_ew_start_clicked(self):
+        """Toggle EW selection mode."""
+        if not self.plot_viewer:
+            return
+        
+        is_active = self.ew_start_button.isChecked()
+        
+        if is_active:
+            # Start selection mode
+            self.ew_start_button.setText("Cancel")
+            self.ew_min_input.clear()
+            self.ew_max_input.clear()
+            self.ew_result_input.clear()
+            self.ew_centroid_input.clear()
+            self.ew_save_button.setEnabled(False)
+            
+            # [FIX] Automatically turn off tool modes (Pan/Zoom) to allow selection
+            if hasattr(self.plot_viewer, 'toolbar') and self.plot_viewer.toolbar.mode != '':
+                if self.plot_viewer.toolbar.mode == 'pan/zoom': 
+                    self.plot_viewer.toolbar.pan()
+                elif self.plot_viewer.toolbar.mode == 'zoom rect': 
+                    self.plot_viewer.toolbar.zoom()
+
+            # [NEW] Clear any existing persistent highlight when starting new selection
+            self.plot_viewer.canvas.cleanup_persistent_selection()
+            
+            # Start region selection with COMPLETION callback only
+            self.plot_viewer.start_region_selection(self._on_ew_region_selected)
+        else:
+            # Cancel selection mode
+            self.ew_start_button.setText("Start")
+            self.plot_viewer._is_selecting_region = False
+            self.plot_viewer.canvas.cleanup_selection()
+            self.plot_viewer.canvas.cleanup_persistent_selection()
+    
+    def _on_ew_selection_change(self, xmin, xmax):
+        """Real-time callback during region selection (drag)."""
+        # Update Min/Max fields (5 decimals per request)
+        self.ew_min_input.setText(f"{xmin:.5f}")
+        self.ew_max_input.setText(f"{xmax:.5f}")
+    
+    def _on_ew_region_selected(self, xmin, xmax):
+        """Callback when region selection is completed (mouse release)."""
+        self.ew_start_button.setChecked(False)
+        self.ew_start_button.setText("Start")
+        
+        # Update Min/Max fields on release (5 decimals per request)
+        self.ew_min_input.setText(f"{xmin:.5f}")
+        self.ew_max_input.setText(f"{xmax:.5f}")
+        
+        if not self.active_history:
+            return
+
+        session = self.active_history.current_state
+        if not session or not session.spec:
+            return
+
+        # Perform the calculation
+        try:
+            results = session.features.compute_ew(xmin, xmax)
+            
+            if not results:
+                self.ew_result_input.setText("Error")
+                self.ew_centroid_input.setText("Error")
+                return
+
+            # Store results for saving
+            self._current_ew_result = results
+            
+            # Display in sidebar (5 decimals per request)
+            ew = results['ew']
+            ew_err = results['ew_err']
+            centroid = results['centroid']
+            
+            self.ew_result_input.setText(f"{ew:.5f} ± {ew_err:.5f}")
+            self.ew_centroid_input.setText(f"{centroid:.5f}")
+            self.ew_save_button.setEnabled(True)
+            
+            logging.info(f"EW Measured: {ew} +/- {ew_err} nm (Range: {xmin}-{xmax} nm)")
+
+            # [NEW] Visualize Results on Plot
+            canvas = self.plot_viewer.canvas
+            ax = canvas.axes
+            
+            # 1. Centroid vertical line (dashed)
+            canvas.persistent_centroid_artist = ax.axvline(
+                centroid, color='#f5a100', linestyle='--', lw=1.5, zorder=11, label='Centroid'
+            )
+            
+            # 2. EW shaded area (darker orange)
+            # The EW is represented as a region of width EW centered at centroid
+            # reaching from 0 to 1 in normalized units (roughly)
+            # but usually it's better to show it relative to the continuum.
+            # However, for simplicity and visibility, we'll draw it as a span.
+            canvas.persistent_ew_artist = ax.axvspan(
+                centroid - ew/2.0, centroid + ew/2.0, 
+                color='#f5a100', alpha=0.6, zorder=11, label='EW'
+            )
+            canvas.draw_idle()
+
+        except Exception as e:
+            logging.error(f"Error computing EW: {e}")
+            self.ew_result_input.setText("Error")
+            self.ew_centroid_input.setText("Error")
+    
+    def _on_save_ew_clicked(self):
+        """Save the current EW measurement to the session's list."""
+        if not hasattr(self, '_current_ew_result') or not self._current_ew_result:
+            return
+        
+        if not self.active_history:
+            return
+        
+        # Add to session's ew_measurements list
+        self.active_history.current_state.ew_measurements.append(self._current_ew_result.copy())
+        
+        count = len(self.active_history.current_state.ew_measurements)
+        logging.info(f"EW measurement saved. Total measurements: {count}")
+        
+        # Disable save button until next measurement
+        self.ew_save_button.setEnabled(False)
+
+    def _on_measure_ew(self):
+        """Legacy menu action - now just activates the sidebar button."""
+        if hasattr(self, 'ew_start_button'):
+            self.ew_start_button.setChecked(True)
+            self._on_ew_start_clicked()
 
 class LogSignalBridge(QObject):
     """Thread-safe bridge to emit log messages as Qt signals."""

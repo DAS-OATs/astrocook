@@ -315,9 +315,19 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.selection_artist.remove()
             
             self.selection_artist = self.axes.axvspan(
-                self.selection_start_x, event.xdata, color='yellow', alpha=0.3
+                self.selection_start_x, event.xdata, color='yellow', alpha=0.3, zorder=10
             )
             self.draw_idle()
+
+            # [NEW] Trigger callback for real-time updates
+            if self.plot_widget and hasattr(self.plot_widget, '_selection_realtime_callback') and self.plot_widget._selection_realtime_callback:
+                input_xmin = min(self.selection_start_x, event.xdata)
+                input_xmax = max(self.selection_start_x, event.xdata)
+                try:
+                    self.plot_widget._selection_realtime_callback(input_xmin, input_xmax)
+                except Exception as e:
+                    logging.error(f"Real-time selection callback failed: {e}")
+            
             return # Don't do cursor updates while selecting
         
         # Check if inside axes and cursor checkbox is checked
@@ -398,6 +408,25 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.selection_artist = None
             self.draw_idle()
 
+    def cleanup_persistent_selection(self):
+        """Helper to remove persistent selection highlight and EW markers."""
+        if hasattr(self, 'persistent_selection_artist') and self.persistent_selection_artist:
+            try: self.persistent_selection_artist.remove()
+            except Exception: pass
+            self.persistent_selection_artist = None
+
+        if hasattr(self, 'persistent_centroid_artist') and self.persistent_centroid_artist:
+            try: self.persistent_centroid_artist.remove()
+            except Exception: pass
+            self.persistent_centroid_artist = None
+
+        if hasattr(self, 'persistent_ew_artist') and self.persistent_ew_artist:
+            try: self.persistent_ew_artist.remove()
+            except Exception: pass
+            self.persistent_ew_artist = None
+
+        self.draw_idle()
+
 class SpectrumPlotWidget(QWidget):
     """
     Refactored widget that contains the plot canvas, toolbar, and toggles.
@@ -463,7 +492,13 @@ class SpectrumPlotWidget(QWidget):
 
         # Selection Mode State
         self._is_selecting_region = False
+        self._selection_callback = None # [NEW] Callback for generic region selection
+        self._selection_realtime_callback = None # [NEW] Callback for real-time drag updates
         self._selection_start_x = None
+        self.selection_artist = None
+        self.persistent_selection_artist = None
+        self.persistent_centroid_artist = None
+        self.persistent_ew_artist = None
         
         # Store the original Matplotlib coordinate formatter ONCE
         self._default_format_coord = self.canvas.axes.format_coord
@@ -1999,8 +2034,17 @@ class SpectrumPlotWidget(QWidget):
         if hasattr(self, 'toolbar') and self.toolbar.mode != '':
             # Toolbar is active (Pan or Zoom)
             
-            if hit_knot:
-                # User specifically clicked a knot -> OVERRIDE TOOLBAR
+            # [FIX] Robust CMD/Control detection. 
+            # Check both Qt modifiers AND Matplotlib's event.key
+            modifiers = QApplication.keyboardModifiers()
+            is_qt_cmd = bool(modifiers & (Qt.ControlModifier | Qt.MetaModifier))
+            is_mpl_cmd = event.key and any(k in event.key for k in ['super', 'cmd', 'control', 'meta'])
+            is_cmd = is_qt_cmd or is_mpl_cmd
+            
+            logging.debug(f"on_press: tool={self.toolbar.mode}, is_selecting={self._is_selecting_region}, is_cmd={is_cmd} (qt={is_qt_cmd}, mpl={event.key})")
+            
+            if hit_knot or (self._is_selecting_region and is_cmd):
+                # User specifically clicked a knot or CMD+drag -> OVERRIDE TOOLBAR
                 self._paused_tool_mode = self.toolbar.mode # Remember what was on
                 
                 # Turn off the tool internally so it doesn't process the drag
@@ -2072,9 +2116,26 @@ class SpectrumPlotWidget(QWidget):
 
         # 3. Region Selection (Button 1)
         # Only runs if NOT consumed by continuum logic above
-        if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
-            self._selection_start_x = event.xdata
-            self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
+        
+        # [FIX] Robust CMD/Control detection for selection block
+        has_tool = hasattr(self, 'toolbar') and self.toolbar.mode != ''
+        modifiers = QApplication.keyboardModifiers()
+        is_qt_cmd = bool(modifiers & (Qt.ControlModifier | Qt.MetaModifier))
+        is_mpl_cmd = event.key and any(k in event.key for k in ['super', 'cmd', 'control', 'meta', 'alt'])
+        is_cmd = is_qt_cmd or is_mpl_cmd
+        
+        if (event.button == 1 and event.inaxes == self.canvas.axes and 
+            self._is_selecting_region):
+            
+            # If tool active, MUST have CMD held to override
+            if has_tool and not is_cmd:
+                return # Let toolbar handle it
+            
+            logging.info(f"on_press: Starting EW selection at x={event.xdata:.3f} (is_cmd={is_cmd})")
+            # [FIX] Set it on the CANVAS so on_motion sees it!
+            self.canvas.selection_start_x = event.xdata
+            self.canvas.selection_artist = self.canvas.axes.axvspan(
+                event.xdata, event.xdata, color='yellow', alpha=0.3, zorder=10)
             self.canvas.draw_idle() 
             return True
 
@@ -2124,29 +2185,75 @@ class SpectrumPlotWidget(QWidget):
         if self._active_knot_idx is not None:
             self._active_knot_idx = None
             
-        # --- [START NEW BLOCK] ---
-        # 2. Restore Toolbar if we paused it
-        if hasattr(self, '_paused_tool_mode') and self._paused_tool_mode:
-            if self._paused_tool_mode == 'pan/zoom': 
-                self.toolbar.pan()
-            elif self._paused_tool_mode == 'zoom rect': 
-                self.toolbar.zoom()
-            self._paused_tool_mode = None
-
-        # 2. Handle Existing Region Selection Logic
-        if self._selection_start_x is not None:
-            start = self._selection_start_x
+        # 2. Handle Existing Region Selection Logic (PRIORITY)
+        # [FIX] Handle selection FIRST so we can explicitly skip toolbar restoration if needed
+        selection_performed = False
+        if self.canvas.selection_start_x is not None:
+            start = self.canvas.selection_start_x
             end = event.xdata
-            self.canvas.cleanup_selection()
-            self._selection_start_x = None
+            selection_performed = True
+            
+            # Keep the highlight! Assign it as persistent
+            if self.canvas.selection_artist:
+                # Cleanup previous persistent one
+                self.canvas.cleanup_persistent_selection()
+                self.canvas.persistent_selection_artist = self.canvas.selection_artist
+                self.canvas.selection_artist = None
+            
+            self.canvas.selection_start_x = None
+
+            # ... rest of the logic follows
             
             if start is None or end is None or start == end: 
+                self.canvas.cleanup_persistent_selection()
                 return
             
             xmin, xmax = sorted([start, end])
-            if self.main_window:
+            
+            # [NEW] Check for custom callback first
+            completion_callback = self._selection_callback if hasattr(self, '_selection_callback') else None
+            
+            # Reset selection state
+            self._selection_callback = None
+            self._is_selecting_region = False
+            
+            if completion_callback:
+                logging.debug(f"Executing selection callback for range {xmin:.4f}-{xmax:.4f}")
+                try:
+                    completion_callback(xmin, xmax)
+                except Exception as e:
+                    logging.error(f"Selection callback failed: {e}")
+                
+            elif self.main_window:
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
+
+        # 3. Restore Toolbar if we paused it (at the end)
+        if hasattr(self, '_paused_tool_mode') and self._paused_tool_mode:
+            paused_mode = self._paused_tool_mode
+            self._paused_tool_mode = None # Clear before restoring to avoid recursion
+
+            if paused_mode == 'pan/zoom': 
+                self.toolbar.pan()
+            elif paused_mode == 'zoom rect': 
+                self.toolbar.zoom()
+            
+            # If we just performed a selection, we want to AVOID the toolbar 
+            # applying its zoom/pan on this specific release.
+            # Matplotlib's toolbar usually handles release in its own event loop.
+            # By restoring it AFTER we processed the event, we should be safe.
+
+
+    def start_region_selection(self, callback):
+        """
+        Enables region selection mode and sets the callback to be executed
+        when the selection is completed.
+        """
+        self._is_selecting_region = True
+        self._selection_callback = callback
+        # Change cursor to indicate selection mode?
+        # self.setCursor(Qt.CrossCursor) 
+        logging.info("Region selection mode started.")
 
     def _generate_velocity_knots(self, x_full, stride_kms):
         """

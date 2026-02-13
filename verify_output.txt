@@ -1,0 +1,5 @@
+[INFO] utils: NumExpr defaulting to 8 threads.
+Testing file: /Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/teaching/ac/spectrum_BD+14_3079_LabAstro23.fits
+Detected format: primary_image_fits
+Load successful!
+Load failed: 'DataColumnV2' object has no attribute 'min'

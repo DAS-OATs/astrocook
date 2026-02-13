@@ -19,6 +19,7 @@ from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.absorbers import RecipeAbsorbersV2
 from astrocook.recipes.edit import RecipeEditV2
 from astrocook.recipes.flux import RecipeFluxV2
+from astrocook.recipes.features import RecipeFeaturesV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
     SystemListDataV2, HistoryLogV2, LogEntryV2, V1LogArtifact
@@ -214,6 +215,8 @@ class SessionV2:
         Access to continuum estimation and fitting recipes.
     absorbers : astrocook.recipes.absorbers.RecipeAbsorbersV2
         Access to line identification and fitting recipes.
+    features : astrocook.recipes.features.RecipeFeaturesV2
+        Access to feature extraction recipes (e.g., Equivalent Width).
     """
     def __init__(self,
                  name: str,
@@ -233,6 +236,7 @@ class SessionV2:
         self.flux = RecipeFluxV2(self)
         self.continuum = RecipeContinuumV2(self)
         self.absorbers = RecipeAbsorbersV2(self)
+        self.features = RecipeFeaturesV2(self)
 
         self.cb = self.edit
         self._shade = False 
@@ -240,6 +244,7 @@ class SessionV2:
         self._clicks = []  
         self._z_sel = 0.0   
         self._series_sel = 'Ly_a' 
+        self.ew_measurements = [] # [NEW] Store EW measurements
         logging.debug(f"SessionV2 '{self.name}' initialized.")
 
     def __getattr__(self, name):
@@ -251,6 +256,8 @@ class SessionV2:
             return getattr(self.continuum, name)
         if hasattr(self.absorbers, name):
             return getattr(self.absorbers, name)
+        if hasattr(self.features, name):
+            return getattr(self.features, name)
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @property
