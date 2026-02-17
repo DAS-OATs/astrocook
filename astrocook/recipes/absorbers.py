@@ -857,6 +857,16 @@ class RecipeAbsorbersV2:
         # Delegate to SpectrumV2
         new_spec = spec.update_model(model_flux)
         
+        # Remove temporary JSON maps to prevent FITS header overflow
+        # These keys are no longer needed once components are populated.
+        if hasattr(new_spec, 'remove_meta_keys'):
+            new_spec = new_spec.remove_meta_keys([
+                'series_map_json', 
+                'z_map_json', 
+                'logN_map_json', 
+                'b_map_json'
+            ])
+
         return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
     def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
