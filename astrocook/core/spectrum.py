@@ -601,6 +601,19 @@ class SpectrumV2:
         new_history = self.history + [f"Updated column '{name}'"]
         return SpectrumV2(data=new_data, history=new_history)
 
+    def remove_meta_keys(self, keys: List[str]) -> 'SpectrumV2':
+        """
+        Return a NEW SpectrumV2 with specified metadata keys removed.
+        Used to clean up temporary large objects (like JSON maps) before saving.
+        """
+        new_meta = deepcopy(self._data.meta)
+        for k in keys:
+            if k in new_meta:
+                del new_meta[k]
+        
+        new_data = dataclasses.replace(self._data, meta=new_meta)
+        return SpectrumV2(data=new_data, history=self.history)
+
     def remove_columns(self, col_names: List[str]) -> 'SpectrumV2':
         """
         Return a NEW SpectrumV2 with specified auxiliary columns removed.
