@@ -291,11 +291,11 @@ METAL_MULTIPLETS = {
     'CaII': ['CaII_3934', 'CaII_3969'],
     
     # Complex multiplets
-    'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII_1304', 'SiII_1808'],
+    'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII*_1264', 'SiII_1304', 'SiII_1808'],
     'SII': ['SII_1250', 'SII_1253', 'SII_1259'],
     'MnII': ['MnII_2576', 'MnII_2594', 'MnII_2606'],
-    'FeII': ['FeII_2382', 'FeII_2600', 'FeII_2344', 'FeII_2586', 'FeII_1608', 'FeII_2374'],
-    'NI': ['NI_1200', 'NI_1199', 'NI_1201'],
+    'FeII': ['FeII_1608', 'FeII_1611', 'FeII_2249', 'FeII_2260', 'FeII_2344', 'FeII_2367', 'FeII_2374', 'FeII_2382', 'FeII_2586', 'FeII_2600'],
+    'NI': ['NI_963', 'NI_964', 'NI_965', 'NI_1134a', 'NI_1134b', 'NI_1134c', 'NI_1199', 'NI_1200', 'NI_1201'],
     'CrII': ['CrII_2056', 'CrII_2062', 'CrII_2066'],
 }
 
