@@ -289,7 +289,16 @@ class SystemListV2:
                     self.constraint_model._active_uuids = None
 
     def to_v1_systlist(self) -> Optional[Table]:
-        """Converts the V2 list to a simple V1-compatible table structure."""
+        """
+        Convert the V2 system list to a V1-compatible Astropy Table.
+
+        Used for saving archives in the legacy ``.acs`` format.
+
+        Returns
+        -------
+        astropy.table.Table or None
+            A table containing the system list in V1 format, or ``None`` if the list is empty.
+        """
         if not self.components: return None
         logging.warning("Simplified V2->V1 system list conversion. V1 constraints may be lost.")
         data_dict = {
@@ -466,7 +475,23 @@ class SystemListV2:
     def update_components(self, uuids: List[str], **changes) -> 'SystemListV2':
         """
         Batch update parameters for multiple components in a single pass.
-        Much faster than calling update_component repeatedly.
+
+        This method is significantly faster than calling :meth:`update_component` 
+        repeatedly because it creates a new immutable state only once after applying 
+        all changes.
+
+        Parameters
+        ----------
+        uuids : list of str
+            A list of component UUIDs to update.
+        **changes : dict
+            Keyword arguments specifying the fields to update (e.g., ``z=2.5``).
+            Changes are applied identically to all specified components.
+
+        Returns
+        -------
+        SystemListV2
+            A new instance with the components updated.
         """
         # Convert list to set for O(1) lookups
         target_uuids = set(uuids)

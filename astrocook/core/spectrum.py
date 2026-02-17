@@ -314,18 +314,49 @@ class SpectrumV2:
         return quantity[where_safe]
 
     def has_aux_column(self, name: str) -> bool:
-        """Checks if an auxiliary column exists."""
+        """
+        Check if an auxiliary column exists.
+
+        Parameters
+        ----------
+        name : str
+            The name of the column to check (e.g., ``'cont'``).
+
+        Returns
+        -------
+        bool
+            ``True`` if the column is present in the auxiliary data, ``False`` otherwise.
+        """
         return name in self._data.aux_cols
     
     def get_column(self, name: str) -> Optional[au.Quantity]:
-        """Accede a una colonna ausiliaria per la GUI (es. 'cont')."""
+        """
+        Get an auxiliary column as an Astropy Quantity.
+
+        Parameters
+        ----------
+        name : str
+            The name of the auxiliary column to retrieve (e.g., ``'cont'``).
+
+        Returns
+        -------
+        astropy.units.Quantity or None
+            The column data with units, or ``None`` if the column does not exist.
+        """
         col = self._data.aux_cols.get(name)
         return col.quantity if col else None
 
     def to_v1_spectrum(self) -> SpectrumV1:
         """
-        Converts the immutable SpectrumV2 (API + Data Core) back into a mutable 
-        SpectrumV1 object for saving.
+        Convert the immutable SpectrumV2 back into a mutable SpectrumV1 object.
+
+        This method extracts core data arrays and auxiliary columns to reconstruct
+        the legacy object required for saving in the ``.acs`` format.
+
+        Returns
+        -------
+        astrocook.legacy.spectrum.Spectrum
+            A legacy Spectrum object containing the current data and metadata.
         """
         # NOTE: This is complex because we need to extract the data and auxiliary columns
         # and feed them to the V1 SpectrumV1 constructor (which calls FrameV1.__init__).

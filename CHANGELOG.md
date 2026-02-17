@@ -1,3 +1,11 @@
+## [2.0.0-beta.3] - 2026-02-18
+
+- Improved robustness (crash recovery) and fitting (weak lines, Lyman forest)
+- Updated line lists (FeII, SiII, etc.) and set turbulent broadening (btur) to default to frozen.
+- Added batch actions (refit, freeze, delete), group highlighting, and visual feedback for frozen parameters
+- Introduced a Data Inspector and a recipe to equalize flux across sessions
+- Added Drag-and-Drop support to the main window
+
 ## [2.0.0-beta.2] - 2026-01-22
 
 - More flexible way to manually edit continuum

@@ -246,6 +246,25 @@ class RecipeFluxV2:
         return self._session.with_new_spectrum(new_spec_v2)
     
     def equalize(self, reference_session: str = 'None', order: str = '0') -> 'SessionV2':
+        """
+        Equalize flux to a reference session.
+
+        Scales the flux of the current session to match the flux level of a 
+        reference session using a polynomial scaling model.
+
+        Parameters
+        ----------
+        reference_session : str, optional
+            The name of the reference session. Defaults to ``'None'``.
+        order : str, optional
+            The polynomial order for the scaling model (``'0'`` = scalar, ``'-1'`` = spline). 
+            Defaults to ``'0'``.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the scaled flux. Returns ``0`` (int) on failure.
+        """
         if reference_session in ['None', '']:
             logging.error("No reference session selected.")
             return 0
