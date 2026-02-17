@@ -955,17 +955,33 @@ class VoigtFitterV2:
 
         new_components = []
         old_components = self._system_list.components
-        active_uuids = self._constraints._active_uuids
+        active_uuids = None
+        if hasattr(self, '_constraints'):
+            # The constraint model stores the active set in _active_uuids
+            if hasattr(self._constraints, '_active_uuids'):
+                active_uuids = self._constraints._active_uuids
 
         for i, old_comp in enumerate(old_components):
             idx = i * 4
+
+            # Spectator Check
+            # A component is a spectator if a specific active set exists 
+            # AND this component is NOT in it.
+            is_spectator = (active_uuids is not None) and (old_comp.uuid not in active_uuids)
             
-            # Zero out errors for fixed parameters
-            # If the parameter was free, take the calculated error.
-            # If it was fixed, set error to 0.0 (clearing stale values).
-            dz_new = p_full_errors[idx] if is_free_mask[idx] else 0.0
-            dlogN_new = p_full_errors[idx+1] if is_free_mask[idx+1] else 0.0
-            db_new = p_full_errors[idx+2] if is_free_mask[idx+2] else 0.0
+            # Helper to assign error
+            def resolve_error(param_idx, old_err):
+                if is_free_mask[param_idx]:
+                    return p_full_errors[param_idx] # New calculated error
+                elif is_spectator:
+                    return old_err # PRESERVE old error for spectators
+                else:
+                    return 0.0 # ZERO error for user-frozen params
+                
+            dz_new = resolve_error(idx, old_comp.dz)
+            dlogN_new = resolve_error(idx+1, old_comp.dlogN)
+            db_new = resolve_error(idx+2, old_comp.db)
+            dbtur_new = resolve_error(idx+3, old_comp.dbtur)
             
             # Metadata Update
             comp_chi2 = old_comp.chi2
