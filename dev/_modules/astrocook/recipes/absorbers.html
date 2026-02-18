@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -553,11 +553,23 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Redshift&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;b (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;btur&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;btur (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;series&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Series&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;resol&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Resolution (R or FWHM)&quot;</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#update_component&quot;</span><span class="p">,</span>
         <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;update_components&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Batch update components.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;uuids&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;logN&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;btur&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;resol&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="p">]</span>
     <span class="p">},</span>
     <span class="s2">&quot;delete_component&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete component(s).&quot;</span><span class="p">,</span>
@@ -647,7 +659,8 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit window around lines (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;group_depth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Grouping depth (1=Neighbors, 2=FoF)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;max_group_size&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Max components per fit group (chunking)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region_limit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Limit fitting to &#39;red_side&#39; or &#39;lya_forest&#39;.&quot;</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region_limit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Limit fitting to &#39;red_side&#39; or &#39;lya_forest&#39;.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;selected_uuids&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#refit_all&quot;</span>
     <span class="p">},</span>
@@ -1300,6 +1313,16 @@
         <span class="c1"># Delegate to SpectrumV2</span>
         <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">)</span>
         
+        <span class="c1"># Remove temporary JSON maps to prevent FITS header overflow</span>
+        <span class="c1"># These keys are no longer needed once components are populated.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_spec</span><span class="p">,</span> <span class="s1">&#39;remove_meta_keys&#39;</span><span class="p">):</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">remove_meta_keys</span><span class="p">([</span>
+                <span class="s1">&#39;series_map_json&#39;</span><span class="p">,</span> 
+                <span class="s1">&#39;z_map_json&#39;</span><span class="p">,</span> 
+                <span class="s1">&#39;logN_map_json&#39;</span><span class="p">,</span> 
+                <span class="s1">&#39;b_map_json&#39;</span>
+            <span class="p">])</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">running_systs</span><span class="p">)</span></div>
 
         
@@ -1339,6 +1362,14 @@
             <span class="n">z_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">);</span> <span class="n">logN_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">);</span> <span class="n">b_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="n">btur_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">btur</span><span class="p">)</span>
             <span class="n">z_win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">series</span> <span class="ow">and</span> <span class="n">series</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+            <span class="c1"># 1. Parse the string &quot;FeII_2586,FeII_2600&quot; -&gt; [&quot;FeII_2586&quot;, &quot;FeII_2600&quot;]</span>
+            <span class="n">members</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            
+            <span class="c1"># 2. Register globally so the Fitter can find it</span>
+            <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series</span><span class="p">]</span> <span class="o">=</span> <span class="n">members</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registered custom multiplet: &#39;</span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2">&#39; -&gt; </span><span class="si">{</span><span class="n">members</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1363,7 +1394,7 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.update_component">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> 
-                         <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+                         <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update component parameters.</span>
 
@@ -1380,6 +1411,8 @@
 <span class="sd">            Column Density (log). Defaults to ``&#39;None&#39;``.</span>
 <span class="sd">        b : str, optional</span>
 <span class="sd">            Doppler parameter (km/s). Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        btur : str, optional</span>
+<span class="sd">            Turbulent broadening (km/s). Defaults to ``&#39;None&#39;``.</span>
 <span class="sd">        series : str, optional</span>
 <span class="sd">            Series name. Defaults to ``&#39;None&#39;``.</span>
 <span class="sd">        resol : str, optional</span>
@@ -1396,6 +1429,7 @@
             <span class="k">if</span> <span class="n">z</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">logN</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;logN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">btur</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;btur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">btur</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">series</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">resol</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="c1"># Handle resolution update</span>
             
@@ -1403,6 +1437,61 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed update_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeAbsorbersV2.update_components">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.update_components">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> 
+                          <span class="n">b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span>
+                          <span class="n">series</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Batch update component parameters.</span>
+
+<span class="sd">        Modifies the physical parameters of multiple existing components simultaneously.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_components`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuids : list</span>
+<span class="sd">            List of component UUIDs to update.</span>
+<span class="sd">        z : str, optional</span>
+<span class="sd">            Redshift. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        logN : str, optional</span>
+<span class="sd">            Column Density (log). Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        b : str, optional</span>
+<span class="sd">            Doppler parameter (km/s). Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        btur : str, optional</span>
+<span class="sd">            Turbulent broadening (km/s). Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        series : str, optional</span>
+<span class="sd">            Series name. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        resol : str, optional</span>
+<span class="sd">            Resolution (R or FWHM). Defaults to ``&#39;None&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with updated components,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Parse values</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">z</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">logN</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;logN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">logN</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">btur</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;btur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">btur</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">series</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resol</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span> <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">changes</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+            <span class="c1"># Delegate to the new bulk method</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">update_components</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed update_components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.delete_component">
@@ -1843,7 +1932,8 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">refit_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100&#39;</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100.0&#39;</span><span class="p">,</span> 
                   <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">max_group_size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;20&#39;</span><span class="p">,</span>
-                  <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+                  <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+                  <span class="n">selected_uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Refit all systems.</span>
 
@@ -1904,7 +1994,14 @@
             
             <span class="n">uuids_in_region</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
             
+            <span class="c1"># Prepare selection set</span>
+            <span class="n">target_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">selected_uuids</span><span class="p">)</span> <span class="k">if</span> <span class="n">selected_uuids</span> <span class="k">else</span> <span class="kc">None</span>
+
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+                <span class="c1"># Check selection first</span>
+                <span class="k">if</span> <span class="n">target_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_set</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
                 <span class="n">is_valid</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">if</span> <span class="n">use_region_filter</span><span class="p">:</span>
                     <span class="c1"># Resolve primary rest wavelength</span>

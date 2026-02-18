@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Editing Data &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>Editing Data &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Getting Started" href="getting_started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -600,10 +600,15 @@
 <section id="stitching">
 <h3>Stitching<a class="headerlink" href="#stitching" title="Link to this heading">#</a></h3>
 <p>If you have spectra covering <em>different</em> wavelength ranges (e.g., Blue and Red arms of a spectrograph), use <strong>Stitch</strong>:</p>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p>Select the sessions as above.</p></li>
 <li><p>Right-click and choose <strong>Stitch N sessions…</strong>.</p></li>
-<li><p>This concatenates the data arrays without resampling.</p></li>
+<li><p>This concatenates the data arrays without resampling.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The recipe automatically cleans up <code class="docutils literal notranslate"><span class="pre">NaN</span></code> values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from “scatter-plot” artifacts.</p>
+</div>
+</li>
 </ol>
 <img alt="Context menu for co-adding multiple sessions" class="align-center" src="../images/editing_multiselect_coadd.png" />
 </section>

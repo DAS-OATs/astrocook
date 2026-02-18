@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.spectrum &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.core.spectrum &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -757,14 +757,38 @@
 <div class="viewcode-block" id="SpectrumV2.has_aux_column">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.has_aux_column">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_aux_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if an auxiliary column exists.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an auxiliary column exists.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name of the column to check (e.g., ``&#39;cont&#39;``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            ``True`` if the column is present in the auxiliary data, ``False`` otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span></div>
 
     
 <div class="viewcode-block" id="SpectrumV2.get_column">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_column">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Accede a una colonna ausiliaria per la GUI (es. &#39;cont&#39;).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an auxiliary column as an Astropy Quantity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name of the auxiliary column to retrieve (e.g., ``&#39;cont&#39;``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        astropy.units.Quantity or None</span>
+<span class="sd">            The column data with units, or ``None`` if the column does not exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">col</span><span class="o">.</span><span class="n">quantity</span> <span class="k">if</span> <span class="n">col</span> <span class="k">else</span> <span class="kc">None</span></div>
 
@@ -773,8 +797,15 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_v1_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumV1</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the immutable SpectrumV2 (API + Data Core) back into a mutable </span>
-<span class="sd">        SpectrumV1 object for saving.</span>
+<span class="sd">        Convert the immutable SpectrumV2 back into a mutable SpectrumV1 object.</span>
+
+<span class="sd">        This method extracts core data arrays and auxiliary columns to reconstruct</span>
+<span class="sd">        the legacy object required for saving in the ``.acs`` format.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        astrocook.legacy.spectrum.Spectrum</span>
+<span class="sd">            A legacy Spectrum object containing the current data and metadata.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># NOTE: This is complex because we need to extract the data and auxiliary columns</span>
         <span class="c1"># and feed them to the V1 SpectrumV1 constructor (which calls FrameV1.__init__).</span>
@@ -1061,6 +1092,22 @@
         <span class="c1"># 4. Return new SpectrumV2</span>
         <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Updated column &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpectrumV2.remove_meta_keys">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_meta_keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_meta_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a NEW SpectrumV2 with specified metadata keys removed.</span>
+<span class="sd">        Used to clean up temporary large objects (like JSON maps) before saving.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">new_meta</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">new_meta</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SpectrumV2.remove_columns">
@@ -1930,6 +1977,25 @@
         <span class="c1"># 5. Return a NEW SpectrumV2 instance</span>
         <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Rebinned spectrum (dx=</span><span class="si">{</span><span class="n">dx</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SpectrumV2.equalize_to_reference">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.equalize_to_reference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize_to_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scale this spectrum&#39;s flux to match a reference spectrum.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_flux_scaling</span>
+        
+        <span class="c1"># Compute the scaling model (array) based on the reference</span>
+        <span class="n">scale_model</span> <span class="o">=</span> <span class="n">compute_flux_scaling</span><span class="p">(</span>
+            <span class="n">reference_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">reference_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+            <span class="n">order</span><span class="o">=</span><span class="n">order</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Use the existing scale_flux method to apply it</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">scale_model</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="SpectrumV2.coadd">

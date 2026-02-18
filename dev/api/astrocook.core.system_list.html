@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.system_list module &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.core.system_list module &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="astrocook.core.structures module" href="astrocook.core.structures.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -563,7 +563,16 @@ guarantees cleanup (resetting the mask) even if errors occur.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.to_v1_systlist">
 <span class="sig-name descname"><span class="pre">to_v1_systlist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.to_v1_systlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.to_v1_systlist" title="Link to this definition">#</a></dt>
-<dd><p>Converts the V2 list to a simple V1-compatible table structure.</p>
+<dd><p>Convert the V2 system list to a V1-compatible Astropy Table.</p>
+<p>Used for saving archives in the legacy <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A table containing the system list in V1 format, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the list is empty.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>astropy.table.Table or None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -638,6 +647,30 @@ guarantees cleanup (resetting the mask) even if errors occur.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new instance with the updated component.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.update_components">
+<span class="sig-name descname"><span class="pre">update_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">changes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/system_list.html#SystemListV2.update_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.update_components" title="Link to this definition">#</a></dt>
+<dd><p>Batch update parameters for multiple components in a single pass.</p>
+<p>This method is significantly faster than calling <a class="reference internal" href="#astrocook.core.system_list.SystemListV2.update_component" title="astrocook.core.system_list.SystemListV2.update_component"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update_component()</span></code></a>
+repeatedly because it creates a new immutable state only once after applying
+all changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>uuids</strong> (<em>list</em><em> of </em><em>str</em>) – A list of component UUIDs to update.</p></li>
+<li><p><strong>**changes</strong> (<em>dict</em>) – Keyword arguments specifying the fields to update (e.g., <code class="docutils literal notranslate"><span class="pre">z=2.5</span></code>).
+Changes are applied identically to all specified components.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the components updated.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
@@ -901,6 +934,7 @@ existing components. Lower this to de-blend close doublets (default: 10.0).</p><
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.add_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_component_by_uuid()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.update_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.update_components"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_components()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_constraint()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.delete_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.delete_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.get_connected_group"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_connected_group()</span></code></a></li>

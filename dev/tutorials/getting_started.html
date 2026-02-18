@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Getting Started &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>Getting Started &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Tutorials" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -476,6 +476,15 @@
 <p class="admonition-title">Tip</p>
 <p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
 </div>
+<section id="the-data-inspector">
+<span id="data-inspector"></span><h3>The Data Inspector<a class="headerlink" href="#the-data-inspector" title="Link to this heading">#</a></h3>
+<p>For precise pixel-level analysis, you can open the <strong>Data Inspector</strong>.</p>
+<ol class="arabic simple">
+<li><p><strong>Right-click</strong> on any point in the spectrum plot.</p></li>
+<li><p>Select <strong>Inspect Data (near …)</strong> from the context menu.</p></li>
+</ol>
+<p>This opens a floating window displaying the raw values (Wavelength, Flux, Error, Continuum) centered on the pixel you clicked. The table supports infinite scrolling, automatically loading more data as you move up or down.</p>
+</section>
 </section>
 <section id="customizing-the-view-right-sidebar">
 <span id="getting-started-customizing"></span><h2>3. Customizing the View (Right Sidebar)<a class="headerlink" href="#customizing-the-view-right-sidebar" title="Link to this heading">#</a></h2>
@@ -485,6 +494,7 @@
 <p>You can show or hide specific layers of the plot:</p>
 <ul>
 <li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
+<li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
 <li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
 <li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
 <li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
@@ -549,11 +559,16 @@
 </section>
 <section id="session-info-properties">
 <h3>Session Info &amp; Properties<a class="headerlink" href="#session-info-properties" title="Link to this heading">#</a></h3>
-<p>Right-click on any session in the list to open the context menu. Select <strong>View Info</strong> to open the Session Inspector. Here you can see (and edit) critical metadata:</p>
+<p>Right-click on any session in the list to open the context menu. This menu offers several powerful tools:</p>
 <ul class="simple">
+<li><p><strong>View Info</strong>: Opens the Session Inspector. Here you can see (and edit) critical metadata:</p>
+<ul>
 <li><p><strong>Object Name</strong></p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong>: Crucial for many recipes like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis.</p></li>
 <li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong>: Essential for accurate Voigt profile fitting.</p></li>
+</ul>
+</li>
+<li><p><strong>Duplicate</strong>: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).</p></li>
 </ul>
 </section>
 <section id="the-log-scripter">
@@ -646,7 +661,10 @@
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-a-spectrum">1. Loading a Spectrum</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#navigating-the-plot">2. Navigating the Plot</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#navigating-the-plot">2. Navigating the Plot</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-data-inspector">The Data Inspector</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customizing-the-view-right-sidebar">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#toggles">Toggles</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>

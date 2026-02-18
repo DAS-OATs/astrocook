@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.flux &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.recipes.flux &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -489,6 +489,14 @@
         <span class="p">],</span>
         <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#rebin&quot;</span>
     <span class="p">},</span>
+    <span class="s2">&quot;equalize&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Equalize flux to reference.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Scale the flux of this session to match another &#39;reference&#39; session.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;reference_session&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the reference session&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;order&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Polynomial order (-1=spline, 0=scalar)&quot;</span><span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">},</span>
     <span class="s2">&quot;resample&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Resample on another grid.&quot;</span><span class="p">,</span>
         <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.&quot;</span><span class="p">,</span>
@@ -679,6 +687,49 @@
         
         <span class="c1"># 6. Return a NEW SessionV2 instance (the new state)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeFluxV2.equalize">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.equalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Equalize flux to a reference session.</span>
+
+<span class="sd">        Scales the flux of the current session to match the flux level of a </span>
+<span class="sd">        reference session using a polynomial scaling model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference_session : str, optional</span>
+<span class="sd">            The name of the reference session. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        order : str, optional</span>
+<span class="sd">            The polynomial order for the scaling model (``&#39;0&#39;`` = scalar, ``&#39;-1&#39;`` = spline). </span>
+<span class="sd">            Defaults to ``&#39;0&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new session with the scaled flux. Returns ``0`` (int) on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No reference session selected.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">order_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+            <span class="c1"># Find the reference session object via the GUI bridge</span>
+            <span class="n">ref_hist</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span> 
+                            <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">reference_session</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_hist</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Session &#39;</span><span class="si">{</span><span class="n">reference_session</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
+                <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order_i</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Equalize failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
 
     
 <div class="viewcode-block" id="RecipeFluxV2.resample">

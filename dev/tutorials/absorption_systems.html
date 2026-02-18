@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Continuum Fitting" href="continuum_fitting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -549,7 +549,13 @@
 <p>If the auto-finder missed a line:</p>
 <ol class="arabic simple">
 <li><p>In the Velocity Plot (right panel), <strong>Right-click</strong> on the background where the line should be.</p></li>
-<li><p>Select <strong>Add [Ion] at z=…</strong>.</p></li>
+<li><p>The menu offers smart options based on the transition you clicked:</p>
+<ul class="simple">
+<li><p><strong>Add [Ion] (Single Line):</strong> Adds only the specific line under the cursor.</p></li>
+<li><p><strong>Add [Ion] (Standard):</strong> Adds the full standard multiplet (e.g., both members of the CIV doublet).</p></li>
+<li><p><strong>Add [List] (Subset):</strong> Adds exactly the set of transitions currently visible in the Inspector.</p></li>
+</ul>
+</li>
 <li><p>A new component is added and fitted immediately.</p></li>
 </ol>
 <div class="admonition note">
@@ -568,7 +574,7 @@
 <li><p>Select the component(s) in the table.</p></li>
 <li><p><strong>Right-click</strong> to open the context menu.</p></li>
 <li><p>Select <strong>Freeze ‘b’</strong> (or <code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>).</p></li>
-<li><p>The value will turn <em>italic</em>, indicating it is locked.</p></li>
+<li><p>The value will turn <em>italic</em> and the uncertainty display (<span class="math notranslate nohighlight">\(\pm\)</span>) will disappear, indicating it is fixed.</p></li>
 </ol>
 </section>
 <section id="parameter-linking">
@@ -594,7 +600,7 @@
 <h3>Refitting<a class="headerlink" href="#refitting" title="Link to this heading">#</a></h3>
 <p>After manual edits, you often need to re-optimize the fit:</p>
 <ul class="simple">
-<li><p><strong>Refit Selected:</strong> Right-click the table and choose “Refit Selected” to optimize only the highlighted lines.</p></li>
+<li><p><strong>Refit Selected:</strong> Select one <strong>or more</strong> components in the table, right-click, and choose “Refit Selected”. This will optimize all highlighted lines (and their physical neighbors) in a batch process.</p></li>
 <li><p><strong>Refit All:</strong> Go to <strong>Absorbers &gt; Refit All Systems…</strong> (in the main window) to re-optimize the entire spectrum, handling blends automatically.</p></li>
 </ul>
 <img alt="Linking parameters via the context menu" class="align-center" src="../images/absorbers_linking.png" />

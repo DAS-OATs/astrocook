@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -898,61 +898,105 @@
 
         <span class="k">return</span> <span class="n">final_resid</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_find_feature_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_center</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">trans_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">150.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_feature_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_center</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">trans_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                             <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">150.0</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">14.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
         <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">trans_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">atom</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
         
         <span class="n">lambda_obs</span> <span class="o">=</span> <span class="n">atom</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_center</span><span class="p">)</span>
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
         
-        <span class="n">dx_search</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_window_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_obs</span>
+        <span class="c1"># --- DLA LOGIC ---</span>
+        <span class="n">is_dla</span> <span class="o">=</span> <span class="n">logN</span> <span class="o">&gt;</span> <span class="mf">19.0</span>
         
+        <span class="c1"># 1. Setup Windows</span>
+        <span class="c1"># If DLA, force a massive search window (at least 3000 km/s) to catch wings</span>
+        <span class="k">if</span> <span class="n">is_dla</span><span class="p">:</span>
+            <span class="n">eff_window_kms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="mf">4000.0</span><span class="p">)</span>
+            <span class="n">continuum_threshold</span> <span class="o">=</span> <span class="mf">0.98</span> <span class="c1"># Must fully recover</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">eff_window_kms</span> <span class="o">=</span> <span class="n">z_window_kms</span>
+            <span class="n">continuum_threshold</span> <span class="o">=</span> <span class="mf">0.95</span>
+
+        <span class="c1"># 1. Find Center Index</span>
         <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">lambda_obs</span><span class="p">)</span>
-        
+        <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx_center</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># 2. Determine Search Range (Indices)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
              <span class="n">sample_dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx_center</span><span class="o">-</span><span class="mi">10</span><span class="p">):</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">),</span> <span class="n">idx_center</span><span class="o">+</span><span class="mi">10</span><span class="p">)]))</span>
         <span class="k">else</span><span class="p">:</span> <span class="n">sample_dx</span> <span class="o">=</span> <span class="mf">1.0</span>
         
+        <span class="n">dx_search</span> <span class="o">=</span> <span class="p">(</span><span class="n">eff_window_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_obs</span>
         <span class="n">px_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dx_search</span> <span class="o">/</span> <span class="n">sample_dx</span><span class="p">)</span> <span class="k">if</span> <span class="n">sample_dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">50</span>
         
-        <span class="n">start_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx_center</span> <span class="o">-</span> <span class="n">px_width</span><span class="p">)</span>
-        <span class="n">end_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">),</span> <span class="n">idx_center</span> <span class="o">+</span> <span class="n">px_width</span><span class="p">)</span>
+        <span class="c1"># Absolute safety bounds</span>
+        <span class="n">max_px_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="mf">15000.0</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_obs</span> <span class="o">/</span> <span class="n">sample_dx</span><span class="p">)</span>
         
-        <span class="k">if</span> <span class="n">end_idx</span> <span class="o">-</span> <span class="n">start_idx</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="c1"># 3. Prepare Smoothed Flux</span>
+        <span class="n">safe_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">idx_center</span> <span class="o">-</span> <span class="n">max_px_width</span><span class="p">)</span>
+        <span class="n">safe_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">),</span> <span class="n">idx_center</span> <span class="o">+</span> <span class="n">max_px_width</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">safe_end</span> <span class="o">-</span> <span class="n">safe_start</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
         
-        <span class="n">y_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
-        <span class="n">dy_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
-        <span class="n">y_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y_window</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
-        
-        <span class="n">center_rel</span> <span class="o">=</span> <span class="n">idx_center</span> <span class="o">-</span> <span class="n">start_idx</span>
-        <span class="n">center_rel</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_window</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">center_rel</span><span class="p">))</span>
+        <span class="n">y_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="n">safe_start</span><span class="p">:</span><span class="n">safe_end</span><span class="p">]</span>
+        <span class="n">dy_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="n">safe_start</span><span class="p">:</span><span class="n">safe_end</span><span class="p">]</span>
+        <span class="n">y_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y_view</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">center_rel</span> <span class="o">=</span> <span class="n">idx_center</span> <span class="o">-</span> <span class="n">safe_start</span>
+        <span class="n">center_rel</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_smooth</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">center_rel</span><span class="p">))</span>
 
-        <span class="c1"># Scan Left</span>
-        <span class="n">left_boundary</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">center_rel</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">center_rel</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">err</span> <span class="o">=</span> <span class="n">dy_window</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">lowest_point</span><span class="p">:</span> <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">val</span>
-            <span class="n">is_local_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_smooth</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span> <span class="n">left_boundary</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span> <span class="k">break</span>
-            <span class="k">if</span> <span class="n">is_local_max</span><span class="p">:</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="n">lowest_point</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">err</span><span class="p">:</span> <span class="n">left_boundary</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span> <span class="k">break</span>
+        <span class="c1"># --- Helper: Scan Logic ---</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">scan_direction</span><span class="p">(</span><span class="n">direction</span><span class="p">):</span>
+            <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">center_rel</span><span class="p">]</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="n">direction</span>
+            <span class="n">curr</span> <span class="o">=</span> <span class="n">center_rel</span>
+            
+            <span class="k">while</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">curr</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_smooth</span><span class="p">):</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">curr</span><span class="p">]</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">dy_view</span><span class="p">[</span><span class="n">curr</span><span class="p">]</span>
                 
-        <span class="c1"># Scan Right</span>
-        <span class="n">right_boundary</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_window</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">center_rel</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">center_rel</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_window</span><span class="p">)):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">err</span> <span class="o">=</span> <span class="n">dy_window</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">lowest_point</span><span class="p">:</span> <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">val</span>
-            <span class="n">is_local_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_smooth</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_window</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span> <span class="n">right_boundary</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span> <span class="k">break</span>
-            <span class="k">if</span> <span class="n">is_local_max</span><span class="p">:</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="n">lowest_point</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">err</span><span class="p">:</span> <span class="n">right_boundary</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span> <span class="k">break</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">lowest_point</span><span class="p">:</span> <span class="n">lowest_point</span> <span class="o">=</span> <span class="n">val</span>
+                
+                <span class="c1"># Check Local Max (Separation between blended lines)</span>
+                <span class="n">is_local_max</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">curr</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_smooth</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">curr</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">curr</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">curr</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_smooth</span><span class="p">[</span><span class="n">curr</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">is_local_max</span> <span class="o">=</span> <span class="kc">True</span>
+                
+                <span class="c1"># CRITERIA 1: Continuum Reached</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">continuum_threshold</span><span class="p">:</span> 
+                    <span class="k">return</span> <span class="n">curr</span>
+                
+                <span class="c1"># CRITERIA 2: Separation (Saddle Point)</span>
+                <span class="c1"># [FIX] If DLA, IGNORE local maxima (blends). Bulldoze through to find the wing.</span>
+                <span class="c1"># If Normal line, stop at peaks to separate blends.</span>
+                <span class="k">if</span> <span class="n">is_local_max</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_dla</span><span class="p">:</span>
+                    <span class="n">rise</span> <span class="o">=</span> <span class="n">val</span> <span class="o">-</span> <span class="n">lowest_point</span>
+                    <span class="n">is_significant</span> <span class="o">=</span> <span class="n">rise</span> <span class="o">&gt;</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">err</span>
+                    <span class="n">is_above_mud</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mf">0.1</span> 
+                    
+                    <span class="k">if</span> <span class="n">is_significant</span> <span class="ow">and</span> <span class="n">is_above_mud</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">curr</span>
 
-        <span class="n">idx_min</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">left_boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">idx_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">right_boundary</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># CRITERIA 3: Distance Limit</span>
+                <span class="n">dist_pix</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">curr</span> <span class="o">-</span> <span class="n">center_rel</span><span class="p">)</span>
+                
+                <span class="c1"># If DLA, we respect the massive px_width set above (4000 km/s).</span>
+                <span class="c1"># If Normal, we respect the user&#39;s window, but allow expansion if still deep.</span>
+                <span class="k">if</span> <span class="n">dist_pix</span> <span class="o">&gt;</span> <span class="n">px_width</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">is_dla</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">curr</span> <span class="c1"># Hard stop at 4000 km/s</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span> <span class="k">return</span> <span class="n">curr</span> <span class="c1"># Normal expansion stop</span>
+
+                <span class="n">curr</span> <span class="o">+=</span> <span class="n">step</span>
+            <span class="k">return</span> <span class="n">curr</span>
+
+        <span class="c1"># 4. Execute Scan</span>
+        <span class="n">left_rel</span> <span class="o">=</span> <span class="n">scan_direction</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">right_rel</span> <span class="o">=</span> <span class="n">scan_direction</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">idx_min</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">safe_start</span> <span class="o">+</span> <span class="n">left_rel</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">idx_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">safe_start</span> <span class="o">+</span> <span class="n">right_rel</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">idx_max</span> <span class="o">&lt;=</span> <span class="n">idx_min</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx_min</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx_max</span><span class="p">]</span>
@@ -1118,15 +1162,33 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">active_components</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">trans</span> <span class="ow">in</span> <span class="n">get_trans_list</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
-                    <span class="n">lam_min</span><span class="p">,</span> <span class="n">lam_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_feature_limits</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">trans</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">lam_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">mask_feat</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&gt;=</span> <span class="n">lam_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&lt;=</span> <span class="n">lam_max</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">|=</span> <span class="n">mask_feat</span>
-                    <span class="k">else</span><span class="p">:</span>
+                    <span class="n">lam_min</span><span class="p">,</span> <span class="n">lam_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_feature_limits</span><span class="p">(</span>
+                        <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">trans</span><span class="p">,</span> 
+                        <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> 
+                        <span class="n">logN</span><span class="o">=</span><span class="n">comp</span><span class="o">.</span><span class="n">logN</span>
+                    <span class="p">)</span>
+                    
+                    <span class="c1"># 2. [FIX] Check for &quot;Collapsed Window&quot;</span>
+                    <span class="c1"># If the smart finder returned a window that is too narrow (&lt; 30 km/s width),</span>
+                    <span class="c1"># it likely failed on a weak line. We force the fallback window.</span>
+                    <span class="n">use_fallback</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">lam_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lam_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+                        <span class="c1"># Calculate velocity width of the found window</span>
+                        <span class="n">width_v</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam_max</span> <span class="o">-</span> <span class="n">lam_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_max</span>
+                        <span class="k">if</span> <span class="n">width_v</span> <span class="o">&gt;</span> <span class="mf">30.0</span><span class="p">:</span> <span class="c1"># Minimum safe width</span>
+                            <span class="n">use_fallback</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="n">mask_feat</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&gt;=</span> <span class="n">lam_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&lt;=</span> <span class="n">lam_max</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">|=</span> <span class="n">mask_feat</span>
+    
+                    <span class="c1"># 3. Fallback / Enforce Minimum Width</span>
+                    <span class="k">if</span> <span class="n">use_fallback</span><span class="p">:</span>
                         <span class="n">lam_0</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">trans</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wave&#39;</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">lam_0</span><span class="p">:</span>
                             <span class="n">lam_obs</span> <span class="o">=</span> <span class="n">lam_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
-                            <span class="n">dw</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_window_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam_obs</span>
+                            <span class="c1"># Ensure we use at least the user&#39;s z_window_kms, or a safe minimum of 30 km/s</span>
+                            <span class="n">safe_window</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">)</span>
+                            <span class="n">dw</span> <span class="o">=</span> <span class="p">(</span><span class="n">safe_window</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lam_obs</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">|=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&gt;</span> <span class="n">lam_obs</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">&lt;</span> <span class="n">lam_obs</span> <span class="o">+</span> <span class="n">dw</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">&amp;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span>
         
@@ -1333,14 +1395,33 @@
 
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">old_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span>
-        <span class="n">active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
+        <span class="n">active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_constraints&#39;</span><span class="p">):</span>
+            <span class="c1"># The constraint model stores the active set in _active_uuids</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">,</span> <span class="s1">&#39;_active_uuids&#39;</span><span class="p">):</span>
+                <span class="n">active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">old_comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">old_components</span><span class="p">):</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">4</span>
+
+            <span class="c1"># Spectator Check</span>
+            <span class="c1"># A component is a spectator if a specific active set exists </span>
+            <span class="c1"># AND this component is NOT in it.</span>
+            <span class="n">is_spectator</span> <span class="o">=</span> <span class="p">(</span><span class="n">active_uuids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">)</span>
             
-            <span class="n">dz_new</span> <span class="o">=</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">else</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dz</span>
-            <span class="n">dlogN_new</span> <span class="o">=</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dlogN</span>
-            <span class="n">db_new</span> <span class="o">=</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="k">else</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">db</span>
+            <span class="c1"># Helper to assign error</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">resolve_error</span><span class="p">(</span><span class="n">param_idx</span><span class="p">,</span> <span class="n">old_err</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]:</span>
+                    <span class="k">return</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]</span> <span class="c1"># New calculated error</span>
+                <span class="k">elif</span> <span class="n">is_spectator</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">old_err</span> <span class="c1"># PRESERVE old error for spectators</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mf">0.0</span> <span class="c1"># ZERO error for user-frozen params</span>
+                
+            <span class="n">dz_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
+            <span class="n">dlogN_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dlogN</span><span class="p">)</span>
+            <span class="n">db_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+            <span class="n">dbtur_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dbtur</span><span class="p">)</span>
             
             <span class="c1"># Metadata Update</span>
             <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">chi2</span>

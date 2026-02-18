@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.system_list &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.core.system_list &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -551,8 +551,16 @@
                 <span class="c1"># Ensure value is an object (defensive)</span>
                 <span class="n">val_obj</span> <span class="o">=</span> <span class="n">v</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="c1"># If parsing &#39;btur&#39;, default to False. For everything else, True.</span>
+                    <span class="c1"># We need to extract the param name from the key.</span>
+                    <span class="n">default_free</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">p_name</span> <span class="o">=</span> <span class="n">final_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">p_name</span> <span class="o">==</span> <span class="s1">&#39;btur&#39;</span><span class="p">:</span>
+                            <span class="n">default_free</span> <span class="o">=</span> <span class="kc">False</span>
+
                     <span class="n">val_obj</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span>
-                        <span class="n">is_free</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_free&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                        <span class="n">is_free</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_free&#39;</span><span class="p">,</span> <span class="n">default_free</span><span class="p">),</span>
                         <span class="n">target_uuid</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;target_uuid&#39;</span><span class="p">),</span>
                         <span class="n">expression</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expression&#39;</span><span class="p">)</span>
                     <span class="p">)</span>
@@ -695,18 +703,42 @@
             <span class="k">yield</span>
             <span class="k">return</span>
 
-        <span class="n">original_active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span>
+        <span class="c1"># Snapshot original state safely</span>
+        <span class="c1"># Copy the set to avoid reference issues</span>
+        <span class="n">original_active</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">original_active</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span><span class="p">)</span>
+
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">active_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">)</span>
             <span class="k">yield</span>
         <span class="k">finally</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">)</span></div>
+            <span class="c1"># Robust cleanup</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fitting_context cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Forcing reset to None.&quot;</span><span class="p">)</span>
+                <span class="c1"># Fail-safe: Unlock everything to prevent persistent &#39;Frozen&#39; state</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="c1"># Last resort: direct attribute clear</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="SystemListV2.to_v1_systlist">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.to_v1_systlist">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_v1_systlist</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Table</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the V2 list to a simple V1-compatible table structure.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the V2 system list to a V1-compatible Astropy Table.</span>
+
+<span class="sd">        Used for saving archives in the legacy ``.acs`` format.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        astropy.table.Table or None</span>
+<span class="sd">            A table containing the system list in V1 format, or ``None`` if the list is empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Simplified V2-&gt;V1 system list conversion. V1 constraints may be lost.&quot;</span><span class="p">)</span>
         <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
@@ -892,6 +924,48 @@
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 
 
+
+<div class="viewcode-block" id="SystemListV2.update_components">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_components">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Batch update parameters for multiple components in a single pass.</span>
+
+<span class="sd">        This method is significantly faster than calling :meth:`update_component` </span>
+<span class="sd">        repeatedly because it creates a new immutable state only once after applying </span>
+<span class="sd">        all changes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        uuids : list of str</span>
+<span class="sd">            A list of component UUIDs to update.</span>
+<span class="sd">        **changes : dict</span>
+<span class="sd">            Keyword arguments specifying the fields to update (e.g., ``z=2.5``).</span>
+<span class="sd">            Changes are applied identically to all specified components.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SystemListV2</span>
+<span class="sd">            A new instance with the components updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert list to set for O(1) lookups</span>
+        <span class="n">target_uuids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+        <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Single pass through the list</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
+                <span class="c1"># Apply changes only to valid fields</span>
+                <span class="n">valid_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">c</span><span class="p">)}</span>
+                <span class="n">filtered_changes</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">changes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">valid_fields</span><span class="p">}</span>
+                <span class="n">new_c</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">filtered_changes</span><span class="p">)</span>
+                <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_c</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_components</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+
     
 
 <div class="viewcode-block" id="SystemListV2.update_constraint">
@@ -945,7 +1019,9 @@
             <span class="k">else</span><span class="p">:</span>
                  <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">existing</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># Default btur to Frozen, others to Free</span>
+            <span class="n">default_free</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">param</span> <span class="o">==</span> <span class="s1">&#39;btur&#39;</span> <span class="k">else</span> <span class="kc">True</span>
+            <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="n">default_free</span><span class="p">)</span>
 
         <span class="c1"># 3. Apply Changes</span>
         <span class="c1"># [FIX] Logic for Unlinking: If we explicitly set is_free=True, </span>

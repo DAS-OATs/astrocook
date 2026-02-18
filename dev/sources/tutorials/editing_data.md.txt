@@ -140,6 +140,9 @@ If you have spectra covering _different_ wavelength ranges (e.g., Blue and Red a
 1. Select the sessions as above.
 2. Right-click and choose **Stitch N sessions...**.
 3. This concatenates the data arrays without resampling.
+   :::{note}
+   The recipe automatically cleans up `NaN` values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from "scatter-plot" artifacts.
+   :::
 
 ```{image} ../_static/editing_multiselect_coadd.png
 :alt: Context menu for co-adding multiple sessions

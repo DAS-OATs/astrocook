@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.flux module &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.recipes.flux module &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="astrocook.recipes.edit module" href="astrocook.recipes.edit.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -565,6 +565,29 @@ or 0 on failure.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.equalize">
+<span class="sig-name descname"><span class="pre">equalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.equalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.equalize" title="Link to this definition">#</a></dt>
+<dd><p>Equalize flux to a reference session.</p>
+<p>Scales the flux of the current session to match the flux level of a
+reference session using a polynomial scaling model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_session</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the reference session. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
+<li><p><strong>order</strong> (<em>str</em><em>, </em><em>optional</em>) – The polynomial order for the scaling model (<code class="docutils literal notranslate"><span class="pre">'0'</span></code> = scalar, <code class="docutils literal notranslate"><span class="pre">'-1'</span></code> = spline).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'0'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new session with the scaled flux. Returns <code class="docutils literal notranslate"><span class="pre">0</span></code> (int) on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.resample">
 <span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/recipes/flux.html#RecipeFluxV2.resample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.resample" title="Link to this definition">#</a></dt>
 <dd><p>Resample on another grid.</p>
@@ -662,6 +685,7 @@ or 0 on failure.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.calculate_running_std()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.smooth"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.smooth()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.rebin"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.rebin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.equalize"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.equalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.resample"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.resample()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.calibrate_from_magnitudes()</span></code></a></li>
 </ul>

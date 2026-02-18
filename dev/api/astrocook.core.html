@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core package &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.core package &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="API Reference" href="../reference.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -519,6 +519,7 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.sanitize_legacy_tellurics()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_region_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_region_bounds()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_column()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_meta_keys"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.remove_meta_keys()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_columns"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.remove_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.prepare_expression_context"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.prepare_expression_context()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.apply_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.apply_expression()</span></code></a></li>
@@ -531,6 +532,7 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.smooth_column()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.rebin"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.rebin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.equalize_to_reference"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.equalize_to_reference()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.coadd"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.coadd()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resample_on_grid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_resampled_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_resampled_column()</span></code></a></li>
@@ -663,6 +665,7 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_component()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_component_by_uuid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_component()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_components"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_components()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_constraint()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.delete_component()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_connected_group()</span></code></a></li>

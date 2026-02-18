@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.session &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>astrocook.core.session &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../../../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -434,6 +434,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
@@ -500,43 +501,36 @@
     <span class="n">archive_root</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="n">v2_metadata</span> <span class="o">=</span> <span class="kc">None</span>
     
-    <span class="c1"># --- CHECK V2 NATIVE LOADERS FIRST ---</span>
-    <span class="c1"># Import the getter from the new module</span>
+    <span class="n">archive_path_lower</span> <span class="o">=</span> <span class="n">archive_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="c1"># PRESERVE: Check for V2 archive early to prevent mis-loading as raw spectrum</span>
+    <span class="n">is_v2_archive</span> <span class="o">=</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs2&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.tar.gz&#39;</span><span class="p">)</span>
+
+    <span class="c1"># --- 1. CHECK V2 NATIVE LOADERS (Only for raw files) ---</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span><span class="p">,</span> <span class="n">detect_file_format</span>
 
-    <span class="c1"># --- AUTO-DETECT FORMAT ---</span>
-    <span class="k">if</span> <span class="n">format_name</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span> <span class="ow">or</span> <span class="n">format_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">format_name</span> <span class="o">=</span> <span class="n">detect_file_format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-detected format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; for </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Format detection failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">), defaulting to &#39;generic_spectrum&#39;.&quot;</span><span class="p">)</span>
-            <span class="n">format_name</span> <span class="o">=</span> <span class="s1">&#39;generic_spectrum&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_v2_archive</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">format_name</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span> <span class="ow">or</span> <span class="n">format_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">format_name</span> <span class="o">=</span> <span class="n">detect_file_format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-detected format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; for </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Format detection failed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">), defaulting to &#39;generic_spectrum&#39;.&quot;</span><span class="p">)</span>
+                <span class="n">format_name</span> <span class="o">=</span> <span class="s1">&#39;generic_spectrum&#39;</span>
 
-    <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using V2 Native Loader for format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Call the pure loader (returns SpectrumDataV2)</span>
-            <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
+        <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using V2 Native Loader for format &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; on </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
+                <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V2 Loader &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
 
-            <span class="c1"># Wrap in API object</span>
-            <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">)</span>
-
-            <span class="c1"># Create session (SystemList empty for raw loads)</span>
-            <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;V2 Loader &#39;</span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">&#39; failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="c1"># If specific loader fails, do NOT fall back to generic FITS. Fail hard.</span>
-            <span class="k">return</span> <span class="mi">0</span>
-
-    <span class="c1"># --- 2. EXISTING LEGACY LOGIC (ACS/FITS) ---</span>
+    <span class="c1"># --- 2. EXISTING LEGACY &amp; ARCHIVE LOGIC ---</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">archive_path_lower</span> <span class="o">=</span> <span class="n">archive_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        
-        <span class="k">if</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs2&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.tar.gz&#39;</span><span class="p">):</span>
-            <span class="c1"># ... (unpacking logic unchanged) ...</span>
+        <span class="k">if</span> <span class="n">is_v2_archive</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unpacking V2 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
             <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="s1">&#39;r:gz&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
@@ -549,11 +543,9 @@
                     <span class="k">break</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">spec_file_path</span><span class="p">:</span>
                  <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;Could not find a _spec.fits file in the .acs2 archive.&quot;</span><span class="p">)</span>
-            
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">spec_file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">archive_path_lower</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs&#39;</span><span class="p">):</span>
-            <span class="c1"># ... (unpacking logic unchanged) ...</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unpacking V1 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">archive_manager</span> <span class="o">=</span> <span class="n">V1ArchiveManager</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">archive_manager</span><span class="o">.</span><span class="n">unpack</span><span class="p">()</span>
@@ -566,13 +558,11 @@
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">spec_file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Standard FITS fallback</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading single FITS file (Legacy Path).&quot;</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">archive_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">spec_file_path</span> <span class="o">=</span> <span class="n">archive_path</span>
         
-        <span class="c1"># --- V2 METADATA ---</span>
         <span class="k">if</span> <span class="n">temp_dir</span><span class="p">:</span>
             <span class="n">meta_fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_root</span><span class="p">)</span><span class="si">}</span><span class="s2">_meta.json&quot;</span>
             <span class="n">meta_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">meta_fname</span><span class="p">)</span>
@@ -584,7 +574,7 @@
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load _meta.json: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># --- LEGACY LOAD ---</span>
+        <span class="c1"># PRESERVE: Legacy Load and Migration</span>
         <span class="n">spectrum_v2</span> <span class="o">=</span> <span class="n">load_and_migrate_structure</span><span class="p">(</span>
             <span class="n">archive_root</span><span class="p">,</span> <span class="s1">&#39;spec&#39;</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">,</span> <span class="n">format_name</span><span class="p">,</span> 
             <span class="n">spec_file_path</span><span class="o">=</span><span class="n">spec_file_path</span><span class="p">,</span>
@@ -606,7 +596,7 @@
             <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span>
         <span class="p">)</span>
         
-        <span class="c1"># Ensure &#39;cont&#39; is intrinsic and &#39;telluric_model&#39; is separate</span>
+        <span class="c1"># PRESERVE: Sanitize tellurics (Essential for alignment)</span>
         <span class="k">if</span> <span class="n">new_session</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">new_session</span> <span class="o">=</span> <span class="n">new_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">sanitize_legacy_tellurics</span><span class="p">())</span>

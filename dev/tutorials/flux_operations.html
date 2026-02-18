@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Flux Operations &#8212; Astrocook 2.0.0-beta.2 documentation</title>
+    <title>Flux Operations &#8212; Astrocook 2.0.0-beta.3 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=da2f29f8"></script>
+    <script src="../static/documentation_options.js?v=7e57ade1"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="Editing Data" href="editing_data.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0-beta.2" />
+  <meta name="docsearch:version" content="2.0.0-beta.3" />
   </head>
   
   
@@ -494,8 +494,23 @@
 <p>Unlike smoothing, rebinning changes the X-axis grid. The new flux values are calculated to preserve the physical energy/counts per bin.</p>
 </div>
 </section>
+<section id="equalizing">
+<h2>4. Equalizing<a class="headerlink" href="#equalizing" title="Link to this heading">#</a></h2>
+<p>Sometimes the flux calibration between two exposures or arms of a spectrograph differs. You can scale the current session’s flux to match a reference session.</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>Flux &gt; Equalize to Reference…</strong>.</p></li>
+<li><p><strong>Reference Session:</strong> Select the session you want to match.</p></li>
+<li><p><strong>Order:</strong> Choose the complexity of the scaling:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code> (Scalar): Multiplies flux by a constant factor.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-1</span></code> (Spline): Fits a smooth curve to match the shape.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code> or higher: Fits a polynomial of that order.</p></li>
+</ul>
+</li>
+</ol>
+</section>
 <section id="resampling">
-<h2>4. Resampling<a class="headerlink" href="#resampling" title="Link to this heading">#</a></h2>
+<h2>5. Resampling<a class="headerlink" href="#resampling" title="Link to this heading">#</a></h2>
 <p>Resampling is different from rebinning. It interpolates your spectrum onto an arbitrary grid defined by <em>another</em> open session. This is a critical prerequisite for comparing two spectra pixel-by-pixel (e.g., for creating a ratio or difference spectrum).</p>
 <p><strong>Scenario:</strong> You have a high-resolution spectrum (Session A) and a low-resolution standard (Session B), and you want to divide A by B.</p>
 <ol class="arabic simple">
@@ -508,7 +523,7 @@
 <p>Session A will now have exactly the same wavelength points as Session B, allowing you to use <a class="reference internal" href="editing_data.html#editing-arithmetic"><span class="std std-ref">Apply Expression</span></a> to compute <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">/</span> <span class="pre">SessionB.y</span></code>.</p>
 </section>
 <section id="flux-calibration">
-<span id="id1"></span><h2>5. Flux Calibration<a class="headerlink" href="#flux-calibration" title="Link to this heading">#</a></h2>
+<span id="id1"></span><h2>6. Flux Calibration<a class="headerlink" href="#flux-calibration" title="Link to this heading">#</a></h2>
 <p>If your spectrum is not flux-calibrated (or the calibration is off), you can warp it to match known photometric data.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Flux &gt; Flux Calibrate…</strong>.</p></li>
@@ -578,8 +593,9 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#calculating-running-statistics">1. Calculating Running Statistics</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing">2. Smoothing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rebinning">3. Rebinning</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resampling">4. Resampling</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flux-calibration">5. Flux Calibration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#equalizing">4. Equalizing</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#resampling">5. Resampling</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#flux-calibration">6. Flux Calibration</a></li>
 </ul>
   </nav></div>
 
