@@ -19,6 +19,10 @@ This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing,
 
 Astrocook will generate a new continuum curve (black dashed line). If you have a `model` (absorption lines) already defined, it will automatically re-normalize it to match the new continuum.
 
+:::{tip}
+You can use the **Data Inspector** (Right-click on the plot) to examine the exact continuum values (`cont`) and residuals at any pixel. See [The Data Inspector](getting_started.md#data-inspector).
+:::
+
 ```{image} ../_static/continuum_auto.png
 :alt: Applying a mathematical expression to a column
 :align: center
@@ -42,9 +46,13 @@ Automatic fits sometimes fail near complex emission lines or spectral edges. You
 2. Click the **Start** button.
 3. **Knots** (black dots) will appear along the current continuum.
 
-   :::{note}
-   If no continuum exists yet, Astrocook will prompt you to run the **Auto-estimate** routine first. You cannot edit the raw flux directly.
-   :::
+:::{note}
+If no continuum exists yet, Astrocook will prompt you to run the **Auto-estimate** routine first. You cannot edit the raw flux directly.
+:::
+
+:::{tip}
+Manual editing modifies the session in place. If you want to compare your manual fit against the automatic one, use the **Duplicate** command in the Session List context menu to create a backup copy before you start editing.
+:::
 
 ### Modifying Knots
 

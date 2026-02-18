@@ -29,6 +29,16 @@ The central plot is interactive. You can explore the details of your spectrum us
 Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!
 :::
 
+(data-inspector)=
+### The Data Inspector
+
+For precise pixel-level analysis, you can open the **Data Inspector**.
+
+1.  **Right-click** on any point in the spectrum plot.
+2.  Select **Inspect Data (near ...)** from the context menu.
+
+This opens a floating window displaying the raw values (Wavelength, Flux, Error, Continuum) centered on the pixel you clicked. The table supports infinite scrolling, automatically loading more data as you move up or down.
+
 (getting-started-customizing)=
 ## 3. Customizing the View (Right Sidebar)
 
@@ -39,6 +49,7 @@ Look to the right side of the window. This is the **Plot Controls** panel. Here 
 You can show or hide specific layers of the plot:
 
 - **1-sigma error**: Hides the grey error shading.
+- **Show error as line**: Instead of a shaded band, plots the error array ($dy$) as a separate line. Useful for inspecting noise structure in high-resolution spectra.
 - **Normalization**: Hides the continuum level (dashed black line).
 - **Absorption model**: Hides the Voigt profile fits (solid red line).
 - **Systems**: Hides the vertical tick marks indicating identified systems.
@@ -97,11 +108,13 @@ If you loaded multiple spectra, click on their names in this list to switch the 
 
 ### Session Info & Properties
 
-Right-click on any session in the list to open the context menu. Select **View Info** to open the Session Inspector. Here you can see (and edit) critical metadata:
+Right-click on any session in the list to open the context menu. This menu offers several powerful tools:
 
-- **Object Name**
-- **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
-- **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
+- **View Info**: Opens the Session Inspector. Here you can see (and edit) critical metadata:
+  - **Object Name**
+  - **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
+  - **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
+- **Duplicate**: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).
 
 ### The Log Scripter
 

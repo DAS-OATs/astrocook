@@ -94,7 +94,10 @@ Just like in the main window, if the **Zoom** or **Pan** tools are active in the
 If the auto-finder missed a line:
 
 1. In the Velocity Plot (right panel), **Right-click** on the background where the line should be.
-2. Select **Add [Ion] at z=...**.
+2. The menu offers smart options based on the transition you clicked:
+   - **Add [Ion] (Single Line):** Adds only the specific line under the cursor.
+   - **Add [Ion] (Standard):** Adds the full standard multiplet (e.g., both members of the CIV doublet).
+   - **Add [List] (Subset):** Adds exactly the set of transitions currently visible in the Inspector.
 3. A new component is added and fitted immediately.
 
 :::{note}
@@ -112,7 +115,7 @@ To fix a parameter during fitting:
 1. Select the component(s) in the table.
 2. **Right-click** to open the context menu.
 3. Select **Freeze 'b'** (or `z`, `logN`).
-4. The value will turn _italic_, indicating it is locked.
+4. The value will turn *italic* and the uncertainty display ($\pm$) will disappear, indicating it is fixed.
 
 ### Parameter Linking
 
@@ -135,7 +138,7 @@ Astrocook also tracks a turbulent broadening parameter `btur` separately. It is 
 
 After manual edits, you often need to re-optimize the fit:
 
-- **Refit Selected:** Right-click the table and choose "Refit Selected" to optimize only the highlighted lines.
+- **Refit Selected:** Select one **or more** components in the table, right-click, and choose "Refit Selected". This will optimize all highlighted lines (and their physical neighbors) in a batch process.
 - **Refit All:** Go to **Absorbers > Refit All Systems...** (in the main window) to re-optimize the entire spectrum, handling blends automatically.
 
 ```{image} ../_static/absorbers_linking.png

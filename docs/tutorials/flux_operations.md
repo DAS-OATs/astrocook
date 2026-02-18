@@ -49,7 +49,18 @@ Rebinning is more rigorous than smoothing. It combines adjacent pixels into larg
 Unlike smoothing, rebinning changes the X-axis grid. The new flux values are calculated to preserve the physical energy/counts per bin.
 :::
 
-## 4. Resampling
+## 4. Equalizing
+
+Sometimes the flux calibration between two exposures or arms of a spectrograph differs. You can scale the current session's flux to match a reference session.
+
+1.  Go to **Flux > Equalize to Reference...**.
+2.  **Reference Session:** Select the session you want to match.
+3.  **Order:** Choose the complexity of the scaling:
+    * `0` (Scalar): Multiplies flux by a constant factor.
+    * `-1` (Spline): Fits a smooth curve to match the shape.
+    * `1` or higher: Fits a polynomial of that order.
+
+## 5. Resampling
 
 Resampling is different from rebinning. It interpolates your spectrum onto an arbitrary grid defined by _another_ open session. This is a critical prerequisite for comparing two spectra pixel-by-pixel (e.g., for creating a ratio or difference spectrum).
 
@@ -64,7 +75,7 @@ Resampling is different from rebinning. It interpolates your spectrum onto an ar
 Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](#editing-arithmetic) to compute `y / SessionB.y`.
 
 (flux-calibration)=
-## 5. Flux Calibration
+## 6. Flux Calibration
 
 If your spectrum is not flux-calibrated (or the calibration is off), you can warp it to match known photometric data.
 
