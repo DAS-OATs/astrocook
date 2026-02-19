@@ -1488,6 +1488,34 @@ class RecipeAbsorbersV2:
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 current_session = RecipeContinuumV2(current_session).estimate_auto()
 
+            # --- START NEW CONSOLIDATED LOGIC FOR BETA.4 ---
+            # If selected_uuids is provided (e.g., from 'Refit Selected' in UI),
+            # we fit the entire connected group once instead of looping.
+            if selected_uuids:
+                logging.info(f"Refitting {len(selected_uuids)} component{'s' if len(selected_uuids) > 1 else ''}...")
+                
+                # Use our new spatial-index-powered grouping logic
+                combined_active_set = current_session.systs.get_connected_group(
+                    selected_uuids, max_depth=depth_i
+                )
+
+                try:
+                    # Execute a single fit pass for the entire 'Super-Group'
+                    with current_session.systs.fitting_context(list(combined_active_set), group_depth=0):
+                        fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
+                                              check_stop=self._is_stop_requested)
+                        new_systs, model_flux, res = fitter.fit(
+                            max_nfev=max_nfev_i, z_window_kms=z_win_f
+                        )
+                    
+                    # Update model and return immediately
+                    new_spec = current_session.spec.update_model(model_flux)
+                    return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
+                except Exception as e:
+                    logging.error(f"Consolidated fit failed: {e}")
+                    return 0
+            # --- END NEW CONSOLIDATED LOGIC ---
+
             # --- 0. DETERMINE FILTER BOUNDS ---
             obs_min_limit = 0.0 * au.nm
             obs_max_limit = 1e6 * au.nm

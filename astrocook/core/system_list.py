@@ -13,6 +13,72 @@ from astrocook.core.system_list_migration import migrate_component_v2_to_v1
 from astrocook.legacy.syst_list import SystList as SystListV1
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 
+def get_all_w_rest(series_name: str) -> List[float]:
+    """
+    Returns a list of rest wavelengths in Angstroms for a given series name.
+    Handles single lines, standard multiplets, and custom comma-separated lists.
+    """
+    # 1. Check if it's a known single transition
+    if series_name in ATOM_DATA:
+        return [ATOM_DATA[series_name]['wave']]
+    
+    # 2. Check if it's a standard multiplet tag (e.g., 'CIV')
+    if series_name in STANDARD_MULTIPLETS:
+        waves = []
+        for line_name in STANDARD_MULTIPLETS[series_name]:
+            if line_name in ATOM_DATA:
+                waves.append(ATOM_DATA[line_name]['wave'])
+        return waves
+
+    # 3. Handle custom comma-separated strings (e.g., 'CIV_1548,CIV_1550')
+    if ',' in series_name:
+        waves = []
+        for part in series_name.split(','):
+            name = part.strip()
+            if name in ATOM_DATA:
+                waves.append(ATOM_DATA[name]['wave'])
+        return waves
+
+    return []
+
+def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: dict) -> bool:
+    """
+    Checks if two components should be grouped together for fitting.
+    """
+    c_kms = 299792.458
+    
+    # 1. CONSTRAINT CHECK (Highest Priority)
+    # If components are linked via expressions, they MUST be fitted together.
+    for c_src, c_other in [(c1, c2), (c2, c1)]:
+        if c_src.uuid in constraints_map:
+            for constr in constraints_map[c_src.uuid].values():
+                if hasattr(constr, 'target_uuid') and constr.target_uuid == c_other.uuid:
+                    return True
+
+    # 2. SPECTRAL OVERLAP (The "Blend" Logic)
+    # Check if ANY transition from system 1 is near ANY transition from system 2.
+    # We use a threshold based on the thermal width (b-parameter) or a 30 km/s floor.
+    threshold_kms = max(4.0 * max(c1.b, c2.b), 30.0)
+    
+    obs1 = [w * (1 + c1.z) for w in get_all_w_rest(c1.series)]
+    obs2 = [w * (1 + c2.z) for w in get_all_w_rest(c2.series)]
+    
+    for w1 in obs1:
+        for w2 in obs2:
+            dv = c_kms * abs(w1 - w2) / ((w1 + w2) / 2.0)
+            if dv < threshold_kms:
+                return True
+
+    # 3. KINEMATIC PROXIMITY (Same Species)
+    # If they are the same species and close in velocity, group them.
+    if c1.series == c2.series:
+        dz = abs(c1.z - c2.z)
+        dv_kin = c_kms * dz / (1 + c1.z)
+        if dv_kin < threshold_kms:
+            return True
+            
+    return False
+
 # --- 3. System List API Layer (The orchestrator) ---
 class SystemListV2:
     """
@@ -683,105 +749,116 @@ class SystemListV2:
             The full set of UUIDs in the connected group.
         """
         if not seed_uuids: return set()
-        
+
         c_kms = 299792.458
-        # 1. Sort components by Z for fast searching
-        sorted_comps = sorted(self.components, key=lambda c: c.z)
-        comp_map = {c.uuid: c for c in sorted_comps}
-        z_values = np.array([c.z for c in sorted_comps])
-        
-        # Access constraints if available, else empty
-        constraints_map = self._data.v2_constraints_map if hasattr(self._data, 'v2_constraints_map') else {}
-
-        # Helper: Get rest wavelengths
-        def get_all_w_rest(series_name: str) -> List[float]:
-            if series_name in ATOM_DATA: return [ATOM_DATA[series_name]['wave']]
-            if series_name in STANDARD_MULTIPLETS:
-                waves = []
-                for line_name in STANDARD_MULTIPLETS[series_name]:
-                    if line_name in ATOM_DATA: waves.append(ATOM_DATA[line_name]['wave'])
-                if waves: return waves
-            return []
-
-        # Helper: Check overlap
-        def are_overlapping(c1, c2):
-            # Threshold: 4 sigma (thermal) or fixed 30 km/s buffer
-            threshold_kms = max(4.0 * max(c1.b, c2.b), 30.0)
-            
-            # 1. Constraints (Linked parameters imply grouping)
-            if c1.uuid in constraints_map:
-                for constr in constraints_map[c1.uuid].values():
-                    if hasattr(constr, 'target_uuid') and constr.target_uuid == c2.uuid: return True
-            if c2.uuid in constraints_map:
-                for constr in constraints_map[c2.uuid].values():
-                    if hasattr(constr, 'target_uuid') and constr.target_uuid == c1.uuid: return True
-
-            # 2. Spectral Overlap (Do the lines touch?)
-            waves1 = get_all_w_rest(c1.series)
-            waves2 = get_all_w_rest(c2.series)
-            if not waves1 or not waves2: return False
-            
-            # Use z from object
-            obs1 = [w * (1 + c1.z) for w in waves1]
-            obs2 = [w * (1 + c2.z) for w in waves2]
-            
-            for w1 in obs1:
-                for w2 in obs2:
-                    lam_avg = (w1 + w2) / 2.0
-                    dv = c_kms * abs(w1 - w2) / lam_avg
-                    if dv < threshold_kms: return True
-            
-            # 3. Kinematic Proximity (Same Series)
-            if c1.series == c2.series:
-                dz = abs(c1.z - c2.z)
-                dv_kin = c_kms * dz / (1 + c1.z)
-                if dv_kin < threshold_kms: return True
-                
-            return False
-
-        # --- Transitive Closure Loop (Friends-of-Friends) ---
+        # 1. Map components and retrieve constraints from the data core
+        comp_map = {c.uuid: c for c in self.components}
+        constraints_map = self._data.v2_constraints_map
         group_uuids = set(seed_uuids)
-        
+
+        # --- STEP 1: Build a Spatial Wavelength Index ---
+        # We map every individual line of every component to its observed wavelength
+        flat_index = []
+        for c in self.components:
+            for w_rest in get_all_w_rest(c.series):
+                w_obs = w_rest * (1 + c.z)
+                flat_index.append((w_obs, c.uuid))
+
+        # Sort for binary search efficiency
+        flat_index.sort(key=lambda x: x[0])
+        all_w_obs = np.array([x[0] for x in flat_index])
+        all_uuids = [x[1] for x in flat_index]
+
+        # --- STEP 2: Transitive Closure (Friends-of-Friends) ---
         for _ in range(max_depth):
             added_count = 0
             current_members = [comp_map[u] for u in group_uuids if u in comp_map]
-            
-            # 2. Define "Safe" Z-Window for candidates
-            # (Conservative: Max possible metal line offset is ~20000 km/s, e.g. Ly-a vs CIV)
-            # For pure overlapping, 500 km/s is enough. For constraints, we use the map.
-            # We filter based on kinematic proximity to ANY current member.
-            
             if not current_members: break
-            
-            min_z = min(c.z for c in current_members)
-            max_z = max(c.z for c in current_members)
-            
-            # Expand window by 0.1 (huge buffer for multiplet separation like Ly-a <-> CIV)
-            z_lower = min_z - 0.1
-            z_upper = max_z + 0.1
-            
-            # 3. Fast Slice using numpy searchsorted
-            idx_start = np.searchsorted(z_values, z_lower)
-            idx_end = np.searchsorted(z_values, z_upper)
-            candidates = sorted_comps[idx_start:idx_end]
 
-            for other in candidates:
-                if other.uuid in group_uuids: continue
-                
+            # Identify candidate UUIDs nearby in observed wavelength space
+            candidate_uuids = set()
+            for m in current_members:
+                for w_rest in get_all_w_rest(m.series):
+                    w_obs = w_rest * (1 + m.z)
+                    # Use a 500 km/s search window to find potential candidates
+                    dv_ang = (500.0 / c_kms) * w_obs
+
+                    idx_start = np.searchsorted(all_w_obs, w_obs - dv_ang)
+                    idx_end = np.searchsorted(all_w_obs, w_obs + dv_ang)
+
+                    for i in range(idx_start, idx_end):
+                        candidate_uuids.add(all_uuids[i])
+
+            # --- STEP 3: Detailed Physics and Constraint Validation ---
+            for cand_uuid in candidate_uuids:
+                if cand_uuid in group_uuids: continue
+
+                other = comp_map[cand_uuid]
+                # Check proximity and constraints using the updated signature
                 is_connected = False
                 for member in current_members:
-                    if are_overlapping(member, other):
+                    if are_overlapping(member, other, constraints_map):
                         is_connected = True
                         break
-                
+                    
                 if is_connected:
                     group_uuids.add(other.uuid)
                     added_count += 1
-            
-            if added_count == 0:
-                break
-        
-        logging.debug(f"Fluid Group: {len(seed_uuids)} targets -> {len(group_uuids)} active components.")
+
+            if added_count == 0: break
+
+        return group_uuids
+        if not seed_uuids: return set()
+    
+        c_kms = 299792.458
+        comp_map = {c.uuid: c for c in self.components}
+        group_uuids = set(seed_uuids)
+
+        # --- STEP 1: Build a Spatial Wavelength Index ---
+        # We create a sorted list of all observed wavelengths present in the SystemList
+        flat_index = []
+        for c in self.components:
+            for w_rest in get_all_w_rest(c.series):
+                w_obs = w_rest * (1 + c.z)
+                flat_index.append((w_obs, c.uuid))
+
+        # Sort index by wavelength for binary search
+        flat_index.sort(key=lambda x: x[0])
+        all_w_obs = np.array([x[0] for x in flat_index])
+        all_uuids = [x[1] for x in flat_index]
+
+        # --- STEP 2: Transitive Closure ---
+        for _ in range(max_depth):
+            added_count = 0
+            current_members = [comp_map[u] for u in group_uuids if u in comp_map]
+
+            # Identify ranges to search based on CURRENT group members
+            candidate_uuids = set()
+            for m in current_members:
+                for w_rest in get_all_w_rest(m.series):
+                    w_obs = w_rest * (1 + m.z)
+                    # 500 km/s buffer for the initial search
+                    dv_ang = (500.0 / c_kms) * w_obs
+
+                    # Binary search to find indices in the flat_index
+                    idx_start = np.searchsorted(all_w_obs, w_obs - dv_ang)
+                    idx_end = np.searchsorted(all_w_obs, w_obs + dv_ang)
+
+                    for i in range(idx_start, idx_end):
+                        candidate_uuids.add(all_uuids[i])
+
+            # --- STEP 3: Detailed Physics/Constraint Check ---
+            for cand_uuid in candidate_uuids:
+                if cand_uuid in group_uuids: continue
+
+                other = comp_map[cand_uuid]
+                # are_overlapping verifies velocity proximity AND constraints
+                if any(are_overlapping(m, other) for m in current_members):
+                    group_uuids.add(cand_uuid)
+                    added_count += 1
+
+            if added_count == 0: break
+
         return group_uuids
 
     def _sanitize_after_fit(self, systs: 'SystemListV2') -> 'SystemListV2':
