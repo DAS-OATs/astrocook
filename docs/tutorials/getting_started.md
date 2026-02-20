@@ -150,6 +150,23 @@ When you have finished your analysis (or if you want to save your progress):
 :align: center
 ```
 
+## 5. Exporting and Importing Data
+
+Astrocook allows you to easily exchange data with external tools (like spreadsheet managers, Topcat, or custom Python scripts) using standard CSV files.
+
+### Export to ASCII
+To save your current data in a human-readable format, go to **File > Export to ASCII...**. 
+A dialog will appear allowing you to select exactly what to export:
+* **Spectrum (spec)**: Saves the Wavelength ($x$), Flux ($y$), Error ($dy$), Continuum ($cont$), and any other active spectral columns into a `_spec.csv` file.
+* **System List (systems)**: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a `_systems.csv` file.
+
+You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.
+
+### Import from ASCII
+If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
+* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.
+* **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
+
 ## What's Next?
 
 Now that you are comfortable with the interface, you are ready to manipulate your data. Check out the [Editing Data](editing_data.md) tutorial to learn how to clean up your spectra.

@@ -1686,9 +1686,10 @@ class RecipeAbsorbersV2:
         1. **Narrow Spikes**: Components with ``b < min_b``.
         2. **Weak Lines**: Components with ``logN < min_logN``.
         3. **Broad/Ghost Lines**: Components with ``b > max_b``.
-           - If ``combined_check`` is ``True``, broad lines are only removed if they 
-             are *also* weak (``logN < 13.0``). This protects strong, broad features 
-             like DLA wings or OVI absorbers.
+        
+        If ``combined_check`` is ``True``, broad lines are only removed if they 
+        are *also* weak (``logN < 13.0``). This protects strong, broad features 
+        like DLA wings or OVI absorbers.
 
         Parameters
         ----------

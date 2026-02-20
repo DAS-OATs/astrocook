@@ -30,11 +30,42 @@ FILE_RECIPES_SCHEMAS = {
 }
 
 class RecipeFileV2:
+    """
+    Recipes for file input/output operations.
+
+    This class manages exporting session data (spectra and system lists) to 
+    external formats like ASCII/CSV, and importing modified data back into 
+    the session. It operates immutably where applicable to support Undo/Redo.
+    """
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
 
     def export_ascii(self, targets: str, path: str, prefix: str) -> bool:
+        """
+        Export selected components of the session to ASCII/CSV files.
+
+        Generates distinct files for spectrum data (`_spec.csv`) and system 
+        lists (`_systems.csv`) based on the requested targets. Spectrum 
+        exports automatically include the wavelength array (`x`), while 
+        system exports automatically include the transition name (`series`) 
+        and redshift (`z`).
+
+        Parameters
+        ----------
+        targets : str
+            Comma-separated list of structures or columns to export 
+            (e.g., ``'spec, systems'`` or ``'y, cont, logN'``).
+        path : str
+            The destination directory path.
+        prefix : str
+            The base filename prefix for the exported files.
+
+        Returns
+        -------
+        bool
+            ``True`` if at least one file was successfully saved, ``False`` otherwise.
+        """
         target_list = [t.strip() for t in targets.split(',') if t.strip()]
         saved_any = False
         
@@ -82,7 +113,24 @@ class RecipeFileV2:
             return False
         
     def import_ascii(self, file_path: str) -> 'SessionV2':
+        """
+        Import columns from an ASCII/CSV file into the current session.
 
+        Reads external data and overwrites or appends columns in the 
+        spectrum based on matching column headers. The imported file must 
+        have the exact same number of rows as the current spectrum to ensure 
+        grid alignment. 
+
+        Parameters
+        ----------
+        file_path : str
+            The full path to the ASCII/CSV file to import.
+
+        Returns
+        -------
+        SessionV2
+            A new session instance containing the imported data. Returns ``0`` if the import fails.
+        """
         try:
             # 1. Load the table
             table = ascii.read(file_path)

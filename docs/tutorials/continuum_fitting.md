@@ -20,7 +20,7 @@ This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing,
 Astrocook will generate a new continuum curve (black dashed line). If you have a `model` (absorption lines) already defined, it will automatically re-normalize it to match the new continuum.
 
 :::{tip}
-You can use the **Data Inspector** (Right-click on the plot) to examine the exact continuum values (`cont`) and residuals at any pixel. See [The Data Inspector](getting_started.md#data-inspector).
+You can use the **Data Inspector** (Right-click on the plot) to examine the exact continuum values (`cont`) and residuals at any pixel. See [The Data Inspector](#data-inspector).
 :::
 
 ```{image} ../_static/continuum_auto.png
