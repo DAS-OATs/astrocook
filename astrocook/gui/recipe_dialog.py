@@ -222,16 +222,14 @@ class RecipeDialog(QDialog):
         # --- DEDICATED EXPORT ASCII VIEW ---
         if self.recipe_name == "export_ascii":
             caption = QLabel(
-                "Choose the entire structure or individual columns.<br>"
-                "<small><i>Note: Columns from <b>spec</b> include wavelength (x); "
-                "<b>systems</b> include ID and Series.</i></small>"
+                "Choose the entire structure or individual columns."
             )
             caption.setWordWrap(True)
             caption.setTextFormat(Qt.RichText)
             ref_layout.addWidget(caption)
 
             # --- SPEC SECTION (Dynamic) ---
-            ref_layout.addWidget(QLabel("<b>Spectrum (spec):</b>"))
+            ref_layout.addWidget(QLabel("<b>Spectrum (spec):</b><br><small><i>Exported tables include wavelength ('x') by default.</i></small>"))
             spec_grid = QGridLayout()
             spec_grid.setSpacing(4)
             
@@ -253,7 +251,7 @@ class RecipeDialog(QDialog):
 
             # --- SYSTEMS SECTION (Dynamic) ---
             ref_layout.addSpacing(5)
-            ref_layout.addWidget(QLabel("<b>System List (systems):</b>"))
+            ref_layout.addWidget(QLabel("<b>System List (systems):</b><br><small><i>Exported tables include transitions and redshift ('z') by default.</i></small>"))
             syst_grid = QGridLayout()
             syst_grid.setSpacing(4)
             
