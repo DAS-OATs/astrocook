@@ -50,6 +50,7 @@ except ImportError:
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
 for name in ABSORBERS_RECIPES_SCHEMAS:
@@ -58,6 +59,8 @@ for name in CONTINUUM_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'continuum'
 for name in EDIT_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'edit'
+for name in FILE_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'file'
 for name in FLUX_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'flux'
 # (Add other recipe categories here as they are created)
@@ -663,6 +666,21 @@ class MainWindowV2(QMainWindow):
         save_action.setEnabled(False)
         file_menu.addAction(save_action)
         self.save_action = save_action # Assign to self
+
+        export_action = QAction("&Export to ASCII...", self)
+        export_action.triggered.connect(self._on_export_requested)
+        # Insert it after Save
+        file_menu.insertAction(self.save_action, export_action) 
+        self.export_action = export_action
+        self.export_action.setEnabled(False) # Default disabled
+
+        import_action = QAction("&Import from ASCII...", self)
+        import_action.triggered.connect(self._on_import_requested)
+        # Insert it after Save
+        file_menu.insertAction(self.save_action, import_action) 
+        self.import_action = import_action
+        self.import_action.setEnabled(False) # Default disabled
+
         file_menu.addSeparator()
         close_action = QAction("&Close Session", self)
         close_action.setShortcut("Ctrl+W")
@@ -1141,10 +1159,13 @@ class MainWindowV2(QMainWindow):
         
         msg_box = QMessageBox(target_parent)
         msg_box.setWindowTitle(title)
+
+        # Convert standard \n line breaks to HTML <br> tags
+        formatted_body = text.replace('\n', '<br>')
         
         formatted_text = (
             f"<p style='font-size: 13pt; font-weight: bold; margin: 0px;'>{header}</p>"
-            f"<p style='font-size: 12pt; font-weight: normal; margin-top: 8px;'>{text}</p>"
+            f"<p style='font-size: 12pt; font-weight: normal; margin-top: 8px;'>{formatted_body}</p>"
         )
         msg_box.setText(formatted_text)
         
@@ -2780,6 +2801,42 @@ class MainWindowV2(QMainWindow):
             # If state is weird (no worker), just close
             self._cleanup_progress_ui()
 
+    def _on_export_requested(self):
+        """Launches the selection dialog first."""
+        if not self.active_history:
+            return
+        # No QFileDialog here anymore! Just the dialog.
+        self._launch_recipe_dialog("file", "export_ascii")
+
+    def _on_import_requested(self):
+        if not self.active_history: return
+
+        # 1. The Disclaimer
+        header = "Import and Overwrite Data?"
+        text = ("You are about to import data from an ASCII file. "
+                "Columns with matching names will be <b>overwritten</b>.<br><br>"
+                "<i>Note: The number of rows in the file must exactly match the current spectrum.</i>")
+
+        confirm = self._show_custom_message(
+            title="Import ASCII",
+            header=header,
+            text=text,
+            buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            default_btn=QMessageBox.StandardButton.Cancel
+        )
+
+        if confirm != QMessageBox.StandardButton.Ok: return
+
+        # 2. File Browser
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select ASCII/CSV File to Import", "", 
+            "CSV Files (*.csv);;Text Files (*.txt *.dat);;All Files (*)"
+        )
+
+        if file_path:
+            # 3. Execute via standard recipe pipeline to ensure it's in the Undo history
+            self._on_recipe_requested("file", "import_ascii", {"file_path": file_path}, {})
+
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
         """
@@ -2787,7 +2844,87 @@ class MainWindowV2(QMainWindow):
         """
         if not self.active_history: return
 
-        # [Check Requirements logic remains the same...]
+        # --- 1. THE INTERCEPT (MUST BE AT THE TOP) ---
+        if recipe_name == "export_ascii":
+            # 1. CLEAN PARSING OF TARGETS
+            raw_targets = params.get('targets', '')
+            target_list = [t.strip() for t in raw_targets.split(',') if t.strip()]
+            
+            # Authoritative identification
+            # A 'spec' target is anything in the spectrum table (excluding 'systems')
+            spec_colnames = self.active_history.current_state.spec.t.colnames
+            has_spec = any(t in spec_colnames or t == "spec" for t in target_list if t != "systems")
+            
+            # A 'systems' target is the literal 'systems' or any column in the systems table
+            syst_colnames = self.active_history.current_state.systs.t.colnames
+            has_systems = "systems" in target_list or any(t in syst_colnames for t in target_list)
+        
+            # 2. SMART FILENAME SUGGESTION (REFINED)
+            session_name = self.active_history.current_state.name
+            if has_spec and not has_systems:
+                suggested_name = f"{session_name}_spec.csv"
+            elif has_systems and not has_spec:
+                suggested_name = f"{session_name}_systems.csv"
+            else:
+                # Mixed export: Suggested name is just the prefix (no .csv)
+                suggested_name = session_name
+            
+            full_path, _ = QFileDialog.getSaveFileName(
+                self, "Export ASCII Table", suggested_name, 
+                "CSV Files (*.csv);;Text Files (*.txt);;All Files (*)"
+            )
+            
+            if not full_path: return
+        
+            import os
+            folder = os.path.dirname(full_path)
+            # Extract prefix and strip redundant suffixes if user clicked an existing file
+            filename_prefix = os.path.splitext(os.path.basename(full_path))[0]
+            filename_prefix = filename_prefix.replace('_spec', '').replace('_systems', '')
+        
+            # 3. OVERWRITE SAFETY CHECK
+            conflicts = []
+            if has_spec:
+                spec_path = os.path.join(folder, f"{filename_prefix}_spec.csv")
+                if os.path.exists(spec_path): conflicts.append(os.path.basename(spec_path))
+            if has_systems:
+                syst_path = os.path.join(folder, f"{filename_prefix}_systems.csv")
+                if os.path.exists(syst_path): conflicts.append(os.path.basename(syst_path))
+        
+            if conflicts:
+                conflict_list = "\n".join([f"• {c}" for c in conflicts])
+                ret = self._show_custom_message(
+                    title="Confirm Overwrite",
+                    header="Files already exist",
+                    text=f"The following files will be overwritten:\n\n{conflict_list}\n\nDo you want to proceed?",
+                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    default_btn=QMessageBox.StandardButton.No
+                )
+                if ret != QMessageBox.StandardButton.Yes: return
+        
+            # 4. EXECUTION
+            try:
+                saved = self.active_history.current_state.file.export_ascii(
+                    targets=raw_targets, 
+                    path=folder, 
+                    prefix=filename_prefix
+                )
+                
+                if saved:
+                    files_created = []
+                    if has_spec: files_created.append(f"• {filename_prefix}_spec.csv")
+                    if has_systems: files_created.append(f"• {filename_prefix}_systems.csv")
+                    
+                    self._show_custom_message(
+                        title="Export Complete",
+                        header="Data exported successfully",
+                        text=f"Saved in {folder}:\n\n" + "\n".join(files_created)
+                    )
+            except Exception as e:
+                logging.error(f"Export failed: {e}")
+            return
+
+        # --- 2. STANDARD RECIPE PREPARATION ---
         if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
             return
 
@@ -3478,6 +3615,8 @@ class MainWindowV2(QMainWindow):
 
         # ... (Enable/Disable File menu actions) ...
         if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
+        if hasattr(self, 'export_action'): self.export_action.setEnabled(is_valid_session)
+        if hasattr(self, 'import_action'): self.import_action.setEnabled(is_valid_session)
         if hasattr(self, 'close_session_action'): self.close_session_action.setEnabled(is_valid_session)
 
         # ... (Enable/Disable View menu actions) ...

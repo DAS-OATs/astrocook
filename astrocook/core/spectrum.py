@@ -94,7 +94,13 @@ class TableAdapterV2(object):
                     
             # Return a NEW TableAdapterV2 instance containing the sliced data
             return TableAdapterV2(new_data_dict)
-            
+        
+        elif isinstance(key, list):
+            # Selection of multiple columns: return a new TableAdapterV2
+            # with only the requested subset of the dictionary.
+            new_data_dict = {col: self._data_dict[col] for col in key if col in self._data_dict}
+            return TableAdapterV2(new_data_dict)
+        
         else:
             raise KeyError(f"Invalid key type: {type(key)}. Expected string or slice.")
 

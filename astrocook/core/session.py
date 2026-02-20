@@ -18,6 +18,7 @@ from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
 from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.absorbers import RecipeAbsorbersV2
 from astrocook.recipes.edit import RecipeEditV2
+from astrocook.recipes.file import RecipeFileV2
 from astrocook.recipes.flux import RecipeFluxV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
@@ -206,6 +207,8 @@ class SessionV2:
         The display name of the session (e.g., filename without extension).
     systs : astrocook.core.system_list.SystemListV2, optional
         The container for identified absorption systems and Voigt profile components.
+    file : astrocook.recipes.file.RecipeFileV2
+        Access to file import/export recipes (e.g., ``import_ascii``, ``export_ascii``).
     edit : astrocook.recipes.edit.RecipeEditV2
         Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).
     flux : astrocook.recipes.flux.RecipeFluxV2
@@ -229,6 +232,7 @@ class SessionV2:
         self._current_spectrum = spec
         self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
         
+        self.file = RecipeFileV2(self)
         self.edit = RecipeEditV2(self)
         self.flux = RecipeFluxV2(self)
         self.continuum = RecipeContinuumV2(self)

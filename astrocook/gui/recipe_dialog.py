@@ -2,7 +2,7 @@ import logging
 import webbrowser
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
-    QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout, QApplication
+    QPushButton, QDialogButtonBox, QWidget, QGroupBox, QComboBox, QMessageBox, QVBoxLayout, QApplication
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
@@ -198,7 +198,7 @@ class RecipeDialog(QDialog):
         main_layout.addWidget(form_widget)
 
         # Trigger Helper Pane
-        if self.recipe_name in ("apply_expression", "mask_expression", "split", "delete", "import_systems", "equalize", "resample"):
+        if self.recipe_name in ("export_ascii", "apply_expression", "mask_expression", "split", "delete", "import_systems", "equalize", "resample"):
             self._setup_usability_pane(main_layout) 
 
         # 3. Buttons
@@ -210,18 +210,72 @@ class RecipeDialog(QDialog):
         main_layout.addWidget(button_box)
 
     def _setup_usability_pane(self, main_layout):
-        """Helper to set up the buttons for expressions or session selection."""
         available_cols = self._get_available_columns()
         
-        # Guard: Only skip if columns missing AND it's not a recipe that works without columns
-        if not available_cols and self.recipe_name not in ("delete", "import_systems", "equalize", "resample"): return
-
         ref_container = QFrame(self)
         ref_container.setObjectName("ReferencePane")
         ref_container.setFrameShape(QFrame.StyledPanel) 
         ref_layout = QVBoxLayout(ref_container)
-        ref_layout.setSpacing(8)
+        ref_layout.setSpacing(12) # Increased spacing for clarity
         ref_layout.setContentsMargins(10, 10, 10, 10)
+
+        # --- DEDICATED EXPORT ASCII VIEW ---
+        if self.recipe_name == "export_ascii":
+            caption = QLabel(
+                "Choose the entire structure or individual columns.<br>"
+                "<small><i>Note: Columns from <b>spec</b> include wavelength (x); "
+                "<b>systems</b> include ID and Series.</i></small>"
+            )
+            caption.setWordWrap(True)
+            caption.setTextFormat(Qt.RichText)
+            ref_layout.addWidget(caption)
+
+            # --- SPEC SECTION (Dynamic) ---
+            ref_layout.addWidget(QLabel("<b>Spectrum (spec):</b>"))
+            spec_grid = QGridLayout()
+            spec_grid.setSpacing(4)
+            
+            btn_spec_all = QPushButton("spec (all)")
+            btn_spec_all.setStyleSheet("font-weight: bold; color: #296bff;")
+            # Helper to select all current spec columns
+            btn_spec_all.clicked.connect(lambda: self._insert_text_into_expression(", ".join(available_cols)))
+            spec_grid.addWidget(btn_spec_all, 0, 0)
+
+            # Map all dynamic columns from the spectrum (excluding 'x' which is auto-added)
+            # available_cols is already defined at the top of this method
+            spec_cols = [c for c in available_cols if c != 'x']
+            for i, col in enumerate(spec_cols):
+                btn = QPushButton(col)
+                btn.clicked.connect(lambda checked=False, t=col: self._insert_text_into_expression(t))
+                spec_grid.addWidget(btn, (i+1)//4, (i+1)%4)
+            
+            ref_layout.addLayout(spec_grid)
+
+            # --- SYSTEMS SECTION (Dynamic) ---
+            ref_layout.addSpacing(5)
+            ref_layout.addWidget(QLabel("<b>System List (systems):</b>"))
+            syst_grid = QGridLayout()
+            syst_grid.setSpacing(4)
+            
+            btn_syst_all = QPushButton("systems (all)")
+            btn_syst_all.setStyleSheet("font-weight: bold; color: #d35400;")
+            btn_syst_all.clicked.connect(lambda: self._insert_text_into_expression("systems"))
+            syst_grid.addWidget(btn_syst_all, 0, 0)
+
+            # Extract colnames from the SystemListV2 table
+            if self.session.systs:
+                syst_available = self.session.systs.t.colnames
+                # Exclude internal/contextual columns already handled by 'systems (all)'
+                syst_params = [c for c in syst_available if c not in ['id', 'series', 'func']]
+                for i, col in enumerate(syst_params):
+                    btn = QPushButton(col)
+                    btn.clicked.connect(lambda checked=False, t=col: self._insert_text_into_expression(t))
+                    syst_grid.addWidget(btn, (i+1)//4, (i+1)%4)
+
+            ref_layout.addLayout(syst_grid)
+            
+            main_layout.addWidget(ref_container)
+            return
 
         # --- BLOCK 1: SESSION SELECTION (Import & Resample) ---
         if self.recipe_name in ("import_systems", "equalize", "resample"):
@@ -381,52 +435,53 @@ class RecipeDialog(QDialog):
         # Legacy/Unused
         pass 
 
-    def _insert_text_into_expression(self, text: str):
-        target_widget = None
+    def _insert_text_into_expression(self, text):
+        """
+        Smart insertion for recipe parameters. 
+        Handles comma-separated lists (export, delete) and 
+        space-separated expressions (apply_expression).
+        """
+        # 1. Identify the target widget (usually 'targets' or 'expression')
+        target_name = 'targets' if self.recipe_name in ["export_ascii", "delete", "remove_columns"] else 'expression'
+        target_widget = self.input_widgets.get(target_name)
         
-        if self._last_focused_widget is not None and self._last_focused_widget.isVisible():
-             target_widget = self._last_focused_widget
-        else:
-             if self.recipe_name == "delete":
-                 target_widget = self.input_widgets.get('targets')
-             elif self.recipe_name == "import_systems":
-                 target_widget = self.input_widgets.get('source_session')
-             elif self.recipe_name == "resample":
-                 target_widget = self.input_widgets.get('target_session')
-             else:
-                 target_widget = self.input_widgets.get('expression')
-        
-        if not (target_widget and isinstance(target_widget, QLineEdit)):
-            return
-            
-        # Logic for Session Selection (Replace text)
-        if self.recipe_name in ("import_systems", "equalize", "resample"):
-            target_widget.setText(text)
-            target_widget.setFocus()
-            if self.recipe_name == 'resample':
-                 self._check_oversample(text)
+        if not target_widget:
+            # Fallback if the parameter name varies
             return
 
-        if self.recipe_name == "delete":
-            current_text = target_widget.text().strip()
-            if current_text:
-                if not current_text.endswith(text):
-                     target_widget.insert(f", {text}")
-            else:
-                target_widget.insert(text)
-            target_widget.setFocus()
-            return 
-        
-        if text.startswith("_") or text in self.function_list:
-            target_widget.insert(f" {text}() ")
-            target_widget.cursorBackward(False, 2) 
-        elif text in self.session_alias_map:
-            target_widget.insert(f" {text}. ")
-        elif text in self.operator_list or text in self.boolean_list:
-            target_widget.insert(f" {text} ") 
-        else:
-            target_widget.insert(f" {text} ") 
+        current_text = target_widget.text().strip()
+
+        # --- MODE A: COMMA-SEPARATED LISTS (Export, Delete, etc.) ---
+        if self.recipe_name in ["export_ascii", "delete", "remove_columns", "resample"]:
+            # Split current and new text into sets of terms to handle duplicates
+            current_terms = [t.strip() for t in current_text.split(',') if t.strip()]
+            new_terms = [t.strip() for t in text.split(',') if t.strip()]
             
+            for term in new_terms:
+                if term not in current_terms:
+                    current_terms.append(term)
+            
+            final_string = ", ".join(current_terms)
+            target_widget.setText(final_string)
+        
+        # --- MODE B: EXPRESSION BUILDING (Apply Expression, Split) ---
+        else:
+            # For expressions, we usually want to append with a space if not empty
+            # and avoid duplicating the exact same operator/variable twice in a row
+            if not current_text:
+                target_widget.setText(text)
+            else:
+                # Check if the text is already there as a standalone word/operator
+                # to prevent things like 'y / /' or 'y cont cont'
+                last_word = current_text.split()[-1] if current_text.split() else ""
+                
+                if text == last_word:
+                    # Optional: skip if user clicks the same button twice in an expression
+                    pass 
+                else:
+                    # Add a space before the new operator or variable
+                    target_widget.setText(f"{current_text} {text}")
+
         target_widget.setFocus()
 
     def _check_oversample(self, target_name):

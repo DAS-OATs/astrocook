@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Dict
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 # Define a map of all known recipe modules
 ALL_SCHEMAS = {
+    'file': FILE_RECIPES_SCHEMAS,
     'edit': EDIT_RECIPES_SCHEMAS,
     'flux': FLUX_RECIPES_SCHEMAS,
     'continuum': CONTINUUM_RECIPES_SCHEMAS,
