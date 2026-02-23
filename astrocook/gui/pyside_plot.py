@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 import qtawesome as qta
 import scienceplots
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import PchipInterpolator
 from typing import Optional, TYPE_CHECKING
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
@@ -275,6 +275,11 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         for artist in self.cursor_artists:
             try: self.axes.draw_artist(artist); drawn_artists.append(artist)
             except Exception as e: logging.error(f"Error drawing anim artist {artist}: {e}")
+        if getattr(self.plot_widget, '_edit_mode_active', False):
+            if hasattr(self.plot_widget, 'knot_artist') and self.plot_widget.knot_artist:
+                self.axes.draw_artist(self.plot_widget.knot_artist)
+            if hasattr(self.plot_widget, 'spline_artist') and self.plot_widget.spline_artist:
+                self.axes.draw_artist(self.plot_widget.spline_artist)
         if drawn_artists:
             try: self.blit(self.axes.bbox)
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
@@ -480,6 +485,7 @@ class SpectrumPlotWidget(QWidget):
         self._edit_mode_active = False
         self._knots_x = None  # np.array
         self._knots_y = None  # np.array
+        self._is_anchor = None
         self._active_knot_idx = None # Index of knot being dragged
         
         self.knot_artist = None  # Matplotlib Line2D (markers)
@@ -1854,51 +1860,102 @@ class SpectrumPlotWidget(QWidget):
 
         # --- CONTINUUM EDITING LOGIC ---
         if self._edit_mode_active and self._active_knot_idx is not None:
-            # 1. Update the internal data (Move the knot)
-            # We constrain x to stay between neighbors to prevent knots crossing over
             new_x = event.xdata
             new_y = event.ydata
             
-            # (Optional) Constraint logic: Keep knots sorted
-            # idx = self._active_knot_idx
-            # if idx > 0: new_x = max(new_x, self._knots_x[idx-1] + 0.0001)
-            # if idx < len(self._knots_x) - 1: new_x = min(new_x, self._knots_x[idx+1] - 0.0001)
-            
             self._knots_x[self._active_knot_idx] = new_x
             self._knots_y[self._active_knot_idx] = new_y
+            self._is_anchor[self._active_knot_idx] = True # NEW: Mark moved knots as anchors
             
             # 2. Update the Artist Objects
             self.knot_artist.set_data(self._knots_x, self._knots_y)
-            
-            # Recalculate the spline (See point #2 below about clipping!)
-            self.update_spline_preview()
+            self._apply_local_patch(new_x)
             
             # 3. BLITTING (The "Live" Update)
-            # This is what was missing or broken.
             if self.background:
-                # A. Restore the clean background (erasing the old knot position)
                 self.canvas.restore_region(self.background)
-                
-                # B. Draw the artists at their NEW positions
                 self.canvas.axes.draw_artist(self.knot_artist)
                 self.canvas.axes.draw_artist(self.spline_artist)
-                
-                # C. Show it on screen
                 self.canvas.blit(self.canvas.axes.bbox)
                 
-            return # Stop processing (don't do region selection etc)
+            return # Stop processing
             
     def on_press(self, event):
         if not event.inaxes: return
         
         # --- 0. CHECK MODIFIERS ---
-        # Use Qt directly to reliably detect 'Ctrl' key even if plot focus is fuzzy
         modifiers = QApplication.keyboardModifiers()
-        is_ctrl_held = (modifiers & Qt.ControlModifier)
+        is_ctrl_held = bool(modifiers & Qt.ControlModifier)
+        is_shift_held = bool(modifiers & Qt.ShiftModifier)
 
         # Check if a toolbar mode (Zoom/Pan) is currently active
         is_tool_active = bool(self.toolbar.mode)
 
+        # --- 1. CONTINUUM EDITING LOGIC (Highest Priority) ---
+        if self._edit_mode_active and event.inaxes == self.canvas.axes:
+            click_x, click_y = event.xdata, event.ydata
+            
+            # Distance check for existing knots
+            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
+            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
+            
+            nearest_idx = None
+            min_dist = float('inf')
+            if len(knot_pixels) > 0:
+                dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
+                nearest_idx = np.argmin(dists)
+                min_dist = dists[nearest_idx]
+                
+            THRESHOLD = 10 # pixels
+            
+            # A. SHIFT + LEFT CLICK: Add Knot
+            if event.button == 1 and is_shift_held:
+                spec = self.main_window.active_history.current_state.spec
+                # NEW: Snap the new knot exactly to the frozen curve
+                new_y = np.interp(click_x, spec.x.value, self._frozen_spline_y) 
+                    
+                self._knots_x = np.append(self._knots_x, click_x)
+                self._knots_y = np.append(self._knots_y, new_y)
+                self._is_anchor = np.append(self._is_anchor, True) 
+                
+                sorter = np.argsort(self._knots_x)
+                self._knots_x = self._knots_x[sorter]
+                self._knots_y = self._knots_y[sorter]
+                self._is_anchor = self._is_anchor[sorter]
+                
+                self.knot_artist.set_data(self._knots_x, self._knots_y)
+                # NEW: Patch locally around the new knot
+                self._apply_local_patch(click_x) 
+                
+                self.canvas.draw_idle()
+                return True 
+
+            # B. RIGHT CLICK (on a knot): Remove Knot
+            elif event.button == 3 and min_dist < THRESHOLD:
+                if len(self._knots_x) > 2:
+                    removed_x = self._knots_x[nearest_idx] # Remember where it was
+                    self._knots_x = np.delete(self._knots_x, nearest_idx)
+                    self._knots_y = np.delete(self._knots_y, nearest_idx)
+                    self._is_anchor = np.delete(self._is_anchor, nearest_idx)
+                    
+                    self.knot_artist.set_data(self._knots_x, self._knots_y)
+                    # NEW: Patch locally across the gap we just created
+                    self._apply_local_patch(removed_x) 
+                    
+                    self.canvas.draw_idle()
+                return True
+                
+            # C. LEFT CLICK (on a knot, NO shift): Grab Knot to move
+            elif event.button == 1 and min_dist < THRESHOLD and not is_shift_held:
+                self._active_knot_idx = nearest_idx
+                # Pause toolbar if active
+                if hasattr(self, 'toolbar') and self.toolbar.mode != '':
+                    self._paused_tool_mode = self.toolbar.mode
+                    if self.toolbar.mode == 'pan/zoom': self.toolbar.pan()
+                    elif self.toolbar.mode == 'zoom rect': self.toolbar.zoom()
+                return True
+
+        # --- 2. EXISTING RIGHT CLICK CONTEXT MENU ---
         # Condition: Right Click (Button 3) AND (Ctrl held OR No tool active)
         if event.button == 3 and (is_ctrl_held or not is_tool_active):
             
@@ -1976,146 +2033,13 @@ class SpectrumPlotWidget(QWidget):
                 elif paused_mode == 'zoom rect': self.toolbar.zoom()
 
             return True # Consume event
-        
-        # 1. DETECT KNOT HIT
-        hit_knot = False
-        nearest_idx = None
-        
-        # Only check for knots if we are actually editing continuum
-        if self._edit_mode_active and event.inaxes == self.canvas.axes:
-            click_x, click_y = event.xdata, event.ydata
-            
-            # Transform to pixels for precise hit testing (radius 10px)
-            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
-            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
-            
-            if len(knot_pixels) > 0:
-                dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
-                nearest_idx = np.argmin(dists)
-                if dists[nearest_idx] < 10: 
-                    hit_knot = True
 
-        # 2. TOOLBAR CONFLICT GATE
-        if hasattr(self, 'toolbar') and self.toolbar.mode != '':
-            # Toolbar is active (Pan or Zoom)
-            
-            if hit_knot:
-                # User specifically clicked a knot -> OVERRIDE TOOLBAR
-                self._paused_tool_mode = self.toolbar.mode # Remember what was on
-                
-                # Turn off the tool internally so it doesn't process the drag
-                if self.toolbar.mode == 'pan/zoom': 
-                    self.toolbar.pan()
-                elif self.toolbar.mode == 'zoom rect': 
-                    self.toolbar.zoom()
-            else:
-                # User clicked empty space -> LET TOOLBAR WORK
-                # We return immediately so the navigation tool gets the event
-                return
-
-        # 2. CONTINUUM EDITING LOGIC (High Priority)
-        if self._edit_mode_active and event.inaxes == self.canvas.axes:
-            click_x, click_y = event.xdata, event.ydata
-            
-            # Calculate distances for "Magnet" or "Remove"
-            # We transform to pixels for precise clicking feel
-            knot_pixels = self.canvas.axes.transData.transform(np.column_stack([self._knots_x, self._knots_y]))
-            click_pixel = self.canvas.axes.transData.transform((click_x, click_y))
-            dists = np.hypot(knot_pixels[:,0] - click_pixel[0], knot_pixels[:,1] - click_pixel[1])
-            nearest_idx = np.argmin(dists)
-            min_dist = dists[nearest_idx]
-            
-            THRESHOLD = 10 # pixels
-            
-            # --- RIGHT CLICK: Add/Remove ---
-            if event.button == 3: 
-                modified = False
-                
-                if min_dist < THRESHOLD:
-                    # REMOVE Knot
-                    if len(self._knots_x) > 2:
-                        self._knots_x = np.delete(self._knots_x, nearest_idx)
-                        self._knots_y = np.delete(self._knots_y, nearest_idx)
-                        modified = True
-                else:
-                    # ADD Knot
-                    # We simply append the new knot, then sort everything.
-                    # This works even if the existing knots are messy/unsorted.
-                    self._knots_x = np.append(self._knots_x, click_x)
-                    self._knots_y = np.append(self._knots_y, click_y)
-                    
-                    # Sort immediately to keep data clean
-                    sorter = np.argsort(self._knots_x)
-                    self._knots_x = self._knots_x[sorter]
-                    self._knots_y = self._knots_y[sorter]
-                    modified = True
-
-                if modified:
-                    # Update Visuals (Blitting for speed)
-                    self.knot_artist.set_data(self._knots_x, self._knots_y)
-                    self.update_spline_preview()
-                    
-                    if hasattr(self, 'background') and self.background:
-                        self.canvas.restore_region(self.background)
-                        self.canvas.axes.draw_artist(self.knot_artist)
-                        self.canvas.axes.draw_artist(self.spline_artist)
-                        self.canvas.blit(self.canvas.axes.bbox)
-                    else:
-                        self.canvas.draw()
-                        
-                return True # Consume event
-
-            # --- LEFT CLICK: Grab Knot ---
-            if event.button == 1:
-                self._active_knot_idx = nearest_idx
-                return True
-
-        # 3. Region Selection (Button 1)
-        # Only runs if NOT consumed by continuum logic above
+        # --- 3. Region Selection (Button 1) ---
         if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
             self._selection_start_x = event.xdata
             self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
             self.canvas.draw_idle() 
             return True
-
-        # 4. Context Menu (Button 3)
-        # Only runs if NOT consumed by continuum logic above
-        if event.button == 3 and event.inaxes:
-            found_comp = None
-            xlim = event.inaxes.get_xlim(); tol = (xlim[1] - xlim[0]) * 0.015 
-            for ax, x_pos, comp in self._tick_visuals:
-                if ax == event.inaxes and abs(event.xdata - x_pos) < tol: found_comp = comp; break
-            
-            menu = QMenu(self)
-            if found_comp:
-                act_inspect = QAction(f"Inspect {found_comp.series} (Group View)", menu)
-                if self.main_window: act_inspect.triggered.connect(lambda checked=False, u=found_comp.uuid: self.main_window.open_inspector_on_component(u))
-                menu.addAction(act_inspect)
-                menu.addSeparator()
-
-            z_click = self.calculate_z_from_x(event.xdata)
-            if z_click is not None and self.main_window and self.main_window.cursor_show_checkbox.isChecked():
-                series_str = self.main_window.cursor_series_input.text()
-                act_add = QAction(f"Add {series_str} at z={z_click:.5f}", menu)
-                act_add.triggered.connect(lambda checked=False, z=z_click, s=series_str: self.main_window._on_recipe_requested("absorbers", "add_component", {'series': s, 'z': z}, {}))
-                menu.addAction(act_add)
-                
-                act_zem = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
-                act_zem.triggered.connect(lambda checked=False, z=z_click: self.main_window._on_recipe_requested("edit", "set_properties", {"z_em": str(z)}, {}))
-                menu.addAction(act_zem)
-
-            menu.addSeparator()
-            
-            act_split = QAction("Split from Current Zoom", menu)
-            act_split.setToolTip("Create a new session containing only the visible spectral region.")
-            # Connect to the Main Window method we just created
-            act_split.triggered.connect(lambda: self.main_window.launch_split_from_current_view())
-            menu.addAction(act_split)
-
-            if not menu.isEmpty(): 
-                menu.exec(QCursor.pos())
-                
-                return True
 
         return False
     
@@ -2177,55 +2101,43 @@ class SpectrumPlotWidget(QWidget):
         
         return indices
 
-    def start_continuum_edit(self, initial_stride=500):
+    def start_continuum_edit(self, initial_stride=1500):
         if not self.main_window.active_history: return
         
-        # [TOOLBAR RESET]
         if hasattr(self, 'toolbar') and self.toolbar:
              if self.toolbar.mode == 'pan/zoom': self.toolbar.pan() 
              elif self.toolbar.mode == 'zoom rect': self.toolbar.zoom()
 
-        # [DATA PREP]
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
-        if spec.cont is not None:
-            y_source = spec.cont.value
-        else:
-            y_source = spec.y.value
+        y_source = spec.cont.value if spec.cont is not None else spec.y.value
             
         indices = self._generate_velocity_knots(x_full, float(initial_stride))
             
         self._knots_x = x_full[indices]
         self._knots_y = y_source[indices]
+        self._is_anchor = np.zeros(len(self._knots_x), dtype=bool) 
+        
+        # --- Set master curve EXACTLY to the existing continuum ---
+        self._frozen_spline_y = np.copy(y_source)
         
         self._remove_editor_artists()
 
-        # [CREATE ARTISTS]
         self.knot_artist, = self.canvas.axes.plot(
             self._knots_x, self._knots_y, 
             'o', color='black', markersize=2, alpha=0.5, 
             label='Knots', zorder=10, animated=True
         )
         
+        # Notice we plot the frozen array here, not an empty list
         self.spline_artist, = self.canvas.axes.plot(
-            [], [], 
+            x_full, self._frozen_spline_y, 
             '-', color='black', lw=3, alpha=0.3, 
             label='Draft Cont.', zorder=9, animated=True
         )
 
         self._edit_mode_active = True
-        self.update_spline_preview()
-
-        # [REGISTER for Blitting]
-        if self.knot_artist not in self.canvas.cursor_artists:
-            self.canvas.cursor_artists.append(self.knot_artist)
-        if self.spline_artist not in self.canvas.cursor_artists:
-            self.canvas.cursor_artists.append(self.spline_artist)
-
-        # --- CONNECT LISTENER ---
         self._draw_cid = self.canvas.mpl_connect('draw_event', self.on_background_draw)
-
-        # Force Initial Draw (This triggers on_background_draw, populating self.background)
         self.canvas.draw()
 
     def stop_continuum_edit(self, save=False):
@@ -2239,17 +2151,51 @@ class SpectrumPlotWidget(QWidget):
         
         self.background = None
 
-        # Capture data
         final_x, final_y = None, None
         if save:
-            # FIX: Return the sanitized (sorted & deduped) knots.
-            # This makes the "merge" permanent upon saving.
-            final_x, final_y = self._get_sanitized_knots()
+            # --- NEW: PASS THE DENSE FROZEN CURVE TO THE RECIPE ---
+            # By passing every pixel, the backend PCHIP will exactly recreate your frozen curve.
+            spec = self.main_window.active_history.current_state.spec
+            final_x = spec.x.value.tolist()
+            final_y = self._frozen_spline_y.tolist()
 
         self._remove_editor_artists()
         self.canvas.draw()
         
         return final_x, final_y
+
+    def _apply_local_patch(self, center_x):
+        """Recomputes the spline ONLY between i-1 and i+1, and pastes it into the frozen curve."""
+        x_clean, y_clean = self._get_sanitized_knots()
+        spec = self.main_window.active_history.current_state.spec
+        x_full = spec.x.value
+        
+        if len(x_clean) < 4:
+            # Fallback for extreme edge cases
+            from scipy.interpolate import PchipInterpolator
+            cs = PchipInterpolator(x_clean, y_clean)
+            self._frozen_spline_y = cs(x_full)
+        else:
+            # 1. Find the index of the knot closest to the action
+            idx = np.argmin(np.abs(x_clean - center_x))
+            
+            # 2. Define the neighborhood (i-1 to i+1)
+            start_idx = max(0, idx - 1)
+            end_idx = min(len(x_clean) - 1, idx + 1)
+            
+            local_x = x_clean[start_idx : end_idx + 1]
+            local_y = y_clean[start_idx : end_idx + 1]
+            
+            # 3. Create a purely local PCHIP
+            from scipy.interpolate import PchipInterpolator
+            cs_local = PchipInterpolator(local_x, local_y)
+            
+            # 4. Paste the patch into the master frozen array
+            mask = (x_full >= local_x[0]) & (x_full <= local_x[-1])
+            self._frozen_spline_y[mask] = cs_local(x_full[mask])
+            
+        # Update the visual green line
+        self.spline_artist.set_data(x_full, self._frozen_spline_y)
 
     def on_background_draw(self, event):
         """
@@ -2304,100 +2250,61 @@ class SpectrumPlotWidget(QWidget):
         self._stride_backup_x = None
         self._stride_backup_y = None
 
-    def update_continuum_stride(self, stride):
+    def update_continuum_stride(self, new_stride):
         """
-        Resamples the continuum using the Backup (if dragging) or Current (if single step).
+        Resamples visual knots along the purely frozen master curve.
         """
         if not self._edit_mode_active: return
-
-        # 1. Choose Source Data
-        # If we are dragging the slider, use the High-Fidelity Backup.
-        # If this is a single programmatic update, use the current knots.
-        if getattr(self, '_stride_backup_x', None) is not None:
-            src_x, src_y = self._stride_backup_x, self._stride_backup_y
-        else:
-            src_x, src_y = self._get_sanitized_knots()
         
-        if len(src_x) < 2: return 
+        # 1. Keep anchors
+        x_live, _, a_live = self._get_sanitized_knots_with_anchors()
+        x_anchors = x_live[a_live]
         
-        from scipy.interpolate import CubicSpline
-        try:
-            # Create spline from the SOURCE (Original shape)
-            source_spline = CubicSpline(src_x, src_y)
-        except Exception:
-            return
-
-        # 2. Calculate New Grid (same as before)
-        if not self.main_window.active_history: return
+        # 2. Generate new floating X grid
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
+        new_indices = self._generate_velocity_knots(x_full, float(new_stride))
+        x_new_floating = x_full[new_indices]
         
-        indices = self._generate_velocity_knots(x_full, float(stride))
-            
-        new_knots_x = x_full[indices]
+        # 3. Merge X
+        x_merged = np.unique(np.concatenate([x_anchors, x_new_floating]))
         
-        # 3. Project Original Shape onto New Grid
-        new_knots_y = source_spline(new_knots_x)
+        # 4. SAMPLE DIRECTLY FROM THE FROZEN CURVE
+        y_merged = np.interp(x_merged, x_full, self._frozen_spline_y)
         
-        # 4. Apply Update
-        self._knots_x = new_knots_x
-        self._knots_y = new_knots_y
+        # 5. Restore flags
+        self._knots_x = x_merged
+        self._knots_y = y_merged
+        self._is_anchor = np.isin(x_merged, x_anchors)
         
-        # 5. Render
         self.knot_artist.set_data(self._knots_x, self._knots_y)
-        self.update_spline_preview()
         
-        if hasattr(self, 'background') and self.background:
-            self.canvas.restore_region(self.background)
-            self.canvas.axes.draw_artist(self.knot_artist)
-            self.canvas.axes.draw_artist(self.spline_artist)
-            self.canvas.blit(self.canvas.axes.bbox)
-        else:
-            self.canvas.draw()
+        # Notice we DO NOT call _apply_local_patch here. The green line stays perfectly frozen.
+        self.canvas.draw_idle()
 
-    def update_spline_preview(self):
-        if not self._edit_mode_active: return
+    def _get_sanitized_knots_with_anchors(self):
+        if len(self._knots_x) == 0: return np.array([]), np.array([]), np.array([])
         
-        # 1. Get Clean Data
-        # We do NOT modify self._knots_x in place here, so the 'index' of the knot 
-        # you are dragging remains valid even if you cross other knots.
-        x_clean, y_clean = self._get_sanitized_knots()
-        
-        if len(x_clean) < 2: return
-
-        # 2. Calculate Spline on Full Grid
-        spec = self.main_window.active_history.current_state.spec
-        x_full = spec.x.value
-        
-        from scipy.interpolate import CubicSpline
-        try:
-            cs = CubicSpline(x_clean, y_clean, bc_type='natural')
-            spline_y = cs(x_full)
-            self.spline_artist.set_data(x_full, spline_y)
-        except Exception as e:
-            print(f"Spline error: {e}")
-
-    def _get_sanitized_knots(self):
-        """Returns sorted, unique copies of knots for spline calculation."""
-        if len(self._knots_x) == 0: return np.array([]), np.array([])
-        
-        # 1. Sort by X
         sorter = np.argsort(self._knots_x)
         x_s = self._knots_x[sorter]
         y_s = self._knots_y[sorter]
+        a_s = self._is_anchor[sorter]
         
-        # 2. Remove Duplicates (The "Merge" effect)
-        # np.unique returns sorted unique elements. 
-        # We keep the first occurrence of any duplicate x.
         x_u, unique_indices = np.unique(x_s, return_index=True)
         y_u = y_s[unique_indices]
+        a_u = a_s[unique_indices]
         
+        return x_u, y_u, a_u
+
+    def _get_sanitized_knots(self):
+        """Returns sorted, unique copies of knots for spline calculation."""
+        x_u, y_u, _ = self._get_sanitized_knots_with_anchors()
         return x_u, y_u
     
     def reset_continuum_to_original(self, stride_kms):
         """
-        Discards all manual edits and re-generates knots from the 
-        underlying session data (spec.cont or spec.y).
+        Discards all manual edits and re-generates the frozen master curve 
+        from the underlying session data (spec.cont or spec.y).
         """
         if not self._edit_mode_active or not self.main_window.active_history: 
             return
@@ -2409,7 +2316,6 @@ class SpectrumPlotWidget(QWidget):
         self._stride_backup_y = None
 
         # 2. Retrieve the SOURCE data (Original State)
-        # This mirrors the logic in 'start_continuum_edit'
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
         if spec.cont is not None:
@@ -2420,13 +2326,17 @@ class SpectrumPlotWidget(QWidget):
         # 3. Generate fresh indices based on the requested stride
         indices = self._generate_velocity_knots(x_full, float(stride_kms))
         
-        # 4. Overwrite current knots
+        # 4. Overwrite current knots and reset anchors
         self._knots_x = x_full[indices]
         self._knots_y = y_source[indices]
+        self._is_anchor = np.zeros(len(self._knots_x), dtype=bool) 
         
-        # 5. Update Visuals
+        # --- FIX: Regenerate frozen master curve EXACTLY from source ---
+        self._frozen_spline_y = np.copy(y_source)
+        
+        # 6. Update Visuals
         self.knot_artist.set_data(self._knots_x, self._knots_y)
-        self.update_spline_preview()
+        self.spline_artist.set_data(x_full, self._frozen_spline_y)
         
         # Force redraw
         self.canvas.draw_idle()

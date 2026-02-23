@@ -448,12 +448,72 @@ class MainWindowV2(QMainWindow):
         # Column 1: Boxes (Stretch)
         unified_grid.setColumnStretch(1, 1)
 
+                # Helper function to create collapsible group boxes
+        def create_collapsible_group(title, is_collapsed=False):
+            group = QGroupBox(title)
+            group.setCheckable(True)
+            group.setChecked(not is_collapsed)
+            group.setStyleSheet("""
+                QGroupBox {
+                    font-weight: bold;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    margin-top: 8px;
+                    padding-top: 8px;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 8px;
+                    padding: 0 3px;
+                }
+            """)
+            
+            def toggle_content(checked):
+                if group.layout():
+                    for i in range(group.layout().count()):
+                        item = group.layout().itemAt(i)
+                        w = item.widget()
+                        if w: w.setVisible(checked)
+                        l = item.layout()
+                        if l:
+                            # Recursively hide sub-layouts
+                            for j in range(l.count()):
+                                sub_item = l.itemAt(j)
+                                sub_w = sub_item.widget()
+                                if sub_w: sub_w.setVisible(checked)
+                
+                # Adjust fixed height to collapse/expand
+                if not checked:
+                    # Keep just enough for the title (roughly 25-30px)
+                    group.setMinimumHeight(30)
+                    group.setMaximumHeight(30)
+                else:
+                    group.setMinimumHeight(0)
+                    group.setMaximumHeight(16777215) # Default QWIDGETSIZE_MAX
+            
+            group.toggled.connect(toggle_content)
+            return group
+
+        # Helper to apply the initial collapse state after layout is set
+        def apply_initial_collapse(group):
+            # Call the internal toggle_content logic by triggering the signal
+            # or calling the logic directly if we can access it.
+            # Easiest way: force a toggle event
+            checked = group.isChecked()
+            # We need to manually trigger the logic because the signal might not fire 
+            # if we set the same value, or it might have fired before layout was set.
+            # Let's find the slot
+            group.toggled.emit(checked)
+
         # -- SECTION 1: Axis Limits --
-        # Header (Span 2 columns)
-        header_limits = QLabel("<b>Axis Limits:</b>")
-        # Add some top margin to separate from previous section
-        header_limits.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_limits, 0, 0, 1, 2)
+        # Use a simple layout without a GroupBox border to keep it clean
+        limits_header = QLabel("<b>Axis Limits</b>")
+        limits_header.setStyleSheet("margin-top: 10px; margin-bottom: 2px;")
+        sidebar_layout.addWidget(limits_header)
+        
+        limits_layout = QGridLayout()
+        limits_layout.setSpacing(5)
+        limits_layout.setContentsMargins(10, 0, 10, 0) # Indent slightly
 
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
@@ -469,26 +529,31 @@ class MainWindowV2(QMainWindow):
         self.ymin_input.editingFinished.connect(self._on_set_custom_limits)
         self.ymax_input.editingFinished.connect(self._on_set_custom_limits)
         
-        # Rows 1-4
-        self.lbl_lmin = QLabel("λ Min:")
-        self.lbl_lmax = QLabel("λ Max:")
-        self.lbl_fmin = QLabel("F Min:")
-        self.lbl_fmax = QLabel("F Max:")
-
-        unified_grid.addWidget(self.lbl_lmin, 1, 0)
-        unified_grid.addWidget(self.xmin_input, 1, 1)
-        unified_grid.addWidget(self.lbl_lmax, 2, 0)
-        unified_grid.addWidget(self.xmax_input, 2, 1)
-        unified_grid.addWidget(self.lbl_fmin, 3, 0)
-        unified_grid.addWidget(self.ymin_input, 3, 1)
-        unified_grid.addWidget(self.lbl_fmax, 4, 0)
-        unified_grid.addWidget(self.ymax_input, 4, 1)
+        # λ and F on same rows
+        lbl_lambda = QLabel("λ:")
+        lambda_layout = QHBoxLayout()
+        lambda_layout.setSpacing(3)
+        lambda_layout.addWidget(self.xmin_input)
+        lambda_layout.addWidget(self.xmax_input)
+        
+        limits_layout.addWidget(lbl_lambda, 0, 0)
+        limits_layout.addLayout(lambda_layout, 0, 1)
+        
+        lbl_flux = QLabel("F:")
+        flux_layout = QHBoxLayout()
+        flux_layout.setSpacing(3)
+        flux_layout.addWidget(self.ymin_input)
+        flux_layout.addWidget(self.ymax_input)
+        
+        limits_layout.addWidget(lbl_flux, 1, 0)
+        limits_layout.addLayout(flux_layout, 1, 1)
+        
+        sidebar_layout.addLayout(limits_layout)
 
         # -- SECTION 2: Redshift Cursor --
-        # Header (Span 2 columns)
-        header_cursor = QLabel("<b>Redshift Cursor:</b>")
-        header_cursor.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_cursor, 5, 0, 1, 2)
+        cursor_group = create_collapsible_group("Redshift Cursor", is_collapsed=True)
+        cursor_layout = QGridLayout()
+        cursor_layout.setSpacing(5)
 
         self.cursor_series_input = _expand_field(QLineEdit("Ly_a"))
         self.cursor_z_input = _expand_field(QLineEdit("0.0"))
@@ -497,69 +562,35 @@ class MainWindowV2(QMainWindow):
         z_validator.setNotation(QDoubleValidator.StandardNotation)
         self.cursor_z_input.setValidator(z_validator)
 
-        # Rows 6-7
-        unified_grid.addWidget(QLabel("Trans.:"), 6, 0)
-        unified_grid.addWidget(self.cursor_series_input, 6, 1)
-        unified_grid.addWidget(QLabel("Redshift:"), 7, 0)
-        unified_grid.addWidget(self.cursor_z_input, 7, 1)
-        
-        # Add the Unified Grid to the sidebar
-        #sidebar_layout.addLayout(unified_grid)
+        cursor_layout.addWidget(QLabel("Trans.:"), 0, 0)
+        cursor_layout.addWidget(self.cursor_series_input, 0, 1)
+        cursor_layout.addWidget(QLabel("Redshift:"), 1, 0)
+        cursor_layout.addWidget(self.cursor_z_input, 1, 1)
 
-        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines"); self.cursor_show_checkbox.setChecked(False)
-        # Add some margin to the checkbox
-        self.cursor_show_checkbox.setStyleSheet("margin-top: 5px;")
-        unified_grid.addWidget(self.cursor_show_checkbox, 8, 0, 1, 2)
+        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines")
+        self.cursor_show_checkbox.setChecked(False)
+        cursor_layout.addWidget(self.cursor_show_checkbox, 2, 0, 1, 2)
 
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        # Continuum Tools
-        header_continuum = QLabel("<b>Edit Continuum:</b>")
-        # Add some top margin to separate from previous section
-        header_continuum.setStyleSheet("margin-top: 10px; margin-bottom: 4px;")
-        unified_grid.addWidget(header_continuum, 9, 0, 1, 2)
+        cursor_group.setLayout(cursor_layout)
+        sidebar_layout.addWidget(cursor_group)
+        apply_initial_collapse(cursor_group)
 
-        # ROW 10: Slider (Spanning both columns for better control)
-        self.stride_slider = QSlider(Qt.Horizontal)
-        self.stride_slider.setMinimum(0)
-        self.stride_slider.setMaximum(100)
-        self.stride_slider.setEnabled(False)
-        self.stride_slider.valueChanged.connect(self._on_stride_change)
-        self.stride_slider.sliderPressed.connect(self._on_stride_slider_pressed)
-        self.stride_slider.sliderReleased.connect(self._on_stride_slider_released)
-        self.stride_slider.setToolTip("Adjust density. Drag to smooth/roughen.")
-        self._set_slider_from_stride(500)
-        
-        unified_grid.addWidget(self.stride_slider, 10, 0, 1, 2) # Span 2 columns
+        # -- SECTION 4: Edit Continuum (Collapsible, hidden by default) --
+        continuum_group = create_collapsible_group("Edit Continuum", is_collapsed=True)
+        continuum_layout = QGridLayout()
+        continuum_layout.setSpacing(5)
 
-        # ROW 11: Spacing Label + Entry
-        self.lbl_spacing = QLabel("Spacing:")
-        self.lbl_spacing.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        unified_grid.addWidget(self.lbl_spacing, 11, 0, 1, 1)
-
-        self.stride_entry = QLineEdit()
-        stride_validator = QDoubleValidator(0.0, 20000.0, 0)
-        stride_validator.setLocale(QLocale.C)
-        stride_validator.setNotation(QDoubleValidator.StandardNotation)
-        self.stride_entry.setValidator(stride_validator)
-        self.stride_entry.setAlignment(Qt.AlignLeft)
-        self.stride_entry.setEnabled(False)
-        self.stride_entry.setToolTip("Enter spacing in km/s")
-        self.stride_entry.editingFinished.connect(self._on_stride_text_changed)
-        
-        unified_grid.addWidget(self.stride_entry, 11, 1, 1, 1)
-
-        # ROW 12: Buttons (Start/Save and Reset) inside a sub-layout for equal sizing
+        # Buttons first
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(10) # Gap between buttons
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.setSpacing(5)
 
         self.edit_cont_button = QPushButton("Start")
         self.edit_cont_button.clicked.connect(self._toggle_continuum_editor)
-        # SizePolicy: Expanding allows them to share available space equally
         self.edit_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         button_layout.addWidget(self.edit_cont_button)
 
@@ -570,11 +601,65 @@ class MainWindowV2(QMainWindow):
         self.reset_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         button_layout.addWidget(self.reset_cont_button)
 
-        # Add the sub-layout to the main grid, spanning both columns
-        unified_grid.addLayout(button_layout, 12, 0, 1, 2)
+        continuum_layout.addLayout(button_layout, 0, 0, 1, 2)
 
-        # Add the group to your main sidebar layout
-        sidebar_layout.addLayout(unified_grid)
+        # Slider
+        self.stride_slider = QSlider(Qt.Horizontal)
+        self.stride_slider.setMinimum(0)
+        self.stride_slider.setMaximum(100)
+        self.stride_slider.setEnabled(False)
+        self.stride_slider.valueChanged.connect(self._on_stride_change)
+        self.stride_slider.sliderPressed.connect(self._on_stride_slider_pressed)
+        self.stride_slider.sliderReleased.connect(self._on_stride_slider_released)
+        self.stride_slider.setToolTip("Adjust density. Drag to smooth/roughen.")
+        self._set_slider_from_stride(1500)
+        
+        continuum_layout.addWidget(self.stride_slider, 1, 0, 1, 2)
+
+        # Spacing
+        self.lbl_spacing = QLabel("Spacing:")
+        continuum_layout.addWidget(self.lbl_spacing, 2, 0)
+        
+        self.stride_entry = QLineEdit()
+        stride_validator = QDoubleValidator(0.0, 20000.0, 0)
+        stride_validator.setLocale(QLocale.C)
+        stride_validator.setNotation(QDoubleValidator.StandardNotation)
+        self.stride_entry.setValidator(stride_validator)
+        self.stride_entry.setAlignment(Qt.AlignLeft)
+        self.stride_entry.setEnabled(False)
+        self.stride_entry.setToolTip("Enter spacing in km/s")
+        self.stride_entry.editingFinished.connect(self._on_stride_text_changed)
+        
+        continuum_layout.addWidget(self.stride_entry, 2, 1)
+
+        # --- Edit Hints Label (Row 3, spanning 2 columns) ---
+        # 1. Create a transparent container to shield the label from the collapse script
+        self.edit_hints_container = QWidget()
+        hints_layout = QVBoxLayout(self.edit_hints_container)
+        hints_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # 2. Create the label itself
+        self.edit_hints_label = QLabel(
+            "<div style='font-size: 11pt;'>"
+            "<p style='margin: 0px 0px 6px 0px;'><b>Controls:</b></p>"
+            "<p style='margin: 0px 0px 2px 0px;'>• <b>Shift + Click:</b> Add knot</p>"
+            "<p style='margin: 0px 0px 2px 0px;'>• <b>Right-Click:</b> Remove knot</p>"
+            "<p style='margin: 0px 0px 0px 0px;'>• <b>Drag:</b> Move knot<br>"
+            "&nbsp;&nbsp;<i>(Stay within neighboring knots)</i></p>"
+            "</div>"
+        )
+        self.edit_hints_label.setWordWrap(True)
+        self.edit_hints_label.setVisible(False) # Hidden by default
+        
+        # 3. Put the label in the container
+        hints_layout.addWidget(self.edit_hints_label)
+
+        # 4. Add the CONTAINER to the main layout
+        continuum_layout.addWidget(self.edit_hints_container, 3, 0, 1, 2)
+
+        continuum_group.setLayout(continuum_layout)
+        sidebar_layout.addWidget(continuum_group)
+        apply_initial_collapse(continuum_group)
 
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         sidebar_layout.addItem(spacer)
@@ -621,16 +706,17 @@ class MainWindowV2(QMainWindow):
         self.plot_controls_collapse_button.setVisible(False) # Start hidden
 
     def _trigger_replot(self):
-        """Slot to be called when any plot toggle checkbox changes state."""
-        if self.plot_viewer: # Check if plot viewer exists
-            # ** 1. Get the currently active session state **
-            session_state = None
-            if self.active_history:
-                session_state = self.active_history.current_state
-            
-            # ** 2. Pass the state to plot_spectrum **
-            # plot_spectrum itself handles the None case
-            self.plot_viewer.plot_spectrum(session_state=session_state)
+        """Slot called when plot toggles or cursor changes."""
+        if self.plot_viewer:
+            # Check if we are currently in manual edit mode
+            if getattr(self.plot_viewer, '_edit_mode_active', False):
+                # Tell the plot viewer to refresh using the live buffer
+                # instead of the session's static 'cont' column.
+                self.plot_viewer.refresh_edit_layer()
+            else:
+                # Standard behavior: draw from the session state
+                session_state = self.active_history.current_state if self.active_history else None
+                self.plot_viewer.plot_spectrum(session_state=session_state)
 
     def _update_cursor_and_replot(self):
         """Slot called when cursor series or redshift changes."""
@@ -1675,6 +1761,8 @@ class MainWindowV2(QMainWindow):
             # --- STARTING ---
             if not self.active_history: return
 
+            self.edit_hints_label.setVisible(True)
+
             # Check if continuum exists
             spec = self.active_history.current_state.spec
             # Check if .cont is None or (if it's a Column) has no values
@@ -1721,6 +1809,7 @@ class MainWindowV2(QMainWindow):
             self.stride_slider.setEnabled(False)
             self.stride_entry.setEnabled(False)
             self.reset_cont_button.setEnabled(False)
+            self.edit_hints_label.setVisible(False)
             self.stride_entry.clear()
 
             # Clear the saved default
@@ -1837,7 +1926,7 @@ class MainWindowV2(QMainWindow):
             return
 
         # 1. Retrieve the default stride
-        default_stride = getattr(self, '_default_continuum_stride', 500.0)
+        default_stride = getattr(self, '_default_continuum_stride', 1500.0)
         
         # 2. Block signals to prevent intermediate updates (the "flicker")
         self.stride_slider.blockSignals(True)

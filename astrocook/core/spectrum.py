@@ -7,7 +7,7 @@ import logging
 import numexpr as ne
 import numpy as np
 import re
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import PchipInterpolator
 from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -2044,7 +2044,7 @@ class SpectrumV2:
             knots_y_arr = np.array(knots_y)
             sorter = np.argsort(knots_x_arr)
             
-            cs = CubicSpline(knots_x_arr[sorter], knots_y_arr[sorter])
+            cs = PchipInterpolator(knots_x_arr[sorter], knots_y_arr[sorter])
             
             # Evaluate on current grid
             x_axis = self.x.value

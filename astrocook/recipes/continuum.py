@@ -1,7 +1,6 @@
 import astropy.units as au
 import logging
 import numpy as np
-from scipy.interpolate import CubicSpline
 from typing import TYPE_CHECKING, Optional
 
 from astrocook.core.structures import HistoryLogV2, LogEntryV2

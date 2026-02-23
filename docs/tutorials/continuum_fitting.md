@@ -56,21 +56,24 @@ Manual editing modifies the session in place. If you want to compare your manual
 
 ### Modifying Knots
 
-- **Move**: Left-click and drag a knot to adjust the continuum level at that wavelength.
+The continuum is treated as a **frozen master curve**. The visible knots act as handles to locally bend this curve. 
 
-- **Add**: Right-click anywhere on the plot to add a new knot.
+- **Move**: `Left-click` and drag a knot to adjust the continuum level locally. 
+  *(Warning: To maintain mathematical stability, do not drag a knot horizontally past its immediate left or right neighbors).*
+- **Add**: `Shift + Left-click` anywhere on the plot. A new knot will be created at that X-coordinate, perfectly snapped to the existing curve.
+- **Remove**: `Right-click` on an existing knot to delete it. 
 
-- **Remove**: Right-click on an existing knot to delete it.
-
+When you add, move, or remove a knot, the shape of the continuum is only recalculated in the immediate vicinity of that action. The rest of the curve remains safely locked in place. 
 ### Controlling Stiffness (Slider & Spacing)
 
-You can adjust the **knot density** using the slider or the **Spacing** text box.
+You can adjust the **knot density** (the number of visual handles) using the slider or the **Spacing** text box.
 
-- **Slider**: Drag left to increase density (closer knots) or right to decrease it (smoother curve).
+- **Slider**: Drag left to increase density (more knots) or right to decrease it (fewer knots).
 - **Spacing Box**: Type a precise velocity spacing (in km/s) and press Enter.
 
 :::{important}
-Changing the spacing may affect the overall shape of the continuum. If you want to discard your manual moves and revert to the original continuum shape, click the **Reset** button (next to *Save*). This restores the knots to their default distribution based on the saved continuum.
+Changing the spacing **does not change the shape** of your continuum. The slider simply resamples the frozen curve, placing new knots along its existing path. 
+If you want to discard all your manual edits and generate a completely fresh continuum from the underlying data, click the **Reset** button.
 :::
 
 ```{image} ../_static/continuum_manual_edit.png
