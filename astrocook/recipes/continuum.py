@@ -20,7 +20,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
             {"name": "fudge", "type": str, "default": "auto", "doc": "Fudge factor. Use 'auto' or a float (e.g., '1.0')."}, 
             {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
-            {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
+            {"name": "template", "type": bool, "default": False, "doc": "Use QSO template to trace Lyman-alpha emission"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "continuum_cb.html#estimate_auto"
@@ -108,7 +108,7 @@ class RecipeContinuumV2:
             Standard deviation (km/s) for the final Gaussian smoothing.
             Defaults to ``'500.0'``.
         template : str, optional
-            If ``'True'``, use a QSO template (Not Implemented). Defaults to ``'False'``.
+            If ``'True'``, use a QSO template. Defaults to ``'False'``.
         renorm_model : str, optional
             If ``'True'``, re-normalize the 'model' column to match the new continuum.
             Defaults to ``'True'``.
@@ -154,7 +154,8 @@ class RecipeContinuumV2:
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
                 mask_col='abs_mask',
-                renorm_model=renorm_model_b
+                renorm_model=renorm_model_b,
+                template=template_b
             )
             
             # 3. Return the final new state
@@ -219,7 +220,7 @@ class RecipeContinuumV2:
             return 0
 
     def fit_continuum(self, fudge: str = 'auto', smooth_std: str = '500.0', 
-                      mask_col: str = 'abs_mask', renorm_model: str = 'True') -> 'SessionV2':
+                      mask_col: str = 'abs_mask', renorm_model: str = 'True', template: str = 'False') -> 'SessionV2':
         """
         Fit continuum to mask (V1 logic).
 
@@ -238,6 +239,8 @@ class RecipeContinuumV2:
             Name of the mask column to use (True=Absorbed). Defaults to ``'abs_mask'``.
         renorm_model : str, optional
             If ``'True'``, re-normalize the 'model' column. Defaults to ``'True'``.
+        template : str, optional
+            If ``'True'``, use a QSO template. Defaults to ``'False'``.
 
         Returns
         -------
@@ -248,6 +251,7 @@ class RecipeContinuumV2:
         try:
             smooth_std_f = float(smooth_std)
             renorm_model_b = str(renorm_model) == 'True'
+            template_b = str(template) == 'True'
             
             # Allow 'auto' or parse float
             if fudge.lower() == 'auto':
@@ -264,7 +268,8 @@ class RecipeContinuumV2:
                 fudge=fudge_arg,
                 smooth_std_kms=smooth_std_f,
                 mask_col=mask_col,
-                renorm_model=renorm_model_b 
+                renorm_model=renorm_model_b ,
+                template=template_b
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:

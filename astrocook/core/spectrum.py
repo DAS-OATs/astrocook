@@ -1,3 +1,5 @@
+from tempfile import template
+
 import astropy.constants as const
 import astropy.units as au
 from copy import deepcopy
@@ -1852,7 +1854,8 @@ class SpectrumV2:
         return SpectrumV2(data=new_data, history=self.history + [f"Found absorbed (kappa={kappa})"])
         
     def fit_continuum(self, fudge: Union[float, str], smooth_std_kms: float, 
-                      mask_col: str = 'abs_mask', renorm_model: bool = False) -> 'SpectrumV2':
+                      mask_col: str = 'abs_mask', renorm_model: bool = False,
+                      template: bool = False) -> 'SpectrumV2':
         """
         Fit a continuum to the unabsorbed regions.
 
@@ -1868,6 +1871,8 @@ class SpectrumV2:
             Name of the mask column to use. Defaults to ``'abs_mask'``.
         renorm_model : bool, optional
             If True, re-normalizes the 'model' column to the new continuum.
+        template : bool, optional
+            If True, uses a QSO template to trace Lyman-alpha emission.
 
         Returns
         -------
@@ -1890,13 +1895,37 @@ class SpectrumV2:
         telluric_col = self._data.aux_cols.get('telluric_model')
         telluric_vals = telluric_col.values if telluric_col is not None else None
 
+        y_fit = self._data.y.values.copy()
+        y_interp = None
+        
+        # --- NEW: Apply QSO Template Normalization ---
+        if template:
+            try:
+                from astrocook.legacy.vars import qso_composite
+                from scipy.interpolate import interp1d
+                
+                # qso_composite['x'] is in Angstroms. Convert to nm and shift to observed frame.
+                x_template_nm = (qso_composite['x'] / 10.0) * (1.0 + self._data.z_em)
+                y_template = qso_composite['y']
+                
+                # Interpolate template onto the current spectrum's grid (in nm)
+                interp_fn = interp1d(x_template_nm, y_template, bounds_error=False, fill_value=1.0)
+                y_interp = interp_fn(self.x.to_value(au.nm))
+                
+                # Normalize the working flux to flatten the emission peak
+                valid = y_interp > 0
+                y_fit[valid] = y_fit[valid] / y_interp[valid]
+                logging.info("Applied QSO template for continuum fitting.")
+            except ImportError:
+                logging.warning("Template requested but qso_composite not found in legacy.vars.")
+                template = False
+        # ---------------------------------------------
+
         # 2. Step A: Interpolate (Raw Guess)
-        # Note: Ideally we would fit (y / telluric), but standard practice 
-        # often fits y directly (assuming tellurics are masked).
         try:
             cont_raw = interpolate_continuum_mask(
                 x=self._data.x.values,
-                y=self._data.y.values,
+                y=y_fit, # Use flattened flux
                 mask_abs=mask_abs
             )
         except ValueError as e:
@@ -1906,9 +1935,8 @@ class SpectrumV2:
         # 3. Step B: Auto-Fudge
         applied_fudge = 1.0
         if isinstance(fudge, str) and fudge.lower() == 'auto':
-            # Calculate fudge using the raw guess
             applied_fudge = compute_auto_fudge(
-                y=self._data.y.values,
+                y=y_fit, # Use flattened flux
                 mask_abs=mask_abs,
                 cont_model=cont_raw
             )
@@ -1922,6 +1950,7 @@ class SpectrumV2:
         cont_fudged = cont_raw * applied_fudge
         
         # 4. Step C: Smooth
+        # We smooth the FLATTENED continuum to avoid smearing the template's Ly-a peak
         if smooth_std_kms > 0:
             cont_intrinsic = smooth_spectrum(
                 x=self._data.x.quantity,
@@ -1932,35 +1961,33 @@ class SpectrumV2:
         else:
             cont_intrinsic = cont_fudged
             
+        # --- NEW: Restore the Emission Peak ---
+        if template and y_interp is not None:
+            cont_intrinsic = cont_intrinsic * y_interp
+        # --------------------------------------
+        
         # 5. Build New Auxiliary Columns
         new_aux_cols = deepcopy(self._data.aux_cols)
         
         # [CRITICAL] Store the Intrinsic Continuum
-        # Since we added the .norm property, 'cont' should remain clean of tellurics
-        # so that .norm = cont * telluric works correctly.
         new_aux_cols['cont'] = DataColumnV2(
             values=cont_intrinsic,
             unit=self._data.y.unit, 
-            description=f"Continuum (smooth={smooth_std_kms} km/s, fudge={applied_fudge:.3f})"
+            description=f"Continuum (smooth={smooth_std_kms} km/s, fudge={applied_fudge:.3f}, template={template})"
         )
         
-        # 6. Step D: Renormalize Model (Corrected Logic)
+        # 6. Step D: Renormalize Model
         old_cont_col = self._data.aux_cols.get('cont')
         old_model_col = self._data.aux_cols.get('model')
 
         if renorm_model and old_cont_col is not None and old_model_col is not None:
-            # Construct the FULL Normalization vectors (Cont * Telluric)
-            # This ensures we preserve the optical depth (e^-tau) correctly.
-            
             old_norm_vals = old_cont_col.values
             new_norm_vals = cont_intrinsic
             
             if telluric_vals is not None:
-                # Apply telluric to both old and new baselines
                 old_norm_vals = old_norm_vals * telluric_vals
                 new_norm_vals = new_norm_vals * telluric_vals
 
-            # Pass the *Effective Norms* to the helper
             new_model_col = self._renormalize_model(
                 old_cont_vals=old_norm_vals,
                 new_cont_vals=new_norm_vals,
@@ -1974,7 +2001,7 @@ class SpectrumV2:
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
         # 8. Return New SpectrumV2
-        hist_entry = f"Fitted continuum (fudge={applied_fudge:.3f}, smooth={smooth_std_kms} km/s)"
+        hist_entry = f"Fitted continuum (fudge={applied_fudge:.3f}, smooth={smooth_std_kms} km/s, template={template})"
         return SpectrumV2(data=new_data, history=self.history + [hist_entry])
     
 
