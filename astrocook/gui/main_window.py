@@ -517,7 +517,7 @@ class MainWindowV2(QMainWindow):
 
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
-        validator.setNotation(QDoubleValidator.StandardNotation)
+        validator.setNotation(QDoubleValidator.ScientificNotation)
 
         self.xmin_input = _expand_field(QLineEdit("0.0")); self.xmin_input.setValidator(validator)
         self.xmax_input = _expand_field(QLineEdit("1.0")); self.xmax_input.setValidator(validator)
