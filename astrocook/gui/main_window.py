@@ -573,7 +573,7 @@ class MainWindowV2(QMainWindow):
 
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
-        self.cursor_show_checkbox.stateChanged.connect(self._trigger_replot) 
+        self.cursor_show_checkbox.stateChanged.connect(self._on_cursor_checkbox_toggled)
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
         cursor_group.setLayout(cursor_layout)
@@ -724,6 +724,48 @@ class MainWindowV2(QMainWindow):
         # (e.g., check if series exists in xem_d)
         if self.cursor_show_checkbox.isChecked(): # Only replot if cursor is visible
             self._trigger_replot()
+
+    def _on_cursor_checkbox_toggled(self, checked):
+        """Intercepts the redshift cursor toggle to prevent conflicts with continuum editing."""
+        if checked and hasattr(self, 'plot_viewer') and getattr(self.plot_viewer, '_edit_mode_active', False):
+            # Prompt the user to save or discard continuum edits
+            ret = self._show_custom_message(
+                title="Continuum Edit Active",
+                header="Save Continuum Edits?",
+                text="You must close the Continuum Editor to use the Redshift Cursor.<br><br>Do you want to save your current continuum edits?",
+                buttons=QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+                default_btn=QMessageBox.StandardButton.Save
+            )
+            
+            if ret == QMessageBox.StandardButton.Save:
+                self._toggle_continuum_editor() # This saves and turns off edit mode
+                self._trigger_replot()
+            elif ret == QMessageBox.StandardButton.Discard:
+                # Cancel edit without saving
+                self.plot_viewer.stop_continuum_edit(save=False)
+                self._reset_continuum_ui()
+                self._trigger_replot()
+            else: # Cancel
+                # Revert the checkbox visually without triggering signals
+                self.cursor_show_checkbox.blockSignals(True)
+                self.cursor_show_checkbox.setChecked(False)
+                self.cursor_show_checkbox.blockSignals(False)
+                return
+        else:
+            # Standard behavior
+            self._trigger_replot()
+    
+    def _reset_continuum_ui(self):
+        """Helper to reset the continuum editor panel to its default visual state."""
+        self.edit_cont_button.setText("Start")
+        self.edit_cont_button.setStyleSheet("") 
+        self.stride_slider.setEnabled(False)
+        self.stride_entry.setEnabled(False)
+        self.reset_cont_button.setEnabled(False)
+        self.edit_hints_label.setVisible(False)
+        self.stride_entry.clear()
+        if hasattr(self, '_default_continuum_stride'):
+            del self._default_continuum_stride
 
     def _create_menubar(self):
         menu_bar = self.menuBar()
@@ -1761,6 +1803,19 @@ class MainWindowV2(QMainWindow):
             # --- STARTING ---
             if not self.active_history: return
 
+            # --- NEW: Force cursor off before taking background snapshot ---
+            if self.cursor_show_checkbox.isChecked():
+                self.cursor_show_checkbox.blockSignals(True)
+                self.cursor_show_checkbox.setChecked(False)
+                self.cursor_show_checkbox.blockSignals(False)
+                
+                # Erase cursor lines from Matplotlib so they aren't captured
+                if hasattr(self, 'plot_viewer'):
+                    for artist in self.plot_viewer.canvas.cursor_artists:
+                        try: artist.remove()
+                        except: pass
+                    self.plot_viewer.canvas.cursor_artists = []
+
             self.edit_hints_label.setVisible(True)
 
             # Check if continuum exists
@@ -1804,13 +1859,7 @@ class MainWindowV2(QMainWindow):
             knots_x, knots_y = self.plot_viewer.stop_continuum_edit(save=True)
 
             # UI Reset
-            self.edit_cont_button.setText("Start")
-            self.edit_cont_button.setStyleSheet("") 
-            self.stride_slider.setEnabled(False)
-            self.stride_entry.setEnabled(False)
-            self.reset_cont_button.setEnabled(False)
-            self.edit_hints_label.setVisible(False)
-            self.stride_entry.clear()
+            self._reset_continuum_ui()
 
             # Clear the saved default
             if hasattr(self, '_default_continuum_stride'):
