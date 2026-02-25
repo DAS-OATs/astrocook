@@ -435,6 +435,7 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the computed column,
             or 0 on failure.
         """
+        target_col = target_col.strip()
         expression = expression.strip()
         if not expression:
             logging.error("Expression cannot be empty.")
@@ -479,6 +480,7 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the masked column,
             or 0 on failure.
         """
+        target_col = target_col.strip()
         expression = expression.strip()
         if not expression:
             logging.error("Expression cannot be empty.")
@@ -524,6 +526,7 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the smoothed column,
             or 0 on failure.
         """
+        target_col = target_col.strip()
         try:
             sigma_kms_f = float(sigma_kms)
             # --- ADD THIS LINE ---

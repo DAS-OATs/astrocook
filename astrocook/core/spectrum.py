@@ -604,6 +604,8 @@ class SpectrumV2:
         SpectrumV2
             A new instance with the updated column data.
         """
+        name = name.strip() # --- Enforce clean column names ---
+
         # 1. Determine Unit (inherit if not provided and col exists)
         target_unit = unit
         if target_unit is None:
@@ -668,14 +670,21 @@ class SpectrumV2:
         new_aux_cols = deepcopy(self._data.aux_cols)
         removed = []
         
+        # Create a mapping of stripped names to actual internal keys.
+        # This allows users to delete columns that were imported from ASCII 
+        # or manually created with accidental trailing whitespace.
+        key_map = {k.strip(): k for k in new_aux_cols.keys()}
+
         for col in col_names:
-            if col in new_aux_cols:
-                del new_aux_cols[col]
-                removed.append(col)
-            elif col in ['x', 'y', 'dy', 'xmin', 'xmax']:
-                logging.warning(f"Cannot delete core column '{col}'.")
+            clean_col = col.strip()
+            if clean_col in key_map:
+                actual_key = key_map[clean_col]
+                del new_aux_cols[actual_key]
+                removed.append(actual_key) # Log the exact key removed
+            elif clean_col in ['x', 'y', 'dy', 'xmin', 'xmax']:
+                logging.warning(f"Cannot delete core column '{clean_col}'.")
             else:
-                logging.warning(f"Column '{col}' not found.")
+                logging.warning(f"Column '{clean_col}' not found.")
         
         if not removed:
             return self
@@ -761,6 +770,7 @@ class SpectrumV2:
         SpectrumV2
             A new instance with the computed column.
         """
+        target_col = target_col.strip() # --- Enforce clean column names ---
         
         # 1. Get column data and the numexpr variable dict
         all_cols, local_dict = self._get_ne_contexts()
@@ -841,6 +851,7 @@ class SpectrumV2:
         SpectrumV2
             A new instance with the masked column.
         """
+        target_col = target_col.strip() # --- Enforce clean column names ---
         
         # 1. Get column data and the numexpr variable dict
         all_cols, local_dict = self._get_ne_contexts()
