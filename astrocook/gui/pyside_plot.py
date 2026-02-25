@@ -998,7 +998,7 @@ class SpectrumPlotWidget(QWidget):
                         color='black', lw=0.8, label='Normalization', rasterized=True
                     )
                 else:
-                    logging.warning("Normalization requested but spec.norm is None.")
+                    logging.debug("Normalization requested but spec.norm is None.")
 
             # 4. Plot Model
             if self.main_window.model_checkbox.isChecked():

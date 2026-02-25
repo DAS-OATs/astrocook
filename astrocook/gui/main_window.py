@@ -539,13 +539,13 @@ class MainWindowV2(QMainWindow):
         limits_layout.addWidget(lbl_lambda, 0, 0)
         limits_layout.addLayout(lambda_layout, 0, 1)
         
-        lbl_flux = QLabel("F:")
+        self.lbl_flux = QLabel("F:")
         flux_layout = QHBoxLayout()
         flux_layout.setSpacing(3)
         flux_layout.addWidget(self.ymin_input)
         flux_layout.addWidget(self.ymax_input)
         
-        limits_layout.addWidget(lbl_flux, 1, 0)
+        limits_layout.addWidget(self.lbl_flux, 1, 0)
         limits_layout.addLayout(flux_layout, 1, 1)
         
         sidebar_layout.addLayout(limits_layout)
@@ -1693,7 +1693,17 @@ class MainWindowV2(QMainWindow):
 
         # --- *** NEW: Update SNR Column Combo *** ---
         self._populate_snr_combo()
-            
+
+        # --- Safely uncheck Normalize F if no continuum exists ---
+        if is_valid and session_state_to_show and session_state_to_show.spec:
+            if session_state_to_show.spec.cont is None:
+                if self.norm_y_checkbox.isChecked():
+                    self.norm_y_checkbox.blockSignals(True)
+                    self.norm_y_checkbox.setChecked(False)
+                    if hasattr(self, 'lbl_flux'):
+                        self.lbl_flux.setText("F:")
+                    self.norm_y_checkbox.blockSignals(False)
+
         # Also set the visibility of the combo box
         #self.snr_col_combo.parentWidget().setVisible(self.snr_checkbox.isChecked())
 
@@ -1756,8 +1766,8 @@ class MainWindowV2(QMainWindow):
         sym = "ƒ" if is_norm else "F"
         
         # Update Labels
-        self.lbl_fmin.setText(f"{sym} Min:")
-        self.lbl_fmax.setText(f"{sym} Max:")
+        if hasattr(self, 'lbl_flux'):
+            self.lbl_flux.setText(f"{sym}:")
 
         # 3. Trigger the redraw
         self._trigger_replot()
@@ -3816,6 +3826,19 @@ class MainWindowV2(QMainWindow):
 
         # Enable Save action only if valid session
         if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
+
+        # --- Enable/Disable Normalize F based on continuum ---
+        if is_valid_session and self.active_history and self.active_history.current_state.spec:
+            has_cont = self.active_history.current_state.spec.cont is not None
+            if hasattr(self, 'norm_y_checkbox'):
+                self.norm_y_checkbox.setEnabled(has_cont)
+                if has_cont:
+                    self.norm_y_checkbox.setToolTip("Plot F / Continuum and set F limits.")
+                else:
+                    self.norm_y_checkbox.setToolTip("Requires a continuum to normalize F.")
+        else:
+            if hasattr(self, 'norm_y_checkbox'):
+                self.norm_y_checkbox.setEnabled(False)
 
         if is_valid_session:
             # --- State when a valid session IS loaded ---
