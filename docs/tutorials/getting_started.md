@@ -66,7 +66,7 @@ You can show or hide specific layers of the plot:
 ### Axis Controls
 
 - **Units**: You can switch the X-axis display between `nm`, `Angstrom`, and `micron` on the fly.
-- **Normalize F**: Plots the flux relative to the continuum (showing $f = F / F_\mathrm{cont}$).
+- **Normalize F**: Plots the flux relative to the continuum (showing $f = F / F_\mathrm{cont}$) (this control becomes active only when a `cont` column is present).
 - **Show SNR**: Plots the Signal-to-Noise Ratio instead of flux.
     * **Error Col.**: When showing SNR, you can select which column to use as the noise estimate (default is `dF`).
 - **Logarithmic $\lambda$**: Switches the X-axis to a logarithmic scale.
