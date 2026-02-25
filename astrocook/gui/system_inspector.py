@@ -1701,18 +1701,16 @@ class SystemInspector(QWidget):
             self._toggle_constraint(c.uuid, param, is_free, None, None)
 
     def _refit_list(self, comps):
-        """Iterates list and triggers fit_component."""
+        """Batch refit: Treats the entire selection as one fitting problem."""
         if self.main_window and comps:
             uuid_list = [c.uuid for c in comps]
             
-            # We use group_depth='2' (standard FoF) so that selecting a single line 
-            # pulls in its neighbors, just like 'fit_component'.
             self.main_window._on_recipe_requested(
                 "absorbers", "refit_all", 
                 {
                     "selected_uuids": uuid_list,
-                    "group_depth": "2",  # Enable neighbor grouping
-                    "max_nfev": "200"    # Standard fit iterations
+                    "group_depth": "2",  # Standard FoF depth to catch blends
+                    "max_nfev": "200"
                 }, 
                 {}
             )

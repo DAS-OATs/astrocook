@@ -3100,7 +3100,15 @@ class MainWindowV2(QMainWindow):
             # A. Create Detailed Dialog
             self.progress_dialog = RecipeProgressDialog(f"{recipe_name}", self)
 
-            if recipe_name in {'add_component', 'fit_component'}:
+            # Determine if we should show an indeterminate bar.
+            # 1. add_component and fit_component are always indeterminate.
+            # 2. refit_all is indeterminate ONLY if selected_uuids is provided (Consolidated mode).
+            is_indeterminate = recipe_name in {'add_component', 'fit_component'}
+            
+            if recipe_name == 'refit_all' and params.get('selected_uuids') is not None:
+                is_indeterminate = True
+
+            if is_indeterminate:
                 self.progress_dialog.progress_bar.setRange(0, 0) # Indeterminate mode
                 self.progress_dialog.progress_bar.setTextVisible(False) # Hide "%" text
 
