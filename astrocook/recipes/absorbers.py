@@ -221,6 +221,18 @@ ABSORBERS_RECIPES_SCHEMAS = {
         ],
         "url": "absorbers_cb.html#optimize_system"
     },
+    "fit_bayesian": {
+        "brief": "Fit Bayesian.",
+        "details": "Runs Bayesian sampling (MCMC or Nested) for the selected group.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "gui_hidden": True},
+            {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampling engine: 'mcmc' or 'nested'."},
+            {"name": "nsteps", "type": int, "default": 500, "doc": "Number of steps (MCMC)."},
+            {"name": "nlive", "type": int, "default": 250, "doc": "Number of live points (Nested)."},
+            {"name": "group_depth", "type": int, "default": 2}
+        ],
+        "gui_hidden": True
+    },
     "refit_all": {
         "brief": "Refit all systems.",
         "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
@@ -1177,6 +1189,67 @@ class RecipeAbsorbersV2:
             
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
+
+    def fit_bayesian(self, uuid: str, engine: str = 'mcmc', nsteps: str = '500', 
+                     nlive: str = '250', group_depth: str = '2') -> 'SessionV2':
+        """
+        Fit Bayesian.
+        
+        Runs Bayesian sampling for the selected component and its neighbors.
+        """
+        try:
+            from ..fitting.bayesian_fitter import BayesianVoigtFitter
+            nsteps_i = int(nsteps); nlive_i = int(nlive); depth_i = int(group_depth)
+            
+            if not self._session.systs: return 0
+            current_session = self._session
+
+            with current_session.systs.fitting_context([uuid], group_depth=depth_i):
+                b_fitter = BayesianVoigtFitter(current_session.spec, current_session.systs)
+                
+                if engine.lower() == 'nested':
+                    logging.info(f"Running Nested Sampling (nlive={nlive_i})...")
+                    res = b_fitter.run_nested(nlive=nlive_i)
+                else:
+                    logging.info(f"Running MCMC (nsteps={nsteps_i})...")
+                    res = b_fitter.run_mcmc(nsteps=nsteps_i)
+
+                # 1. Update component parameters with medians
+                # We do this INSIDE the context so the fitter's constraints match the sampling results
+                new_systs = b_fitter.apply_results(res)
+                
+                # 2. Store samples in metadata for later corner plot
+                new_meta = dict(new_systs._data.meta)
+                if 'bayesian_results' not in new_meta:
+                    new_meta['bayesian_results'] = {}
+                
+                # We store results for ALL active components in the context
+                # so the corner plot is accessible from any of them.
+                group_results = {
+                    'samples': res['samples'],
+                    'labels': b_fitter.fitter._constraints.get_active_param_labels(),
+                    'engine': engine
+                }
+                
+                active_uuids = b_fitter.fitter._constraints._active_uuids
+                for active_uuid in active_uuids:
+                    new_meta['bayesian_results'][active_uuid] = group_results
+                
+                from dataclasses import replace
+                final_systs_data = replace(new_systs._data, meta=new_meta)
+                from ..core.system_list import SystemListV2
+                final_systs = SystemListV2(final_systs_data)
+
+            # 3. Update Model flux
+            from ..fitting.voigt_fitter import VoigtFitterV2
+            fitter = VoigtFitterV2(current_session.spec, final_systs)
+            _, model_flux = fitter.compute_model_flux()
+            new_spec = current_session.spec.update_model(model_flux)
+
+            return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
+
+        except Exception as e:
+            logging.error(f"Failed fit_bayesian: {e}", exc_info=True); return 0
         
     def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
                           expression: str = None, target_uuid: str = None) -> 'SessionV2':

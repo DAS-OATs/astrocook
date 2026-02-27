@@ -669,6 +669,171 @@ class VoigtFitterV2:
         # 5. Collapse lines (Sum over axis 0)
         return np.sum(tau_matrix, axis=0)
 
+    def prepare_fit_context(self, z_window_kms: float = 20.0) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Prepares the internal state for fitting (masks, background, vectorized data).
+        
+        Returns
+        -------
+        tuple
+            (lower_bounds, upper_bounds) for the free parameters.
+        """
+        self._fit_mask = np.zeros_like(self._valid_mask, dtype=bool)
+        c_kms = 299792.458
+        active_uuids = self._constraints._active_uuids
+        
+        def get_trans_list(series):
+            if series in STANDARD_MULTIPLETS: return STANDARD_MULTIPLETS[series]
+            if series in ATOM_DATA: return [series]
+            return []
+
+        active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
+
+        if not active_components:
+            self._fit_mask = self._valid_mask
+        else:
+            for comp in active_components:
+                for trans in get_trans_list(comp.series):
+                    lam_min, lam_max = self._find_feature_limits(
+                        comp.z, trans, 
+                        z_window_kms=z_window_kms, 
+                        logN=comp.logN
+                    )
+                    
+                    use_fallback = True
+                    if lam_min is not None and lam_max is not None:
+                        width_v = c_kms * (lam_max - lam_min) / lam_max
+                        if width_v > 30.0:
+                            use_fallback = False
+                            mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
+                            self._fit_mask |= mask_feat
+    
+                    if use_fallback:
+                        lam_0 = ATOM_DATA.get(trans, {}).get('wave')
+                        if lam_0:
+                            lam_obs = lam_0 * (1.0 + comp.z)
+                            safe_window = max(z_window_kms, 30.0)
+                            dw = (safe_window / c_kms) * lam_obs
+                            self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
+            self._fit_mask &= self._valid_mask
+        
+        if np.any(self._fit_mask):
+            indices = np.where(self._fit_mask)[0]
+            self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
+        else:
+            logging.warning("Fit mask is empty! Falling back to full valid mask.")
+            self._sl = slice(None)
+            self._fit_mask = self._valid_mask.copy()
+
+        self._x_calc = self._x_ang[self._sl]
+        self._y_norm_calc = self._y_norm[self._sl]
+        self._dy_norm_calc = self._dy_norm[self._sl]
+        self._fit_mask_calc = self._fit_mask[self._sl]
+        
+        logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
+        
+        if self._use_variable_resolution and self._resol_column is not None:
+            self._resol_calc = self._resol_column[self._sl]
+        else:
+            self._resol_calc = None
+
+        # Background
+        self._cached_tau_groups = {}
+        if len(self._x_calc) > 0:
+            x_min_win, x_max_win = self._x_calc[0], self._x_calc[-1]
+        else:
+            x_min_win, x_max_win = -np.inf, np.inf
+        buffer_ang = 100.0
+        
+        relevant_static_comps = []
+        if active_uuids is not None:
+            for comp in self._system_list.components:
+                if comp.uuid in active_uuids: continue
+                is_relevant = False
+                for t in get_trans_list(comp.series):
+                    atom = ATOM_DATA.get(t)
+                    if not atom: continue
+                    obs_w = atom['wave'] * (1 + comp.z)
+                    if (x_min_win - buffer_ang) < obs_w < (x_max_win + buffer_ang):
+                        is_relevant = True; break
+                if is_relevant: relevant_static_comps.append(comp)
+        
+        for comp in relevant_static_comps:
+            res_key = self._get_component_resolution(comp)
+            if res_key not in self._cached_tau_groups:
+                self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
+            self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
+
+        # Active Data
+        self._active_fit_components = []
+        if active_uuids is not None:
+            for i, comp in enumerate(self._system_list.components):
+                if comp.uuid in active_uuids: self._active_fit_components.append((i, comp))
+        else:
+            self._active_fit_components = None
+
+        self._active_lines_data = {}
+        iterator = self._active_fit_components if self._active_fit_components is not None else enumerate(self._system_list.components)
+        grouped_lines = {}
+        
+        for idx, comp in iterator:
+            res_key = self._get_component_resolution(comp)
+            if res_key not in grouped_lines:
+                grouped_lines[res_key] = {'lambda': [], 'f': [], 'gamma': [], 'idx_z': [], 'idx_N': [], 'idx_b': [], 'idx_btur': []}
+            t_list = get_trans_list(comp.series)
+            base_idx = idx * 4
+            for t in t_list:
+                atom = ATOM_DATA.get(t)
+                if not atom: continue
+                g = grouped_lines[res_key]
+                g['lambda'].append(atom['wave']); g['f'].append(atom['f']); g['gamma'].append(atom['gamma'])
+                g['idx_z'].append(base_idx); g['idx_N'].append(base_idx + 1); g['idx_b'].append(base_idx + 2); g['idx_btur'].append(base_idx + 3)
+
+        for rk, data in grouped_lines.items():
+            if not data['lambda']: continue
+            self._active_lines_data[rk] = {k: np.array(v) for k, v in data.items()}
+
+        # Bounds
+        lower_bounds, upper_bounds = self._constraints.get_bounds()
+        is_free_mask = self._constraints._param_map['is_free']
+        free_idx_map = np.cumsum(is_free_mask) - 1
+        
+        for i, comp in enumerate(self._system_list.components):
+            base_idx = i * 4
+            if not is_free_mask[base_idx]: continue 
+            if comp.series in STANDARD_MULTIPLETS: primary = STANDARD_MULTIPLETS[comp.series][0]
+            elif comp.series in ATOM_DATA: primary = comp.series
+            else: continue
+            
+            dz_window = (1.0 + comp.z) * (z_window_kms / c_kms)
+            z_min_win, z_max_win = comp.z - dz_window, comp.z + dz_window
+            lam_min, lam_max = self._find_feature_limits(comp.z, primary, z_window_kms=z_window_kms)
+            z_final_min, z_final_max = z_min_win, z_max_win
+            if lam_min is not None:
+                atom = ATOM_DATA[primary]
+                z_final_min = max(z_min_win, (lam_min / atom['wave']) - 1.0)
+                z_final_max = min(z_max_win, (lam_max / atom['wave']) - 1.0)
+
+            idx_z = free_idx_map[base_idx]
+            cur = self._constraints.p_free_vector[idx_z]
+            lower_bounds[idx_z] = min(z_final_min, cur - 1e-6)
+            upper_bounds[idx_z] = max(z_final_max, cur + 1e-6)
+        
+        return lower_bounds, upper_bounds
+
+    def get_fit_context_data(self) -> Dict[str, Any]:
+        """
+        Returns all data needed for an external likelihood calculation.
+        Call prepare_fit_context first.
+        """
+        return {
+            'x': self._x_calc,
+            'y': self._y_norm_calc,
+            'dy': self._dy_norm_calc,
+            'mask': self._fit_mask_calc,
+            'compute_model': self._compute_model
+        }
+
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 0) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
@@ -705,218 +870,13 @@ class VoigtFitterV2:
         logging.debug(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
         
-        # 1. DYNAMIC FIT MASK
-        self._fit_mask = np.zeros_like(self._valid_mask, dtype=bool)
-        c_kms = 299792.458
-        active_uuids = self._constraints._active_uuids
-        
-        def get_trans_list(series):
-            if series in STANDARD_MULTIPLETS: return STANDARD_MULTIPLETS[series]
-            if series in ATOM_DATA: return [series]
-            return []
-
-        active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
-
-        if not active_components:
-            self._fit_mask = self._valid_mask
-        else:
-            for comp in active_components:
-                for trans in get_trans_list(comp.series):
-                    lam_min, lam_max = self._find_feature_limits(
-                        comp.z, trans, 
-                        z_window_kms=z_window_kms, 
-                        logN=comp.logN
-                    )
-                    
-                    # 2. [FIX] Check for "Collapsed Window"
-                    # If the smart finder returned a window that is too narrow (< 30 km/s width),
-                    # it likely failed on a weak line. We force the fallback window.
-                    use_fallback = True
-                    if lam_min is not None and lam_max is not None:
-                        c_kms = 299792.458
-                        # Calculate velocity width of the found window
-                        width_v = c_kms * (lam_max - lam_min) / lam_max
-                        if width_v > 30.0: # Minimum safe width
-                            use_fallback = False
-                            mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
-                            self._fit_mask |= mask_feat
-    
-                    # 3. Fallback / Enforce Minimum Width
-                    if use_fallback:
-                        lam_0 = ATOM_DATA.get(trans, {}).get('wave')
-                        if lam_0:
-                            lam_obs = lam_0 * (1.0 + comp.z)
-                            # Ensure we use at least the user's z_window_kms, or a safe minimum of 30 km/s
-                            safe_window = max(z_window_kms, 30.0)
-                            dw = (safe_window / c_kms) * lam_obs
-                            self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
-            self._fit_mask &= self._valid_mask
-        
-        # Optimization: Slice the arrays to only the relevant fitting regions
-        if np.any(self._fit_mask):
-            indices = np.where(self._fit_mask)[0]
-            self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
-        else:
-            self._sl = slice(None)
-
-        # Slice Data
-        self._x_calc = self._x_ang[self._sl]
-        self._y_norm_calc = self._y_norm[self._sl]
-        self._dy_norm_calc = self._dy_norm[self._sl]
-        self._fit_mask_calc = self._fit_mask[self._sl]
-        
-        # Slice Resolution (Crucial for Stitching)
-        if self._use_variable_resolution and self._resol_column is not None:
-            self._resol_calc = self._resol_column[self._sl]
-        else:
-            self._resol_calc = None
-
-        logging.debug(f"Fit Mask: {np.sum(self._fit_mask)} pixels (Slice: {len(self._x_calc)}). Variable Resol: {self._use_variable_resolution}")
-
-        # --- OPTIMIZATION 1: PRE-CALCULATE BACKGROUND ON RELEVANT COMPONENTS ONLY ---
-        self._cached_tau_groups = {}
-        
-        # Get window bounds for spatial filtering (with buffer)
-        if len(self._x_calc) > 0:
-            x_min_win = self._x_calc[0]
-            x_max_win = self._x_calc[-1]
-        else:
-            x_min_win, x_max_win = -np.inf, np.inf
-        buffer_ang = 100.0
-        
-        relevant_static_comps = []
-        if active_uuids is not None:
-            # We filter the 1000+ static components to just the ~5-10 nearby ones
-            for comp in self._system_list.components:
-                if comp.uuid in active_uuids: continue
-                
-                is_relevant = False
-                t_list = get_trans_list(comp.series)
-                for t in t_list:
-                    atom = ATOM_DATA.get(t)
-                    if not atom: continue
-                    obs_w = atom['wave'] * (1 + comp.z)
-                    # Simple bounds check (much faster than computing profile)
-                    if (x_min_win - buffer_ang) < obs_w < (x_max_win + buffer_ang):
-                        is_relevant = True
-                        break
-                
-                if is_relevant:
-                    relevant_static_comps.append(comp)
-        
-        # Now compute background only for the survivors
-        for comp in relevant_static_comps:
-            # Determine Group
-            res_key = self._get_component_resolution(comp)
-            
-            if res_key not in self._cached_tau_groups:
-                self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
-            
-            # Add Tau
-            self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
-
-        # --- OPTIMIZATION 2: CACHE ACTIVE LIST FOR INNER LOOP ---
-        self._active_fit_components = []
-        if active_uuids is not None:
-            for i, comp in enumerate(self._system_list.components):
-                if comp.uuid in active_uuids:
-                    self._active_fit_components.append((i, comp))
-        else:
-            # If fitting everything, we don't need a special cache
-            self._active_fit_components = None
-
-        # --- OPTIMIZATION 3: PREPARE VECTORIZED LINE DATA ---
-        # We flatten components -> lines for the active set
-        self._active_lines_data = {} # Key: res_key, Value: dict of arrays
-        
-        # Determine iterator (either the cached active list or full list)
-        if self._active_fit_components is not None:
-            iterator = self._active_fit_components
-        else:
-            iterator = enumerate(self._system_list.components)
-
-        grouped_lines = {}
-        
-        for idx, comp in iterator:
-            res_key = self._get_component_resolution(comp)
-            if res_key not in grouped_lines:
-                grouped_lines[res_key] = {
-                    'lambda': [], 'f': [], 'gamma': [], 
-                    'p_idx_z': [], 'p_idx_logN': [], 'p_idx_b': [], 'p_idx_btur': [] 
-                }
-            
-            # Get transitions
-            if comp.series in STANDARD_MULTIPLETS: t_list = STANDARD_MULTIPLETS[comp.series]
-            elif comp.series in ATOM_DATA: t_list = [comp.series]
-            else: continue
-            
-            # Store Mapping to p_full indices
-            base_idx = idx * 4
-            
-            for t in t_list:
-                atom = ATOM_DATA.get(t)
-                if not atom: continue
-                
-                # Append Atomic Data
-                g = grouped_lines[res_key]
-                g['lambda'].append(atom['wave'])
-                g['f'].append(atom['f'])
-                g['gamma'].append(atom['gamma'])
-                
-                # Append Parameter Indices (So we can pull values from p_full rapidly)
-                g['p_idx_z'].append(base_idx)
-                g['p_idx_logN'].append(base_idx + 1)
-                g['p_idx_b'].append(base_idx + 2)
-                g['p_idx_btur'].append(base_idx + 3)
-
-        # Convert to Numpy Arrays and store
-        for rk, data in grouped_lines.items():
-            if not data['lambda']: continue
-            self._active_lines_data[rk] = {
-                'lambda': np.array(data['lambda']),
-                'f':      np.array(data['f']),
-                'gamma':  np.array(data['gamma']),
-                'idx_z':  np.array(data['p_idx_z']),
-                'idx_N':  np.array(data['p_idx_logN']),
-                'idx_b':  np.array(data['p_idx_b']),
-                'idx_btur': np.array(data['p_idx_btur'])
-            }
-
-        # --- Bounds Logic ---
-        lower_bounds, upper_bounds = self._constraints.get_bounds()
-        p_full = self._constraints.map_p_free_to_full(p0)
-        is_free_mask = self._constraints._param_map['is_free']
-        free_idx_map = np.cumsum(is_free_mask) - 1
-        
-        for i, comp in enumerate(self._system_list.components):
-            base_idx = i * 4
-            if not is_free_mask[base_idx]: continue 
-            
-            if comp.series in STANDARD_MULTIPLETS: primary = STANDARD_MULTIPLETS[comp.series][0]
-            elif comp.series in ATOM_DATA: primary = comp.series
-            else: continue
-            
-            dz_window = (1.0 + comp.z) * (z_window_kms / c_kms)
-            z_min_win, z_max_win = comp.z - dz_window, comp.z + dz_window
-            lam_min, lam_max = self._find_feature_limits(comp.z, primary, z_window_kms=z_window_kms)
-            
-            z_final_min, z_final_max = z_min_win, z_max_win
-            if lam_min is not None:
-                atom = ATOM_DATA[primary]
-                z_final_min = max(z_min_win, (lam_min / atom['wave']) - 1.0)
-                z_final_max = min(z_max_win, (lam_max / atom['wave']) - 1.0)
-
-            idx_z = free_idx_map[base_idx]
-            cur = p0[idx_z]
-            lower_bounds[idx_z] = min(z_final_min, cur - 1e-6)
-            upper_bounds[idx_z] = max(z_final_max, cur + 1e-6)
-        
-        bounds = (lower_bounds, upper_bounds)
+        # Setup the fitting context (pixels, background, vectors)
+        bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
         p0 = self._smart_guess(p0, z_window_kms)
 
         # Clamp p0 to bounds to prevent "Initial guess outside bounds" error
         # Because smart_guess might have proposed values that violate strict constraints.
-        p0 = np.clip(p0, lower_bounds, upper_bounds)
+        p0 = np.clip(p0, bounds[0], bounds[1])
 
         # Fit
         res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
@@ -927,18 +887,22 @@ class VoigtFitterV2:
 
         # Statistics
         p_free_errors = np.zeros_like(res.x)
+        is_free_mask = self._constraints._param_map['is_free']
         chi2 = 0; red_chi2 = 0
         try:
             residuals = res.fun 
             chi2 = np.sum(residuals**2)
             n_data = np.sum(self._fit_mask_calc)
-            dof = max(1, n_data - len(p0))
+            dof = max(1, n_data - len(res.x))
             red_chi2 = chi2 / dof
             J = res.jac
             cov = pinv(J.T @ J) 
-            p_free_errors = np.sqrt(np.diag(cov))
+            # Scale errors by reduced chi-square for a more realistic estimate
+            p_free_errors = np.sqrt(np.diag(cov) * red_chi2)
+            logging.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
+            p_free_errors = np.zeros_like(res.x)
             p_free_errors[:] = np.nan
 
         p_fitted_full = self._constraints.map_p_free_to_full(res.x)

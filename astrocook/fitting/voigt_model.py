@@ -371,3 +371,13 @@ class VoigtModelConstraintV2:
     @property
     def v2_constraints_for_save(self) -> Dict[str, Dict[str, ParameterConstraintV2]]:
         return self.v2_constraints_by_uuid
+    def get_active_param_labels(self) -> List[str]:
+        """
+        Return a list of labels for the free parameters (e.g., 'z_0', 'logN_0', ...).
+        Used for visualization (e.g., Corner Plots).
+        """
+        labels = []
+        for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):
+            if self._param_map['is_free'][i]:
+                labels.append(f"{param_name}_{comp.id}")
+        return labels

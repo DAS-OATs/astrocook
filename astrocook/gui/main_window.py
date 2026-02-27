@@ -216,6 +216,7 @@ class MainWindowV2(QMainWindow):
         self.setAcceptDrops(True)
 
         self._update_undo_redo_actions()
+        self.statusBar().setVisible(False)
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
 
     def resizeEvent(self, event):
@@ -3096,7 +3097,7 @@ class MainWindowV2(QMainWindow):
         # 2. Decide: Simple Dialog vs. Detailed Dialog
         long_running_recipes = {
             'doublets_auto', 'lya_auto', 'forest_auto', 
-            'refit_all', 'metals_auto', 'add_component', 'fit_component'
+            'refit_all', 'metals_auto', 'add_component', 'fit_component', 'fit_bayesian'
         }
         
         is_long_running = recipe_name in long_running_recipes
