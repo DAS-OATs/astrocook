@@ -146,23 +146,37 @@ class BayesianVoigtFitter:
         
         # Map uncertainties back to full vector (treating frozen as 0 uncertainty)
         dp_full = np.zeros_like(p_full)
-        dp_full[self.fitter._constraints._param_map['is_free']] = stds
+        is_free_mask = self.fitter._constraints._param_map['is_free']
+        dp_full[is_free_mask] = stds
         
-        # Update component by component
+        # We only update components that were part of the active group
+        # This ensures we don't accidentally reset/clear errors for other components
         new_systs = self.systs
-        num_params = 4 # z, logN, b, btur
-        
-        for i, comp in enumerate(self.fitter._constraints._system_list.components):
+        active_uuids = self.fitter._constraints._active_uuids
+        if active_uuids is None:
+            # If everything was active (no context), update everything
+            active_uuids = [c.uuid for c in self.fitter._constraints._system_list.components]
+
+        for uuid in active_uuids:
             # Find its offset in p_full
-            # In V2, we can identify components by UUID
-            idx = self.fitter._constraints._uuid_to_idx.get(comp.uuid)
+            idx = self.fitter._constraints._uuid_to_idx.get(uuid)
             if idx is not None:
+                # Update basic parameters (medians)
                 updates = {
-                    'z': p_full[idx], 'dz': dp_full[idx],
-                    'logN': p_full[idx+1], 'dlogN': dp_full[idx+1],
-                    'b': p_full[idx+2], 'db': dp_full[idx+2],
-                    'btur': p_full[idx+3], 'dbtur': dp_full[idx+3]
+                    'z': p_full[idx],
+                    'logN': p_full[idx+1],
+                    'b': p_full[idx+2],
+                    'btur': p_full[idx+3]
                 }
-                new_systs = new_systs.update_component(comp.uuid, **updates)
+                
+                # Update uncertainties ONLY for parameters that were free
+                # Non-free parameters (Frozen or Linked) should keep their previous errors
+                # or stay at None if they didn't have any.
+                if is_free_mask[idx]: updates['dz'] = dp_full[idx]
+                if is_free_mask[idx+1]: updates['dlogN'] = dp_full[idx+1]
+                if is_free_mask[idx+2]: updates['db'] = dp_full[idx+2]
+                if is_free_mask[idx+3]: updates['dbtur'] = dp_full[idx+3]
+                
+                new_systs = new_systs.update_component(uuid, **updates)
         
         return new_systs

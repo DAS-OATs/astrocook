@@ -1177,8 +1177,6 @@ class RecipeAbsorbersV2:
                 if "stopped" in str(e):
                     logging.info("Fit stopped by user. Reverting to pre-fit state.")
                     return self._session # Return the session as it was before fitting started
-                raise e # Re-raise if it's a real error
-            
             if new_systs.constraint_model:
                 new_systs.constraint_model.set_active_components(None)
 
@@ -1190,13 +1188,29 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed fit_component: {e}", exc_info=True); return 0
 
-    def fit_bayesian(self, uuid: str, engine: str = 'mcmc', nsteps: str = '500', 
-                     nlive: str = '250', group_depth: str = '2') -> 'SessionV2':
+    def fit_bayesian(self, uuids: list[str] = None, engine: str = 'mcmc', 
+                     nsteps: str = '500', nlive: str = '250', 
+                     group_depth: str = '2') -> int:
         """
-        Fit Bayesian.
-        
-        Runs Bayesian sampling for the selected component and its neighbors.
+        Run Bayesian sampling (MCMC or Nested) on a group of components.
+
+        Parameters
+        ----------
+        uuids : list of str, optional
+            A list of component UUIDs to fit. If not provided, a single component 
+            must be specified via other means (not supported here).
+        engine : {'mcmc', 'nested'}, optional
+            The sampling engine to use (default: 'mcmc').
+        nsteps : str, optional
+            Number of MCMC steps (default: '500').
+        nlive : str, optional
+            Number of live points for Nested Sampling (default: '250').
+        group_depth : str, optional
+            Depth of connected group search (FoF) to define the fitting group (default: '2').
         """
+        if uuids is None: return 0
+        if isinstance(uuids, str): uuids = [uuids] # Fallback for single uuid string
+
         try:
             from ..fitting.bayesian_fitter import BayesianVoigtFitter
             nsteps_i = int(nsteps); nlive_i = int(nlive); depth_i = int(group_depth)
@@ -1204,7 +1218,7 @@ class RecipeAbsorbersV2:
             if not self._session.systs: return 0
             current_session = self._session
 
-            with current_session.systs.fitting_context([uuid], group_depth=depth_i):
+            with current_session.systs.fitting_context(uuids, group_depth=depth_i):
                 b_fitter = BayesianVoigtFitter(current_session.spec, current_session.systs)
                 
                 if engine.lower() == 'nested':
@@ -1776,7 +1790,7 @@ class RecipeAbsorbersV2:
         
     def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
                        min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
-        """
+        r"""
         Clean negligible components.
 
         Removes unphysical or negligible components from the system list. This is useful 

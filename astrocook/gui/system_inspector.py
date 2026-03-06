@@ -1695,11 +1695,11 @@ class SystemInspector(QWidget):
         m.addSeparator()
         m.addSection("Bayesian Fitting")
         
-        act_bayesian_mcmc = QAction(f"Re-fit Bayesian (MCMC){suffix}", m)
+        act_bayesian_mcmc = QAction(f"Refit Bayesian (MCMC){suffix}", m)
         act_bayesian_mcmc.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'mcmc'))
         m.addAction(act_bayesian_mcmc)
 
-        act_bayesian_nested = QAction(f"Re-fit Bayesian (Nested){suffix}", m)
+        act_bayesian_nested = QAction(f"Refit Bayesian (Nested){suffix}", m)
         act_bayesian_nested.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'nested'))
         m.addAction(act_bayesian_nested)
         
@@ -1762,17 +1762,15 @@ class SystemInspector(QWidget):
     def _fit_bayesian(self, comps, engine='mcmc'):
         """Batch Bayesian fit."""
         if self.main_window and comps:
-            # For now, we fit the primary of the selection
-            # In a better implementation, we could group them
-            uuid = comps[0].uuid
+            uuid_list = [c.uuid for c in comps]
             
             # Log the action
-            logging.info(f"Triggering Bayesian {engine.upper()} fit for {uuid}...")
+            logging.info(f"Triggering Bayesian {engine.upper()} fit for {len(uuid_list)} components...")
             
             self.main_window._on_recipe_requested(
                 "absorbers", "fit_bayesian", 
                 {
-                    "uuid": uuid,
+                    "uuids": uuid_list,
                     "engine": engine,
                     "nsteps": "500",
                     "nlive": "250",
