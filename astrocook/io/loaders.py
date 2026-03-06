@@ -750,15 +750,22 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumDataV2:
 def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
     """
     Loader for ESO X-Shooter 1D spectra (Binary Table FITS).
-    Expects columns: WAVE, FLUX, ERR, QUAL (optional).
+    Handles standard formats, 1-row array tables (Phase 3), 
+    and extracts telluric models when available.
     """
     try:
         with fits.open(file_path) as hdul:
-            # X-Shooter data is usually in extension 1
-            data = hdul[1].data
+            # 1. Safely find the SPECTRUM extension (fallback to ext 1)
+            ext_idx = 1
+            for i, hdu in enumerate(hdul):
+                if hdu.name.upper() == 'SPECTRUM':
+                    ext_idx = i
+                    break
+                    
+            data = hdul[ext_idx].data
             header = hdul[0].header
             
-            # 1. Extract Arrays (Handle standard column naming variations)
+            # Extract Arrays (Handle standard column naming variations)
             cols = data.columns.names
             
             # Wavelength
@@ -775,9 +782,14 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             elif 'ERROR' in cols: dy = data['ERROR']
             else: dy = np.zeros_like(y)
             
-            # 2. Units (Hardcoded for X-Shooter standard, or parsed from header)
+            # *** CRITICAL FIX: Flatten arrays ***
+            # Phase 3 products often store data as a 1-row table with N-element arrays.
+            if x.ndim > 1: x = x.flatten()
+            if y.ndim > 1: y = y.flatten()
+            if dy.ndim > 1: dy = dy.flatten()
+            
+            # 2. Units 
             x, x_unit = _x_unit_heuristics(x)
-            print(x_unit)
             y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
             
             # 3. Build Columns
@@ -786,12 +798,31 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             dy_col = DataColumnV2(dy, y_unit)
             xmin_col, xmax_col = _auto_limits(x, x_unit)
             
-            # 4. Handle Quality Flag (Aux Column)
+            # 4. Handle Auxiliary Columns
             aux_cols = {}
+            
+            # Quality flag
             if 'QUAL' in cols:
-                # Convert Bad Pixel Map to internal mask style if needed
-                qual = data['QUAL']
+                qual = data['QUAL'].flatten() if data['QUAL'].ndim > 1 else data['QUAL']
                 aux_cols['quality'] = DataColumnV2(qual, au.dimensionless_unscaled, "Quality Flag")
+
+            # Telluric-corrected pipelines often include the uncorrected/reduced flux too
+            if 'FLUX_REDUCED' in cols:
+                flux_red = data['FLUX_REDUCED'].flatten() if data['FLUX_REDUCED'].ndim > 1 else data['FLUX_REDUCED']
+                aux_cols['flux_reduced'] = DataColumnV2(flux_red, y_unit, "Flux Reduced")
+
+            # Extract Telluric transmission if a TELLURIC_DATA extension is present
+            if 'TELLURIC_DATA' in hdul:
+                tell_data = hdul['TELLURIC_DATA'].data
+                if 'mtrans' in tell_data.columns.names:
+                    mtrans = tell_data['mtrans']
+                    # TELLURIC_DATA is sometimes formatted as a standard N-row table instead of a 1-row table
+                    if mtrans.ndim > 1: mtrans = mtrans.flatten()
+                    
+                    if len(mtrans) == len(x):
+                        aux_cols['telluric_transmission'] = DataColumnV2(
+                            mtrans, au.dimensionless_unscaled, "Telluric Model Transmission"
+                        )
 
             # 5. Metadata
             meta = dict(header)
