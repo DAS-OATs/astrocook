@@ -4,6 +4,10 @@ A thousand ways to cook a spectrum!
 
  [![DOI](https://zenodo.org/badge/78840469.svg)](https://zenodo.org/badge/latestdoi/78840469)
 
+🚀 Note: **Astrocook Version 2.0.0 is almost here!** > We are currently finalizing a major architectural overhaul. Check out the active development and new OOP features in our [develop branch](https://github.com/DAS-OATS/astrocook/tree/develop). 
+
+## Installation
+
 To get a copy of Astrocook on your local machine:
 
 ```
