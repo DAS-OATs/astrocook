@@ -852,12 +852,14 @@ class MainWindowV2(QMainWindow):
         # ** Undo Action **
         self.undo_action = QAction("&Undo", self)
         self.undo_action.setShortcut(QKeySequence.Undo) # Standard shortcut (Ctrl+Z / Cmd+Z)
+        self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
         self.undo_action.triggered.connect(self._undo_last_action)
         edit_menu.addAction(self.undo_action)
 
         # ** Redo Action **
         self.redo_action = QAction("&Redo", self)
         self.redo_action.setShortcut(QKeySequence.Redo) # Standard shortcut (Ctrl+Y / Cmd+Shift+Z)
+        self.redo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
         self.redo_action.triggered.connect(self._redo_last_action)
         edit_menu.addAction(self.redo_action)
 
