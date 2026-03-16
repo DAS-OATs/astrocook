@@ -109,6 +109,37 @@ def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
         logging.debug(f"Inverse z conversion failed: {e}")
         return None
 
+def _parse_and_flatten_transitions(series_str: str) -> list:
+    """Helper to parse a transition string and flatten any standard multiplets."""
+    if not series_str: return []
+    
+    transitions = []
+    # 1. Direct lookup
+    if series_str in STANDARD_MULTIPLETS:
+        transitions = STANDARD_MULTIPLETS[series_str]
+    else:
+        # 2. V1/V2 comma-separated parsing
+        if V1_FUNCTIONS_AVAILABLE:
+            try:
+                transitions = trans_parse(series_str)
+            except Exception:
+                transitions = [s.strip() for s in series_str.split(',') if s.strip()]
+        else:
+            transitions = [s.strip() for s in series_str.split(',') if s.strip()]
+            
+        if not transitions and series_str in xem_d:
+            transitions = [series_str]
+
+    # 3. Flatten nested multiplets (like "CII" inside "OI_1302,CII")
+    flat_transitions = []
+    for t in transitions:
+        if t in STANDARD_MULTIPLETS and t != series_str: # Prevent infinite loop
+            flat_transitions.extend(STANDARD_MULTIPLETS[t])
+        else:
+            flat_transitions.append(t)
+            
+    return flat_transitions
+
 # --- Helper to get colors ---
 def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
     # ... (function definition as before) ...
@@ -1094,21 +1125,7 @@ class SpectrumPlotWidget(QWidget):
                     z = comp.z
                     
                     # V1/V2 Fallback Logic for Transitions
-                    transitions = []
-                    try:
-                        # 1. Try V2-native lookup (e.g., "CIV")
-                        transitions = STANDARD_MULTIPLETS[comp.series]
-                    except KeyError:
-                        if V1_FUNCTIONS_AVAILABLE:
-                            # 2. Try V1 trans_parse (e.g., "CIV_1548,CIV_1550")
-                            try:
-                                transitions = trans_parse(comp.series)
-                            except Exception:
-                                pass # Will be caught by logging below
-                        
-                        # 3. Fallback for single lines (e.g., "Ly_a")
-                        if not transitions and comp.series in xem_d:
-                            transitions = [comp.series]
+                    transitions = _parse_and_flatten_transitions(comp.series)
                     
                     if not transitions:
                         logging.warning(f"Could not parse series '{comp.series}' for system plot.")
@@ -1453,21 +1470,7 @@ class SpectrumPlotWidget(QWidget):
         try:
             # V1/V2 Fallback Logic for Transitions
             series_str = main_window.cursor_series_input.text()
-            transitions = []
-            try:
-                # 1. Try V2-native lookup
-                transitions = STANDARD_MULTIPLETS[series_str]
-            except KeyError:
-                if V1_FUNCTIONS_AVAILABLE:
-                    # 2. Try V1 trans_parse
-                    try:
-                        transitions = trans_parse(series_str)
-                    except Exception:
-                        pass
-                        
-                # 3. Fallback for single lines
-                if not transitions and series_str in xem_d:
-                    transitions = [series_str]
+            transitions = _parse_and_flatten_transitions(series_str)
 
             zem = getattr(spec, '_zem', 0.0) # Get spec RF z
             x_unit = spec.x.unit # Get spec current x unit
@@ -1493,20 +1496,7 @@ class SpectrumPlotWidget(QWidget):
             # V1/V2 Fallback Logic for Transitions
             series_str = self.main_window.cursor_series_input.text()
             transitions = []
-            try:
-                # 1. Try V2-native lookup
-                transitions = STANDARD_MULTIPLETS[series_str]
-            except KeyError:
-                if V1_FUNCTIONS_AVAILABLE:
-                    # 2. Try V1 trans_parse
-                    try:
-                        transitions = trans_parse(series_str)
-                    except Exception:
-                        pass
-
-                # 3. Fallback for single lines
-                if not transitions and series_str in xem_d:
-                    transitions = [series_str]
+            transitions = _parse_and_flatten_transitions(series_str)
 
             if not transitions: return None
             

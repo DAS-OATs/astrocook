@@ -35,26 +35,47 @@ def _register_custom_multiplets(components: List[ComponentDataV2]):
     for c in components:
         series = c.series
         if series and ',' in series and series not in STANDARD_MULTIPLETS:
-            # Parse: "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
-            members = [s.strip() for s in series.split(',') if s.strip()]
+            # Parse: "OI_1302,CII" -> ["OI_1302", "CII"]
+            raw_members = [s.strip() for s in series.split(',') if s.strip()]
+            
+            # --- Flatten any nested standard multiplets ---
+            flat_members = []
+            for m in raw_members:
+                if m in STANDARD_MULTIPLETS:
+                    flat_members.extend(STANDARD_MULTIPLETS[m])
+                else:
+                    flat_members.append(m)
             
             # Register globally
-            STANDARD_MULTIPLETS[series] = members
-            logging.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
+            STANDARD_MULTIPLETS[series] = flat_members
+            logging.info(f"Auto-registered loaded custom multiplet: '{series}' -> {flat_members}")
 
-# ... (v1_table_to_data_v2 remains unchanged) ...
 def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
     t_v1 = v1_spectrum_instance._t 
     meta_v1 = v1_spectrum_instance._meta
-    x_unit = v1_spectrum_instance._xunit
+    v1_x_unit = v1_spectrum_instance._xunit
     v1_y_unit = v1_spectrum_instance._yunit 
     y_unit = au.dimensionless_unscaled
 
-    x_col = DataColumnV2(t_v1['x'].value, x_unit, description="Channels")
+    x_vals = t_v1['x'].value
+    xmin_vals = t_v1['xmin'].value
+    xmax_vals = t_v1['xmax'].value
+
+    # --- HEURISTIC ENFORCEMENT FOR V1 ARCHIVES ---
+    if v1_x_unit is not None and v1_x_unit.is_equivalent(au.Angstrom):
+        # If median > 3000, it's actually Angstroms, so divide by 10 to get nm
+        if np.median(x_vals) > 3000:
+            x_vals = x_vals / 10.0
+            xmin_vals = xmin_vals / 10.0
+            xmax_vals = xmax_vals / 10.0
+        # If median < 3000, the data is already nm, the V1 label was just wrong!
+
+    x_col = DataColumnV2(x_vals, au.nm, description="Channels")
+    xmin_col = DataColumnV2(xmin_vals, au.nm, description="Lower channel limit")
+    xmax_col = DataColumnV2(xmax_vals, au.nm, description="Upper channel limit")
+    
     y_col = DataColumnV2(t_v1['y'].value, y_unit, description="Flux density")
     dy_col = DataColumnV2(t_v1['dy'].value, y_unit, description="Error on Flux")
-    xmin_col = DataColumnV2(t_v1['xmin'].value, x_unit, description="Lower channel limit")
-    xmax_col = DataColumnV2(t_v1['xmax'].value, x_unit, description="Upper channel limit")
 
     aux_cols = {}
     if 'resol' not in t_v1.colnames:
@@ -124,11 +145,24 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
     t = spec_table
     meta = t.meta
     
-    x_col = DataColumnV2(t['x'].value, t['x'].unit)
+    x_vals = t['x'].value
+    xmin_vals = t['xmin'].value
+    xmax_vals = t['xmax'].value
+    table_x_unit = t['x'].unit
+
+    # --- HEURISTIC ENFORCEMENT FOR V2 ARCHIVES ---
+    if table_x_unit is not None and table_x_unit.is_equivalent(au.Angstrom):
+        if np.median(x_vals) > 3000:
+            x_vals = x_vals / 10.0
+            xmin_vals = xmin_vals / 10.0
+            xmax_vals = xmax_vals / 10.0
+
+    x_col = DataColumnV2(x_vals, au.nm)
+    xmin_col = DataColumnV2(xmin_vals, au.nm)
+    xmax_col = DataColumnV2(xmax_vals, au.nm)
+    
     y_col = DataColumnV2(t['y'].value, t['y'].unit)
     dy_col = DataColumnV2(t['dy'].value, t['dy'].unit)
-    xmin_col = DataColumnV2(t['xmin'].value, t['xmin'].unit)
-    xmax_col = DataColumnV2(t['xmax'].value, t['xmax'].unit)
     
     aux_cols = {}
     core_cols = ['x', 'y', 'dy', 'xmin', 'xmax']

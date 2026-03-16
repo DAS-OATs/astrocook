@@ -48,10 +48,9 @@ def _x_unit_heuristics(x_arr: np.ndarray) -> au.Unit:
     Heuristic to adjust wavelength unit if necessary.
     If unit is Angstrom and median > 3000, convert to nm.
     """
-    x_unit = au.Angstrom
     if np.median(x_arr) > 3000: 
         x_arr = x_arr / 10.0
-        x_unit = au.nm
+
     return x_arr, x_unit
 
 def detect_file_format(file_path: str) -> str:
