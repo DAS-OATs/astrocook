@@ -2354,6 +2354,9 @@ class SpectrumV2:
         system_logN_map = {}
         system_b_map = {}
         
+        # [NEW] Rich metadata for UI Tooltips
+        region_info = {}
+
         sys_id_counter = 1
         processed_systems = set()
         c_kms = 299792.458
@@ -2365,10 +2368,14 @@ class SpectrumV2:
             aod_clean = np.maximum(aod_clean, 0.0)
 
         for rid, candidates in reliable_ids.items():
-            # Mark region
-            region_mask = (region_id_map_merged == rid)
-            final_vis_map[region_mask] = rid
+            rid_int = int(rid)
+            region_mask = (region_id_map_merged == rid_int)
+            final_vis_map[region_mask] = rid_int
             
+            # Populate region_info for tooltips: {id: [[series, score], ...]}
+            # We convert score to float to ensure JSON serializability
+            region_info[rid_int] = [[c[0], float(c[1])] for c in candidates]
+
             # --- DE-BLENDING ---
             flux_seg = spec.y.value[region_mask]
             err_seg = spec.dy.value[region_mask]
@@ -2380,72 +2387,48 @@ class SpectrumV2:
             else:
                 inv_flux = 1.0 - flux_seg
                 inv_flux_smooth = gaussian_filter1d(inv_flux, sigma=1.0)
-                
-                # NEW: Calculate local noise floor (3-sigma)
-                # Use standard error if available, else heuristic
                 local_sigma = np.nanmedian(err_seg) if np.all(err_seg > 0) else 0.01
                 dynamic_prominence = max(0.02, 3.0 * local_sigma)
-
-                # Use dynamic prominence instead of fixed 0.02
-                peaks, properties = find_peaks(inv_flux_smooth, prominence=dynamic_prominence, width=1.0)
+                peaks, _ = find_peaks(inv_flux_smooth, prominence=dynamic_prominence, width=1.0)
                 
                 if len(peaks) == 0:
                     peaks = [np.argmax(inv_flux_smooth)]
                     widths_pix = [len(flux_seg)]
                 else:
-                    # Get FWHM in pixels
                     widths_pix = peak_widths(inv_flux_smooth, peaks, rel_height=0.5)[0]
 
-            # Process each detected SUB-PEAK
             for i, peak_idx in enumerate(peaks):
                 x_peak_obs = x_seg[peak_idx]
-                
-                # Estimate b from FWHM
                 local_dv = dv_pix[region_mask][peak_idx]
                 fwhm_kms = widths_pix[i] * local_dv
-                # FWHM = 2.355 * sigma = 1.665 * b
-                b_guess = max(5.0, fwhm_kms / 1.665) 
-                b_guess = min(100.0, b_guess)
+                b_guess = max(5.0, min(100.0, fwhm_kms / 1.665))
 
                 for (component_name, score, z_test_orig) in candidates:
-                    
-                    # Deduce System Name
                     system_name = component_name
-                    if component_name in STANDARD_MULTIPLETS:
-                        system_name = component_name
-                    else:
+                    if component_name not in STANDARD_MULTIPLETS:
                         for mult, members in STANDARD_MULTIPLETS.items():
                             if component_name in members:
                                 system_name = mult
                                 break
                     
-                    # Recalculate Z based on THIS peak
                     if component_name in ATOM_DATA:
-                        lam_rest = ATOM_DATA[component_name]['wave'] / 10.0 # nm
+                        lam_rest = ATOM_DATA[component_name]['wave'] / 10.0 
                         z_peak = (x_peak_obs / lam_rest) - 1.0
                     else:
                         z_peak = z_test_orig
                         
-                    # Estimate N (partitioned AOD)
-                    # Window: Peak +/- FWHM
                     p_start = max(0, int(peak_idx - widths_pix[i]))
                     p_end = min(len(aod_clean[region_mask]), int(peak_idx + widths_pix[i] + 1))
-                    
                     local_tau = np.sum(aod_clean[region_mask][p_start:p_end] * dv_pix[region_mask][p_start:p_end])
                     
                     if component_name in ATOM_DATA:
                         atom = ATOM_DATA[component_name]
                         if atom['f'] > 0:
-                            # N = 3.768e14 * Integral(tau dv) / (f * lambda)
-                            # (Adjust integration window factor if needed, but raw sum is decent start)
                             N_val = 3.768e14 * local_tau / (atom['f'] * atom['wave'])
-                            logN_guess = np.log10(N_val) if N_val > 0 else 13.0
+                            logN_guess = max(11.0, min(19.0, np.log10(N_val) if N_val > 0 else 13.0))
                         else: logN_guess = 13.5
                     else: logN_guess = 13.5
-                    
-                    logN_guess = max(11.0, min(19.0, logN_guess))
 
-                    # Unique Key (System + Rounded Z)
                     z_round = round(z_peak, 5)
                     uniq_key = (system_name, z_round)
                     
@@ -2454,17 +2437,21 @@ class SpectrumV2:
                         system_z_map[sys_id_counter] = z_peak
                         system_logN_map[sys_id_counter] = logN_guess
                         system_b_map[sys_id_counter] = b_guess
-                        
                         sys_id_counter += 1
                         processed_systems.add(uniq_key)
 
         # --- 7. Create Final Data Core ---
-        new_meta = spec.meta
-        new_aux_cols = deepcopy(spec._data.aux_cols)
+        new_meta = self.meta.copy()
+        new_aux_cols = deepcopy(self._data.aux_cols)
 
-        new_meta['num_regions_raw'] = int(num_raw)
-        new_meta['num_regions_merged'] = int(num_merged)
-        new_meta['num_regions_identified'] = len(reliable_ids)
+        # Storage for Identification
+        new_meta['series_map_json'] = json.dumps(system_series_map)
+        new_meta['z_map_json'] = json.dumps(system_z_map)
+        new_meta['logN_map_json'] = json.dumps(system_logN_map)
+        new_meta['b_map_json'] = json.dumps(system_b_map)
+        
+        # rich UI Metadata [THE FIX]
+        new_meta['region_identifications'] = json.dumps(region_info)
 
         vis_col = DataColumnV2(
             values=final_vis_map,
@@ -2473,22 +2460,7 @@ class SpectrumV2:
         )
         new_aux_cols['abs_ids'] = vis_col
 
-        # Serialize
-        try:
-            new_meta['series_map_json'] = json.dumps(system_series_map)
-            new_meta['z_map_json'] = json.dumps(system_z_map)
-            new_meta['logN_map_json'] = json.dumps(system_logN_map) # New
-            new_meta['b_map_json'] = json.dumps(system_b_map)       # New
-        except Exception as e:
-            logging.error(f"Failed to serialize component maps: {e}")
-            new_meta['region_identifications'] = None
-        
-        final_data_core = dataclasses.replace(
-            spec._data, 
-            meta=new_meta,
-            aux_cols=new_aux_cols
-        )
-        
+        final_data_core = dataclasses.replace(self._data, meta=new_meta, aux_cols=new_aux_cols)
         new_history = self.history + [f"Identified {len(processed_systems)} systems (de-blended)"]
         return SpectrumV2(data=final_data_core, history=new_history)
     
