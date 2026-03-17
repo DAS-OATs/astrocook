@@ -96,9 +96,15 @@ class RecipeDialog(QDialog):
         if not self.session or not self.session.spec:
             return []
         try:
-            cols = list(self.session.spec.t._data_dict.keys())
-            cols.sort()
-            return cols
+            internal_cols = self.session.spec.t.colnames
+            pretty_mapping = {
+                'x': 'λ', 
+                'xmin': 'λmin', 
+                'xmax': 'λmax', 
+                'y': 'F', 
+                'dy': 'dF'
+            }
+            return [pretty_mapping.get(c, c) for c in internal_cols]
         except Exception as e:
             return []
             

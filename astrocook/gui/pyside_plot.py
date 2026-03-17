@@ -388,7 +388,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         # Force the main window to take focus back so hotkeys work
         if self.plot_widget and self.plot_widget.main_window:
             self.plot_widget.main_window.setFocus()
-            
+
         if self.plot_widget:
             self.plot_widget.on_press(event)
 
@@ -2494,13 +2494,30 @@ class DataInspectorDialog(QDialog):
         self.table = QTableWidget()
         
         # Define Columns
-        self.cols = ['x', 'y', 'dy', 'cont', 'model']
+        self.cols = ['x', 'xmin', 'xmax', 'y', 'dy', 'cont', 'model']
+
+        # Define Display Labels
+        self.display_labels = {
+            'x': 'λ',
+            'xmin': 'λmin',
+            'xmax': 'λmax',
+            'y': 'F',
+            'dy': 'dF',
+            'cont': 'cont',
+            'model': 'model'
+        }
+        
         if hasattr(self.spec, '_data') and self.spec._data.aux_cols:
             for c in self.spec._data.aux_cols:
-                if c not in self.cols: self.cols.append(c)
+                if c not in self.cols: 
+                    self.cols.append(c)
+                    self.display_labels[c] = c # Default label for aux columns
                 
         self.table.setColumnCount(len(self.cols) + 1)
-        self.table.setHorizontalHeaderLabels(['Index'] + self.cols)
+        
+        # Use the display_labels for the horizontal header
+        header_labels = ['Index'] + [self.display_labels.get(c, c) for c in self.cols]
+        self.table.setHorizontalHeaderLabels(header_labels)
         
         # Styling
         self.table.verticalHeader().setVisible(False)

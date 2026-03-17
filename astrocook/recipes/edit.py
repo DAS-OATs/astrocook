@@ -47,8 +47,8 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Apply expression to columns.",
         "details": "Apply a NumPy-style expression. Use column names (x, y, cont...) as variables. E.g., 'y / cont', 'y * 2.0', or 'log10(y)'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "y", "doc": "Target column (to be overwritten or created)"},
-            {"name": "expression", "type": str, "default": "y / cont", "doc": "Expression to evaluate (e.g., 'y / 2.0')"},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Target column (to be overwritten or created)"},
+            {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression to evaluate (e.g., 'F / 2.0')"},
         ],
         "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
@@ -56,8 +56,8 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Mask column by expression.",
         "details": "Mask a target column by setting values to NaN where the expression is True. E.g., '(x < 300) | (x > 400)', or 'dy <= 0'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "y", "doc": "Target column to mask (e.g., y)"},
-            {"name": "expression", "type": str, "default": "dy <= 0", "doc": "Boolean expression (e.g., '(x > 300) & (x < 400)')"},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Target column to mask (e.g., F)"},
+            {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression (e.g., '(x > 300) & (x < 400)')"},
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
@@ -65,7 +65,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Smooth a single column.",
         "details": "Apply a Gaussian filter to a single data column (e.g., 'dy' or 'snr').",
         "params": [
-            {"name": "target_col", "type": str, "default": "dy", "doc": "Target column to smooth"},
+            {"name": "target_col", "type": str, "default": "dF", "doc": "Target column to smooth"},
             {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
             {"name": "renorm_model", "type": bool, "default": False, "doc": "If smoothing 'cont', also re-normalize 'model'?", "gui_hidden": True},
         ],
@@ -152,6 +152,32 @@ class RecipeEditV2:
     def __init__(self, session_v2: 'SessionV2'):
         self._session = session_v2
         self._tag = 'cb'
+
+    def _translate_ui_names(self, name_str: str) -> str:
+        """
+        Translates scientific symbols back to internal keys.
+        Supports: λ -> x, F -> y, dF -> dy.
+        Original V1 names (x, y, dy) remain untouched for compatibility.
+        """
+        if not isinstance(name_str, str):
+            return name_str
+
+        # Mapping: UI Display -> Internal Key
+        mapping = {
+            'λ': 'x',
+            'λmin': 'xmin',
+            'λmax': 'xmax',
+            'F': 'y',
+            'dF': 'dy'
+        }
+        
+        # Use regex with word boundaries (\b) to ensure we don't 
+        # accidentally replace 'F' inside a word like 'Flux'
+        processed_str = name_str
+        for ui_name, internal_name in mapping.items():
+            processed_str = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_str)
+        
+        return processed_str
 
     def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> Tuple[str, Dict[str, np.ndarray]]:
         """
@@ -425,7 +451,7 @@ class RecipeEditV2:
         target_col : str
             Target column (to be overwritten or created).
         expression : str
-            Expression to evaluate (e.g., ``'y / cont'``, ``'y * 2.0'``).
+            Expression to evaluate (e.g., ``'F / dF'``, ``'F * 2.0'``).
         alias_map : dict, optional
             Mapping of aliases to session names (e.g. ``{'s1': 'Session 1'}``).
 
@@ -435,8 +461,9 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the computed column,
             or 0 on failure.
         """
-        target_col = target_col.strip()
-        expression = expression.strip()
+        # Translate UI symbols back to internal keys
+        target_col = self._translate_ui_names(target_col.strip())
+        expression = self._translate_ui_names(expression.strip())
         if not expression:
             logging.error("Expression cannot be empty.")
             return 0
@@ -468,9 +495,9 @@ class RecipeEditV2:
         Parameters
         ----------
         target_col : str
-            Target column to mask (e.g., ``'y'``).
+            Target column to mask (e.g., ``'F'``).
         expression : str
-            Boolean expression (e.g., ``'(x < 300) | (x > 400)'``, ``'dy <= 0'``).
+            Boolean expression (e.g., ``'(x < 300) | (x > 400)'``, ``'dF <= 0'``).
         alias_map : dict, optional
             Mapping of aliases to session names.
 
@@ -480,8 +507,9 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the masked column,
             or 0 on failure.
         """
-        target_col = target_col.strip()
-        expression = expression.strip()
+        # Translate UI symbols back to internal keys
+        target_col = self._translate_ui_names(target_col.strip())
+        expression = self._translate_ui_names(expression.strip())
         if not expression:
             logging.error("Expression cannot be empty.")
             return 0
@@ -503,7 +531,7 @@ class RecipeEditV2:
             logging.error(f"Failed during mask_expression: {e}", exc_info=True)
             return 0
 
-    def smooth_column(self, target_col: str = 'dy', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
+    def smooth_column(self, target_col: str = 'dF', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
         """
         Smooth a single column.
 
@@ -513,7 +541,7 @@ class RecipeEditV2:
         Parameters
         ----------
         target_col : str, optional
-            Target column to smooth. Defaults to ``'dy'``.
+            Target column to smooth. Defaults to ``'dF'``.
         sigma_kms : str, optional
             Standard deviation for Gaussian kernel (km/s). Defaults to ``'100.0'``.
         renorm_model : str, optional
@@ -526,7 +554,8 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with the smoothed column,
             or 0 on failure.
         """
-        target_col = target_col.strip()
+        # Translate UI symbols back to internal keys
+        target_col = self._translate_ui_names(target_col.strip())
         try:
             sigma_kms_f = float(sigma_kms)
             # --- ADD THIS LINE ---
