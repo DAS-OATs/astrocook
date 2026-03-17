@@ -171,10 +171,13 @@ class RecipeEditV2:
             'dF': 'dy'
         }
         
-        # Use regex with word boundaries (\b) to ensure we don't 
-        # accidentally replace 'F' inside a word like 'Flux'
         processed_str = name_str
-        for ui_name, internal_name in mapping.items():
+        # Sort keys by length (descending)
+        sorted_keys = sorted(mapping.keys(), key=len, reverse=True)
+        
+        for ui_name in sorted_keys:
+            internal_name = mapping[ui_name]
+            # Use regex word boundaries to ensure we only replace exact matches
             processed_str = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_str)
         
         return processed_str
