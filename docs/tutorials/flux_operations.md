@@ -7,7 +7,7 @@ Once you've loaded your data and set the basic properties, you might need to pro
 Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).
 
 1. Go to **Flux > Calculate Running StdDev...**.
-2. **Input Column:** Usually `y` (Flux).
+2. **Input Column:** Usually `F` (Flux).
 3. **Window Size:** The number of pixels to use for the sliding window (e.g., `21`).
 4. **Output Column:** Name for the new error column (default: `running_std`).
 
@@ -72,7 +72,7 @@ Resampling is different from rebinning. It interpolates your spectrum onto an ar
 4. **Target Session:** Select "Session B" from the dropdown list.
 5. Click **Run**.
 
-Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](#editing-arithmetic) to compute `y / SessionB.y`.
+Session A will now have exactly the same wavelength points as Session B, allowing you to use [Apply Expression](#editing-arithmetic) to compute `F / SessionB.F`.
 
 (flux-calibration)=
 ## 6. Flux Calibration

@@ -8,7 +8,7 @@ For most science cases, you should start with one of the automated pipelines in 
 
 :::{important}
 **Normalization:** All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the `cont` column (multiplied by `telluric_model` if present) as the reference.
-* If no continuum exists, the software assumes the flux `y` is already normalized (median $\approx$ 1).
+* If no continuum exists, the software assumes the flux `F` is already normalized (median $\approx$ 1).
 * To use an alternative continuum (e.g., a power-law `cont_pl`), you must first copy it into the main `cont` column using **Edit > Apply Expression...** (`cont = cont_pl`).
 :::
 

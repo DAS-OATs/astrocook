@@ -37,7 +37,14 @@ For precise pixel-level analysis, you can open the **Data Inspector**.
 1.  **Right-click** on any point in the spectrum plot.
 2.  Select **Inspect Data (near ...)** from the context menu.
 
-This opens a floating window displaying the raw values (Wavelength, Flux, Error, Continuum) centered on the pixel you clicked. The table supports infinite scrolling, automatically loading more data as you move up or down.
+TThis opens a floating window displaying the raw values centered on the pixel you clicked. The table headers use scientific notation for clarity:
+* **λ**: Central wavelength of the pixel.
+* **λmin / λmax**: The lower and upper boundaries of the pixel bin.
+* **F**: Flux density.
+* **dF**: 1-sigma error estimate.
+* **Other columns**, containing the continuum and additional information, when present.
+
+The table supports infinite scrolling, automatically loading more data as you move up or down.
 
 (getting-started-customizing)=
 ## 3. Customizing the View (Right Sidebar)
