@@ -30,19 +30,19 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 (editing-arithmetic)=
 ## 3. Arithmetic on Columns
 
-Astrocook allows you to perform mathematical operations on **any** data column (Flux `y`, Error `dy`, Wavelength `x`, etc.) using NumPy-style syntax.
+Astrocook allows you to perform mathematical operations on **any** data column (Flux `F`, Error `dF`, Wavelength `λ`, etc.) using NumPy-style syntax.
 
 ### General Arithmetic
 
 You can modify existing columns or create new ones.
 
 1.  Go to **Edit > Apply Expression...**.
-2.  **Target Column:** Enter the name of the column to overwrite (e.g., `y`) or create (e.g., `flux_corr`).
-3.  **Expression:** Enter your formula (e.g., `y * 1e17`).
+2.  **Target Column:** Enter the name of the column to overwrite (e.g., `F`) or create (e.g., `F_corr`).
+3.  **Expression:** Enter your formula (e.g., `F * 1e17`).
 4.  Click **Run**.
 
 :::{tip}
-The recipe dialog features **toolbars** above the input fields. Click buttons like `y`, `x`, `log10`, or `sqrt` to instantly insert them into your expression syntax error-free.
+The recipe dialog features **toolbars** above the input fields. Click buttons like `F`, `λ`, `log10`, or `sqrt` to instantly insert them into your expression syntax error-free.
 :::
 
 ### Creating New Columns
@@ -50,7 +50,7 @@ The recipe dialog features **toolbars** above the input fields. Click buttons li
 You can also create new auxiliary columns. For example, to create a column representing the Signal-to-Noise Ratio:
 
 1. **Target Column**: `snr` (A new name).
-2. **Expression:** `y / dy`.
+2. **Expression:** `F / dF`.
 3. Once created, you can visualize this new column using the Aux. Column dropdown in the [Plot Controls](#getting-started-customizing).
 
 ```{image} ../_static/editing_apply_expression.png
@@ -66,8 +66,8 @@ The Edit menu provides specialized tools for cleaning and organizing your data s
 
 To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:
 1.  Go to **Edit > Mask by Expression...**.
-2.  **Target Column:** The column to mask (e.g., `y`).
-3.  **Expression:** A boolean condition (e.g., `dy <= 0` or `x < 350`).
+2.  **Target Column:** The column to mask (e.g., `F`).
+3.  **Expression:** A boolean condition (e.g., `dF <= 0` or `λ < 350`).
 4.  Values satisfying this condition will be set to `NaN`.
 
 ### Smoothing Single Columns
@@ -98,8 +98,8 @@ Sometimes you only want to work on a specific piece of a spectrum, such as the L
 To extract a custom range into a *new* session:
 
 1.  Go to **Edit > Split Out Region...**.
-2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `x`.
-    * Example: `(x > 400) & (x < 500)`
+2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `λ`.
+    * Example: `(λ > 400) & (λ < 500)`
 3.  A new session containing only that data range will appear in your list.
 
 ### Quick Extraction (Presets)
