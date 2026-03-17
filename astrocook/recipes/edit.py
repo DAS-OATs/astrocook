@@ -445,7 +445,7 @@ class RecipeEditV2:
         """
         Apply expression to columns.
 
-        Apply a NumPy-style expression. Use column names (x, y, cont...) as variables.
+        Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables.
         Supports multi-session arithmetic via aliases.
         Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.apply_expression`.
 
@@ -500,7 +500,7 @@ class RecipeEditV2:
         target_col : str
             Target column to mask (e.g., ``'F'``).
         expression : str
-            Boolean expression (e.g., ``'(x < 300) | (x > 400)'``, ``'dF <= 0'``).
+            Boolean expression (e.g., ``'(λ < 300) | (λ > 400)'``, ``'dF <= 0'``).
         alias_map : dict, optional
             Mapping of aliases to session names.
 
@@ -742,7 +742,7 @@ class RecipeEditV2:
         Parameters
         ----------
         expression : str
-            Boolean expression to select data (e.g., ``'(x > 400) & (x < 500)'``).
+            Boolean expression to select data (e.g., ``'(λ > 400) & (λ < 500)'``).
         alias_map : dict, optional
             Mapping for multi-session variables.
 
