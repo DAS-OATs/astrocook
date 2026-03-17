@@ -700,14 +700,14 @@ class SpectrumV2:
         """
         Prepare context for cross-spectrum arithmetic expressions.
 
-        Parses an expression for aliases (e.g., ``"s1.y"``), resolves them against
+        Parses an expression for aliases (e.g., ``"s1.F"``), resolves them against
         provided spectrum objects, and resamples their data onto the current
         spectrum's grid.
 
         Parameters
         ----------
         expression : str
-            The raw expression string (e.g., ``"y - s1.y"``).
+            The raw expression string (e.g., ``"F - s1.F"``).
         other_specs : dict
             A dictionary mapping alias names to :class:`SpectrumV2` objects.
 

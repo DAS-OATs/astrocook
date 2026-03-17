@@ -377,7 +377,7 @@ class RecipeDialog(QDialog):
 
             # ... (Session/Operator/Function/Boolean blocks) ...
             if self.session_alias_map:
-                sess_title = QLabel("<b>Available Sessions (e.g., s1.y):</b>")
+                sess_title = QLabel("<b>Available Sessions (e.g., s1.F):</b>")
                 sess_title.setContentsMargins(0, 8, 0, 0)
                 ref_layout.addWidget(sess_title)
                 sess_button_widget = QWidget()

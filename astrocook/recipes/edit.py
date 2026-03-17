@@ -45,7 +45,7 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "apply_expression": {
         "brief": "Apply expression to columns.",
-        "details": "Apply a NumPy-style expression. Use column names (x, y, cont...) as variables. E.g., 'y / cont', 'y * 2.0', or 'log10(y)'.",
+        "details": "Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables. E.g., 'F / cont', 'F * 2.0', or 'log10(F)'.",
         "params": [
             {"name": "target_col", "type": str, "default": "F", "doc": "Target column (to be overwritten or created)"},
             {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression to evaluate (e.g., 'F / 2.0')"},
@@ -54,16 +54,16 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "mask_expression": {
         "brief": "Mask column by expression.",
-        "details": "Mask a target column by setting values to NaN where the expression is True. E.g., '(x < 300) | (x > 400)', or 'dy <= 0'.",
+        "details": "Mask a target column by setting values to NaN where the expression is True. E.g., '(λ < 300) | (λ > 400)', or 'dF <= 0'.",
         "params": [
             {"name": "target_col", "type": str, "default": "F", "doc": "Target column to mask (e.g., F)"},
-            {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression (e.g., '(x > 300) & (x < 400)')"},
+            {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression (e.g., '(λ > 300) & (λ < 400)')"},
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
     "smooth_column": {
         "brief": "Smooth a single column.",
-        "details": "Apply a Gaussian filter to a single data column (e.g., 'dy' or 'snr').",
+        "details": "Apply a Gaussian filter to a single data column (e.g., 'dF' or 'snr').",
         "params": [
             {"name": "target_col", "type": str, "default": "dF", "doc": "Target column to smooth"},
             {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
@@ -193,7 +193,7 @@ class RecipeEditV2:
         Parameters
         ----------
         expression : str
-            The raw expression string provided by the user (e.g. ``"y - s1.y"``).
+            The raw expression string provided by the user (e.g. ``"F - s1.F"``).
         alias_map : dict
             A dictionary mapping aliases (e.g. ``"s1"``) to full session names.
 
