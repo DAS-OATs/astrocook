@@ -2366,6 +2366,32 @@ class SpectrumPlotWidget(QWidget):
         # Force redraw
         self.canvas.draw_idle()
 
+    def refresh_edit_layer(self):
+        """
+        Refreshes the continuum editing visuals (knots and draft spline).
+        Called by MainWindow to ensure the editor layer stays in sync with 
+        the background plot during updates or replots.
+        """
+        if not self._edit_mode_active:
+            return
+
+        try:
+            # 1. Ensure knots and spline data are up to date with the internal state
+            if self.knot_artist:
+                self.knot_artist.set_data(self._knots_x, self._knots_y)
+            
+            if self.spline_artist:
+                # The draft spline is already stored in self._frozen_spline_y
+                # We ensure the artist matches the full current x-grid
+                spec = self.main_window.active_history.current_state.spec
+                self.spline_artist.set_data(spec.x.value, self._frozen_spline_y)
+
+            # 2. Request an animation frame update (this uses blitting if background is valid)
+            self.canvas.draw_animated()
+            
+        except Exception as e:
+            logging.debug(f"Failed to refresh edit layer: {e}")
+
     def set_highlights(self, uuids: set):
         """Updates the list of highlighted component UUIDs and refreshes the plot."""
         if self._highlighted_uuids != uuids:
