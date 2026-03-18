@@ -594,6 +594,12 @@ class MainWindowV2(QMainWindow):
         self.edit_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         button_layout.addWidget(self.edit_cont_button)
 
+        self.cancel_cont_button = QPushButton("Cancel")
+        self.cancel_cont_button.setEnabled(False)
+        self.cancel_cont_button.clicked.connect(self._on_cancel_continuum_clicked)
+        self.cancel_cont_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button_layout.addWidget(self.cancel_cont_button)
+
         self.reset_cont_button = QPushButton("Reset")
         self.reset_cont_button.setEnabled(False)
         self.reset_cont_button.setToolTip("Discard changes and reset to default spacing.")
@@ -755,10 +761,47 @@ class MainWindowV2(QMainWindow):
             # Standard behavior
             self._trigger_replot()
     
+    def _on_cancel_continuum_clicked(self):
+        """Slot for the dedicated Cancel button in the sidebar."""
+        # Re-use the confirmation logic. 
+        # If the user clicks 'Cancel' in the dialog, the editor stays open.
+        # If they click 'Save' or 'Discard', the editor closes.
+        self._confirm_discard_continuum_edits()
+
+    def _confirm_discard_continuum_edits(self) -> bool:
+        """
+        Checks if continuum editing is active and asks user to Save, Discard, or Stay.
+        Returns True if the workflow (Open/Switch) can proceed.
+        Returns False if the user wants to stay and continue editing.
+        """
+        if hasattr(self, 'plot_viewer') and getattr(self.plot_viewer, '_edit_mode_active', False):
+            ret = self._show_custom_message(
+                title="Continuum Editor Active",
+                header="Unsaved Continuum Edits",
+                text="You are currently editing the continuum. What would you like to do with your changes?",
+                buttons=QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+                default_btn=QMessageBox.StandardButton.Save
+            )
+            
+            if ret == QMessageBox.StandardButton.Save:
+                # Trigger the same logic as the "Save" (formerly toggle) button
+                self._toggle_continuum_editor() 
+                return True
+            elif ret == QMessageBox.StandardButton.Discard:
+                # Discard and clean up visuals
+                self.plot_viewer.cancel_continuum_edit()
+                self._reset_continuum_ui()
+                return True
+            else: 
+                # User clicked 'Cancel' (meaning 'Cancel the switch/open, I want to stay')
+                return False
+        return True
+
     def _reset_continuum_ui(self):
         """Helper to reset the continuum editor panel to its default visual state."""
         self.edit_cont_button.setText("Start")
         self.edit_cont_button.setStyleSheet("") 
+        self.cancel_cont_button.setEnabled(False)
         self.stride_slider.setEnabled(False)
         self.stride_entry.setEnabled(False)
         self.reset_cont_button.setEnabled(False)
@@ -1625,6 +1668,7 @@ class MainWindowV2(QMainWindow):
 
     def add_session(self, new_session: SessionV2, initial_load=False):
         """Adds a new session history and updates view."""
+
         # The log_object parameter has been removed
         self._add_session_internal(new_session, is_initial=initial_load)
         if self.active_history:
@@ -1856,6 +1900,7 @@ class MainWindowV2(QMainWindow):
             self.plot_viewer.start_continuum_edit(initial_stride=initial_stride)
 
             self.edit_cont_button.setText("Save")
+            self.cancel_cont_button.setEnabled(True)
             self.stride_slider.setEnabled(True)
             self.stride_entry.setEnabled(True)
             self.reset_cont_button.setEnabled(True)
@@ -2092,7 +2137,13 @@ class MainWindowV2(QMainWindow):
             new_history_list_index = index.row()
             if 0 <= new_history_list_index < len(self.session_histories):
                 new_active_history = self.session_histories[new_history_list_index]
-                if new_active_history != self.active_history:
+                if self.active_history != new_active_history:
+                    # Only switch if user confirms discarding edits
+                    if not self._confirm_discard_continuum_edits():
+                        # Re-select the old item in the list visually
+                        self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
+                        return
+
                     logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
                     self.active_history = new_active_history
                     # Show the state pointed to by the NEW active history's index
@@ -2113,6 +2164,10 @@ class MainWindowV2(QMainWindow):
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
+        # [Check for pending edits BEFORE opening the file browser
+        if not self._confirm_discard_continuum_edits():
+            return
+        
         file_names, _ = QFileDialog.getOpenFileNames(
             self, 
             "Open Spectrum File(s)", 

@@ -2188,6 +2188,35 @@ class SpectrumPlotWidget(QWidget):
         self.canvas.draw()
         
         return final_x, final_y
+    
+    def cancel_continuum_edit(self):
+        """
+        Forcefully stops the continuum editor and discards all pending visual edits.
+        Cleans up artists and background buffers.
+        """
+        if not self._edit_mode_active:
+            return
+
+        logging.info("Continuum edit cancelled.")
+        
+        # 1. Stop the editor state without saving data
+        self._edit_mode_active = False
+        self._active_knot_idx = None
+        
+        # 2. Disconnect the background draw listener
+        if hasattr(self, '_draw_cid'):
+            self.canvas.mpl_disconnect(self._draw_cid)
+            del self._draw_cid
+        
+        # 3. Wipe visual buffers
+        self.canvas.background = None
+        self._remove_editor_artists()
+        
+        # 4. Trigger a clean redraw of the spectrum (using the session's 'cont' column)
+        session_state = None
+        if self.main_window.active_history:
+            session_state = self.main_window.active_history.current_state
+        self.plot_spectrum(session_state=session_state)
 
     def _apply_local_patch(self, center_x):
         """Recomputes the spline ONLY between i-1 and i+1, and pastes it into the frozen curve."""
