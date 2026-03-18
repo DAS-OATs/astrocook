@@ -44,7 +44,7 @@ Automatic fits sometimes fail near complex emission lines or spectral edges. You
 
 1. Look at the **Edit Continuum** section in the right sidebar.
 2. Click the **Start** button.
-3. **Knots** (black dots) will appear along the current continuum.
+3. The spectrum will be overplotted with a **Draft Continuum** (thick black line) and a series of **Knots** (circular markers).
 
 :::{note}
 If no continuum exists yet, Astrocook will prompt you to run the **Auto-estimate** routine first. You cannot edit the raw flux directly.
@@ -81,12 +81,23 @@ If you want to discard all your manual edits and generate a completely fresh con
 :align: center
 ```
 
-### Saving
+### Saving and Canceling
 
-When you are satisfied with the shape:
+Once editing is active, the sidebar buttons update to reflect the "active state":
 
-1. Click the **Save** button (which replaced "Start").
-2. The new continuum is saved to the session, and the knots disappear.
+- **Save:** Finalizes your manual knots and updates the session history. You will be asked if you wish to re-normalize the absorption model to match the new continuum.
+
+- **Cancel:** Discards all pending visual edits and reverts the plot to the last saved state.
+
+- **Reset:** Discards manual placements and restores the original knot distribution based on the current spacing value.
+
+### Workflow Safety
+
+To prevent accidental data loss, Astrocook monitors your editing state:
+
+- **Session Switching/Opening Files:** If you attempt to switch sessions or open a new file while editing, a dialog will appear asking you to **Save**, **Cancel**, or **Not Save**.
+
+- **Redshift Cursor:** Activating the Redshift Cursor will prompt you to close the Continuum Editor first to avoid interaction conflicts.
 
 ## 3. Power-Law Fitting
 
