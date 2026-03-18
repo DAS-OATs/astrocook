@@ -110,7 +110,8 @@ def run_comparison(n_components=1, snr=20, regime='unsaturated'):
     
     # 3. Bayesian Fit
     logging.info("\n--- Running Bayesian Fit (MCMC) ---")
-    b_fitter = BayesianVoigtFitter(f_fitter)
+    # NEW API: BayesianVoigtFitter(spec, systs)
+    b_fitter = BayesianVoigtFitter(spec, guess_sys)
     
     try:
         mcmc_res = b_fitter.run_mcmc(nwalkers=32, nsteps=500, burn_in=100)

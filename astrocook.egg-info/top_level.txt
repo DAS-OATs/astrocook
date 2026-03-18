@@ -1,1 +1,2 @@
 astrocook
+astrocook_output

@@ -353,6 +353,10 @@ class VoigtFitterV2:
         """
         p_full = self._constraints.map_p_free_to_full(p_free)
         
+        # Ensure we have a wavelength grid to work with
+        if self._x_calc is None:
+            self._x_calc = self._x_ang
+        
         # 1. Load Background (Tau computed from static components)
         tau_total_dict = {k: v.copy() for k, v in self._cached_tau_groups.items()}
         
@@ -438,6 +442,9 @@ class VoigtFitterV2:
         resid[~np.isfinite(resid)] = 0.0
         
         final_resid = resid[self._fit_mask_calc]
+        
+        # DEBUG PRINT - 100%
+        print(f"DEBUG: p_free={p_free} sum(resid^2)={np.sum(final_resid**2):.4f} mask_size={np.sum(self._fit_mask_calc)}")
         
         # Optional: Soft penalty for b > 50 km/s to prevent runaways
         p_full = self._constraints.map_p_free_to_full(p_free)
@@ -712,7 +719,7 @@ class VoigtFitterV2:
                         lam_0 = ATOM_DATA.get(trans, {}).get('wave')
                         if lam_0:
                             lam_obs = lam_0 * (1.0 + comp.z)
-                            safe_window = max(z_window_kms, 30.0)
+                            safe_window = max(z_window_kms, 150.0)
                             dw = (safe_window / c_kms) * lam_obs
                             self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
             self._fit_mask &= self._valid_mask
@@ -731,6 +738,11 @@ class VoigtFitterV2:
         self._fit_mask_calc = self._fit_mask[self._sl]
         
         logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
+        if np.sum(self._fit_mask_calc) == 0:
+            logging.warning("FIT MASK IS EMPTY!")
+            # Debug: what are we searching for?
+            for idx, comp in iterator:
+                logging.warning(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
         
         if self._use_variable_resolution and self._resol_column is not None:
             self._resol_calc = self._resol_column[self._sl]
@@ -808,11 +820,9 @@ class VoigtFitterV2:
             dz_window = (1.0 + comp.z) * (z_window_kms / c_kms)
             z_min_win, z_max_win = comp.z - dz_window, comp.z + dz_window
             lam_min, lam_max = self._find_feature_limits(comp.z, primary, z_window_kms=z_window_kms)
-            z_final_min, z_final_max = z_min_win, z_max_win
-            if lam_min is not None:
-                atom = ATOM_DATA[primary]
-                z_final_min = max(z_min_win, (lam_min / atom['wave']) - 1.0)
-                z_final_max = min(z_max_win, (lam_max / atom['wave']) - 1.0)
+            # Narrow the physical bounds based only on the requested z_window_kms
+            z_final_min = max(lower_bounds[base_idx], z_min_win)
+            z_final_max = min(upper_bounds[base_idx], z_max_win)
 
             idx_z = free_idx_map[base_idx]
             cur = self._constraints.p_free_vector[idx_z]
@@ -867,19 +877,35 @@ class VoigtFitterV2:
             3. **res** (*OptimizeResult*):
                The raw result object from ``scipy.optimize``.
         """
-        logging.debug(f"Starting Voigt Fit (Window={z_window_kms} km/s)...")
         p0 = self._constraints.p_free_vector
-        
-        # Setup the fitting context (pixels, background, vectors)
-        bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
-        p0 = self._smart_guess(p0, z_window_kms)
+        logging.info(f"Initial p0: {p0}")
+        # 1. Refine initial guess using centroiding (Smart Guess)
+        # p0 = self._smart_guess(p0, z_window_kms)
+        print(f"DEBUG: p0 after skipping smart_guess: {p0}")
 
-        # Clamp p0 to bounds to prevent "Initial guess outside bounds" error
-        # Because smart_guess might have proposed values that violate strict constraints.
+        # 2. Setup the fitting context (pixels, background, vectors) based on refined guess
+        # We need to update the system list temporarily to ensure prepare_fit_context 
+        # uses the refined positions for mask calculation.
+        p_full_refined = self._constraints.map_p_free_to_full(p0)
+        # This is a bit hacky but prevents the mask from being off-center
+        from dataclasses import replace
+        old_systs = self._system_list
+        new_comps = []
+        for i, comp in enumerate(old_systs.components):
+            idx = i * 4
+            new_comps.append(replace(comp, z=p_full_refined[idx], logN=p_full_refined[idx+1], b=p_full_refined[idx+2], btur=p_full_refined[idx+3]))
+        self._system_list = SystemListV2(replace(old_systs._data, components=new_comps))
+
+        bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
+
+        # Clamp p0 to bounds
         p0 = np.clip(p0, bounds[0], bounds[1])
 
         # Fit
         res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
+        
+        # Restore system list (it will be updated properly at the end)
+        self._system_list = old_systs
         
         # --- CLEANUP (Reset Optimized Caches) ---
         self._active_fit_components = None

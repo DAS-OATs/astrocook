@@ -1,7 +1,7 @@
+# import pytest
 import numpy as np
 import astropy.units as au
 import logging
-import matplotlib.pyplot as plt
 
 # Import V2 Core
 from astrocook.core.structures import (
@@ -10,16 +10,9 @@ from astrocook.core.structures import (
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.system_list import SystemListV2
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.core.atomic_data import ATOM_DATA
-
-# Configure Logging
-logging.basicConfig(level=logging.INFO)
 
 def create_synthetic_spectrum():
     """Generates a spectrum with a CIV doublet and some noise."""
-    print("--- Generating Synthetic Data ---")
-    
-    # 1. Create Grid centered on CIV 1548 at z=2.0
     z_true = 2.0
     lambda_0 = 1548.2040
     lambda_obs_center = lambda_0 * (1 + z_true)
@@ -28,34 +21,22 @@ def create_synthetic_spectrum():
     x_arr = np.linspace(lambda_obs_center - 10, lambda_obs_center + 10, 500)
     
     # 2. Create True Model (Physics)
-    # We cheat and use the Fitter's own physics engine to generate the truth
-    # True Params: z=2.0, logN=14.0, b=25.0
     true_comp = ComponentDataV2(
         id=0, z=z_true, dz=0, logN=14.0, dlogN=0, b=25.0, db=0, 
-        series='CIV' # This triggers both 1548 and 1550
+        series='CIV' 
     )
     
-    # Create a dummy system list for generation
     dummy_list_data = SystemListDataV2(components=[true_comp])
     dummy_sys = SystemListV2(dummy_list_data)
     
-    # Create a dummy spectrum container
     x_col = DataColumnV2(x_arr, au.Angstrom)
     y_dummy = DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled)
     dy_dummy = DataColumnV2(np.ones_like(x_arr)*0.1, au.dimensionless_unscaled)
     spec_data = SpectrumDataV2(x=x_col, xmin=x_col, xmax=x_col, y=y_dummy, dy=dy_dummy)
     spec_v2 = SpectrumV2(spec_data)
     
-    # Use Fitter to generate true flux
     fitter = VoigtFitterV2(spec_v2, dummy_sys)
-    # We need to hack the constraint model to give us the P vector for the true component
-    # Since we are just generating, we can calculate manually or use the internal method if accessible
-    # Let's trust the fitter logic:
-    # We create a fitter, but we need to generate the model from the *parameters*, not fit.
-    # VoigtFitterV2._compute_model uses the constraints vector.
-    
-    # Let's extract the p_vector corresponding to the true component
-    p_true = np.array([z_true, 14.0, 25.0, 0.0]) # z, logN, b, btur
+    p_true = np.array([z_true, 14.0, 25.0]) # z, logN, b (btur is frozen)
     true_flux = fitter._compute_model(p_true)
     
     # 3. Add Noise
@@ -67,8 +48,6 @@ def create_synthetic_spectrum():
     # 4. Return SpectrumV2 Object
     y_col = DataColumnV2(y_obs, au.dimensionless_unscaled)
     dy_col = DataColumnV2(dy_obs, au.dimensionless_unscaled)
-    
-    # Add a continuum column (all ones)
     aux = {'cont': DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled)}
     
     final_data = SpectrumDataV2(
@@ -77,74 +56,50 @@ def create_synthetic_spectrum():
     return SpectrumV2(final_data)
 
 def test_fitting_workflow():
-    
+    """
+    Smoke test for the Frequentist Fitter (VoigtFitterV2).
+    Verifies parameter recovery and compute_model_flux after refactor.
+    """
     # 1. Get Data
     spectrum = create_synthetic_spectrum()
     
-    # 2. Create a "Bad" Initial Guess (User clicked slightly wrong)
-    # True was z=2.0, logN=14.0, b=25.0
-    # Guess is z=2.001, logN=13.5, b=40.0
-    print("\n--- Initializing System List with Guess ---")
+    # 2. Initial Guess
+    z_true = 2.0
+    logN_true = 14.0
+    b_true = 25.0
+    
     guess_comp = ComponentDataV2(
         id=1, 
-        z=2.0005,  # Slightly shifted
+        z=z_true + 0.0005,
         dz=None,
-        logN=13.5, # Too weak
+        logN=13.5, # Default guess
         dlogN=None,
-        b=40.0,    # Too broad
+        b=10.0,    # Default guess (required to trigger smart_guess)
         db=None,
         series='CIV'
     )
     
     syst_list = SystemListV2(SystemListDataV2(components=[guess_comp]))
-    
-    print(f"Guess: z={guess_comp.z:.5f}, logN={guess_comp.logN:.2f}, b={guess_comp.b:.2f}")
-    
-    # 3. Initialize Fitter
-    print("\n--- Initializing Fitter ---")
     fitter = VoigtFitterV2(spectrum, syst_list)
     
-    # 4. Run Fit
-    print("--- Running Fit (Levenberg-Marquardt) ---")
-    new_syst_list, result = fitter.fit(verbose=2)
+    # 3. Run Fit
+    new_syst_list, final_model_flux, result = fitter.fit(z_window_kms=100.0, verbose=0)
     
-    # 5. Inspect Results
-    fitted_comp = new_syst_list.components[0]
+    # 4. Assertions
+    assert result.success, "Fitter failed to converge"
     
-    print("\n--- Fit Results ---")
-    print(f"Success: {result.success}")
-    print(f"Message: {result.message}")
-    print(f"Cost: {result.cost:.4f}")
+    fitted = new_syst_list.components[0]
     
-    print("-" * 30)
-    print(f"{'Param':<10} | {'True':<10} | {'Guess':<10} | {'Fitted':<10}")
-    print("-" * 30)
-    print(f"{'z':<10} | {2.0:<10.5f} | {guess_comp.z:<10.5f} | {fitted_comp.z:<10.5f}")
-    print(f"{'logN':<10} | {14.0:<10.2f} | {guess_comp.logN:<10.2f} | {fitted_comp.logN:<10.2f}")
-    print(f"{'b':<10} | {25.0:<10.2f} | {guess_comp.b:<10.2f} | {fitted_comp.b:<10.2f}")
-    print("-" * 30)
-    
-    # 6. Visualization (Optional)
-    try:
-        x_plot, y_model = fitter.compute_model_flux()
-        # We need to re-compute model for the fitted result manually to be sure
-        # (Fitter.compute_model_flux uses the *current* constraints, but the fitter returns a *new* list)
-        
-        # To plot the result, we make a new fitter with the new list (statelessness check)
-        fitter_final = VoigtFitterV2(spectrum, new_syst_list)
-        x_plot, y_final = fitter_final.compute_model_flux()
-        
-        plt.figure(figsize=(10, 6))
-        plt.step(spectrum.x.value, spectrum.y.value, color='black', alpha=0.3, label='Data (Noisy)')
-        plt.plot(x_plot, y_final, color='red', lw=2, label='Fitted Model')
-        plt.title("V2 Voigt Fitter Test: CIV Doublet")
-        plt.xlabel("Wavelength (Angstrom)")
-        plt.ylabel("Normalized Flux")
-        plt.legend()
-        plt.show()
-        print("Plot displayed.")
-    except Exception as e:
-        print(f"Plotting skipped: {e}")
+    # Tolerances (considering SNR=20)
+    assert abs(fitted.z - z_true) < 1e-4, f"z recovery failed: {fitted.z} vs {z_true}"
+    assert abs(fitted.logN - logN_true) < 0.2, f"logN recovery failed: {fitted.logN} vs {logN_true}"
+    assert abs(fitted.b - b_true) < 5.0, f"b recovery failed: {fitted.b} vs {b_true}"
+
+    # Verify model flux calculation
+    x_calc, y_calc = fitter.compute_model_flux()
+    assert len(y_calc) == len(spectrum.x.value)
+    assert np.all(y_calc >= 0)
+    assert np.all(y_calc <= 1.1) # Allowing for some noise above continuum
 
 if __name__ == "__main__":
     test_fitting_workflow()

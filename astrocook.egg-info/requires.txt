@@ -1,4 +1,4 @@
-wxpython>=4.2
+PySide6>=6.10
 astropy>=6.1
 tqdm>=4.66
 matplotlib>=3.9
@@ -11,6 +11,14 @@ cycler>=0.10
 statsmodels>=0.10.1
 numexpr
 qtawesome
+
+[bayesian]
+emcee
+dynesty
+corner
+
+[legacy]
+wxPython
 
 [test]
 pytest
