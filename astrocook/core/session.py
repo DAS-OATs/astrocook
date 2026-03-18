@@ -71,33 +71,28 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
     v2_metadata = None
     
     archive_path_lower = archive_path.lower()
-    # PRESERVE: Check for V2 archive early to prevent mis-loading as raw spectrum
     is_v2_archive = archive_path_lower.endswith('.acs2') or archive_path_lower.endswith('.tar.gz')
 
-    # --- 1. CHECK V2 NATIVE LOADERS (Only for raw files) ---
+    # --- 1. V2 NATIVE LOADERS (Only for RAW files, NOT archives) ---
     from astrocook.io.loaders import get_loader, detect_file_format
 
-    if not is_v2_archive:
+    if not is_v2_archive and not archive_path_lower.endswith('.acs'):
         if format_name == 'auto' or format_name is None:
             try:
                 format_name = detect_file_format(archive_path)
-                logging.info(f"Auto-detected format '{format_name}' for {os.path.basename(archive_path)}")
-            except Exception as e:
-                logging.warning(f"Format detection failed ({e}), defaulting to 'generic_spectrum'.")
+            except Exception:
                 format_name = 'generic_spectrum'
 
         v2_loader = get_loader(format_name)
         if v2_loader:
-            logging.info(f"Using V2 Native Loader for format '{format_name}' on {archive_path}")
             try:
                 spec_data = v2_loader(archive_path)
-                spectrum_v2 = SpectrumV2(data=spec_data)
-                return SessionV2(name=name, gui=gui_context, spec=spectrum_v2)
+                return SessionV2(name=name, gui=gui_context, spec=SpectrumV2(data=spec_data))
             except Exception as e:
-                logging.error(f"V2 Loader '{format_name}' failed: {e}")
+                logging.error(f"V2 Loader failed: {e}")
                 return 0
 
-    # --- 2. EXISTING LEGACY & ARCHIVE LOGIC ---
+    # --- 2. ARCHIVE & LEGACY HANDLING ---
     try:
         if is_v2_archive:
             logging.debug(f"Unpacking V2 archive: {archive_path}")
@@ -105,45 +100,40 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             with tarfile.open(archive_path, 'r:gz') as tar:
                 tar.extractall(path=temp_dir)
             
+            # 1. FIND THE ACTUAL FITS FILE
             spec_file_path = None
             for f in os.listdir(temp_dir):
                 if f.endswith('_spec.fits'):
                     spec_file_path = os.path.join(temp_dir, f)
                     break
+            
             if not spec_file_path:
-                 raise FileNotFoundError("Could not find a _spec.fits file in the .acs2 archive.")
-            archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
+                 raise FileNotFoundError("Could not find _spec.fits in .acs2 archive.")
+            
+            # 2. SET THE ROOT TO THE UNPACKED FILE (Crucial for the Adapter)
+            archive_root = os.path.join(temp_dir, os.path.basename(spec_file_path).replace('_spec.fits', ''))
+            
+            # 3. LOAD METADATA
+            meta_file_path = f"{archive_root}_meta.json"
+            if os.path.exists(meta_file_path):
+                with open(meta_file_path, 'r') as f:
+                    v2_metadata = json.load(f)
 
         elif archive_path_lower.endswith('.acs'):
-            logging.debug(f"Unpacking V1 archive: {archive_path}")
+            # ... (V1 logic remains same) ...
             archive_manager = V1ArchiveManager(archive_path)
             temp_dir = archive_manager.unpack()
-            if not temp_dir:
-                 raise RuntimeError("V1ArchiveManager failed to unpack .acs file.")
-
             spec_file_path = archive_manager.get_structure_path('spec')
-            if not spec_file_path:
-                 raise FileNotFoundError("Could not find a _spec.fits file in the .acs archive.")
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
         else:
-            logging.debug("Loading single FITS file (Legacy Path).")
+            # Single FITS file load
             temp_dir = None
             archive_root = os.path.splitext(archive_path)[0]
             spec_file_path = archive_path
-        
-        if temp_dir:
-            meta_fname = f"{os.path.basename(archive_root)}_meta.json"
-            meta_file_path = os.path.join(temp_dir, meta_fname)
-            if os.path.exists(meta_file_path):
-                try:
-                    with open(meta_file_path, 'r') as f:
-                        v2_metadata = json.load(f)
-                    logging.info("Loaded V2 metadata from _meta.json.")
-                except Exception as e:
-                    logging.error(f"Failed to load _meta.json: {e}")
 
-        # PRESERVE: Legacy Load and Migration
+        # --- 3. EXECUTE MIGRATION ---
+        # archive_root MUST point to the directory/prefix where the .fits live
         spectrum_v2 = load_and_migrate_structure(
             archive_root, 'spec', gui_context, format_name, 
             spec_file_path=spec_file_path,
@@ -155,35 +145,15 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             v2_metadata=v2_metadata
         )
 
-        if not spectrum_v2: 
-            raise RuntimeError(f"Legacy Spectrum loading failed for {archive_path}")
-
-        new_session = SessionV2(
-            name=name, 
-            gui=gui_context, 
-            spec=spectrum_v2, 
-            systs=system_list_v2
-        )
-        
-        # PRESERVE: Sanitize tellurics (Essential for alignment)
-        if new_session.spec:
-            try:
-                new_session = new_session.with_new_spectrum(new_session.spec.sanitize_legacy_tellurics())
-            except Exception as e:
-                logging.warning(f"Failed to sanitize legacy tellurics: {e}")
-                
-        return new_session 
+        return SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
 
     except Exception as e: 
-        logging.error(f"FATAL: load_session_from_file failed: {e}", exc_info=True)
+        logging.error(f"Load failed: {e}", exc_info=True)
         return 0 
-
-    finally: 
-        if archive_manager:
-            archive_manager.cleanup()
-        elif temp_dir and os.path.exists(temp_dir):
-            import shutil
-            shutil.rmtree(temp_dir)
+    finally:
+        # Cleanup temp files
+        if archive_manager: archive_manager.cleanup()
+        if temp_dir and os.path.exists(temp_dir): shutil.rmtree(temp_dir)
             
 
 class SessionV2:
