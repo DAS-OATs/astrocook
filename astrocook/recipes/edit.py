@@ -91,9 +91,9 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "split": {
         "brief": "Split spectrum by expression.",
-        "details": "Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(x > 400) & (x < 500)'.",
+        "details": "Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(λ > 400) & (λ < 500)'.",
         "params": [
-            {"name": "expression", "type": str, "default": "(x > 400) & (x < 500)", "doc": "Boolean expression to select data"}
+            {"name": "expression", "type": str, "default": "(λ > 400) & (λ < 500)", "doc": "Boolean expression to select data"}
         ],
         "url": "edit_cb.html#split"
     },

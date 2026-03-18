@@ -14,7 +14,7 @@ FILE_RECIPES_SCHEMAS = {
         "brief": "Export session data to ASCII.",
         "details": "Saves selected session components (Flux, Continuum, System List) as CSV files.",
         "params": [
-            {"name": "targets", "type": str, "default": "y, cont, systems", "doc": "Comma-separated elements to export"},
+            {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated elements to export"},
             {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Destination folder"}
         ],
         "url": "file_cb.html#export"
@@ -55,7 +55,7 @@ class RecipeFileV2:
         ----------
         targets : str
             Comma-separated list of structures or columns to export 
-            (e.g., ``'spec, systems'`` or ``'y, cont, logN'``).
+            (e.g., ``'spec, systems'`` or ``'F, cont, logN'``).
         path : str
             The destination directory path.
         prefix : str
@@ -66,7 +66,13 @@ class RecipeFileV2:
         bool
             ``True`` if at least one file was successfully saved, ``False`` otherwise.
         """
-        target_list = [t.strip() for t in targets.split(',') if t.strip()]
+        mapping = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
+        processed_targets = targets
+        for ui_name, internal_name in mapping.items():
+            # Replace whole words only
+            processed_targets = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_targets)
+            
+        target_list = [t.strip() for t in processed_targets.split(',') if t.strip()]
         saved_any = False
         
         # Get authoritative column lists
