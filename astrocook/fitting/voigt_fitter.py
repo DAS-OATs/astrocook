@@ -820,16 +820,19 @@ class VoigtFitterV2:
             dz_window = (1.0 + comp.z) * (z_window_kms / c_kms)
             z_min_win, z_max_win = comp.z - dz_window, comp.z + dz_window
             lam_min, lam_max = self._find_feature_limits(comp.z, primary, z_window_kms=z_window_kms)
-            # Narrow the physical bounds based only on the requested z_window_kms
-            z_final_min = max(lower_bounds[base_idx], z_min_win)
-            z_final_max = min(upper_bounds[base_idx], z_max_win)
-
+            
             idx_z = free_idx_map[base_idx]
+            
+            # Narrow the physical bounds based only on the requested z_window_kms
+            z_final_min = max(lower_bounds[idx_z], z_min_win)
+            z_final_max = min(upper_bounds[idx_z], z_max_win)
+
             cur = self._constraints.p_free_vector[idx_z]
             lower_bounds[idx_z] = min(z_final_min, cur - 1e-6)
             upper_bounds[idx_z] = max(z_final_max, cur + 1e-6)
         
         return lower_bounds, upper_bounds
+
 
     def get_fit_context_data(self) -> Dict[str, Any]:
         """

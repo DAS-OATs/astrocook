@@ -94,7 +94,29 @@ class BayesianVoigtFitter:
         sampler = emcee.EnsembleSampler(nwalkers, self.ndim, self.ln_posterior)
         
         logging.info(f"Running MCMC: {nwalkers} walkers, {nsteps} steps...")
-        sampler.run_mcmc(pos, nsteps, progress=progress)
+        if progress:
+            # We use manual iteration instead of run_mcmc to pipe progress to the GUI via logging
+            # Astrocook's RecipeProgressDialog looks for '>> PROGRESS: X' messages
+            update_interval = max(1, nsteps // 100)
+            try:
+                # Add tqdm for terminal output if available
+                from tqdm import tqdm
+                pbar = tqdm(total=nsteps, desc="MCMC", leave=False)
+            except ImportError:
+                pbar = None
+
+            for i, result in enumerate(sampler.sample(pos, iterations=nsteps, progress=False)):
+                if pbar: pbar.update(1)
+                
+                # Update GUI every 1% or at least every step
+                if i % update_interval == 0:
+                    pct = int(100 * i / nsteps)
+                    logging.info(f">> PROGRESS: {pct}")
+            
+            if pbar: pbar.close()
+            logging.info(">> PROGRESS: 100")
+        else:
+            sampler.run_mcmc(pos, nsteps, progress=False)
         
         # Process results
         flat_samples = sampler.get_chain(discard=burn_in, flat=True)
@@ -120,7 +142,30 @@ class BayesianVoigtFitter:
         dsampler = dynesty.NestedSampler(self.ln_likelihood, prior_transform, self.ndim, nlive=nlive)
         
         logging.info(f"Running Nested Sampling (nlive={nlive})...")
-        dsampler.run_nested(print_progress=progress)
+        if progress:
+            import time
+            last_log_time = time.time()
+            
+            # Start manual sampling to safely pipe progress to GUI
+            # We target dlogz=0.1 which is dynesty's standard default
+            target_dlogz = 0.1
+            for i, res in enumerate(dsampler.sample(dlogz=target_dlogz)):
+                if time.time() - last_log_time > 0.5:
+                    dlogz = getattr(dsampler, 'dlogz', None)
+                    if dlogz is None and isinstance(res, tuple) and len(res) > 3:
+                        dlogz = res[-1]  # fallback for some old dynesty versions
+                    
+                    if dlogz is not None:
+                        logging.info(f"Nested Iter {i} | dLogZ: {dlogz:.2f} > {target_dlogz}")
+                    else:
+                        logging.info(f"Nested Iter {i}...")
+                    last_log_time = time.time()
+            
+            # Finalize remaining live points
+            logging.info("Adding final live points...")
+            dsampler.add_live_points()
+        else:
+            dsampler.run_nested(print_progress=False)
         
         res = dsampler.results
         samples = res.samples

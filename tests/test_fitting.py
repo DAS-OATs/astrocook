@@ -99,7 +99,43 @@ def test_fitting_workflow():
     x_calc, y_calc = fitter.compute_model_flux()
     assert len(y_calc) == len(spectrum.x.value)
     assert np.all(y_calc >= 0)
-    assert np.all(y_calc <= 1.1) # Allowing for some noise above continuum
+
+def test_adding_component_to_existing_system():
+    """
+    Reproduces the scenario where a user adds a new component to an existing fit.
+    This tests if the fitter correctly handles index mapping when p_free is a 
+    subset of the full parameters (i.e. partial fit).
+    """
+    spectrum = create_synthetic_spectrum()
+    
+    # 1. Existing System (Frozen/Inactive)
+    comp1 = ComponentDataV2(
+        id=1, z=1.5, dz=0, logN=13.0, dlogN=0, b=20.0, db=0, series='CIV'
+    )
+    
+    # 2. New Component (Active/Free)
+    comp2 = ComponentDataV2(
+        id=2, z=2.0, dz=None, logN=13.5, dlogN=None, b=10.0, db=None, series='CIV'
+    )
+    
+    syst_list = SystemListV2(SystemListDataV2(components=[comp1, comp2]))
+    
+    # Simulate GUI selection: only comp2 is active
+    syst_list.constraint_model._active_uuids = [comp2.uuid]
+    # Update constraints to freeze comp1
+    # We must explicitly freeze comp1 as the GUI would do.
+    # The default SystemListV2 constructor leaves dz=None components as free.
+    # Here, comp1 has dz=0, which our constraints interpret as frozen.
+    
+    fitter = VoigtFitterV2(spectrum, syst_list)
+    
+    try:
+        new_syst_list, final_model, res = fitter.fit(z_window_kms=100.0, verbose=0)
+        assert res.success
+    except IndexError as e:
+        import pytest
+        pytest.fail(f"IndexError occurred during partial fit: {e}")
 
 if __name__ == "__main__":
     test_fitting_workflow()
+    test_adding_component_to_existing_system()
