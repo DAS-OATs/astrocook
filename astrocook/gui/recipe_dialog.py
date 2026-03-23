@@ -332,9 +332,13 @@ class RecipeDialog(QDialog):
             max_cols_per_row = 4
             current_col_idx = 0; current_row_idx = 0
 
-            core_cols = {'x', 'xmin', 'xmax', 'y', 'dy'}
-            filtered_cols = [c for c in available_cols if c not in core_cols]
+            # Define core columns using their UI names as returned by _get_available_columns()
+            core_ui_cols = {'λ', 'λmin', 'λmax', 'F', 'dF'}
+            filtered_cols = [c for c in available_cols if c not in core_ui_cols]
             items_to_show = ["systems"] + filtered_cols
+
+            # Define standard columns that get filled with NaNs instead of removed
+            standard_ui_cols = {'cont', 'model'}
 
             for item_name in items_to_show:
                 if current_col_idx >= max_cols_per_row:
@@ -347,8 +351,35 @@ class RecipeDialog(QDialog):
                     display_label = "systems (lines)"
                     button.setText(display_label)
                     button.setStyleSheet("color: darkred; font-weight: bold;") 
+                elif item_name in standard_ui_cols:
+                    # Give standard columns a distinct color (e.g., orange) to indicate a different behavior
+                    button.setStyleSheet("color: #d35400;")
 
-                button.clicked.connect(lambda checked=False, text=item_name: self._insert_text_into_expression(text))
+                # --- [FIX 2] Add the Warning Intercept ---
+                # We use a helper function to handle the click logic cleanly
+                def make_click_handler(col_name):
+                    def handler():
+                        if col_name in standard_ui_cols:
+                            # Try to use the Main Window's custom styled message box
+                            if self.parent_window and hasattr(self.parent_window, '_show_custom_message'):
+                                self.parent_window._show_custom_message(
+                                    title="Standard Column",
+                                    header=f"Clearing '{col_name}'",
+                                    text=f"'{col_name}' is a standard Astrocook column.<br><br>Deleting it will clear its contents (fill with NaNs) rather than removing the column entirely.",
+                                    buttons=QMessageBox.StandardButton.Ok,
+                                    parent=self  # <--- THIS FIXES THE FOCUS ISSUE
+                                )
+                            else:
+                                # Fallback just in case
+                                QMessageBox.information(
+                                    self, 
+                                    "Standard Column Selected", 
+                                    f"'{col_name}' is a standard column. Deleting it will clear its contents (fill with NaNs)."
+                                )
+                        self._insert_text_into_expression(col_name)
+                    return handler
+
+                button.clicked.connect(make_click_handler(item_name))
                 
                 del_button_grid.addWidget(button, current_row_idx, current_col_idx)
                 current_col_idx += 1

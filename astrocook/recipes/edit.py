@@ -710,6 +710,7 @@ class RecipeEditV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the elements removed.
         """
+        targets = self._translate_ui_names(targets)
         target_list = [t.strip() for t in targets.split(',') if t.strip()]
         if not target_list:
             return self._session
