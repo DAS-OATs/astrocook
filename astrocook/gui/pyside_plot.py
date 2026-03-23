@@ -1427,6 +1427,11 @@ class SpectrumPlotWidget(QWidget):
         if self.main_window:
             # Schedule this to run just after the draw completes
             QTimer.singleShot(0, self.main_window._update_limit_boxes_from_plot)
+
+        # --- Refresh Data Inspector if it's open ---
+        if hasattr(self, '_data_inspector_dialog') and self._data_inspector_dialog is not None:
+            if self._data_inspector_dialog.isVisible():
+                self._data_inspector_dialog.refresh(session_state)
     
     def toggle_region_selector(self):
         """ Enables/disables the region selection mode. """
@@ -2622,6 +2627,52 @@ class DataInspectorDialog(QDialog):
         # 5. Connect Scroll Signal
         self.table.verticalScrollBar().valueChanged.connect(self._check_scroll)
 
+    def refresh(self, new_session):
+        """
+        Updates the table data and columns if the session state changes 
+        (e.g., a column is added or masked), while preserving the scroll window.
+        """
+        if not new_session or not new_session.spec: 
+            return
+            
+        self.session = new_session
+        self.spec = new_session.spec
+        
+        # 1. Save current scroll position to prevent jumping
+        vbar = self.table.verticalScrollBar()
+        scroll_val = vbar.value()
+        
+        # 2. Re-evaluate columns in case one was added or removed
+        self.cols = ['x', 'xmin', 'xmax', 'y', 'dy', 'cont', 'model']
+        self.display_labels = {
+            'x': 'λ', 'xmin': 'λmin', 'xmax': 'λmax', 
+            'y': 'F', 'dy': 'dF', 'cont': 'cont', 'model': 'model'
+        }
+        
+        if hasattr(self.spec, '_data') and self.spec._data.aux_cols:
+            for c in self.spec._data.aux_cols:
+                if c not in self.cols: 
+                    self.cols.append(c)
+                    self.display_labels[c] = c # Default label for aux columns
+                    
+        # 3. Block signals to prevent scroll events from firing during rebuild
+        self.table.blockSignals(True)
+        vbar.blockSignals(True)
+        
+        # 4. Rebuild table headers and clear old rows
+        self.table.setColumnCount(len(self.cols) + 1)
+        header_labels = ['Index'] + [self.display_labels.get(c, c) for c in self.cols]
+        self.table.setHorizontalHeaderLabels(header_labels)
+        self.table.setRowCount(0) 
+        
+        self.table.blockSignals(False)
+        
+        # 5. Re-populate the current sliding window with the new data
+        self._populate_range(self.current_start, self.current_end, prepend=False)
+        
+        # 6. Restore scroll position
+        vbar.setValue(scroll_val)
+        vbar.blockSignals(False)
 
     def _populate_range(self, start_idx, end_idx, prepend=False):
         """
