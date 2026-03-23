@@ -651,15 +651,15 @@ class VelocityPlotWidget(QWidget):
         norm = session.spec.norm.value if has_norm else np.ones_like(y)
         
         with np.errstate(divide='ignore', invalid='ignore'):
-            y_norm = np.divide(y, norm, where=norm!=0)
-            dy_norm = np.divide(dy, norm, where=norm!=0)
+            y_norm = np.divide(y, norm, out=np.full_like(y, np.nan), where=norm!=0)
+            dy_norm = np.divide(dy, norm, out=np.full_like(dy, np.nan), where=norm!=0)
             
         y_resid = None
         if session.spec.model is not None:
             mod = session.spec.model.value
             with np.errstate(divide='ignore', invalid='ignore'):
-                mod_norm = np.divide(mod, norm, where=norm!=0) if has_norm else mod
-                y_resid = np.divide(y_norm - mod_norm, dy_norm, where=dy_norm!=0)
+                mod_norm = np.divide(mod, norm, out=np.full_like(mod, np.nan), where=norm!=0) if has_norm else mod
+                y_resid = np.divide(y_norm - mod_norm, dy_norm, out=np.full_like(y_norm, np.nan), where=dy_norm!=0)
 
         colors = get_color_cycle(5, cmap='tab20')
         #colors[0] = "#296bff"
@@ -945,11 +945,11 @@ class VelocityPlotWidget(QWidget):
                 dy = session.spec.dy.value if session.spec.dy is not None else np.ones_like(x_full)
                 norm = session.spec.norm.value if session.spec.norm is not None else np.ones_like(x_full)
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    dy_norm = np.divide(dy, norm, where=norm!=0)
+                    dy_norm = np.divide(dy, norm, out=np.full_like(dy, np.nan), where=norm!=0)
                 
                 dy_interp = np.interp(v_grid, v_full, dy_norm, left=1.0, right=1.0)
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    prof_sigma = np.divide(total_prof - 1.0, dy_interp, where=dy_interp>1e-9)
+                    prof_sigma = np.divide(total_prof - 1.0, dy_interp, out=np.zeros_like(total_prof), where=dy_interp>1e-9)
                     prof_sigma[~np.isfinite(prof_sigma)] = 0.0
                 line_resid.set_data(v_grid, prof_sigma)
             
