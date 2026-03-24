@@ -766,9 +766,25 @@ class RecipeEditV2:
             expression=final_expression,
             extra_vars=extra_vars
         )
+
+        new_systs = self._session.systs
+        if new_spec_v2 and len(new_spec_v2.x) > 0 and new_systs:
+            import numpy as np
+            import astropy.units as au
+            
+            # Safely get min/max in nanometers, regardless of current plot units
+            xmin_nm = np.min(new_spec_v2.x.to(au.nm).value)
+            xmax_nm = np.max(new_spec_v2.x.to(au.nm).value)
+            
+            original_count = len(new_systs.components)
+            new_systs = new_systs.filter_by_range(xmin_nm, xmax_nm)
+            filtered_count = len(new_systs.components)
+            
+            if original_count != filtered_count:
+                logging.info(f"Split: Filtered out {original_count - filtered_count} systems outside the new range.")
         
-        # 3. Return a NEW SessionV2 instance (GUI handles branching)
-        return self._session.with_new_spectrum(new_spec_v2)
+        # 4. Return a NEW SessionV2 instance (GUI handles branching)
+        return self._session.with_new_spectrum(new_spec_v2).with_new_system_list(new_systs)
     
     def extract_preset(self, region: str = 'lya_forest') -> Union['SessionV2', List['SessionV2']]:
         """
