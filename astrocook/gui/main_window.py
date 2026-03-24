@@ -2502,6 +2502,55 @@ class MainWindowV2(QMainWindow):
                     else:
                         step_str = f"{med_dx:.4f} {spec.x.unit} (variable)"
 
+        chi2_html = "<tr><td>Red. χ² (Global):</td><td>N/A (No model)</td></tr>"
+        
+        if spec.model is not None and len(spec.model.value) > 0:
+            try:
+                x_vals = spec.x.value
+                y_vals = spec.y.value
+                dy_vals = spec.dy.value
+                mod_vals = spec.model.value
+                
+                # Filter out NaNs and division-by-zero
+                valid = (dy_vals > 0) & np.isfinite(y_vals) & np.isfinite(mod_vals) & np.isfinite(dy_vals)
+                
+                if np.any(valid):
+                    x_v = x_vals[valid]
+                    y_v = y_vals[valid]
+                    dy_v = dy_vals[valid]
+                    mod_v = mod_vals[valid]
+                    
+                    # Calculate pixel-by-pixel chi-squared
+                    chi2_array = ((y_v - mod_v) / dy_v) ** 2
+                    
+                    z_em = spec._data.z_em
+                    
+                    if z_em > 0:
+                        # Split by Ly-alpha (121.567 nm)
+                        lya_obs = 121.567 * (1.0 + z_em)
+                        
+                        forest_mask = x_v < lya_obs
+                        red_mask = x_v >= lya_obs
+                        
+                        c_forest_str = "N/A"
+                        c_red_str = "N/A"
+                        
+                        if np.any(forest_mask):
+                            c_forest = np.sum(chi2_array[forest_mask]) / np.sum(forest_mask)
+                            c_forest_str = f"{c_forest:.2f}"
+                            
+                        if np.any(red_mask):
+                            c_red = np.sum(chi2_array[red_mask]) / np.sum(red_mask)
+                            c_red_str = f"{c_red:.2f}"
+                            
+                        chi2_html = f"<tr><td>Red. χ² (forest / red side):</td><td>{c_forest_str} / {c_red_str}</td></tr>"
+                    else:
+                        # Fallback if z_em is not set
+                        c_glob = np.sum(chi2_array) / len(chi2_array)
+                        chi2_html = f"<tr><td>Red. χ² (global):</td><td>{c_glob:.2f}</td></tr>"
+            except Exception as e:
+                logging.warning(f"Could not calculate chi-squared for info panel: {e}")
+
         stats_html = (
             "<p style='margin-bottom: 5px;'><b>Other info:</b></p>"
             "<style>td { padding-left: 15px; padding-top: 5px; }</style>"
@@ -2509,6 +2558,7 @@ class MainWindowV2(QMainWindow):
             f"<tr><td>Wavelength Range:</td><td>{x_range}</td></tr>"
             f"<tr><td>Median Step:</td><td>{step_str}</td></tr>" # Added Row
             f"<tr><td>Median SNR:</td><td>{snr_str}</td></tr>"
+            f"{chi2_html}"  # <--- [NEW] Inject the Chi-Squared row here
             f"<tr><td>Number of data points:</td><td>{len(spec.x)}</td></tr>"
             f"<tr><td>Number of components:</td><td>{len(systs.components)}</td></tr>"
             "</table>"
