@@ -3812,7 +3812,7 @@ class MainWindowV2(QMainWindow):
 
         # 2. Build the expression string
         # Note: 'x' in the data is typically nm. 
-        expression = f"(x > {xmin:.4f}) & (x < {xmax:.4f})"
+        expression = f"(λ > {xmin:.4f}) & (λ < {xmax:.4f})"
         
         logging.info(f"Splitting from view: {expression}")
 

@@ -753,7 +753,7 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` containing the subset of data,
             or 0 on failure.
         """
-        expression = expression.strip()
+        expression = self._translate_ui_names(expression.strip())
         if not expression:
             logging.error("Expression cannot be empty.")
             return 0
@@ -807,7 +807,7 @@ class RecipeEditV2:
                 v_max = obs_max.to(spec_unit).value
                 
                 # Build expression
-                expression = f"(x > {v_min:.4f}) & (x < {v_max:.4f})"
+                expression = f"(λ > {v_min:.4f}) & (λ < {v_max:.4f})"
                 logging.info(f"Extracting '{reg}': {expression} (z_em={self._session.spec._data.z_em:.4f})")
                 
                 # Create the split session
