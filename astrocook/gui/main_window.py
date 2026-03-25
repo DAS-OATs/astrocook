@@ -1322,12 +1322,8 @@ class MainWindowV2(QMainWindow):
                              buttons=QMessageBox.StandardButton.Ok, 
                              default_btn=None, 
                              parent=None,
-                             checkbox_text=None): # <--- New argument
-        """
-        Creates a custom Message Box. 
-        If checkbox_text is provided, returns (button, is_checked).
-        Otherwise, returns button.
-        """
+                             checkbox_text=None,
+                             detailed_text=None):
         target_parent = parent if parent else self
         
         msg_box = QMessageBox(target_parent)
@@ -1357,13 +1353,62 @@ class MainWindowV2(QMainWindow):
 
         msg_box.setWindowModality(Qt.WindowModal)
         
-        # Style with optional checkbox margin
         msg_box.setStyleSheet("""
             QLabel { padding-top: 10px; }
             QCheckBox { margin-top: 10px; font-size: 12pt; }
         """)
         
-        # [NEW] Add Checkbox if requested
+        # --- [NEW] Permanently visible scrollable box ---
+        if detailed_text:
+            details_box = QTextEdit(msg_box)
+            details_box.setReadOnly(True)
+            details_box.setPlainText(detailed_text)
+            details_box.setMinimumWidth(500)
+            details_box.setMinimumHeight(200)
+            details_box.setMaximumHeight(400)
+            # Add some spacing above it and a slightly darker background to inset it
+            #details_box.setStyleSheet("""
+            #    QTextEdit {
+            #        font-family: monospace; 
+            #        margin-top: 15px; 
+            #        background-color: #f4f5f7;
+            #        border: 1px solid #dcdcdc;
+            #        border-radius: 5px;
+            #        padding: 5px;
+            #    }
+            #    QScrollBar:vertical {
+            #        border: none;
+            #        background: transparent;
+            #        width: 10px;
+            #        margin: 2px;
+            #    }
+            #    QScrollBar::handle:vertical {
+            #        background: #c1c1c1;
+            #        min-height: 30px;
+            #        border-radius: 4px;
+            #    }
+            #    QScrollBar::handle:vertical:hover {
+            #        background: #a8a8a8;
+            #    }
+            #    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            #        height: 0px; /* Hides the ugly up/down arrow buttons */
+            #    }
+            #    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            #        background: none; /* Removes the dark background track */
+            #    }
+            #""")
+
+            # Set the monospace font natively without invoking the CSS engine
+            font = details_box.font()
+            font.setFamily("monospace")
+            details_box.setFont(font)
+
+            # Inject it into the QMessageBox's internal grid layout
+            grid = msg_box.layout()
+            # Add it at the bottom, spanning all columns
+            grid.addWidget(details_box, grid.rowCount(), 0, 1, grid.columnCount())
+            
+        # Add Checkbox if requested
         cb = None
         if checkbox_text:
             cb = QCheckBox(checkbox_text)
@@ -3437,6 +3482,7 @@ class MainWindowV2(QMainWindow):
                         title="Warnings Issued",
                         header="Process completed with warnings",
                         text=msg_text,
+                        detailed_text=details_text,
                         buttons=QMessageBox.StandardButton.Ok,
                         icon_name="icon_3d_HR.png" # or a warning icon
                     )
@@ -3617,49 +3663,43 @@ class MainWindowV2(QMainWindow):
         # 1. Cleanup UI
         self._cleanup_progress_ui()
             
-        # [NEW] Append warnings to the message
+        # 2. Build the scrollable details text (Traceback + Warnings)
+        details_text = ""
+        
+        if trace:
+            details_text += "Traceback:\n" + "-"*40 + "\n"
+            # Truncate if massive to prevent Qt from lagging
+            if len(trace) > 5000:
+                details_text += trace[:5000] + "\n... (traceback truncated)"
+            else:
+                details_text += trace
+            details_text += "\n\n"
+
+        # Check for captured warnings and add them to the details box
         if hasattr(self, '_captured_warnings') and self._captured_warnings:
             unique_warnings = list(dict.fromkeys(self._captured_warnings))
             if unique_warnings:
-                message += "<br><br><b>Previous Warnings:</b><ul>"
-                for w in unique_warnings:
-                    message += f"<li>{w}</li>"
-                message += "</ul>"
+                details_text += "Previous Warnings:\n" + "-"*40 + "\n"
+                details_text += "\n".join(unique_warnings)
 
         if trace:
             # --- CASE A: System Crash (Show Traceback) ---
-            # We format the traceback as a code block for readability
-            # Replace newlines with <br> for HTML rendering if not using <pre>
-            # But <pre> is safer for code.
-            
-            # Truncate trace if massive
-            if len(trace) > 2000:
-                display_trace = trace[:2000] + "\n... (traceback truncated)"
-            else:
-                display_trace = trace
-
-            full_text = (
-                f"{message}<br><br>"
-                f"<b>Traceback:</b>"
-                f"<pre style='font-size: 10pt; background-color: #f0f0f0; padding: 5px;'>{display_trace}</pre>"
-            )
-
             self._show_custom_message(
                 title="Internal Error",
                 header=title, # e.g. "Recipe Error: fit_continuum"
-                text=full_text,
+                text=message,
+                detailed_text=details_text if details_text else None, # <--- Both go here now
                 buttons=QMessageBox.StandardButton.Ok,
-                icon_name="icon_3d_HR.png" # Or a warning icon if you have one
+                icon_name="icon_3d_HR.png" 
             )
 
         else:
             # --- CASE B: User Error (Offer Retry) ---
-            # e.g. "Param X is invalid"
-            
             ret = self._show_custom_message(
                 title="Recipe Failed",
-                header=title,   # e.g. "Recipe Aborted"
-                text=message,   # e.g. "Value must be positive."
+                header=title,   
+                text=message,   
+                detailed_text=details_text if details_text else None, # <--- Both go here now
                 buttons=QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel,
                 default_btn=QMessageBox.StandardButton.Retry
             )
