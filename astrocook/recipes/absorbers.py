@@ -726,10 +726,10 @@ class RecipeAbsorbersV2:
     def identify_lines(self, 
                        multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                        mask_col: str = 'abs_mask', 
-                       min_pix_region: str = '3',
-                       merge_dv: str = '10.0',
-                       score_threshold: str = '0.5',
-                       bypass_scoring: str = 'False',
+                       min_pix_region: str = '1',
+                       merge_dv: str = '2.0',
+                       score_threshold: str = '0.1',
+                       bypass_scoring: str = 'True',
                        debug_rating: str = 'False') -> 'SessionV2':
         """
         Identify likely absorption systems.
