@@ -1366,8 +1366,8 @@ class RecipeAbsorbersV2:
         return final_session
 
     def optimize_system(self, uuid: str, max_components: str = '5', 
-                        threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
-                        z_window_kms: str = '100.0', min_dv: str = '10.0',
+                        threshold_sigma: str = '2.0', aic_penalty: str = '0.0',
+                        z_window_kms: str = '100.0', min_dv: str = '5.0',
                         group_depth: str = '2', patience: str = '2') -> 'SessionV2':
         """
         Optimize system by iteratively analyzing fit residuals.
@@ -1385,13 +1385,13 @@ class RecipeAbsorbersV2:
             Maximum number of new components to add in this region. Defaults to ``"5"``.
         threshold_sigma : str, optional
             Residual threshold (sigma) required to trigger a new component addition. 
-            Defaults to ``"2.5"``.
+            Defaults to ``"2.0"``.
         aic_penalty : str, optional
             Min AIC improvement to accept new component. Defaults to ``"0.0"``.
         z_window_kms : str, optional
             Velocity window (km/s) to analyze. Defaults to ``"100.0"``.
         min_dv : str, optional
-            Min separation (km/s). Defaults to ``"10.0"``.
+            Min separation (km/s). Defaults to ``"5.0"``.
         group_depth : str, optional
             Grouping depth. Defaults to ``"2"``.
         patience : str, optional
@@ -1427,23 +1427,26 @@ class RecipeAbsorbersV2:
                 residuals = (running_session.spec.flux - model_flux) / running_session.spec.sig
                 
                 # Break the loop if no significant residual is found
-                if np.max(residuals) < thresh:
+                # Using 2.0 sigma as a balance between noise and weak blended lines
+                if np.max(np.abs(residuals)) < thresh:
                     logging.info(f"Optimization: No residuals > {thresh} sigma. Stopping iteration.")
                     break
                 
                 # Identify the peak of the worst residual to use as a new seed
-                worst_idx = np.argmax(residuals)
+                worst_idx = np.argmax(np.abs(residuals))
                 peak_w = running_session.spec.wave[worst_idx]
                 logging.info(f"Optimization: Significant residual detected near wave={peak_w:.2f}. Fitting new component.")
                 
                 # Attempt to fit a new component at the location of the residual peak
+                # min_dv=5.0 allows the logN=13 line to be placed close to larger neighbors
                 new_systs = running_session.systs.optimize_hierarchy(
                     spec=running_session.spec,
                     uuid_seed=uuid, 
                     max_components=1,
                     threshold_sigma=thresh,
                     z_window_kms=z_win,
-                    group_depth=depth
+                    group_depth=depth,
+                    min_dv=5.0
                 )
                 
                 running_session = running_session.with_new_system_list(new_systs)
