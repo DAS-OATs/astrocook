@@ -726,10 +726,10 @@ class RecipeAbsorbersV2:
     def identify_lines(self, 
                        multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                        mask_col: str = 'abs_mask', 
-                       min_pix_region: str = '1',
-                       merge_dv: str = '2.0',
-                       score_threshold: str = '0.1',
-                       bypass_scoring: str = 'True',
+                       min_pix_region: str = '1',       
+                       merge_dv: str = '2.0',           
+                       score_threshold: str = '0.05',   
+                       bypass_scoring: str = 'True',    
                        debug_rating: str = 'False') -> 'SessionV2':
         """
         Identify likely absorption systems.
@@ -769,11 +769,10 @@ class RecipeAbsorbersV2:
             bypass_scoring_b = bypass_scoring.lower() == 'true'
             debug_rating_b = debug_rating.lower() == 'true'
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
-        except ValueError:
-            logging.error(msg_param_fail); return 0
-        
-        try:
-            logging.debug("identify_lines: Calling spec.identify_lines...")
+            
+            logging.info(f"Scanning with high sensitivity: dv={merge_dv_f}, min_pix={min_pix_i}")
+
+            # Call the engine ONLY with the arguments it explicitly accepts
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
                 mask_col=mask_col,
@@ -784,10 +783,15 @@ class RecipeAbsorbersV2:
                 debug_rating=debug_rating_b
             )
             
+            if new_spec_v2 is None:
+                logging.warning("identify_lines returned None. Returning current session.")
+                return self._session
+                
             return self._session.with_new_spectrum(new_spec_v2)
+
         except Exception as e:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
-            return 0
+            return self._session
     
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
                        series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
