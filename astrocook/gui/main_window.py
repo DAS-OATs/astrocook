@@ -2857,7 +2857,7 @@ class MainWindowV2(QMainWindow):
         Handles the request to close a session, either from the menu (active)
         or context menu (specific).
         """
-        if history_to_close is None:
+        if history_to_close is None or isinstance(history_to_close, bool):
             history_to_close = self.active_history
 
         if not history_to_close:
