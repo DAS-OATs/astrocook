@@ -11,7 +11,8 @@ from PySide6.QtCore import (
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup,
-    QSize, QStringListModel, QThreadPool, QTimer, QUrl
+    QSize, QStringListModel, QThreadPool, QTimer, QUrl,
+    QSettings
 )
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (
@@ -2287,14 +2288,21 @@ class MainWindowV2(QMainWindow):
         if not self._confirm_discard_continuum_edits():
             return
         
+        # --- Retrieve the last used directory ---
+        settings = QSettings("Astrocook", "AstrocookV2")
+        last_dir = settings.value("last_working_dir", os.getcwd())
+
         file_names, _ = QFileDialog.getOpenFileNames(
             self, 
             "Open Spectrum File(s)", 
-            os.getcwd(),
+            last_dir,
             "All Supported (*.acs *.acs2 *.fits *.txt *.dat);;Astrocook Sessions (*.acs *.acs2);;FITS Files (*.fits);;Text Files (*.txt *.dat);;All Files (*)"
         )
         
         if file_names:
+            # --- Save the directory for next time ---
+            settings.setValue("last_working_dir", os.path.dirname(file_names[0]))
+            
             # Show a wait cursor if loading multiple files
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
@@ -2907,16 +2915,22 @@ class MainWindowV2(QMainWindow):
         session_to_save_final = history_to_save.current_state
         session_to_save_initial = history_to_save.states[0]
         
-        default_name = session_to_save_final.name + ".acs2"
-        
+        # --- Sync with the last used directory ---
+        settings = QSettings("Astrocook", "AstrocookV2")
+        last_dir = settings.value("last_working_dir", os.getcwd())
+        default_path = os.path.join(last_dir, session_to_save_final.name + ".acs2")
+
         file_name, selected_filter = QFileDialog.getSaveFileName(
             self,
             "Save Astrocook Session",
-            default_name,
+            default_path,
             "Astrocook V2 Session (*.acs2);;Astrocook V1 Session (*.acs)"
         )
 
         if file_name:
+            # --- Save the directory for next time ---
+            settings.setValue("last_working_dir", os.path.dirname(file_name))
+            
             logging.info(f"Saving session to: {file_name}")
             try:
                 # Pass *both* sessions to the save method
