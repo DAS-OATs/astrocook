@@ -329,17 +329,17 @@ class VoigtFitterV2:
         Determines the resolution (val, unit) for a specific component.
         Priority: Variable Column > Component Attribute > Global Default
         """
-        # 1. Variable Column (Overrides everything if active)
-        if self._use_variable_resolution:
-            return -1.0, 'column' # Sentinel value for "Use Column"
-
-        # 2. Component Attribute
+        # 1. Component Attribute (Highest Priority: User manual override)
         if comp.resol is not None and comp.resol > 0:
             # Heuristic for unit
             unit = 'R' if comp.resol > 500.0 else 'km/s'
             return float(comp.resol), unit
+
+        # 2. Variable Column (Instrument baseline)
+        if self._use_variable_resolution:
+            return -1.0, 'column' # Sentinel value for "Use Column"
             
-        # 3. Global Default
+        # 3. Global Default (Fallback)
         if self._global_resol_val > 0:
             return self._global_resol_val, self._global_resol_unit
             

@@ -456,7 +456,20 @@ class SpectrumV2:
         new_data = dataclasses.replace(self._data, z_em=z_em, resol=resol, meta=new_meta)
         
         new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
-        return SpectrumV2(data=new_data, history=new_history)
+        # Create the preliminary SpectrumV2 object
+        spec = SpectrumV2(data=new_data, history=new_history)
+
+        # --- [NEW] Automatically populate the 'resol' column! ---
+        if resol > 0:
+            import numpy as np
+            resol_arr = np.full(len(spec.x), resol)
+            spec = spec.update_column(
+                'resol', 
+                resol_arr, 
+                description="Global resolution baseline"
+            )
+
+        return spec
 
     def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
         """

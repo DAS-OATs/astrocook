@@ -757,14 +757,12 @@ class VelocityPlotWidget(QWidget):
                             comp_res_arg = panel_res_arg
                             comp_res_unit = panel_res_unit
                             
-                            # Only check for override if we are NOT using a spectrum column
-                            if not found_valid_col_data:
-                                # Check if component has specific resolution
-                                c_res = getattr(sel_c, 'resol', None)
-                                if c_res is not None and c_res > 0:
-                                    comp_res_arg = c_res
-                                    # Heuristic for unit
-                                    comp_res_unit = 'R' if c_res > 500 else 'km/s'
+                            # Check if component has specific resolution FIRST
+                            c_res = getattr(sel_c, 'resol', None)
+                            if c_res is not None and c_res > 0:
+                                comp_res_arg = c_res
+                                # Heuristic for unit
+                                comp_res_unit = 'R' if c_res > 500 else 'km/s'
 
                             b_eff = np.sqrt(sel_c.b**2 + sel_c.btur**2)
 
