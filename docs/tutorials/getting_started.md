@@ -113,6 +113,19 @@ The panel on the left is your **Session List**. Each file you load becomes a "Se
 
 If you loaded multiple spectra, click on their names in this list to switch the main view instantly.
 
+### Visualizing Multiple Spectra (Ghost Overlay)
+
+You can easily compare multiple spectra simultaneously directly in the main plot window:
+
+* **How to use:** Hold `Ctrl` (or `Cmd` on macOS) and click on multiple sessions in the left-hand Session List. You can also use `Shift+Click` to select a continuous range.
+* **What you'll see:** Your primary active session remains fully featured (showing models, continuums, and system markers). The additional selected sessions will appear underneath as "ghost" spectra, plotted in distinct, colorblind-friendly colors with semi-transparent flux and error bands. A legend will automatically appear to help you identify them.
+* **Smart Scaling:** The ghost spectra are fully integrated with your View Controls! If you toggle **Normalize F**, all visible spectra will automatically rescale to match the active view.
+
+```{image} ../_static/getting_started_ghost_spectra.png
+:alt: Overlay of multiple ghost spectra in the main plot window
+:align: center
+```
+
 ### Session Info & Properties
 
 Right-click on any session in the list to open the context menu. This menu offers several powerful tools:
