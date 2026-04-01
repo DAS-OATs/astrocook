@@ -937,6 +937,68 @@ class SpectrumPlotWidget(QWidget):
                     scatter_ms = 6.0
 
             # --- Check state from main_window reference ---
+
+            # --- Plot Background / Ghost Spectra ---
+            if hasattr(self.main_window, 'session_list_view') and self.main_window.session_list_view.selectionModel():
+                indexes = self.main_window.session_list_view.selectionModel().selectedIndexes()
+                ghost_states = []
+                for idx in indexes:
+                    row = idx.row()
+                    if 0 <= row < len(self.main_window.session_histories):
+                        hist = self.main_window.session_histories[row]
+                        # Exclude the primary active history
+                        if hist != self.main_window.active_history:
+                            ghost_states.append(hist.current_state)
+
+                if ghost_states:
+                    cmap = plt.get_cmap('tab10') # Distinct, colorblind-friendly palette
+                    for i, ghost_state in enumerate(ghost_states):
+                        if not ghost_state.spec: continue
+                        
+                        ghost_x = ghost_state.spec.x.value
+                        ghost_y = ghost_state.spec.y.value
+                        ghost_dy = ghost_state.spec.dy.value if ghost_state.spec.dy is not None else None
+                        
+                        # 1. Apply view toggles (Norm/SNR) to ghost so it matches primary scale
+                        if is_norm_y:
+                            ghost_norm = ghost_state.spec.norm.value if ghost_state.spec.norm is not None else np.ones_like(ghost_y)
+                            ghost_y = np.divide(ghost_y, ghost_norm, out=np.full_like(ghost_y, np.nan), where=ghost_norm!=0)
+                            if ghost_dy is not None:
+                                ghost_dy = np.divide(ghost_dy, ghost_norm, out=np.full_like(ghost_dy, np.nan), where=ghost_norm!=0)
+                        elif is_snr:
+                            try:
+                                err_col = self.main_window.snr_col_combo.currentText()
+                                err_data = ghost_dy if err_col == 'dy' else ghost_state.spec.get_column(err_col).value
+                                ghost_y = np.divide(ghost_y, err_data, out=np.full_like(ghost_y, np.nan), where=err_data!=0)
+                                ghost_dy = np.ones_like(ghost_y)
+                            except: pass
+
+                        # 2. Slice ghost data to current zoom to save rendering time
+                        if was_zoomed and not force_autoscale:
+                            g_start = np.searchsorted(ghost_x, previous_xlim[0], side='left')
+                            g_end = np.searchsorted(ghost_x, previous_xlim[1], side='right')
+                            g_start = max(0, g_start - 50) # Buffer
+                            g_end = min(len(ghost_x), g_end + 50)
+                            if g_end > g_start:
+                                ghost_x = ghost_x[g_start:g_end]
+                                ghost_y = ghost_y[g_start:g_end]
+                                if ghost_dy is not None: ghost_dy = ghost_dy[g_start:g_end]
+                            else:
+                                continue # Ghost is completely out of current view
+
+                        # 3. Plotting
+                        color = cmap((i + 1) % 10) # Grab a unique color from tab10
+                        label = f"Ghost: {ghost_state.name}"
+                        
+                        # Plot Ghost Flux (solid but slightly transparent, low z-order)
+                        ax.step(ghost_x, ghost_y, where='mid', color=color, alpha=0.7, lw=0.8, label=label, zorder=0.8, rasterized=True)
+                        
+                        # Plot Ghost Error (faint boundary lines of the same color)
+                        if ghost_dy is not None:
+                            ax.step(ghost_x, ghost_y - ghost_dy, where='mid', color=color, alpha=0.25, lw=0.4, zorder=0.7, rasterized=True)
+                            ax.step(ghost_x, ghost_y + ghost_dy, where='mid', color=color, alpha=0.25, lw=0.4, zorder=0.7, rasterized=True)
+            
+
             # 2. Plot Error Shading (Conditional)
             if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
                 if dx_data is not None and dy_data is not None:
