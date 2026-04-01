@@ -1443,7 +1443,7 @@ class SpectrumV2:
         xmax_calc = convert_axis_velocity(self._data.xmax.quantity, z_ref, target_calc_unit)
 
         # 1. Rebin the flux-like columns
-        x_new, xmin_new, xmax_new, y_new, dy_new = rebin_spectrum(
+        x_new, xmin_new, xmax_new, y_new, dy_new, resol_new = rebin_spectrum(
             x_calc, xmin_calc, xmax_calc, 
             self._data, 
             xstart, xend, dx, target_calc_unit,
@@ -1460,7 +1460,11 @@ class SpectrumV2:
         x_final_nm = x_final.to_value(au.nm) # Get the new grid in nm for interpolation
         
         for name, col_data in self._data.aux_cols.items():
-            
+            # --- Bypass interpolation if it's the carefully drizzled resolution ---
+            if name == 'resol' and resol_new is not None:
+                new_aux_cols['resol'] = DataColumnV2(resol_new, col_data.unit)
+                continue
+
             # --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---
             if col_data.values is None:
                 logging.debug(f"Skipping aux col '{name}' as its data is None.")
@@ -1580,6 +1584,8 @@ class SpectrumV2:
         big_xmax_list = []
         big_y_list = []
         big_dy_list = []
+        big_resol_list = []
+        has_any_resol = False
 
         for i, spec in enumerate(all_specs):
             # A. Flux Scaling (Skip for self/index 0)
@@ -1604,6 +1610,20 @@ class SpectrumV2:
             xmin_conv = convert_axis_velocity(spec.xmin, z_em, calc_unit).value
             xmax_conv = convert_axis_velocity(spec.xmax, z_em, calc_unit).value
             
+            # --- Capture Resolution ---
+            res_arr = np.zeros(len(spec.x))
+            if spec.has_aux_column('resol'):
+                res_arr = spec.get_column('resol').value
+                has_any_resol = True
+            elif getattr(spec._data, 'resol', 0.0) > 0:
+                res_arr = np.full(len(spec.x), spec._data.resol)
+                has_any_resol = True
+            elif 'resol' in spec.meta and float(spec.meta['resol']) > 0:
+                res_arr = np.full(len(spec.x), float(spec.meta['resol']))
+                has_any_resol = True
+                
+            big_resol_list.append(res_arr)
+
             # C. Append
             big_x_list.append(x_conv)
             big_xmin_list.append(xmin_conv)
@@ -1617,6 +1637,7 @@ class SpectrumV2:
         flat_xmax = np.concatenate(big_xmax_list)
         flat_y = np.concatenate(big_y_list)
         flat_dy = np.concatenate(big_dy_list)
+        flat_resol = np.concatenate(big_resol_list)
 
         # 4. Convert Bounds to Calculation Unit
         if xstart is not None:
@@ -1630,18 +1651,24 @@ class SpectrumV2:
             xend_conv = None
 
         # 5. Create Temp Data Container (in Calculation Units)
+        # --- Pack the resolution column for the drizzler ---
+        temp_aux = {}
+        if has_any_resol:
+            temp_aux['resol'] = DataColumnV2(flat_resol, au.dimensionless_unscaled)
+
         temp_data = SpectrumDataV2(
             x=DataColumnV2(flat_x, calc_unit),
             xmin=DataColumnV2(flat_xmin, calc_unit),
             xmax=DataColumnV2(flat_xmax, calc_unit),
             y=DataColumnV2(flat_y, self.y.unit),
             dy=DataColumnV2(flat_dy, self.dy.unit),
+            aux_cols=temp_aux,
             meta=self.meta
         )
 
         # 6. Rebin (Vectorized Drizzle)
         # Returns new arrays in `calc_unit` (km/s)
-        reb_x, reb_xmin, reb_xmax, reb_y, reb_dy = rebin_spectrum(
+        reb_x, reb_xmin, reb_xmax, reb_y, reb_dy, reb_resol = rebin_spectrum(
             temp_data.x.quantity, temp_data.xmin.quantity, temp_data.xmax.quantity,
             temp_data,
             xstart_conv, xend_conv,
@@ -1671,6 +1698,11 @@ class SpectrumV2:
         # Optional: Add a note about the co-add origin
         new_meta['ORIGIN'] = 'coadd'
 
+        # --- Restore the co-added resolution array ---
+        new_aux_cols = {}
+        if reb_resol is not None:
+            new_aux_cols['resol'] = DataColumnV2(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
+
         # 8. Wrap in Logic Class
         final_spec_data = SpectrumDataV2(
             x=DataColumnV2(final_x.value, final_x.unit), 
@@ -1678,6 +1710,7 @@ class SpectrumV2:
             xmax=DataColumnV2(final_xmax.value, final_xmax.unit),
             y=DataColumnV2(reb_y.value, reb_y.unit), 
             dy=DataColumnV2(reb_dy.value, reb_dy.unit),
+            aux_cols=new_aux_cols,
             meta=new_meta 
         )
         

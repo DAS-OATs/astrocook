@@ -291,6 +291,11 @@ def rebin_spectrum(
     y_val = spec_data.y.quantity.to_value(spec_data.y.unit)
     dy_val = spec_data.dy.quantity.to_value(spec_data.y.unit)
     
+    # Extract resolution array if present
+    resol_val = None
+    if 'resol' in spec_data.aux_cols:
+        resol_val = spec_data.aux_cols['resol'].values
+
     # Initial Mask (NaNs and bad pixels)
     valid_mask = np.isfinite(y_val) & (xmax_in_val > xmin_in_val) & (dy_val > 0)
     
@@ -309,6 +314,13 @@ def rebin_spectrum(
         num = np.zeros(N_out)
         den = np.zeros(N_out)
         
+        if resol_val is not None:
+            res_v = resol_val[mask_in]
+            num_res = np.zeros(N_out)
+            den_res = np.zeros(N_out)
+        else:
+            num_res, den_res = None, None
+
         max_span = np.max(idx_end - idx_start) if len(idx_start) > 0 else 0
         
         for k in range(int(max_span) + 1):
@@ -336,11 +348,20 @@ def rebin_spectrum(
             
             np.add.at(num, bin_idx, y_v[valid_sub] * weights)
             np.add.at(den, bin_idx, weights)
+
+            # --- Proper 1/R^2 weighted resolution accumulation ---
+            if resol_val is not None:
+                valid_res = res_v[valid_sub] > 0
+                if np.any(valid_res):
+                    w_res = weights[valid_res]
+                    inv_r_sq = 1.0 / (res_v[valid_sub][valid_res]**2)
+                    np.add.at(num_res, bin_idx[valid_res], w_res * inv_r_sq)
+                    np.add.at(den_res, bin_idx[valid_res], w_res)
             
-        return num, den
+        return num, den, num_res, den_res
 
     # --- PASS 1: Consensus ---
-    num1, den1 = _drizzle_pass(valid_mask)
+    num1, den1, num_res1, den_res1 = _drizzle_pass(valid_mask)
     
     # --- ITERATIVE LOCAL CLIPPING ---
     if kappa is not None:
@@ -369,7 +390,7 @@ def rebin_spectrum(
         valid_mask &= ~is_outlier
 
     # --- PASS 2: Final Rebinning ---
-    num_final, den_final = _drizzle_pass(valid_mask)
+    num_final, den_final, num_res_final, den_res_final = _drizzle_pass(valid_mask)
 
     # Finalize Output
     valid_out = den_final > 0
@@ -379,6 +400,14 @@ def rebin_spectrum(
     y_out_val[valid_out] = num_final[valid_out] / den_final[valid_out]
     dy_out_val[valid_out] = 1.0 / np.sqrt(den_final[valid_out])
     
+    # --- Finalize Resolution Array ---
+    resol_out = None
+    if resol_val is not None:
+        resol_out = np.zeros(N_out)
+        valid_res_out = den_res_final > 0
+        inv_r_sq_out = num_res_final[valid_res_out] / den_res_final[valid_res_out]
+        resol_out[valid_res_out] = 1.0 / np.sqrt(inv_r_sq_out)
+
     # Reconstruct Quantities
     x_out = au.Quantity(x_out_val, xunit_target)
     xmin_out = au.Quantity(edges_out[:-1], xunit_target)
@@ -386,7 +415,7 @@ def rebin_spectrum(
     y_out = au.Quantity(y_out_val, spec_data.y.unit)
     dy_out = au.Quantity(dy_out_val, spec_data.y.unit)
     
-    return x_out, xmin_out, xmax_out, y_out, dy_out
+    return x_out, xmin_out, xmax_out, y_out, dy_out, resol_out
 
 def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
