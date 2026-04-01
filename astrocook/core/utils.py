@@ -10,6 +10,7 @@ from typing import Any, List, Dict
 BRANCHING_RECIPES: List[str] = [
     'split',                
     'stitch',
+    'equalize_and_stitch',
     'extract_preset',
     'coadd',
     'resample',
