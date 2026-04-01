@@ -2,6 +2,7 @@ from copy import deepcopy
 import dataclasses
 import json
 import logging
+import trace
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -3319,6 +3320,72 @@ class MainWindowV2(QMainWindow):
                 logging.error(f"Export failed: {e}")
             return
 
+        # --- [NEW] GUI-Thread Pre-checks ---
+        if recipe_name == "set_properties":
+            new_resol = str(params.get('resol', '_current_'))
+            # If the user is actively changing the resolution
+            if new_resol != '_current_':
+                # Check if the active session already has a 'resol' column
+                if self.active_history and self.active_history.current_state.spec.has_aux_column('resol'):
+                    from PySide6.QtWidgets import QMessageBox, QApplication
+                    
+                    # Find the currently active floating window/dialog
+                    active_win = QApplication.activeWindow()
+                    if active_win is None:
+                        active_win = self
+                        
+                    reply = self._show_custom_message(
+                        title="Overwrite Resolution Column?",
+                        header="Existing 'resol' column detected.",
+                        text="This spectrum already has a pixel-by-pixel 'resol' column.\n\nDo you want to overwrite it with a flat array based on this new global value?",
+                        buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        default_btn=QMessageBox.StandardButton.No,
+                        parent=active_win  # <--- [FIX] Parent to the active floating window!
+                    )
+                    # Inject the user's choice into the params before sending to the worker
+                    params['overwrite_resol_col'] = (reply == QMessageBox.StandardButton.Yes)
+                else:
+                    params['overwrite_resol_col'] = True
+
+        if recipe_name == "coadd":
+            names_str = params.get('session_names', '')
+            names_list = [n.strip() for n in names_str.split(',') if n.strip()]
+            
+            if names_list and hasattr(self, 'session_histories'):
+                # Find the actual Session objects requested
+                specs_to_coadd = []
+                for hist in self.session_histories:
+                    if hist.display_name in names_list:
+                        specs_to_coadd.append(hist.current_state.spec)
+                
+                # Count how many have defined resolutions
+                if specs_to_coadd:
+                    resol_count = 0
+                    for s in specs_to_coadd:
+                        has_col = s.has_aux_column('resol')
+                        has_glob_attr = getattr(s._data, 'resol', 0.0) > 0
+                        has_glob_meta = float(s.meta.get('resol', 0.0)) > 0 if 'resol' in s.meta else False
+                        
+                        if has_col or has_glob_attr or has_glob_meta:
+                            resol_count += 1
+                            
+                    # Mismatch detected!
+                    if 0 < resol_count < len(specs_to_coadd):
+                        from PySide6.QtWidgets import QMessageBox, QApplication
+                        active_win = QApplication.activeWindow()
+                        if active_win is None: active_win = self
+                            
+                        reply = self._show_custom_message(
+                            title="Resolution Mismatch",
+                            header="Missing Resolution Data",
+                            text=f"Only {resol_count} out of {len(specs_to_coadd)} selected sessions have a defined resolution.\n\nMixing known and unknown resolutions means the final LSF cannot be calculated accurately. The co-added spectrum will NOT have a resolution column.\n\nDo you want to proceed anyway?",
+                            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            default_btn=QMessageBox.StandardButton.No,
+                            parent=active_win
+                        )
+                        if reply == QMessageBox.StandardButton.No:
+                            return  # Abort the recipe dispatch!
+
         # --- 2. STANDARD RECIPE PREPARATION ---
         if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
             return
@@ -3573,11 +3640,11 @@ class MainWindowV2(QMainWindow):
                         msg_text += f"<li>{w}</li>"
                     msg_text += "</ul>"
 
+
                     self._show_custom_message(
                         title="Warnings Issued",
                         header="Process completed with warnings",
                         text=msg_text,
-                        detailed_text=details_text,
                         buttons=QMessageBox.StandardButton.Ok,
                         icon_name="icon_3d_HR.png" # or a warning icon
                     )
@@ -4428,6 +4495,7 @@ class RecipeProgressDialog(QDialog):
         self.status_label.setText("Attempting to stop gracefully...")
         # Emit signal to parent
         self.stop_requested.emit()
+        
 class WarningCaptureHandler(logging.Handler):
     """Captures warning messages to a list for GUI display."""
     def __init__(self):

@@ -415,7 +415,8 @@ class SpectrumV2:
         return v1_spec
     
     def with_properties(self, z_em: float, resol: float = 0.0, 
-                        object_name: Optional[str] = None) -> 'SpectrumV2':
+                        object_name: Optional[str] = None,
+                        overwrite_resol_col: bool = True) -> 'SpectrumV2':
         """
         Return a NEW SpectrumV2 instance with updated properties.
 
@@ -427,6 +428,8 @@ class SpectrumV2:
             Resolution (R). Defaults to ``0.0``.
         object_name : str, optional
             The object name (header keyword).
+        overwrite_resol_col : bool, optional
+            If ``True``, updates/creates the 'resol' auxiliary column with the new resolution value. Defaults to ``True``.
 
         Returns
         -------
@@ -459,8 +462,8 @@ class SpectrumV2:
         # Create the preliminary SpectrumV2 object
         spec = SpectrumV2(data=new_data, history=new_history)
 
-        # --- [NEW] Automatically populate the 'resol' column! ---
-        if resol > 0:
+        # --- Only populate the flat array if permitted ---
+        if resol > 0 and overwrite_resol_col:
             import numpy as np
             resol_arr = np.full(len(spec.x), resol)
             spec = spec.update_column(
@@ -1459,10 +1462,18 @@ class SpectrumV2:
         new_aux_cols = {}
         x_final_nm = x_final.to_value(au.nm) # Get the new grid in nm for interpolation
         
+        new_meta = self._data.meta.copy()
+        median_r = self._data.resol
+
         for name, col_data in self._data.aux_cols.items():
             # --- Bypass interpolation if it's the carefully drizzled resolution ---
             if name == 'resol' and resol_new is not None:
                 new_aux_cols['resol'] = DataColumnV2(resol_new, col_data.unit)
+                # --- Update Global Median ---
+                valid_r = resol_new[np.isfinite(resol_new) & (resol_new > 0)]
+                if len(valid_r) > 0:
+                    median_r = float(np.nanmedian(valid_r))
+                    new_meta['resol'] = median_r
                 continue
 
             # --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---
@@ -1507,6 +1518,7 @@ class SpectrumV2:
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=new_meta, 
+            resol=median_r,
             z_em=self._data.z_em   # Propagate
         )
         
@@ -1585,7 +1597,7 @@ class SpectrumV2:
         big_y_list = []
         big_dy_list = []
         big_resol_list = []
-        has_any_resol = False
+        resol_sources_count = 0
 
         for i, spec in enumerate(all_specs):
             # A. Flux Scaling (Skip for self/index 0)
@@ -1612,15 +1624,20 @@ class SpectrumV2:
             
             # --- Capture Resolution ---
             res_arr = np.zeros(len(spec.x))
+            has_res = False
+            
             if spec.has_aux_column('resol'):
                 res_arr = spec.get_column('resol').value
-                has_any_resol = True
+                has_res = True
             elif getattr(spec._data, 'resol', 0.0) > 0:
                 res_arr = np.full(len(spec.x), spec._data.resol)
-                has_any_resol = True
+                has_res = True
             elif 'resol' in spec.meta and float(spec.meta['resol']) > 0:
                 res_arr = np.full(len(spec.x), float(spec.meta['resol']))
-                has_any_resol = True
+                has_res = True
+                
+            if has_res:
+                resol_sources_count += 1
                 
             big_resol_list.append(res_arr)
 
@@ -1630,6 +1647,13 @@ class SpectrumV2:
             big_xmax_list.append(xmax_conv)
             big_y_list.append(y_val)
             big_dy_list.append(dy_val)
+
+        # --- All-or-Nothing Resolution Decision ---
+        track_resolution = (resol_sources_count == len(all_specs))
+
+        if resol_sources_count > 0 and not track_resolution:
+            logging.warning("Coadd: Resolution mismatch! Some input spectra are missing resolution data. "
+                            "Resolution tracking has been disabled for this co-add.")
 
         # 3. Concatenate (The "Manual Stitch")
         flat_x = np.concatenate(big_x_list)
@@ -1653,7 +1677,7 @@ class SpectrumV2:
         # 5. Create Temp Data Container (in Calculation Units)
         # --- Pack the resolution column for the drizzler ---
         temp_aux = {}
-        if has_any_resol:
+        if track_resolution:
             temp_aux['resol'] = DataColumnV2(flat_resol, au.dimensionless_unscaled)
 
         temp_data = SpectrumDataV2(
@@ -1700,8 +1724,20 @@ class SpectrumV2:
 
         # --- Restore the co-added resolution array ---
         new_aux_cols = {}
+        
+        # --- Safely force the metadata resolution to be a float ---
+        try:
+            median_r = float(self.meta.get('resol', 0.0))
+        except (ValueError, TypeError):
+            median_r = 0.0
+
         if reb_resol is not None:
             new_aux_cols['resol'] = DataColumnV2(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
+            # --- Update Global Median ---
+            valid_r = reb_resol[np.isfinite(reb_resol) & (reb_resol > 0)]
+            if len(valid_r) > 0:
+                median_r = float(np.nanmedian(valid_r))
+                new_meta['resol'] = median_r
 
         # 8. Wrap in Logic Class
         final_spec_data = SpectrumDataV2(
@@ -1711,7 +1747,9 @@ class SpectrumV2:
             y=DataColumnV2(reb_y.value, reb_y.unit), 
             dy=DataColumnV2(reb_dy.value, reb_dy.unit),
             aux_cols=new_aux_cols,
-            meta=new_meta 
+            meta=new_meta, 
+            z_em=self._data.z_em,
+            resol=median_r
         )
         
         return self.__class__(final_spec_data)

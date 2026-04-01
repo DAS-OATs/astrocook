@@ -150,7 +150,8 @@ class SpectrumDataV2:
                        xmax_values: Optional[np.ndarray] = None,
                        aux_data: Optional[Dict[str, tuple]] = None, # {'col_name': (values, unit, desc)}
                        meta: Optional[Dict[str, Any]] = None,
-                       z_em: float = 0.0) -> 'SpectrumDataV2':
+                       z_em: float = 0.0,
+                       resol: float = 0.0) -> 'SpectrumDataV2':
         """
         Factory method to create a SpectrumDataV2 from raw NumPy arrays.
 
@@ -204,7 +205,8 @@ class SpectrumDataV2:
                    y=y_col, dy=dy_col, 
                    aux_cols=aux_cols, 
                    meta=meta if meta is not None else {},
-                   z_em=z_em)
+                   z_em=z_em,
+                   resol=resol)
     
 @dataclass(frozen=True)
 class ComponentDataV2:

@@ -20,9 +20,9 @@ EDIT_RECIPES_SCHEMAS = {
         "params": [
             {"name": "name", "type": str, "default": "_current_", "doc": "Session Name (display label)"},
             {"name": "object", "type": str, "default": "_current_", "doc": "Object Name (header)"},
-            # CHANGED: types to str to allow '_current_' default without casting errors
             {"name": "z_em", "type": str, "default": "_current_", "doc": "Emission Redshift (z_em)"},
-            {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"} 
+            {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"}, 
+            {"name": "overwrite_resol_col", "type": bool, "default": True, "gui_hidden": True} # <--- [NEW] Add this hidden flag
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -299,7 +299,8 @@ class RecipeEditV2:
         
 
     def set_properties(self, name: str = '_current_', object: str = '_current_', 
-                       z_em: str = '_current_', resol: str = '_current_') -> Optional['SessionV2']:
+                       z_em: str = '_current_', resol: str = '_current_',
+                       overwrite_resol_col: bool = True) -> Optional['SessionV2']:
         """
         Set session properties.
 
@@ -317,6 +318,8 @@ class RecipeEditV2:
         resol : str, optional
             Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``).
             Defaults to ``'_current_'`` (no change).
+        overwrite_resol_col : bool, optional
+            If ``True``, updates the 'resol' column in the spectrum data with the new resolution value. Defaults to ``True``.
 
         Returns
         -------
@@ -339,7 +342,7 @@ class RecipeEditV2:
         except ValueError:
             logging.error(msg_param_fail)
             return 0
-            
+
         # 2. Handle text inputs
         current_meta = self._session.spec.meta
         
@@ -352,7 +355,8 @@ class RecipeEditV2:
             new_spec = self._session.spec.with_properties(
                 z_em=z_em_f, 
                 resol=resol_f,
-                object_name=new_object 
+                object_name=new_object,
+                overwrite_resol_col=overwrite_resol_col 
             )
             
             # 4. Handle Session Name (Lives on the Session wrapper)
@@ -937,7 +941,7 @@ class RecipeEditV2:
             A list of :class:`~astrocook.core.session.SessionV2` objects OR strings
             (names of sessions loaded in the GUI).
         sort : bool, optional
-            If True, sorts the final spectrum by wavelength. Defaults to True.
+            If ``True``, sorts the final spectrum by wavelength. Defaults to ``True``.
 
         Returns
         -------
