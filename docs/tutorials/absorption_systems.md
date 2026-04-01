@@ -68,6 +68,12 @@ This table lists every component in the model.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
 * **Group View:** Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.
 
+#### Understanding Resolution Priority
+Astrocook handles instrumental resolution ($R$) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The Voigt fitting engine and the velocity plots apply resolution convolution according to this strict hierarchy:
+1. **Component-Specific Resolution (Highest Priority):** If you manually assign a resolution to a specific component (via the right-click menu in the System List), Astrocook will *always* use this value for that specific line, ignoring all other settings.
+2. **The `resol` Column:** If your spectrum data contains a `resol` auxiliary column (visible in the Data Inspector), Astrocook will use the specific resolution value at the pixel where the absorption line is centered. This allows for accurate modeling of spectra where $R$ changes with wavelength.
+3. **Global Session Resolution (Fallback):** If no component-specific override exists and no `resol` column is present, Astrocook falls back to the global scalar resolution set via **Edit > Set Properties...**. Note that setting a global resolution will automatically generate a flat `resol` column across the entire spectrum.
+
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
