@@ -123,6 +123,17 @@ EDIT_RECIPES_SCHEMAS = {
         "params": [],
         "gui_hidden": True  # Usually called via script
     },
+    "equalize_and_stitch": {
+        "brief": "Equalize and stitch arms.",
+        "details": "Equalize flux levels and stitch multiple sessions at specific wavelengths.",
+        "params": [
+            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of other sessions (in blue-to-red order)."},
+            {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated cut-off wavelengths (nm) where arms join."},
+            {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated overlap ranges (e.g., '545-555, 795-805') or 'auto'"},
+            {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated fixed multipliers, or 'auto'."}
+        ],
+        "url": "edit_cb.html#equalize-and-stitch"
+    },
     "coadd": {
         "brief": "Co-add multiple sessions.",
         "details": "Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).",
@@ -1005,6 +1016,148 @@ class RecipeEditV2:
         except Exception as e:
             logging.error(f"Stitch failed: {e}", exc_info=True)
             return 0
+
+    def equalize_and_stitch(self, other_sessions: str, stitch_wavelengths: str, 
+                            equalize_ranges: str = 'auto', manual_factors: str = 'auto') -> 'SessionV2':
+        """
+        Equalize and stitch arms.
+
+        Equalize flux levels and stitch multiple sessions at specific wavelengths.
+        """
+        from astrocook.core.session import SessionV2
+        import astropy.units as au
+        
+        # 1. Parse Input Lists
+        others_list = [s.strip() for s in other_sessions.split(',') if s.strip()]
+        if not others_list:
+            logging.error("No other sessions provided.")
+            return 0
+            
+        try:
+            cuts = [float(c.strip()) for c in stitch_wavelengths.split(',')]
+        except ValueError:
+            logging.error("Invalid stitch_wavelengths. Must be numbers separated by commas.")
+            return 0
+
+        if len(cuts) != len(others_list):
+            logging.error(f"Need exactly {len(others_list)} cut-off wavelengths.")
+            return 0
+
+        # Parse Manual Factors
+        factors = []
+        if manual_factors.lower() != 'auto':
+            try:
+                factors = [float(f.strip()) for f in manual_factors.split(',')]
+                if len(factors) != len(others_list):
+                    logging.warning(f"Expected {len(others_list)} manual factors, got {len(factors)}. Falling back to 'auto'.")
+                    factors = []
+            except ValueError:
+                logging.warning("Invalid manual_factors. Falling back to 'auto'.")
+
+        # Parse Equalize Ranges
+        eq_ranges = []
+        if equalize_ranges.lower() != 'auto' and not factors:
+            try:
+                for r in equalize_ranges.split(','):
+                    vmin, vmax = map(float, r.split('-'))
+                    eq_ranges.append((vmin, vmax))
+                if len(eq_ranges) != len(others_list):
+                    logging.warning(f"Expected {len(others_list)} equalize ranges. Falling back to 'auto'.")
+                    eq_ranges = []
+            except Exception:
+                logging.warning("Invalid equalize_ranges format. Use 'min-max, min-max'. Falling back to 'auto'.")
+
+        # 2. Resolve GUI Sessions
+        resolved_others = []
+        if hasattr(self._session, '_gui'):
+            for name in others_list:
+                found = False
+                for hist in self._session._gui.session_histories:
+                    if hist.display_name == name:
+                        resolved_others.append(hist.current_state.spec)
+                        found = True
+                        break
+                if not found:
+                    logging.error(f"Session '{name}' not found.")
+                    return 0
+        
+        if len(resolved_others) != len(others_list):
+            return 0
+
+        # --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---
+        # It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.
+        all_sessions_info = [(self._session.name, self._session.spec)]
+        for name, spec in zip(others_list, resolved_others):
+            all_sessions_info.append((name, spec))
+            
+        all_sessions_info.sort(key=lambda item: np.nanmin(item[1].x.value))
+        
+        anchor_spec = all_sessions_info[0][1]
+        subsequent_specs = [item[1] for item in all_sessions_info[1:]]
+        ordered_names = [item[0] for item in all_sessions_info]
+
+        # 4. Processing
+        processed_parts = []
+        
+        # First (Bluest) Part: x <= first_cut
+        logging.info(f"Base arm ({ordered_names[0]}): keeping data x <= {cuts[0]}")
+        first_part = anchor_spec.split(f"x <= {cuts[0]}")
+        processed_parts.append(first_part)
+    
+        current_reference_full = anchor_spec 
+
+        # Subsequent Arms
+        for i, other_spec in enumerate(subsequent_specs):
+            current_cut = cuts[i]
+            arm_name = ordered_names[i+1]
+            
+            # --- A. Equalization ---
+            if factors:
+                logging.info(f"Arm {i+1} ({arm_name}): Applying manual factor {factors[i]:.4f}")
+                equalized_spec = other_spec.scale_flux(factors[i])
+            else:
+                if eq_ranges:
+                    vmin, vmax = eq_ranges[i]
+                    logging.info(f"Arm {i+1} ({arm_name}): Calculating equalization in range {vmin}-{vmax} nm")
+                    ref_overlap = current_reference_full.split(f"(x >= {vmin}) & (x <= {vmax})")
+                    other_overlap = other_spec.split(f"(x >= {vmin}) & (x <= {vmax})")
+                    
+                    if len(ref_overlap.x) > 5 and len(other_overlap.x) > 5:
+                        from astrocook.core.spectrum_operations import compute_flux_scaling
+                        scale_model = compute_flux_scaling(
+                            ref_overlap.x.value, ref_overlap.y.value, 
+                            other_overlap.x.value, other_overlap.y.value, order=0
+                        )
+                        scalar_factor = np.nanmedian(scale_model)
+                        logging.info(f"Arm {i+1} ({arm_name}): Calculated factor = {scalar_factor:.4f}")
+                        equalized_spec = other_spec.scale_flux(scalar_factor)
+                    else:
+                        logging.warning(f"Arm {i+1} ({arm_name}): Not enough overlap. Falling back to global auto.")
+                        equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
+                else:
+                    logging.info(f"Arm {i+1} ({arm_name}): Calculating global auto equalization")
+                    equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
+            
+            # --- B. Apply Split Logic ---
+            if i < len(cuts) - 1:
+                next_cut = cuts[i+1]
+                logging.info(f"Arm {i+1} ({arm_name}): keeping data {current_cut} < x <= {next_cut}")
+                part = equalized_spec.split(f"(x > {current_cut}) & (x <= {next_cut})")
+            else:
+                logging.info(f"Arm {i+1} ({arm_name}): keeping data x > {current_cut}")
+                part = equalized_spec.split(f"x > {current_cut}")
+            
+            processed_parts.append(part)
+            current_reference_full = current_reference_full.stitch([equalized_spec], sort=True)
+    
+        # 5. Final Stitch
+        logging.info("Stitching processed arms together...")
+        final_spec = processed_parts[0].stitch(processed_parts[1:], sort=True)
+        
+        new_name = "Stitched_" + "_".join(ordered_names)
+        new_session = self._session.with_new_spectrum(final_spec)
+        new_session.name = new_name
+        return new_session
         
     def coadd(self, session_names: str, xstart: str = 'None', xend: str = 'None', 
               dx: str = '0.01', xunit: str = 'nm', kappa: str = '5.0', 

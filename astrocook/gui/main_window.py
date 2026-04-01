@@ -2238,80 +2238,6 @@ class MainWindowV2(QMainWindow):
         except Exception as e:
             logging.error(f"Error switching session via list click: {e}")
 
-    def _on_equalized_stitch_requested(self, primary_history, others_names: List[str]):
-        """
-        Stitches multiple arms by automatically identifying the blue-to-red order
-        based on their actual wavelength ranges.
-        """
-        # 1. Collect all candidate sessions
-        all_names = [primary_history.display_name] + others_names
-        candidate_histories = []
-        for name in all_names:
-            hist = next((h for h in self.session_histories if h.display_name == name), None)
-            if hist:
-                candidate_histories.append(hist)
-    
-        if len(candidate_histories) < 2:
-            return
-    
-        # 2. Sort histories by the minimum wavelength of their spectrum
-        # This ensures processed_parts[0] is always the bluest arm
-        candidate_histories.sort(key=lambda h: np.nanmin(h.current_state.spec.x.value))
-    
-        # 3. Input handling for cuts
-        num_cuts_needed = len(candidate_histories) - 1
-        cut_str, ok = QInputDialog.getText(
-            self, "Equalized Stitch", 
-            f"Enter {num_cuts_needed} cut-off wavelengths (nm) in increasing order:"
-        )
-        if not ok or not cut_str:
-            return
-    
-        try:
-            cuts = [float(c.strip()) for c in cut_str.split(',')]
-            if len(cuts) != num_cuts_needed:
-                raise ValueError(f"Expected {num_cuts_needed} values.")
-        except ValueError as e:
-            QMessageBox.warning(self, "Invalid Input", str(e))
-            return
-    
-        # 4. Processing
-        # Anchor is the bluest arm (first in sorted list)
-        anchor_sess = candidate_histories[0].current_state
-        processed_parts = []
-        
-        # First (Bluest) Part: x <= first_cut
-        processed_parts.append(anchor_sess.edit.split(f"x <= {cuts[0]}"))
-    
-        # Subsequent Arms
-        for i in range(1, len(candidate_histories)):
-            other_sess = candidate_histories[i].current_state
-            current_cut = cuts[i-1]
-            
-            # A. Equalize to the original anchor (Bluest arm)
-            equalized_spec = other_sess.spec.equalize_to_reference(anchor_sess.spec, order=0)
-            other_sess = other_sess.with_new_spectrum(equalized_spec)
-            
-            # B. Apply Split Logic
-            if i < len(cuts):
-                # Intermediate arm: between current cut and next cut
-                next_cut = cuts[i]
-                part = other_sess.edit.split(f"(x > {current_cut}) & (x <= {next_cut})")
-            else:
-                # Reddest arm: everything above the last cut
-                part = other_sess.edit.split(f"x > {current_cut}")
-            
-            processed_parts.append(part)
-    
-        # 5. Final Stitch
-        final_session = processed_parts[0].edit.stitch(processed_parts[1:])
-        
-        # Auto-name based on sorted order
-        names_ordered = [h.display_name for h in candidate_histories]
-        final_session.name = "Stitched_" + "_".join(names_ordered)
-        
-        self.add_session(final_session)
-
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
         # [Check for pending edits BEFORE opening the file browser
@@ -2403,7 +2329,7 @@ class MainWindowV2(QMainWindow):
             stitch_eq_action = QAction(f"Equalize and Stitch {len(indexes)} Arms...", self)
             stitch_eq_action.setToolTip("Equalize flux levels and stitch arms at specific wavelengths.")
             stitch_eq_action.triggered.connect(
-                lambda: self._on_equalized_stitch_requested(primary_history, others_names)
+                lambda: self._on_equalized_stitch_dialog_requested(primary_history, others_names)
             )
             menu.addAction(stitch_eq_action)
 
@@ -2497,6 +2423,21 @@ class MainWindowV2(QMainWindow):
         params = {'other_sessions': others_names}
         
         self._on_recipe_requested("edit", "stitch", params, {})
+
+    def _on_equalized_stitch_dialog_requested(self, primary_history, others_names: List[str]):
+        """
+        Callback for the Equalize and Stitch context menu action.
+        Pre-fills the 'other_sessions' in the dialog.
+        """
+        if self.active_history != primary_history:
+            self.active_history = primary_history
+            self._update_view_for_session(primary_history.current_state, set_current_list_item=True)
+
+        others_str = ", ".join(others_names)
+        
+        self._launch_recipe_dialog(
+            "edit", "equalize_and_stitch", initial_params={'other_sessions': others_str}
+        )
 
     def _on_coadd_requested(self, primary_history, others_names: List[str]):
         """
@@ -3595,7 +3536,7 @@ class MainWindowV2(QMainWindow):
                                 logging.error(f"Propagation crashed: {e}", exc_info=True)
 
                 original_history_index = self.session_histories.index(original_parent_history)
-                branching = is_branching_recipe(recipe_name)
+                branching = is_branching_recipe(recipe_name)# or recipe_name == 'equalize_and_stitch'
                 
                 # --- 4. PREPARE PARENT FOR BRANCHING ---
                 # If we are branching multiple times (e.g. extract_preset="lya, red"), 
