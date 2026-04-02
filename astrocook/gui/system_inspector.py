@@ -1755,9 +1755,18 @@ class SystemInspector(QWidget):
         #m.addAction(act_bayesian_nested)
         
         act_corner = QAction(f"Show Corner Plot", m)
+        
+        # Check if Bayesian results exist for this specific component
+        has_results = False
+        if self.current_session and self.current_session.systs:
+            meta = self.current_session.systs._data.meta
+            if 'bayesian_results' in meta and clicked_comp.uuid in meta['bayesian_results']:
+                has_results = True
+                
+        act_corner.setEnabled(has_results)
         act_corner.triggered.connect(lambda: self._show_corner_plot(clicked_comp))
         m.addAction(act_corner)
-
+        
         m.exec(self.table_view.mapToGlobal(pos))
 
     # --- [NEW] Batch Helper Methods ---

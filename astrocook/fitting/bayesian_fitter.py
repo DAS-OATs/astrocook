@@ -98,22 +98,14 @@ class BayesianVoigtFitter:
             # We use manual iteration instead of run_mcmc to pipe progress to the GUI via logging
             # Astrocook's RecipeProgressDialog looks for '>> PROGRESS: X' messages
             update_interval = max(1, nsteps // 100)
-            try:
-                # Add tqdm for terminal output if available
-                from tqdm import tqdm
-                pbar = tqdm(total=nsteps, desc="MCMC", leave=False)
-            except ImportError:
-                pbar = None
 
             for i, result in enumerate(sampler.sample(pos, iterations=nsteps, progress=False)):
-                if pbar: pbar.update(1)
                 
                 # Update GUI every 1% or at least every step
                 if i % update_interval == 0:
                     pct = int(100 * i / nsteps)
                     logging.info(f">> PROGRESS: {pct}")
             
-            if pbar: pbar.close()
             logging.info(">> PROGRESS: 100")
         else:
             sampler.run_mcmc(pos, nsteps, progress=False)

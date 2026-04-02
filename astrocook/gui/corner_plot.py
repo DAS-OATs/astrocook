@@ -16,7 +16,7 @@ class CornerPlotWindow(QMainWindow):
     def __init__(self, samples: np.ndarray, labels: list, title: str = "Corner Plot", parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
-        self.resize(1000, 1000)
+        self.resize(800, 800)
         
         # 1. Parameter Re-ordering (z, then logN, then b, then others)
         param_order = []
@@ -120,7 +120,7 @@ class CornerPlotWindow(QMainWindow):
                 ax = axs[i, j]
                 ax.set_facecolor('#ffffff') 
                 # [NEW] Enforce square aspect ratio for boxes
-                ax.set_box_aspect(1)
+                #ax.set_box_aspect(1)
                 
                 if idx_y < idx_x:
                     ax.set_visible(False)
@@ -139,15 +139,16 @@ class CornerPlotWindow(QMainWindow):
                     for q in qs:
                         ax.axvline(q, color=color_orange, ls='--', lw=1, alpha=0.5)
                     
-                    ax.set_title(self.labels[idx_x], fontsize=10, fontweight='bold', pad=10, color='#333333')
-                    ax.text(0.5, 0.85, f"{med:.3f} +{std_p:.3f} -{std_m:.3f}", 
-                            transform=ax.transAxes, ha='center', va='top', fontsize=8, color=color_orange) if 'med' in locals() else None
-                    # Recalculate med for title text if needed
+                    # Calculate stats
                     med = qs[1]
                     std_p = qs[2] - qs[1]
                     std_m = qs[1] - qs[0]
-                    ax.text(0.5, 0.85, f"{med:.3f}\n+{std_p:.3f} -{std_m:.3f}", 
-                            transform=ax.transAxes, ha='center', va='top', fontsize=7, color=color_orange)
+
+                    # Use Matplotlib's math text to stack the errors vertically!
+                    title_str = f"{self.labels[idx_x]}\n${med:.3f}^{{+{std_p:.3f}}}_{{-{std_m:.3f}}}$"
+                    
+                    # Slightly smaller font to prevent overlap
+                    ax.set_title(title_str, fontsize=8, fontweight='bold', pad=8, color='#333333')
 
                 else: 
                     if master_y_ax and ax != master_y_ax:
