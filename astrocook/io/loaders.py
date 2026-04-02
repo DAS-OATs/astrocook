@@ -91,6 +91,12 @@ def detect_file_format(file_path: str) -> str:
                 if 'ivar' in cols or 'sigma' in cols:
                     return "pypeit_coadd"
 
+            # 2.5 PypeIt Telluric Models
+            if 'MODEL' in ext_names:
+                cols = hdul['MODEL'].columns.names
+                if 'TELLURIC' in cols and 'OBJ_MODEL' in cols:
+                    return "pypeit_tellmodel"
+                
             # 3. ESPRESSO S2D
             if 'SCIDATA' in ext_names and \
                any(w in ext_names for w in ['WAVEDATA_VAC_BARY', 'WAVEDATA_AIR']):
@@ -433,6 +439,70 @@ def load_pypeit_stack(file_path: str, **kwargs) -> SpectrumDataV2:
         )
     except Exception as e:
         logging.error(f"Failed to load PypeIt Stack: {e}")
+        raise
+
+@register_loader("pypeit_tellmodel")
+def load_pypeit_tellmodel(file_path: str, **kwargs) -> SpectrumDataV2:
+    """
+    Loader for PypeIt Telluric Model files.
+    Extracts the 1D arrays from the 'MODEL' extension's single row.
+    """
+    try:
+        with fits.open(file_path) as hdul:
+            # The data is located in the 'MODEL' extension
+            data = hdul['MODEL'].data
+            
+            # Flatten the arrays (extracting them from the 1-row table format)
+            x = data['WAVE'].flatten()
+            y = data['TELLURIC'].flatten()
+            dy = np.zeros_like(y) # Models typically don't have pixel-by-pixel errors here
+            
+            obj_model = data['OBJ_MODEL'].flatten()
+            
+            # 1. Filter invalid padding (<= 0) and NaNs
+            valid_mask = (x > 0.0) & np.isfinite(x) & np.isfinite(y)
+            
+            x = x[valid_mask]
+            y = y[valid_mask]
+            dy = dy[valid_mask]
+            obj_model = obj_model[valid_mask]
+            
+            # 2. Sort by Wavelength
+            sort_idx = np.argsort(x)
+            
+            x = x[sort_idx]
+            y = y[sort_idx]
+            dy = dy[sort_idx]
+            obj_model = obj_model[sort_idx]
+            
+            # Extract Units (Heuristic will convert Angstroms to nm if needed)
+            x, x_unit = _x_unit_heuristics(x)
+            y_unit = au.dimensionless_unscaled
+            
+            # Build Core Columns
+            x_col = DataColumnV2(x, x_unit, "Wavelength")
+            xmin_col, xmax_col = _auto_limits(x, x_unit)
+            
+            y_col = DataColumnV2(y, y_unit, "Telluric Transmission")
+            dy_col = DataColumnV2(dy, y_unit, "Error")
+            
+            # Stash the Quasar/Object model as an auxiliary column
+            aux_cols = {
+                'obj_model': DataColumnV2(obj_model, y_unit, "Object Model")
+            }
+            
+            meta = dict(hdul[0].header)
+            meta['ORIGIN'] = 'pypeit_tellmodel_loader'
+            
+            return SpectrumDataV2(
+                x=x_col, xmin=xmin_col, xmax=xmax_col,
+                y=y_col, dy=dy_col,
+                aux_cols=aux_cols,
+                meta=meta
+            )
+
+    except Exception as e:
+        logging.error(f"Failed to load PypeIt Telluric Model: {e}")
         raise
 
 @register_loader("simple_csv")
