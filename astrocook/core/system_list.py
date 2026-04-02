@@ -789,6 +789,21 @@ class SystemListV2:
                     for i in range(idx_start, idx_end):
                         candidate_uuids.add(all_uuids[i])
 
+                    # --- Explicit Link Traversal ---
+                    # Components linked via constraints MUST be in the same group, 
+                    # even if they are far apart in wavelength (e.g. CIV and SiIV).
+                    for m in current_members:
+                        if m.uuid in constraints_map:
+                            for constr in constraints_map[m.uuid].values():
+                                if hasattr(constr, 'target_uuid') and constr.target_uuid:
+                                    candidate_uuids.add(constr.target_uuid)
+
+                    # Also check if anyone links TO our current members (Inverse search)
+                    for cand_uuid, c_map in constraints_map.items():
+                        for constr in c_map.values():
+                            if hasattr(constr, 'target_uuid') and constr.target_uuid in group_uuids:
+                                candidate_uuids.add(cand_uuid)
+
             # --- STEP 3: Detailed Physics and Constraint Validation ---
             for cand_uuid in candidate_uuids:
                 if cand_uuid in group_uuids: continue
@@ -803,58 +818,6 @@ class SystemListV2:
                     
                 if is_connected:
                     group_uuids.add(other.uuid)
-                    added_count += 1
-
-            if added_count == 0: break
-
-        return group_uuids
-        if not seed_uuids: return set()
-    
-        c_kms = 299792.458
-        comp_map = {c.uuid: c for c in self.components}
-        group_uuids = set(seed_uuids)
-
-        # --- STEP 1: Build a Spatial Wavelength Index ---
-        # We create a sorted list of all observed wavelengths present in the SystemList
-        flat_index = []
-        for c in self.components:
-            for w_rest in get_all_w_rest(c.series):
-                w_obs = w_rest * (1 + c.z)
-                flat_index.append((w_obs, c.uuid))
-
-        # Sort index by wavelength for binary search
-        flat_index.sort(key=lambda x: x[0])
-        all_w_obs = np.array([x[0] for x in flat_index])
-        all_uuids = [x[1] for x in flat_index]
-
-        # --- STEP 2: Transitive Closure ---
-        for _ in range(max_depth):
-            added_count = 0
-            current_members = [comp_map[u] for u in group_uuids if u in comp_map]
-
-            # Identify ranges to search based on CURRENT group members
-            candidate_uuids = set()
-            for m in current_members:
-                for w_rest in get_all_w_rest(m.series):
-                    w_obs = w_rest * (1 + m.z)
-                    # 500 km/s buffer for the initial search
-                    dv_ang = (500.0 / c_kms) * w_obs
-
-                    # Binary search to find indices in the flat_index
-                    idx_start = np.searchsorted(all_w_obs, w_obs - dv_ang)
-                    idx_end = np.searchsorted(all_w_obs, w_obs + dv_ang)
-
-                    for i in range(idx_start, idx_end):
-                        candidate_uuids.add(all_uuids[i])
-
-            # --- STEP 3: Detailed Physics/Constraint Check ---
-            for cand_uuid in candidate_uuids:
-                if cand_uuid in group_uuids: continue
-
-                other = comp_map[cand_uuid]
-                # are_overlapping verifies velocity proximity AND constraints
-                if any(are_overlapping(m, other) for m in current_members):
-                    group_uuids.add(cand_uuid)
                     added_count += 1
 
             if added_count == 0: break
