@@ -7,11 +7,12 @@ from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale, QPoint
-from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont
+from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QPushButton, QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
-    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip
+    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip,
+    QStyledItemDelegate
 )
 from typing import List, Optional
 
@@ -95,6 +96,15 @@ ERR_MAP = {
     "btur": "dbtur"
 }
 
+class LinkColorDelegate(QStyledItemDelegate):
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        # Fetch the custom text color we defined in the Model
+        fg_brush = index.data(Qt.ForegroundRole)
+        if fg_brush:
+            # Force Qt to use our color even when the row is natively selected!
+            option.palette.setBrush(QPalette.HighlightedText, fg_brush)
+
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
 
@@ -123,6 +133,24 @@ class SystemTableModel(QAbstractTableModel):
         self._primary_uuids = primary_uuids
         self._secondary_uuids = secondary_uuids
         
+        # --- Dynamically map link colors for the active group ---
+        self._link_color_map = {}
+        active_uuids = primary_uuids | secondary_uuids
+        
+        if active_uuids:
+            link_clusters = set()
+            for uid in active_uuids:
+                if uid in self._constraints_map:
+                    for attr, cons in self._constraints_map[uid].items():
+                        # Track the target UUID and the parameter being linked
+                        if cons.target_uuid:
+                            link_clusters.add((cons.target_uuid, attr))
+
+            # Color palette (Deep Blue, Magenta, Forest Green, Purple, Teal, Maroon)
+            palette = ["#296bff", "#d90077", "#008a00", "#7030a0", "#008080", "#800000"]
+            for i, cluster in enumerate(link_clusters):
+                self._link_color_map[cluster] = QColor(palette[i % len(palette)])
+
         if self._components:
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
@@ -168,6 +196,28 @@ class SystemTableModel(QAbstractTableModel):
                 font.setItalic(True); return font
             return None
 
+        # --- Foreground (Text Color) ---
+        if role == Qt.ForegroundRole and is_constrained_col:
+            # 1. Global Behavior: Frozen parameters are always gray
+            if not is_free and not is_linked:
+                return QBrush(QColor("#888888"))
+
+            # 2. Dynamic Behavior: Coloring Links within the selected group
+            if comp.uuid in self._primary_uuids or comp.uuid in self._secondary_uuids:
+                # If it's the dependent variable...
+                if is_linked and c_data.target_uuid:
+                    cluster = (c_data.target_uuid, attr)
+                    if cluster in self._link_color_map:
+                        return QBrush(self._link_color_map[cluster])
+                
+                # If it's the TARGET variable...
+                elif is_free:
+                    cluster = (comp.uuid, attr)
+                    if cluster in self._link_color_map:
+                        return QBrush(self._link_color_map[cluster])
+
+            return None
+        
         # 2. Tooltip (Keep existing logic)
         if role == Qt.ToolTipRole:
              c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
@@ -1177,6 +1227,10 @@ class SystemInspector(QWidget):
         self.table_view = QTableView()
         self.table_model = SystemTableModel()
         
+        # --- Apply the custom text color delegate ---
+        self._link_delegate = LinkColorDelegate(self.table_view)
+        self.table_view.setItemDelegate(self._link_delegate)
+
         self.proxy_model = SystemSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.table_model)
         
