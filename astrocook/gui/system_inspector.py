@@ -18,6 +18,7 @@ from typing import List, Optional
 
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from .corner_plot import CornerPlotWindow
 from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
 
 # --- [CHANGE] Robust Convolution Import with Local Fallback ---
@@ -1742,6 +1743,21 @@ class SystemInspector(QWidget):
         act_del.triggered.connect(lambda: self._delete_list(selected_comps))
         m.addAction(act_del)
 
+        m.addSeparator()
+        m.addSection("Bayesian Fitting")
+        
+        act_bayesian_mcmc = QAction(f"Refit Bayesian (MCMC){suffix}", m)
+        act_bayesian_mcmc.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'mcmc'))
+        m.addAction(act_bayesian_mcmc)
+
+        #act_bayesian_nested = QAction(f"Refit Bayesian (Nested){suffix}", m)
+        #act_bayesian_nested.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'nested'))
+        #m.addAction(act_bayesian_nested)
+        
+        act_corner = QAction(f"Show Corner Plot", m)
+        act_corner.triggered.connect(lambda: self._show_corner_plot(clicked_comp))
+        m.addAction(act_corner)
+
         m.exec(self.table_view.mapToGlobal(pos))
 
     # --- [NEW] Batch Helper Methods ---
@@ -1793,6 +1809,50 @@ class SystemInspector(QWidget):
             self.main_window._on_recipe_requested(
                 "absorbers", "delete_component", {"uuids": uuid_list}, {}
             )
+
+    def _fit_bayesian(self, comps, engine='mcmc'):
+        """Batch Bayesian fit."""
+        if self.main_window and comps:
+            uuid_list = [c.uuid for c in comps]
+            
+            # Log the action
+            logging.info(f"Triggering Bayesian {engine.upper()} fit for {len(uuid_list)} components...")
+            
+            self.main_window._on_recipe_requested(
+                "absorbers", "fit_bayesian", 
+                {
+                    "uuids": uuid_list,
+                    "engine": engine,
+                    "nsteps": "500",
+                    "nlive": "250",
+                    "group_depth": "2"
+                }, 
+                {}
+            )
+
+    def _show_corner_plot(self, comp):
+        """Show Corner Plot for a component if results exist."""
+        if not self.current_session: return
+        
+        meta = self.current_session.systs._data.meta
+        if 'bayesian_results' not in meta or comp.uuid not in meta['bayesian_results']:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.information(self, "No Results", 
+                                  f"No Bayesian sampling results found for {comp.series} (z={comp.z:.4f}).\n"
+                                  "Please run 'Re-fit Bayesian' first.")
+            return
+            
+        res = meta['bayesian_results'][comp.uuid]
+        samples = res['samples']
+        labels = res.get('labels', [])
+        
+        if not labels:
+            # Fallback labels
+            labels = [f"p_{i}" for i in range(samples.shape[1])]
+            
+        title = f"Bayesian Corner Plot: {comp.series} at z={comp.z:.5f}"
+        self.corner_win = CornerPlotWindow(samples, labels, title=title, parent=self)
+        self.corner_win.show()
 
     # Method to set resolution for specific components
     def _set_component_resolution(self):

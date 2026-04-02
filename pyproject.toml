@@ -64,6 +64,11 @@ test = [
     "pytest",
     "pytest-mock",
 ]
+bayesian = [
+    "emcee",
+    "dynesty",
+    "corner",
+]
 # You could add other groups like 'docs' or 'bayesian' later
 
 legacy = ["wxPython"]
