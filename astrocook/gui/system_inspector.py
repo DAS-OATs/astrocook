@@ -1458,19 +1458,18 @@ class SystemInspector(QWidget):
                 self._manual_base_text = new_txt 
                 
             else:
-                # --- MODE B: Fluid Prepend ---
-                # We prepend the selection to the BASE text (what user typed),
-                # NOT to the current box text (which might have old temp selections).
-                
-                # Check for duplicates in the base text to be clean
+                # --- MODE B: Smart Preserve or Reset ---
+                # Check what is currently in the custom manual text
                 base_tokens = [t.strip() for t in self._manual_base_text.split(',') if t.strip()]
                 
                 if primary_comp.series in base_tokens:
-                    # Already in the manual list: just show the manual list
+                    # The selected component is part of the custom list. Preserve the custom panels!
                     new_txt = self._manual_base_text
                 else:
-                    # Prepend: "Selection, Base"
-                    new_txt = f"{primary_comp.series}, {self._manual_base_text}"
+                    # The selected component is entirely new. Reset the view!
+                    new_txt = series_str
+                    self._manual_base_text = new_txt
+                    self._manual_trans_edit = False # Turn off manual mode
             
             # Update the widget (Programmatic setText does NOT fire textEdited)
             self.trans_in.setText(new_txt)
