@@ -148,3 +148,11 @@ If you have spectra covering _different_ wavelength ranges (e.g., Blue and Red a
 :alt: Context menu for co-adding multiple sessions
 :align: center
 ```
+
+### Resolution Tracking during Operations
+
+When combining multiple spectra, Astrocook rigorously tracks instrumental resolving power ($R$) pixel-by-pixel:
+
+* **Stitching:** When stitching spectra end-to-end, their respective `resol` columns are seamlessly concatenated.
+* **Co-adding:** When co-adding overlapping spectra, Astrocook calculates the new effective resolution using an **Inverse Variance Weighted (IVW) average** of the input resolutions (weighted by $1/R^2$). Because co-addition combines signals in parallel, **the lower-resolution data will safely dominate the overlap region**, preserving the physical accuracy of the Line Spread Function.
+* **Safety First:** To prevent scientifically invalid models, co-addition enforces an "all or nothing" rule. If you attempt to co-add a mix of spectra where some have known resolutions and others do not, Astrocook will warn you and safely drop the `resol` column from the final output.

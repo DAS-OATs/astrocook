@@ -42,7 +42,7 @@ TThis opens a floating window displaying the raw values centered on the pixel yo
 * **λmin / λmax**: The lower and upper boundaries of the pixel bin.
 * **F**: Flux density.
 * **dF**: 1-sigma error estimate.
-* **Other columns**, containing the continuum and additional information, when present.
+* **Other columns**, containing the continuum and additional information, when present (such as the resolution column `resol`, mentioned below).
 
 The table supports infinite scrolling, automatically loading more data as you move up or down.
 
@@ -134,6 +134,10 @@ Right-click on any session in the list to open the context menu. This menu offer
   - **Object Name**
   - **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
   - **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
+  :::{note}
+  Setting a global resolution here will automatically generate a pixel-by-pixel `resol` column across your entire spectrum, which you can verify in the Data Inspector.
+  :::
+
 - **Duplicate**: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).
 
 ### The Log Scripter
