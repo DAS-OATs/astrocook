@@ -1436,6 +1436,26 @@ class SystemInspector(QWidget):
             if self.proxy_model.rowCount() > 0: self.table_view.selectRow(0)
             else: self.vel_plot.plot_spectrum(None)
                 
+        # --- Auto-Refresh Corner Plot if open ---
+        if hasattr(self, 'corner_win') and self.corner_win.isVisible():
+            # Grab the actively selected row
+            sel = self.table_view.selectionModel().selectedRows()
+            if sel:
+                idx_source = self.proxy_model.mapToSource(sel[0])
+                primary_comp = self.table_model.get_component_at(idx_source.row())
+                
+                if primary_comp:
+                    meta = session.systs._data.meta if session and session.systs else {}
+                    # Check if this newly selected component has Bayesian results
+                    if 'bayesian_results' in meta and primary_comp.uuid in meta['bayesian_results']:
+                        self._corner_uuid = primary_comp.uuid # Update our tracker
+                        res = meta['bayesian_results'][primary_comp.uuid]
+                        samples = res['samples']
+                        labels = res.get('labels', [f"p_{i}" for i in range(samples.shape[1])])
+                        title = f"Bayesian Corner Plot: {primary_comp.series} at z={primary_comp.z:.5f}"
+                        
+                        self.corner_win.update_data(samples, labels, title)
+
     def update_limit_boxes(self, v_min, v_max):
         self.vmin_in.blockSignals(True)
         self.vmax_in.blockSignals(True)
@@ -1860,8 +1880,17 @@ class SystemInspector(QWidget):
             labels = [f"p_{i}" for i in range(samples.shape[1])]
             
         title = f"Bayesian Corner Plot: {comp.series} at z={comp.z:.5f}"
-        self.corner_win = CornerPlotWindow(samples, labels, title=title, parent=self)
-        self.corner_win.show()
+        # Track which component is currently being plotted
+        self._corner_uuid = comp.uuid 
+        
+        # Reuse existing window if open, otherwise create a new one
+        if hasattr(self, 'corner_win') and self.corner_win.isVisible():
+            self.corner_win.update_data(samples, labels, title)
+            self.corner_win.raise_()
+            self.corner_win.activateWindow()
+        else:
+            self.corner_win = CornerPlotWindow(samples, labels, title=title, parent=self)
+            self.corner_win.show()
 
     # Method to set resolution for specific components
     def _set_component_resolution(self):
