@@ -1,3 +1,12 @@
+## [2.0.0] - 2026-04-03
+
+- Added an experimental Bayesian fitting engine supporting MCMC (`emcee`).
+- Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.
+- Fixed a critical group definition bug to ensure physically linked components are always correctly grouped during fitting.
+- Improved continuum fitting and smoothing methods, including dynamic re-normalization of the Voigt model.
+- Polished the GUI with publication-ready plot formatting, stacked asymmetric error labels, and scientific notation for redshift uncertainties.
+- Finalized the transition to the immutable V2 data architecture and removed legacy dead code.
+
 ## [2.0.0-beta.3] - 2026-02-18
 
 - Improved robustness (crash recovery) and fitting (weak lines, Lyman forest)

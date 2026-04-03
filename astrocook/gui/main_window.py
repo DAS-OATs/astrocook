@@ -4550,7 +4550,7 @@ class AboutDialog(QDialog):
         try:
             from astrocook import __version__ as ver
         except ImportError:
-            ver = "v2.0.0-beta.3"
+            ver = "v2.0.0"
 
         ver_lbl = QLabel(f"Version: {ver}")
         ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
@@ -4569,7 +4569,7 @@ class AboutDialog(QDialog):
         # --- Description / Credits ---
         credits_html = (
             "<p align='center'>Developed by <b>Guido Cupani</b><br>at INAF–Osservatorio Astronomico di Trieste.</p>"
-            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,<br>Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo,<br> Stefano Alberto Russo, Andrea Trost.</p>"
+            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,<br>Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo,<br> Christian Piscitelli, Stefano Alberto Russo, Andrea Trost.</p>"
             "<p align='center'>Logo and icon by <a href='https://claudiacupani.com'><b>Claudia Cupani</b></a>.</p>"
             "<p align='center'>Partly funded by the PRIN PNRR project<br>“Next generation computing & data technologies<br>to probe the cosmic metal content”.</p>"
         )

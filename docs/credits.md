@@ -18,7 +18,7 @@
 
 Developed by **Guido Cupani** at INAF–Osservatorio Astronomico di Trieste.
 
-**Many thanks** to (in alphabetical order): Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Stefano Alberto Russo, Andrea Trost.
+**Many thanks** to (in alphabetical order): Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Christian Piscitelli, Stefano Alberto Russo, Andrea Trost.
 
 Logo and icon by **[Claudia Cupani](https://claudiacupani.com)**.
 
