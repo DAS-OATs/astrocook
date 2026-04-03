@@ -374,8 +374,17 @@ class VoigtModelConstraintV2:
     
     def get_active_param_labels(self) -> List[str]:
         """
-        Return a list of labels for the free parameters.
-        Used for visualization (e.g., Corner Plots).
+        Return a list of formatting labels for all active free parameters.
+
+        Iterates through the components and parameter constraints to build
+        identifying strings (e.g., ``'z (1)'``, ``'logN (2)'``) for every
+        parameter that is currently free to vary during the fit.
+        Used primarily for visualization (e.g., Corner Plots).
+
+        Returns
+        -------
+        list of str
+            A list of parameter labels, matching the order of the ``p_free_vector``.
         """
         labels = []
         for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):

@@ -660,8 +660,21 @@ class SpectrumV2:
 
     def remove_meta_keys(self, keys: List[str]) -> 'SpectrumV2':
         """
-        Return a NEW SpectrumV2 with specified metadata keys removed.
-        Used to clean up temporary large objects (like JSON maps) before saving.
+        Remove specified keys from the metadata dictionary.
+
+        Returns a new SpectrumV2 instance with the specified metadata keys removed.
+        This is commonly used to clean up temporary large objects (like JSON
+        mapping dictionaries) before saving the session to disk.
+
+        Parameters
+        ----------
+        keys : list of str
+            A list of metadata keys to remove.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with the cleaned metadata.
         """
         new_meta = deepcopy(self._data.meta)
         for k in keys:
@@ -1529,6 +1542,24 @@ class SpectrumV2:
     def equalize_to_reference(self, reference_spec: 'SpectrumV2', order: int = 0) -> 'SpectrumV2':
         """
         Scale this spectrum's flux to match a reference spectrum.
+
+        Computes a scaling polynomial by comparing the flux of this spectrum
+        to a reference spectrum, and applies this scaling to all flux-like
+        columns (y, dy, cont, model).
+
+        Parameters
+        ----------
+        reference_spec : SpectrumV2
+            The reference spectrum object to match.
+        order : int, optional
+            Polynomial order for the scaling model. ``0`` applies a constant
+            scalar factor, ``-1`` applies a spline interpolation, ``>0`` applies a
+            polynomial of the given order. Defaults to ``0``.
+
+        Returns
+        -------
+        SpectrumV2
+            A new instance with scaled flux.
         """
         from astrocook.core.spectrum_operations import compute_flux_scaling
         

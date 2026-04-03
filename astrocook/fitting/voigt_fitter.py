@@ -829,8 +829,22 @@ class VoigtFitterV2:
 
     def get_fit_context_data(self) -> Dict[str, Any]:
         """
-        Returns all data needed for an external likelihood calculation.
-        Call prepare_fit_context first.
+        Retrieve all internal data required for external likelihood calculations.
+
+        Extracts the sliced arrays, fit masks, and the model computation function
+        used by the frequentist fitter, allowing external engines (like Bayesian
+        samplers) to evaluate the exact same physical model. Must be called
+        after :meth:`prepare_fit_context`.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+            - ``'x'``: The wavelength grid array.
+            - ``'y'``: The normalized flux array.
+            - ``'dy'``: The normalized flux error array.
+            - ``'mask'``: The boolean fit mask array.
+            - ``'compute_model'``: A callable function that takes a free parameter vector and returns the normalized model array.
         """
         return {
             'x': self._x_calc,

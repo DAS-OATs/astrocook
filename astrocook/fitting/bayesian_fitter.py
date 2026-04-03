@@ -17,10 +17,20 @@ class BayesianVoigtFitter:
     """
     Bayesian engine for Voigt profile fitting.
     
-    This class wraps a VoigtFitterV2 instance to perform MCMC or Nested Sampling
-    using the same physical model and data preparation.
+    This class wraps a :class:`~astrocook.fitting.voigt_fitter.VoigtFitterV2`
+    instance to perform Markov Chain Monte Carlo (MCMC) or Nested Sampling
+    using the exact same physical model, constraints, and data preparation.
+
+    Parameters
+    ----------
+    spec : SpectrumV2
+        The spectral data to fit.
+    systs : SystemListV2
+        The system list containing the components to model.
+    z_window_kms : float, optional
+        Velocity window (km/s) around component centers to include in the fit mask.
+        Defaults to ``20.0``.
     """
-    
     def __init__(self, spec: Any, systs: Any, z_window_kms: float = 20.0):
         self.spec = spec
         self.systs = systs
@@ -37,7 +47,23 @@ class BayesianVoigtFitter:
         self.ndim = len(self.p_initial)
         
     def ln_likelihood(self, p_free: np.ndarray) -> float:
-        """Standard Gaussian Log-Likelihood."""
+        """
+        Compute the log-likelihood of a parameter vector.
+
+        Evaluates the standard Gaussian log-likelihood for the active fit region,
+        incorporating any penalty terms (e.g., Doppler parameter runaways) 
+        inherited from the frequentist fitter.
+
+        Parameters
+        ----------
+        p_free : np.ndarray
+            The vector of free parameters to evaluate.
+
+        Returns
+        -------
+        float
+            The computed log-likelihood, or ``-np.inf`` if evaluation fails.
+        """
         try:
             model = self.ctx['compute_model'](p_free)
             # Only use pixels in the dynamic mask
@@ -63,12 +89,42 @@ class BayesianVoigtFitter:
             return -np.inf
 
     def ln_prior(self, p_free: np.ndarray) -> float:
-        """Uniform priors based on physical bounds."""
+        """
+        Compute the log-prior probability of a parameter vector.
+
+        Applies a uniform flat prior defined by the physical boundaries of the
+        free parameters (e.g., column density between 10.0 and 23.0).
+
+        Parameters
+        ----------
+        p_free : np.ndarray
+            The vector of free parameters.
+
+        Returns
+        -------
+        float
+            ``0.0`` if the parameters are within physical bounds, ``-np.inf`` otherwise.
+        """
         if np.any(p_free < self.lower_bounds) or np.any(p_free > self.upper_bounds):
             return -np.inf
         return 0.0 # Log of 1/Volume is constant, so we can use 0 for simplicity
 
     def ln_posterior(self, p_free: np.ndarray) -> float:
+        """
+        Compute the total log-posterior probability.
+
+        Calculates the sum of the log-prior and log-likelihood.
+
+        Parameters
+        ----------
+        p_free : np.ndarray
+            The vector of free parameters.
+
+        Returns
+        -------
+        float
+            The log-posterior probability, or ``-np.inf`` if outside prior bounds.
+        """
         lp = self.ln_prior(p_free)
         if not np.isfinite(lp):
             return -np.inf
@@ -77,7 +133,35 @@ class BayesianVoigtFitter:
     def run_mcmc(self, nwalkers: int = 32, nsteps: int = 1000, 
                  burn_in: int = 200, progress: bool = True) -> Dict[str, Any]:
         """
-        Run MCMC using emcee.
+        Execute Markov Chain Monte Carlo (MCMC) sampling using ``emcee``.
+
+        Initializes walkers around the initial parameter guess and samples the
+        posterior distribution.
+
+        Parameters
+        ----------
+        nwalkers : int, optional
+            Number of MCMC walkers. Defaults to ``32``.
+        nsteps : int, optional
+            Number of sampling steps per walker. Defaults to ``1000``.
+        burn_in : int, optional
+            Number of initial steps to discard as burn-in. Defaults to ``200``.
+        progress : bool, optional
+            If True, pipes progress percentage to the logger. Defaults to ``True``.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+            - ``'samples'``: The flattened, burn-in discarded chain (np.ndarray).
+            - ``'sampler'``: The raw ``emcee.EnsembleSampler`` object.
+            - ``'medians'``: The median values for each parameter (np.ndarray).
+            - ``'std'``: The standard deviations for each parameter (np.ndarray).
+
+        Raises
+        ------
+        ImportError
+            If the ``emcee`` package is not installed.
         """
         if emcee is None:
             raise ImportError("emcee is not installed. Please install it to use MCMC.")
@@ -122,7 +206,33 @@ class BayesianVoigtFitter:
 
     def run_nested(self, nlive: int = 250, progress: bool = True) -> Dict[str, Any]:
         """
-        Run Nested Sampling using dynesty.
+        Execute Nested Sampling using ``dynesty``.
+
+        Samples the parameter space to estimate both the posterior distribution
+        and the Bayesian evidence (log-Z).
+
+        Parameters
+        ----------
+        nlive : int, optional
+            Number of live points for the nested sampler. Defaults to ``250``.
+        progress : bool, optional
+            If True, pipes progress (dLogZ) to the logger. Defaults to ``True``.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+            - ``'results'``: The raw ``dynesty`` results object.
+            - ``'logz'``: The estimated log-evidence.
+            - ``'logzerr'``: The error on the log-evidence.
+            - ``'samples'``: The posterior samples (np.ndarray).
+            - ``'medians'``: The median values for each parameter (np.ndarray).
+            - ``'std'``: The standard deviations for each parameter (np.ndarray).
+
+        Raises
+        ------
+        ImportError
+            If the ``dynesty`` package is not installed.
         """
         if dynesty is None:
             raise ImportError("dynesty is not installed. Please install it to use Nested Sampling.")
@@ -173,7 +283,21 @@ class BayesianVoigtFitter:
 
     def apply_results(self, res: Dict[str, Any]) -> Any:
         """
-        Apply Bayesian medians and uncertainties to the system list.
+        Apply Bayesian medians and uncertainties back to the system list.
+
+        Extracts the posterior medians and standard deviations, maps them back
+        to the full parameter vector, and updates the corresponding components
+        in the system list. Fixed or linked parameters maintain their prior state.
+
+        Parameters
+        ----------
+        res : dict
+            The results dictionary returned by :meth:`run_mcmc` or :meth:`run_nested`.
+
+        Returns
+        -------
+        SystemListV2
+            A new system list containing the updated parameters and Bayesian errors.
         """
         medians = res['medians'] if 'medians' in res else np.median(res['samples'], axis=0)
         stds = res['std'] if 'std' in res else np.std(res['samples'], axis=0)

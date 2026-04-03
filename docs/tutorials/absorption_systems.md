@@ -152,6 +152,27 @@ After manual edits, you often need to re-optimize the fit:
 :align: center
 ```
 
+### Bayesian Fitting (Experimental)
+
+Astrocook v2.0.0 introduces a prototype Bayesian fitting engine, allowing you to rigorously explore parameter space using MCMC (`emcee`). This is particularly useful for analyzing highly blended systems or determining robust parameter uncertainties.
+
+To run a Bayesian fit:
+1. Select the component(s) you wish to fit in the System List.
+2. **Right-click** to open the context menu and locate the **Bayesian Fitting** section.
+3. Select **Refit Bayesian (MCMC)**. 
+4. The sampling will run as a batch process, with progress tracked in the main window's progress bar.
+
+**Visualizing Posteriors (Corner Plots)**
+Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:
+* Right-click a Bayesian-fitted component and select **Show Corner Plot**.
+* This opens a dedicated, scrollable window displaying the 1D histograms and 2D contours for all free parameters ($z$, $\log N$, $b$).
+* The plot title explicitly shows the median values along with their **asymmetrical $1\sigma$ uncertainties** (e.g., $14.500^{+0.123}_{-0.154}$).
+* **Auto-Refresh:** You can leave the Corner Plot window open on a second monitor. As you click through different Bayesian-fitted systems in the table, or run new fits, the plot will automatically update to reflect the active system.
+
+:::{note}
+While the corner plot displays the full asymmetric uncertainties, the main System List table simplifies these into a single, symmetric $1\sigma$ equivalent (derived from the standard deviation of the samples) to maintain compatibility with legacy data structures.
+:::
+
 ### Cleaning Results
 After running automated pipelines or performing manual fits, your model might contain artifacts such as noise spikes fitted as narrow lines, or continuum undulations fitted as broad, shallow features ("ghosts").
 
