@@ -1,1 +1,0 @@
-../../../../Resources/astropy/io/fits/_utils.pyx

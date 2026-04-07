@@ -1,1 +1,0 @@
-../../../../Resources/astropy/io/ascii/cparser.pyx

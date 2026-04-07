@@ -1,1 +1,0 @@
-../../../../Resources/astropy/cosmology/_src/signature_deprecations.c

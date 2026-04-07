@@ -1,1 +1,0 @@
-../../../../../Resources/astropy/timeseries/periodograms/bls/bls.c

@@ -1,3 +1,0 @@
-# Add Latex packages for Russian (cyrillic) fonts
-
-text.latex.preamble : \usepackage[russian]{babel} \usepackage[utf8]{inputenc} \usepackage[T2A]{fontenc} \usepackage{amsmath} \usepackage{amssymb}
