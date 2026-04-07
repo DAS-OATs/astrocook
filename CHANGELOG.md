@@ -1,4 +1,4 @@
-## [2.0.0] - 2026-04-03
+## [2.0.0] - 2026-04-07
 
 - Added an experimental Bayesian fitting engine supporting MCMC (`emcee`).
 - Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.

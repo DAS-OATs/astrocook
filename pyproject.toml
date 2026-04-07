@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 name = "astrocook"
 # !! IMPORTANT: Replace "2.0.0" with your actual current version !!
 # Consider using setuptools-scm later to get version from Git tags automatically
-version = "2.0.0.dev0"
+version = "2.0.0"
 description = "Python package for the analysis of quasar spectra"
 readme = "README.md" # Assumes you have a README.md file
 requires-python = ">=3.12" # Specify the minimum Python version you support

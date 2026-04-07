@@ -7,7 +7,7 @@
 <br>
 
 <span style="font-size:120%; color:#296bff">© 2017-2026 Guido Cupani</span><br>
-<span style="color:#f5a100"><b>Version: 2.0.0-beta</b></span>
+<span style="color:#f5a100"><b>Version: 2.0.0</b></span>
 
 <span style="font-size:120%"><b>A thousand recipes to cook a spectrum</b></span>
 
