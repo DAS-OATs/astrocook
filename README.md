@@ -1,6 +1,7 @@
 <img width="400" height="311" alt="logo_3d_HR" src="https://github.com/user-attachments/assets/89f51f8b-128a-4d06-982a-e925d24c43da" />
 
 <br>
+<br>
 
 <span style="font-size:120%; color:#296bff">© 2017-2026 Guido Cupani</span><br>
 <span style="color:#f5a100"><b>Version: 2.0.0</b></span>
