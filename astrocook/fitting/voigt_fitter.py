@@ -730,12 +730,12 @@ class VoigtFitterV2:
         self._dy_norm_calc = self._dy_norm[self._sl]
         self._fit_mask_calc = self._fit_mask[self._sl]
         
-        logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
+        #logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
         if np.sum(self._fit_mask_calc) == 0:
-            logging.warning("FIT MASK IS EMPTY!")
+            logging.debug("FIT MASK IS EMPTY!")
             # Debug: what are we searching for?
             for idx, comp in iterator:
-                logging.warning(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
+                logging.debug(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
         
         if self._use_variable_resolution and self._resol_column is not None:
             self._resol_calc = self._resol_column[self._sl]
@@ -888,10 +888,10 @@ class VoigtFitterV2:
                The raw result object from ``scipy.optimize``.
         """
         p0 = self._constraints.p_free_vector
-        logging.info(f"Initial p0: {p0}")
+        #logging.info(f"Initial p0: {p0}")
         # 1. Refine initial guess using centroiding (Smart Guess)
         # p0 = self._smart_guess(p0, z_window_kms)
-        print(f"DEBUG: p0 after skipping smart_guess: {p0}")
+        #print(f"DEBUG: p0 after skipping smart_guess: {p0}")
 
         # 2. Setup the fitting context (pixels, background, vectors) based on refined guess
         # We need to update the system list temporarily to ensure prepare_fit_context 
