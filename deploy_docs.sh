@@ -55,8 +55,14 @@ echo -e "${BLUE}Step 3: Patching HTML for Jekyll compatibility...${NC}"
 TEMP_DIR=$(mktemp -d)
 cp -r "$BUILD_OUTPUT"/* "$TEMP_DIR"
 
-# --- Explicitly copy the switcher file to the root of the website ---
+# Explicitly copy the switcher file to the root of the website
 cp switcher.json "$TEMP_DIR/" 2>/dev/null || cp docs/switcher.json "$TEMP_DIR/"
+
+# Inject the V1 legacy documentation
+echo -e "${BLUE}Injecting V1 legacy documentation into /v1/...${NC}"
+mkdir -p "$TEMP_DIR/v1"
+# Copy the pre-built V1 HTML files into the new v1 directory
+cp -r docs_backup/* "$TEMP_DIR/v1/" 2>/dev/null || echo "Warning: docs_backup not found"
 
 # Go into the temp dir to perform operations
 pushd "$TEMP_DIR" > /dev/null
