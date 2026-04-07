@@ -1,0 +1,4 @@
+release/
+build/
+dist/
+astrocook.egg-info/
