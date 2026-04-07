@@ -64,6 +64,9 @@ mkdir -p "$TEMP_DIR/v1"
 # Copy the pre-built V1 HTML files into the new v1 directory
 cp -r docs_backup/* "$TEMP_DIR/v1/" 2>/dev/null || echo "Warning: docs_backup not found"
 
+# Restore the Jekyll config to the root so the V1 theme loads
+cp docs_backup/_config.yml "$TEMP_DIR/" 2>/dev/null || echo "Warning: _config.yml not found"
+
 # Go into the temp dir to perform operations
 pushd "$TEMP_DIR" > /dev/null
 
