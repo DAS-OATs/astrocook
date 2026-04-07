@@ -9,9 +9,9 @@ build-backend = "setuptools.build_meta"
 [project]
 # --- Core Metadata (PEP 621) ---
 name = "astrocook"
-# !! IMPORTANT: Replace "1.9.0" with your actual current version !!
+# !! IMPORTANT: Replace "2.0.0" with your actual current version !!
 # Consider using setuptools-scm later to get version from Git tags automatically
-version = "1.9.0"
+version = "2.0.0"
 description = "Python package for the analysis of quasar spectra"
 readme = "README.md" # Assumes you have a README.md file
 requires-python = ">=3.12" # Specify the minimum Python version you support
@@ -41,7 +41,7 @@ classifiers = [
 dependencies = [
     # !! IMPORTANT: List ALL essential runtime dependencies here !!
     # Check your imports carefully. This is a starting guess:
-    "wxpython>=4.2",
+    "PySide6>=6.10",
     "astropy>=6.1",      # Core astronomy data structures (Table, units)
     "tqdm>=4.66",
     "matplotlib>=3.9",
@@ -52,6 +52,11 @@ dependencies = [
     "numpy>=1.17.3",       # Core numerical operations
     "cycler>=0.10",
     "statsmodels>=0.10.1",   # Plotting library
+    "numexpr",
+    "qtawesome",
+    "emcee",
+    "dynesty",
+    "corner",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
@@ -64,6 +69,8 @@ test = [
 ]
 # You could add other groups like 'docs' or 'bayesian' later
 
+legacy = ["wxPython"]
+
 # --- Entry Points (e.g., for command-line scripts) ---
 [project.scripts]
 # If running `astrocook-gui` should launch your GUI:
@@ -74,6 +81,7 @@ test = [
 Homepage = "https://github.com/DAS-OATs/astrocook" # Or your specific homepage
 Repository = "https://github.com/DAS-OATs/astrocook"
 # Bug-Tracker = "https://github.com/DAS-OATs/astrocook/issues" # Optional
+
 
 # --- Setuptools specific configuration ---
 [tool.setuptools]
@@ -95,4 +103,17 @@ minversion = "6.0"
 addopts = "-ra -q"
 testpaths = [
     "tests", # Specifies where pytest should look for tests
+]
+
+[tool.coverage.run]
+# CRITICAL FIX: Tell the coverage tool that the source code starts in the 'astrocook' directory.
+# This resolves the "Module was never imported" error.
+source = ["astrocook"]
+
+[tool.coverage.report]
+# Configure which files to include/exclude from the report (optional)
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    # Add other boilerplate lines to exclude here
 ]

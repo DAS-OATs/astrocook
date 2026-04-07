@@ -1,42 +1,7 @@
-#import locale
-#locale.setlocale(locale.LC_ALL, 'en_US')
-#import wx
-#wx.Locale(wx.LANGUAGE_DEFAULT)
-version = "1.9"
-current_year = 2025
+# astrocook/__init__.py
 
-from .session import Session
-from .syst_list import SystList
+# Expose the V2 Session as the main entry point
+from .core.session import SessionV2
 
-import logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="[%(levelname)s] %(module)s: %(message)s [deprecated]")
-
-#from .frame import Frame
-#from .spectrum import Spectrum
-
-#from .format import Format
-#from .session import Session
-
-
-"""
-from .list import List  # Deprecated
-from .list_reader import ListReader  # Deprecated
-from .list_syst import ListSyst  # Deprecated
-from .spec_1d import Spec1D
-from .spec_1d_cont import Spec1DCont
-from .spec_1d_reader import Spec1DReader
-from .model import Model
-from .line import Line
-from .cont import Cont
-from .syst import Syst
-from .system import System
-#from .abs import Abs
-from .voigt import Voigt
-from .io import IO
-from .recipe import Recipe
-from .workflow import Workflow
-from .plot import Plot
-from .app import MainFrame
-"""
+# Expose formatting/version info if needed
+__version__ = "2.0.0"

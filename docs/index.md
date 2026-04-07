@@ -1,19 +1,39 @@
----
-layout: default
-title: Home
-nav_exclude: true
----
+```{image} _static/icon_3d_HR.png
+:alt: Astrocook Logo
+:width: 200px
+:class: no-background
+:align: center
+```
 
-# Astrocook 🍪
+# Welcome to Astrocook!
 
-A thousand recipes to cook a spectrum
-{: .fs-6 .fw-300}
+**Astrocook** is a Python package and GUI for analyzing quasar spectra, built on the modern Scientific Python stack (**PySide6**, **Astropy**, **Matplotlib**).  
+It is designed to make spectral analysis—such as continuum fitting, absorption line identification, and Voigt profile modeling—interactive, reproducible, and easy.
 
-Astrocook is a software environment to analyze quasar spectra. It includes:
-* a set of **algorithms** to model spectral features in emission and absorption (continuum, spectral lines, complex absorption systems);
-* a graphical user interface (GUI) to perform the analysis **interactively**;
-* a scripting utility to **automatize** the analysis and make it fully **reproducible**.
+## Key Features
 
-This site serves as a documentation for [Astrocook v1.0.0](https://github.com/DAS-OATs/astrocook). It shows how to [get started](start.md) with the software and its GUI, how to [manage the data](data.md), and how to [perform some common tasks](common.md). It also provides a [reference of the recipes](cookbook.md) available in the code.
+* **Interactive GUI**: Zoom, pan, and select regions with a mouse-driven interface.  
+* **Spectral Operations**: Smooth, rebin, and arithmetic operations (addition, subtraction) on spectra.  
+* **Continuum Fitting**: Automatic and manual algorithms for defining quasar continua.  
+* **System Identification**: Smart algorithms to identify absorption systems (Ly-$\alpha$, CIV, MgII, etc.).  
+* **Voigt Profile Fitting**: Integrated fitting engine for complex absorption features.  
+* **Session Management**: Save and restore your full analysis state (undo/redo supported).
 
-The documentation is still sparse, but is constantly improved. An ❗️ highlights an important feature, or sometimes an issue of the code that is going to be solved in the next future. A 🚧 denotes a section of the documentation that needs to be completed.
+## Documentation
+
+```{toctree}
+:maxdepth: 1  
+:caption: User Guide
+
+installation
+tutorials/index
+reference
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Info
+
+credits
+changelog
+```

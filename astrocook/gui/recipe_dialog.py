@@ -1,0 +1,586 @@
+import logging
+import webbrowser
+from PySide6.QtWidgets import (
+    QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
+    QPushButton, QDialogButtonBox, QWidget, QGroupBox, QComboBox, QMessageBox, QVBoxLayout, QApplication
+)
+from PySide6.QtGui import QIntValidator, QDoubleValidator
+from PySide6.QtCore import Qt, QLocale, Signal, QEvent
+
+from astrocook.core.session import SessionV2
+from astrocook.core.utils import get_recipe_schema
+
+class RecipeDialog(QDialog):
+    """
+    A dynamic dialog box for configuring and running Astrocook V2 recipes.
+    """
+
+    recipe_requested = Signal(str, str, dict, dict)
+
+    def __init__(self, recipe_category: str, recipe_name: str,
+                 session: SessionV2, parent=None):
+        super().__init__(parent)
+        self.recipe_category = recipe_category
+        self.recipe_name = recipe_name
+        self.session = session
+        self.parent_window = parent 
+
+        self.input_widgets = {} 
+        self._last_focused_widget = None
+                
+        # 1. Operators 
+        self.operator_list = ["+", "-", "*", "/", "**"]
+        # 2. Functions 
+        self.function_list = ["log", "log10", "exp", "sqrt", "abs",]
+        # 3. Booleans 
+        self.boolean_list = ['&', '|', '~', '(', ')']
+        # 4. Session alias map
+        self.session_alias_map = self._build_alias_map()
+
+        try:
+            self.schema = get_recipe_schema(recipe_category, recipe_name)
+        except Exception as e:
+            logging.error(f"Failed to get schema for {recipe_category}.{recipe_name}: {e}")
+            self.schema = None 
+
+        self._apply_styles()
+        self._setup_ui()
+
+    def _apply_styles(self):
+        """Applies consistent rounded styling to inputs and helper buttons only."""
+        pal = QApplication.palette()
+        text_col = pal.color(pal.ColorRole.Text).name()
+        base_col = pal.color(pal.ColorRole.Base).name()
+        btn_col = pal.color(pal.ColorRole.Button).name()
+        
+        self.setStyleSheet(f"""
+            /* Input Fields */
+            QLineEdit, QComboBox {{
+                padding: 4px;
+                border-radius: 6px;
+                background-color: {base_col};
+                color: {text_col};
+                border: 1px solid #ccc;
+            }}
+            QLineEdit:focus, QComboBox:focus {{
+                border: 1px solid #296bff;
+            }}
+            
+            /* Reference Pane Frame */
+            QFrame#ReferencePane {{
+                background-color: {base_col}; 
+                border: 1px solid #ccc;
+                border-radius: 8px;
+            }}
+
+            /* Helper Buttons (Specific to the pane ONLY) */
+            QFrame#ReferencePane QPushButton {{
+                background-color: {btn_col};
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                padding: 4px 8px;
+                min-width: 20px;
+            }}
+            QFrame#ReferencePane QPushButton:hover {{
+                background-color: #e0e0e0;
+                border: 1px solid #999;
+            }}
+            QFrame#ReferencePane QPushButton:pressed {{
+                background-color: #d0d0d0;
+            }}
+
+            QLabel {{ margin-right: 5px; }}
+        """)
+
+    def _get_available_columns(self) -> list[str]:
+        if not self.session or not self.session.spec:
+            return []
+        try:
+            internal_cols = self.session.spec.t.colnames
+            pretty_mapping = {
+                'x': 'λ', 
+                'xmin': 'λmin', 
+                'xmax': 'λmax', 
+                'y': 'F', 
+                'dy': 'dF'
+            }
+            return [pretty_mapping.get(c, c) for c in internal_cols]
+        except Exception as e:
+            return []
+            
+    def _build_alias_map(self) -> dict:
+        alias_map = {}
+        s_index = 1
+        if self.parent_window and hasattr(self.parent_window, 'session_histories'):
+            current_session_name = self.session.name
+            for hist in self.parent_window.session_histories:
+                if hist.display_name != current_session_name:
+                    alias = f"s{s_index}"
+                    alias_map[alias] = hist.display_name
+                    s_index += 1
+        return alias_map
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.FocusIn:
+            if isinstance(source, QLineEdit) and source in self.input_widgets.values():
+                self._last_focused_widget = source
+        return super().eventFilter(source, event)
+
+    def _setup_ui(self):
+        """Creates the dialog's layout and widgets."""
+        if not self.schema:
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(0, self.reject)
+            return
+
+        self.setWindowTitle(f"Recipe: {self.schema.get('brief', self.recipe_name).rstrip('.')}")
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(15) 
+
+        # 1. Description
+        if self.schema.get('details'):
+            desc_label = QLabel(self.schema['details'])
+            desc_label.setWordWrap(True)
+            main_layout.addWidget(desc_label)
+
+        # 2. Parameters Form
+        form_widget = QWidget()
+        form_layout = QFormLayout(form_widget)
+        
+        params = self.schema.get('params', [])
+        if not params:
+            form_layout.addRow(QLabel("This recipe takes no parameters."))
+        else:
+            for param in params:
+                if param.get('gui_hidden', False): continue
+                
+                param_name = param['name']
+                param_type = param['type']
+                param_doc = param.get('doc', param_name) 
+                param_default = str(param.get('default', '')) 
+
+                if param_default == "_current_":
+                    try:
+                        current_val = getattr(self.session.spec._data, param_name)
+                        param_default = str(current_val)
+                    except AttributeError:
+                        param_default = "0.0" 
+
+                label = QLabel(f"{param_doc.rstrip('.')}:")
+                label.setToolTip(param_doc) 
+
+                widget = None
+                
+                if param_type == str:
+                    widget = QLineEdit(param_default); widget.setMinimumWidth(200)
+                elif param_type == int:
+                    widget = QLineEdit(param_default); widget.setValidator(QIntValidator()); widget.setMinimumWidth(200)
+                elif param_type == float:
+                    widget = QLineEdit(param_default); val = QDoubleValidator(); val.setLocale(QLocale.C); widget.setValidator(val); widget.setMinimumWidth(200)
+                elif param_type == bool:
+                    def_c = param.get('default', False); 
+                    if isinstance(def_c, str): def_c = def_c.lower() == 'true'
+                    widget = QCheckBox(); widget.setChecked(def_c); label.setText(""); widget.setText(f"{param_doc}")
+                else:
+                    widget = QLineEdit(param_default)
+
+                widget.setToolTip(param_doc)
+
+                if widget:
+                    self.input_widgets[param_name] = widget
+                    form_layout.addRow(label, widget)
+                    
+                    if isinstance(widget, QLineEdit):
+                        widget.installEventFilter(self)
+                        if self._last_focused_widget is None:
+                            self._last_focused_widget = widget
+
+        if self.recipe_name == 'resample':
+            self.oversample_warning_label = QLabel("⚠️ **Warning:** Target grid is finer. This will oversample the data.")
+            self.oversample_warning_label.setStyleSheet("color: #D35400;") 
+            self.oversample_warning_label.setVisible(False)
+            form_layout.addRow(self.oversample_warning_label)
+
+        main_layout.addWidget(form_widget)
+
+        # Trigger Helper Pane
+        if self.recipe_name in ("export_ascii", "apply_expression", "mask_expression", "split", "delete", "import_systems", "equalize", "resample"):
+            self._setup_usability_pane(main_layout) 
+
+        # 3. Buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.Help)
+        button_box.button(QDialogButtonBox.Ok).setText("Run") 
+        button_box.accepted.connect(self.accept) 
+        button_box.rejected.connect(self.reject) 
+        button_box.helpRequested.connect(self._show_help) 
+        main_layout.addWidget(button_box)
+
+    def _setup_usability_pane(self, main_layout):
+        available_cols = self._get_available_columns()
+        
+        ref_container = QFrame(self)
+        ref_container.setObjectName("ReferencePane")
+        ref_container.setFrameShape(QFrame.StyledPanel) 
+        ref_layout = QVBoxLayout(ref_container)
+        ref_layout.setSpacing(12) # Increased spacing for clarity
+        ref_layout.setContentsMargins(10, 10, 10, 10)
+
+        # --- DEDICATED EXPORT ASCII VIEW ---
+        if self.recipe_name == "export_ascii":
+            caption = QLabel(
+                "Choose the entire structure or individual columns."
+            )
+            caption.setWordWrap(True)
+            caption.setTextFormat(Qt.RichText)
+            ref_layout.addWidget(caption)
+
+            # --- SPEC SECTION (Dynamic) ---
+            ref_layout.addWidget(QLabel("<b>Spectrum (spec):</b><br><small><i>Exported tables include wavelength ('x') by default.</i></small>"))
+            spec_grid = QGridLayout()
+            spec_grid.setSpacing(4)
+            
+            btn_spec_all = QPushButton("spec (all)")
+            btn_spec_all.setStyleSheet("font-weight: bold; color: #296bff;")
+            # Helper to select all current spec columns
+            btn_spec_all.clicked.connect(lambda: self._insert_text_into_expression(", ".join(available_cols)))
+            spec_grid.addWidget(btn_spec_all, 0, 0)
+
+            # Map all dynamic columns from the spectrum (excluding 'x' which is auto-added)
+            # available_cols is already defined at the top of this method
+            spec_cols = [c for c in available_cols if c != 'x']
+            for i, col in enumerate(spec_cols):
+                btn = QPushButton(col)
+                btn.clicked.connect(lambda checked=False, t=col: self._insert_text_into_expression(t))
+                spec_grid.addWidget(btn, (i+1)//4, (i+1)%4)
+            
+            ref_layout.addLayout(spec_grid)
+
+            # --- SYSTEMS SECTION (Dynamic) ---
+            ref_layout.addSpacing(5)
+            ref_layout.addWidget(QLabel("<b>System List (systems):</b><br><small><i>Exported tables include transitions and redshift ('z') by default.</i></small>"))
+            syst_grid = QGridLayout()
+            syst_grid.setSpacing(4)
+            
+            btn_syst_all = QPushButton("systems (all)")
+            btn_syst_all.setStyleSheet("font-weight: bold; color: #d35400;")
+            btn_syst_all.clicked.connect(lambda: self._insert_text_into_expression("systems"))
+            syst_grid.addWidget(btn_syst_all, 0, 0)
+
+            # Extract colnames from the SystemListV2 table
+            if self.session.systs:
+                syst_available = self.session.systs.t.colnames
+                # Exclude internal/contextual columns already handled by 'systems (all)'
+                syst_params = [c for c in syst_available if c not in ['id', 'series', 'func']]
+                for i, col in enumerate(syst_params):
+                    btn = QPushButton(col)
+                    btn.clicked.connect(lambda checked=False, t=col: self._insert_text_into_expression(t))
+                    syst_grid.addWidget(btn, (i+1)//4, (i+1)%4)
+
+            ref_layout.addLayout(syst_grid)
+            
+            main_layout.addWidget(ref_container)
+            return
+
+        # --- BLOCK 1: SESSION SELECTION (Import & Resample) ---
+        if self.recipe_name in ("import_systems", "equalize", "resample"):
+            # Update title logic to include Equalize
+            if self.recipe_name == 'resample':
+                title_text = "<b>Select Target Session:</b>"
+            elif self.recipe_name == 'equalize':
+                title_text = "<b>Select Reference Session:</b>"
+            else:
+                title_text = "<b>Select Source Session:</b>"
+                
+            title = QLabel(title_text)
+            ref_layout.addWidget(title)
+            
+            sess_grid_widget = QWidget()
+            sess_grid = QGridLayout(sess_grid_widget)
+            sess_grid.setSpacing(6)
+            
+            if not self.session_alias_map:
+                ref_layout.addWidget(QLabel("(No other sessions open)"))
+            else:
+                row, col = 0, 0
+                max_cols = 3
+                sorted_aliases = sorted(self.session_alias_map.items(), key=lambda item: int(item[0][1:]))
+                
+                for alias, full_name in sorted_aliases:
+                    button = QPushButton(full_name) 
+                    button.setText(f"{alias} ({full_name})")
+                    button.setStyleSheet("text-align: left; padding: 5px;")
+                    
+                    # On click, insert the FULL NAME
+                    button.clicked.connect(lambda checked=False, t=full_name: self._insert_text_into_expression(t))
+                    
+                    sess_grid.addWidget(button, row, col)
+                    col += 1
+                    if col >= max_cols:
+                        col = 0; row += 1
+                
+                ref_layout.addWidget(sess_grid_widget)
+
+        # --- BLOCK 2: DELETE ---
+        elif self.recipe_name == "delete":
+            del_title = QLabel("<b>Select elements to delete:</b>")
+            ref_layout.addWidget(del_title)
+            
+            del_button_grid_widget = QWidget()
+            del_button_grid = QGridLayout(del_button_grid_widget)
+            del_button_grid.setSpacing(6)
+            
+            max_cols_per_row = 4
+            current_col_idx = 0; current_row_idx = 0
+
+            # Define core columns using their UI names as returned by _get_available_columns()
+            core_ui_cols = {'λ', 'λmin', 'λmax', 'F', 'dF'}
+            filtered_cols = [c for c in available_cols if c not in core_ui_cols]
+            items_to_show = ["systems"] + filtered_cols
+
+            # Define standard columns that get filled with NaNs instead of removed
+            standard_ui_cols = {'cont', 'model'}
+
+            for item_name in items_to_show:
+                if current_col_idx >= max_cols_per_row:
+                    current_col_idx = 0; current_row_idx += 1
+                
+                display_label = item_name
+                button = QPushButton(display_label)
+                
+                if item_name == "systems":
+                    display_label = "systems (lines)"
+                    button.setText(display_label)
+                    button.setStyleSheet("color: darkred; font-weight: bold;") 
+                elif item_name in standard_ui_cols:
+                    # Give standard columns a distinct color (e.g., orange) to indicate a different behavior
+                    button.setStyleSheet("color: #d35400;")
+
+                # --- [FIX 2] Add the Warning Intercept ---
+                # We use a helper function to handle the click logic cleanly
+                def make_click_handler(col_name):
+                    def handler():
+                        if col_name in standard_ui_cols:
+                            # Try to use the Main Window's custom styled message box
+                            if self.parent_window and hasattr(self.parent_window, '_show_custom_message'):
+                                self.parent_window._show_custom_message(
+                                    title="Standard Column",
+                                    header=f"Clearing '{col_name}'",
+                                    text=f"'{col_name}' is a standard Astrocook column.<br><br>Deleting it will clear its contents (fill with NaNs) rather than removing the column entirely.",
+                                    buttons=QMessageBox.StandardButton.Ok,
+                                    parent=self  # <--- THIS FIXES THE FOCUS ISSUE
+                                )
+                            else:
+                                # Fallback just in case
+                                QMessageBox.information(
+                                    self, 
+                                    "Standard Column Selected", 
+                                    f"'{col_name}' is a standard column. Deleting it will clear its contents (fill with NaNs)."
+                                )
+                        self._insert_text_into_expression(col_name)
+                    return handler
+
+                button.clicked.connect(make_click_handler(item_name))
+                
+                del_button_grid.addWidget(button, current_row_idx, current_col_idx)
+                current_col_idx += 1
+
+            ref_layout.addWidget(del_button_grid_widget)
+
+        # --- BLOCK 3: EXPRESSIONS (Default fallback) ---
+        else: 
+            cols_title = QLabel("<b>Available Columns:</b>")
+            ref_layout.addWidget(cols_title)
+            
+            col_button_grid_widget = QWidget()
+            col_button_grid = QGridLayout(col_button_grid_widget)
+            col_button_grid.setSpacing(6)
+            col_button_grid.setContentsMargins(0, 0, 0, 0)
+            
+            max_cols_per_row = 5 
+            for i, col_name in enumerate(available_cols):
+                row = i // max_cols_per_row
+                col = i % max_cols_per_row
+                button = QPushButton(col_name)
+                button.clicked.connect(lambda checked=False, text=col_name: self._insert_text_into_expression(text))
+                col_button_grid.addWidget(button, row, col)
+            
+            ref_layout.addWidget(col_button_grid_widget)
+
+            # ... (Session/Operator/Function/Boolean blocks) ...
+            if self.session_alias_map:
+                sess_title = QLabel("<b>Available Sessions (e.g., s1.F):</b>")
+                sess_title.setContentsMargins(0, 8, 0, 0)
+                ref_layout.addWidget(sess_title)
+                sess_button_widget = QWidget()
+                sess_button_layout = QVBoxLayout(sess_button_widget)
+                sess_button_layout.setSpacing(5); sess_button_layout.setContentsMargins(0, 0, 0, 0)
+                for alias, full_name in self.session_alias_map.items():
+                    btn_txt = f"{full_name} ({alias})"
+                    button = QPushButton(btn_txt) 
+                    button.setStyleSheet("text-align: left; padding: 4px;")
+                    button.setToolTip(f"Inserts '{alias}.' into expression") 
+                    button.clicked.connect(lambda checked=False, text=alias: self._insert_text_into_expression(text))
+                    sess_button_layout.addWidget(button)
+                ref_layout.addWidget(sess_button_widget)
+
+            op_title = QLabel("<b>Operators:</b>")
+            op_title.setContentsMargins(0, 8, 0, 0)
+            ref_layout.addWidget(op_title)
+            op_button_grid_widget = QWidget()
+            op_button_grid = QGridLayout(op_button_grid_widget)
+            op_button_grid.setSpacing(6); op_button_grid.setContentsMargins(0, 0, 0, 0)
+            for i, op_name in enumerate(self.operator_list):
+                button = QPushButton(op_name)
+                button.clicked.connect(lambda checked=False, text=op_name: self._insert_text_into_expression(text))
+                op_button_grid.addWidget(button, 0, i)
+            ref_layout.addWidget(op_button_grid_widget)
+
+            if self.recipe_name == "apply_expression":
+                funcs_title = QLabel("<b>Functions:</b>")
+                funcs_title.setContentsMargins(0, 8, 0, 0) 
+                ref_layout.addWidget(funcs_title)
+                func_button_grid_widget = QWidget()
+                func_button_grid = QGridLayout(func_button_grid_widget)
+                func_button_grid.setSpacing(6); func_button_grid.setContentsMargins(0, 0, 0, 0)
+                for i, func_name in enumerate(self.function_list):
+                    row = i // max_cols_per_row
+                    col = i % max_cols_per_row
+                    button = QPushButton(func_name)
+                    button.clicked.connect(lambda checked=False, text=func_name: self._insert_text_into_expression(text))
+                    func_button_grid.addWidget(button, row, col)
+                ref_layout.addWidget(func_button_grid_widget)
+
+            elif self.recipe_name in ("mask_expression", "split"):
+                bool_title = QLabel("<b>Boolean Operators:</b>")
+                bool_title.setContentsMargins(0, 8, 0, 0)
+                ref_layout.addWidget(bool_title)
+                bool_button_grid_widget = QWidget()
+                bool_button_grid = QGridLayout(bool_button_grid_widget)
+                bool_button_grid.setSpacing(6); bool_button_grid.setContentsMargins(0, 0, 0, 0)
+                for i, bool_name in enumerate(self.boolean_list):
+                    display_text = bool_name.replace('&', '&&')
+                    button = QPushButton(display_text)
+                    button.clicked.connect(lambda checked=False, text=bool_name: self._insert_text_into_expression(text))
+                    bool_button_grid.addWidget(button, 0, i)
+                ref_layout.addWidget(bool_button_grid_widget)
+
+        main_layout.addWidget(ref_container)
+
+    def _on_resample_target_changed(self, target_name: str):
+        # Legacy/Unused
+        pass 
+
+    def _insert_text_into_expression(self, text):
+        """
+        Smart insertion for recipe parameters. 
+        Handles comma-separated lists (export, delete) and 
+        space-separated expressions (apply_expression).
+        """
+        # 1. Identify the target widget (usually 'targets' or 'expression')
+        target_name = 'targets' if self.recipe_name in ["export_ascii", "delete", "remove_columns"] else 'expression'
+        target_widget = self.input_widgets.get(target_name)
+        
+        if not target_widget:
+            # Fallback if the parameter name varies
+            return
+
+        current_text = target_widget.text().strip()
+
+        # --- MODE A: COMMA-SEPARATED LISTS (Export, Delete, etc.) ---
+        if self.recipe_name in ["export_ascii", "delete", "remove_columns", "resample"]:
+            # Split current and new text into sets of terms to handle duplicates
+            current_terms = [t.strip() for t in current_text.split(',') if t.strip()]
+            new_terms = [t.strip() for t in text.split(',') if t.strip()]
+            
+            for term in new_terms:
+                if term not in current_terms:
+                    current_terms.append(term)
+            
+            final_string = ", ".join(current_terms)
+            target_widget.setText(final_string)
+        
+        # --- MODE B: EXPRESSION BUILDING (Apply Expression, Split) ---
+        else:
+            # For expressions, we usually want to append with a space if not empty
+            # and avoid duplicating the exact same operator/variable twice in a row
+            if not current_text:
+                target_widget.setText(text)
+            else:
+                # Check if the text is already there as a standalone word/operator
+                # to prevent things like 'y / /' or 'y cont cont'
+                last_word = current_text.split()[-1] if current_text.split() else ""
+                
+                if text == last_word:
+                    # Optional: skip if user clicks the same button twice in an expression
+                    pass 
+                else:
+                    # Add a space before the new operator or variable
+                    target_widget.setText(f"{current_text} {text}")
+
+        target_widget.setFocus()
+
+    def _check_oversample(self, target_name):
+        """Checks if the target session has a finer grid than the current one."""
+        if not hasattr(self, 'oversample_warning_label'): return
+        if not target_name:
+            self.oversample_warning_label.setVisible(False)
+            return
+            
+        try:
+            target_hist = None
+            if self.parent_window:
+                for hist in self.parent_window.session_histories:
+                    if hist.display_name == target_name:
+                        target_hist = hist
+                        break
+            if not target_hist:
+                self.oversample_warning_label.setVisible(False)
+                return
+            
+            current_points = len(self.session.spec.x)
+            target_points = len(target_hist.current_state.spec.x)
+            if target_points > current_points:
+                self.oversample_warning_label.setVisible(True)
+            else:
+                self.oversample_warning_label.setVisible(False)
+        except Exception:
+            self.oversample_warning_label.setVisible(False)
+
+    def accept(self):
+        if not self.schema:
+            super().reject(); return
+
+        params_to_pass = {}
+        try:
+            for param_name, widget in self.input_widgets.items():
+                if isinstance(widget, QLineEdit):
+                    params_to_pass[param_name] = widget.text()
+                elif isinstance(widget, QCheckBox):
+                    params_to_pass[param_name] = str(widget.isChecked())
+                elif isinstance(widget, QComboBox):
+                    params_to_pass[param_name] = widget.currentText() 
+        except Exception as e:
+            logging.error(f"Error gathering parameters: {e}")
+            QMessageBox.critical(self, "Parameter Error", f"Could not read parameters:\n{e}")
+            return 
+
+        self.recipe_requested.emit(
+            self.recipe_category,
+            self.recipe_name,
+            params_to_pass,
+            self.session_alias_map
+        )
+        super().accept()
+
+    def reject(self):
+        super().reject() 
+
+    def _show_help(self):
+        if self.schema and self.schema.get('url'):
+            url = self.schema['url']
+            try:
+                webbrowser.open(url) 
+            except Exception as e:
+                QMessageBox.warning(self, "Help Error", f"Could not open help URL:\n{e}")
+        else:
+            QMessageBox.information(self, "No Help", "No documentation URL is available for this recipe.")
