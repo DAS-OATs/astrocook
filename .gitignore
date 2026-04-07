@@ -47,3 +47,4 @@ tests/batch_output/
 output_cii/
 current_prompt.md
 tests/*.png
+astrocook.egg-info/
