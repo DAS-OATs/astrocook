@@ -4,7 +4,7 @@
 DOCS_DIR="docs"
 BUILD_OUTPUT="docs/_build/html"
 TARGET_BRANCH="gh-pages"
-TARGET_FOLDER="dev"
+TARGET_FOLDER="."
 SOURCE_PACKAGE="astrocook" 
 
 # Stop the script if any command fails
@@ -80,14 +80,13 @@ popd > /dev/null
 echo -e "${BLUE}Step 4: Switching to $TARGET_BRANCH...${NC}"
 git checkout "$TARGET_BRANCH"
 
-echo -e "${BLUE}Step 5: Updating '$TARGET_FOLDER' directory...${NC}"
-mkdir -p "$TARGET_FOLDER"
-rm -rf "$TARGET_FOLDER"/*
-cp -r "$TEMP_DIR"/* "$TARGET_FOLDER"/
+echo -e "${BLUE}Step 5: Updating root directory...${NC}"
+# Copy the new V2 files to the root, overwriting the old ones
+cp -r "$TEMP_DIR"/* .
 
 echo -e "${BLUE}Step 6: Committing and Pushing...${NC}"
-git add "$TARGET_FOLDER"
-git commit -m "Deploy Jekyll-patched docs to dev folder" || echo "No changes to commit"
+git add .
+git commit -m "Deploy V2 docs to root" || echo "No changes to commit"
 git push origin "$TARGET_BRANCH"
 
 # 5. Cleanup
@@ -96,4 +95,4 @@ rm -rf "$TEMP_DIR"
 git checkout "$CURRENT_BRANCH"
 
 echo -e "${GREEN}=== Deployment Complete! ===${NC}"
-echo "Your patched dev docs are at: https://das-oats.github.io/astrocook/$TARGET_FOLDER/"
+echo "Your patched V2 docs are at: https://das-oats.github.io/astrocook/"
