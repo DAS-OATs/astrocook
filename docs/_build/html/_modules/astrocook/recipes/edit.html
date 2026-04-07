@@ -1,0 +1,1644 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.recipes.edit &#8212; Astrocook 2.0.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=cc54fbde" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/recipes/edit';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.0.0" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.edit</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.recipes.edit</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">SystemListDataV2</span>  <span class="c1"># &lt;&lt;&lt; *** ADD THIS IMPORT ***</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
+
+<span class="n">EDIT_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;set_properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Set session properties.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Set core session properties like name, object, redshift, and resolution.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Session Name (display label)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Object Name (header)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_em&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Emission Redshift (z_em)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;resol&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. &#39;3px&#39;)&quot;</span><span class="p">},</span> 
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;overwrite_resol_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="c1"># &lt;--- [NEW] Add this hidden flag</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#set_properties&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;x_convert&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Convert X axis.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Convert the x axis units and zero point to wavelength or velocity units.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_ref&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Reference redshift for velocity conversion (defaults to z_em)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xunit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;km/s&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit of wavelength or velocity&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#convert-x-axis&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;y_convert&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Convert Y axis units.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Converts the flux and error arrays to the specified unit.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;yunit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;erg/(nm s cm^2)&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit of flux density&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#convert-y-axis&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;apply_expression&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Apply expression to columns.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables. E.g., &#39;F / cont&#39;, &#39;F * 2.0&#39;, or &#39;log10(F)&#39;.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target column (to be overwritten or created)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;F / dF&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Expression to evaluate (e.g., &#39;F / 2.0&#39;)&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#apply_expression&quot;</span> <span class="c1"># Placeholder URL</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;mask_expression&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Mask column by expression.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Mask a target column by setting values to NaN where the expression is True. E.g., &#39;(λ &lt; 300) | (λ &gt; 400)&#39;, or &#39;dF &lt;= 0&#39;.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target column to mask (e.g., F)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;dF &lt;= 0&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Boolean expression (e.g., &#39;(λ &gt; 300) &amp; (λ &lt; 400)&#39;)&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#mask_expression&quot;</span> <span class="c1"># Placeholder URL</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;smooth_column&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Smooth a single column.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Apply a Gaussian filter to a single data column (e.g., &#39;dF&#39; or &#39;snr&#39;).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;dF&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target column to smooth&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sigma_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Standard deviation for Gaussian kernel (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;If smoothing &#39;cont&#39;, also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#smooth_column&quot;</span> <span class="c1"># Placeholder URL</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;import_systems&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Import systems from session.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Copy absorption systems from another open session into this one.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;source_session&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the session to import from.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;append&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;If True, adds to existing. If False, replaces them.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;refit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Refit the systems to the new data immediately?&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;absorbers_cb.html#import_systems&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;delete&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Delete elements.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Remove columns from the spectrum or clear the line list.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;targets&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated list of items to delete (e.g. &#39;cont, lines&#39;)&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#delete&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;split&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Split spectrum by expression.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Extract a portion of the spectrum into a new session using a boolean expression. E.g., &#39;(λ &gt; 400) &amp; (λ &lt; 500)&#39;.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;(λ &gt; 400) &amp; (λ &lt; 500)&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Boolean expression to select data&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#split&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;extract_preset&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Extract region by preset.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Extract a specific standard region (like the Ly-alpha forest) into a new session, based on the current emission redshift (z_em).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="c1"># We use a string for now. Options: &#39;lya_forest&#39;, &#39;all_ly_forest&#39;, &#39;red_side&#39;</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;lya_forest&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Preset region (&#39;lya_forest&#39;, &#39;all_ly_forest&#39;, &#39;red_side&#39;)&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#extract_preset&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;trim_common&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Trim to common velocity coverage.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Trims the current session to the velocity range shared by a list of other sessions (intersection).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;others_names&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated names of other sessions&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;z_target&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;_current_&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Target redshift&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_self&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;Ly_a&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Transition for current session&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;trans_others&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated transitions for other sessions&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;window_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Symmetric window width (km/s)&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#trim_common&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;stitch&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Merge multiple sessions&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Usually called via script</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;coadd&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Co-add multiple sessions.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;session_names&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated names of sessions to co-add&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xstart&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Start wavelength (nm, None for auto)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xend&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;End wavelength (nm, None for auto)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Step size for the final grid&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xunit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;km/s&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit for step size (km/s or nm)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;5.0&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma clipping threshold (None for off)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;equalize_order&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)&quot;</span><span class="p">},</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#coadd&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">SESSION_VAR_REGEX</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RecipeEditV2">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecipeEditV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipes for general structure editing and arithmetic operations.</span>
+
+<span class="sd">    These methods are accessed via the ``session.edit`` attribute and delegate</span>
+<span class="sd">    heavy logic to the Core structures :class:`~astrocook.core.spectrum.SpectrumV2`</span>
+<span class="sd">    and :class:`~astrocook.core.system_list.SystemListV2`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RecipeEditV2.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session_v2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">&#39;cb&#39;</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_translate_ui_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Translates scientific symbols back to internal keys.</span>
+<span class="sd">        Supports: λ -&gt; x, F -&gt; y, dF -&gt; dy.</span>
+<span class="sd">        Original V1 names (x, y, dy) remain untouched for compatibility.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name_str</span>
+
+        <span class="c1"># Mapping: UI Display -&gt; Internal Key</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;λ&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;λmin&#39;</span><span class="p">:</span> <span class="s1">&#39;xmin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;λmax&#39;</span><span class="p">:</span> <span class="s1">&#39;xmax&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;dF&#39;</span><span class="p">:</span> <span class="s1">&#39;dy&#39;</span>
+        <span class="p">}</span>
+        
+        <span class="n">processed_str</span> <span class="o">=</span> <span class="n">name_str</span>
+        <span class="c1"># Sort keys by length (descending)</span>
+        <span class="n">sorted_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">ui_name</span> <span class="ow">in</span> <span class="n">sorted_keys</span><span class="p">:</span>
+            <span class="n">internal_name</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">ui_name</span><span class="p">]</span>
+            <span class="c1"># Use regex word boundaries to ensure we only replace exact matches</span>
+            <span class="n">processed_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\b&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">ui_name</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\b&#39;</span><span class="p">,</span> <span class="n">internal_name</span><span class="p">,</span> <span class="n">processed_str</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">processed_str</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_expression_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal helper to resolve session aliases and delegate parsing to the Core.</span>
+
+<span class="sd">        This prepares the context for multi-session arithmetic (e.g., subtracting</span>
+<span class="sd">        one spectrum from another) by resolving GUI session names to actual</span>
+<span class="sd">        Spectrum objects.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expression : str</span>
+<span class="sd">            The raw expression string provided by the user (e.g. ``&quot;F - s1.F&quot;``).</span>
+<span class="sd">        alias_map : dict</span>
+<span class="sd">            A dictionary mapping aliases (e.g. ``&quot;s1&quot;``) to full session names.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple containing:</span>
+<span class="sd">            1. **final_expression** (*str*): The processed expression compatible with ``numexpr``.</span>
+<span class="sd">            2. **extra_vars** (*dict*): A dictionary of numpy arrays representing the</span>
+<span class="sd">               resampled data from other sessions.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        :meth:`astrocook.core.spectrum.SpectrumV2.prepare_expression_context`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alias_map</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">expression</span><span class="p">,</span> <span class="p">{}</span>
+
+        <span class="c1"># 1. Resolve Aliases to Objects (GUI Logic)</span>
+        <span class="n">resolved_specs</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Access the GUI context</span>
+        <span class="n">gui</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gui</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gui</span><span class="p">,</span> <span class="s1">&#39;session_histories&#39;</span><span class="p">):</span>
+            <span class="c1"># If running in script without GUI, we can&#39;t resolve aliases easily </span>
+            <span class="c1"># unless we passed the objects directly. For now, assume GUI context or fail gracefully.</span>
+            <span class="k">if</span> <span class="n">alias_map</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;GUI context missing: Cannot resolve multi-session aliases.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">expression</span><span class="p">,</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">full_name</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="n">gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">full_name</span><span class="p">:</span>
+                    <span class="n">resolved_specs</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find session &#39;</span><span class="si">{</span><span class="n">full_name</span><span class="si">}</span><span class="s2">&#39; for alias &#39;</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 2. Delegate to Core (Business Logic)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">prepare_expression_context</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">resolved_specs</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_resolution_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resol_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses user input for resolution.</span>
+
+<span class="sd">        Accepts either a raw floating point number (R) or a pixel width string</span>
+<span class="sd">        (e.g., &quot;3px&quot;) which is converted to R based on the current spectral sampling.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        resol_str : str</span>
+<span class="sd">            Input string, either a raw number (R) or a pixel width (e.g., &quot;3px&quot;).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The resolving power R. Returns 0.0 if parsing fails or spectrum is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">clean_str</span> <span class="o">=</span> <span class="n">resol_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="c1"># Check for pixel syntax</span>
+        <span class="k">if</span> <span class="s1">&#39;px&#39;</span> <span class="ow">in</span> <span class="n">clean_str</span> <span class="ow">or</span> <span class="s1">&#39;pixel&#39;</span> <span class="ow">in</span> <span class="n">clean_str</span><span class="p">:</span>
+            <span class="c1"># Extract the number part</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([\d\.]+)&quot;</span><span class="p">,</span> <span class="n">clean_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not parse pixel width from &#39;</span><span class="si">{</span><span class="n">resol_str</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            
+            <span class="n">pix_fwhm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimating Resolution (R) assuming </span><span class="si">{</span><span class="n">pix_fwhm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> pixel FWHM...&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 1. Get raw x array</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># 2. Calculate Median Sampling (dx)</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">x_vals</span><span class="p">))</span>
+                
+                <span class="c1"># 3. Calculate Median Wavelength (lambda)</span>
+                <span class="n">mid_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">mid_x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># 4. Calculate R = lambda / (N_pix * dx)</span>
+                    <span class="n">fwhm_wave</span> <span class="o">=</span> <span class="n">pix_fwhm</span> <span class="o">*</span> <span class="n">dx</span>
+                    <span class="n">estimated_R</span> <span class="o">=</span> <span class="n">mid_x</span> <span class="o">/</span> <span class="n">fwhm_wave</span>
+                    
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Estimated R ~ </span><span class="si">{</span><span class="n">estimated_R</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (at </span><span class="si">{</span><span class="n">mid_x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">). &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;This is an approximation assuming constant sampling.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">estimated_R</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Cannot estimate resolution: invalid grid spacing or wavelength.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Cannot estimate resolution: spectrum too short.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mf">0.0</span>
+                
+        <span class="c1"># Fallback: Try standard float conversion</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">clean_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid resolution format: &#39;</span><span class="si">{</span><span class="n">resol_str</span><span class="si">}</span><span class="s2">&#39;. Use a number (R) or &#39;Npx&#39;.&quot;</span><span class="p">)</span>
+        
+
+<div class="viewcode-block" id="RecipeEditV2.set_properties">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.set_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;_current_&#39;</span><span class="p">,</span> <span class="nb">object</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;_current_&#39;</span><span class="p">,</span> 
+                       <span class="n">z_em</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;_current_&#39;</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;_current_&#39;</span><span class="p">,</span>
+                       <span class="n">overwrite_resol_col</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set session properties.</span>
+
+<span class="sd">        Set core session properties like name, object, redshift, and resolution.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.with_properties`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str, optional</span>
+<span class="sd">            The session Name (display label). Defaults to ``&#39;_current_&#39;`` (no change).</span>
+<span class="sd">        object : str, optional</span>
+<span class="sd">            The object Name (header target). Defaults to ``&#39;_current_&#39;`` (no change).</span>
+<span class="sd">        z_em : str, optional</span>
+<span class="sd">            Emission Redshift. Defaults to ``&#39;_current_&#39;`` (no change).</span>
+<span class="sd">        resol : str, optional</span>
+<span class="sd">            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``&#39;3px&#39;``).</span>
+<span class="sd">            Defaults to ``&#39;_current_&#39;`` (no change).</span>
+<span class="sd">        overwrite_resol_col : bool, optional</span>
+<span class="sd">            If ``True``, updates the &#39;resol&#39; column in the spectrum data with the new resolution value. Defaults to ``True``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with updated properties,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Parse numerical inputs (z_em, resol)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;_current_&#39;</span><span class="p">:</span>
+                <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">z_em_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span>
+                
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;_current_&#39;</span><span class="p">:</span>
+                <span class="c1"># Use stored resolution (R) directly</span>
+                <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">resol</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_resolution_string</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># 2. Handle text inputs</span>
+        <span class="n">current_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
+        
+        <span class="c1"># Determine new values, falling back to current if &#39;_current_&#39; is passed</span>
+        <span class="n">new_name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;_current_&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span> <span class="k">if</span> <span class="nb">object</span> <span class="o">!=</span> <span class="s1">&#39;_current_&#39;</span> <span class="k">else</span> <span class="n">current_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 3. Apply changes via SpectrumV2.with_properties</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">with_properties</span><span class="p">(</span>
+                <span class="n">z_em</span><span class="o">=</span><span class="n">z_em_f</span><span class="p">,</span> 
+                <span class="n">resol</span><span class="o">=</span><span class="n">resol_f</span><span class="p">,</span>
+                <span class="n">object_name</span><span class="o">=</span><span class="n">new_object</span><span class="p">,</span>
+                <span class="n">overwrite_resol_col</span><span class="o">=</span><span class="n">overwrite_resol_col</span> 
+            <span class="p">)</span>
+            
+            <span class="c1"># 4. Handle Session Name (Lives on the Session wrapper)</span>
+            <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_name</span><span class="p">:</span>
+                <span class="n">new_session</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">new_name</span>
+            
+            <span class="k">return</span> <span class="n">new_session</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="RecipeEditV2.x_convert">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.x_convert">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert X axis.</span>
+
+<span class="sd">        Convert the x axis units and zero point to wavelength or velocity units.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.x_convert`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_ref : str, optional</span>
+<span class="sd">            Reference redshift for velocity conversion. Defaults to ``&#39;0.0&#39;``</span>
+<span class="sd">            (can use ``&#39;_current_&#39;`` to use the session&#39;s z_em).</span>
+<span class="sd">        xunit : str, optional</span>
+<span class="sd">            Unit of wavelength or velocity (e.g., ``&#39;nm&#39;``, ``&#39;km/s&#39;``).</span>
+<span class="sd">            Defaults to ``&#39;km/s&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the converted X-axis,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Handle default logic here</span>
+        <span class="k">if</span> <span class="n">z_ref</span> <span class="o">==</span> <span class="s1">&#39;_current_&#39;</span><span class="p">:</span>
+            <span class="n">z_ref_float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">z_ref_float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_ref</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">xunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span> <span class="c1"># Returning 0 prevents crashing and triggers V1 logging</span>
+
+        <span class="c1"># 1. Get the new SpectrumV2 instance (the immutable operation)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x_convert</span><span class="p">(</span><span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref_float</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="n">xunit_obj</span><span class="p">)</span>
+        
+        <span class="c1"># 2. Return a NEW SessionV2 instance with the updated spectrum</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span> </div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.y_convert">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.y_convert">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">y_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;erg/(nm s cm^2)&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert Y axis units.</span>
+
+<span class="sd">        Converts the flux and error arrays to the specified unit.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.y_convert`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        yunit : str, optional</span>
+<span class="sd">            Target unit of flux density. Defaults to ``&#39;erg/(nm s cm^2)&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the converted Y-axis,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># C. Parameter Validation and Type Casting</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">yunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">yunit</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span> 
+
+        <span class="c1"># 1. Execute the immutable V2 operation</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y_convert</span><span class="p">(</span><span class="n">yunit</span><span class="o">=</span><span class="n">yunit_obj</span><span class="p">)</span>
+        
+        <span class="c1"># 2. Return a NEW SessionV2 instance (the new state)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.apply_expression">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.apply_expression">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply expression to columns.</span>
+
+<span class="sd">        Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables.</span>
+<span class="sd">        Supports multi-session arithmetic via aliases.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.apply_expression`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target_col : str</span>
+<span class="sd">            Target column (to be overwritten or created).</span>
+<span class="sd">        expression : str</span>
+<span class="sd">            Expression to evaluate (e.g., ``&#39;F / dF&#39;``, ``&#39;F * 2.0&#39;``).</span>
+<span class="sd">        alias_map : dict, optional</span>
+<span class="sd">            Mapping of aliases to session names (e.g. ``{&#39;s1&#39;: &#39;Session 1&#39;}``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the computed column,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Translate UI symbols back to internal keys</span>
+        <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Expression cannot be empty.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Prepare multi-session vars</span>
+            <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_expression_contexts</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original expression: &#39;</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final expression: &#39;</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># 2. Call the API with the prepared data</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">apply_expression</span><span class="p">(</span>
+                <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
+                <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
+                <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during apply_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span> </div>
+
+            
+<div class="viewcode-block" id="RecipeEditV2.mask_expression">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.mask_expression">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mask column by expression.</span>
+
+<span class="sd">        Mask a target column by setting values to NaN where the expression is True.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.mask_expression`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target_col : str</span>
+<span class="sd">            Target column to mask (e.g., ``&#39;F&#39;``).</span>
+<span class="sd">        expression : str</span>
+<span class="sd">            Boolean expression (e.g., ``&#39;(λ &lt; 300) | (λ &gt; 400)&#39;``, ``&#39;dF &lt;= 0&#39;``).</span>
+<span class="sd">        alias_map : dict, optional</span>
+<span class="sd">            Mapping of aliases to session names.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the masked column,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Translate UI symbols back to internal keys</span>
+        <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Expression cannot be empty.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Prepare multi-session vars</span>
+            <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_expression_contexts</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original expression: &#39;</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Final expression: &#39;</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 2. Call the API with the prepared data</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_expression</span><span class="p">(</span>
+                <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
+                <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
+                <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during mask_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RecipeEditV2.smooth_column">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.smooth_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smooth_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;dF&#39;</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100.0&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Smooth a single column.</span>
+
+<span class="sd">        Apply a Gaussian filter to a single data column.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.smooth_column`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target_col : str, optional</span>
+<span class="sd">            Target column to smooth. Defaults to ``&#39;dF&#39;``.</span>
+<span class="sd">        sigma_kms : str, optional</span>
+<span class="sd">            Standard deviation for Gaussian kernel (km/s). Defaults to ``&#39;100.0&#39;``.</span>
+<span class="sd">        renorm_model : str, optional</span>
+<span class="sd">            If ``&#39;True&#39;`` and smoothing ``&#39;cont&#39;``, the ``&#39;model&#39;`` column is</span>
+<span class="sd">            re-normalized. Defaults to ``&#39;False&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the smoothed column,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Translate UI symbols back to internal keys</span>
+        <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sigma_kms_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma_kms</span><span class="p">)</span>
+            <span class="c1"># --- ADD THIS LINE ---</span>
+            <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Call the immutable V2 operation</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth_column</span><span class="p">(</span>
+                <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
+                <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms_f</span><span class="p">,</span>
+                <span class="c1"># --- ADD THIS ARGUMENT ---</span>
+                <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model_b</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># 2. Return a NEW SessionV2 instance</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during smooth_column: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeEditV2.import_systems">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.import_systems">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_session</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">refit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import systems from session.</span>
+
+<span class="sd">        Copy absorption systems from another open session into this one, filtering</span>
+<span class="sd">        those that fall outside the current spectral range.</span>
+<span class="sd">        Delegates filtering to :meth:`astrocook.core.system_list.SystemListV2.filter_by_range`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source_session : str</span>
+<span class="sd">            Name of the session to import from.</span>
+<span class="sd">        append : bool, optional</span>
+<span class="sd">            If ``True``, adds to existing systems. If ``False``, replaces them.</span>
+<span class="sd">            Defaults to ``True``.</span>
+<span class="sd">        refit : bool, optional</span>
+<span class="sd">            If ``True``, runs a refit on the imported systems. Defaults to ``False``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with imported systems.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">do_append</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">append</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+        <span class="n">do_refit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">refit</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+
+        <span class="c1"># 1. Find the source session</span>
+        <span class="n">target_hist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">source_session</span><span class="p">:</span>
+                    <span class="n">target_hist</span> <span class="o">=</span> <span class="n">hist</span>
+                    <span class="k">break</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_hist</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Session &#39;</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="n">source_systs</span> <span class="o">=</span> <span class="n">target_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">systs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source_systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Source session &#39;</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">&#39; has no systems.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># 2. Prepare current list</span>
+        <span class="k">if</span> <span class="n">do_append</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
+            <span class="n">base_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
+
+        <span class="c1"># 3. Filter Source Components (Delegated to Core)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                
+                <span class="n">filtered_source_systs</span> <span class="o">=</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">filter_by_range</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
+                
+                <span class="n">skipped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">skipped</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> systems outside spectral range.&quot;</span><span class="p">)</span>
+                    
+                <span class="n">source_systs</span> <span class="o">=</span> <span class="n">filtered_source_systs</span> 
+                
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not filter systems by range: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No systems fell within the target spectral range.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># 4. Merge</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems from &#39;</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">&#39;...&quot;</span><span class="p">)</span>
+        <span class="n">new_systs</span> <span class="o">=</span> <span class="n">base_systs</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">source_systs</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="c1"># Create intermediate session with imported (but unfitted) systems</span>
+        <span class="n">intermediate_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
+
+        <span class="c1"># 5. Optional Refit</span>
+        <span class="k">if</span> <span class="n">do_refit</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Refitting imported systems...&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Local import to avoid circular dependency</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
+                
+                <span class="c1"># Wrap the intermediate session in the Absorbers recipe</span>
+                <span class="n">rec_abs</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">intermediate_session</span><span class="p">)</span>
+                
+                <span class="c1"># Run refit_all</span>
+                <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
+                <span class="c1"># or expose them as advanced params in the schema.</span>
+                <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">refitted_session</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Refit failed. Returning imported systems without fitting.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">intermediate_session</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during import auto-refit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">intermediate_session</span>
+
+        <span class="c1"># Return unfitted result</span>
+        <span class="k">return</span> <span class="n">intermediate_session</span></div>
+
+        
+<div class="viewcode-block" id="RecipeEditV2.delete">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.delete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete elements.</span>
+
+<span class="sd">        Remove columns from the spectrum or clear the line list.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.remove_columns`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        targets : str</span>
+<span class="sd">            Comma-separated list of items to delete (e.g. ``&#39;cont, lines&#39;``).</span>
+<span class="sd">            Use ``&#39;lines&#39;`` or ``&#39;systems&#39;`` to clear the component list.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the elements removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+        <span class="n">target_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">target_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># 1. Handle System List</span>
+        <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span>
+        <span class="k">if</span> <span class="s1">&#39;lines&#39;</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="ow">or</span> <span class="s1">&#39;systems&#39;</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
+            <span class="c1"># Re-initialize empty</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Marked system list for deletion.&quot;</span><span class="p">)</span>
+            <span class="c1"># Remove keywords from list to avoid trying to delete them as columns</span>
+            <span class="n">target_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="s1">&#39;systems&#39;</span><span class="p">]]</span>
+
+        <span class="c1"># 2. Handle Columns via Core API</span>
+        <span class="k">if</span> <span class="n">target_list</span><span class="p">:</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">remove_columns</span><span class="p">(</span><span class="n">target_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
+            
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.split">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.split">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Split spectrum by expression.</span>
+
+<span class="sd">        Extract a portion of the spectrum into a new session using a boolean expression.</span>
+<span class="sd">        Only rows where the expression is True are kept.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.split`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expression : str</span>
+<span class="sd">            Boolean expression to select data (e.g., ``&#39;(λ &gt; 400) &amp; (λ &lt; 500)&#39;``).</span>
+<span class="sd">        alias_map : dict, optional</span>
+<span class="sd">            Mapping for multi-session variables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` containing the subset of data,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Expression cannot be empty.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="c1"># 1. Prepare multi-session vars (re-using our existing helper!)</span>
+        <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_expression_contexts</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">)</span>
+        
+        <span class="c1"># 2. Call the immutable V2 operation</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
+            <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
+        <span class="p">)</span>
+
+        <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span>
+        <span class="k">if</span> <span class="n">new_spec_v2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">new_systs</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+            
+            <span class="c1"># Safely get min/max in nanometers, regardless of current plot units</span>
+            <span class="n">xmin_nm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">xmax_nm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            
+            <span class="n">original_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">filter_by_range</span><span class="p">(</span><span class="n">xmin_nm</span><span class="p">,</span> <span class="n">xmax_nm</span><span class="p">)</span>
+            <span class="n">filtered_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">original_count</span> <span class="o">!=</span> <span class="n">filtered_count</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Split: Filtered out </span><span class="si">{</span><span class="n">original_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">filtered_count</span><span class="si">}</span><span class="s2"> systems outside the new range.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># 4. Return a NEW SessionV2 instance (GUI handles branching)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.extract_preset">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.extract_preset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_preset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;lya_forest&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract region by preset.</span>
+
+<span class="sd">        Extract a specific standard region (like the Ly-alpha forest) into a new</span>
+<span class="sd">        session, based on the current emission redshift (z_em).</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.get_region_bounds`</span>
+<span class="sd">        and :meth:`split`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        region : str, optional</span>
+<span class="sd">            Preset region identifier. Options: ``&#39;lya_forest&#39;``, ``&#39;all_ly_forest&#39;``,</span>
+<span class="sd">            ``&#39;red_side&#39;``. Can be a comma-separated list. Defaults to ``&#39;lya_forest&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or List[SessionV2] or int</span>
+<span class="sd">            One or more new :class:`~astrocook.core.session.SessionV2` instances,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Parse inputs (split by comma and strip whitespace)</span>
+        <span class="n">region_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">region</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">region_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Calculate bounds</span>
+                <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+                
+                <span class="c1"># Convert to native units for expression</span>
+                <span class="n">spec_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
+                <span class="n">v_min</span> <span class="o">=</span> <span class="n">obs_min</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">spec_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">v_max</span> <span class="o">=</span> <span class="n">obs_max</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">spec_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                
+                <span class="c1"># Build expression</span>
+                <span class="n">expression</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(λ &gt; </span><span class="si">{</span><span class="n">v_min</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">) &amp; (λ &lt; </span><span class="si">{</span><span class="n">v_max</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracting &#39;</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2"> (z_em=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                
+                <span class="c1"># Create the split session</span>
+                <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expression</span><span class="p">)</span>
+                
+                <span class="c1"># (Optional) Store the intended suffix name in the session metadata </span>
+                <span class="c1"># so the GUI could potentially use it later (though GUI currently auto-names branches)</span>
+                <span class="c1"># new_session.name += f&quot;_{reg}&quot; </span>
+                
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_session</span><span class="p">)</span>
+                
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping region &#39;</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extract &#39;</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span> <span class="c1"># Return failure code if nothing worked</span>
+
+        <span class="c1"># Return single object if one, or list if multiple</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">results</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.trim_common">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.trim_common">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trim_common</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">others_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z_target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                    <span class="n">trans_others</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;500.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trim to common velocity coverage.</span>
+
+<span class="sd">        Trims the current session to the velocity range shared by a list of other</span>
+<span class="sd">        sessions (intersection).</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calc_intersection_expression`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        others_names : str</span>
+<span class="sd">            Comma-separated names of other sessions.</span>
+<span class="sd">        z_target : str</span>
+<span class="sd">            Target redshift (float parsed from string).</span>
+<span class="sd">        trans_self : str</span>
+<span class="sd">            Transition for current session (e.g. ``&#39;Ly_a&#39;``).</span>
+<span class="sd">        trans_others : str</span>
+<span class="sd">            Comma-separated transitions for other sessions.</span>
+<span class="sd">        window_kms : str, optional</span>
+<span class="sd">            Symmetric window width in km/s. Defaults to ``&#39;500.0&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` trimmed to the common coverage,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 1. Parse Inputs</span>
+            <span class="n">z_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_target</span><span class="p">)</span>
+            <span class="n">win_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">window_kms</span><span class="p">)</span>
+            <span class="n">others_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">others_names</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            <span class="n">trans_list_others</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trans_others</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+            
+            <span class="c1"># 2. Resolve Session Objects (GUI Logic)</span>
+            <span class="n">resolved_others_specs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">others_list</span><span class="p">:</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                            <span class="n">resolved_others_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                            <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trim_common: Session &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found in GUI history.&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mismatch: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">)</span><span class="si">}</span><span class="s2"> transitions provided.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
+                
+            <span class="c1"># 3. Delegate Calculation to Core (SSOT)</span>
+            <span class="c1"># The core calculates the physics and returns the boolean expression string</span>
+            <span class="n">split_expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calc_intersection_expression</span><span class="p">(</span>
+                <span class="n">others_specs</span><span class="o">=</span><span class="n">resolved_others_specs</span><span class="p">,</span>
+                <span class="n">z_target</span><span class="o">=</span><span class="n">z_f</span><span class="p">,</span>
+                <span class="n">trans_self</span><span class="o">=</span><span class="n">trans_self</span><span class="p">,</span>
+                <span class="n">trans_others</span><span class="o">=</span><span class="n">trans_list_others</span><span class="p">,</span>
+                <span class="n">window_kms</span><span class="o">=</span><span class="n">win_f</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">split_expression</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;trim_common: No overlap found or invalid inputs.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applying intersection trim: </span><span class="si">{</span><span class="n">split_expression</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 4. Execute Split</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_expression</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trim_common failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+    
+<div class="viewcode-block" id="RecipeEditV2.stitch">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.stitch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_sessions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="s1">&#39;SessionV2&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">sort</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merge multiple sessions.</span>
+
+<span class="sd">        Concatenates the current session with a list of other sessions.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.stitch`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_sessions : list</span>
+<span class="sd">            A list of :class:`~astrocook.core.session.SessionV2` objects OR strings</span>
+<span class="sd">            (names of sessions loaded in the GUI).</span>
+<span class="sd">        sort : bool, optional</span>
+<span class="sd">            If ``True``, sorts the final spectrum by wavelength. Defaults to ``True``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` containing the merged data,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Delayed import to avoid circular dependency</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">other_sessions</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No sessions provided to stitch.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># 1. Resolve Inputs (GUI/Script Logic)</span>
+        <span class="n">resolved_specs</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">other_sessions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">SessionV2</span><span class="p">):</span>
+                <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># GUI Lookup</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="p">,</span> <span class="s1">&#39;session_histories&#39;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">item</span><span class="p">:</span>
+                            <span class="n">found</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span>
+                            <span class="k">break</span>
+                <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch: Could not find loaded session named &#39;</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&#39;. Skipping.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch: Invalid item type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No valid sessions found to stitch.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 2. Delegate Data Manipulation to Core</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="n">sort</span><span class="p">)</span>
+
+            <span class="c1"># Remove NaNs which break the &#39;step&#39; plot (causing &quot;scatter&quot; look)</span>
+            <span class="c1"># We use the public split API to keep valid data only.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Check for NaNs in X or Y</span>
+                <span class="n">x_val</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">y_val</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x_val</span><span class="p">))</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_val</span><span class="p">))):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stitch: Cleaning up NaNs to fix plot display...&quot;</span><span class="p">)</span>
+                    <span class="c1"># Filter: Keep rows where X and Y are finite</span>
+                    <span class="c1"># Note: We rely on the core&#39;s split expression evaluator</span>
+                    <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;isfinite(x) &amp; isfinite(y)&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">clean_err</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch cleanup warning: </span><span class="si">{</span><span class="n">clean_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># 3. Return New Session</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="RecipeEditV2.coadd">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.coadd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">coadd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> 
+              <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0.01&#39;</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nm&#39;</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5.0&#39;</span><span class="p">,</span> 
+              <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Co-add multiple sessions.</span>
+
+<span class="sd">        Stitches multiple sessions together and rebins them onto a single common</span>
+<span class="sd">        grid in one pass (Inverse Variance Weighting).</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.coadd`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        session_names : str</span>
+<span class="sd">            Comma-separated names of sessions to co-add.</span>
+<span class="sd">        xstart : str, optional</span>
+<span class="sd">            Start wavelength. ``&#39;None&#39;`` for auto. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        xend : str, optional</span>
+<span class="sd">            End wavelength. ``&#39;None&#39;`` for auto. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">        dx : str, optional</span>
+<span class="sd">            Step size for the final grid. Defaults to ``&#39;0.01&#39;``.</span>
+<span class="sd">        xunit : str, optional</span>
+<span class="sd">            Unit for the step size (e.g., ``&#39;nm&#39;`` or ``&#39;km/s&#39;``). Defaults to ``&#39;nm&#39;``.</span>
+<span class="sd">        kappa : str, optional</span>
+<span class="sd">            Sigma clipping threshold. ``&#39;None&#39;`` for off. Defaults to ``&#39;5.0&#39;``.</span>
+<span class="sd">        equalize_order : str, optional</span>
+<span class="sd">            Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear).</span>
+<span class="sd">            Defaults to ``&#39;0&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` containing the co-added spectrum,</span>
+<span class="sd">            or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">names_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">session_names</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">names_list</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Coadd: No sessions selected.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># 1. Resolve Session Objects</span>
+        <span class="c1"># We assume the first session in the list is the &quot;primary&quot; (self is implied context, </span>
+        <span class="c1"># but we need to find the specific objects named in the list).</span>
+        
+        <span class="n">resolved_specs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names_list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                        <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                        <span class="k">break</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Coadd: No valid sessions found.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># 2. Parse Parameters</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">eq_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">equalize_order</span><span class="p">)</span>
+            <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xstart</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">xend_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xend</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xend</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">dx_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span> 
+            <span class="n">dx_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="n">dx_unit</span><span class="p">)</span> 
+            <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="c1"># 3. Delegate to Core</span>
+            <span class="c1"># We use the first spectrum in the list as the &#39;base&#39; to call the method on.</span>
+            <span class="n">base_spec</span> <span class="o">=</span> <span class="n">resolved_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">others</span> <span class="o">=</span> <span class="n">resolved_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Co-adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions onto </span><span class="si">{</span><span class="n">dx_q</span><span class="si">}</span><span class="s2"> grid...&quot;</span><span class="p">)</span>
+            
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">base_spec</span><span class="o">.</span><span class="n">coadd</span><span class="p">(</span>
+                <span class="n">others</span><span class="o">=</span><span class="n">others</span><span class="p">,</span>
+                <span class="n">xstart</span><span class="o">=</span><span class="n">xstart_q</span><span class="p">,</span>
+                <span class="n">xend</span><span class="o">=</span><span class="n">xend_q</span><span class="p">,</span>
+                <span class="n">dx</span><span class="o">=</span><span class="n">dx_q</span><span class="p">,</span>
+                <span class="n">kappa</span><span class="o">=</span><span class="n">kappa_f</span><span class="p">,</span>
+                <span class="n">equalize_order</span><span class="o">=</span><span class="n">eq_order</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># 4. Return New Session</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Coadd failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

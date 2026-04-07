@@ -1,0 +1,91 @@
+('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+ 'Drive/GitHub/astrocook/build/Astrocook/Astrocook',
+ False,
+ False,
+ True,
+ ['/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+  'Drive/GitHub/astrocook/assets/icon_3d_HR.icns'],
+ None,
+ False,
+ False,
+ None,
+ True,
+ True,
+ 'arm64',
+ None,
+ None,
+ '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+ 'Drive/GitHub/astrocook/build/Astrocook/Astrocook.pkg',
+ [('pyi-macos-argv-emulation', '', 'OPTION'),
+  ('pyi-contents-directory _internal', '', 'OPTION'),
+  ('PYZ-00.pyz',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/build/Astrocook/PYZ-00.pyz',
+   'PYZ'),
+  ('python3.13/lib-dynload/_struct.cpython-313-darwin.so',
+   '/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload/_struct.cpython-313-darwin.so',
+   'EXTENSION'),
+  ('python3.13/lib-dynload/zlib.cpython-313-darwin.so',
+   '/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/lib-dynload/zlib.cpython-313-darwin.so',
+   'EXTENSION'),
+  ('struct',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/build/Astrocook/localpycs/struct.pyc',
+   'PYMODULE'),
+  ('pyimod01_archive',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/build/Astrocook/localpycs/pyimod01_archive.pyc',
+   'PYMODULE'),
+  ('pyimod02_importers',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/build/Astrocook/localpycs/pyimod02_importers.pyc',
+   'PYMODULE'),
+  ('pyimod03_ctypes',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/build/Astrocook/localpycs/pyimod03_ctypes.pyc',
+   'PYMODULE'),
+  ('pyiboot01_bootstrap',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/loader/pyiboot01_bootstrap.py',
+   'PYSOURCE'),
+  ('pyi_rth_pkgutil',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pkgutil.py',
+   'PYSOURCE'),
+  ('pyi_rth_multiprocessing',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_multiprocessing.py',
+   'PYSOURCE'),
+  ('pyi_rth_pyside6',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pyside6.py',
+   'PYSOURCE'),
+  ('pyi_rth_mplconfig',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_mplconfig.py',
+   'PYSOURCE'),
+  ('pyi_rth_inspect',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_inspect.py',
+   'PYSOURCE'),
+  ('pyi_rth_pkgres',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pkgres.py',
+   'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/hooks/rthooks/pyi_rth_setuptools.py',
+   'PYSOURCE'),
+  ('run_astrocook',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/astrocook/run_astrocook.py',
+   'PYSOURCE')],
+ [],
+ False,
+ False,
+ 1775558405,
+ [('runw',
+   '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My '
+   'Drive/GitHub/acv2/lib/python3.13/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
+   'EXECUTABLE')],
+ '/Library/Frameworks/Python.framework/Versions/3.13/Python')
