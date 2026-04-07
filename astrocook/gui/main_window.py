@@ -271,14 +271,43 @@ class MainWindowV2(QMainWindow):
     def _setup_empty_view(self):
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-        label = QLabel("Welcome to Astrocook V2!\n\nUse 'File > Open Session...'")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # 1. Add some stretching at the top so the content stays centered
+        layout.addStretch()
         
-        font = label.font() # Get the current font
-        font.setPointSize(18) # Set a specific size: font.setPointSize(14)
-        label.setFont(font) # Apply the modified font
+        # 2. Add a welcome message
+        label = QLabel("Welcome to")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("font-size: 36pt; color: #296bff;")
+        layout.addWidget(label)
+
+        layout.addSpacing(20)
+
+        # 3. Add the Logo
+        try:
+            icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
+            if os.path.exists(icon_path):
+                logo_lbl = QLabel()
+                # Scale the image, keeping it smooth and proportioned
+                pixmap = QPixmap(icon_path).scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                logo_lbl.setPixmap(pixmap)
+                logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(logo_lbl)
+        except Exception as e:
+            logging.warning(f"Could not load logo for empty view: {e}")
+
+        # 4. Add instructions
+        layout.addSpacing(40)
+
+        label = QLabel("Use 'File > Open Session...'")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("font-size: 24pt; color: #ff7f0e;")
 
         layout.addWidget(label)
+
+        # 5. Add stretching at the bottom
+        layout.addStretch()
+
         self.central_stack.addWidget(empty_widget)
 
     def _setup_left_sidebar(self):

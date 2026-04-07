@@ -1791,7 +1791,7 @@ class RecipeAbsorbersV2:
         
     def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
                        min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
-        """
+        r"""
         Clean negligible components.
 
         Removes unphysical or negligible components from the system list. This is useful 
