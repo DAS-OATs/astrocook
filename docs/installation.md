@@ -34,13 +34,7 @@ git clone https://github.com/das-oats/astrocook.git
 cd astrocook
 ```
 
-2. Move to the `develop` branch (where V2 is temporarily hosted):
-```
-git checkout develop
-git pull
-```
-
-3. Create a virtual environment (Recommended):
+2. Create a virtual environment (Recommended):
 ```
 python -m venv ac2
 source ac2/bin/activate  # On Windows: ac2\Scripts\activate
@@ -50,7 +44,7 @@ source ac2/bin/activate  # On Windows: ac2\Scripts\activate
 If the `venv` command fails, you may need to install the module first (e.g., `sudo apt install python3-venv` on Ubuntu/Debian).
 :::
 
-4. Install dependencies:
+3. Install dependencies:
 ```
 pip install -e .
 ```
