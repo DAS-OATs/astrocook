@@ -2813,7 +2813,7 @@ class MainWindowV2(QMainWindow):
     def _open_docs(self):
         """Opens the online documentation in the default browser."""
         # Replace with your actual documentation URL (e.g., ReadTheDocs or GitHub Wiki)
-        url = "https://das-oats.github.io/astrocook/dev/" 
+        url = "https://das-oats.github.io/astrocook/" 
         QDesktopServices.openUrl(QUrl(url))
 
     def _on_view_system_inspector(self):
