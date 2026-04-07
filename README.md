@@ -1,8 +1,4 @@
-```{image} docs/_static/logo_3d_HR.png
-:width: 400px
-:class: no-background
-:align: center
-```
+<img width="400" height="311" alt="logo_3d_HR" src="https://github.com/user-attachments/assets/89f51f8b-128a-4d06-982a-e925d24c43da" />
 
 <br>
 
