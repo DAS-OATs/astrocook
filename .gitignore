@@ -48,3 +48,7 @@ output_cii/
 current_prompt.md
 tests/*.png
 astrocook.egg-info/
+release/
+build/
+dist/
+astrocook.egg-info/
