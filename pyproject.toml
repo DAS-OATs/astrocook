@@ -54,6 +54,9 @@ dependencies = [
     "statsmodels>=0.10.1",   # Plotting library
     "numexpr",
     "qtawesome",
+    "emcee",
+    "dynesty",
+    "corner",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
@@ -63,11 +66,6 @@ test = [
     # Dependencies needed only for running tests
     "pytest",
     "pytest-mock",
-]
-bayesian = [
-    "emcee",
-    "dynesty",
-    "corner",
 ]
 # You could add other groups like 'docs' or 'bayesian' later
 
