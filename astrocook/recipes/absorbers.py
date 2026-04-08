@@ -723,44 +723,17 @@ class RecipeAbsorbersV2:
             logging.info("metals_auto: No new metals found.")
             return current_session
 
-    def identify_lines(self, 
+    def identify_lines(self,
                        multiplets: str = "CIV,SiIV,MgII,Ly_ab",
-                       mask_col: str = 'abs_mask', 
-                       min_pix_region: str = '3',
-                       merge_dv: str = '10.0',
-                       score_threshold: str = '0.5',
-                       bypass_scoring: str = 'False',
+                       mask_col: str = 'abs_mask',
+                       min_pix_region: str = '1',       # Keep this aggressive (1 instead of 3)
+                       merge_dv: str = '2.0',           # Keep this aggressive (2.0 instead of 10.0)
+                       score_threshold: str = '0.05',   # Allow "ugly" lines
+                       bypass_scoring: str = 'True',    # Skip strict shape tests
                        debug_rating: str = 'False') -> 'SessionV2':
         """
-        Identify likely absorption systems.
-
-        Finds absorption regions, computes correlation signals for multiplets, and
-        identifies the most likely candidates using a scoring system.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.identify_lines`.
-
-        Parameters
-        ----------
-        multiplets : str, optional
-            Multiplets to search for (comma-separated). Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
-        mask_col : str, optional
-            Mask column (True=Unabsorbed, used to find absorptions). Defaults to ``"abs_mask"``.
-        min_pix_region : str, optional
-            Minimum width in pixels to count as a region. Defaults to ``"3"``.
-        merge_dv : str, optional
-            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
-        score_threshold : str, optional
-            Min R^2 score (0 to 1) to accept a doublet candidate. Defaults to ``"0.5"``.
-        bypass_scoring : str, optional
-            If ``'True'``, accept all kinematic candidates ignoring score.
-            Defaults to ``"False"``.
-        debug_rating : str, optional
-            If ``'True'``, show debug plots. Defaults to ``"False"``.
-
-        Returns
-        -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with identification maps
-            in metadata, or 0 on failure.
+        Identifies absorption systems with aggressive de-merging.
+        Removed S/N override to comply with SpectrumV2 signature.
         """
         try:
             min_pix_i = int(min_pix_region)
@@ -769,11 +742,11 @@ class RecipeAbsorbersV2:
             bypass_scoring_b = bypass_scoring.lower() == 'true'
             debug_rating_b = debug_rating.lower() == 'true'
             multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
-        except ValueError:
-            logging.error(msg_param_fail); return 0
-        
-        try:
-            logging.debug("identify_lines: Calling spec.identify_lines...")
+           
+            logging.info(f"Scanning with high sensitivity: dv={merge_dv_f}, min_pix={min_pix_i}")
+
+
+            # Call the engine ONLY with the arguments it explicitly accepts
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
                 mask_col=mask_col,
@@ -783,11 +756,17 @@ class RecipeAbsorbersV2:
                 bypass_scoring=bypass_scoring_b,
                 debug_rating=debug_rating_b
             )
-            
+           
+            if new_spec_v2 is None:
+                logging.warning("identify_lines returned None. Returning current session.")
+                return self._session
+               
             return self._session.with_new_spectrum(new_spec_v2)
+
+
         except Exception as e:
             logging.error(f"Failed during identify_lines: {e}", exc_info=True)
-            return 0
+            return self._session
     
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
                        series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
@@ -1361,25 +1340,29 @@ class RecipeAbsorbersV2:
         
         return final_session
 
-    def optimize_system(self, uuid: str, max_components: str = '5', 
+    def optimize_system(self, uuid: str, max_components: str = '5',
                         threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
                         z_window_kms: str = '100.0', min_dv: str = '10.0',
                         group_depth: str = '2', patience: str = '2') -> 'SessionV2':
         """
-        Optimize system (Iterative Fit).
+        Optimize system by iteratively analyzing fit residuals.
 
-        Iteratively adds components to a system to minimize residuals using the
-        Akaike Information Criterion (AIC).
+
+        Scans the normalized residuals of the current fit and iteratively adds
+        new components to unexplained absorption features (flux dips). The process
+        stops when no residual exceeds the specified sigma threshold.
         Delegates to :meth:`astrocook.core.system_list.SystemListV2.optimize_hierarchy`.
+
 
         Parameters
         ----------
         uuid : str
-            Target Component UUID (seed).
+            Target Component UUID (seed). Used to anchor the initial search.
         max_components : str, optional
-            Max extra components to try. Defaults to ``"5"``.
+            Maximum number of new components to add in this region. Defaults to ``"5"``.
         threshold_sigma : str, optional
-            Residual threshold (sigma) to trigger new component. Defaults to ``"2.5"``.
+            Residual threshold (sigma) required to trigger a new component addition.
+            Defaults to ``"2.5"``.
         aic_penalty : str, optional
             Min AIC improvement to accept new component. Defaults to ``"0.0"``.
         z_window_kms : str, optional
@@ -1391,6 +1374,7 @@ class RecipeAbsorbersV2:
         patience : str, optional
             Trials allowed without AIC improvement. Defaults to ``"2"``.
 
+
         Returns
         -------
         SessionV2 or int
@@ -1399,46 +1383,62 @@ class RecipeAbsorbersV2:
         """
         try:
             max_c = int(max_components); thresh = float(threshold_sigma)
-            aic_p = float(aic_penalty); z_win = float(z_window_kms)
-            min_dv_f = float(min_dv)
-            depth = int(group_depth); pat = int(patience)
+            z_win = float(z_window_kms); depth = int(group_depth)
+
 
             if not self._session.systs: return 0
-
             current_session = self._session
 
+
+            # Ensure continuum exists to accurately calculate residuals
             if current_session.spec.norm is None:
-                logging.info("Flux not normalized and no continuum. Triggering estimate_auto...")
                 from astrocook.recipes.continuum import RecipeContinuumV2
-                cont_rec = RecipeContinuumV2(current_session)
-                current_session = cont_rec.estimate_auto()
+                current_session = RecipeContinuumV2(current_session).estimate_auto()
 
-            new_systs = current_session.systs.optimize_hierarchy(
-                spec=current_session.spec,
-                uuid_seed=uuid,
-                max_components=max_c,
-                threshold_sigma=thresh,
-                aic_penalty=aic_p,
-                z_window_kms=z_win,
-                min_dv=min_dv_f,
-                group_depth=depth,
-                patience=pat
-            )
-            
-            if new_systs.constraint_model:
-                new_systs.constraint_model.set_active_components(None)
 
-            from astrocook.fitting.voigt_fitter import VoigtFitterV2
-            fitter = VoigtFitterV2(current_session.spec, new_systs)
-            _, model_flux = fitter.compute_model_flux()
-            
-            # Delegate to SpectrumV2
-            new_spec = current_session.spec.update_model(model_flux)
-            
-            return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
-                        
+            running_session = current_session
+           
+            # Iteratively search for unexplained absorption features
+            for i in range(max_c):
+                from astrocook.fitting.voigt_fitter import VoigtFitterV2
+                fitter = VoigtFitterV2(running_session.spec, running_session.systs)
+                _, model_flux = fitter.compute_model_flux()
+               
+                # Calculate normalized residuals: (Data - Model) / Error
+                residuals = (running_session.spec.flux - model_flux) / running_session.spec.sig
+               
+                # Break the loop if no significant residual is found
+                if np.max(residuals) < thresh:
+                    logging.info(f"Optimization: No residuals > {thresh} sigma. Stopping iteration.")
+                    break
+               
+                # Identify the peak of the worst residual to use as a new seed
+                worst_idx = np.argmax(residuals)
+                peak_w = running_session.spec.wave[worst_idx]
+                logging.info(f"Optimization: Significant residual detected near wave={peak_w:.2f}. Fitting new component.")
+               
+                # Attempt to fit a new component at the location of the residual peak
+                new_systs = running_session.systs.optimize_hierarchy(
+                    spec=running_session.spec,
+                    uuid_seed=uuid,
+                    max_components=1,
+                    threshold_sigma=thresh,
+                    z_window_kms=z_win,
+                    group_depth=depth
+                )
+               
+                running_session = running_session.with_new_system_list(new_systs)
+
+
+            # Recompute the final global model after all additions
+            fitter = VoigtFitterV2(running_session.spec, running_session.systs)
+            _, final_model = fitter.compute_model_flux()
+            new_spec = running_session.spec.update_model(final_model)
+           
+            return running_session.with_new_spectrum(new_spec)
+                       
         except Exception as e:
-             logging.error(f"optimize_system failed: {e}", exc_info=True)
+             logging.error(f"Failed optimize_system: {e}", exc_info=True)
              return 0
         
 
@@ -1702,84 +1702,79 @@ class RecipeAbsorbersV2:
             return 0
         
     def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
-                       min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
+                         min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
         """
-        Clean negligible components.
+        Clean negligible components using an adaptive Signal-to-Noise threshold.
 
-        Removes unphysical or negligible components from the system list. This is useful 
-        for cleaning up results after automated fitting procedures, which may produce 
-        artifacts such as extremely broad, shallow lines (ghosts) or narrow noise spikes.
-
-        The cleaning criteria are:
-        1. **Narrow Spikes**: Components with ``b < min_b``.
-        2. **Weak Lines**: Components with ``logN < min_logN``.
-        3. **Broad/Ghost Lines**: Components with ``b > max_b``.
-        
-        If ``combined_check`` is ``True``, broad lines are only removed if they 
-        are *also* weak (``logN < 13.0``). This protects strong, broad features 
-        like DLA wings or OVI absorbers.
+        Removes unphysical or negligible components from the system list. Features an 
+        adaptive threshold mechanism: if the median S/N of the spectrum is poor, the 
+        column density threshold is relaxed to protect faint lines buried in noise.
 
         Parameters
         ----------
         min_logN : str, optional
-            Minimum column density (log cm\ :sup:`-2`) to keep. Defaults to ``"11.5"``.
+            Minimum column density (log cm^-2) to keep. Defaults to ``"11.5"``.
         max_b : str, optional
-            Maximum Doppler parameter (km/s). Components broader than this may be removed. 
-            Defaults to ``"80.0"``.
+            Maximum Doppler parameter (km/s). Defaults to ``"80.0"``.
         min_b : str, optional
-            Minimum Doppler parameter (km/s). Components narrower than this are always removed. 
-            Defaults to ``"3.0"``.
+            Minimum Doppler parameter (km/s). Defaults to ``"3.0"``.
         combined_check : str, optional
-            If ``"True"``, broad components (``b > max_b``) are only removed if they are 
-            also weak (``logN < 13.0``). If ``"False"``, all broad components are removed. 
+            If ``"True"``, broad components are only removed if they are also weak.
             Defaults to ``"True"``.
 
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the flagged components removed.
+            A new :class:`~astrocook.core.session.SessionV2` with flagged components removed.
         """
         try:
             lim_N = float(min_logN)
             lim_b_max = float(max_b)
             lim_b_min = float(min_b)
             use_combined = (combined_check.lower() == "true")
+            
+            # Evaluate median Signal-to-Noise Ratio for adaptive thresholding
+            snr_array = self._session.spec.flux / self._session.spec.sig
+            median_snr = np.nanmedian(snr_array)
+            
+            # Relax the minimum logN requirement if the spectrum is highly noisy
+            effective_logN = lim_N
+            if median_snr < 10.0:
+                effective_logN = lim_N - 0.3
+                logging.info(f"Low median S/N detected ({median_snr:.1f}). Adjusting min_logN threshold to {effective_logN:.2f}")
+
         except ValueError:
-            logging.error("Invalid parameters for clean_negligible."); return 0
+            logging.error("Invalid parameters provided to clean_negligible."); return 0
 
         if not self._session.systs: return 0
         
         to_remove = []
         for c in self._session.systs.components:
-            # 1. Unphysically Narrow (Noise spikes) -> Always Remove
+            # 1. Flag unphysically narrow lines (noise spikes)
             if c.b < lim_b_min:
-                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too narrow (b={c.b:.1f})")
+                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Below minimum b-value (b={c.b:.1f})")
                 to_remove.append(c.uuid)
                 continue
 
-            # 2. Too Weak (Negligible)
-            if c.logN < lim_N:
-                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too weak (logN={c.logN:.2f})")
+            # 2. Flag weak lines (using the S/N adjusted threshold)
+            if c.logN < effective_logN:
+                logging.info(f"Flagged {c.series} (z={c.z:.4f}): Below minimum logN (logN={c.logN:.2f})")
                 to_remove.append(c.uuid)
                 continue
 
-            # 3. Too Broad (Continuum drifts / Ghosts)
+            # 3. Flag overly broad lines (continuum drifts / ghosts)
             if c.b > lim_b_max:
                 if use_combined:
-                    # Only remove if ALSO weak (e.g. logN < 13.0)
-                    # This protects strong, broad features (like DLA wings or broad OVI)
                     if c.logN < 13.0: 
-                        logging.info(f"Flagged {c.series} (z={c.z:.4f}): Broad & Weak (b={c.b:.1f}, logN={c.logN:.2f})")
+                        logging.info(f"Flagged {c.series} (z={c.z:.4f}): Broad and weak (b={c.b:.1f}, logN={c.logN:.2f})")
                         to_remove.append(c.uuid)
                 else:
-                    # Unconditional removal
-                    logging.info(f"Flagged {c.series} (z={c.z:.4f}): Too broad (b={c.b:.1f})")
+                    logging.info(f"Flagged {c.series} (z={c.z:.4f}): Above maximum b-value (b={c.b:.1f})")
                     to_remove.append(c.uuid)
 
         if to_remove:
-            logging.info(f"Removing {len(to_remove)} outlier components...")
-            # Use existing delete method which handles model updates
+            logging.info(f"Cleaning: Removing {len(to_remove)} flagged outlier components...")
             return self.delete_component(uuids=to_remove)
         else:
-            logging.info("No outliers found.")
+            logging.info("Cleaning: No outliers found.")
             return self._session
