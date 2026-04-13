@@ -126,6 +126,9 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             spec_file_path = archive_manager.get_structure_path('spec')
             archive_root = os.path.splitext(spec_file_path)[0].replace('_spec', '')
 
+            if format_name == 'auto' or format_name == 'acs':
+                format_name = 'archive'
+
         else:
             # Single FITS file load
             temp_dir = None
