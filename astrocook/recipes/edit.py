@@ -1022,7 +1022,36 @@ class RecipeEditV2:
         """
         Equalize and stitch arms.
 
-        Equalize flux levels and stitch multiple sessions at specific wavelengths.
+        Equalize flux levels and stitch multiple sessions at specific cut-off wavelengths.
+        This recipe is designed to seamlessly combine data from multi-arm spectrographs 
+        (e.g., X-Shooter's UVB, VIS, and NIR arms).
+
+        The procedure enforces a strict blue-to-red processing order regardless of 
+        input order. For $N$ total sessions, exactly $N-1$ parameters must be provided 
+        for cuts, ranges, and factors.
+
+        Parameters
+        ----------
+        other_sessions : str
+            Comma-separated names of the other sessions to stitch to the current one.
+            (This parameter is hidden in the GUI dialog).
+        stitch_wavelengths : str
+            Comma-separated cut-off wavelengths (in nm) where the arms join. 
+            Data bluer than a cut is taken from the bluer arm; data redder is taken 
+            from the redder arm. Requires $N-1$ values.
+        equalize_ranges : str, optional
+            Comma-separated overlap ranges formatted as ``'min-max, min-max'`` (in nm) 
+            used to calculate the scaling factor between adjacent arms. If set to 
+            ``'auto'``, the recipe attempts a global match. Defaults to ``'auto'``.
+        manual_factors : str, optional
+            Comma-separated fixed multipliers to scale adjacent arms. If provided, 
+            these override the `equalize_ranges` calculation. Defaults to ``'auto'``.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new :class:`~astrocook.core.session.SessionV2` containing the equalized 
+            and stitched spectrum, or 0 on failure.
         """
         from astrocook.core.session import SessionV2
         import astropy.units as au

@@ -144,6 +144,20 @@ If you have spectra covering _different_ wavelength ranges (e.g., Blue and Red a
    The recipe automatically cleans up `NaN` values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from "scatter-plot" artifacts.
    :::
 
+### Equalize and Stitch Arms
+
+When working with multi-arm spectrographs (like X-Shooter), the flux calibration between adjacent arms (e.g., UVB and VIS) might slightly mismatch in the overlap region. This tool automatically scales the flux and stitches the arms at precise cut-off wavelengths.
+
+1. Load the $N$ sessions representing your spectral arms.
+2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select them.
+3. Right-click and choose **Equalize and Stitch N Arms...**.
+4. A dialog will appear asking for exact parameters to guide the combination:
+    * **stitch_wavelengths**: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., `550, 1000`). You must provide exactly $N-1$ values.
+    * **equalize_ranges**: (Optional) Specify the exact overlap window (e.g., `545-555, 995-1005`) Astrocook should use to calculate the flux scaling factor. Leave as `auto` to attempt a global match.
+    * **manual_factors**: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.
+
+Astrocook automatically sorts the arms from bluest to reddest before processing, ensuring a mathematically continuous final spectrum.
+
 ```{image} ../_static/editing_multiselect_coadd.png
 :alt: Context menu for co-adding multiple sessions
 :align: center
