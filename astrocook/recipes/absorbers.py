@@ -51,7 +51,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Auto-fit Ly-alpha forest.",
         "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
         "params": [
-            {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
+            {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
+            {"name": "min_logN", "type": float, "default": 11.5, "doc": "Minimum column density to keep."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s) to keep."},
             {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window (km/s)."}
         ],
@@ -505,7 +506,7 @@ class RecipeAbsorbersV2:
             region_limit="red_side"  # <--- FORCE RED SIDE
         )
 
-    def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
+    def lya_auto(self, merge_dv: str = "10.0", min_logN: str = "11.5", min_b: str = "10.0",
                  z_window_kms: str = "100.0") -> 'SessionV2':
         """
         Auto-fit Ly-alpha forest.
@@ -516,8 +517,10 @@ class RecipeAbsorbersV2:
 
         Parameters
         ----------
-        score_threshold : str, optional
-            Lower threshold for single lines (R^2). Defaults to ``"0.1"``.
+        merge_dv : str, optional
+            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
+        min_logN : str, optional
+            Minimum column density to keep. Defaults to ``"11.5"``.
         min_b : str, optional
             Minimum b parameter (km/s) to keep. Defaults to ``"10.0"``.
         z_window_kms : str, optional
@@ -534,7 +537,8 @@ class RecipeAbsorbersV2:
         # 1. Run Pipeline (FORCE region='lya_forest')
         final_session = self.components_auto(
             multiplets="Ly_a",
-            score_threshold=score_threshold,
+            score_threshold="0.1",
+            merge_dv=merge_dv,
             z_window_kms=z_window_kms,
             mask_col='abs_mask',
             region_limit='lya_forest' # <--- FORCE FOREST
@@ -575,6 +579,13 @@ class RecipeAbsorbersV2:
 
         except Exception as e:
             logging.warning(f"lya_auto cleanup failed: {e}", exc_info=True)
+
+        # 3. Clean Negligible components
+        logging.info("Cleaning negligible/faint components...")
+        rec_clean = RecipeAbsorbersV2(final_session)
+        final_session_clean = rec_clean.clean_negligible(min_logN=min_logN)
+        if final_session_clean != 0:
+            final_session = final_session_clean
 
         return final_session
 
