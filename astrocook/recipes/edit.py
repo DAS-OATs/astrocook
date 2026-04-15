@@ -127,7 +127,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Equalize and stitch arms.",
         "details": "Equalize flux levels and stitch multiple sessions at specific wavelengths.",
         "params": [
-            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of other sessions (in blue-to-red order)."},
+            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of other sessions (in blue-to-red order).", "gui_hidden": True},
             {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated cut-off wavelengths (nm) where arms join."},
             {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated overlap ranges (e.g., '545-555, 795-805') or 'auto'"},
             {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated fixed multipliers, or 'auto'."}
