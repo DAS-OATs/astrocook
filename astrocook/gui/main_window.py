@@ -2437,17 +2437,20 @@ class MainWindowV2(QMainWindow):
         # Since 'others_names' excludes the primary session, its length IS exactly N-1!
         n_minus_one = len(others_names)
 
+        # Pluralization check
+        val_word = "value" if n_minus_one == 1 else "values"
+
         # 1. Dynamically inject the exact number into the Recipe Schema in memory
         from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
         params = EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]["params"]
         
         for p in params:
             if p["name"] == "stitch_wavelengths":
-                p["doc"] = f"Comma-separated cut-offs (Requires {n_minus_one} values)."
+                p["doc"] = f"Comma-separated cut-offs (requires {n_minus_one} {val_word})."
             elif p["name"] == "equalize_ranges":
-                p["doc"] = f"Overlap ranges 'min-max' (Requires {n_minus_one} values) or 'auto'."
+                p["doc"] = f"Overlap ranges 'min-max' (requires {n_minus_one} {val_word}) or 'auto'."
             elif p["name"] == "manual_factors":
-                p["doc"] = f"Fixed multipliers (Requires {n_minus_one} values) or 'auto'."
+                p["doc"] = f"Fixed multipliers (requires {n_minus_one} {val_word}) or 'auto'."
 
         others_str = ", ".join(others_names)
         
