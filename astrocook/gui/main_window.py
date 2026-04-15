@@ -2433,10 +2433,29 @@ class MainWindowV2(QMainWindow):
             self.active_history = primary_history
             self._update_view_for_session(primary_history.current_state, set_current_list_item=True)
 
+        # N total sessions selected means we need exactly N-1 cuts.
+        # Since 'others_names' excludes the primary session, its length IS exactly N-1!
+        n_minus_one = len(others_names)
+
+        # 1. Dynamically inject the exact number into the Recipe Schema in memory
+        from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+        params = EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]["params"]
+        
+        for p in params:
+            if p["name"] == "stitch_wavelengths":
+                p["doc"] = f"Comma-separated cut-offs (Requires {n_minus_one} values)."
+            elif p["name"] == "equalize_ranges":
+                p["doc"] = f"Overlap ranges 'min-max' (Requires {n_minus_one} values) or 'auto'."
+            elif p["name"] == "manual_factors":
+                p["doc"] = f"Fixed multipliers (Requires {n_minus_one} values) or 'auto'."
+
         others_str = ", ".join(others_names)
         
+        # 3. Store the hidden string so we can inject it later
+        self._hidden_stitch_sessions = others_str
+
         self._launch_recipe_dialog(
-            "edit", "equalize_and_stitch", initial_params={'other_sessions': others_str}
+            "edit", "equalize_and_stitch"
         )
 
     def _on_coadd_requested(self, primary_history, others_names: List[str]):
@@ -3357,6 +3376,12 @@ class MainWindowV2(QMainWindow):
                             return  # Abort the recipe dispatch!
 
         # --- 2. STANDARD RECIPE PREPARATION ---
+
+        # [FIX] Re-inject the hidden session names for equalize_and_stitch
+        if recipe_name == "equalize_and_stitch" and hasattr(self, '_hidden_stitch_sessions'):
+            params['other_sessions'] = self._hidden_stitch_sessions
+            del self._hidden_stitch_sessions
+        
         if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
             return
 
@@ -3705,6 +3730,9 @@ class MainWindowV2(QMainWindow):
         logging.debug(f"Recipe dialog closed (result: {result}), clearing active dialog lock.")
         self.active_recipe_dialog = None
 
+        # [FIX] Clear the hidden string if the user cancelled the dialog
+        if hasattr(self, '_hidden_stitch_sessions'):
+            del self._hidden_stitch_sessions
 
     def _ask_to_renormalize_model(self, recipe_name: str, params: Dict[str, Any]):
         """
