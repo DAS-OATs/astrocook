@@ -92,8 +92,35 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
          
     if structure_name == 'spec':
         if v2_metadata:
-            # [FIX] Removed try/except. Fail loudly if V2 fails.
-            return load_spec_data_v2_from_archive(path_to_load)
+            # Load the standard FITS data
+            spec_v2 = load_spec_data_v2_from_archive(path_to_load)
+            
+            # --- Restored to a simple, clean assignment ---
+            if 'region_identifications' in v2_metadata:
+                raw_regions = v2_metadata['region_identifications']
+                
+                # 1. Parse the string back into a Python dictionary
+                import json
+                if isinstance(raw_regions, str):
+                    try:
+                        raw_regions = json.loads(raw_regions)
+                    except json.JSONDecodeError:
+                        pass
+                        
+                # 2. Force the keys to be integers so 1.0 and 1 match perfectly
+                if isinstance(raw_regions, dict):
+                    restored_regions = {}
+                    for k, v in raw_regions.items():
+                        try:
+                            # float() handles "1.0", int() converts to 1
+                            restored_regions[int(float(k))] = v
+                        except ValueError:
+                            restored_regions[k] = v
+                    spec_v2.meta['region_identifications'] = restored_regions
+                else:
+                    spec_v2.meta['region_identifications'] = raw_regions
+                
+            return spec_v2
 
         v1_spec = load_v1_spec_object(path_to_load, format_name, gui_context)
         if not v1_spec: raise RuntimeError("V1 load failed.")
@@ -261,7 +288,23 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
         v1_reconstruction_data=None, 
         component_uuids=[c.uuid for c in session.systs.components]
     )
-    return json.dumps(dataclasses.asdict(metadata), indent=2)
+    
+    # NEW: Inject region_identifications into the JSON dictionary
+    meta_dict = dataclasses.asdict(metadata)
+    if 'region_identifications' in session.spec.meta:
+        meta_dict['region_identifications'] = session.spec.meta['region_identifications']
+
+    # --- THE FIX: Teach JSON how to read NumPy numbers ---
+    import numpy as np
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.generic):
+                return obj.item() # Converts np.float64 to float, np.int64 to int
+            if isinstance(obj, np.ndarray):
+                return obj.tolist() # Converts numpy arrays to python lists
+            return super().default(obj)
+
+    return json.dumps(meta_dict, indent=2, cls=NumpyEncoder)
 
 def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
     t = Table()
@@ -273,6 +316,10 @@ def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
     for name, data_col in spec_data.aux_cols.items():
         t[name] = Column(data_col.values, unit=data_col.unit)
     t.meta.update(spec_data.meta)
+
+    # Strip massive lists before FITS creation
+    t.meta.pop('region_identifications', None)
+
     t.meta['ORIGIN'] = 'Astrocook V2'
     t.meta['Z_EM'] = spec_data.z_em
     return t
