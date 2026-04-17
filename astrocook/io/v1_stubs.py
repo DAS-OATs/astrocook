@@ -219,6 +219,8 @@ def save_archive_v1(v1_spec: Any, v1_systs: Any, json_log_str: str, file_path: s
             systs_path_temp = os.path.join(temp_dir, systs_fname)
             if hasattr(v1_systs, 'meta'):
                 v1_systs.t.meta.update(v1_systs.meta)
+                # Strip massive lists for V1 saves too
+                v1_spec.t.meta.pop('region_identifications', None)
             v1_systs.t.write(systs_path_temp, format='fits', overwrite=True)
             logging.debug(f"Wrote temporary system list FITS file: {systs_fname}")
 

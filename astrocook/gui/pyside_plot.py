@@ -1751,41 +1751,48 @@ class SpectrumPlotWidget(QWidget):
         self._tip_region_html = None
         if 'abs_ids' in spec._data.aux_cols:
             try:
-                # 1. Robustly get the ID array regardless of DataColumnV2 wrapper
+                # 1. Safely extract the ID and handle FITS NaNs
                 col_obj = spec._data.aux_cols['abs_ids']
                 ids_array = col_obj.values if hasattr(col_obj, 'values') else col_obj
-                region_id_val = int(ids_array[idx])
+                
+                val = ids_array[idx]
+                if np.isnan(val) or val == 0:
+                    region_id_val = 0
+                else:
+                    region_id_val = int(val)
                 
                 if region_id_val != 0:
-                    # 2. Retrieve metadata using V2-specific key
-                    ident_labels_json = spec.meta.get('region_identifications')
+                    ident_labels = spec.meta.get('region_identifications')
                     
-                    if ident_labels_json:
-                        ident_labels_raw = json.loads(ident_labels_json)
+                    if ident_labels:
+                        # 2. Normalize data (Unpack strings and double-encoded strings)
+                        while isinstance(ident_labels, str):
+                            try:
+                                ident_labels = json.loads(ident_labels)
+                            except json.JSONDecodeError:
+                                break # Stop if it's a raw un-parseable string
                         
-                        # 3. Use string lookup to match JSON-standardized keys
-                        region_key = str(region_id_val)
-                        
-                        if region_key in ident_labels_raw:
-                            ids_for_region = ident_labels_raw[region_key]
+                        if isinstance(ident_labels, dict):
+                            # 3. Look up key robustly (Checks both Int and String keys)
+                            region_data = ident_labels.get(region_id_val) or ident_labels.get(str(region_id_val))
                             
-                            # 4. Handle V2 rich-metadata format: [[series, score], ...]
-                            if isinstance(ids_for_region, list):
-                                labels = []
-                                for entry in ids_for_region:
-                                    # Handle both [series, score] and older [series] formats
-                                    if isinstance(entry, list) and len(entry) >= 2:
-                                        name, score = entry[0], entry[1]
-                                        labels.append(f"{name} ({score:.2f})" if score > 0 else name)
-                                    else:
-                                        labels.append(str(entry))
-                                        
-                                label_str = ", ".join(labels)
-                                if label_str:
-                                    self._tip_region_html = f"<tr><td style='padding-right:8px'><b>Likely:</b></td><td>{label_str}</td></tr>"
+                            if region_data:
+                                # 4. Format the labels
+                                if isinstance(region_data, list):
+                                    labels = []
+                                    for entry in region_data:
+                                        if isinstance(entry, list) and len(entry) >= 2:
+                                            name, score = entry[0], entry[1]
+                                            labels.append(f"{name} ({score:.2f})" if score > 0 else name)
+                                        else:
+                                            labels.append(str(entry))
+                                            
+                                    label_str = ", ".join(labels)
+                                    if label_str:
+                                        self._tip_region_html = f"<tr><td style='padding-right:8px'><b>Likely:</b></td><td>{label_str}</td></tr>"
             except Exception as e:
-                # Use warning temporarily to catch V2 transition bottlenecks
-                logging.warning(f"Tooltip region lookup failed for ID {region_id_val}: {e}")
+                # Suppress errors to ensure the rest of the tooltip still renders
+                pass
 
         # --- 4. Data Points (Zoom Check) ---
         self._tip_data_rows = []
