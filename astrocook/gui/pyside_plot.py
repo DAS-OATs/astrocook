@@ -220,6 +220,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         # Region Selection State
         self.selection_artist = None # Will hold the axvspan
         self.selection_start_x = None
+        self.persistent_artists = [] # [NEW] List of artists (spans/lines) for multi-measurements
 
         # Connect Matplotlib events
         self.mpl_connect('motion_notify_event', self.on_motion)
@@ -275,11 +276,15 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         for artist in self.cursor_artists:
             try: self.axes.draw_artist(artist); drawn_artists.append(artist)
             except Exception as e: logging.error(f"Error drawing anim artist {artist}: {e}")
-        if getattr(self.plot_widget, '_edit_mode_active', False):
-            if hasattr(self.plot_widget, 'knot_artist') and self.plot_widget.knot_artist:
-                self.axes.draw_artist(self.plot_widget.knot_artist)
-            if hasattr(self.plot_widget, 'spline_artist') and self.plot_widget.spline_artist:
-                self.axes.draw_artist(self.plot_widget.spline_artist)
+        # [NEW] Persistent artists (centroids/spans already measured)
+        for artist in self.persistent_artists:
+            try: self.axes.draw_artist(artist); drawn_artists.append(artist)
+            except Exception as e: logging.error(f"Error drawing persistent artist: {e}")
+
+        # Active selection span (the yellow one being dragged)
+        if self.selection_artist:
+            try: self.axes.draw_artist(self.selection_artist); drawn_artists.append(self.selection_artist)
+            except Exception as e: logging.error(f"Error drawing Selection Span: {e}")
         if drawn_artists:
             try: self.blit(self.axes.bbox)
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
@@ -320,9 +325,19 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.selection_artist.remove()
             
             self.selection_artist = self.axes.axvspan(
-                self.selection_start_x, event.xdata, color='yellow', alpha=0.3
+                self.selection_start_x, event.xdata, color='#f5a100', alpha=0.15, zorder=10
             )
             self.draw_idle()
+
+            # [NEW] Trigger callback for real-time updates
+            if self.plot_widget and hasattr(self.plot_widget, '_selection_realtime_callback') and self.plot_widget._selection_realtime_callback:
+                input_xmin = min(self.selection_start_x, event.xdata)
+                input_xmax = max(self.selection_start_x, event.xdata)
+                try:
+                    self.plot_widget._selection_realtime_callback(input_xmin, input_xmax)
+                except Exception as e:
+                    logging.error(f"Real-time selection callback failed: {e}")
+            
             return # Don't do cursor updates while selecting
         
         # Check if inside axes and cursor checkbox is checked
@@ -407,6 +422,22 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.selection_artist = None
             self.draw_idle()
 
+    def cleanup_persistent_selection(self):
+        """Helper to remove all persistent selection highlights and EW markers."""
+        for artist in self.persistent_artists:
+            try: artist.remove()
+            except Exception: pass
+        self.persistent_artists = []
+        self.draw_idle()
+
+    def cleanup_persistent_selection(self):
+        """Helper to remove all persistent selection highlights and EW markers."""
+        for artist in self.persistent_artists:
+            try: artist.remove()
+            except Exception: pass
+        self.persistent_artists = []
+        self.draw_idle()
+
 class SpectrumPlotWidget(QWidget):
     """
     Refactored widget that contains the plot canvas, toolbar, and toggles.
@@ -472,6 +503,8 @@ class SpectrumPlotWidget(QWidget):
 
         # Selection Mode State
         self._is_selecting_region = False
+        self._selection_callback = None # [NEW] Callback for generic region selection
+        self._selection_realtime_callback = None # [NEW] Callback for real-time drag updates
         self._selection_start_x = None
         
         # Store the original Matplotlib coordinate formatter ONCE
@@ -998,7 +1031,6 @@ class SpectrumPlotWidget(QWidget):
                             ax.step(ghost_x, ghost_y - ghost_dy, where='mid', color=color, alpha=0.25, lw=0.4, zorder=0.7, rasterized=True)
                             ax.step(ghost_x, ghost_y + ghost_dy, where='mid', color=color, alpha=0.25, lw=0.4, zorder=0.7, rasterized=True)
             
-
             # 2. Plot Error Shading (Conditional)
             if self.main_window.error_checkbox.isChecked(): # <<< Check main window's checkbox
                 if dx_data is not None and dy_data is not None:
@@ -1489,12 +1521,12 @@ class SpectrumPlotWidget(QWidget):
         if self.main_window:
             # Schedule this to run just after the draw completes
             QTimer.singleShot(0, self.main_window._update_limit_boxes_from_plot)
-
+    
         # --- Refresh Data Inspector if it's open ---
         if hasattr(self, '_data_inspector_dialog') and self._data_inspector_dialog is not None:
             if self._data_inspector_dialog.isVisible():
                 self._data_inspector_dialog.refresh(session_state)
-    
+
     def toggle_region_selector(self):
         """ Enables/disables the region selection mode. """
         # 1. Toggle state
@@ -1952,30 +1984,46 @@ class SpectrumPlotWidget(QWidget):
 
         # --- CONTINUUM EDITING LOGIC ---
         if self._edit_mode_active and self._active_knot_idx is not None:
+            # 1. Update the internal data (Move the knot)
+            # We constrain x to stay between neighbors to prevent knots crossing over
             new_x = event.xdata
             new_y = event.ydata
             
+            # (Optional) Constraint logic: Keep knots sorted
+            # idx = self._active_knot_idx
+            # if idx > 0: new_x = max(new_x, self._knots_x[idx-1] + 0.0001)
+            # if idx < len(self._knots_x) - 1: new_x = min(new_x, self._knots_x[idx+1] - 0.0001)
+            
             self._knots_x[self._active_knot_idx] = new_x
             self._knots_y[self._active_knot_idx] = new_y
-            self._is_anchor[self._active_knot_idx] = True # NEW: Mark moved knots as anchors
+            self._is_anchor[self._active_knot_idx] = True
             
             # 2. Update the Artist Objects
             self.knot_artist.set_data(self._knots_x, self._knots_y)
+            
+            # Recalculate the spline (See point #2 below about clipping!)
             self._apply_local_patch(new_x)
             
             # 3. BLITTING (The "Live" Update)
+            # This is what was missing or broken.
             if self.background:
+                # A. Restore the clean background (erasing the old knot position)
                 self.canvas.restore_region(self.background)
+                
+                # B. Draw the artists at their NEW positions
                 self.canvas.axes.draw_artist(self.knot_artist)
                 self.canvas.axes.draw_artist(self.spline_artist)
+                
+                # C. Show it on screen
                 self.canvas.blit(self.canvas.axes.bbox)
                 
-            return # Stop processing
+            return # Stop processing (don't do region selection etc)
             
     def on_press(self, event):
         if not event.inaxes: return
         
         # --- 0. CHECK MODIFIERS ---
+        # Use Qt directly to reliably detect 'Ctrl' key even if plot focus is fuzzy
         modifiers = QApplication.keyboardModifiers()
         is_ctrl_held = bool(modifiers & Qt.ControlModifier)
         is_shift_held = bool(modifiers & Qt.ShiftModifier)
@@ -2048,7 +2096,6 @@ class SpectrumPlotWidget(QWidget):
                 return True
 
         # --- 2. EXISTING RIGHT CLICK CONTEXT MENU ---
-        # Condition: Right Click (Button 3) AND (Ctrl held OR No tool active)
         if event.button == 3 and (is_ctrl_held or not is_tool_active):
             
             # A. Pause Toolbar (if active) to prevent artifacts
@@ -2125,44 +2172,111 @@ class SpectrumPlotWidget(QWidget):
                 elif paused_mode == 'zoom rect': self.toolbar.zoom()
 
             return True # Consume event
-
-        # --- 3. Region Selection (Button 1) ---
-        if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
-            self._selection_start_x = event.xdata
-            self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
+        
+        # 3. Region Selection (Button 1)
+        # Only runs if NOT consumed by continuum logic above
+        
+        # [FIX] Robust CMD/Control detection for selection block
+        has_tool = hasattr(self, 'toolbar') and self.toolbar.mode != ''
+        modifiers = QApplication.keyboardModifiers()
+        is_qt_cmd = bool(modifiers & (Qt.ControlModifier | Qt.MetaModifier))
+        is_mpl_cmd = event.key and any(k in event.key for k in ['super', 'cmd', 'control', 'meta', 'alt'])
+        is_cmd = is_qt_cmd or is_mpl_cmd
+        
+        if (event.button == 1 and event.inaxes == self.canvas.axes and 
+            self._is_selecting_region):
+            
+            # If selection mode is active, we take priority unless a tool is active AND CMD is NOT held.
+            # (Basically: Selection mode + CMD always wins. Selection mode alone wins if no tool active.)
+            if has_tool and not is_cmd:
+                return # Let toolbar handle it (Pan/Zoom)
+            
+            logging.info(f"on_press: Starting EW selection at x={event.xdata:.3f} (is_cmd={is_cmd}, has_tool={has_tool})")
+            # [FIX] Set it on the CANVAS so on_motion sees it!
+            self.canvas.selection_start_x = event.xdata
+            self.canvas.selection_artist = self.canvas.axes.axvspan(
+                event.xdata, event.xdata, color='#f5a100', alpha=0.15, zorder=10)
             self.canvas.draw_idle() 
             return True
-
-        return False
     
     def on_release(self, event):
         # 1. Drop the knot
         if self._active_knot_idx is not None:
             self._active_knot_idx = None
             
-        # --- [START NEW BLOCK] ---
-        # 2. Restore Toolbar if we paused it
-        if hasattr(self, '_paused_tool_mode') and self._paused_tool_mode:
-            if self._paused_tool_mode == 'pan/zoom': 
-                self.toolbar.pan()
-            elif self._paused_tool_mode == 'zoom rect': 
-                self.toolbar.zoom()
-            self._paused_tool_mode = None
-
-        # 2. Handle Existing Region Selection Logic
-        if self._selection_start_x is not None:
-            start = self._selection_start_x
+        # 2. Handle Existing Region Selection Logic (PRIORITY)
+        # [FIX] Handle selection FIRST so we can explicitly skip toolbar restoration if needed
+        selection_performed = False
+        if self.canvas.selection_start_x is not None:
+            start = self.canvas.selection_start_x
             end = event.xdata
-            self.canvas.cleanup_selection()
-            self._selection_start_x = None
+            selection_performed = True
+            
+            # Keep the highlight! Append it to persistent list
+            if self.canvas.selection_artist:
+                self.canvas.persistent_artists.append(self.canvas.selection_artist)
+                self.canvas.last_selection_artist = self.canvas.selection_artist
+                self.canvas.selection_artist = None
+                self.canvas.background = None # [NEW] Invalidate background to include new artist
+            
+            self.canvas.selection_start_x = None
+
+            # ... rest of the logic follows
             
             if start is None or end is None or start == end: 
+                # If selection was canceled or empty, clean up the last added artist
+                if self.canvas.persistent_artists:
+                    a = self.canvas.persistent_artists.pop()
+                    try: a.remove()
+                    except: pass
                 return
             
             xmin, xmax = sorted([start, end])
-            if self.main_window:
+            
+            # [NEW] Check for custom callback first
+            completion_callback = self._selection_callback if hasattr(self, '_selection_callback') else None
+            
+            # Reset selection state
+            self._selection_callback = None
+            self._is_selecting_region = False
+            
+            if completion_callback:
+                logging.debug(f"Executing selection callback for range {xmin:.4f}-{xmax:.4f}")
+                try:
+                    completion_callback(xmin, xmax)
+                except Exception as e:
+                    logging.error(f"Selection callback failed: {e}")
+                
+            elif self.main_window:
                 logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
                 self.main_window.launch_split_from_region(xmin, xmax)
+
+        # 3. Restore Toolbar if we paused it (at the end)
+        if hasattr(self, '_paused_tool_mode') and self._paused_tool_mode:
+            paused_mode = self._paused_tool_mode
+            self._paused_tool_mode = None # Clear before restoring to avoid recursion
+
+            if paused_mode == 'pan/zoom': 
+                self.toolbar.pan()
+            elif paused_mode == 'zoom rect': 
+                self.toolbar.zoom()
+            
+            # If we just performed a selection, we want to AVOID the toolbar 
+            # applying its zoom/pan on this specific release.
+            # Matplotlib's toolbar usually handles release in its own event loop.
+            # By restoring it AFTER we processed the event, we should be safe.
+
+
+    def start_region_selection(self, callback):
+        """
+        Enables region selection mode and sets the callback to be executed
+        when the selection is completed.
+        """
+        self._is_selecting_region = True
+        self._selection_callback = callback
+        # Change cursor to indicate selection mode?
+        # self.setCursor(Qt.CrossCursor) 
+        logging.info("Region selection mode started.")
 
     def _generate_velocity_knots(self, x_full, stride_kms):
         """
@@ -2193,16 +2307,21 @@ class SpectrumPlotWidget(QWidget):
         
         return indices
 
-    def start_continuum_edit(self, initial_stride=1500):
+    def start_continuum_edit(self, initial_stride=500):
         if not self.main_window.active_history: return
         
+        # [TOOLBAR RESET]
         if hasattr(self, 'toolbar') and self.toolbar:
              if self.toolbar.mode == 'pan/zoom': self.toolbar.pan() 
              elif self.toolbar.mode == 'zoom rect': self.toolbar.zoom()
 
+        # [DATA PREP]
         spec = self.main_window.active_history.current_state.spec
         x_full = spec.x.value
-        y_source = spec.cont.value if spec.cont is not None else spec.y.value
+        if spec.cont is not None:
+            y_source = spec.cont.value
+        else:
+            y_source = spec.y.value
             
         indices = self._generate_velocity_knots(x_full, float(initial_stride))
             
@@ -2212,9 +2331,10 @@ class SpectrumPlotWidget(QWidget):
         
         # --- Set master curve EXACTLY to the existing continuum ---
         self._frozen_spline_y = np.copy(y_source)
-        
+
         self._remove_editor_artists()
 
+        # [CREATE ARTISTS]
         self.knot_artist, = self.canvas.axes.plot(
             self._knots_x, self._knots_y, 
             'o', color='black', markersize=2, alpha=0.5, 
@@ -2243,6 +2363,7 @@ class SpectrumPlotWidget(QWidget):
         
         self.background = None
 
+        # Capture data
         final_x, final_y = None, None
         if save:
             # --- NEW: PASS THE DENSE FROZEN CURVE TO THE RECIPE ---

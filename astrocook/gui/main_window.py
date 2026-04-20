@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
+    QTableWidget, QHeaderView, QTableWidgetItem
 )
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -52,6 +53,7 @@ except ImportError:
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+from astrocook.recipes.features import FEATURES_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 RECIPE_CATEGORY_MAP = {}
@@ -61,6 +63,8 @@ for name in CONTINUUM_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'continuum'
 for name in EDIT_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'edit'
+for name in FEATURES_RECIPES_SCHEMAS:
+    RECIPE_CATEGORY_MAP[name] = 'features'
 for name in FILE_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'file'
 for name in FLUX_RECIPES_SCHEMAS:
@@ -478,8 +482,7 @@ class MainWindowV2(QMainWindow):
         unified_grid.setColumnMinimumWidth(0, 80)
         # Column 1: Boxes (Stretch)
         unified_grid.setColumnStretch(1, 1)
-
-                # Helper function to create collapsible group boxes
+        # Helper function to create collapsible group boxes
         def create_collapsible_group(title, is_collapsed=False):
             group = QGroupBox(title)
             group.setCheckable(True)
@@ -536,7 +539,7 @@ class MainWindowV2(QMainWindow):
             # Let's find the slot
             group.toggled.emit(checked)
 
-        # -- SECTION 1: Axis Limits --
+        # -- SECTION 1: Axis Limits (Non-collapsible) --
         # Use a simple layout without a GroupBox border to keep it clean
         limits_header = QLabel("<b>Axis Limits</b>")
         limits_header.setStyleSheet("margin-top: 10px; margin-bottom: 2px;")
@@ -581,7 +584,61 @@ class MainWindowV2(QMainWindow):
         
         sidebar_layout.addLayout(limits_layout)
 
-        # -- SECTION 2: Redshift Cursor --
+        # -- SECTION 2: Equivalent Width (Collapsible) --
+        ew_group = create_collapsible_group("Equivalent Width")
+        ew_layout = QGridLayout()
+        ew_layout.setSpacing(5)
+
+        # Start and Save buttons on same row
+        ew_button_layout = QHBoxLayout()
+        ew_button_layout.setSpacing(5)
+        
+        self.ew_start_button = QPushButton("Start")
+        self.ew_start_button.setCheckable(True)
+        self.ew_start_button.clicked.connect(self._on_ew_start_clicked)
+        ew_button_layout.addWidget(self.ew_start_button)
+        
+        self.ew_inspect_button = QPushButton("View List")
+        self.ew_inspect_button.setToolTip("Show and export the list of all computed EWs.")
+        self.ew_inspect_button.clicked.connect(self._on_inspect_ew_clicked)
+        ew_button_layout.addWidget(self.ew_inspect_button)
+        
+        ew_layout.addLayout(ew_button_layout, 0, 0, 1, 2)
+
+        # Min/Max inputs
+        self.ew_min_input = _expand_field(QLineEdit())
+        self.ew_min_input.setPlaceholderText("min")
+        self.ew_min_input.setReadOnly(True)
+        self.ew_max_input = _expand_field(QLineEdit())
+        self.ew_max_input.setPlaceholderText("max")
+        self.ew_max_input.setReadOnly(True)
+        
+        lbl_ew_lambda = QLabel("λ:")
+        ew_lambda_layout = QHBoxLayout()
+        ew_lambda_layout.setSpacing(3)
+        ew_lambda_layout.addWidget(self.ew_min_input)
+        ew_lambda_layout.addWidget(self.ew_max_input)
+        
+        ew_layout.addWidget(lbl_ew_lambda, 1, 0)
+        ew_layout.addLayout(ew_lambda_layout, 1, 1)
+
+        # Results
+        self.ew_result_input = _expand_field(QLineEdit())
+        self.ew_result_input.setPlaceholderText("EW ± error")
+        self.ew_result_input.setReadOnly(True)
+        self.ew_centroid_input = _expand_field(QLineEdit())
+        self.ew_centroid_input.setPlaceholderText("Centroid")
+        self.ew_centroid_input.setReadOnly(True)
+        
+        ew_layout.addWidget(QLabel("EW:"), 2, 0)
+        ew_layout.addWidget(self.ew_result_input, 2, 1)
+        ew_layout.addWidget(QLabel("Centroid:"), 3, 0)
+        ew_layout.addWidget(self.ew_centroid_input, 3, 1)
+
+        ew_group.setLayout(ew_layout)
+        sidebar_layout.addWidget(ew_group)
+
+        # -- SECTION 3: Redshift Cursor (Collapsible, hidden by default) --
         cursor_group = create_collapsible_group("Redshift Cursor", is_collapsed=True)
         cursor_layout = QGridLayout()
         cursor_layout.setSpacing(5)
@@ -604,7 +661,7 @@ class MainWindowV2(QMainWindow):
 
         self.cursor_series_input.editingFinished.connect(self._update_cursor_and_replot)
         self.cursor_z_input.editingFinished.connect(self._update_cursor_and_replot)
-        self.cursor_show_checkbox.stateChanged.connect(self._on_cursor_checkbox_toggled)
+        self.cursor_show_checkbox.stateChanged.connect(self._on_cursor_checkbox_toggled) 
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
         cursor_group.setLayout(cursor_layout)
@@ -656,7 +713,7 @@ class MainWindowV2(QMainWindow):
         # Spacing
         self.lbl_spacing = QLabel("Spacing:")
         continuum_layout.addWidget(self.lbl_spacing, 2, 0)
-        
+
         self.stride_entry = QLineEdit()
         stride_validator = QDoubleValidator(0.0, 20000.0, 0)
         stride_validator.setLocale(QLocale.C)
@@ -858,7 +915,7 @@ class MainWindowV2(QMainWindow):
 
         # 3. Help Menu
         help_menu = menu_bar.addMenu("&Help")
-        
+
         # --- File and View operations ---
 
         # --- File Menu Actions
@@ -1216,11 +1273,14 @@ class MainWindowV2(QMainWindow):
             self.ymin_input.blockSignals(True)
             self.ymax_input.blockSignals(True)
             
-            # Set text using the converted display values
-            self.xmin_input.setText(f"{display_xlim[0]:.4g}")
-            self.xmax_input.setText(f"{display_xlim[1]:.4g}")
-            self.ymin_input.setText(f"{ylim_plot[0]:.4g}")
-            self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
+            # [FIX] Don't update axis limit inputs if we're in EW selection mode
+            # (prevents conflict with EW λ min/max inputs)
+            if not (hasattr(self, 'ew_start_button') and self.ew_start_button.isChecked()):
+                # Set text using the converted display values (3 decimal places)
+                self.xmin_input.setText(f"{display_xlim[0]:.4g}")
+                self.xmax_input.setText(f"{display_xlim[1]:.4g}")
+                self.ymin_input.setText(f"{ylim_plot[0]:.4g}")
+                self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
             
         except Exception as e:
             logging.warning(f"Failed to update limit boxes: {e}")
@@ -1355,11 +1415,16 @@ class MainWindowV2(QMainWindow):
                              parent=None,
                              checkbox_text=None,
                              detailed_text=None):
+        """
+        Creates a custom Message Box. 
+        If checkbox_text is provided, returns (button, is_checked).
+        Otherwise, returns button.
+        """
         target_parent = parent if parent else self
         
         msg_box = QMessageBox(target_parent)
         msg_box.setWindowTitle(title)
-
+        
         # Convert standard \n line breaks to HTML <br> tags
         formatted_body = text.replace('\n', '<br>')
         
@@ -1384,6 +1449,7 @@ class MainWindowV2(QMainWindow):
 
         msg_box.setWindowModality(Qt.WindowModal)
         
+        # Style with optional checkbox margin
         msg_box.setStyleSheet("""
             QLabel { padding-top: 10px; }
             QCheckBox { margin-top: 10px; font-size: 12pt; }
@@ -1744,7 +1810,6 @@ class MainWindowV2(QMainWindow):
 
     def add_session(self, new_session: SessionV2, initial_load=False):
         """Adds a new session history and updates view."""
-
         # The log_object parameter has been removed
         self._add_session_internal(new_session, is_initial=initial_load)
         if self.active_history:
@@ -1815,7 +1880,7 @@ class MainWindowV2(QMainWindow):
 
         # --- *** NEW: Update SNR Column Combo *** ---
         self._populate_snr_combo()
-
+            
         # --- Safely uncheck Normalize F if no continuum exists ---
         if is_valid and session_state_to_show and session_state_to_show.spec:
             if session_state_to_show.spec.cont is None:
@@ -2332,7 +2397,7 @@ class MainWindowV2(QMainWindow):
         if file_names:
             # --- Save the directory for next time ---
             settings.setValue("last_working_dir", os.path.dirname(file_names[0]))
-            
+
             # Show a wait cursor if loading multiple files
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
@@ -3669,7 +3734,6 @@ class MainWindowV2(QMainWindow):
                         msg_text += f"<li>{w}</li>"
                     msg_text += "</ul>"
 
-
                     self._show_custom_message(
                         title="Warnings Issued",
                         header="Process completed with warnings",
@@ -4158,6 +4222,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         if hasattr(self, 'clean_negligible_action'): self.clean_negligible_action.setEnabled(enable_recipes)
+        if hasattr(self, 'measure_ew_action'): self.measure_ew_action.setEnabled(enable_recipes) # [FIX] Enable EW action
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...
@@ -4391,6 +4456,22 @@ class MainWindowV2(QMainWindow):
         uuids = {c.uuid for c in components} if components else set()
         self.plot_viewer.set_highlights(uuids)
 
+    def _on_inspect_ew_clicked(self):
+        """Launches the EW Inspector Dialog."""
+        if not self.active_history:
+            return
+        
+        # Use a persistent attribute to allow non-modal behavior
+        if not hasattr(self, 'ew_inspector_dialog') or self.ew_inspector_dialog is None:
+            self.ew_inspector_dialog = EWInspectorDialog(self.active_history.current_state, parent=self)
+        else:
+            self.ew_inspector_dialog.session = self.active_history.current_state
+            self.ew_inspector_dialog._populate_table()
+            
+        self.ew_inspector_dialog.show()
+        self.ew_inspector_dialog.raise_()
+        self.ew_inspector_dialog.activateWindow()
+
     def dragEnterEvent(self, event):
         """Check if the drag contains files."""
         if event.mimeData().hasUrls():
@@ -4416,6 +4497,149 @@ class MainWindowV2(QMainWindow):
             QApplication.restoreOverrideCursor()
         
         event.acceptProposedAction()
+
+    def _on_ew_start_clicked(self):
+        """Toggle EW selection mode."""
+        if not self.plot_viewer:
+            return
+        
+        is_active = self.ew_start_button.isChecked()
+        
+        if is_active:
+            # Start selection mode
+            self.ew_start_button.setText("Close")
+            self.ew_min_input.clear()
+            self.ew_max_input.clear()
+            self.ew_result_input.clear()
+            self.ew_centroid_input.clear()
+            
+            # [FIX] Automatically turn off tool modes (Pan/Zoom) to allow selection
+            if hasattr(self.plot_viewer, 'toolbar') and self.plot_viewer.toolbar.mode != '':
+                if self.plot_viewer.toolbar.mode == 'pan/zoom': 
+                    self.plot_viewer.toolbar.pan()
+                elif self.plot_viewer.toolbar.mode == 'zoom rect': 
+                    self.plot_viewer.toolbar.zoom()
+
+            # [NEW] Clear any existing persistent highlight when starting new selection
+            self.plot_viewer.canvas.cleanup_persistent_selection()
+            
+            # Start region selection with COMPLETION callback only
+            self.plot_viewer.start_region_selection(self._on_ew_region_selected)
+        else:
+            # Cancel selection mode
+            self.ew_start_button.setText("Start")
+            self.plot_viewer._is_selecting_region = False
+            self.plot_viewer.canvas.cleanup_selection()
+            self.plot_viewer.canvas.cleanup_persistent_selection()
+    
+    def _on_ew_selection_change(self, xmin, xmax):
+        """Real-time callback during region selection (drag)."""
+        # Update Min/Max fields (5 decimals per request)
+        self.ew_min_input.setText(f"{xmin:.5f}")
+        self.ew_max_input.setText(f"{xmax:.5f}")
+    
+    def _on_ew_region_selected(self, xmin, xmax):
+        """Callback when region selection is completed (mouse release)."""
+        # [MOD] Keep the button checked for continuous mode
+        # self.ew_start_button.setChecked(False)
+        # self.ew_start_button.setText("Start")
+        
+        # Update Min/Max fields on release (3 decimals for λ to avoid overcrowding)
+        self.ew_min_input.setText(f"{xmin:.3f}")
+        self.ew_max_input.setText(f"{xmax:.3f}")
+        
+        if not self.active_history:
+            return
+
+        session = self.active_history.current_state
+        if not session or not session.spec:
+            return
+
+        # Perform the calculation
+        try:
+            results = session.features.compute_ew(xmin, xmax)
+            
+            if not results:
+                self.ew_result_input.setText("Error")
+                self.ew_centroid_input.setText("Error")
+                return
+
+            # Store results for saving
+            self._current_ew_result = results
+            
+            # Display in sidebar (5 decimals per request)
+            ew = results['ew']
+            ew_err = results['ew_err']
+            centroid = results['centroid']
+            
+            self.ew_result_input.setText(f"{ew:.5f} ± {ew_err:.5f}")
+            self.ew_centroid_input.setText(f"{centroid:.5f}")
+            
+            # [NEW] Visualize Results on Plot
+            canvas = self.plot_viewer.canvas
+            ax = canvas.axes
+            
+            # 1. Centroid vertical line (dotted)
+            c_line = ax.axvline(
+                centroid, color='#f5a100', linestyle=':', lw=1.5, zorder=11, label='Centroid'
+            )
+            canvas.persistent_artists.append(c_line)
+            
+            # 2. EW shaded area (darker orange)
+            e_span = ax.axvspan(
+                centroid - ew/2.0, centroid + ew/2.0, 
+                color='#f5a100', alpha=0.4, zorder=11, label='EW'
+            )
+            canvas.persistent_artists.append(e_span)
+            
+            # [FIX] Store artists in results BEFORE saving to list
+            # Include the selection artist from the canvas
+            sel_artist = getattr(canvas, 'last_selection_artist', None)
+            results['_artists'] = [c_line, e_span]
+            if sel_artist:
+                results['_artists'].append(sel_artist)
+                canvas.last_selection_artist = None # Clear it
+            
+            # [MOD] Auto-save to list (now includes artists!)
+            self._on_save_ew_clicked()
+            
+            logging.info(f"EW Measured: {ew} +/- {ew_err} nm (Range: {xmin}-{xmax} nm)")
+            
+            # [FIX] Invalidate background to ensure markers appear in next blit
+            canvas.background = None 
+            
+            # [MOD] Re-activate selection mode immediately for continuous use
+            self.plot_viewer.start_region_selection(self._on_ew_region_selected)
+            
+            canvas.draw_idle()
+
+        except Exception as e:
+            logging.error(f"Error computing EW: {e}")
+            self.ew_result_input.setText("Error")
+            self.ew_centroid_input.setText("Error")
+    
+    def _on_save_ew_clicked(self):
+        """Save the current EW measurement to the session's list."""
+        if not hasattr(self, '_current_ew_result') or not self._current_ew_result:
+            return
+        
+        if not self.active_history:
+            return
+        
+        # Add to session's ew_measurements list
+        self.active_history.current_state.ew_measurements.append(self._current_ew_result.copy())
+        
+        count = len(self.active_history.current_state.ew_measurements)
+        logging.info(f"EW measurement saved. Total measurements: {count}")
+        
+        # Disable save button until next measurement (Removed in V2 simplify)
+        # self.ew_save_button.setEnabled(False) 
+
+    def _on_measure_ew(self):
+        """Legacy menu action - now just activates the sidebar button."""
+        if hasattr(self, 'ew_start_button'):
+            self.ew_start_button.setChecked(True)
+            self._on_ew_start_clicked()
 
 class LogSignalBridge(QObject):
     """Thread-safe bridge to emit log messages as Qt signals."""
@@ -4524,7 +4748,6 @@ class RecipeProgressDialog(QDialog):
         self.status_label.setText("Attempting to stop gracefully...")
         # Emit signal to parent
         self.stop_requested.emit()
-        
 class WarningCaptureHandler(logging.Handler):
     """Captures warning messages to a list for GUI display."""
     def __init__(self):
@@ -4579,7 +4802,7 @@ class AboutDialog(QDialog):
         try:
             from astrocook import __version__ as ver
         except ImportError:
-            ver = "v2.0.0"
+            ver = "v2.0.0-course"
 
         ver_lbl = QLabel(f"Version: {ver}")
         ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
@@ -4643,3 +4866,131 @@ class AboutDialog(QDialog):
         # Update this URL if the repo is under a different organization
         url = "https://github.com/DAS-OATs/astrocook/issues"
         QDesktopServices.openUrl(QUrl(url))
+
+class EWInspectorDialog(QDialog):
+    """
+    Dialog to display and export the list of Equivalent Width measurements.
+    """
+    def __init__(self, session, parent=None):
+        super().__init__(parent)
+        self.session = session
+        self.setWindowTitle("EW List")
+        self.resize(700, 500)
+        
+        self.layout = QVBoxLayout(self)
+        
+        # --- 1. Button Bar ---
+        button_layout = QHBoxLayout()
+        
+        self.export_btn = QPushButton("Save List As...")
+        self.export_btn.setToolTip("Export the EW measurements to a CSV file.")
+        self.export_btn.clicked.connect(self._on_export_clicked)
+        button_layout.addWidget(self.export_btn)
+        
+        button_layout.addStretch()
+        self.layout.addLayout(button_layout)
+        
+        # --- 2. Table ---
+        self.table = QTableWidget()
+        self.cols = ['xmin', 'xmax', 'centroid', 'ew'] # Combine ew and ew_err in one col
+        self.table.setColumnCount(len(self.cols))
+        self.table.setHorizontalHeaderLabels(['λ Min', 'λ Max', 'Centroid', 'EW ± Error'])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
+        
+        self._populate_table()
+        self.layout.addWidget(self.table)
+        
+        # --- 3. Close Button ---
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        button_box.rejected.connect(self.reject)
+        self.layout.addWidget(button_box)
+
+    def _populate_table(self):
+        measurements = getattr(self.session, 'ew_measurements', [])
+        self.table.setRowCount(len(measurements))
+        
+        for i, m in enumerate(measurements):
+            for j, col in enumerate(self.cols):
+                if col == 'ew':
+                    ew = m.get('ew', 0.0)
+                    err = m.get('ew_err', 0.0)
+                    item = QTableWidgetItem(f"{ew:.5f} ± {err:.5f}")
+                else:
+                    val = m.get(col, 0.0)
+                    if isinstance(val, (float, np.floating)):
+                        item = QTableWidgetItem(f"{val:.5f}")
+                    else:
+                        item = QTableWidgetItem(str(val))
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(i, j, item)
+
+    def _on_export_clicked(self):
+        measurements = getattr(self.session, 'ew_measurements', [])
+        if not measurements:
+            QMessageBox.information(self, "No Data", "No EW measurements to export.")
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save EW Measurements", "", "CSV Files (*.csv);;All Files (*)"
+        )
+        
+        if file_path:
+            try:
+                import csv
+                with open(file_path, 'w', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=self.cols)
+                    writer.writeheader()
+                    for m in measurements:
+                        writer.writerow({k: m.get(k, '') for k in self.cols})
+                
+                logging.info(f"EW measurements exported to {file_path}")
+                QMessageBox.information(self, "Export Successful", f"Data exported to {file_path}")
+            except Exception as e:
+                logging.error(f"Failed to export EW: {e}")
+
+    def _show_context_menu(self, pos):
+        menu = QMenu(self)
+        delete_act = menu.addAction("Delete Measurement")
+        delete_act.triggered.connect(self._on_delete_clicked)
+        menu.exec(self.table.mapToGlobal(pos))
+
+    def _on_delete_clicked(self):
+        row = self.table.currentRow()
+        if row < 0: return
+        
+        measurements = getattr(self.session, 'ew_measurements', [])
+        if 0 <= row < len(measurements):
+            # Remove from session
+            m = measurements.pop(row)
+            
+            # Remove artists from plot if present
+            # We must be careful to remove from BOTH the axes and the canvas list
+            artists = m.get('_artists', [])
+            canvas = None
+            if self.parent() and hasattr(self.parent(), 'plot_viewer'):
+                canvas = self.parent().plot_viewer.canvas
+
+            for a in artists:
+                try: 
+                    # 1. Remove from Matplotlib Axes
+                    a.remove()
+                    # 2. Remove from Canvas persistent list to stop blitting redraws
+                    if canvas and a in canvas.persistent_artists:
+                        canvas.persistent_artists.remove(a)
+                except Exception as e:
+                    logging.debug(f"Could not remove artist during deletion: {e}")
+            
+            # Refresh table
+            self._populate_table()
+            
+            # Refresh plot
+            if canvas:
+                canvas.background = None # Invalidate background
+                canvas.draw_idle()
+            
+            logging.info(f"Deleted EW measurement at index {row}")
