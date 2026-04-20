@@ -25,6 +25,16 @@ CONTINUUM_RECIPES_SCHEMAS = {
         ],
         "url": "continuum_cb.html#estimate_auto"
     },
+    "estimate_stellar": {
+        "brief": "Estimate continuum for stellar spectra.",
+        "details": "A recipe optimized for stars that applies a uniform clipping algorithm across the whole range, bypassing Lyman-forest logic.",
+        "params": [
+            {"name": "smooth_len", "type": float, "default": 500.0, "doc": "Smoothing length (km/s)"},
+            {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
+            {"name": "smooth_std", "type": float, "default": 500.0, "doc": "Final Gaussian smoothing std (km/s)"},
+            {"name": "fudge", "type": str, "default": "1.0", "doc": "Multiplicative factor to shift the continuum up/down"},
+        ],
+    },
     "find_absorbed": {
         "brief": "Find absorbed regions (V1 logic).",
         "details": "Run the V1 'clip_flux' kappa-sigma algorithm (with Ly-a split) to create a 'mask_unabs' column.",
@@ -163,6 +173,49 @@ class RecipeContinuumV2:
         except Exception as e:
             logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
             return 0
+        
+    def estimate_stellar(self, smooth_len: str = '500.0', kappa: str = '2.0', smooth_std: str = '500.0', fudge: str = '1.0') -> 'SessionV2':
+        """
+        Estimate continuum for stellar spectra.
+        """
+        import numpy as np
+        
+        try:
+            smooth_len_q = float(smooth_len) * au.km/au.s
+            kappa_f = float(kappa)
+            smooth_std_f = float(smooth_std)
+            # Parse the fudge string (allow 'auto' just in case, or parse float)
+            fudge_arg = 'auto' if fudge.lower() == 'auto' else float(fudge)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        current_spec = self._session.spec
+
+        # RMS ERROR ESTIMATION
+        if np.nanmedian(current_spec.dy.value) <= 0.0:
+            logging.info("Error array (dy) is zero. Calculating running standard deviation to estimate errors.")
+            current_spec = current_spec.calculate_running_std(
+                input_col='y', 
+                output_col='running_std', 
+                window_pix=21
+            )
+            current_spec = current_spec.apply_expression('dy', 'running_std')
+
+        new_spec = current_spec.find_absorbed(
+            smooth_len_lya=smooth_len_q, 
+            smooth_len_out=smooth_len_q, 
+            kappa=kappa_f,
+            template=False 
+        )
+
+        # Apply final smoothing using the parsed fudge argument
+        new_spec = new_spec.fit_continuum(
+            fudge=fudge_arg, 
+            smooth_std_kms=smooth_std_f
+        )
+
+        return self._session.with_new_spectrum(new_spec)
 
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
                         kappa: str = '2.0', template: str = 'False') -> 'SessionV2':

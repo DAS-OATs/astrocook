@@ -1121,7 +1121,7 @@ class MainWindowV2(QMainWindow):
 
         auto_cont_action = QAction("&Auto-estimate Continuum...", self)
         auto_cont_action.setToolTip("Find Absorbed regions and fit a continuum")
-        auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_auto"))
+        auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_stellar"))
         continuum_menu.addAction(auto_cont_action)
         self.auto_cont_action = auto_cont_action; self.auto_cont_action.setEnabled(False)
 

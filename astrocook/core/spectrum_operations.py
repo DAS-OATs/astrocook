@@ -484,7 +484,7 @@ def find_absorbed_regions(
     
     # Define Ly-alpha proximity
     if z_em == 0.0:
-        logging.warning("z_em is 0.0. Using 'smooth_len_out' for all regions.")
+        logging.debug("z_em is 0.0. Using 'smooth_len_out' for all regions.")
         lya_prox_nm = -np.inf * au.nm
     else:
         # We need the global XEM_LYA constant here. 
