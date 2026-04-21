@@ -1,3 +1,8 @@
+## [2.0.1] - 2026-04-21
+
+- *Feature*: Added "Equalize and Stitch" to the GUI with dynamic parameters.
+- *Fix*: Prevented FITS save crashes from Ly-α identifications and ensured tooltips render safely upon reloading.
+
 ## [2.0.0] - 2026-04-07
 
 - Added an experimental Bayesian fitting engine supporting MCMC (`emcee`).
