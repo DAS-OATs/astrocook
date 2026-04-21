@@ -1005,6 +1005,14 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(set_props_action)
         self.set_properties_action = set_props_action; self.set_properties_action.setEnabled(False)
         edit_menu.addSeparator()
+
+        # correct_rv Action
+        correct_rv_action = QAction("Correct &Radial Velocity...", self)
+        correct_rv_action.setToolTip("Shift the wavelength grid to the stellar rest frame.")
+        correct_rv_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "correct_rv"))
+        edit_menu.addAction(correct_rv_action)
+        self.correct_rv_action = correct_rv_action
+        self.correct_rv_action.setEnabled(False)
         
         # apply_expression Action
         apply_expr_action = QAction("Apply &Expression...", self)
@@ -4194,6 +4202,7 @@ class MainWindowV2(QMainWindow):
         enable_recipes = is_valid_session
         # Check if actions exist before enabling/disabling
         if hasattr(self, 'set_properties_action'): self.set_properties_action.setEnabled(enable_recipes)
+        if hasattr(self, 'correct_rv_action'): self.correct_rv_action.setEnabled(enable_recipes)
         if hasattr(self, 'apply_expression_action'): self.apply_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)

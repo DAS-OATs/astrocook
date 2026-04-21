@@ -43,6 +43,13 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "edit_cb.html#convert-y-axis"
     },
+    "correct_rv": {
+        "brief": "Correct for Radial Velocity.",
+        "details": "Shifts the observed wavelength grid to the stellar rest frame by correcting for the given radial velocity.",
+        "params": [
+            {"name": "rv_kms", "type": float, "default": 0.0, "doc": "Radial velocity of the star in km/s (positive = redshifted/moving away)"},
+        ],
+    },
     "apply_expression": {
         "brief": "Apply expression to columns.",
         "details": "Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables. E.g., 'F / cont', 'F * 2.0', or 'log10(F)'.",
@@ -445,6 +452,74 @@ class RecipeEditV2:
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
     
+    def correct_rv(self, rv_kms: str = '0.0') -> Optional['SessionV2']:
+        """
+        Correct for Radial Velocity.
+
+        Shifts the observed wavelength grid to the stellar rest frame by
+        correcting for the given radial velocity.
+
+        Parameters
+        ----------
+        rv_kms : str, optional
+            Radial velocity of the star in km/s. Defaults to '0.0'.
+
+        Returns
+        -------
+        SessionV2 or int
+            A new SessionV2 with the corrected X-axis, or 0 on failure.
+        """
+        try:
+            v = float(rv_kms)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        # Speed of light in km/s
+        c = 299792.458
+        doppler_factor = 1.0 + (v / c)
+
+        logging.info(f"Correcting for RV: {v} km/s (Factor: {doppler_factor:.6f})")
+
+        # Because we only want to shift the X-axis (and its bin edges),
+        # we can use NumExpr directly on the core data rather than calling the 
+        # higher-level apply_expression which is designed for vertical (Y) columns.
+        
+        try:
+            import numexpr as ne
+            
+            # 1. Get current X data
+            x_vals = self._session.spec.x.value
+            xmin_vals = self._session.spec.xmin.value
+            xmax_vals = self._session.spec.xmax.value
+            
+            # 2. Apply Doppler correction
+            x_rest = ne.evaluate("x_vals / doppler_factor")
+            xmin_rest = ne.evaluate("xmin_vals / doppler_factor")
+            xmax_rest = ne.evaluate("xmax_vals / doppler_factor")
+            
+            # 3. Create new DataColumns
+            new_x = DataColumnV2(x_rest, self._session.spec.x.unit)
+            new_xmin = DataColumnV2(xmin_rest, self._session.spec.xmin.unit)
+            new_xmax = DataColumnV2(xmax_rest, self._session.spec.xmax.unit)
+            
+            # 4. Rebuild the immutable data core
+            new_data = dataclasses.replace(
+                self._session.spec._data,
+                x=new_x,
+                xmin=new_xmin,
+                xmax=new_xmax
+            )
+            
+            # 5. Create the new SpectrumV2 and SessionV2
+            from astrocook.core.spectrum import SpectrumV2
+            new_spec = SpectrumV2(data=new_data, history=self._session.spec.history + [f"RV corrected (-{v} km/s)"])
+            return self._session.with_new_spectrum(new_spec)
+            
+        except Exception as e:
+            logging.error(f"Failed during RV correction: {e}", exc_info=True)
+            return 0
+        
     def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
         Apply expression to columns.
