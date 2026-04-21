@@ -116,9 +116,9 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
                             restored_regions[int(float(k))] = v
                         except ValueError:
                             restored_regions[k] = v
-                    spec_v2.meta['region_identifications'] = restored_regions
+                    spec_v2._data.meta['region_identifications'] = restored_regions
                 else:
-                    spec_v2.meta['region_identifications'] = raw_regions
+                    spec_v2._data.meta['region_identifications'] = raw_regions
                 
             return spec_v2
 
