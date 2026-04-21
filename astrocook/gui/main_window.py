@@ -4551,7 +4551,7 @@ class AboutDialog(QDialog):
         try:
             from astrocook import __version__ as ver
         except ImportError:
-            ver = "v2.0.0"
+            ver = "v2.0.1"
 
         ver_lbl = QLabel(f"Version: {ver}")
         ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")

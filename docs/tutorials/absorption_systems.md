@@ -154,7 +154,7 @@ After manual edits, you often need to re-optimize the fit:
 
 ### Bayesian Fitting (Experimental)
 
-Astrocook v2.0.0 introduces a prototype Bayesian fitting engine, allowing you to rigorously explore parameter space using MCMC (`emcee`). This is particularly useful for analyzing highly blended systems or determining robust parameter uncertainties.
+Astrocook v2 introduces a prototype Bayesian fitting engine, allowing you to rigorously explore parameter space using MCMC (`emcee`). This is particularly useful for analyzing highly blended systems or determining robust parameter uncertainties.
 
 To run a Bayesian fit:
 1. Select the component(s) you wish to fit in the System List.
