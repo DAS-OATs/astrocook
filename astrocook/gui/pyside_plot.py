@@ -1751,33 +1751,32 @@ class SpectrumPlotWidget(QWidget):
         self._tip_region_html = None
         if 'abs_ids' in spec._data.aux_cols:
             try:
-                # 1. Safely extract the ID and handle FITS NaNs
                 col_obj = spec._data.aux_cols['abs_ids']
                 ids_array = col_obj.values if hasattr(col_obj, 'values') else col_obj
-                
                 val = ids_array[idx]
-                if np.isnan(val) or val == 0:
-                    region_id_val = 0
-                else:
-                    region_id_val = int(val)
                 
-                if region_id_val != 0:
-                    ident_labels = spec.meta.get('region_identifications')
+                # --- We only print if it looks like a valid region to avoid spamming the console on empty space ---
+                is_valid_pixel = not (np.ma.is_masked(val) or (isinstance(val, (float, np.floating)) and np.isnan(val)) or val == 0)
+                
+                if is_valid_pixel:
+                    region_id_val = int(val)                    
+                    ident_labels = spec._data.meta.get('region_identifications')
                     
                     if ident_labels:
-                        # 2. Normalize data (Unpack strings and double-encoded strings)
                         while isinstance(ident_labels, str):
                             try:
                                 ident_labels = json.loads(ident_labels)
-                            except json.JSONDecodeError:
-                                break # Stop if it's a raw un-parseable string
+                            except json.JSONDecodeError as e:
+                                break 
                         
                         if isinstance(ident_labels, dict):
-                            # 3. Look up key robustly (Checks both Int and String keys)
-                            region_data = ident_labels.get(region_id_val) or ident_labels.get(str(region_id_val))
+                            
+                            # Try both lookups
+                            res_int = ident_labels.get(region_id_val)
+                            res_str = ident_labels.get(str(region_id_val))
+                            region_data = res_int or res_str
                             
                             if region_data:
-                                # 4. Format the labels
                                 if isinstance(region_data, list):
                                     labels = []
                                     for entry in region_data:
@@ -1790,8 +1789,10 @@ class SpectrumPlotWidget(QWidget):
                                     label_str = ", ".join(labels)
                                     if label_str:
                                         self._tip_region_html = f"<tr><td style='padding-right:8px'><b>Likely:</b></td><td>{label_str}</td></tr>"
+                else:
+                    region_id_val = 0
+
             except Exception as e:
-                # Suppress errors to ensure the rest of the tooltip still renders
                 pass
 
         # --- 4. Data Points (Zoom Check) ---
