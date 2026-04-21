@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Editing Data &#8212; Astrocook 2.0.0 documentation</title>
+    <title>Editing Data &#8212; Astrocook 2.0.1 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=51b770b3"></script>
+    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -50,7 +50,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Getting Started" href="getting_started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0" />
+  <meta name="docsearch:version" content="2.0.1" />
   </head>
   
   
@@ -610,6 +610,23 @@
 </div>
 </li>
 </ol>
+</section>
+<section id="equalize-and-stitch-arms">
+<h3>Equalize and Stitch Arms<a class="headerlink" href="#equalize-and-stitch-arms" title="Link to this heading">#</a></h3>
+<p>When working with multi-arm spectrographs (like X-Shooter), the flux calibration between adjacent arms (e.g., UVB and VIS) might slightly mismatch in the overlap region. This tool automatically scales the flux and stitches the arms at precise cut-off wavelengths.</p>
+<ol class="arabic simple">
+<li><p>Load the <span class="math notranslate nohighlight">\(N\)</span> sessions representing your spectral arms.</p></li>
+<li><p>In the <strong>Session List</strong>, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) and click to select them.</p></li>
+<li><p>Right-click and choose <strong>Equalize and Stitch N Arms…</strong>.</p></li>
+<li><p>A dialog will appear asking for exact parameters to guide the combination:</p>
+<ul class="simple">
+<li><p><strong>stitch_wavelengths</strong>: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., <code class="docutils literal notranslate"><span class="pre">550,</span> <span class="pre">1000</span></code>). You must provide exactly <span class="math notranslate nohighlight">\(N-1\)</span> values.</p></li>
+<li><p><strong>equalize_ranges</strong>: (Optional) Specify the exact overlap window (e.g., <code class="docutils literal notranslate"><span class="pre">545-555,</span> <span class="pre">995-1005</span></code>) Astrocook should use to calculate the flux scaling factor. Leave as <code class="docutils literal notranslate"><span class="pre">auto</span></code> to attempt a global match.</p></li>
+<li><p><strong>manual_factors</strong>: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.</p></li>
+</ul>
+</li>
+</ol>
+<p>Astrocook automatically sorts the arms from bluest to reddest before processing, ensuring a mathematically continuous final spectrum.</p>
 <img alt="Context menu for co-adding multiple sessions" class="align-center" src="../images/editing_multiselect_coadd.png" />
 </section>
 <section id="resolution-tracking-during-operations">
@@ -693,6 +710,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#combining-sessions-stitch-co-add">6. Combining Sessions (Stitch &amp; Co-add)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#co-adding-spectra">Co-adding Spectra</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#stitching">Stitching</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#equalize-and-stitch-arms">Equalize and Stitch Arms</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#resolution-tracking-during-operations">Resolution Tracking during Operations</a></li>
 </ul>
 </li>

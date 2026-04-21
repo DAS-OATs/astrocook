@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.edit &#8212; Astrocook 2.0.0 documentation</title>
+    <title>astrocook.recipes.edit &#8212; Astrocook 2.0.1 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=51b770b3"></script>
+    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.0" />
+  <meta name="docsearch:version" content="2.0.1" />
   </head>
   
   
@@ -552,6 +552,17 @@
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Merge multiple sessions&quot;</span><span class="p">,</span>
         <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Usually called via script</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;equalize_and_stitch&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Equalize and stitch arms.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Equalize flux levels and stitch multiple sessions at specific wavelengths.&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;other_sessions&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated names of other sessions (in blue-to-red order).&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;stitch_wavelengths&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated cut-off wavelengths (nm) where arms join.&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;equalize_ranges&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated overlap ranges (e.g., &#39;545-555, 795-805&#39;) or &#39;auto&#39;&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;manual_factors&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated fixed multipliers, or &#39;auto&#39;.&quot;</span><span class="p">}</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#equalize-and-stitch&quot;</span>
     <span class="p">},</span>
     <span class="s2">&quot;coadd&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Co-add multiple sessions.&quot;</span><span class="p">,</span>
@@ -1475,6 +1486,180 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stitch failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="RecipeEditV2.equalize_and_stitch">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.equalize_and_stitch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize_and_stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_sessions</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">stitch_wavelengths</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                            <span class="n">equalize_ranges</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">manual_factors</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Equalize and stitch arms.</span>
+
+<span class="sd">        Equalize flux levels and stitch multiple sessions at specific cut-off wavelengths.</span>
+<span class="sd">        This recipe is designed to seamlessly combine data from multi-arm spectrographs </span>
+<span class="sd">        (e.g., X-Shooter&#39;s UVB, VIS, and NIR arms).</span>
+
+<span class="sd">        The procedure enforces a strict blue-to-red processing order regardless of </span>
+<span class="sd">        input order. For $N$ total sessions, exactly $N-1$ parameters must be provided </span>
+<span class="sd">        for cuts, ranges, and factors.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_sessions : str</span>
+<span class="sd">            Comma-separated names of the other sessions to stitch to the current one.</span>
+<span class="sd">            (This parameter is hidden in the GUI dialog).</span>
+<span class="sd">        stitch_wavelengths : str</span>
+<span class="sd">            Comma-separated cut-off wavelengths (in nm) where the arms join. </span>
+<span class="sd">            Data bluer than a cut is taken from the bluer arm; data redder is taken </span>
+<span class="sd">            from the redder arm. Requires $N-1$ values.</span>
+<span class="sd">        equalize_ranges : str, optional</span>
+<span class="sd">            Comma-separated overlap ranges formatted as ``&#39;min-max, min-max&#39;`` (in nm) </span>
+<span class="sd">            used to calculate the scaling factor between adjacent arms. If set to </span>
+<span class="sd">            ``&#39;auto&#39;``, the recipe attempts a global match. Defaults to ``&#39;auto&#39;``.</span>
+<span class="sd">        manual_factors : str, optional</span>
+<span class="sd">            Comma-separated fixed multipliers to scale adjacent arms. If provided, </span>
+<span class="sd">            these override the `equalize_ranges` calculation. Defaults to ``&#39;auto&#39;``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SessionV2 or int</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` containing the equalized </span>
+<span class="sd">            and stitched spectrum, or 0 on failure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+        
+        <span class="c1"># 1. Parse Input Lists</span>
+        <span class="n">others_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">other_sessions</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">others_list</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No other sessions provided.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cuts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">stitch_wavelengths</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Invalid stitch_wavelengths. Must be numbers separated by commas.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Need exactly </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> cut-off wavelengths.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># Parse Manual Factors</span>
+        <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">manual_factors</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">manual_factors</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> manual factors, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span><span class="si">}</span><span class="s2">. Falling back to &#39;auto&#39;.&quot;</span><span class="p">)</span>
+                    <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid manual_factors. Falling back to &#39;auto&#39;.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Parse Equalize Ranges</span>
+        <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">equalize_ranges</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;auto&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">factors</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">equalize_ranges</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+                    <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
+                    <span class="n">eq_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eq_ranges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> equalize ranges. Falling back to &#39;auto&#39;.&quot;</span><span class="p">)</span>
+                    <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid equalize_ranges format. Use &#39;min-max, min-max&#39;. Falling back to &#39;auto&#39;.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 2. Resolve GUI Sessions</span>
+        <span class="n">resolved_others</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">others_list</span><span class="p">:</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                        <span class="n">resolved_others</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                        <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Session &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_others</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---</span>
+        <span class="c1"># It doesn&#39;t matter which arm was right-clicked; we MUST process them from bluest to reddest.</span>
+        <span class="n">all_sessions_info</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">others_list</span><span class="p">,</span> <span class="n">resolved_others</span><span class="p">):</span>
+            <span class="n">all_sessions_info</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="p">))</span>
+            
+        <span class="n">all_sessions_info</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        
+        <span class="n">anchor_spec</span> <span class="o">=</span> <span class="n">all_sessions_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">subsequent_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">all_sessions_info</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+        <span class="n">ordered_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">all_sessions_info</span><span class="p">]</span>
+
+        <span class="c1"># 4. Processing</span>
+        <span class="n">processed_parts</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># First (Bluest) Part: x &lt;= first_cut</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Base arm (</span><span class="si">{</span><span class="n">ordered_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">): keeping data x &lt;= </span><span class="si">{</span><span class="n">cuts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">first_part</span> <span class="o">=</span> <span class="n">anchor_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x &lt;= </span><span class="si">{</span><span class="n">cuts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">processed_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">first_part</span><span class="p">)</span>
+    
+        <span class="n">current_reference_full</span> <span class="o">=</span> <span class="n">anchor_spec</span> 
+
+        <span class="c1"># Subsequent Arms</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">other_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">subsequent_specs</span><span class="p">):</span>
+            <span class="n">current_cut</span> <span class="o">=</span> <span class="n">cuts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">arm_name</span> <span class="o">=</span> <span class="n">ordered_names</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="c1"># --- A. Equalization ---</span>
+            <span class="k">if</span> <span class="n">factors</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Applying manual factor </span><span class="si">{</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">eq_ranges</span><span class="p">:</span>
+                    <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">eq_ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating equalization in range </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2"> nm&quot;</span><span class="p">)</span>
+                    <span class="n">ref_overlap</span> <span class="o">=</span> <span class="n">current_reference_full</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(x &gt;= </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    <span class="n">other_overlap</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(x &gt;= </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ref_overlap</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">other_overlap</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_flux_scaling</span>
+                        <span class="n">scale_model</span> <span class="o">=</span> <span class="n">compute_flux_scaling</span><span class="p">(</span>
+                            <span class="n">ref_overlap</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ref_overlap</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+                            <span class="n">other_overlap</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">other_overlap</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span>
+                        <span class="p">)</span>
+                        <span class="n">scalar_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">scale_model</span><span class="p">)</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculated factor = </span><span class="si">{</span><span class="n">scalar_factor</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">scalar_factor</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Not enough overlap. Falling back to global auto.&quot;</span><span class="p">)</span>
+                        <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span><span class="n">current_reference_full</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating global auto equalization&quot;</span><span class="p">)</span>
+                    <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span><span class="n">current_reference_full</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            
+            <span class="c1"># --- B. Apply Split Logic ---</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">next_cut</span> <span class="o">=</span> <span class="n">cuts</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2"> &lt; x &lt;= </span><span class="si">{</span><span class="n">next_cut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">part</span> <span class="o">=</span> <span class="n">equalized_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">next_cut</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">part</span> <span class="o">=</span> <span class="n">equalized_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="n">processed_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+            <span class="n">current_reference_full</span> <span class="o">=</span> <span class="n">current_reference_full</span><span class="o">.</span><span class="n">stitch</span><span class="p">([</span><span class="n">equalized_spec</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+        <span class="c1"># 5. Final Stitch</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Stitching processed arms together...&quot;</span><span class="p">)</span>
+        <span class="n">final_spec</span> <span class="o">=</span> <span class="n">processed_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">processed_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="n">new_name</span> <span class="o">=</span> <span class="s2">&quot;Stitched_&quot;</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ordered_names</span><span class="p">)</span>
+        <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">final_spec</span><span class="p">)</span>
+        <span class="n">new_session</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">new_name</span>
+        <span class="k">return</span> <span class="n">new_session</span></div>
 
         
 <div class="viewcode-block" id="RecipeEditV2.coadd">
