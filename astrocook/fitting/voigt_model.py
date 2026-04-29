@@ -39,7 +39,7 @@ class VoigtModelConstraintV2:
     # Default Physical Limits (Min, Max)
     DEFAULT_BOUNDS = {
         'z':    (-0.5, 10.0),
-        'logN': (10.0, 23.0),
+        'logN': (10.0, 19.5),
         'b':    (1.0, 300.0),
         'btur': (0.0, 100.0)
     }
