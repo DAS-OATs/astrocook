@@ -854,6 +854,21 @@ class VoigtFitterV2:
             'compute_model': self._compute_model
         }
 
+    def _get_dynamic_v_range(self, logN: float, base_v_range: float = 500.0) -> float:
+        """
+        Calcola un intervallo di velocità dinamico basato sulla colonna densità.
+        Più la riga è forte (logN alto), più la finestra deve essere larga
+        per catturare le ali di smorzamento (damping wings).
+        """
+        if logN > 19.0:
+            return base_v_range * 4.0  # Really large window (~2000 km/s)
+        elif logN > 18.0:
+            return base_v_range * 2.5  # Large window (~1250 km/s)
+        elif logN > 17.0:
+            return base_v_range * 1.5  # Medium window (~750 km/s)
+        else:
+            return base_v_range        # Standard (500 km/s)
+
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 0) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
@@ -906,7 +921,10 @@ class VoigtFitterV2:
             new_comps.append(replace(comp, z=p_full_refined[idx], logN=p_full_refined[idx+1], b=p_full_refined[idx+2], btur=p_full_refined[idx+3]))
         self._system_list = SystemListV2(replace(old_systs._data, components=new_comps))
 
-        bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
+        all_logN = [c.logN for c in self._system_list.components]
+        max_logN = max(all_logN) if all_logN else 14.0
+        v_range_dynamic = self._get_dynamic_v_range(max_logN, base_v_range=500.0)
+        bounds = self.prepare_fit_context(z_window_kms=v_range_dynamic)
 
         # Clamp p0 to bounds
         p0 = np.clip(p0, bounds[0], bounds[1])
