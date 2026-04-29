@@ -1758,11 +1758,60 @@ class RecipeAbsorbersV2:
                 local_systs = SystemListV2(local_systs_data)
                 
                 try:
-                    fitter = VoigtFitterV2(current_session.spec, local_systs)
-                    
+                    # 1. Initial Fit
                     with local_systs.fitting_context(target_uuids, group_depth=0):
-                        new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0)
+                        fitter = VoigtFitterV2(current_session.spec, local_systs)
+                        new_local_systs, model_flux_phys, res = fitter.fit(
+                            max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0
+                        )
+
+                    # --- COMPONENT TRACKING ---
+                    count_before = len(new_local_systs.components)
                     
+                    # 2. Residual Analysis
+                    y_data = current_session.spec.y.value
+                    dy_data = current_session.spec.dy.value
+                    flux_resid = y_data - model_flux_phys
+                    sigma_resid = flux_resid / np.maximum(dy_data, 1e-9)
+                    
+                    # Determine primary wavelength for masking
+                    primary_trans = (STANDARD_MULTIPLETS.get(series_str, [None])[0] 
+                                    if series_str in STANDARD_MULTIPLETS else series_str)
+                    
+                    if primary_trans in ATOM_DATA:
+                        rest_w = ATOM_DATA[primary_trans]['wave']
+                        x_ang = current_session.spec.x.to(au.Angstrom).value
+                        
+                        # Only look for residuals near the current system
+                        z_m = np.mean([c.z for c in new_local_systs.components if c.uuid in target_uuids])
+                        win_ang = rest_w * (1 + z_m) * (z_win_f / 299792.458)
+                        local_mask = (x_ang > rest_w*(1+z_m) - win_ang) & (x_ang < rest_w*(1+z_m) + win_ang)
+                        
+                        # Trigger if model is > 2.5 sigma above data (underfit)
+                        underfit_mask = (sigma_resid < -2.5) & local_mask
+                        
+                        if np.any(underfit_mask):
+                            # Find worst underfit pixel
+                            idx = np.where(underfit_mask)[0][np.argmin(sigma_resid[underfit_mask])]
+                            new_z = (x_ang[idx] / rest_w) - 1.0
+                            
+                            # Add component with WEAK parameters to avoid Chi2 explosion
+                            new_local_systs = new_local_systs.add_component(
+                                series=series_str, z=new_z, logN=11.5, b=10.0
+                            )
+                            target_uuids.append(new_local_systs.components[-1].uuid)
+
+                            # 3. Final Refit
+                            with new_local_systs.fitting_context(target_uuids, group_depth=0):
+                                fitter2 = VoigtFitterV2(current_session.spec, new_local_systs)
+                                new_local_systs, _, _ = fitter2.fit(
+                                    max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0
+                                )
+
+                    count_after = len(new_local_systs.components)
+                    print(f"[Unit {i}] Components: {count_before} -> {count_after}")
+
+                    # 4. Update the batch map
                     for fitted_comp in new_local_systs.components:
                         if fitted_comp.uuid in target_uuids:
                             updated_components_map[fitted_comp.uuid] = fitted_comp
