@@ -856,9 +856,9 @@ class VoigtFitterV2:
 
     def _get_dynamic_v_range(self, logN: float, base_v_range: float = 500.0) -> float:
         """
-        Calcola un intervallo di velocità dinamico basato sulla colonna densità.
-        Più la riga è forte (logN alto), più la finestra deve essere larga
-        per catturare le ali di smorzamento (damping wings).
+        Calculates a dynamic velocity range based on column density.
+        The stronger the line (higher logN), the larger the window must be
+        to capture damping wings.
         """
         if logN > 19.0:
             return base_v_range * 4.0  # Really large window (~2000 km/s)
