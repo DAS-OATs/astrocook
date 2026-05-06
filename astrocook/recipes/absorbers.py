@@ -581,11 +581,13 @@ class RecipeAbsorbersV2:
             logging.warning(f"lya_auto cleanup failed: {e}", exc_info=True)
 
         # 3. Clean Negligible components
-        logging.info("Cleaning negligible/faint components...")
-        rec_clean = RecipeAbsorbersV2(final_session)
-        final_session_clean = rec_clean.clean_negligible(min_logN=min_logN)
-        if final_session_clean != 0:
-            final_session = final_session_clean
+        #logging.info("Cleaning negligible/faint components...")
+        #rec_clean = RecipeAbsorbersV2(final_session)
+        #final_session_clean = rec_clean.clean_negligible(min_logN=min_logN)
+        #if final_session_clean != 0:
+        #    final_session = final_session_clean
+        # Cleanup skipped
+        logging.info("Skipping negligible-component cleaning.")
 
         return final_session
 
