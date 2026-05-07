@@ -876,12 +876,19 @@ class MainWindowV2(QMainWindow):
         self.export_action = export_action
         self.export_action.setEnabled(False) # Default disabled
 
-        import_action = QAction("&Import from ASCII...", self)
-        import_action.triggered.connect(self._on_import_requested)
-        # Insert it after Save
-        file_menu.insertAction(self.save_action, import_action) 
-        self.import_action = import_action
-        self.import_action.setEnabled(False) # Default disabled
+        import_spec_action = QAction("Import &Spectrum from ASCII...", self)
+        import_spec_action.setToolTip("Import spectrum columns from a CSV file.")
+        import_spec_action.triggered.connect(self._on_import_spec_requested)
+        file_menu.insertAction(self.save_action, import_spec_action) 
+        self.import_spec_action = import_spec_action
+        self.import_spec_action.setEnabled(False)
+
+        import_systs_action = QAction("Import S&ystems from ASCII...", self)
+        import_systs_action.setToolTip("Import an absorption system list from a CSV file.")
+        import_systs_action.triggered.connect(self._on_import_systs_requested)
+        file_menu.insertAction(self.save_action, import_systs_action) 
+        self.import_systs_action = import_systs_action
+        self.import_systs_action.setEnabled(False)
 
         file_menu.addSeparator()
         close_action = QAction("&Close Session", self)
@@ -3196,10 +3203,10 @@ class MainWindowV2(QMainWindow):
         # No QFileDialog here anymore! Just the dialog.
         self._launch_recipe_dialog("file", "export_ascii")
 
-    def _on_import_requested(self):
+    def _on_import_spec_requested(self):
         if not self.active_history: return
 
-        # 1. The Disclaimer
+        # Restore the disclaimer for spectrum imports!
         header = "Import and Overwrite Data?"
         text = ("You are about to import data from an ASCII file. "
                 "Columns with matching names will be <b>overwritten</b>.<br><br>"
@@ -3212,18 +3219,25 @@ class MainWindowV2(QMainWindow):
             buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             default_btn=QMessageBox.StandardButton.Cancel
         )
-
         if confirm != QMessageBox.StandardButton.Ok: return
 
-        # 2. File Browser
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select ASCII/CSV File to Import", "", 
+            self, "Select Spectrum ASCII/CSV", "", 
             "CSV Files (*.csv);;Text Files (*.txt *.dat);;All Files (*)"
         )
-
         if file_path:
-            # 3. Execute via standard recipe pipeline to ensure it's in the Undo history
-            self._on_recipe_requested("file", "import_ascii", {"file_path": file_path}, {})
+            self._on_recipe_requested("file", "import_ascii_spec", {"path": file_path}, {})
+
+    def _on_import_systs_requested(self):
+        if not self.active_history: return
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Systems ASCII/CSV", "", 
+            "CSV Files (*.csv);;Text Files (*.txt *.dat);;All Files (*)"
+        )
+        if file_path:
+            # Store hidden path and launch dialog
+            self._hidden_import_path = file_path
+            self._launch_recipe_dialog("file", "import_ascii_systs")
 
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
@@ -3385,6 +3399,11 @@ class MainWindowV2(QMainWindow):
             params['other_sessions'] = self._hidden_stitch_sessions
             del self._hidden_stitch_sessions
         
+        # [FIX] Re-inject the hidden file path for imports
+        if recipe_name in ["import_ascii_spec", "import_ascii_systs"] and hasattr(self, '_hidden_import_path'):
+            params['path'] = self._hidden_import_path
+            del self._hidden_import_path
+
         if not self._check_and_handle_requirements(category, recipe_name, params, mode='direct'):
             return
 
@@ -3736,6 +3755,8 @@ class MainWindowV2(QMainWindow):
         # [FIX] Clear the hidden string if the user cancelled the dialog
         if hasattr(self, '_hidden_stitch_sessions'):
             del self._hidden_stitch_sessions
+        if hasattr(self, '_hidden_import_path'):
+            del self._hidden_import_path
 
     def _ask_to_renormalize_model(self, recipe_name: str, params: Dict[str, Any]):
         """
@@ -4082,7 +4103,8 @@ class MainWindowV2(QMainWindow):
         # ... (Enable/Disable File menu actions) ...
         if hasattr(self, 'save_action'): self.save_action.setEnabled(is_valid_session)
         if hasattr(self, 'export_action'): self.export_action.setEnabled(is_valid_session)
-        if hasattr(self, 'import_action'): self.import_action.setEnabled(is_valid_session)
+        if hasattr(self, 'import_spec_action'): self.import_spec_action.setEnabled(is_valid_session)
+        if hasattr(self, 'import_systs_action'): self.import_systs_action.setEnabled(is_valid_session)
         if hasattr(self, 'close_session_action'): self.close_session_action.setEnabled(is_valid_session)
 
         # ... (Enable/Disable View menu actions) ...

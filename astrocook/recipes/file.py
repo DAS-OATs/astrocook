@@ -3,6 +3,7 @@ import os
 import numpy as np
 from astropy.io import ascii
 from astropy.table import Table
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -19,13 +20,22 @@ FILE_RECIPES_SCHEMAS = {
         ],
         "url": "file_cb.html#export"
     },
-    "import_ascii": {
-        "brief": "Import session data from ASCII.",
-        "details": "Imports session components (Flux, Continuum, System List) from CSV files.",
+    "import_ascii_spec": {
+        "brief": "Import spectrum data from ASCII.",
+        "details": "Imports spectrum columns from a CSV file. Overwrites existing columns with matching names.",
         "params": [
-            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Source folder"}
+            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Source file"}
         ],
-        "url": "file_cb.html#export"
+        "url": "file_cb.html#import"
+    },
+    "import_ascii_systs": {
+        "brief": "Import system list from ASCII.",
+        "details": "Imports absorption systems from a CSV file containing 'series' and 'z' columns.",
+        "params": [
+            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Source file"},
+            {"name": "syst_mode", "type": str, "default": "append", "doc": "'append' to or 'replace' the current list."}
+        ],
+        "url": "file_cb.html#import"
     }
 }
 
@@ -118,46 +128,24 @@ class RecipeFileV2:
             logging.error(f"Export failed: {e}")
             return False
         
-    def import_ascii(self, file_path: str) -> 'SessionV2':
-        """
-        Import columns from an ASCII/CSV file into the current session.
-
-        Reads external data and overwrites or appends columns in the 
-        spectrum based on matching column headers. The imported file must 
-        have the exact same number of rows as the current spectrum to ensure 
-        grid alignment. 
-
-        Parameters
-        ----------
-        file_path : str
-            The full path to the ASCII/CSV file to import.
-
-        Returns
-        -------
-        SessionV2
-            A new session instance containing the imported data. Returns ``0`` if the import fails.
-        """
+    def import_ascii_spec(self, path: str) -> 'SessionV2':
+        """Import columns from an ASCII/CSV file into the current spectrum."""
         try:
-            # 1. Load the table
-            table = ascii.read(file_path)
+            table = ascii.read(path)
             current_len = len(self._session.spec.x)
             import_len = len(table)
 
-            # 2. Safety Check: Pixel count must match
             if import_len != current_len:
                 raise ValueError(f"Length mismatch: File has {import_len} pixels, but current session has {current_len}.")
 
             new_spec = self._session.spec
             imported_cols = []
 
-            # 3. Iterate through columns in the ASCII file
             for col_name in table.colnames:
-                # We skip 'x' to prevent grid misalignment, but use everything else
                 if col_name.lower() == 'x':
                     continue
                 
                 values = np.array(table[col_name])
-                # Update the column (this handles both core y/dy and aux columns)
                 new_spec = new_spec.update_column(col_name, values)
                 imported_cols.append(col_name)
 
@@ -165,5 +153,89 @@ class RecipeFileV2:
             return self._session.with_new_spectrum(new_spec)
 
         except Exception as e:
-            logging.error(f"Import from ASCII failed: {e}")
+            logging.error(f"Import spectrum from ASCII failed: {e}", exc_info=True)
+            return 0
+
+    def import_ascii_systs(self, path: str, syst_mode: str = "append") -> 'SessionV2':
+        """Import systems from an ASCII/CSV file into the current session."""
+        try:
+            table = ascii.read(path)
+
+            if 'series' not in table.colnames or 'z' not in table.colnames:
+                raise ValueError("System import requires 'series' and 'z' columns in the CSV.")
+
+            from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+            from astrocook.core.system_list import SystemListV2
+            import uuid
+
+            current_systs = self._session.systs
+            components = []
+            
+            if syst_mode.lower() == 'append' and current_systs and current_systs.components:
+                components = list(current_systs.components)
+                next_id = max(c.id for c in components) + 1
+            else:
+                next_id = 1
+                
+            for row in table:
+                def safe_float(col_name, default=None):
+                    if col_name not in table.colnames: return default
+                    val = row[col_name]
+                    if np.ma.is_masked(val) or (isinstance(val, (float, np.floating)) and np.isnan(val)):
+                        return default
+                    try: return float(val)
+                    except (ValueError, TypeError): return default
+
+                comp = ComponentDataV2(
+                    id=next_id,
+                    z=safe_float('z', 0.0),
+                    dz=safe_float('dz'),
+                    logN=safe_float('logN', 13.5),
+                    dlogN=safe_float('dlogN'),
+                    b=safe_float('b', 10.0),
+                    db=safe_float('db'),
+                    btur=safe_float('btur', 0.0),
+                    dbtur=safe_float('dbtur'),
+                    func=str(row['func']) if 'func' in table.colnames else 'voigt',
+                    series=str(row['series']),
+                    chi2=safe_float('chi2'),
+                    resol=safe_float('resol')
+                )
+                
+                object.__setattr__(comp, 'uuid', str(uuid.uuid4()))
+                components.append(comp)
+                next_id += 1
+            
+            new_data = SystemListDataV2(components=components)
+            new_systs = SystemListV2(data=new_data)
+
+            # 1. Update the session with the new system list
+            new_session = self._session.with_new_system_list(new_systs)
+            
+            # --- NEW: Automatically regenerate the model ---
+            try:
+                from astrocook.fitting.voigt_fitter import VoigtFitterV2
+                
+                # Initialize the fitter with the updated session data
+                fitter = VoigtFitterV2(new_session.spec, new_session.systs)
+                
+                # Compute the theoretical flux (without fitting/changing parameters)
+                _, model_flux = fitter.compute_model_flux()
+                
+                # Inject the new model array into the spectrum's columns
+                new_spec = new_session.spec.update_column('model', model_flux)
+                new_session = new_session.with_new_spectrum(new_spec)
+                
+                logging.info("Successfully generated 'model' column from imported systems.")
+            except ImportError:
+                logging.warning("VoigtFitterV2 not found. Skipping automatic model generation.")
+            except Exception as e:
+                logging.warning(f"Could not generate model flux during import: {e}")
+            # -----------------------------------------------
+            
+            logging.info(f"Imported {len(table)} systems from ASCII ({syst_mode} mode).")
+            return new_session
+
+        except Exception as e:
+            logging.error(f"Import systems from ASCII failed: {e}", exc_info=True)
             return 0
