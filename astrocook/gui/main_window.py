@@ -876,15 +876,15 @@ class MainWindowV2(QMainWindow):
         self.export_action = export_action
         self.export_action.setEnabled(False) # Default disabled
 
-        import_spec_action = QAction("Import &Spectrum from ASCII...", self)
-        import_spec_action.setToolTip("Import spectrum columns from a CSV file.")
+        import_spec_action = QAction("Import &Spectrum Columns from ASCII...", self)
+        import_spec_action.setToolTip("Import spectrum columns from a CSV or text file.")
         import_spec_action.triggered.connect(self._on_import_spec_requested)
         file_menu.insertAction(self.save_action, import_spec_action) 
         self.import_spec_action = import_spec_action
         self.import_spec_action.setEnabled(False)
 
         import_systs_action = QAction("Import S&ystems from ASCII...", self)
-        import_systs_action.setToolTip("Import an absorption system list from a CSV file.")
+        import_systs_action.setToolTip("Import an absorption system list from a CSV or text file.")
         import_systs_action.triggered.connect(self._on_import_systs_requested)
         file_menu.insertAction(self.save_action, import_systs_action) 
         self.import_systs_action = import_systs_action
