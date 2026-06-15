@@ -129,7 +129,25 @@ class RecipeFileV2:
             return False
         
     def import_ascii_spec(self, path: str) -> 'SessionV2':
-        """Import columns from an ASCII/CSV file into the current spectrum."""
+        """
+        Import columns from an ASCII/CSV file into the current spectrum.
+
+        Reads external data and overwrites or appends columns in the 
+        spectrum based on matching column headers. The imported file must 
+        have the exact same number of rows as the current spectrum to ensure 
+        grid alignment. The 'x' (wavelength) column is deliberately ignored 
+        during import to preserve the fundamental data grid.
+
+        Parameters
+        ----------
+        path : str
+            The full path to the ASCII/CSV file to import.
+
+        Returns
+        -------
+        SessionV2
+            A new session instance containing the imported data. Returns ``0`` if the import fails.
+        """
         try:
             table = ascii.read(path)
             current_len = len(self._session.spec.x)
@@ -157,7 +175,29 @@ class RecipeFileV2:
             return 0
 
     def import_ascii_systs(self, path: str, syst_mode: str = "append") -> 'SessionV2':
-        """Import systems from an ASCII/CSV file into the current session."""
+        """
+        Import absorption systems from an ASCII/CSV file into the current session.
+
+        Reads a list of components from an external file and either appends 
+        them to the existing system list or replaces it entirely. The file 
+        must contain at least 'series' and 'z' columns. Upon successful import, 
+        this method automatically computes the theoretical Voigt profiles for 
+        all active systems and updates the spectrum's 'model' column.
+
+        Parameters
+        ----------
+        path : str
+            The full path to the ASCII/CSV file to import.
+        syst_mode : str, optional
+            Choose whether to ``'append'`` the imported systems to the 
+            current list or ``'replace'`` it entirely. Defaults to ``'append'``.
+
+        Returns
+        -------
+        SessionV2
+            A new session instance containing the imported systems and updated 
+            model flux. Returns ``0`` if the import fails.
+        """
         try:
             table = ascii.read(path)
 

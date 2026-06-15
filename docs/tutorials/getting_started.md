@@ -187,9 +187,21 @@ A dialog will appear allowing you to select exactly what to export:
 You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.
 
 ### Import from ASCII
-If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
+
+Astrocook provides two dedicated import options under the **File** menu, depending on what type of data you are bringing back into your session:
+
+**1. Import Spectrum Columns from ASCII...**
+Use this if you have manipulated your `_spec.csv` data externally (like generating a custom mask or applying a specialized error correction).
 * Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.
-* **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
+* **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum.
+
+**2. Import Systems from ASCII...**
+Use this to load a list of absorption components from a `_systems.csv` file.
+* The CSV must contain at least the `series` (transition name) and `z` (redshift) columns.
+* When you select the file, a dialog will appear asking if you want to **append** the new systems to your existing list or completely **replace** the current list.
+* **Smart Modeling:** As soon as the systems are imported, Astrocook automatically calculates their theoretical Voigt profiles and updates the `model` column. Toggle the **Absorption model** checkbox in the right sidebar to immediately see the green fit lines on your plot!
+
+Because both of these imports operate through the standard recipe pipeline, they are fully undoable via the Log Scripter or by pressing `Ctrl+Z` (`Cmd+Z` on Mac).
 
 ## What's Next?
 
