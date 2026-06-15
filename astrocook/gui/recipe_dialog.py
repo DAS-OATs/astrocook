@@ -114,7 +114,7 @@ class RecipeDialog(QDialog):
         if self.parent_window and hasattr(self.parent_window, 'session_histories'):
             current_session_name = self.session.name
             for hist in self.parent_window.session_histories:
-                if hist.display_name != current_session_name:
+                if hist is not self.parent_window.active_history:
                     alias = f"s{s_index}"
                     alias_map[alias] = hist.display_name
                     s_index += 1
@@ -476,12 +476,25 @@ class RecipeDialog(QDialog):
         Handles comma-separated lists (export, delete) and 
         space-separated expressions (apply_expression).
         """
-        # 1. Identify the target widget (usually 'targets' or 'expression')
-        target_name = 'targets' if self.recipe_name in ["export_ascii", "delete", "remove_columns"] else 'expression'
+        # Dynamically identify the correct input widget based on recipe
+        target_name = 'expression' # default
+        if self.recipe_name in ["export_ascii", "delete", "remove_columns"]:
+            target_name = 'targets'
+        elif self.recipe_name in ["resample", "import_systems"]:
+            target_name = 'target_session'
+        elif self.recipe_name == "equalize":
+            target_name = 'reference_session'
+        elif self.recipe_name == "coadd":
+            target_name = 'session_names'
+            
         target_widget = self.input_widgets.get(target_name)
         
         if not target_widget:
-            # Fallback if the parameter name varies
+            return
+        
+        if target_name in ["target_session", "reference_session"]:
+            target_widget.setText(text)
+            target_widget.setFocus()
             return
 
         current_text = target_widget.text().strip()
@@ -554,7 +567,12 @@ class RecipeDialog(QDialog):
         try:
             for param_name, widget in self.input_widgets.items():
                 if isinstance(widget, QLineEdit):
-                    params_to_pass[param_name] = widget.text()
+                    val = widget.text().strip()
+                    # [FIX] Translate alias (s1) to full name for session inputs
+                    if param_name in ["target_session", "reference_session"]:
+                        if val in self.session_alias_map:
+                            val = self.session_alias_map[val]
+                    params_to_pass[param_name] = val
                 elif isinstance(widget, QCheckBox):
                     params_to_pass[param_name] = str(widget.isChecked())
                 elif isinstance(widget, QComboBox):

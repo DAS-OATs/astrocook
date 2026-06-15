@@ -1803,9 +1803,9 @@ class SpectrumV2:
             A new instance interpolated to the target grid.
         """
         x_old = self.x.to_value(au.nm)
-        x_new = target_grid_spec.x.to_value(au.nm)
+        x_new_nm = target_grid_spec.x.to_value(au.nm)
         all_cols_old = self.t._data_dict
-        x_col = DataColumnV2(x_new, target_grid_spec.x.unit)
+        x_col = DataColumnV2(target_grid_spec.x.value, target_grid_spec.x.unit)
         xmin_col = DataColumnV2(target_grid_spec.xmin.value, target_grid_spec.xmin.unit)
         xmax_col = DataColumnV2(target_grid_spec.xmax.value, target_grid_spec.xmax.unit)
         y_col_new = None
@@ -1816,7 +1816,7 @@ class SpectrumV2:
                 continue
             if col_q.dtype.kind in 'fiu': 
                 logging.debug(f"Resampling column '{name}'...")
-                y_interp = np.interp(x_new, x_old, col_q.value,
+                y_interp = np.interp(x_new_nm, x_old, col_q.value,
                                      left=fill_value, right=fill_value)
                 new_data_col = DataColumnV2(y_interp, col_q.unit)
                 if name == 'y':
