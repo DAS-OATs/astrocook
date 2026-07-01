@@ -57,6 +57,7 @@ dependencies = [
     "emcee",
     "dynesty",
     "corner",
+    "regexp",
     # Add any others you import directly (e.g., requests, emcee, etc.)
 ]
 
