@@ -1,6 +1,7 @@
 import logging
 import os
 import numpy as np
+import re
 from astropy.io import ascii
 from astropy.table import Table
 from typing import TYPE_CHECKING
