@@ -1,48 +1,52 @@
 # CLAUDE.md
 
-Contesto per le sessioni di Claude Code su Astrocook. Il piano completo
-(analisi, fasi, valutazione scientifica, visione v3) è in `ROADMAP.md`:
-leggilo prima di iniziare un lavoro non banale.
+Context for Claude Code sessions on Astrocook. The full plan (analysis,
+phases, scientific assessment, v3 vision) is in `ROADMAP.md`: read it before
+starting any non-trivial work.
 
-## Progetto
-Astrocook: pacchetto Python per l'analisi di spettri di quasar (continuo,
-identificazione dei sistemi di assorbimento, fit di Voigt). GUI PySide6 +
-API scriptabile. Autore e maintainer: Guido Cupani (INAF–OATs).
-Versione attuale: 2.0.1. Python ≥3.12.
+## Language
+Everything committed to the repository (code, comments, docs, commit
+messages, PR descriptions) is in English. Conversations with Guido are in
+Italian.
 
-## Architettura (v2)
-- `astrocook/core/` – dataclass immutabili (`structures.py`), `SpectrumV2`,
-  funzioni pure in `spectrum_operations.py`, sessione, lista dei sistemi.
-  I metodi restituiscono nuovi oggetti: non mutare lo stato in place.
-- `astrocook/fitting/` – fit di Voigt (`voigt_fitter.py`), vincoli
-  (`voigt_model.py`), motore bayesiano (`bayesian_fitter.py`).
-- `astrocook/recipes/` – operazioni esposte all'utente, con parametri
-  strutturati.
-- `astrocook/gui/` – interfaccia PySide6.
-- `astrocook/io/` – loader e migrazione V1 → V2.
-- `astrocook/legacy/` – codice V1, ancora importato da vari moduli V2.
-  Va rimosso progressivamente (fase 3), non usato per codice nuovo.
+## Project
+Astrocook: a Python package for the analysis of quasar spectra (continuum,
+identification of absorption systems, Voigt fitting). PySide6 GUI +
+scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
+Current version: 2.0.1. Python ≥3.12.
 
-## Come si lavora
-- Avvio GUI: `python run_astrocook.py [file ...]`
+## Architecture (v2)
+- `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
+  pure functions in `spectrum_operations.py`, session, system list.
+  Methods return new objects: do not mutate state in place.
+- `astrocook/fitting/` – Voigt fitting (`voigt_fitter.py`), constraints
+  (`voigt_model.py`), Bayesian engine (`bayesian_fitter.py`).
+- `astrocook/recipes/` – user-facing operations, with structured parameters.
+- `astrocook/gui/` – PySide6 interface.
+- `astrocook/io/` – loaders and V1 → V2 migration.
+- `astrocook/legacy/` – V1 code, still imported by several V2 modules.
+  To be removed progressively (phase 3); do not use it for new code.
+
+## How to work
+- Launch the GUI: `python run_astrocook.py [file ...]`
   (headless: `QT_QPA_PLATFORM=offscreen`).
-- Test: `pytest` (config in `pyproject.toml`). La copertura è ancora
-  minima: prima di modificare codice di produzione, aggiungi test di
-  caratterizzazione per il comportamento coinvolto.
-- Lavora per PR piccole; la suite deve essere verde prima e dopo.
-- Non cambiare comportamenti numerici senza l'accordo di Guido: se un
-  comportamento sembra un bug, segnalalo invece di correggerlo in silenzio.
-- La documentazione utente (Sphinx + MyST) è in `docs/` ed è in inglese.
+- Tests: `pytest` (config in `pyproject.toml`). Coverage is still minimal:
+  before changing production code, add characterization tests for the
+  behaviour involved.
+- Work in small PRs; the test suite must be green before and after.
+- Do not change numerical behaviour without Guido's agreement: if a
+  behaviour looks like a bug, report it instead of silently fixing it.
+- User documentation (Sphinx + MyST) lives in `docs/`.
 
-## Direzione
-- v2: consolidamento (test e CI, pulizia, distacco dal legacy, refactoring,
-  gestione degli errori).
-- Astrocook come strumento per agenti: server MCP sulle recipe, API con
-  output strutturati, log affidabile in linguaggio naturale.
-- v3 (orizzonte): collezione di modelli completi con identificazioni
-  alternative e credibilità, generata automaticamente in meno di un'ora.
+## Direction
+- v2: consolidation (tests and CI, cleanup, decoupling from legacy,
+  refactoring, error handling).
+- Astrocook as a tool for agents: MCP server over the recipes, API with
+  structured outputs, reliable natural-language log.
+- v3 (horizon): a collection of complete models with alternative
+  identifications and credibility, generated automatically in under an hour.
 
-## Stato attuale
-Analisi e roadmap completate (ottobre 2026). Prossimo passo: fase 1 (rete di
-sicurezza), come pilota. Aggiorna questa sezione e la tabella in
-`ROADMAP.md` alla fine di ogni fase.
+## Current status
+Analysis and roadmap done (October 2026). Next step: phase 1 (safety net),
+as a pilot. Update this section and the table in `ROADMAP.md` at the end of
+each phase.
