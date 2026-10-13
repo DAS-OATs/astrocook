@@ -16,11 +16,21 @@ Typical use::
     spectrum = generate(truth)          # SpectrumV2
     truth.to_json("mock_truth.json")    # ground truth, for later comparison
 """
-from astrocook.mocks.truth import MockComponent, MockTruth
-from astrocook.mocks.generate import generate, make_grid, normalized_flux
+from astrocook.mocks.truth import (
+    EmissionLine, MockComponent, MockTruth, QSO_EMISSION_LINES,
+)
+from astrocook.mocks.generate import (
+    continuum, generate, make_grid, normalized_flux, spike_indices,
+)
 from astrocook.mocks.physics import optical_depth, convolve_velocity
+from astrocook.mocks.populations import (
+    expected_forest_lines, lya_forest, mean_transmission_fg08, metal_systems,
+)
 
 __all__ = [
-    "MockComponent", "MockTruth", "generate", "make_grid", "normalized_flux",
+    "EmissionLine", "MockComponent", "MockTruth", "QSO_EMISSION_LINES",
+    "continuum", "generate", "make_grid", "normalized_flux", "spike_indices",
     "optical_depth", "convolve_velocity",
+    "expected_forest_lines", "lya_forest", "mean_transmission_fg08",
+    "metal_systems",
 ]

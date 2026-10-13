@@ -6,7 +6,7 @@ import astropy.units as au
 
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-from astrocook.mocks.physics import C_KMS, convolve_velocity, optical_depth
+from astrocook.mocks.physics import C_KMS, FWHM_TO_SIGMA, convolve_velocity, optical_depth
 from astrocook.mocks.truth import MockTruth
 
 
@@ -50,16 +50,33 @@ def normalized_flux(truth: MockTruth) -> Tuple[np.ndarray, np.ndarray]:
     return x, flux_sub.reshape(len(x), k).mean(axis=1)
 
 
+def continuum(truth: MockTruth, x_nm: np.ndarray) -> np.ndarray:
+    """Power law plus the Gaussian emission lines of ``truth``."""
+    power_law = truth.cont_amplitude * (x_nm / truth.cont_ref_nm) ** truth.cont_slope
+    bumps = np.zeros_like(x_nm)
+    for line in truth.emission_lines:
+        centre = line.rest_nm * (1.0 + truth.z_em)
+        sigma = line.fwhm_kms / C_KMS * centre * FWHM_TO_SIGMA
+        bumps += line.amplitude * np.exp(-0.5 * ((x_nm - centre) / sigma) ** 2)
+    return power_law * (1.0 + bumps)
+
+
+def spike_indices(truth: MockTruth, n_pixels: int) -> np.ndarray:
+    """Pixel indices of the spikes of ``truth`` (reproducible from the seed)."""
+    rng = np.random.default_rng([truth.seed, 1])
+    return np.sort(rng.choice(n_pixels, size=truth.n_spikes, replace=False))
+
+
 def generate(truth: MockTruth) -> SpectrumV2:
     """Mock spectrum for ``truth``.
 
-    The spectrum has the true continuum in the ``cont`` column and the
-    noiseless flux in ``mock_flux``; ``z_em`` and the resolving power are
+    The spectrum has the true continuum (with emission lines) in the
+    ``cont`` column and the noiseless flux in ``mock_flux``; ``z_em`` and the resolving power are
     set (the latter also in the metadata, so that it survives a save).
     """
     x, xmin, xmax = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
     _, flux = normalized_flux(truth)
-    cont = truth.cont_amplitude * (x / truth.cont_ref_nm) ** truth.cont_slope
+    cont = continuum(truth, x)
     true_flux = cont * flux
 
     if truth.snr is None:
@@ -69,6 +86,9 @@ def generate(truth: MockTruth) -> SpectrumV2:
         rng = np.random.default_rng(truth.seed)
         dy = cont / truth.snr
         y = true_flux + rng.standard_normal(len(x)) * dy
+    if truth.n_spikes:
+        spikes = spike_indices(truth, len(x))
+        y[spikes] += truth.spike_amplitude * (dy[spikes] if truth.snr else cont[spikes])
 
     unit = au.dimensionless_unscaled
     meta = {"MOCK": True}

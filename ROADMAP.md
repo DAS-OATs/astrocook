@@ -177,10 +177,14 @@ No changes to production code.
    ground truth in `MockTruth` (JSON). Validated in `tests/test_mocks.py`
    (thin-line equivalent width within 0.1% of the analytic value,
    convolution conserving the equivalent width, instrumental FWHM = c/R,
-   noise statistics, oversampling convergence). Next: random populations
-   (Lyman-alpha forest with f(N) ~ N^-1.5, log-normal b around 25 km/s,
-   dN/dz ~ (1+z)^gamma; metal systems), emission lines, artefacts
-   (spikes, sky residuals, tellurics).
+   noise statistics, oversampling convergence). Second part done: random
+   Lyman-alpha forest (f(N) ~ N^-1.5 for 12 < logN < 17, log-normal b
+   around 25 km/s with b >= 10 km/s, dN/dz = 1700 ((1+z)/4)^2.5, which
+   reproduces the mean transmission of Faucher-Giguere et al. 2008 within
+   ~0.03 at z = 3 and 3.8), multi-component metal systems, Gaussian
+   emission lines (Lyman-alpha + NV, CIV) and single-pixel spikes. The
+   default parameters are indicative, to be calibrated before scientific
+   use. Still missing: sky residuals and tellurics.
 4. **Non-determinism:** fixed seeds, statistical tolerances, UUIDs and
    timestamps excluded from comparisons.
 5. **File compatibility:** `.acs`/`.acs2` round trips (requires real V1
@@ -260,8 +264,8 @@ per component, none) and on J0103-1305 (frozen continuum and systems,
 R = 45000 given by the maintainer); the SpectrumV2 methods that combine
 spectra (stitch, coadd, resample_on_grid, get_resampled_column,
 equalize_to_reference, split, scale_flux) on synthetic exposures with
-different grids, noise, flux scales and resolutions. Next: the V1/V2 parity
-tests (item 11), then the full chain.
+different grids, noise, flux scales and resolutions. Next: the full chain
+(wider J0103-1305 window including Lyman-beta, plus a mock case).
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version
@@ -332,6 +336,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
 | F16 | smoothing | For the same "std" parameter, V1 `_gauss_convolve` uses the kernel exp(-(dv/std)^2), i.e. sigma = std/sqrt(2), while V2 `smooth_spectrum` uses sigma = std: V2 smooths sqrt(2) wider. Affects the continuum smoothing (default 500 km/s: effective sigma 354 km/s in V1, 500 km/s in V2) and any other use of the parameter. Which convention to keep is Guido's decision | numerical | `test_smoothing_width_differs_by_sqrt2` (characterization) | open |
 | F17 | continuum (forest) | On the J0103-1305 window, with the same parameters and matched smoothing, V1 `clip_flux` and V2 `find_absorbed` + `fit_continuum` agree on the red side (masks 99.98%, continuum within 0.4%), but in the Lyman-alpha forest V2 marks more pixels as unabsorbed (57.6% vs 54.8% of the window, masks agree on 92.7% of the forest pixels) and its continuum is lower by 1.2% (median; 5th percentile -4.6%). Not explained by the fudge (F3). Relevant to #465 and to the known low forest continuum | numerical | `test_continuum_forest` (strict xfail) | open |
+| F18 | dependencies | GitHub Dependabot reports 36 vulnerabilities on the default branch (2 critical, 8 high, 13 moderate, 13 low), seen on push in October 2026; not yet analysed | security | — (Dependabot alerts) | phase 2 |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
