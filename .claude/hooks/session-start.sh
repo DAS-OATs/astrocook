@@ -1,6 +1,7 @@
 #!/bin/bash
 # SessionStart hook for Claude Code cloud sessions: installs the system
-# libraries needed by Qt (offscreen) and the package with test extras.
+# libraries needed by Qt (offscreen) and the package with dev extras
+# (test dependencies and the Ruff linter).
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -21,7 +22,7 @@ if [ ! -x .venv/bin/python ]; then
   python3 -m venv .venv
 fi
 .venv/bin/pip install -q --upgrade pip
-.venv/bin/pip install -q -e ".[test]"
+.venv/bin/pip install -q -e ".[dev]"
 
 {
   echo "export VIRTUAL_ENV=\"$CLAUDE_PROJECT_DIR/.venv\""

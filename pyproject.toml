@@ -69,6 +69,11 @@ test = [
     "pytest-qt",
     "pytest-cov",
 ]
+dev = [
+    # Test dependencies plus development tools (linter)
+    "astrocook[test]",
+    "ruff",
+]
 # You could add other groups like 'docs' or 'bayesian' later
 
 legacy = ["wxPython"]
@@ -106,6 +111,14 @@ addopts = "-ra -q"
 testpaths = [
     "tests", # Specifies where pytest should look for tests
 ]
+
+[tool.ruff]
+# V1 code and backup directories are not linted (to be removed in phases 2-3)
+extend-exclude = ["astrocook/legacy", "docs_backup", "legacy_home"]
+
+[tool.ruff.lint]
+# Start with pyflakes rules only (likely bugs, not style); extend gradually
+select = ["F"]
 
 [tool.coverage.run]
 # CRITICAL FIX: Tell the coverage tool that the source code starts in the 'astrocook' directory.
