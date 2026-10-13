@@ -264,8 +264,8 @@ per component, none) and on J0103-1305 (frozen continuum and systems,
 R = 45000 given by the maintainer); the SpectrumV2 methods that combine
 spectra (stitch, coadd, resample_on_grid, get_resampled_column,
 equalize_to_reference, split, scale_flux) on synthetic exposures with
-different grids, noise, flux scales and resolutions. Next: the V1/V2 parity
-tests (item 11), then the full chain.
+different grids, noise, flux scales and resolutions. Next: the full chain
+(wider J0103-1305 window including Lyman-beta, plus a mock case).
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version

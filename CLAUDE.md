@@ -60,7 +60,19 @@ Current version: 2.0.1. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Analysis and roadmap done (October 2026). Next step: phase 1 (safety net),
-as a pilot. Open GitHub issues are scheduled in `ROADMAP.md`, section 3.1.
-Update this section and the table in `ROADMAP.md` at the end of
-each phase.
+Phase 0 done. Phase 1 (safety net) in progress; progress per item in
+`ROADMAP.md`, phase 1. Done: snapshots (pure functions, continuum,
+identification, Voigt model and fit, SpectrumV2 methods), tests for the
+"possibly fixed" issues, V1/V2 parity tests, CI, mock generator
+(`astrocook/mocks/`; sky residuals and tellurics still missing).
+Next, in this order: full-chain snapshot (wider J0103-1305 window
+including Lyman-beta, plus a mock case); coverage; GUI smoke tests;
+`.acs2` round trips; chi-squared error-scaling check; mutmut. Log replay
+and V1 `.acs` archives wait for sessions from Guido.
+
+Questionable behaviour found along the way goes in the findings register
+(`ROADMAP.md`, section 3.2), reviewed with Guido at the end of phase 1;
+anything that loses user data or crashes is reported at once. Open GitHub
+issues are scheduled in `ROADMAP.md`, section 3.1. Wait for each PR to be
+merged before opening the next. Update this section and the table in
+`ROADMAP.md` at the end of each phase.
