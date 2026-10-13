@@ -12,7 +12,8 @@ after an intended change, run::
 
     pytest --update-snapshots
 
-and review the resulting diff before committing it.
+(add ``--run-slow`` to include the slow snapshots) and review the resulting
+diff before committing it.
 """
 from pathlib import Path
 
@@ -41,6 +42,19 @@ def pytest_addoption(parser):
         "--update-snapshots", action="store_true", default=False,
         help="Write the numerical snapshots in tests/snapshots/ instead of "
              "comparing against them.")
+    parser.addoption(
+        "--run-slow", action="store_true", default=False,
+        help="Also run the tests marked 'slow' (e.g. the full chain on "
+             "J0103-1305, about 15 minutes).")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-slow"):
+        return
+    skip = pytest.mark.skip(reason="slow test: run with --run-slow")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip)
 
 
 def _to_arrays(values):

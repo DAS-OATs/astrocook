@@ -111,6 +111,9 @@ addopts = "-ra -q"
 testpaths = [
     "tests", # Specifies where pytest should look for tests
 ]
+markers = [
+    "slow: long tests, skipped unless pytest is run with --run-slow",
+]
 
 [tool.ruff]
 # V1 code and backup directories are not linted (to be removed in phases 2-3)
