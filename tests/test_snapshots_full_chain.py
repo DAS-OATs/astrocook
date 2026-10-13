@@ -29,6 +29,7 @@ import numpy as np
 import pytest
 
 RUNNER = Path(__file__).parent / "full_chain.py"
+SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 
 
 def _run_chain(case, tmp_path):
@@ -40,16 +41,49 @@ def _run_chain(case, tmp_path):
         return {key: data[key] for key in data.files}
 
 
+def _groups(case, arrays):
+    """Snapshot name -> arrays, one snapshot per stage."""
+    groups = {f"full_chain_{case}_continuum":
+              {k: arrays[k] for k in ("cont", "abs_mask")}}
+    for stage in ("doublets", "forest"):
+        groups[f"full_chain_{case}_{stage}"] = {
+            k: v for k, v in arrays.items() if k.startswith(stage)}
+    groups[f"full_chain_{case}_model"] = {"model_norm": arrays["model_norm"]}
+    return groups
+
+
+def _report_differences(case, arrays):
+    """Print every difference from the stored snapshots (shown by pytest
+    on failure), so that one run tells how far the whole chain moved."""
+    for name, values in _groups(case, arrays).items():
+        path = SNAPSHOT_DIR / f"{name}.npz"
+        if not path.exists():
+            continue
+        with np.load(path, allow_pickle=False) as ref:
+            for key in ref.files:
+                expected, actual = ref[key], np.asarray(values.get(key))
+                if expected.shape != actual.shape:
+                    print(f"{name}[{key}]: shape {actual.shape}, expected {expected.shape}")
+                elif np.issubdtype(expected.dtype, np.inexact):
+                    diff = np.abs(actual.astype(float) - expected)
+                    rel = diff / np.maximum(np.abs(expected), 1e-300)
+                    print(f"{name}[{key}]: max abs {np.nanmax(diff, initial=0):.3g}, "
+                          f"max rel {np.nanmax(rel, initial=0):.3g}, "
+                          f"> 1e-6 rel: {np.sum(rel > 1e-6)}/{rel.size}")
+                else:
+                    print(f"{name}[{key}]: {np.sum(actual != expected)}/{expected.size} differ")
+
+
 def _check(snapshot, case, arrays):
-    snapshot.check(f"full_chain_{case}_continuum",
-                   {k: arrays[k] for k in ("cont", "abs_mask")})
+    _report_differences(case, arrays)
+    groups = _groups(case, arrays)
+    snapshot.check(f"full_chain_{case}_continuum", groups[f"full_chain_{case}_continuum"])
     for stage in ("doublets", "forest"):
         snapshot.check(f"full_chain_{case}_{stage}",
-                       {k: v for k, v in arrays.items() if k.startswith(stage)},
-                       rtol=1e-6)
+                       groups[f"full_chain_{case}_{stage}"], rtol=1e-6)
     # float32 keeps the file small; the tolerance is set accordingly
-    snapshot.check(f"full_chain_{case}_model",
-                   {"model_norm": arrays["model_norm"]}, rtol=1e-6, atol=1e-6)
+    snapshot.check(f"full_chain_{case}_model", groups[f"full_chain_{case}_model"],
+                   rtol=1e-6, atol=1e-6)
 
 
 @pytest.mark.slow
