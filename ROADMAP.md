@@ -211,6 +211,11 @@ No changes to production code.
     snapshots of the remaining `SpectrumV2` methods, before the mock
     generator. A first manual check (October 2026) showed that F1, F3 and
     F10 are V2 regressions: V1 behaves correctly in all three cases.
+    Done (`tests/test_parity_v1_v2.py`): rebin flux and coadd flux agree
+    to 1e-10 on the same bins (V1 takes the first bin centre as start, V2
+    its left edge); equalization factors agree within 0.5%. Documented
+    differences: rebinned errors (F1), clipping (F2), smoothing width
+    (F16). Next: Voigt model, continuum, identification (statistical).
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
@@ -287,7 +292,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | ID | Area | Finding | Impact | Recorded by | Status |
 |---|---|---|---|---|---|
 | F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490); V2 regression (V1 gives σ/√N), scheduled as a bug (section 3.1) |
-| F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: a single spike makes the whole bin NaN. Clipping runs once, docstring says "iterative" | numerical | snapshot `rebin_spectrum_nm_clip` | open |
+| F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: with few pixels per bin (e.g. 3) a single spike can make the whole bin NaN. Clipping runs once, docstring says "iterative". Not a pure V2 regression: V1 clips with `sigma_clip` within each bin, which keeps the bin but cannot remove an isolated spike with 3-5 pixels per bin; neither version removes it. Related to #465 | numerical | snapshot `rebin_spectrum_nm_clip`; `test_rebin_clipping_keeps_bins_with_a_spike` (strict xfail) | open |
 | F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | V2 regression (V1 uses a running mean, so the fudge is effective and local), scheduled as a bug (section 3.1) |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | open |
@@ -301,6 +306,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured` (strict xfail) | open |
 | F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_ignores_resolution` (characterization) | open |
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
+| F16 | smoothing | For the same "std" parameter, V1 `_gauss_convolve` uses the kernel exp(-(dv/std)^2), i.e. sigma = std/sqrt(2), while V2 `smooth_spectrum` uses sigma = std: V2 smooths sqrt(2) wider. Affects the continuum smoothing (default 500 km/s: effective sigma 354 km/s in V1, 500 km/s in V2) and any other use of the parameter. Which convention to keep is Guido's decision | numerical | `test_smoothing_width_differs_by_sqrt2` (characterization) | open |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
