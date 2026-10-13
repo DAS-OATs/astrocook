@@ -1,0 +1,90 @@
+"""Generation of mock spectra."""
+from typing import Tuple
+
+import numpy as np
+import astropy.units as au
+
+from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.mocks.physics import C_KMS, convolve_velocity, optical_depth
+from astrocook.mocks.truth import MockTruth
+
+
+def make_grid(lam_min_nm: float, lam_max_nm: float,
+              dv_kms: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Pixel centres and edges (nm), uniform in velocity.
+
+    Returns
+    -------
+    x, xmin, xmax : np.ndarray
+        Centres and edges; the edges of adjacent pixels coincide.
+    """
+    step = np.log1p(dv_kms / C_KMS)
+    n = int(np.floor(np.log(lam_max_nm / lam_min_nm) / step))
+    edges = lam_min_nm * np.exp(step * np.arange(n + 1))
+    x = np.sqrt(edges[:-1] * edges[1:])
+    return x, edges[:-1], edges[1:]
+
+
+def normalized_flux(truth: MockTruth) -> Tuple[np.ndarray, np.ndarray]:
+    """Noiseless normalised flux, convolved and averaged over each pixel.
+
+    The model is computed on ``oversample`` sub-pixels per pixel, convolved
+    with the instrumental profile on that grid, then averaged over the
+    sub-pixels of each pixel.
+
+    Returns
+    -------
+    x_nm, flux : np.ndarray
+    """
+    x, xmin, _ = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
+    k = int(truth.oversample)
+    step = np.log1p(truth.dv_kms / C_KMS)
+    sub = np.repeat(xmin, k) * np.exp(step * (np.tile(np.arange(k), len(x)) + 0.5) / k)
+
+    tau = np.zeros_like(sub)
+    for comp in truth.components:
+        tau += optical_depth(sub * 10.0, comp.series, comp.z, comp.logN,
+                             comp.b, comp.btur)
+    flux_sub = convolve_velocity(np.exp(-tau), truth.dv_kms / k, truth.resol)
+    return x, flux_sub.reshape(len(x), k).mean(axis=1)
+
+
+def generate(truth: MockTruth) -> SpectrumV2:
+    """Mock spectrum for ``truth``.
+
+    The spectrum has the true continuum in the ``cont`` column and the
+    noiseless flux in ``mock_flux``; ``z_em`` and the resolving power are
+    set (the latter also in the metadata, so that it survives a save).
+    """
+    x, xmin, xmax = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
+    _, flux = normalized_flux(truth)
+    cont = truth.cont_amplitude * (x / truth.cont_ref_nm) ** truth.cont_slope
+    true_flux = cont * flux
+
+    if truth.snr is None:
+        y = true_flux.copy()
+        dy = np.zeros_like(x)
+    else:
+        rng = np.random.default_rng(truth.seed)
+        dy = cont / truth.snr
+        y = true_flux + rng.standard_normal(len(x)) * dy
+
+    unit = au.dimensionless_unscaled
+    meta = {"MOCK": True}
+    resol = 0.0
+    if truth.resol is not None:
+        resol = float(truth.resol)
+        meta["resol"] = resol
+        meta["resol_fwhm"] = C_KMS / resol
+    data = SpectrumDataV2(
+        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(xmin, au.nm),
+        xmax=DataColumnV2(xmax, au.nm),
+        y=DataColumnV2(y, unit), dy=DataColumnV2(dy, unit),
+        aux_cols={
+            "cont": DataColumnV2(cont, unit, description="True continuum"),
+            "mock_flux": DataColumnV2(true_flux, unit,
+                                      description="Noiseless flux"),
+        },
+        meta=meta, z_em=truth.z_em, resol=resol)
+    return SpectrumV2(data)

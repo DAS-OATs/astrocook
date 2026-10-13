@@ -24,6 +24,8 @@ Current version: 2.0.1. Python ≥3.12.
 - `astrocook/recipes/` – user-facing operations, with structured parameters.
 - `astrocook/gui/` – PySide6 interface.
 - `astrocook/io/` – loaders and V1 → V2 migration.
+- `astrocook/mocks/` – synthetic spectra with known parameters, independent
+  of the fitting code (do not make it depend on `fitting/`).
 - `astrocook/legacy/` – V1 code, still imported by several V2 modules.
   To be removed progressively (phase 3); do not use it for new code.
 

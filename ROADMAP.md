@@ -171,6 +171,16 @@ No changes to production code.
 3. **Simulated spectra** with known parameters (extend
    `tests/simulate_and_fit_cii.py`). Design the generator with
    completeness/purity for v3 in mind.
+   First part done: `astrocook/mocks/` (new module, no change to existing
+   code), independent of the V2 fitting code (own Voigt profile, exact
+   convolution in velocity space, pixel integration by oversampling);
+   ground truth in `MockTruth` (JSON). Validated in `tests/test_mocks.py`
+   (thin-line equivalent width within 0.1% of the analytic value,
+   convolution conserving the equivalent width, instrumental FWHM = c/R,
+   noise statistics, oversampling convergence). Next: random populations
+   (Lyman-alpha forest with f(N) ~ N^-1.5, log-normal b around 25 km/s,
+   dN/dz ~ (1+z)^gamma; metal systems), emission lines, artefacts
+   (spikes, sky residuals, tellurics).
 4. **Non-determinism:** fixed seeds, statistical tolerances, UUIDs and
    timestamps excluded from comparisons.
 5. **File compatibility:** `.acs`/`.acs2` round trips (requires real V1
@@ -183,6 +193,10 @@ No changes to production code.
    warnings are cleaned up in a dedicated PR.
 9. **First scientific checks:** oversampling of the Voigt model; scaling of
    uncertainties by the reduced χ².
+   Preliminary result on oversampling (mock generator vs V2 model, CIV,
+   R = 45000, 2.5 km/s pixels): EW bias of the V2 model +0.05% at
+   b = 12 km/s, +0.3% at 3 km/s, +4% at 1 km/s (max flux difference 0.001,
+   0.013, 0.115). See F9.
 10. **Issues labelled "possibly fixed"** ([#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455),
     [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436)): write a test reproducing each reported scenario.
     If it passes, the test is the evidence for closing the issue; if it
@@ -309,7 +323,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/4 |
 | F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 4 |
 | F8 | resolution handling | The resolution lives in five places (per-component value, `resol` column, `SpectrumDataV2.resol`, meta `resol`/`RESOL`, meta `resol_fwhm`), each read with a different priority by the fitter, the `.acs2` loader, coadd and the GUI. The `.acs2` save does not write the attribute: it survives only through the meta keys (set by "Set properties"). The fitter stamps the resolution used into every fitted component, which then overrides later changes. R vs km/s is guessed from a threshold of 500. The J0103-1305 archive (older version) stores no resolution at all. To be analysed by Guido | behaviour, possible data loss | — (map in the PR that added this row) | open, priority |
-| F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9) | numerical | — | open |
+| F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9): the V2 model, sampled at pixel centres, overestimates the equivalent width of CIV by 4% at b = 1 km/s and 0.3% at 3 km/s (2.5 km/s pixels, R = 45000) | numerical | — | open |
 | F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra (coadding three synthetic exposures at R = 42000-47500 gives a non-round column on 90% of the pixels and a zero Voigt model on 90% of them, `test_voigt_model_on_coadded_spectrum_is_not_zero`), RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero` (strict xfail) | V2 regression (V1 takes R at the system centre, no rounding; from reading the code), scheduled as a bug (section 3.1), high priority |
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | — | open |
 | F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
