@@ -48,5 +48,6 @@ Current version: 2.0.1. Python ≥3.12.
 
 ## Current status
 Analysis and roadmap done (October 2026). Next step: phase 1 (safety net),
-as a pilot. Update this section and the table in `ROADMAP.md` at the end of
+as a pilot. Open GitHub issues are scheduled in `ROADMAP.md`, section 3.1.
+Update this section and the table in `ROADMAP.md` at the end of
 each phase.
