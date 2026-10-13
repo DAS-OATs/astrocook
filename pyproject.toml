@@ -66,6 +66,8 @@ test = [
     # Dependencies needed only for running tests
     "pytest",
     "pytest-mock",
+    "pytest-qt",
+    "pytest-cov",
 ]
 # You could add other groups like 'docs' or 'bayesian' later
 

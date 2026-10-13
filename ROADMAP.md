@@ -131,6 +131,13 @@ a small PR, with the test suite green before and after.
 ### Phase 0 – Environment
 Install dependencies; run the GUI with `QT_QPA_PLATFORM=offscreen`.
 
+Done: SessionStart hook for cloud sessions, `pytest-qt`/`pytest-cov` in the
+`[test]` extra. The GUI starts offscreen without errors. Baseline of the
+existing suite (Python 3.13): 1 passed, 4 failed; all four failures come
+from tests that are out of date with the current API (missing
+`ComponentDataV2.id`, `rebin_spectrum` now returning 6 values, free
+parameter vector without `btur`). To be fixed at the start of phase 1.
+
 ### Phase 1 – Safety net (pilot)
 No changes to production code.
 1. **Numerical snapshots** (characterization tests) of `SpectrumV2`
@@ -282,7 +289,7 @@ review); each of its decisions goes into the log.
 | Phase | Status |
 |---|---|
 | Initial analysis and roadmap | done (October 2026) |
-| 0 – Environment | not started |
+| 0 – Environment | done (October 2026) |
 | 1 – Safety net | not started |
 | Open bugs and urgent features (section 3.1) | not started |
 | 2 – Cleanup and packaging | not started |
