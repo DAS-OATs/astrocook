@@ -79,3 +79,46 @@ def test_fitting_alii_also_fits_blended_civ():
     assert result.success
     civ_fit = fitted.components[1]
     assert abs(civ_fit.logN - 13.5) < 0.05
+
+
+def test_inspector_highlights_blended_component(qapp):
+    # The reporter's symptom: selecting AlII must highlight CIV (the group
+    # members that are not selected get a yellow-orange background)
+    from types import SimpleNamespace
+    from PySide6.QtCore import Qt
+    from astrocook.gui.system_inspector import SystemInspector
+
+    systs = _systs()
+    alii, civ, lya = systs.components
+    inspector = SystemInspector(None)
+    inspector.current_session = SimpleNamespace(systs=systs)
+    inspector.table_model.update_data(systs.components, {})
+    inspector._update_group_definition([alii])
+
+    def background(row):
+        model = inspector.table_model
+        return model.data(model.index(row, 0), Qt.BackgroundRole)
+
+    assert background(1) is not None   # CIV highlighted
+    assert background(2) is None       # unrelated Ly-alpha not highlighted
+
+
+def _pair_at(dv_kms):
+    """AlII 1670 and CIV 1550 (b = 8 and 10 km/s) separated by dv_kms."""
+    z_civ = _W_BLEND / ATOM_DATA["CIV_1550"]["wave"] * (1 + dv_kms / C_KMS) - 1
+    comps = [ComponentDataV2(id=1, z=Z_ALII, dz=None, logN=13.5, dlogN=None,
+                             b=8.0, db=None, series="AlII_1670"),
+             ComponentDataV2(id=2, z=z_civ, dz=None, logN=14.0, dlogN=None,
+                             b=10.0, db=None, series="CIV")]
+    return SystemListV2(SystemListDataV2(components=comps))
+
+
+def test_blend_threshold_ignores_resolution():
+    # Characterization (findings register F14): lines are grouped when their
+    # centres are closer than max(4 b, 30 km/s), whatever the instrumental
+    # resolution and the line strength. At X-Shooter resolution (R ~ 8900)
+    # the two profiles still overlap at 60 km/s, but are not grouped.
+    for dv, grouped in [(30.0, True), (60.0, False)]:
+        systs = _pair_at(dv)
+        alii, civ = systs.components
+        assert (civ.uuid in systs.get_connected_group([alii.uuid])) is grouped

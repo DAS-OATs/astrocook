@@ -188,16 +188,20 @@ No changes to production code.
     If it passes, the test is the evidence for closing the issue; if it
     fails, the issue goes back to the open bugs (see section 3.1).
     Done (tests `tests/test_issue_*.py`):
-    - #469 blended lines of different systems: grouped and fitted together.
+    - #469 blended lines of different systems: grouped and fitted together;
+      the inspector highlights the blended component. The blend threshold
+      ignores the resolution (F14).
     - #477 / #436 VIS+NIR stitching: one cut-off for two arms, scaling
       recovered within 1% (fitted range, auto, manual factor); the GUI
-      passes the other session and asks for N-1 values.
+      passes the other session and asks for N-1 values. With tellurics in
+      the overlap the factor is biased by ~1.5% (F15).
     - #455 multiplet subsets: the subset is modelled and fitted alone;
       NiII added. Still open: 10 metal species with 3+ transitions in
       `ATOM_DATA` have no multiplet entry (question pending in the issue).
     - #450 link colours: work within the selected group; stale colours
       after linking with the group still selected (F13).
-    Closing the issues is Guido's decision.
+    Closing the issues is Guido's decision: the reporters of #469, #477,
+    #436 and #455 have been asked to confirm with the current version.
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
@@ -276,6 +280,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | — | open |
 | F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
 | F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured` (strict xfail) | open |
+| F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_ignores_resolution` (characterization) | open |
+| F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
