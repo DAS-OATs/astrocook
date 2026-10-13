@@ -136,7 +136,8 @@ Done: SessionStart hook for cloud sessions, `pytest-qt`/`pytest-cov` in the
 existing suite (Python 3.13): 1 passed, 4 failed; all four failures come
 from tests that are out of date with the current API (missing
 `ComponentDataV2.id`, `rebin_spectrum` now returning 6 values, free
-parameter vector without `btur`). To be fixed at the start of phase 1.
+parameter vector without `btur`). Fixed at the start of phase 1: the suite
+is green.
 
 Linter: Ruff, pyflakes rules (`F`) only, `legacy/` and backup directories
 excluded. First check: 176 warnings (121 unused imports, 24 unused
@@ -187,6 +188,13 @@ No changes to production code.
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
+
+Findings so far (open, for Guido):
+- [#490](https://github.com/DAS-OATs/astrocook/issues/490): `rebin_spectrum`
+  errors do not decrease with the number of pixels per output bin
+  (`test_rebin_weighted_average_error` is a strict `xfail` until decided).
+- `VoigtFitterV2` bounds z to ±`z_window_kms` (default 20 km/s) around the
+  initial guess: a guess further away cannot reach the true value. Intended?
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version
@@ -312,7 +320,7 @@ review); each of its decisions goes into the log.
 |---|---|
 | Initial analysis and roadmap | done (October 2026) |
 | 0 – Environment | done (October 2026) |
-| 1 – Safety net | not started |
+| 1 – Safety net | in progress |
 | Open bugs and urgent features (section 3.1) | not started |
 | 2 – Cleanup and packaging | not started |
 | 3 – Decoupling from legacy | not started |

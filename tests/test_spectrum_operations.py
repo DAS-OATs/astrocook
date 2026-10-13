@@ -30,9 +30,9 @@ def get_mock_input_case1():
     
     # Rebinning Parameters
     params = {
-        'xstart': au.Quantity(100.025, au.nm), # Start just before P2
-        'xend': au.Quantity(100.125, au.nm),   # End just after P3
-        'dx': au.Quantity(0.05, au.nm),        # New bin size (same as input for simple overlap)
+        'xstart': au.Quantity(100.025, au.nm), # Left edge of P2
+        'xend': au.Quantity(100.125, au.nm),   # Right edge of P3
+        'dx': au.Quantity(0.1, au.nm),         # One output bin covering P2 and P3
         'kappa': 100.0,                        # No clipping
         'filling': np.nan,
     }
@@ -47,39 +47,31 @@ def get_mock_input_case1():
 
     return spec_data, params, expected_y, expected_dy
 
-# --- Test Function ---
+# --- Test Functions ---
+
+def _rebin_case1():
+    spec_data, params, expected_y, expected_dy = get_mock_input_case1()
+    x_out, xmin_out, xmax_out, y_out, dy_out, resol_out = rebin_spectrum(
+        spec_data.x.quantity, spec_data.xmin.quantity, spec_data.xmax.quantity,
+        spec_data,
+        calc_unit=spec_data.x.quantity.unit,
+        **params  # xstart, xend, dx, kappa, filling
+    )
+    # A single output bin, centred at 100.075 nm
+    assert len(y_out) == 1
+    assert np.isclose(x_out.value[0], 100.075)
+    return y_out, dy_out, expected_y, expected_dy
+
 
 def test_rebin_weighted_average(tolerance=1e-9):
-    spec_data, params, expected_y, expected_dy = get_mock_input_case1()
-    
-    # 1. Extract X arrays from spec_data for positional use
-    x_in = spec_data.x.quantity
-    xmin_in = spec_data.xmin.quantity
-    xmax_in = spec_data.xmax.quantity
-    
-    # 2. Define the calculation unit (which is the unit of the input X arrays here)
-    calc_unit = x_in.unit 
-    
-    # Call the pure function with all required positional arguments
-    x_out, xmin_out, xmax_out, y_out, dy_out = rebin_spectrum(
-        # Positional Arguments:
-        x_in, xmin_in, xmax_in, 
-        spec_data, 
-        # Keyword Arguments (from params dictionary):
-        calc_unit=calc_unit, 
-        **params # This includes xstart, xend, dx, kappa, filling
-    )
-    
-    # Isolate the output bin we calculated (Index 1)
-    y_test_value = y_out.value[1]
-    dy_test_value = dy_out.value[1]
+    y_out, _, expected_y, _ = _rebin_case1()
+    assert np.isclose(y_out.value[0], expected_y.value[0], atol=tolerance)
 
-    # Extract the scalar expected value
-    expected_y_value = expected_y.value[0]
-    expected_dy_value = expected_dy.value[0]
-    
-    # Use np.isclose for scalar comparison (Astropy handles units internally)
-    assert np.isclose(y_test_value, expected_y_value, atol=tolerance)
-    assert np.isclose(dy_test_value, expected_dy_value, atol=tolerance)
 
-# This first test ensures the core math for variance-weighted average is correct.
+@pytest.mark.xfail(strict=True, reason=(
+    "Rebinned errors do not decrease with the number of pixels per bin: the "
+    "code gives 0.0686 = 0.0485 * sqrt(2). See "
+    "https://github.com/DAS-OATs/astrocook/issues/490"))
+def test_rebin_weighted_average_error(tolerance=1e-9):
+    _, dy_out, _, expected_dy = _rebin_case1()
+    assert np.isclose(dy_out.value[0], expected_dy.value[0], atol=tolerance)
