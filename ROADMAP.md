@@ -215,7 +215,17 @@ No changes to production code.
     to 1e-10 on the same bins (V1 takes the first bin centre as start, V2
     its left edge); equalization factors agree within 0.5%. Documented
     differences: rebinned errors (F1), clipping (F2), smoothing width
-    (F16). Next: Voigt model, continuum, identification (statistical).
+    (F16). Voigt model (V1 `lines_voigt` + `psf_gauss`, as in `SystModel`):
+    agrees within 5e-4 in flux at R = none, 45000, 20000; a constant 0.05%
+    equivalent-width offset remains for CIV (identical atomic data, not
+    traced; 2e-4 dex in logN), and V2 uses f = 0.4164 for Ly-alpha (V1
+    0.416); with a resolution column V2 fails (F10). Continuum (J0103-1305):
+    red side agrees, forest differs (F17). Identification: skipped, as
+    agreed. V1 `identify_unknown` is unfinished and needs manual input;
+    detection alone (V1 `find_lines`, minima at 5 sigma in the raw flux,
+    749 lines) is not comparable with the V2 regions (95% of the V1 lines
+    in the forest fall in V2 regions, 11% on the red side, where V1 also
+    picks tellurics and noise).
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
@@ -293,7 +303,7 @@ Exception: anything that loses user data or crashes is reported at once.
 |---|---|---|---|---|---|
 | F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490); V2 regression (V1 gives σ/√N), scheduled as a bug (section 3.1) |
 | F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: with few pixels per bin (e.g. 3) a single spike can make the whole bin NaN. Clipping runs once, docstring says "iterative". Not a pure V2 regression: V1 clips with `sigma_clip` within each bin, which keeps the bin but cannot remove an isolated spike with 3-5 pixels per bin; neither version removes it. Related to #465 | numerical | snapshot `rebin_spectrum_nm_clip`; `test_rebin_clipping_keeps_bins_with_a_spike` (strict xfail) | open |
-| F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | V2 regression (V1 uses a running mean, so the fudge is effective and local), scheduled as a bug (section 3.1) |
+| F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | V2 regression (V1 uses a running mean, so the fudge is effective and local), scheduled as a bug (section 3.1). Small in practice: on J0103-1305 the V1 fudge changes the continuum by < 0.05% (`test_v1_auto_fudge_is_small`) |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | open |
 | F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/4 |
@@ -307,6 +317,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_ignores_resolution` (characterization) | open |
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
 | F16 | smoothing | For the same "std" parameter, V1 `_gauss_convolve` uses the kernel exp(-(dv/std)^2), i.e. sigma = std/sqrt(2), while V2 `smooth_spectrum` uses sigma = std: V2 smooths sqrt(2) wider. Affects the continuum smoothing (default 500 km/s: effective sigma 354 km/s in V1, 500 km/s in V2) and any other use of the parameter. Which convention to keep is Guido's decision | numerical | `test_smoothing_width_differs_by_sqrt2` (characterization) | open |
+| F17 | continuum (forest) | On the J0103-1305 window, with the same parameters and matched smoothing, V1 `clip_flux` and V2 `find_absorbed` + `fit_continuum` agree on the red side (masks 99.98%, continuum within 0.4%), but in the Lyman-alpha forest V2 marks more pixels as unabsorbed (57.6% vs 54.8% of the window, masks agree on 92.7% of the forest pixels) and its continuum is lower by 1.2% (median; 5th percentile -4.6%). Not explained by the fudge (F3). Relevant to #465 and to the known low forest continuum | numerical | `test_continuum_forest` (strict xfail) | open |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
