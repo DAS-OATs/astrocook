@@ -12,7 +12,7 @@ def create_v2_system_list_with_v1_models():
     Creates a SystemListV2 object containing one ComponentDataV2 and a mock V1 _mods_t table.
     """
     # 1. Create a minimal ComponentDataV2
-    comp_data = ComponentDataV2(z=2.5, dz=0.0, logN=14.0, dlogN=0.1, b=10.0, db=1.0)
+    comp_data = ComponentDataV2(id=1, z=2.5, dz=0.0, logN=14.0, dlogN=0.1, b=10.0, db=1.0)
     
     # 2. Create a mock V1 _mods_t structure (an Astropy Table)
     mock_v1_models_t = Table({'id': [[1], [2]], 'mod': [object(), object()]})

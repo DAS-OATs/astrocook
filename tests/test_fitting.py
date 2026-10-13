@@ -10,7 +10,6 @@ from astrocook.core.structures import (
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.system_list import SystemListV2
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.core.atomic_data import ATOM_DATA
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -54,13 +53,12 @@ def create_synthetic_spectrum():
     # We create a fitter, but we need to generate the model from the *parameters*, not fit.
     # VoigtFitterV2._compute_model uses the constraints vector.
     
-    # Let's extract the p_vector corresponding to the true component
-    p_true = np.array([z_true, 14.0, 25.0, 0.0]) # z, logN, b, btur
-    true_flux = fitter._compute_model(p_true)
+    _, true_flux = fitter.compute_model_flux()
     
-    # 3. Add Noise
+    # 3. Add Noise (fixed seed: the test must be deterministic)
     noise_level = 0.05
-    noise = np.random.normal(0, noise_level, size=len(x_arr))
+    rng = np.random.default_rng(42)
+    noise = rng.normal(0, noise_level, size=len(x_arr))
     y_obs = true_flux + noise
     dy_obs = np.ones_like(y_obs) * noise_level
     
@@ -76,18 +74,18 @@ def create_synthetic_spectrum():
     )
     return SpectrumV2(final_data)
 
-def test_fitting_workflow():
+def _run_fit():
     
     # 1. Get Data
     spectrum = create_synthetic_spectrum()
     
     # 2. Create a "Bad" Initial Guess (User clicked slightly wrong)
     # True was z=2.0, logN=14.0, b=25.0
-    # Guess is z=2.001, logN=13.5, b=40.0
+    # Guess is z=2.0001, logN=13.5, b=40.0
     print("\n--- Initializing System List with Guess ---")
     guess_comp = ComponentDataV2(
         id=1, 
-        z=2.0005,  # Slightly shifted
+        z=2.0001,  # Slightly shifted (within the default z window of 20 km/s)
         dz=None,
         logN=13.5, # Too weak
         dlogN=None,
@@ -106,7 +104,7 @@ def test_fitting_workflow():
     
     # 4. Run Fit
     print("--- Running Fit (Levenberg-Marquardt) ---")
-    new_syst_list, result = fitter.fit(verbose=2)
+    new_syst_list, _, result = fitter.fit(verbose=2)
     
     # 5. Inspect Results
     fitted_comp = new_syst_list.components[0]
@@ -124,7 +122,11 @@ def test_fitting_workflow():
     print(f"{'b':<10} | {25.0:<10.2f} | {guess_comp.b:<10.2f} | {fitted_comp.b:<10.2f}")
     print("-" * 30)
     
-    # 6. Visualization (Optional)
+    return spectrum, fitter, new_syst_list, result
+
+
+def _plot_fit(spectrum, fitter, new_syst_list, result):
+    """Plot the fit result (only when run as a script)."""
     try:
         x_plot, y_model = fitter.compute_model_flux()
         # We need to re-compute model for the fitted result manually to be sure
@@ -146,5 +148,17 @@ def test_fitting_workflow():
     except Exception as e:
         print(f"Plotting skipped: {e}")
 
+def test_fitting_workflow():
+    _, _, new_syst_list, result = _run_fit()
+    fitted = new_syst_list.components[0]
+
+    # The fit starts from a wrong guess and must recover the true parameters
+    # (z=2.0, logN=14.0, b=25.0) within the noise.
+    assert result.success
+    assert abs(fitted.z - 2.0) < 1e-4
+    assert abs(fitted.logN - 14.0) < 0.1
+    assert abs(fitted.b - 25.0) < 3.0
+
+
 if __name__ == "__main__":
-    test_fitting_workflow()
+    _plot_fit(*_run_fit())
