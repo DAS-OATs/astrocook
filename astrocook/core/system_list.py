@@ -5,13 +5,16 @@ import dataclasses
 import logging
 import numpy as np
 import ast
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 from astrocook.fitting.voigt_model import VoigtModelConstraintV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
 from astrocook.core.system_list_migration import migrate_component_v2_to_v1
 from astrocook.legacy.syst_list import SystList as SystListV1
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+
+if TYPE_CHECKING:
+    from astrocook.core.spectrum import SpectrumV2
 
 def get_all_w_rest(series_name: str) -> List[float]:
     """

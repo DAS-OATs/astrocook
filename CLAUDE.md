@@ -34,6 +34,8 @@ Current version: 2.0.1. Python ≥3.12.
   Locally: `python -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
 - Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
   now, `legacy/` excluded). New code must not add warnings.
+- CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
+  3.12 and 3.13, and `ruff check --select F821` (undefined names only).
 - Launch the GUI: `python run_astrocook.py [file ...]`
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`). Coverage is still minimal:

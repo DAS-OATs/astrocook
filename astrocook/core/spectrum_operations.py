@@ -11,12 +11,15 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks, savgol_filter
 from scipy.special import erf, erfinv
 from scipy.stats import binned_statistic
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from astrocook.legacy.functions import x_convert as x_convert_v1 
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2 
 from astrocook.gui.debug_utils import GLOBAL_PLOTTER
+
+if TYPE_CHECKING:
+    from astrocook.core.spectrum import SpectrumV2
 
 # We assume 'xem' (the Ly-alpha rest wavelength) is accessible here for the custom equivalency
 # You must ensure this global is either imported or defined here (Technical Debt).
