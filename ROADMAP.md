@@ -203,14 +203,22 @@ Findings so far (open, for Guido):
   instead of losing only the spike. Clipping runs once, although the
   docstring says "iterative". Recorded as is in the
   `rebin_spectrum_nm_clip` snapshot.
+- `fit_continuum` with `fudge='auto'` (the recipe default) always applies a
+  factor of exactly 1.0: the fudge is computed from the residuals of the
+  unabsorbed pixels against `cont_raw`, which interpolates exactly those
+  pixels, so the residuals are all zero. Checked on four windows of
+  J0103-1305. Probably meant to be computed after the Gaussian smoothing.
+  Relevant to #465. Recorded as is in the `continuum_j0103_*` snapshots.
 
 Numerical snapshots (item 1): infrastructure in `tests/conftest.py`
 (`snapshot` fixture, reference files in `tests/snapshots/`, updated only with
 `pytest --update-snapshots`). Done: pure functions of
 `spectrum_operations.py` (rebin, smooth, running mean/std, axis conversions,
-flux scaling) on a synthetic spectrum. Next: continuum, identification and
-Voigt fit, each stage taking the frozen output of the previous one (the
-J0103-1305 session in `tests/data`, z_em = 4.072), then the full chain.
+flux scaling) on a synthetic spectrum; continuum (absorbed regions, auto
+fudge, continuum fit, power law) on the raw J0103-1305 spectrum, 570-700 nm,
+z_em = 4.072, recipe defaults. Next: identification and Voigt fit, each
+stage taking the frozen output of the previous one (continuum and systems
+saved in the J0103-1305 session), then the full chain.
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version

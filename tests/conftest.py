@@ -21,6 +21,16 @@ import astropy.units as au
 import pytest
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
+DATA_DIR = Path(__file__).parent / "data"
+
+# Real spectrum used by the snapshots of continuum, identification and fit.
+# The archive does not store the emission redshift: value given by the
+# maintainer.
+J0103_SESSION = DATA_DIR / "J0103-1305_metallines_lya_new.acs2"
+J0103_Z_EM = 4.072
+# Lyman-alpha forest, Ly-alpha emission (616.7 nm) and red side, including
+# the default rest-frame regions of fit_powerlaw (128-136 nm).
+J0103_WINDOW_NM = (570.0, 700.0)
 
 
 def pytest_addoption(parser):
@@ -89,6 +99,40 @@ class Snapshot:
                 else:
                     np.testing.assert_array_equal(
                         actual, expected, err_msg=f"Snapshot {name}[{key}]")
+
+
+@pytest.fixture(scope="session")
+def j0103_session():
+    """The J0103-1305 session (spectrum with continuum, and system list)."""
+    from astrocook.core.session import SessionV2
+    session = SessionV2.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
+    return session[0] if isinstance(session, (list, tuple)) else session
+
+
+@pytest.fixture(scope="session")
+def j0103_window(j0103_session):
+    """
+    Raw J0103-1305 spectrum in ``J0103_WINDOW_NM``: x, xmin, xmax, y, dy and
+    resol only, with ``z_em = J0103_Z_EM``. Saved continuum and model are
+    left out, so that each stage can be run from scratch.
+    """
+    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+
+    spec = j0103_session.spec
+    x = spec.x.value
+    sel = (x > J0103_WINDOW_NM[0]) & (x < J0103_WINDOW_NM[1])
+
+    def col(q):
+        return DataColumnV2(q.value[sel], q.unit)
+
+    data = SpectrumDataV2(
+        x=col(spec.x), xmin=col(spec.xmin), xmax=col(spec.xmax),
+        y=col(spec.y), dy=col(spec.dy),
+        aux_cols={"resol": col(spec.get_column("resol"))},
+        z_em=J0103_Z_EM,
+    )
+    return SpectrumV2(data)
 
 
 @pytest.fixture
