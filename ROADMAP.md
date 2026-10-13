@@ -201,8 +201,10 @@ Numerical snapshots (item 1): infrastructure in `tests/conftest.py`
 flux scaling) on a synthetic spectrum; continuum (absorbed regions, auto
 fudge, continuum fit, power law) on the raw J0103-1305 spectrum, 570-700 nm,
 z_em = 4.072, recipe defaults; line identification on the same window, with
-the continuum and mask saved in the session as frozen inputs. Next: Voigt
-fit (frozen continuum and systems from the session), then the full chain.
+the continuum and mask saved in the session as frozen inputs; Voigt model and
+fit on a synthetic spectrum (resolution from the attribute, from a column,
+per component, none) and on J0103-1305 (frozen continuum and systems,
+R = 45000 given by the maintainer). Next: the full chain.
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version
@@ -257,6 +259,9 @@ Exception: anything that loses user data or crashes is reported at once.
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | open |
 | F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/4 |
 | F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 4 |
+| F8 | resolution handling | The resolution lives in five places (per-component value, `resol` column, `SpectrumDataV2.resol`, meta `resol`/`RESOL`, meta `resol_fwhm`), each read with a different priority by the fitter, the `.acs2` loader, coadd and the GUI. The `.acs2` save does not write the attribute: it survives only through the meta keys (set by "Set properties"). The fitter stamps the resolution used into every fitted component, which then overrides later changes. R vs km/s is guessed from a threshold of 500. The J0103-1305 archive (older version) stores no resolution at all. To be analysed by Guido | behaviour, possible data loss | — (map in the PR that added this row) | open, priority |
+| F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9) | numerical | — | open |
+| F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra, RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero` (strict xfail) | open, high priority |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and

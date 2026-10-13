@@ -31,6 +31,9 @@ J0103_Z_EM = 4.072
 # Lyman-alpha forest, Ly-alpha emission (616.7 nm) and red side, including
 # the default rest-frame regions of fit_powerlaw (128-136 nm).
 J0103_WINDOW_NM = (570.0, 700.0)
+# Resolving power of the J0103-1305 spectrum (given by the maintainer). The
+# archive does not store it (saved by an older version of the software).
+J0103_RESOL = 45000.0
 
 
 def pytest_addoption(parser):
@@ -157,6 +160,18 @@ def j0103_window_with_continuum(j0103_session, j0103_window):
     aux["cont"] = DataColumnV2(cont.value[sel], cont.unit)
     aux["abs_mask"] = DataColumnV2(~unabs, au.dimensionless_unscaled)
     return SpectrumV2(dataclasses.replace(j0103_window._data, aux_cols=aux))
+
+
+@pytest.fixture(scope="session")
+def j0103_window_for_fit(j0103_window_with_continuum):
+    """
+    ``j0103_window_with_continuum`` with the global resolving power set to
+    ``J0103_RESOL`` (as with "Set properties" in the GUI). The all-NaN
+    ``resol`` column of the archive is kept, so the fitter uses the global
+    value.
+    """
+    return j0103_window_with_continuum.with_properties(
+        z_em=J0103_Z_EM, resol=J0103_RESOL, overwrite_resol_col=False)
 
 
 @pytest.fixture
