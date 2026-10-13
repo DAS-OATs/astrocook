@@ -151,6 +151,10 @@ No changes to production code.
 8. **CI:** GitHub Actions (Python 3.12, 3.13).
 9. **First scientific checks:** oversampling of the Voigt model; scaling of
    uncertainties by the reduced χ².
+10. **Issues labelled "possibly fixed"** ([#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455),
+    [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436)): write a test reproducing each reported scenario.
+    If it passes, the test is the evidence for closing the issue; if it
+    fails, the issue goes back to the open bugs (see section 3.1).
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
@@ -172,6 +176,27 @@ the same public API through delegation; same approach for the GUI.
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
 
+### 3.1 User-reported issues
+GitHub issues are the single source of truth; this section only says *when*
+each open issue is addressed. Rule of thumb: bugs before refactoring,
+features after, except urgent features in stable areas.
+
+| When | Issues | Notes |
+|---|---|---|
+| Phase 1 | [#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455), [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436) | "possibly fixed": verify with tests, close or reopen |
+| Right after phase 1, before phase 2 | [#465](https://github.com/DAS-OATs/astrocook/issues/465) | continuum sensitive to spikes (urgent); numerical choice, to be agreed with Guido before fixing |
+| Right after phase 1, before phase 2 | [#476](https://github.com/DAS-OATs/astrocook/issues/476), [#481](https://github.com/DAS-OATs/astrocook/issues/481) | ASCII export; possibly the same problem, to be checked |
+| Right after phase 1, before phase 2 | [#442](https://github.com/DAS-OATs/astrocook/issues/442) | scatter plot not auto-triggering on region overlap |
+| Right after phase 1, before phase 2 | [#480](https://github.com/DAS-OATs/astrocook/issues/480) | import of line lists as ASCII (urgent); touches `io/`, little affected by refactoring |
+| With the natural-language log work | [#424](https://github.com/DAS-OATs/astrocook/issues/424) | logging of manual continuum edits |
+| After phase 3/4 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
+| After phase 4 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |
+| After phase 4 | [#446](https://github.com/DAS-OATs/astrocook/issues/446), [#437](https://github.com/DAS-OATs/astrocook/issues/437) | flux-calibration filters; independent, not urgent |
+
+Each bug fix comes in a small PR with a test reproducing the bug.
+Only issues on GitHub are considered; requests received elsewhere should be
+opened as issues first.
+
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
 the availability of test data.
@@ -179,6 +204,7 @@ the availability of test data.
 ### Decisions reserved to Guido
 - License.
 - Questionable behaviours found by characterization tests (bug or intended?).
+- Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
 - Releases (PyPI, macOS app signing).
 
@@ -258,6 +284,7 @@ review); each of its decisions goes into the log.
 | Initial analysis and roadmap | done (October 2026) |
 | 0 – Environment | not started |
 | 1 – Safety net | not started |
+| Open bugs and urgent features (section 3.1) | not started |
 | 2 – Cleanup and packaging | not started |
 | 3 – Decoupling from legacy | not started |
 | 4 – Splitting large files | not started |
