@@ -41,6 +41,9 @@ Current version: 2.0.1. Python ≥3.12.
 - Tests: `pytest` (config in `pyproject.toml`). Coverage is still minimal:
   before changing production code, add characterization tests for the
   behaviour involved.
+- Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
+  fixture (`tests/conftest.py`). Regenerate only for an intended change
+  (`pytest --update-snapshots`) and say so in the PR.
 - Work in small PRs; the test suite must be green before and after.
 - Do not change numerical behaviour without Guido's agreement: if a
   behaviour looks like a bug, report it instead of silently fixing it.

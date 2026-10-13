@@ -197,6 +197,20 @@ Findings so far (open, for Guido):
   (`test_rebin_weighted_average_error` is a strict `xfail` until decided).
 - `VoigtFitterV2` bounds z to ±`z_window_kms` (default 20 km/s) around the
   initial guess: a guess further away cannot reach the true value. Intended?
+- `rebin_spectrum` with sigma clipping (`kappa`): the clipping model is the
+  first-pass bin mean, which includes the outlier. A single spike shifts it
+  enough that all pixels of the bin are rejected, and the bin becomes NaN
+  instead of losing only the spike. Clipping runs once, although the
+  docstring says "iterative". Recorded as is in the
+  `rebin_spectrum_nm_clip` snapshot.
+
+Numerical snapshots (item 1): infrastructure in `tests/conftest.py`
+(`snapshot` fixture, reference files in `tests/snapshots/`, updated only with
+`pytest --update-snapshots`). Done: pure functions of
+`spectrum_operations.py` (rebin, smooth, running mean/std, axis conversions,
+flux scaling) on a synthetic spectrum. Next: continuum, identification and
+Voigt fit, each stage taking the frozen output of the previous one (the
+J0103-1305 session in `tests/data`, z_em = 4.072), then the full chain.
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version
