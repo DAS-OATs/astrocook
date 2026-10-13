@@ -28,6 +28,12 @@ Current version: 2.0.1. Python ≥3.12.
   To be removed progressively (phase 3); do not use it for new code.
 
 ## How to work
+- Environment: in cloud sessions `.claude/hooks/session-start.sh` installs
+  the Qt system libraries and the package (with `[dev]` extras) into
+  `.venv/`, and sets `QT_QPA_PLATFORM=offscreen` and `MPLBACKEND=Agg`.
+  Locally: `python -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
+- Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
+  now, `legacy/` excluded). New code must not add warnings.
 - Launch the GUI: `python run_astrocook.py [file ...]`
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`). Coverage is still minimal:

@@ -131,6 +131,28 @@ a small PR, with the test suite green before and after.
 ### Phase 0 – Environment
 Install dependencies; run the GUI with `QT_QPA_PLATFORM=offscreen`.
 
+Done: SessionStart hook for cloud sessions, `pytest-qt`/`pytest-cov` in the
+`[test]` extra. The GUI starts offscreen without errors. Baseline of the
+existing suite (Python 3.13): 1 passed, 4 failed; all four failures come
+from tests that are out of date with the current API (missing
+`ComponentDataV2.id`, `rebin_spectrum` now returning 6 values, free
+parameter vector without `btur`). To be fixed at the start of phase 1.
+
+Linter: Ruff, pyflakes rules (`F`) only, `legacy/` and backup directories
+excluded. First check: 176 warnings (121 unused imports, 24 unused
+variables, 16 f-strings without placeholders, 9 undefined names, 6
+redefinitions). Three undefined names are real bugs, to be reported to
+Guido before fixing:
+- `recipes/file.py` (`export_ascii`): `re` not imported, so the recipe
+  always raises `NameError`; probably the cause of #476/#481.
+- `core/session.py` (V1 `.acs` save): `dataclasses` not imported; the error
+  is swallowed by a broad `except`, so the V2 log is silently replaced by an
+  empty one.
+- `fitting/voigt_fitter.py`: `iterator` undefined in the debug branch taken
+  when the fit mask is empty, so the fit raises `NameError`.
+The other undefined names are string annotations (`'SpectrumV2'`) without a
+`TYPE_CHECKING` import: harmless.
+
 ### Phase 1 – Safety net (pilot)
 No changes to production code.
 1. **Numerical snapshots** (characterization tests) of `SpectrumV2`
@@ -282,7 +304,7 @@ review); each of its decisions goes into the log.
 | Phase | Status |
 |---|---|
 | Initial analysis and roadmap | done (October 2026) |
-| 0 – Environment | not started |
+| 0 – Environment | done (October 2026) |
 | 1 – Safety net | not started |
 | Open bugs and urgent features (section 3.1) | not started |
 | 2 – Cleanup and packaging | not started |
