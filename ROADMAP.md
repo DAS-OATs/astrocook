@@ -289,6 +289,20 @@ the same public API through delegation; same approach for the GUI.
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
 
+### Releases
+So far, releases have been distributed as a macOS app through the GitHub
+releases page (not the Mac App Store); Astrocook is not on PyPI yet.
+Plan (proposed, each release still Guido's decision):
+- **2.0.2 (corrective), right after phase 1:** the V2 regressions (F1, F3,
+  F10) and the urgent issues #465 and #480, together with the fixes
+  already on master (ASCII export #476/#481, Voigt fitter context, warning
+  on saving to V1 `.acs`). Release notes state which numerical results
+  change. A 2.0.2 with only the fixes already on master can be brought
+  forward if users need the ASCII export earlier.
+- **2.1 (first consolidated release), after phases 2-3:** clean packaging
+  (LICENSE, entry point, realistic dependency versions); first
+  publication on PyPI. Also the macOS app, as before.
+
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
 each open issue is addressed. Rule of thumb: bugs before refactoring,
@@ -347,8 +361,8 @@ the availability of test data.
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
-- Releases (PyPI, macOS app signing). In particular: whether to publish a
-  corrective 2.0.2 once the V2 regressions (F1, F3, F10) are fixed.
+- Releases (see "Releases" above): timing of 2.0.2 and 2.1, PyPI
+  publication, macOS app signing and notarization.
 
 ---
 
