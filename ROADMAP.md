@@ -178,7 +178,9 @@ No changes to production code.
 6. **Measuring the net:** coverage; mutation testing (`mutmut`) on critical
    modules.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
-8. **CI:** GitHub Actions (Python 3.12, 3.13).
+8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
+   Ruff blocking on undefined names (`F821`) only, until the other pyflakes
+   warnings are cleaned up in a dedicated PR.
 9. **First scientific checks:** oversampling of the Voigt model; scaling of
    uncertainties by the reduced χ².
 10. **Issues labelled "possibly fixed"** ([#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455),
