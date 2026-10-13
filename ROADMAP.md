@@ -202,6 +202,15 @@ No changes to production code.
       after linking with the group still selected (F13).
     Closing the issues is Guido's decision: the reporters of #469, #477,
     #436 and #455 have been asked to confirm with the current version.
+11. **V1/V2 parity tests.** The V1 code (`astrocook/legacy/`) is the
+    validated reference behind ~50 published papers. For each operation
+    reimplemented in V2 (rebin, coadd, continuum, Voigt model and
+    convolution, identification), run V1 and V2 on the same input and
+    compare the outputs within a tolerance; every difference is either
+    documented as intended or treated as a bug. Scheduled right after the
+    snapshots of the remaining `SpectrumV2` methods, before the mock
+    generator. A first manual check (October 2026) showed that F1, F3 and
+    F10 are V2 regressions: V1 behaves correctly in all three cases.
 
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
@@ -229,6 +238,11 @@ decision)**.
 ### Phase 3 – Decoupling from legacy
 One dependency at a time (`Defaults`, `trans_parse`, `xem_d`, … become V2
 modules). Legacy code remains only behind the V1 migration loader.
+The V1 numerical routines used by the parity tests (phase 1, item 11) are
+not deleted: they are moved into a test-only reference module (e.g.
+`tests/reference/`), so that V2 can still be checked against the validated
+V1 behaviour. Only the code needed by the wx GUI and the rest of V1 is
+removed.
 
 ### Phase 4 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
@@ -246,6 +260,7 @@ features after, except urgent features in stable areas.
 | When | Issues | Notes |
 |---|---|---|
 | Phase 1 | [#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455), [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436) | "possibly fixed": verify with tests, close or reopen |
+| Right after phase 1, before phase 2 | F1 ([#490](https://github.com/DAS-OATs/astrocook/issues/490)), F3, F10 (section 3.2) | V2 regressions (V1 is correct): rebinned errors, auto fudge, convolution with a resolution column. Reference behaviour: V1; each fix still agreed with Guido, with a regression test |
 | Right after phase 1, before phase 2 | [#465](https://github.com/DAS-OATs/astrocook/issues/465) | continuum sensitive to spikes (urgent); numerical choice, to be agreed with Guido before fixing |
 | Phase 0 (brought forward) | [#476](https://github.com/DAS-OATs/astrocook/issues/476), [#481](https://github.com/DAS-OATs/astrocook/issues/481) | ASCII export; same problem (missing `import re`, found by Ruff), fixed with a regression test |
 | Right after phase 1, before phase 2 | [#442](https://github.com/DAS-OATs/astrocook/issues/442) | scatter plot not auto-triggering on region overlap |
@@ -267,16 +282,16 @@ Exception: anything that loses user data or crashes is reported at once.
 
 | ID | Area | Finding | Impact | Recorded by | Status |
 |---|---|---|---|---|---|
-| F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490) |
+| F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490); V2 regression (V1 gives σ/√N), scheduled as a bug (section 3.1) |
 | F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: a single spike makes the whole bin NaN. Clipping runs once, docstring says "iterative" | numerical | snapshot `rebin_spectrum_nm_clip` | open |
-| F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | open |
+| F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | V2 regression (V1 uses a running mean, so the fudge is effective and local), scheduled as a bug (section 3.1) |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | open |
 | F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/4 |
 | F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 4 |
 | F8 | resolution handling | The resolution lives in five places (per-component value, `resol` column, `SpectrumDataV2.resol`, meta `resol`/`RESOL`, meta `resol_fwhm`), each read with a different priority by the fitter, the `.acs2` loader, coadd and the GUI. The `.acs2` save does not write the attribute: it survives only through the meta keys (set by "Set properties"). The fitter stamps the resolution used into every fitted component, which then overrides later changes. R vs km/s is guessed from a threshold of 500. The J0103-1305 archive (older version) stores no resolution at all. To be analysed by Guido | behaviour, possible data loss | — (map in the PR that added this row) | open, priority |
 | F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9) | numerical | — | open |
-| F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra, RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero` (strict xfail) | open, high priority |
+| F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra, RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero` (strict xfail) | V2 regression (V1 takes R at the system centre, no rounding; from reading the code), scheduled as a bug (section 3.1), high priority |
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | — | open |
 | F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
 | F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured` (strict xfail) | open |
@@ -292,7 +307,8 @@ the availability of test data.
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
-- Releases (PyPI, macOS app signing).
+- Releases (PyPI, macOS app signing). In particular: whether to publish a
+  corrective 2.0.2 once the V2 regressions (F1, F3, F10) are fixed.
 
 ---
 
