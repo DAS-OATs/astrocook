@@ -163,3 +163,130 @@ def test_equalization_factor():
 
     assert factor_v1 == pytest.approx(1.25, rel=5e-3)
     assert factor_v2 == pytest.approx(factor_v1, rel=5e-3)
+
+
+# --- Voigt model ---------------------------------------------------------
+
+def _voigt_v1(x, step, series, z, logN, b, resol):
+    """V1 model as in SystModel: lines_voigt convolved with spec.psf_gauss."""
+    from astrocook.legacy.functions import convolve_simple, lines_voigt
+    one = np.ones_like(x)
+    spec = _v1(x, step, one, 0.02 * one)
+    model = lines_voigt(x, z, logN, b, 0.0, series)
+    return model if resol is None else convolve_simple(model, spec.psf_gauss(x, resol))
+
+
+def _voigt_v2(x, step, series, z, logN, b, resol=None, resol_col=None):
+    from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+    from astrocook.core.system_list import SystemListV2
+    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    one = np.ones_like(x)
+    unit = au.dimensionless_unscaled
+    aux = {"cont": DataColumnV2(one, unit)}
+    if resol_col is not None:
+        aux["resol"] = DataColumnV2(resol_col, unit)
+    spec = SpectrumV2(SpectrumDataV2(
+        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - step / 2, au.nm),
+        xmax=DataColumnV2(x + step / 2, au.nm), y=DataColumnV2(one, unit),
+        dy=DataColumnV2(0.02 * one, unit), aux_cols=aux, z_em=4.0,
+        resol=resol or 0.0))
+    comp = ComponentDataV2(id=1, z=z, dz=None, logN=logN, dlogN=None, b=b,
+                           db=None, series=series)
+    _, model = VoigtFitterV2(
+        spec, SystemListV2(SystemListDataV2(components=[comp]))).compute_model_flux()
+    return model
+
+
+VOIGT_X = np.arange(612.0, 620.0, 0.002)  # CIV at z = 2.97, Ly-alpha at z = 4.06
+
+
+@pytest.mark.parametrize("resol", [None, 45000.0, 20000.0])
+@pytest.mark.parametrize("series, z, logN, b, ew_rtol", [
+    ("CIV", 2.97, 13.6, 12.0, 1e-3),
+    # V1 uses f = 0.416 for Ly-alpha, V2 0.4164: 0.1% more absorption in V2
+    ("Ly_a", 4.059, 13.8, 25.0, 2e-3),
+])
+def test_voigt_model(series, z, logN, b, ew_rtol, resol):
+    # Same physics: the models agree within 5e-4 in normalised flux. A
+    # constant 0.05% difference in equivalent width remains for CIV, with
+    # identical atomic data; not traced further (2e-4 dex in logN).
+    v1 = _voigt_v1(VOIGT_X, 0.002, series, z, logN, b, resol)
+    v2 = _voigt_v2(VOIGT_X, 0.002, series, z, logN, b, resol)
+    assert np.max(np.abs(v2 - v1)) < 5e-4 + 0.5 * ew_rtol
+    assert np.sum(1 - v2) == pytest.approx(np.sum(1 - v1), rel=ew_rtol)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "V1 takes the resolution from the column at the system centre; V2 "
+    "convolve_flux leaves pixels with a non-round resolution at 0. Findings "
+    "register F10."))
+def test_voigt_model_with_resolution_column():
+    resol = 45050.0
+    v1 = _voigt_v1(VOIGT_X, 0.002, "CIV", 2.97, 13.6, 12.0, resol)
+    v2 = _voigt_v2(VOIGT_X, 0.002, "CIV", 2.97, 13.6, 12.0,
+                   resol_col=np.full(len(VOIGT_X), resol))
+    assert np.max(np.abs(v2 - v1)) < 1e-3
+
+
+# --- Continuum (J0103-1305 window) -------------------------------------------
+
+@pytest.fixture(scope="module")
+def continua(j0103_window):
+    """V1 clip_flux and V2 find_absorbed + fit_continuum on the same window.
+
+    The V2 smoothing is set to the effective V1 one (std 400 km/s in V1 is
+    sigma = 283 km/s, see F16), to compare the algorithms rather than the
+    smoothing convention.
+    """
+    from astrocook.legacy.cookbook_continuum import CookbookContinuum
+    from conftest import J0103_Z_EM
+
+    w = j0103_window
+
+    def v1_continuum(fudge):
+        spec = SpectrumV1(w.x, w.xmin, w.xmax, w.y, w.dy,
+                          xunit=au.nm, yunit=w.y.unit)
+        cookbook = CookbookContinuum()
+        cookbook.sess = SimpleNamespace(spec=spec, lines=None, nodes=None)
+        cookbook.nodes_extract = lambda *a, **k: 0  # knots for the GUI editor
+        cookbook.clip_flux(zem=J0103_Z_EM, fudge=fudge)
+        return (np.array(spec._t["cont"]),
+                np.array(spec._t["mask_unabs"]).astype(bool))
+
+    cont1, unabs1 = v1_continuum("auto")
+    cont1_nofudge, _ = v1_continuum("1.0")
+    absorbed = w.find_absorbed(5000 * au.km / au.s, 400 * au.km / au.s, 2.0, False)
+    unabs2 = ~absorbed.get_column("abs_mask").value.astype(bool)
+    cont2 = absorbed.fit_continuum("auto", 400.0 / np.sqrt(2)).get_column("cont").value
+    forest = w.x.value < 121.567 * (1 + J0103_Z_EM)
+    return SimpleNamespace(cont1=cont1, cont1_nofudge=cont1_nofudge,
+                           unabs1=unabs1, cont2=cont2, unabs2=unabs2,
+                           forest=forest, red=~forest)
+
+
+def test_continuum_red_side(continua):
+    c = continua
+    # Masks agree except a few pixels at the red edge of the window
+    assert np.mean(c.unabs2[c.red] == c.unabs1[c.red]) > 0.999
+    ratio = c.cont2[c.red] / c.cont1[c.red]
+    assert np.nanmedian(ratio) == pytest.approx(1.0, abs=0.005)
+
+
+def test_v1_auto_fudge_is_small(continua):
+    # The V1 automatic fudge is effective but small on this spectrum, so the
+    # V2 regression F3 (fudge always 1) has little practical effect here
+    c = continua
+    ratio = c.cont1 / c.cont1_nofudge
+    assert np.nanmedian(ratio[c.forest]) == pytest.approx(1.0, abs=1e-3)
+    assert np.nanmedian(ratio[c.red]) == pytest.approx(1.0, abs=1e-3)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "In the Lyman-alpha forest V2 marks more pixels as unabsorbed than V1 "
+    "(57.6% vs 54.8% of the window), and its continuum is ~1.2% lower "
+    "(median; up to 5%). Findings register F17."))
+def test_continuum_forest(continua):
+    c = continua
+    assert np.mean(c.unabs2[c.forest] == c.unabs1[c.forest]) > 0.99
+    ratio = c.cont2[c.forest] / c.cont1[c.forest]
+    assert np.nanmedian(ratio) == pytest.approx(1.0, abs=0.005)
