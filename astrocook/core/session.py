@@ -329,6 +329,26 @@ class SessionV2:
         new_session.log_manager = self.log_manager
         return new_session
     
+    def log_lost_on_save(self, file_path: str) -> bool:
+        """
+        Tell whether saving to ``file_path`` would drop the session log.
+
+        The V1 ``.acs`` format cannot store a V2 log (:class:`HistoryLogV2`).
+
+        Parameters
+        ----------
+        file_path : str
+            The destination path, as passed to :meth:`save`.
+
+        Returns
+        -------
+        bool
+            ``True`` if the file would be saved in V1 format and the session
+            has a V2 log.
+        """
+        is_v1 = not file_path.lower().endswith('.acs2')
+        return is_v1 and isinstance(self.log_manager, HistoryLogV2)
+
     def save(self, file_path: str, 
              initial_session: Optional['SessionV2'] = None, 
              models: bool = False):
@@ -381,11 +401,11 @@ class SessionV2:
             elif isinstance(self.log_manager, V1LogArtifact):
                 json_log_str = json.dumps(self.log_manager.v1_json)
             elif isinstance(self.log_manager, HistoryLogV2):
-                # We can serialize the V2 log for documentation in V1
-                try:
-                    json_log_str = json.dumps(dataclasses.asdict(self.log_manager))
-                except Exception:
-                    json_log_str = json.dumps({"set_menu": []})
+                # The V1 format cannot store the V2 log: it is dropped on purpose
+                logging.warning(
+                    "The V1 .acs format does not store the V2 session log: the log "
+                    "was not saved. Save as .acs2 to keep it.")
+                json_log_str = json.dumps({"set_menu": []})
             else:
                 logging.warning("Cannot save V2 log to V1 .acs archive. Log will be empty.")
                 json_log_str = json.dumps({"set_menu": []})

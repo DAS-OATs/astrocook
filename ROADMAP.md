@@ -148,8 +148,10 @@ Guido before fixing:
 - `core/session.py` (V1 `.acs` save): `dataclasses` not imported; the error
   is swallowed by a broad `except`, so the V2 log is silently replaced by an
   empty one. Adding the import alone does not help: `HistoryLogV2` is a
-  dataclass without fields, so `asdict()` returns `{}`. Open question for
-  Guido: what should a V1 `.acs` contain when the session has a V2 log?
+  dataclass without fields, so `asdict()` returns `{}`. Guido's decision:
+  no backward support for V1 is needed, the log may be lost (also to
+  encourage saving as `.acs2`), but the user must be told. Done: warning in
+  the log, and a confirmation dialog in the GUI when saving as `.acs`.
 - `fitting/voigt_fitter.py`: `iterator` used before assignment in the debug
   branch taken when the fit mask is empty, so the fit raises
   `UnboundLocalError`.
