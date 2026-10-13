@@ -734,7 +734,7 @@ class VoigtFitterV2:
         if np.sum(self._fit_mask_calc) == 0:
             logging.debug("FIT MASK IS EMPTY!")
             # Debug: what are we searching for?
-            for idx, comp in iterator:
+            for idx, comp in enumerate(active_components):
                 logging.debug(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
         
         if self._use_variable_resolution and self._resol_column is not None:

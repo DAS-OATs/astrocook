@@ -147,9 +147,14 @@ Guido before fixing:
   always raises `NameError`; probably the cause of #476/#481.
 - `core/session.py` (V1 `.acs` save): `dataclasses` not imported; the error
   is swallowed by a broad `except`, so the V2 log is silently replaced by an
-  empty one.
-- `fitting/voigt_fitter.py`: `iterator` undefined in the debug branch taken
-  when the fit mask is empty, so the fit raises `NameError`.
+  empty one. Adding the import alone does not help: `HistoryLogV2` is a
+  dataclass without fields, so `asdict()` returns `{}`. Open question for
+  Guido: what should a V1 `.acs` contain when the session has a V2 log?
+- `fitting/voigt_fitter.py`: `iterator` used before assignment in the debug
+  branch taken when the fit mask is empty, so the fit raises
+  `UnboundLocalError`.
+The `export_ascii` and `voigt_fitter` bugs were fixed right after phase 0,
+with regression tests.
 The other undefined names are string annotations (`'SpectrumV2'`) without a
 `TYPE_CHECKING` import: harmless.
 
@@ -207,7 +212,7 @@ features after, except urgent features in stable areas.
 |---|---|---|
 | Phase 1 | [#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455), [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436) | "possibly fixed": verify with tests, close or reopen |
 | Right after phase 1, before phase 2 | [#465](https://github.com/DAS-OATs/astrocook/issues/465) | continuum sensitive to spikes (urgent); numerical choice, to be agreed with Guido before fixing |
-| Right after phase 1, before phase 2 | [#476](https://github.com/DAS-OATs/astrocook/issues/476), [#481](https://github.com/DAS-OATs/astrocook/issues/481) | ASCII export; possibly the same problem, to be checked |
+| Phase 0 (brought forward) | [#476](https://github.com/DAS-OATs/astrocook/issues/476), [#481](https://github.com/DAS-OATs/astrocook/issues/481) | ASCII export; same problem (missing `import re`, found by Ruff), fixed with a regression test |
 | Right after phase 1, before phase 2 | [#442](https://github.com/DAS-OATs/astrocook/issues/442) | scatter plot not auto-triggering on region overlap |
 | Right after phase 1, before phase 2 | [#480](https://github.com/DAS-OATs/astrocook/issues/480) | import of line lists as ASCII (urgent); touches `io/`, little affected by refactoring |
 | With the natural-language log work | [#424](https://github.com/DAS-OATs/astrocook/issues/424) | logging of manual continuum edits |
