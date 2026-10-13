@@ -135,6 +135,30 @@ def j0103_window(j0103_session):
     return SpectrumV2(data)
 
 
+@pytest.fixture(scope="session")
+def j0103_window_with_continuum(j0103_session, j0103_window):
+    """
+    ``j0103_window`` plus the continuum and the absorbed-region mask saved
+    in the session (``cont`` and ``abs_mask = ~mask_unabs``). These are the
+    frozen inputs of the identification and fit stages: a change in the
+    continuum algorithm does not propagate to their snapshots.
+    """
+    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.structures import DataColumnV2
+    import dataclasses
+
+    spec = j0103_session.spec
+    x = spec.x.value
+    sel = (x > J0103_WINDOW_NM[0]) & (x < J0103_WINDOW_NM[1])
+    cont = spec.get_column("cont")
+    unabs = spec.get_column("mask_unabs").value[sel].astype(bool)
+
+    aux = dict(j0103_window._data.aux_cols)
+    aux["cont"] = DataColumnV2(cont.value[sel], cont.unit)
+    aux["abs_mask"] = DataColumnV2(~unabs, au.dimensionless_unscaled)
+    return SpectrumV2(dataclasses.replace(j0103_window._data, aux_cols=aux))
+
+
 @pytest.fixture
 def snapshot(request):
     return Snapshot(update=request.config.getoption("--update-snapshots"))

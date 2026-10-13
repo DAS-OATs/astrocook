@@ -191,24 +191,8 @@ No changes to production code.
 At the end of the phase: measure usage and review time to re-estimate the
 rest.
 
-Findings so far (open, for Guido):
-- [#490](https://github.com/DAS-OATs/astrocook/issues/490): `rebin_spectrum`
-  errors do not decrease with the number of pixels per output bin
-  (`test_rebin_weighted_average_error` is a strict `xfail` until decided).
-- `VoigtFitterV2` bounds z to ±`z_window_kms` (default 20 km/s) around the
-  initial guess: a guess further away cannot reach the true value. Intended?
-- `rebin_spectrum` with sigma clipping (`kappa`): the clipping model is the
-  first-pass bin mean, which includes the outlier. A single spike shifts it
-  enough that all pixels of the bin are rejected, and the bin becomes NaN
-  instead of losing only the spike. Clipping runs once, although the
-  docstring says "iterative". Recorded as is in the
-  `rebin_spectrum_nm_clip` snapshot.
-- `fit_continuum` with `fudge='auto'` (the recipe default) always applies a
-  factor of exactly 1.0: the fudge is computed from the residuals of the
-  unabsorbed pixels against `cont_raw`, which interpolates exactly those
-  pixels, so the residuals are all zero. Checked on four windows of
-  J0103-1305. Probably meant to be computed after the Gaussian smoothing.
-  Relevant to #465. Recorded as is in the `continuum_j0103_*` snapshots.
+Findings are collected in the register below (section 3.2) and reviewed
+with Guido at the end of the phase.
 
 Numerical snapshots (item 1): infrastructure in `tests/conftest.py`
 (`snapshot` fixture, reference files in `tests/snapshots/`, updated only with
@@ -216,9 +200,9 @@ Numerical snapshots (item 1): infrastructure in `tests/conftest.py`
 `spectrum_operations.py` (rebin, smooth, running mean/std, axis conversions,
 flux scaling) on a synthetic spectrum; continuum (absorbed regions, auto
 fudge, continuum fit, power law) on the raw J0103-1305 spectrum, 570-700 nm,
-z_em = 4.072, recipe defaults. Next: identification and Voigt fit, each
-stage taking the frozen output of the previous one (continuum and systems
-saved in the J0103-1305 session), then the full chain.
+z_em = 4.072, recipe defaults; line identification on the same window, with
+the continuum and mask saved in the session as frozen inputs. Next: Voigt
+fit (frozen continuum and systems from the session), then the full chain.
 
 ### Phase 2 – Cleanup and packaging
 Obsolete and backup files; `pyproject.toml` (placeholders, version
@@ -257,6 +241,22 @@ features after, except urgent features in stable areas.
 Each bug fix comes in a small PR with a test reproducing the bug.
 Only issues on GitHub are considered; requests received elsewhere should be
 opened as issues first.
+
+### 3.2 Findings register
+Questionable behaviours and technical debt found during phase 1. Nothing
+here is fixed silently: at the end of the phase Guido decides, for each
+item, whether to open an issue, fix it within a later phase, or accept it.
+Exception: anything that loses user data or crashes is reported at once.
+
+| ID | Area | Finding | Impact | Recorded by | Status |
+|---|---|---|---|---|---|
+| F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490) |
+| F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: a single spike makes the whole bin NaN. Clipping runs once, docstring says "iterative" | numerical | snapshot `rebin_spectrum_nm_clip` | open |
+| F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | open |
+| F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
+| F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | open |
+| F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/4 |
+| F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 4 |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
