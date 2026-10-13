@@ -2923,7 +2923,21 @@ class MainWindowV2(QMainWindow):
         if file_name:
             # --- Save the directory for next time ---
             settings.setValue("last_working_dir", os.path.dirname(file_name))
-            
+
+            # --- Warn that the V1 format drops the V2 log ---
+            if session_to_save_final.log_lost_on_save(file_name):
+                ret = self._show_custom_message(
+                    title="Save Session",
+                    header="The session log will not be saved",
+                    text="The V1 format (.acs) does not store the V2 session log.\n"
+                         "Save as .acs2 to keep it.",
+                    buttons=QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
+                    default_btn=QMessageBox.StandardButton.Cancel
+                )
+                if ret != QMessageBox.StandardButton.Save:
+                    logging.info("Save cancelled: V1 format would drop the session log.")
+                    return False
+
             logging.info(f"Saving session to: {file_name}")
             try:
                 # Pass *both* sessions to the save method
