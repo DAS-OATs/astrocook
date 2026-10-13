@@ -1,0 +1,96 @@
+"""Shared pytest configuration and fixtures.
+
+Numerical snapshots
+-------------------
+The ``snapshot`` fixture compares the output of the current code with
+reference arrays stored in ``tests/snapshots/<name>.npz``. These are
+characterization tests: they record what the code does now, not what is
+correct, and catch unintended numerical changes during refactoring.
+
+Reference files are never written automatically. To create or update them
+after an intended change, run::
+
+    pytest --update-snapshots
+
+and review the resulting diff before committing it.
+"""
+from pathlib import Path
+
+import numpy as np
+import astropy.units as au
+import pytest
+
+SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--update-snapshots", action="store_true", default=False,
+        help="Write the numerical snapshots in tests/snapshots/ instead of "
+             "comparing against them.")
+
+
+def _to_arrays(values):
+    """Convert a dict of arrays/Quantities to plain arrays (units as strings)."""
+    arrays = {}
+    for key, value in values.items():
+        if isinstance(value, au.Quantity):
+            arrays[key] = np.asarray(value.value)
+            arrays[f"{key}__unit"] = np.array(value.unit.to_string())
+        elif value is None:
+            arrays[key] = np.array("None")
+        else:
+            arrays[key] = np.asarray(value)
+    return arrays
+
+
+class Snapshot:
+    def __init__(self, update: bool):
+        self.update = update
+
+    def check(self, name: str, values: dict, rtol: float = 1e-10, atol: float = 0.0):
+        """
+        Compare ``values`` with the snapshot ``name``.
+
+        Parameters
+        ----------
+        name : str
+            Snapshot file name (without extension) in ``tests/snapshots/``.
+        values : dict
+            Arrays, Quantities (value and unit are both checked) or ``None``.
+        rtol, atol : float
+            Tolerances for floating-point arrays (``np.testing.assert_allclose``).
+            NaNs must match exactly.
+        """
+        path = SNAPSHOT_DIR / f"{name}.npz"
+        arrays = _to_arrays(values)
+
+        if self.update:
+            SNAPSHOT_DIR.mkdir(exist_ok=True)
+            np.savez_compressed(path, **arrays)
+            return
+
+        if not path.exists():
+            pytest.fail(f"Missing snapshot {path.name}: run pytest --update-snapshots")
+
+        with np.load(path, allow_pickle=False) as ref:
+            assert sorted(ref.files) == sorted(arrays), (
+                f"Snapshot {name}: keys differ (stored {sorted(ref.files)}, "
+                f"got {sorted(arrays)})")
+            for key in ref.files:
+                expected, actual = ref[key], arrays[key]
+                assert expected.shape == actual.shape, (
+                    f"Snapshot {name}[{key}]: shape {actual.shape}, "
+                    f"expected {expected.shape}")
+                if np.issubdtype(expected.dtype, np.inexact):
+                    np.testing.assert_allclose(
+                        actual, expected, rtol=rtol, atol=atol, equal_nan=True,
+                        err_msg=f"Snapshot {name}[{key}]")
+                else:
+                    np.testing.assert_array_equal(
+                        actual, expected, err_msg=f"Snapshot {name}[{key}]")
+
+
+@pytest.fixture
+def snapshot(request):
+    return Snapshot(update=request.config.getoption("--update-snapshots"))
