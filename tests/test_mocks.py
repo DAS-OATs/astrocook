@@ -129,3 +129,109 @@ def test_agrees_with_v2_model_for_resolved_lines():
     _, v2 = VoigtFitterV2(
         spec, SystemListV2(SystemListDataV2(components=[comp]))).compute_model_flux()
     np.testing.assert_allclose(v2, normalized_flux(truth)[1], atol=3e-3)
+
+
+# --- Populations, emission lines, spikes ------------------------------------
+
+from astrocook.mocks import (  # noqa: E402
+    QSO_EMISSION_LINES, EmissionLine, continuum, expected_forest_lines,
+    lya_forest, mean_transmission_fg08, metal_systems, spike_indices,
+)
+
+
+def test_forest_number_of_lines():
+    rng = np.random.default_rng(3)
+    comps = lya_forest(rng, 2.5, 4.0)
+    expected = expected_forest_lines(2.5, 4.0)
+    assert abs(len(comps) - expected) < 4 * np.sqrt(expected)
+    assert all(c.series == "Ly_a" and 2.5 <= c.z <= 4.0 for c in comps)
+
+
+def test_forest_column_density_distribution():
+    # Fraction above logN = 13 for f(N) ~ N^-1.5 between 10^12 and 10^17
+    comps = lya_forest(np.random.default_rng(4), 2.0, 5.0)
+    logN = np.array([c.logN for c in comps])
+    e = 1.0 - 1.5
+    p = (1e13**e - 1e17**e) / (1e12**e - 1e17**e)
+    n = len(logN)
+    assert abs(np.mean(logN > 13.0) - p) < 4 * np.sqrt(p * (1 - p) / n)
+    assert logN.min() >= 12.0 and logN.max() <= 17.0
+
+
+def test_forest_doppler_parameters():
+    comps = lya_forest(np.random.default_rng(5), 2.0, 5.0)
+    b = np.array([c.b for c in comps])
+    assert b.min() >= 10.0
+    assert np.median(b) == pytest.approx(25.0, rel=0.03)
+
+
+def test_forest_redshift_distribution():
+    # p(z) ~ (1+z)^2.5: fraction of lines in the upper half of the range
+    comps = lya_forest(np.random.default_rng(6), 2.0, 4.0)
+    z = np.array([c.z for c in comps])
+    p = (5.0**3.5 - 4.0**3.5) / (5.0**3.5 - 3.0**3.5)
+    assert abs(np.mean(z > 3.0) - p) < 4 * np.sqrt(p * (1 - p) / len(z))
+
+
+@pytest.mark.parametrize("z", [3.0, 3.8])
+def test_forest_mean_transmission(z):
+    # Calibration of the default line density against the observed mean
+    # transmission (Faucher-Giguere et al. 2008), averaged over 3 seeds
+    lam = 121.567 * (1 + np.array([z - 0.1, z + 0.1]))
+    fluxes = []
+    for seed in range(3):
+        comps = lya_forest(np.random.default_rng(seed), z - 0.12, z + 0.12)
+        truth = MockTruth(components=comps, lam_min_nm=lam[0], lam_max_nm=lam[1],
+                          dv_kms=5.0, resol=None, snr=None, oversample=2)
+        fluxes.append(np.mean(normalized_flux(truth)[1]))
+    assert np.mean(fluxes) == pytest.approx(mean_transmission_fg08(z), abs=0.06)
+
+
+def test_metal_systems():
+    comps = metal_systems(np.random.default_rng(7), 20, 2.0, 3.0,
+                          species=("CIV", "MgII"), dv_kms=50.0)
+    assert 20 <= len(comps) <= 80
+    assert {c.series for c in comps} <= {"CIV", "MgII"}
+    assert all(1.99 < c.z < 3.01 and 4.0 <= c.b <= 15.0 for c in comps)
+
+
+def test_emission_lines_in_the_continuum():
+    truth = _truth([], lam_min_nm=580.0, lam_max_nm=640.0, z_em=4.0,
+                   emission_lines=[EmissionLine(121.567, 2.0, 4000.0)])
+    x, _, _ = make_grid(580.0, 640.0, 2.5)
+    cont = continuum(truth, x)
+    peak = np.argmin(np.abs(x - 121.567 * 5.0))
+    assert cont[peak] == pytest.approx(3.0, rel=1e-3)
+    assert cont[0] == pytest.approx(1.0, abs=1e-3)
+
+
+def test_spikes():
+    truth = _truth([], snr=20.0, n_spikes=5, spike_amplitude=10.0, seed=2)
+    spec = generate(truth)
+    idx = spike_indices(truth, len(spec.x.value))
+    assert len(idx) == 5
+    pull = (spec.y.value - spec.get_column("mock_flux").value) / spec.dy.value
+    assert np.all(pull[idx] > 6.0)
+    others = np.delete(pull, idx)
+    assert np.max(np.abs(others)) < 6.0
+    np.testing.assert_array_equal(spike_indices(truth, len(spec.x.value)), idx)
+
+
+def test_full_mock_spectrum(tmp_path):
+    # Forest, metals and emission lines together: the forest absorbs only
+    # blueward of the Lyman-alpha emission
+    rng = np.random.default_rng(11)
+    z_em = 4.0
+    lya_em = 121.567 * (1 + z_em)
+    comps = (lya_forest(rng, 3.6, z_em)
+             + metal_systems(rng, 5, 2.8, 3.3, species=("CIV",)))
+    truth = MockTruth(components=comps, lam_min_nm=560.0, lam_max_nm=640.0,
+                      dv_kms=5.0, resol=40000.0, snr=30.0, z_em=z_em, seed=11,
+                      oversample=3, emission_lines=QSO_EMISSION_LINES)
+    spec = generate(truth)
+    x = spec.x.value
+    norm = spec.get_column("mock_flux").value / spec.get_column("cont").value
+    assert np.mean(norm[x < lya_em - 2]) < np.mean(norm[x > lya_em + 2]) - 0.1
+    path = tmp_path / "truth.json"
+    truth.to_json(str(path))
+    assert MockTruth.from_json(str(path)) == truth

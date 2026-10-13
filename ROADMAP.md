@@ -177,10 +177,14 @@ No changes to production code.
    ground truth in `MockTruth` (JSON). Validated in `tests/test_mocks.py`
    (thin-line equivalent width within 0.1% of the analytic value,
    convolution conserving the equivalent width, instrumental FWHM = c/R,
-   noise statistics, oversampling convergence). Next: random populations
-   (Lyman-alpha forest with f(N) ~ N^-1.5, log-normal b around 25 km/s,
-   dN/dz ~ (1+z)^gamma; metal systems), emission lines, artefacts
-   (spikes, sky residuals, tellurics).
+   noise statistics, oversampling convergence). Second part done: random
+   Lyman-alpha forest (f(N) ~ N^-1.5 for 12 < logN < 17, log-normal b
+   around 25 km/s with b >= 10 km/s, dN/dz = 1700 ((1+z)/4)^2.5, which
+   reproduces the mean transmission of Faucher-Giguere et al. 2008 within
+   ~0.03 at z = 3 and 3.8), multi-component metal systems, Gaussian
+   emission lines (Lyman-alpha + NV, CIV) and single-pixel spikes. The
+   default parameters are indicative, to be calibrated before scientific
+   use. Still missing: sky residuals and tellurics.
 4. **Non-determinism:** fixed seeds, statistical tolerances, UUIDs and
    timestamps excluded from comparisons.
 5. **File compatibility:** `.acs`/`.acs2` round trips (requires real V1
