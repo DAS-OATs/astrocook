@@ -14,9 +14,10 @@ noise 0.02). Fitted values are compared with the known input within loose
 tolerances, not stored as snapshots: they depend on the machine (see
 ``test_snapshots_full_chain.py``).
 
-These tests record the current behaviour, including F24 (findings
+These tests record the current behaviour, including F24 and F25 (findings
 register, ``ROADMAP.md``, section 3.2): ``fit_bayesian`` with at most 200
-MCMC steps overwrites the component parameters with NaN.
+MCMC steps overwrites the component parameters with NaN; components cannot
+be deleted from a spectrum without a continuum.
 """
 import numpy as np
 import pytest
@@ -134,6 +135,25 @@ def test_delete_component_recomputes_model(data):
     np.testing.assert_allclose(out.spec.get_column("model").value, expected)
     both = session.absorbers.delete_component(uuids=[civ.uuid, lya.uuid])
     assert both.systs.components == []
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "delete_component recomputes the model, which needs a continuum: on a "
+    "spectrum in physical units without one, VoigtFitterV2 raises, the error "
+    "is logged and the session is returned unchanged, so the component is "
+    "not deleted (also clean_negligible). Findings register F25 "
+    "(ROADMAP.md, section 3.2)."))
+def test_delete_component_without_continuum(data):
+    import astropy.units as au
+    from test_recipes_edit_flux import _spec
+    # Physical flux (the fitter takes a median flux between 0.1 and 10 as
+    # already normalised)
+    session = _session(_spec(scale=1e-16), _systs(("CIV", 2.97, 13.6, 12.0)))
+    session = session.edit.delete("cont")
+    assert session.spec.y.unit != au.dimensionless_unscaled
+    assert session.spec.norm is None
+    out = session.absorbers.delete_component(uuid=session.systs.components[0].uuid)
+    assert out.systs.components == []
 
 
 def test_delete_component_resets_links_to_it(data):
