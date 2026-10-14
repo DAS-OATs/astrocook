@@ -222,8 +222,16 @@ No changes to production code.
    - **V1 migration** (`system_list_migration.py`, `io/v1_stubs.py`): waits
      for V1 archives.
    The GUI smoke tests (item 7) and the `.acs2` round trips (item 5) come
-   next and address part of `gui/` and `io/`; recipe-level tests for the
-   gaps above are proposed as a follow-up before mutation testing.
+   next and address part of `gui/` and `io/`. The gaps are kept in mind and
+   addressed later (agreed with Guido), except for targeted recipe-level
+   tests, done first.
+   Targeted tests, first part (`tests/test_recipes_edit_flux.py`): the
+   recipes of `edit.py` and `flux.py` (parameter parsing as from the GUI
+   dialogs, lookup of other sessions by name, chaining, return value on bad
+   input; snapshots for smooth column, co-add and rebin). Coverage:
+   `edit.py` 23% -> 82%, `flux.py` 22% -> 84%, `spectrum.py` 55% -> 73%;
+   V2 code 38% -> 42%. Found F22 and F23. Next part: `absorbers.py` and the
+   system list operations.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
 8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
    Ruff blocking on undefined names (`F821`) only, until the other pyflakes
@@ -403,6 +411,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F19 | `refit_all` (reproducibility) | With `group_depth >= 1` the groups are built by taking the next seed from a set of component UUIDs (`next(iter(todo_uuids))`), and the depth-limited friends-of-friends group depends on the seed. UUIDs are random (`uuid4`) and string hashes are randomized per process, so the same input with the same parameters gives a different result at every run. Full chain on J0103-1305, 500-700 nm, two runs: `doublets_auto` gives the same 51 CIV components, but 4 differ by more than 0.1 dex in logN (up to 2.35 dex: logN 10.0 vs 12.35 at z = 3.2836); `lya_auto` gives 477 vs 478 components, ~20 not matched within 5 km/s; the normalised model differs by more than 0.01 on 1.8% of the pixels (up to 0.83). On the mock the differences are ~1e-6 dex. Even with a fixed hash seed and seeded UUIDs the result depends on the machine: on a GitHub runner the J0103-1305 chain gives 477 instead of 478 components after `lya_auto` and a normalised model differing by up to 0.84, with a continuum identical to 1e-15; the mock differs by up to 1e-3 dex in logN. Affects `doublets_auto`, `lya_auto`, `components_auto`, `forest_auto`, "Refit all" from the GUI (schema default `group_depth = 2`) and the refit after importing systems (`recipes/edit.py`) | numerical, reproducibility | `tests/full_chain.py` (fixed hash seed and seeded UUIDs) | open, priority |
 | F20 | `VoigtFitterV2` (uncertainties) | Errors are `sqrt(diag(pinv(J^T J)))`: a negative diagonal element (numerically ill-conditioned fit) gives a NaN uncertainty with only a `RuntimeWarning`, no log message and no flag on the component. 1 of 478 components in the J0103-1305 full chain. Related to the chi-squared scaling check (item 9) | numerical | snapshot `full_chain_j0103_forest` | open |
 | F21 | `lya_auto` (output quality) | On the J0103-1305 full chain (500-700 nm): 39 Ly-alpha components end with b < 10 km/s although `min_b = 10` (the filter runs before the final refit, which moves the remaining components again); components stuck at the parameter bounds are kept (12 at logN = 10, 12 at b = 1 km/s, Ly-alpha and CIV), including two Ly-alpha with logN = 20.2 and 21.1 at b = 1 km/s (z = 3.708, 3.506), unphysical in the forest | behaviour | snapshot `full_chain_j0103_forest` | open |
+| F22 | resolution handling | `apply_expression`, `mask_expression`, `smooth_column` and `split` rebuild `SpectrumDataV2` field by field and drop the `resol` attribute (reset to 0); `smooth`, `rebin`, `stitch` and `set_properties` keep it. The Voigt model changes (by 0.05 in flux in a synthetic test at R = 45000) only when the resolution is in the attribute alone: `set_properties`, the `.acs2` loader and the mocks also store it in the metadata, which is kept, so the usual paths are not affected. One more case for F8 | behaviour | `test_some_operations_drop_the_resolution_attribute` (characterization) | open |
+| F23 | `flux.rebin` recipe | A non-numeric parameter (e.g. `dx = "abc"`) is logged as a parsing error but the recipe goes on and raises `UnboundLocalError`, instead of returning 0 like the other recipes. In the GUI the worker catches the exception, so it is not a crash | error handling | `test_rebin_bad_input_returns_0` (strict xfail) | open, phase 5 |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
