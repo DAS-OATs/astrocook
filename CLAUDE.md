@@ -62,11 +62,13 @@ Current version: 2.0.1. Python ≥3.12.
 ## Current status
 Phase 0 done. Phase 1 (safety net) in progress; progress per item in
 `ROADMAP.md`, phase 1. Done: snapshots (pure functions, continuum,
-identification, Voigt model and fit, SpectrumV2 methods), tests for the
-"possibly fixed" issues, V1/V2 parity tests, CI, mock generator
-(`astrocook/mocks/`; sky residuals and tellurics still missing).
-Next, in this order: full-chain snapshot (wider J0103-1305 window
-including Lyman-beta, plus a mock case); coverage; GUI smoke tests;
+identification, Voigt model and fit, SpectrumV2 methods, full chain on
+J0103-1305 and on a mock), tests for the "possibly fixed" issues, V1/V2
+parity tests, CI, mock generator (`astrocook/mocks/`; sky residuals and
+tellurics still missing). Slow tests (the J0103-1305 full chain, ~15
+minutes) are marked `slow` and run only with `pytest --run-slow` (and in
+a separate CI job).
+Next, in this order: coverage; GUI smoke tests;
 `.acs2` round trips; chi-squared error-scaling check; mutmut. Log replay
 and V1 `.acs` archives wait for sessions from Guido.
 
