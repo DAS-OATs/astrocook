@@ -44,7 +44,7 @@ Current version: 2.0.1. Python ≥3.12.
 - Launch the GUI: `python run_astrocook.py [file ...]`
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`); coverage with
-  `pytest --cov=astrocook`. Coverage is still low (42% of the V2 code):
+  `pytest --cov=astrocook`. Coverage is still low (46% of the V2 code):
   before changing production code, add characterization tests for the
   behaviour involved.
 - Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
@@ -72,10 +72,9 @@ parity tests, CI, mock generator (`astrocook/mocks/`; sky residuals and
 tellurics still missing). Slow tests (the J0103-1305 full chain, ~15
 minutes) are marked `slow` and run only with `pytest --run-slow` (and in
 a separate CI job, see above).
-Coverage measured (V2 without legacy: 38%, 42% after the first targeted
-tests; per area and main gaps in `ROADMAP.md`, phase 1, item 6).
-Targeted recipe-level tests in progress: `edit.py` and `flux.py` done,
-`absorbers.py` and system list operations next.
+Coverage measured (V2 without legacy: 38%, 46% after the targeted
+recipe-level tests for `edit.py`, `flux.py`, `absorbers.py` and the system
+list; per area and remaining gaps in `ROADMAP.md`, phase 1, item 6).
 Next, in this order: GUI smoke tests;
 `.acs2` round trips; chi-squared error-scaling check; mutmut. Log replay
 and V1 `.acs` archives wait for sessions from Guido.

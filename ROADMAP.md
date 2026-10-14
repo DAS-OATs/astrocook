@@ -230,8 +230,19 @@ No changes to production code.
    dialogs, lookup of other sessions by name, chaining, return value on bad
    input; snapshots for smooth column, co-add and rebin). Coverage:
    `edit.py` 23% -> 82%, `flux.py` 22% -> 84%, `spectrum.py` 55% -> 73%;
-   V2 code 38% -> 42%. Found F22 and F23. Next part: `absorbers.py` and the
-   system list operations.
+   V2 code 38% -> 42%. Found F22 and F23.
+   Second part (`tests/test_recipes_absorbers.py`): the single-component
+   recipes of `absorbers.py` (add, update, delete, fit, constraints and
+   links, linked systems, `optimize_system`, `metals_auto`,
+   `clean_negligible`, `fit_bayesian`) and the system list operations
+   behind them, on the synthetic CIV blend; fitted values compared with the
+   known input within loose tolerances (machine-dependent, see item 1).
+   Coverage: `absorbers.py` 45% -> 79%, `system_list.py` 41% -> 76%,
+   `bayesian_fitter.py` 14% -> 70%, `voigt_model.py` 69% -> 85%; V2 code
+   42% -> 46%. Found F24 (reported at once: loses data). Note: with the
+   default threshold (2.5 sigma) `optimize_system` does not add the second
+   component of the blend (logN 13.1, b = 6 km/s, 11 km/s away, S/N 50);
+   with 1.5 sigma it recovers both within 3 km/s and 0.2 dex.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
 8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
    Ruff blocking on undefined names (`F821`) only, until the other pyflakes
@@ -413,6 +424,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F21 | `lya_auto` (output quality) | On the J0103-1305 full chain (500-700 nm): 39 Ly-alpha components end with b < 10 km/s although `min_b = 10` (the filter runs before the final refit, which moves the remaining components again); components stuck at the parameter bounds are kept (12 at logN = 10, 12 at b = 1 km/s, Ly-alpha and CIV), including two Ly-alpha with logN = 20.2 and 21.1 at b = 1 km/s (z = 3.708, 3.506), unphysical in the forest | behaviour | snapshot `full_chain_j0103_forest` | open |
 | F22 | resolution handling | `apply_expression`, `mask_expression`, `smooth_column` and `split` rebuild `SpectrumDataV2` field by field and drop the `resol` attribute (reset to 0); `smooth`, `rebin`, `stitch` and `set_properties` keep it. The Voigt model changes (by 0.05 in flux in a synthetic test at R = 45000) only when the resolution is in the attribute alone: `set_properties`, the `.acs2` loader and the mocks also store it in the metadata, which is kept, so the usual paths are not affected. One more case for F8 | behaviour | `test_some_operations_drop_the_resolution_attribute` (characterization) | open |
 | F23 | `flux.rebin` recipe | A non-numeric parameter (e.g. `dx = "abc"`) is logged as a parsing error but the recipe goes on and raises `UnboundLocalError`, instead of returning 0 like the other recipes. In the GUI the worker catches the exception, so it is not a crash | error handling | `test_rebin_bad_input_returns_0` (strict xfail) | open, phase 5 |
+| F24 | `fit_bayesian` (MCMC) | `run_mcmc` discards a fixed burn-in of 200 steps, and the recipe passes only `nsteps` (GUI parameter, default 500): with `nsteps <= 200` the chain is empty, the medians are NaN and they overwrite z, logN and b of the fitted components, and the model becomes NaN. No warning. Reported at once (loses data; undo restores the previous state) | data loss | `test_fit_bayesian_few_steps_keeps_parameters` (strict xfail) | open, reported |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and

@@ -1,0 +1,283 @@
+"""Characterization tests of the recipe layer of ``recipes/absorbers.py``
+and of the system list operations behind it.
+
+The automatic pipelines (identification, populate, ``refit_all``,
+``doublets_auto``, ``lya_auto``) are covered by the identification and
+full-chain snapshots; here the target is the single-component recipes of
+the system inspector and of the Absorbers menu: parameter parsing (string
+inputs as from the GUI dialogs), what they do to the system list and to
+the model column, and what is returned on bad input.
+
+Input: the synthetic normalised spectrum of ``test_snapshots_voigt.py``
+(a blended CIV doublet with two components and a Ly-alpha line, R = 45000,
+noise 0.02). Fitted values are compared with the known input within loose
+tolerances, not stored as snapshots: they depend on the machine (see
+``test_snapshots_full_chain.py``).
+
+These tests record the current behaviour, including F24 (findings
+register, ``ROADMAP.md``, section 3.2): ``fit_bayesian`` with at most 200
+MCMC steps overwrites the component parameters with NaN.
+"""
+import numpy as np
+import pytest
+
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+from astrocook.core.session import SessionV2
+from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+from astrocook.core.system_list import SystemListV2
+from astrocook.fitting.voigt_fitter import VoigtFitterV2
+
+from test_snapshots_voigt import (
+    R_SYNTH, TRUE_COMPONENTS, _model, _synthetic_spectrum, _system_list,
+)
+
+C_KMS = 299792.458
+CIV_Z = 2.9700
+
+
+@pytest.fixture(scope="module")
+def data():
+    """Noisy synthetic spectrum with the components of TRUE_COMPONENTS."""
+    clean = _synthetic_spectrum(resol=R_SYNTH)
+    true_model = _model(clean, _system_list(TRUE_COMPONENTS))
+    rng = np.random.default_rng(42)
+    return _synthetic_spectrum(
+        y=true_model + rng.normal(0.0, 0.02, len(true_model)), resol=R_SYNTH)
+
+
+def _session(spec, systs=None):
+    return SessionV2(name="synth", gui=None, spec=spec, systs=systs)
+
+
+def _systs(*params):
+    """System list from (series, z, logN, b) tuples."""
+    comps = [ComponentDataV2(id=i + 1, z=z, dz=None, logN=logN, dlogN=None,
+                             b=b, db=None, series=series)
+             for i, (series, z, logN, b) in enumerate(params)]
+    return SystemListV2(SystemListDataV2(components=comps))
+
+
+@pytest.fixture(scope="module")
+def one_civ(data):
+    """Session with one CIV component added (and fitted) by the recipe."""
+    return _session(data).absorbers.add_component("CIV", str(CIV_Z + 1e-4),
+                                                  "13.5", "10.0")
+
+
+def _dv(z1, z2):
+    return abs(z1 - z2) / (1 + z2) * C_KMS
+
+
+@pytest.fixture
+def restore_multiplets():
+    saved = dict(STANDARD_MULTIPLETS)
+    yield
+    STANDARD_MULTIPLETS.clear()
+    STANDARD_MULTIPLETS.update(saved)
+
+
+# --- Add, update, delete --------------------------------------------------
+
+def test_add_component_fits_it(one_civ):
+    (comp,) = one_civ.systs.components
+    assert comp.series == "CIV"
+    # One component for the two blended ones (logN 13.6 + 13.1, b 12 and 6)
+    assert _dv(comp.z, CIV_Z) < 3.0
+    assert comp.logN == pytest.approx(13.72, abs=0.1)
+    assert comp.dz is not None and np.isfinite(comp.dz)
+    # The model column is updated
+    model = one_civ.spec.get_column("model").value
+    assert model.min() < 0.7
+
+
+@pytest.mark.parametrize("kwargs", [dict(z="abc"), dict(logN=""),
+                                    dict(z_window_kms="x")])
+def test_add_component_bad_input_returns_0(data, kwargs):
+    assert _session(data).absorbers.add_component("CIV", **{"z": "2.97", **kwargs}) == 0
+
+
+def test_add_component_custom_multiplet(data, restore_multiplets):
+    series = "CIV_1548,SiIV_1393"
+    out = _session(data).absorbers.add_component(series, "2.97")
+    assert STANDARD_MULTIPLETS[series] == ["CIV_1548", "SiIV_1393"]
+    assert out.systs.components[0].series == series
+
+
+def test_update_component(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    out = one_civ.absorbers.update_component(uuid, logN="14.0", b="20")
+    comp = out.systs.components[0]
+    assert (comp.logN, comp.b) == (14.0, 20.0)
+    assert comp.z == one_civ.systs.components[0].z  # 'None' leaves it as is
+    assert one_civ.absorbers.update_component(uuid, z="abc") == 0
+    # Unknown UUID: logged, list unchanged
+    same = one_civ.absorbers.update_component("unknown", logN="14.0")
+    assert same.systs.components == one_civ.systs.components
+
+
+def test_update_components(data):
+    session = _session(data, _systs(("CIV", 2.97, 13.0, 10.0),
+                                    ("Ly_a", 4.059, 13.0, 20.0)))
+    uuids = [c.uuid for c in session.systs.components]
+    out = session.absorbers.update_components(uuids, b="15.0")
+    assert [c.b for c in out.systs.components] == [15.0, 15.0]
+    assert session.absorbers.update_components(uuids) is session
+
+
+def test_delete_component_recomputes_model(data):
+    session = _session(data, _systs(("CIV", 2.97, 13.6, 12.0),
+                                    ("Ly_a", 4.059, 13.8, 25.0)))
+    civ, lya = session.systs.components
+    out = session.absorbers.delete_component(uuid=civ.uuid)
+    assert [c.uuid for c in out.systs.components] == [lya.uuid]
+    _, expected = VoigtFitterV2(data, out.systs).compute_model_flux()
+    np.testing.assert_allclose(out.spec.get_column("model").value, expected)
+    both = session.absorbers.delete_component(uuids=[civ.uuid, lya.uuid])
+    assert both.systs.components == []
+
+
+def test_delete_component_resets_links_to_it(data):
+    session = _session(data, _systs(("CIV", 2.97, 13.6, 12.0),
+                                    ("SiIV", 2.97, 13.0, 12.0)))
+    civ, siiv = session.systs.components
+    linked = session.absorbers.update_constraint(
+        siiv.uuid, "z", is_free=False, expression=f"p['{civ.uuid}'].z",
+        target_uuid=civ.uuid)
+    out = linked.absorbers.delete_component(uuid=civ.uuid)
+    constraint = out.systs._data.v2_constraints_map[siiv.uuid]["z"]
+    assert constraint.is_free and constraint.expression is None
+
+
+# --- Fit, constraints -----------------------------------------------------
+
+@pytest.mark.parametrize("kwargs", [dict(max_nfev="x"), dict(z_window_kms="x"),
+                                    dict(group_depth="x")])
+def test_fit_component_bad_input_returns_0(one_civ, kwargs):
+    uuid = one_civ.systs.components[0].uuid
+    assert one_civ.absorbers.fit_component(uuid, **kwargs) == 0
+
+
+def test_frozen_parameter_is_not_fitted(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    moved = one_civ.absorbers.update_component(uuid, b="20.0")
+    frozen = moved.absorbers.update_constraint(uuid, "b", is_free=False)
+    out = frozen.absorbers.fit_component(uuid)
+    comp = out.systs.components[0]
+    assert comp.b == 20.0
+    assert comp.logN != one_civ.systs.components[0].logN
+
+
+def test_link_updates_the_value(data):
+    session = _session(data, _systs(("CIV", 2.97, 13.6, 12.0),
+                                    ("SiIV", 2.98, 13.0, 12.0)))
+    civ, siiv = session.systs.components
+    out = session.absorbers.update_constraint(
+        siiv.uuid, "z", is_free=False, expression=f"p['{civ.uuid}'].z",
+        target_uuid=civ.uuid)
+    assert out.systs.components[1].z == 2.97
+    # Unlinking clears the expression
+    free = out.absorbers.update_constraint(siiv.uuid, "z", is_free=True)
+    constraint = free.systs._data.v2_constraints_map[siiv.uuid]["z"]
+    assert constraint.is_free and constraint.expression is None
+
+
+def test_update_constraints_column(data):
+    session = _session(data, _systs(("CIV", 2.97, 13.6, 12.0),
+                                    ("Ly_a", 4.059, 13.8, 25.0)))
+    out = session.absorbers.update_constraints_column("b", is_free=False)
+    for comp in out.systs.components:
+        assert not out.systs._data.v2_constraints_map[comp.uuid]["b"].is_free
+
+
+def test_add_linked_system(data):
+    out = _session(data).absorbers.add_linked_system("CIV, SiIV", CIV_Z)
+    civ, siiv = out.systs.components
+    assert (civ.series, siiv.series) == ("CIV", "SiIV")
+    assert siiv.z == civ.z  # linked to the primary, also after the fit
+    assert _dv(civ.z, CIV_Z) < 3.0
+    constraint = out.systs._data.v2_constraints_map[siiv.uuid]["z"]
+    assert constraint.target_uuid == civ.uuid and not constraint.is_free
+    assert _session(data).absorbers.add_linked_system("", CIV_Z) == 0
+
+
+# --- Optimize, metals, clean ----------------------------------------------
+
+def test_optimize_system_adds_the_blended_component(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    out = one_civ.absorbers.optimize_system(uuid, threshold_sigma="1.5")
+    civ = sorted((c for c in out.systs.components if c.series == "CIV"),
+                 key=lambda c: c.z)
+    assert len(civ) == 2
+    for comp, true in zip(civ, TRUE_COMPONENTS[:2]):
+        assert _dv(comp.z, true["z"]) < 3.0
+        assert comp.logN == pytest.approx(true["logN"], abs=0.2)
+    # With the default threshold (2.5 sigma) no component is added
+    default = one_civ.absorbers.optimize_system(uuid)
+    assert len(default.systs.components) == 1
+    assert one_civ.absorbers.optimize_system(uuid, max_components="x") == 0
+
+
+def test_metals_auto(one_civ, data):
+    # No other ion is kept at the redshift of the CIV system
+    out = one_civ.absorbers.metals_auto()
+    assert [c.series for c in out.systs.components] == ["CIV"]
+    assert _session(data).absorbers.metals_auto() == 0
+    assert one_civ.absorbers.metals_auto(ions="CIV", aic_penalty="x") == 0
+
+
+@pytest.mark.parametrize("combined, removed", [
+    ("True", ["narrow", "weak", "broad_weak"]),
+    ("False", ["narrow", "weak", "broad_weak", "broad_strong"]),
+])
+def test_clean_negligible(data, combined, removed):
+    params = {"narrow": ("CIV", 2.97, 13.5, 2.0),
+              "weak": ("CIV", 2.971, 11.0, 10.0),
+              "broad_weak": ("Ly_a", 4.05, 12.5, 100.0),
+              "broad_strong": ("Ly_a", 4.06, 14.0, 100.0),
+              "good": ("Ly_a", 4.059, 13.8, 25.0)}
+    session = _session(data, _systs(*params.values()))
+    out = session.absorbers.clean_negligible(combined_check=combined)
+    kept = {c.z for c in out.systs.components}
+    assert kept == {p[1] for name, p in params.items() if name not in removed}
+
+
+def test_clean_negligible_nothing_to_do(data):
+    session = _session(data, _systs(("Ly_a", 4.059, 13.8, 25.0)))
+    assert session.absorbers.clean_negligible() is session
+    assert session.absorbers.clean_negligible(min_logN="x") == 0
+
+
+# --- Bayesian, anchor -----------------------------------------------------
+
+def test_fit_bayesian_mcmc(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    out = one_civ.absorbers.fit_bayesian([uuid], nsteps="300")
+    comp = out.systs.components[0]
+    ref = one_civ.systs.components[0]
+    assert _dv(comp.z, ref.z) < 1.0
+    assert comp.logN == pytest.approx(ref.logN, abs=0.05)
+    assert np.isfinite(comp.dlogN) and comp.dlogN > 0
+    stored = out.systs._data.meta["bayesian_results"][uuid]
+    assert stored["engine"] == "mcmc" and len(stored["samples"]) > 0
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "run_mcmc discards a fixed burn-in of 200 steps: with nsteps <= 200 the "
+    "chain is empty, the medians are NaN and they overwrite z, logN and b of "
+    "the components (and the model). Findings register F24 (ROADMAP.md, "
+    "section 3.2)."))
+def test_fit_bayesian_few_steps_keeps_parameters(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    out = one_civ.absorbers.fit_bayesian([uuid], nsteps="200")
+    comp = out.systs.components[0]
+    assert np.isfinite([comp.z, comp.logN, comp.b]).all()
+
+
+def test_fit_bayesian_bad_input_returns_0(one_civ):
+    uuid = one_civ.systs.components[0].uuid
+    assert one_civ.absorbers.fit_bayesian(None) == 0
+    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="x") == 0
+
+
+def test_detect_anchor_without_sibling(one_civ):
+    assert one_civ.absorbers.detect_anchor("missing", "CIV_1548", "CIV_1550") == 0.0
