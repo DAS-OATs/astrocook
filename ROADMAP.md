@@ -244,6 +244,22 @@ No changes to production code.
    component of the blend (logN 13.1, b = 6 km/s, 11 km/s away, S/N 50);
    with 1.5 sigma it recovers both within 3 km/s and 0.2 dex.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
+   Done (`tests/test_gui_smoke.py`, on the small J0103-1305 archive
+   `J0103-1305_metallines_lya_new_3.acs2`): the main window starts empty;
+   a session opens from a file (missing or invalid files give a message,
+   no session); every recipe dialog of the menus is built (the hidden
+   recipes are called by the inspector with their own parameters); recipes
+   run through the GUI path (string parameters, worker thread, result
+   processing, history), including one that opens a new session and the
+   z_em requirement check; errors are reported to the user and the window
+   stays open (a recipe returning 0 and one raising, F23); undo and redo;
+   system inspector, log and script console open; a session closes.
+   Message boxes are replaced by stubs that record what would be shown.
+   Not covered: what is drawn, mouse interaction on the plot, editing in
+   the inspector, the continuum editor. Coverage: `gui/` 25% -> 45%
+   (`main_window.py` 52%, `recipe_dialog.py` 69%, `system_inspector.py`
+   48%, `pyside_plot.py` 31%); V2 code 46% -> 56%. The suite now takes
+   ~2.5 minutes (was ~1). Found F25.
 8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
    Ruff blocking on undefined names (`F821`) only, until the other pyflakes
    warnings are cleaned up in a dedicated PR.
@@ -425,6 +441,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F22 | resolution handling | `apply_expression`, `mask_expression`, `smooth_column` and `split` rebuild `SpectrumDataV2` field by field and drop the `resol` attribute (reset to 0); `smooth`, `rebin`, `stitch` and `set_properties` keep it. The Voigt model changes (by 0.05 in flux in a synthetic test at R = 45000) only when the resolution is in the attribute alone: `set_properties`, the `.acs2` loader and the mocks also store it in the metadata, which is kept, so the usual paths are not affected. One more case for F8 | behaviour | `test_some_operations_drop_the_resolution_attribute` (characterization) | open |
 | F23 | `flux.rebin` recipe | A non-numeric parameter (e.g. `dx = "abc"`) is logged as a parsing error but the recipe goes on and raises `UnboundLocalError`, instead of returning 0 like the other recipes. In the GUI the worker catches the exception, so it is not a crash | error handling | `test_rebin_bad_input_returns_0` (strict xfail) | open, phase 5 |
 | F24 | `fit_bayesian` (MCMC) | `run_mcmc` discards a fixed burn-in of 200 steps, and the recipe passes only `nsteps` (GUI parameter, default 500): with `nsteps <= 200` the chain is empty, the medians are NaN and they overwrite z, logN and b of the fitted components, and the model becomes NaN. No warning. Reported at once (loses data; undo restores the previous state) | data loss | `test_fit_bayesian_few_steps_keeps_parameters` (strict xfail) | open, reported |
+| F25 | `delete_component` | The recipe recomputes the model after deleting, which needs a continuum: on a spectrum in physical units without one (and with a median flux outside 0.1-10, otherwise it is taken as normalised), `VoigtFitterV2` raises, the error is logged and the session is returned unchanged. The component is not deleted (inspector, "Clean negligible": in the GUI only "Process completed with warnings"). Seen on the small J0103-1305 archive (764 components, no continuum). Fitting a component instead triggers the continuum estimate first | behaviour | `test_delete_component_without_continuum` (strict xfail) | open |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
