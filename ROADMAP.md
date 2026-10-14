@@ -273,8 +273,16 @@ No changes to production code.
    `find_absorbed_regions`), checked only through snapshots of the final
    result, and equivalent mutants. The 147 unreached mutants are in
    `compute_identification_signal` and `find_signal_peaks`, which nothing
-   calls (dead code, F31). Found F30. Next modules (on request):
-   `fitting/voigt_model.py`, `fitting/voigt_fitter.py`.
+   calls (dead code, F31). Found F30.
+   Fitting modules (`fitting/voigt_model.py`, `fitting/voigt_fitter.py`,
+   ~40 minutes): 1859 mutants, 226 not reached (mostly `_smart_guess`,
+   commented out in `fit`, and the V1 constraint conversion), 68.8% of the
+   others killed. Survivors that matter: the turbulent b could be changed
+   (e.g. sqrt(b^2 - btur^2)) unnoticed, and no test fitted a line broader
+   than 50 km/s; both covered by `tests/test_voigt_fitter_physics.py`,
+   which found F32. Many other survivors are in resolution handling (F8,
+   F10: to be tested together with the rewrite of the convolution), the
+   feature limits of the fit window and log/error messages.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
    Done (`tests/test_gui_smoke.py`, on the small J0103-1305 archive
    `J0103-1305_metallines_lya_new_3.acs2`): the main window starts empty;
@@ -492,6 +500,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F29 | `VoigtFitterV2` (uncertainties) | The errors are sqrt(diag((J^T J)^-1)) with residuals weighted by 1/dy, not scaled by the reduced chi2, although the comment in `fit` says they are. V1 scaled them (lmfit `Model.fit`, `scale_covar=True` by default): a V1/V2 difference. Monte Carlo on mocks: unscaled errors are right when the error spectrum is right, and wrong by the same factor when it is not (e.g. 2 times too small with the error spectrum underestimated by 2, reduced chi2 3.8); scaled errors are right in all cases. Scaling, or reporting the reduced chi2 next to the errors, is Guido's decision | numerical, V1/V2 difference | `tests/test_error_scaling.py` (characterization) | open, decision |
 | F30 | `running_mean`, `running_std` | Both use `np.convolve(mode='same')`, which pads with zeros: the first and last h values are biased towards 0 (4/7 of the true mean at the edge for h = 3). V1 `running_mean` repeats the first and last full-window value and ignores NaNs. Used by `find_absorbed_regions` on each interval, with half-windows of hundreds of pixels (5000 km/s / 8 on J0103-1305). Replacing it with the V1 function raises the agreement of the forest mask with V1 from 92.7% to 95.7% and the 5th percentile of the continuum ratio from -4.7% to -3.0% (median unchanged, -1.2%): a partial cause of F17 | numerical, V1/V2 difference | `test_running_mean_and_std_pad_the_edges_with_zeros` (characterization) | open |
 | F31 | dead code | `compute_identification_signal` and `find_signal_peaks` (`core/spectrum_operations.py`) are not called anywhere: the V2 identification goes through `SpectrumV2.identify_lines`. Section 2 of this roadmap describes the identification as based on the former. Found by mutation testing (no test reaches them) | code quality | — | phase 2 |
+| F32 | `VoigtFitterV2` (broad lines) | `_residual_function` appends a penalty 5 (b - 50) for every free b > 50 km/s to the residuals ("soft penalty to prevent runaways"). Broad lines are biased: on mocks (Ly-alpha, logN 13.8, R = 45000), at S/N 20 a line with b = 60, 80 or 120 km/s is fitted with b = 50 km/s and logN low by 0.04, 0.11 and 0.35 dex; even at S/N 1000, b = 120 comes out as 72. The penalty also enters chi2 and the uncertainties. Affects OVI, broad Ly-alpha (BLAs), blends fitted with one component | numerical, wrong results | `test_fit_broad_line` (strict xfail) | open, priority |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
