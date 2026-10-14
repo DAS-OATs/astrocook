@@ -192,6 +192,21 @@ No changes to production code.
    (`tests/full_chain.py`).
 5. **File compatibility:** `.acs`/`.acs2` round trips (requires real V1
    archives).
+   `.acs2` done (`tests/test_acs2_round_trip.py`): a session with
+   everything the format is meant to keep (units, float/bool/int auxiliary
+   columns, a resolution column, z_em, R, object name, components with
+   uncertainties, btur, chi2 and resolution, a custom multiplet, frozen and
+   linked parameters, identification metadata), the small J0103-1305
+   archive and (slow) the 15 MB one; a second round trip is identical to
+   the first. Spectrum, components and constraints come back unchanged.
+   Lost or changed: the V2 session log (F26, data loss, reported at once),
+   `region_identifications` (F27), the Bayesian samples (F28), the metadata
+   key `resol` (back as `RESOL`, the resolution itself is recovered from
+   `resol_fwhm`; F8). The state before the changes is stored in the archive
+   (`*_orig.fits`) but not loaded back. The pre-existing
+   `tests/test_v2_io_integrity.py` catches its own assertion errors and
+   always passes; superseded by the new tests, to be removed in phase 2.
+   `.acs` (V1) waits for real V1 archives.
 6. **Measuring the net:** coverage; mutation testing (`mutmut`) on critical
    modules.
    Coverage measured (October 2026, `pytest --cov=astrocook`, reported in
@@ -442,6 +457,9 @@ Exception: anything that loses user data or crashes is reported at once.
 | F23 | `flux.rebin` recipe | A non-numeric parameter (e.g. `dx = "abc"`) is logged as a parsing error but the recipe goes on and raises `UnboundLocalError`, instead of returning 0 like the other recipes. In the GUI the worker catches the exception, so it is not a crash | error handling | `test_rebin_bad_input_returns_0` (strict xfail) | open, phase 5 |
 | F24 | `fit_bayesian` (MCMC) | `run_mcmc` discards a fixed burn-in of 200 steps, and the recipe passes only `nsteps` (GUI parameter, default 500): with `nsteps <= 200` the chain is empty, the medians are NaN and they overwrite z, logN and b of the fitted components, and the model becomes NaN. No warning. Reported at once (loses data; undo restores the previous state) | data loss | `test_fit_bayesian_few_steps_keeps_parameters` (strict xfail) | open, reported |
 | F25 | `delete_component` | The recipe recomputes the model after deleting, which needs a continuum: on a spectrum in physical units without one (and with a median flux outside 0.1-10, otherwise it is taken as normalised), `VoigtFitterV2` raises, the error is logged and the session is returned unchanged. The component is not deleted (inspector, "Clean negligible": in the GUI only "Process completed with warnings"). Seen on the small J0103-1305 archive (764 components, no continuum). Fitting a component instead triggers the continuum estimate first | behaviour | `test_delete_component_without_continuum` (strict xfail) | open |
+| F26 | `.acs2` session log | The `.acs2` archive does not keep the V2 session log: `_serialize_v2_metadata` writes `dataclasses.asdict(HistoryLogV2)`, which is `{}` because the entries are set in `__init__` rather than as dataclass fields (the same cause found in phase 0 for `.acs`), and the loader does not read a log back anyway. Checked through the GUI: after "Set properties" and "Smooth" the archive has `log_history_json: {}` and the reloaded session has an empty log. The GUI tells the user to save as `.acs2` to keep the log. Reported at once (loses data) | data loss | `test_session_log_is_saved` (strict xfail) | open, reported |
+| F27 | `.acs2` identifications | `region_identifications` is saved as a JSON string and reloaded as a dict with integer keys. The identification viewer calls `json.loads` on it and shows "Error parsing metadata" (the plot tooltips handle both forms) | GUI | `test_identification_viewer_after_round_trip` (strict xfail) | open |
+| F28 | `.acs2` Bayesian samples | The posterior samples stored by `fit_bayesian` in the system list metadata (`bayesian_results`, used by the corner plot) are dropped on save without a warning: the FITS header cannot hold them. The fitted values and errors are kept | data loss (recomputable) | `test_bayesian_results_are_saved` (strict xfail) | open |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
