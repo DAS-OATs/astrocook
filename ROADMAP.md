@@ -261,6 +261,20 @@ No changes to production code.
    default threshold (2.5 sigma) `optimize_system` does not add the second
    component of the blend (logN 13.1, b = 6 km/s, 11 km/s away, S/N 50);
    with 1.5 sigma it recovers both within 3 km/s and 0.2 dex.
+   Mutation testing, pilot on `core/spectrum_operations.py` (`mutmut`,
+   configured in `pyproject.toml`, run by hand: ~7 minutes with 4
+   processes; GUI and full-chain tests left out): 1621 mutants, 147 not
+   reached by any test, of the others 75.8% killed. Most survivors were in
+   degenerate input never tested (bad pixels in `rebin_spectrum`, no
+   smoothing, windows as long as the array, exact thresholds, no overlap in
+   `compute_flux_scaling`): covered by `tests/test_spectrum_operations_edges.py`,
+   77.7% killed. The remaining survivors are mostly in the identification
+   helpers (`merge_regions_by_velocity`, `rate_doublet_candidate`,
+   `find_absorbed_regions`), checked only through snapshots of the final
+   result, and equivalent mutants. The 147 unreached mutants are in
+   `compute_identification_signal` and `find_signal_peaks`, which nothing
+   calls (dead code, F31). Found F30. Next modules (on request):
+   `fitting/voigt_model.py`, `fitting/voigt_fitter.py`.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
    Done (`tests/test_gui_smoke.py`, on the small J0103-1305 archive
    `J0103-1305_metallines_lya_new_3.acs2`): the main window starts empty;
@@ -476,6 +490,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F27 | `.acs2` identifications | `region_identifications` is saved as a JSON string and reloaded as a dict with integer keys. The identification viewer calls `json.loads` on it and shows "Error parsing metadata" (the plot tooltips handle both forms) | GUI | `test_identification_viewer_after_round_trip` (strict xfail) | open |
 | F28 | `.acs2` Bayesian samples | The posterior samples stored by `fit_bayesian` in the system list metadata (`bayesian_results`, used by the corner plot) are dropped on save without a warning: the FITS header cannot hold them. The fitted values and errors are kept | data loss (recomputable) | `test_bayesian_results_are_saved` (strict xfail) | open |
 | F29 | `VoigtFitterV2` (uncertainties) | The errors are sqrt(diag((J^T J)^-1)) with residuals weighted by 1/dy, not scaled by the reduced chi2, although the comment in `fit` says they are. V1 scaled them (lmfit `Model.fit`, `scale_covar=True` by default): a V1/V2 difference. Monte Carlo on mocks: unscaled errors are right when the error spectrum is right, and wrong by the same factor when it is not (e.g. 2 times too small with the error spectrum underestimated by 2, reduced chi2 3.8); scaled errors are right in all cases. Scaling, or reporting the reduced chi2 next to the errors, is Guido's decision | numerical, V1/V2 difference | `tests/test_error_scaling.py` (characterization) | open, decision |
+| F30 | `running_mean`, `running_std` | Both use `np.convolve(mode='same')`, which pads with zeros: the first and last h values are biased towards 0 (4/7 of the true mean at the edge for h = 3). V1 `running_mean` repeats the first and last full-window value and ignores NaNs. Used by `find_absorbed_regions` on each interval, with half-windows of hundreds of pixels (5000 km/s / 8 on J0103-1305). Replacing it with the V1 function raises the agreement of the forest mask with V1 from 92.7% to 95.7% and the 5th percentile of the continuum ratio from -4.7% to -3.0% (median unchanged, -1.2%): a partial cause of F17 | numerical, V1/V2 difference | `test_running_mean_and_std_pad_the_edges_with_zeros` (characterization) | open |
+| F31 | dead code | `compute_identification_signal` and `find_signal_peaks` (`core/spectrum_operations.py`) are not called anywhere: the V2 identification goes through `SpectrumV2.identify_lines`. Section 2 of this roadmap describes the identification as based on the former. Found by mutation testing (no test reaches them) | code quality | — | phase 2 |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and

@@ -80,7 +80,9 @@ list, 56% with the GUI smoke tests; per area and remaining gaps in
 `.acs2` round trips done (`tests/test_acs2_round_trip.py`).
 Chi-squared error-scaling check done (`tests/test_error_scaling.py`; F29,
 decision pending).
-Next: mutmut. Log replay
+Mutation testing: pilot on `core/spectrum_operations.py` done (`mutmut`,
+config in `pyproject.toml`, run by hand). Remaining in phase 1: optionally
+mutmut on the fitting modules; log replay
 and V1 `.acs` archives wait for sessions from Guido.
 
 Questionable behaviour found along the way goes in the findings register
