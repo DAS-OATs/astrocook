@@ -80,6 +80,9 @@ in `astrocook/legacy/`.
 2. **Uncertainties not scaled by the reduced χ²:** the comment in
    `fitting/voigt_fitter.py` (~line 936) says they are, the code does not.
    To be clarified whether this is intended. *First check to do.*
+   Checked (phase 1, item 9): with a correct error spectrum the unscaled
+   errors are right; with a wrong one they are wrong by the same factor.
+   V1 scaled them (lmfit default). Decision pending (F29).
 3. Gaussian instrumental profile only (no tabulated LSF, useful for
    ESPRESSO/UVES).
 4. No zero-level offset and no free local continuum in the fitting window.
@@ -284,6 +287,18 @@ No changes to production code.
    R = 45000, 2.5 km/s pixels): EW bias of the V2 model +0.05% at
    b = 12 km/s, +0.3% at 3 km/s, +4% at 1 km/s (max flux difference 0.001,
    0.013, 0.115). See F9.
+   Scaling of uncertainties, done (`tests/test_error_scaling.py`): Monte
+   Carlo on mocks, one CIV component (logN 13.5, b = 12 km/s, R = 45000,
+   2.5 km/s pixels, S/N 20), 100-200 noise realizations. With the right
+   error spectrum the errors of `VoigtFitterV2` are right: pull standard
+   deviation 0.96 (z), 0.98 (logN), 1.05 (b), reduced chi2 0.95. With the
+   error spectrum overestimated by 2 (reduced chi2 0.24) the errors are 2
+   times too large; underestimated by 2 (reduced chi2 3.8), 2 times too
+   small. Scaling by sqrt(reduced chi2), as V1 did, gives pulls of 1.00,
+   1.02, 1.09 in all three cases. No bias of the fit: the mean z offset
+   (+0.07 +- 0.03 km/s at S/N 20) goes to 0.0001 km/s without noise; b and
+   logN are off by +0.025 km/s and -0.0005 dex at high S/N (sampling, F9).
+   See F29.
 10. **Issues labelled "possibly fixed"** ([#469](https://github.com/DAS-OATs/astrocook/issues/469), [#477](https://github.com/DAS-OATs/astrocook/issues/477), [#455](https://github.com/DAS-OATs/astrocook/issues/455),
     [#450](https://github.com/DAS-OATs/astrocook/issues/450), [#436](https://github.com/DAS-OATs/astrocook/issues/436)): write a test reproducing each reported scenario.
     If it passes, the test is the evidence for closing the issue; if it
@@ -460,6 +475,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F26 | `.acs2` session log | The `.acs2` archive does not keep the V2 session log: `_serialize_v2_metadata` writes `dataclasses.asdict(HistoryLogV2)`, which is `{}` because the entries are set in `__init__` rather than as dataclass fields (the same cause found in phase 0 for `.acs`), and the loader does not read a log back anyway. Checked through the GUI: after "Set properties" and "Smooth" the archive has `log_history_json: {}` and the reloaded session has an empty log. The GUI tells the user to save as `.acs2` to keep the log. Reported at once (loses data) | data loss | `test_session_log_is_saved` (strict xfail) | open, reported |
 | F27 | `.acs2` identifications | `region_identifications` is saved as a JSON string and reloaded as a dict with integer keys. The identification viewer calls `json.loads` on it and shows "Error parsing metadata" (the plot tooltips handle both forms) | GUI | `test_identification_viewer_after_round_trip` (strict xfail) | open |
 | F28 | `.acs2` Bayesian samples | The posterior samples stored by `fit_bayesian` in the system list metadata (`bayesian_results`, used by the corner plot) are dropped on save without a warning: the FITS header cannot hold them. The fitted values and errors are kept | data loss (recomputable) | `test_bayesian_results_are_saved` (strict xfail) | open |
+| F29 | `VoigtFitterV2` (uncertainties) | The errors are sqrt(diag((J^T J)^-1)) with residuals weighted by 1/dy, not scaled by the reduced chi2, although the comment in `fit` says they are. V1 scaled them (lmfit `Model.fit`, `scale_covar=True` by default): a V1/V2 difference. Monte Carlo on mocks: unscaled errors are right when the error spectrum is right, and wrong by the same factor when it is not (e.g. 2 times too small with the error spectrum underestimated by 2, reduced chi2 3.8); scaled errors are right in all cases. Scaling, or reporting the reduced chi2 next to the errors, is Guido's decision | numerical, V1/V2 difference | `tests/test_error_scaling.py` (characterization) | open, decision |
 
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
