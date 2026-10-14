@@ -17,6 +17,7 @@ issues/
 .coverage.*
 htmlcov/
 coverage.xml
+mutants/
 dist/astrocook-1.5.1-py3-none-any.whl
 .gitignore
 .gitignore

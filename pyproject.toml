@@ -70,9 +70,10 @@ test = [
     "pytest-cov",
 ]
 dev = [
-    # Test dependencies plus development tools (linter)
+    # Test dependencies plus development tools (linter, mutation testing)
     "astrocook[test]",
     "ruff",
+    "mutmut",
 ]
 # You could add other groups like 'docs' or 'bayesian' later
 
@@ -137,4 +138,19 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
     # Add other boilerplate lines to exclude here
+]
+
+# Mutation testing (phase 1, item 6 of ROADMAP.md): run by hand, not in CI.
+#   mutmut run --max-children 4; mutmut results; mutmut show <mutant>
+# The GUI and full-chain tests are left out: slow, and the chain runs in a
+# subprocess that the mutants do not reach.
+[tool.mutmut]
+source_paths = ["astrocook/core/spectrum_operations.py"]
+also_copy = ["astrocook/"]
+pytest_add_cli_args_test_selection = [
+    "tests/",
+    "--ignore=tests/test_gui_smoke.py",
+    "--ignore=tests/test_gui_save_session.py",
+    "--ignore=tests/test_snapshots_full_chain.py",
+    "-p", "no:cacheprovider",
 ]
