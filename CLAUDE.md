@@ -77,7 +77,8 @@ recipe-level tests for `edit.py`, `flux.py`, `absorbers.py` and the system
 list, 56% with the GUI smoke tests; per area and remaining gaps in
 `ROADMAP.md`, phase 1, item 6). GUI smoke tests done
 (`tests/test_gui_smoke.py`, pytest-qt offscreen; message boxes stubbed).
-Next, in this order: `.acs2` round trips; chi-squared error-scaling check; mutmut. Log replay
+`.acs2` round trips done (`tests/test_acs2_round_trip.py`).
+Next, in this order: chi-squared error-scaling check; mutmut. Log replay
 and V1 `.acs` archives wait for sessions from Guido.
 
 Questionable behaviour found along the way goes in the findings register
