@@ -502,6 +502,42 @@ Exception: anything that loses user data or crashes is reported at once.
 | F31 | dead code | `compute_identification_signal` and `find_signal_peaks` (`core/spectrum_operations.py`) are not called anywhere: the V2 identification goes through `SpectrumV2.identify_lines`. Section 2 of this roadmap describes the identification as based on the former. Found by mutation testing (no test reaches them) | code quality | — | phase 2 |
 | F32 | `VoigtFitterV2` (broad lines) | `_residual_function` appends a penalty 5 (b - 50) for every free b > 50 km/s to the residuals ("soft penalty to prevent runaways"). Broad lines are biased: on mocks (Ly-alpha, logN 13.8, R = 45000), at S/N 20 a line with b = 60, 80 or 120 km/s is fitted with b = 50 km/s and logN low by 0.04, 0.11 and 0.35 dex; even at S/N 1000, b = 120 comes out as 72. The penalty also enters chi2 and the uncertainties. Affects OVI, broad Ly-alpha (BLAs), blends fitted with one component | numerical, wrong results | `test_fit_broad_line` (strict xfail) | open, priority |
 
+### 3.3 Phase 1-bis: findings and urgent issues
+Review of the findings register with Guido (October 2026): the proposals
+below are agreed in general; each item is still a separate small PR, one at
+a time, with the related strict xfail turned into a passing test (or a new
+regression test), and its numerical effect stated in the PR. Items marked
+"decision" get a short proposal first, agreed before the code changes.
+
+Order:
+1. F24: `fit_bayesian` with `nsteps <= 200` overwrites parameters with NaN
+   (burn-in proportional to `nsteps`, or refuse with a message).
+2. F26: `.acs2` does not keep the session log (serialize the log entries,
+   read them back on load).
+3. F32: penalty on b > 50 km/s biases broad lines (remove it; keep a wide
+   upper bound on b; decision on the bound).
+4. F25: components cannot be deleted without a continuum.
+5. F19: automatic pipelines not reproducible (deterministic order of the
+   groups in `refit_all`).
+6. F1 (#490), F3: V2 regressions in rebinned errors and auto fudge (V1 is
+   the reference); F2 reviewed together with F1.
+7. F10 with F8 and F22: rewrite of the convolution (exact, in velocity
+   space) and a single source of truth for the resolution (decision on the
+   design first).
+8. F27, F20, F23, F11, F5: small fixes (identification viewer after a
+   round trip, warning and flag on NaN uncertainties, `flux.rebin` error
+   path, `group_depth`, annotation).
+9. Decisions, one at a time: F29 (scale the uncertainties by
+   sqrt(reduced chi2), as V1, and report it; proposed), F16 (V1 smoothing
+   convention; proposed), F30 then F17 (V1 running mean at the edges;
+   proposed), F4, F9, F14, F21, F15 (needs X-Shooter data).
+10. Issues of section 3.1 scheduled "right after phase 1": #465, #480,
+    #442.
+Then release 2.0.2 (Guido's decision), with at least F24, F26 and F32 in
+addition to the fixes planned in "Releases". Technical debt goes to its
+phase: F18, F31 (phase 2); F6, F7 (phases 3/4); F12, F13 (phase 4); F28
+(save the Bayesian samples as a separate file in the archive) when needed.
+
 ### Rough estimates
 10–20 work sessions, 2–5 calendar weeks; the bottleneck is human review and
 the availability of test data.
@@ -589,8 +625,8 @@ review); each of its decisions goes into the log.
 |---|---|
 | Initial analysis and roadmap | done (October 2026) |
 | 0 – Environment | done (October 2026) |
-| 1 – Safety net | in progress |
-| Open bugs and urgent features (section 3.1) | not started |
+| 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
+| 1-bis – Findings and urgent issues (section 3.3) | not started |
 | 2 – Cleanup and packaging | not started |
 | 3 – Decoupling from legacy | not started |
 | 4 – Splitting large files | not started |
