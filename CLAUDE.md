@@ -37,7 +37,10 @@ Current version: 2.0.1. Python ≥3.12.
 - Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
   now, `legacy/` excluded). New code must not add warnings.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
-  3.12 and 3.13, and `ruff check --select F821` (undefined names only).
+  3.12 and 3.13 (coverage report on 3.13), and `ruff check --select F821`
+  (undefined names only). The slow tests (`pytest --run-slow -m slow`) run
+  in a separate job, not on pull requests: after each merge to master,
+  weekly (Mondays) and on demand from the Actions page.
 - Launch the GUI: `python run_astrocook.py [file ...]`
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`); coverage with
@@ -68,7 +71,7 @@ J0103-1305 and on a mock), tests for the "possibly fixed" issues, V1/V2
 parity tests, CI, mock generator (`astrocook/mocks/`; sky residuals and
 tellurics still missing). Slow tests (the J0103-1305 full chain, ~15
 minutes) are marked `slow` and run only with `pytest --run-slow` (and in
-a separate CI job).
+a separate CI job, see above).
 Coverage measured (V2 without legacy: 38%; per area and main gaps in
 `ROADMAP.md`, phase 1, item 6).
 Next, in this order: GUI smoke tests;

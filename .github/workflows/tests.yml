@@ -4,6 +4,12 @@ on:
   push:
     branches: [master]
   pull_request:
+  # Manual runs (Actions page), e.g. to run the slow tests on a PR branch
+  workflow_dispatch:
+  # Weekly run (Mondays, 05:17 UTC), to catch changes from new dependency
+  # versions when nothing is committed
+  schedule:
+    - cron: "17 5 * * 1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,8 +46,10 @@ jobs:
         run: pytest ${{ matrix.python-version == '3.13' && '--cov=astrocook --cov-report=term' || '' }}
 
   # Slow tests (full analysis chain on a real spectrum, ~15 minutes), on one
-  # Python version only
+  # Python version only. Not on pull requests (the mock chain in the default
+  # suite covers them): after each merge to master, weekly and on demand.
   slow:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

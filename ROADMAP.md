@@ -304,7 +304,8 @@ defaults, each stage on the output of the previous one) on J0103-1305,
 500-700 nm (Lyman-beta emission included), z_em = 4.072, R = 45000, and on
 a mock at z_em = 2.5 (355-460 nm, Lyman-alpha + Lyman-beta forest, CIV and
 SiIV systems). The J0103-1305 chain takes ~15 minutes: it is marked `slow`
-(`pytest --run-slow`) and runs in a separate CI job; the mock chain (~40 s)
+(`pytest --run-slow`) and runs in a separate CI job (after each merge to
+master, weekly and on demand, not on pull requests); the mock chain (~40 s)
 runs in the default suite. Both run in a child process with a fixed hash
 seed and seeded UUIDs, since the automatic pipelines are not reproducible
 otherwise (F19). Only the continuum is compared exactly: the fitted stages
