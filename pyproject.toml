@@ -127,6 +127,9 @@ select = ["F"]
 # CRITICAL FIX: Tell the coverage tool that the source code starts in the 'astrocook' directory.
 # This resolves the "Module was never imported" error.
 source = ["astrocook"]
+# Also measure the child processes (the full-chain snapshots run the chain
+# in a subprocess, see tests/full_chain.py)
+patch = ["subprocess"]
 
 [tool.coverage.report]
 # Configure which files to include/exclude from the report (optional)

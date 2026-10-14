@@ -35,8 +35,9 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
 
+      # Coverage measured on one Python version only (report in the log)
       - name: Run tests
-        run: pytest
+        run: pytest ${{ matrix.python-version == '3.13' && '--cov=astrocook --cov-report=term' || '' }}
 
   # Slow tests (full analysis chain on a real spectrum, ~15 minutes), on one
   # Python version only
