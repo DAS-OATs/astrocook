@@ -194,6 +194,36 @@ No changes to production code.
    archives).
 6. **Measuring the net:** coverage; mutation testing (`mutmut`) on critical
    modules.
+   Coverage measured (October 2026, `pytest --cov=astrocook`, reported in
+   the Python 3.13 CI job; the child processes of the full-chain snapshots
+   are measured too, `patch = ["subprocess"]`). Statement coverage of the
+   V2 code (without `legacy/`): 38%. By area: `mocks/` 99%, `fitting/` 72%
+   (`voigt_fitter.py` 84%, `voigt_model.py` 69%, `bayesian_fitter.py`
+   14%), `core/` 58% (`spectrum_operations.py` 80%, `spectrum.py` 55%,
+   `system_list.py` 41%, `system_list_migration.py` 12%), `recipes/` 37%
+   (`absorbers.py` 45%, `continuum.py` 48%, `file.py` 51%, `edit.py` 23%,
+   `flux.py` 22%), `io/` 27% (`adapter.py` 64%, `loaders.py` 8%), `gui/`
+   25%. The slow tests add less than 1%. Main gaps, by risk:
+   - **loaders** (`io/loaders.py`): only `.acs2` is exercised; ESPRESSO
+     S2D, X-Shooter, PypeIt (spec1d, coadd, stack, telluric model), generic
+     FITS, ASCII with RESVEL header and format detection have no test.
+     Needs small sample files of each format (from Guido).
+   - **recipes** never run: in `edit.py` `import_systems`, `stitch`,
+     `coadd`, `trim_common`, `extract_preset`; in `absorbers.py`
+     `metals_auto`, `clean_negligible`, `add_linked_system`,
+     `optimize_system`, `fit_bayesian`, `update_constraint`; in `flux.py`
+     `resample`. The SpectrumV2 methods behind several of them are covered,
+     the recipe layer (parameter parsing, chaining, error handling) is not.
+   - **system list** operations: `optimize_hierarchy`, `update_constraint`,
+     `filter_by_range`, `delete_component`.
+   - **SpectrumV2** methods: `rebin` (only the pure function is tested),
+     `apply_expression`, `mask_expression`, `smooth_column`,
+     `update_continuum_from_knots`.
+   - **V1 migration** (`system_list_migration.py`, `io/v1_stubs.py`): waits
+     for V1 archives.
+   The GUI smoke tests (item 7) and the `.acs2` round trips (item 5) come
+   next and address part of `gui/` and `io/`; recipe-level tests for the
+   gaps above are proposed as a follow-up before mutation testing.
 7. **GUI:** smoke tests with `pytest-qt` in offscreen mode.
 8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
    Ruff blocking on undefined names (`F821`) only, until the other pyflakes
@@ -274,7 +304,8 @@ defaults, each stage on the output of the previous one) on J0103-1305,
 500-700 nm (Lyman-beta emission included), z_em = 4.072, R = 45000, and on
 a mock at z_em = 2.5 (355-460 nm, Lyman-alpha + Lyman-beta forest, CIV and
 SiIV systems). The J0103-1305 chain takes ~15 minutes: it is marked `slow`
-(`pytest --run-slow`) and runs in a separate CI job; the mock chain (~40 s)
+(`pytest --run-slow`) and runs in a separate CI job (after each merge to
+master, weekly and on demand, not on pull requests); the mock chain (~40 s)
 runs in the default suite. Both run in a child process with a fixed hash
 seed and seeded UUIDs, since the automatic pipelines are not reproducible
 otherwise (F19). Only the continuum is compared exactly: the fitted stages

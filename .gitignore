@@ -14,6 +14,9 @@ QSO_constants/.DS_Store
 issues/
 
 .coverage
+.coverage.*
+htmlcov/
+coverage.xml
 dist/astrocook-1.5.1-py3-none-any.whl
 .gitignore
 .gitignore
