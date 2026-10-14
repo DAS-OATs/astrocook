@@ -78,7 +78,9 @@ list, 56% with the GUI smoke tests; per area and remaining gaps in
 `ROADMAP.md`, phase 1, item 6). GUI smoke tests done
 (`tests/test_gui_smoke.py`, pytest-qt offscreen; message boxes stubbed).
 `.acs2` round trips done (`tests/test_acs2_round_trip.py`).
-Next, in this order: chi-squared error-scaling check; mutmut. Log replay
+Chi-squared error-scaling check done (`tests/test_error_scaling.py`; F29,
+decision pending).
+Next: mutmut. Log replay
 and V1 `.acs` archives wait for sessions from Guido.
 
 Questionable behaviour found along the way goes in the findings register
