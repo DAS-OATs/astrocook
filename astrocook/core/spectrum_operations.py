@@ -81,9 +81,17 @@ def convert_x_axis(spec_data: SpectrumDataV2, z_ref: float, xunit: au.Unit) -> T
     
     return x_new, xmin_new, xmax_new
 
-def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit) -> Tuple[DataColumnV2, DataColumnV2]:
+def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit
+                   ) -> Tuple[DataColumnV2, DataColumnV2, Dict[str, DataColumnV2]]:
     """
     Performs Y-axis unit conversion on flux and error data using native Astropy methods.
+
+    Returns
+    -------
+    tuple
+        ``(y, dy, aux_cols)``: the converted flux and error columns, and the
+        auxiliary columns, with those in flux units converted too and the
+        others copied unchanged.
     """
     
     # Get Quantities from V2 Data
