@@ -84,3 +84,32 @@ def test_b_max_bounds_the_fit():
     fitted, _, _ = VoigtFitterV2(spec, _systs(b=70.0, logN=13.5)).fit(
         max_nfev=3000, z_window_kms=20.0, b_max=50.0)
     assert fitted.components[0].b <= 50.0
+
+
+def test_nan_uncertainties_are_reported(monkeypatch, caplog):
+    # F20: a negative diagonal element of the covariance (ill-conditioned
+    # fit) gave a NaN error with only a numpy RuntimeWarning. The error stays
+    # NaN, but a warning names the component and numpy is silenced.
+    import logging
+    import warnings
+    import astrocook.fitting.voigt_fitter as vf
+
+    real_pinv = vf.pinv
+
+    def pinv_negative(a):
+        cov = real_pinv(a)
+        cov[0, 0] = -abs(cov[0, 0])
+        return cov
+
+    monkeypatch.setattr(vf, "pinv", pinv_negative)
+    spec = _mock(snr=100.0, b=20.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        with caplog.at_level(logging.WARNING):
+            fitted, _, _ = VoigtFitterV2(spec, _systs(b=18.0, logN=13.5)).fit(
+                max_nfev=200, z_window_kms=20.0)
+    comp = fitted.components[0]
+    assert np.isnan(comp.dz)
+    assert np.isfinite(comp.dlogN) and np.isfinite(comp.db)
+    assert "Uncertainties could not be computed" in caplog.text
+    assert "Ly_a at z = 4.0" in caplog.text
