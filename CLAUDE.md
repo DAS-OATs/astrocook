@@ -54,6 +54,13 @@ Current version: 2.0.1. Python ≥3.12.
 - Do not change numerical behaviour without Guido's agreement: if a
   behaviour looks like a bug, report it instead of silently fixing it.
 - User documentation (Sphinx + MyST) lives in `docs/`.
+- Heuristics (thresholds, penalties, bounds, magic numbers) often encode a
+  purpose that no test records (e.g. the penalty on b > 50 km/s kept the
+  forest fits fast, F32). Before removing or changing one, ask Guido what it
+  is for; when the purpose is known, write it as a comment next to the code.
+- For PRs that change fitting or the automatic pipelines, run the slow tests
+  (`pytest --run-slow -m slow`, here or from the Actions page on the branch)
+  before asking for the merge, and report the result in the PR.
 
 ## Direction
 - v2: consolidation (tests and CI, cleanup, decoupling from legacy,

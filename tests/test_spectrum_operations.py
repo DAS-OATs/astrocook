@@ -1,3 +1,5 @@
+import dataclasses
+
 import numpy as np
 from astropy import units as au
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
@@ -70,3 +72,18 @@ def test_rebin_weighted_average(tolerance=1e-9):
 def test_rebin_weighted_average_error(tolerance=1e-9):
     _, dy_out, _, expected_dy = _rebin_case1()
     assert np.isclose(dy_out.value[0], expected_dy.value[0], atol=tolerance)
+
+
+def test_rebin_clipping_with_big_endian_input():
+    # FITS columns are often big-endian; the running median of the clipping
+    # (scipy median_filter) does not support them directly
+    spec_data, params, _, _ = get_mock_input_case1()
+    big = dataclasses.replace(
+        spec_data,
+        y=DataColumnV2(spec_data.y.values.astype(">f8"), spec_data.y.unit),
+        dy=DataColumnV2(spec_data.dy.values.astype(">f8"), spec_data.dy.unit))
+    params = dict(params, kappa=3.0)
+    _, _, _, y_out, _, _ = rebin_spectrum(
+        big.x.quantity, big.xmin.quantity, big.xmax.quantity, big,
+        calc_unit=big.x.quantity.unit, **params)
+    assert np.all(np.isfinite(y_out.value))

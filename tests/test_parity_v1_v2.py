@@ -78,20 +78,42 @@ def test_rebin_errors():
     np.testing.assert_allclose(dy2, dy1, rtol=1e-6)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "With 3 pixels per bin, V2 clips against a first-pass mean that includes "
-    "the outlier and can empty the bin (NaN); V1 keeps the bin. Note that V1 "
-    "does not remove the spike either (sigma_clip on 3-5 values cannot). "
-    "Findings register F2."))
 def test_rebin_clipping_keeps_bins_with_a_spike():
-    arrays = _arrays(500.0, 508.0, 0.004, spikes=(400, 1200))
-    (y1, _), (y2, _) = _rebin_both(arrays, 501.0, 507.0, 0.012, 3.0)
-    (y1_raw, _), _ = _rebin_both(arrays, 501.0, 507.0, 0.012, None)
+    # F2 (findings register): V2 used to clip against a first-pass mean that
+    # included the outlier and could empty the bin (NaN). V1 keeps the bin
+    # but cannot remove a spike with 3 pixels per bin; V2 now clips against
+    # a running median (upward only) and removes it.
+    spikes = (400, 1200)
+    arrays = _arrays(500.0, 508.0, 0.004, spikes=spikes)
+    clean = _arrays(500.0, 508.0, 0.004)
+    (y1, _), (y2, dy2) = _rebin_both(arrays, 501.0, 507.0, 0.012, 3.0)
+    (y1_raw, _), (y2_clean, _) = _rebin_both(clean, 501.0, 507.0, 0.012, None)
+    (y1_spiked, _), _ = _rebin_both(arrays, 501.0, 507.0, 0.012, None)
     # V1: the bins are kept, but the spikes are not removed
     assert np.all(np.isfinite(y1))
-    np.testing.assert_allclose(y1, y1_raw)
-    # V2 must at least keep the bins
+    np.testing.assert_allclose(y1, y1_spiked)
+    # V2: the bins are kept and the spikes are gone
     assert np.all(np.isfinite(y2))
+    assert np.all(np.abs(y2 - y2_clean) < 5 * dy2)
+
+
+def test_rebin_clipping_keeps_narrow_absorption():
+    # F2: a two-sided clipping against a running median removed the cores of
+    # narrow lines; the clipping is upward only, so absorption is untouched
+    x = np.arange(500.0, 508.0, 0.004)
+    sigma = 2.5 * 0.004 / 2.3548  # FWHM 2.5 pixels
+    flux = 1.0 - 0.8 * np.exp(-0.5 * ((x - 504.0) / sigma) ** 2)
+    dy = np.full_like(x, 0.02)
+    y = flux + dy * np.random.default_rng(1).standard_normal(len(x))
+    arrays = (x, 0.004, y, dy)
+    (_, _), (y_clip, _) = _rebin_both(arrays, 501.0, 507.0, 0.016, 3.0)
+    (_, _), (y_raw, _) = _rebin_both(arrays, 501.0, 507.0, 0.016, None)
+    # Bins within 5 sigma of the line (elsewhere a few upward noise
+    # fluctuations beyond 3 sigma are clipped, as expected)
+    x_out = 501.0 + 0.016 * (np.arange(len(y_raw)) + 1.5)
+    line = np.abs(x_out - 504.0) < 5 * sigma
+    assert line.sum() >= 2
+    np.testing.assert_array_equal(y_clip[line], y_raw[line])
 
 
 def test_coadd_flux():
