@@ -86,3 +86,21 @@ def test_saving_to_acs2_does_not_ask(window_with_v2_session, monkeypatch, tmp_pa
     assert window._save_session(history) is True
     assert calls == []
     assert os.path.exists(path)
+
+
+def test_loaded_log_is_kept_by_the_gui(window_with_v2_session, tmp_path):
+    # F26: the GUI used to give every loaded session a new, empty log
+    window, history = window_with_v2_session
+    history.log_manager.add_entry("smooth", {"sigma_kms": "20"})
+    path = tmp_path / "session.acs2"
+    history.current_state.save(str(path))
+    loaded = SessionV2.open_new(str(path), "reloaded", None, "auto")
+
+    window.add_session(loaded)
+    log = window.active_history.log_manager
+    assert [e.recipe_name for e in log.entries] == ["smooth"]
+
+    # A duplicate does not share the log of its source history
+    window.add_session(window.active_history.current_state)
+    assert window.active_history.log_manager is not log
+    assert window.active_history.log_manager.entries == []
