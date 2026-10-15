@@ -264,9 +264,10 @@ def rebin_spectrum(
     ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity]:
     """
     High-performance vectorized rebinning (Inverse/Drizzle method)
-    with optional local sigma clipping (single pass): pixels further than
-    ``kappa`` sigma from a running median of the input pixels are rejected,
-    but a bin is never emptied by the clipping.
+    with optional local sigma clipping (single pass, upward only): pixels
+    more than ``kappa`` sigma above a running median of the input pixels
+    (spikes) are rejected; absorption features are never clipped, and a bin
+    is never emptied by the clipping.
     """
     # 1. Prepare Units and Arrays
     xunit_target = dx.unit
@@ -370,10 +371,14 @@ def rebin_spectrum(
     # --- PASS 1: Consensus ---
     num1, den1, _, num_res1, den_res1 = _drizzle_pass(valid_mask)
     
-    # --- LOCAL CLIPPING (single pass) ---
+    # --- LOCAL CLIPPING (single pass, upward only) ---
     # Each pixel is compared with a running median of the input pixels
     # (robust against the outliers themselves, unlike the mean of the first
     # pass), over at least 5 pixels or the number of pixels per output bin.
+    # Only pixels ABOVE the median are rejected (spikes, cosmic rays): the
+    # cores of narrow absorption lines lie below a running median and were
+    # clipped by a two-sided test (equivalent width of a 2.5-pixel line
+    # reduced by ~20%; findings register F2, agreed with Guido).
     restore_candidates = None
     if kappa is not None and np.any(valid_mask):
         order = np.argsort(x_in_val)
@@ -382,10 +387,12 @@ def rebin_spectrum(
         n_per_bin = int(np.ceil(dx_val / dx_in)) if dx_in > 0 else 1
         window = max(5, n_per_bin)
         window += 1 - window % 2  # odd
-        y_median = np.full_like(y_val, np.nan)
-        y_median[sorted_valid] = median_filter(y_val[sorted_valid], size=window,
-                                               mode='nearest')
-        deviation = np.abs(y_val - y_median)
+        y_median = np.full(len(y_val), np.nan)
+        # Native float64: FITS data are often big-endian, which median_filter
+        # does not support
+        y_sorted = np.asarray(y_val[sorted_valid], dtype=np.float64)
+        y_median[sorted_valid] = median_filter(y_sorted, size=window, mode='nearest')
+        deviation = y_val - y_median
         is_outlier = valid_mask & (deviation > kappa * dy_val)
         restore_candidates = (is_outlier, deviation / dy_val)
         valid_mask = valid_mask & ~is_outlier
