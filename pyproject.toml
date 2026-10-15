@@ -145,7 +145,11 @@ exclude_lines = [
 # The GUI and full-chain tests are left out: slow, and the chain runs in a
 # subprocess that the mutants do not reach.
 [tool.mutmut]
-source_paths = ["astrocook/core/spectrum_operations.py"]
+source_paths = [
+    "astrocook/core/spectrum_operations.py",
+    "astrocook/fitting/voigt_model.py",
+    "astrocook/fitting/voigt_fitter.py",
+]
 also_copy = ["astrocook/"]
 pytest_add_cli_args_test_selection = [
     "tests/",

@@ -64,26 +64,22 @@ Current version: 2.0.1. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phase 0 done. Phase 1 (safety net) in progress; progress per item in
-`ROADMAP.md`, phase 1. Done: snapshots (pure functions, continuum,
+Phases 0 and 1 done (October 2026; details per item in `ROADMAP.md`,
+phase 1). The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
-J0103-1305 and on a mock), tests for the "possibly fixed" issues, V1/V2
-parity tests, CI, mock generator (`astrocook/mocks/`; sky residuals and
-tellurics still missing). Slow tests (the J0103-1305 full chain, ~15
-minutes) are marked `slow` and run only with `pytest --run-slow` (and in
-a separate CI job, see above).
-Coverage measured (V2 without legacy: 38%, 46% after the targeted
-recipe-level tests for `edit.py`, `flux.py`, `absorbers.py` and the system
-list, 56% with the GUI smoke tests; per area and remaining gaps in
-`ROADMAP.md`, phase 1, item 6). GUI smoke tests done
-(`tests/test_gui_smoke.py`, pytest-qt offscreen; message boxes stubbed).
-`.acs2` round trips done (`tests/test_acs2_round_trip.py`).
-Chi-squared error-scaling check done (`tests/test_error_scaling.py`; F29,
-decision pending).
-Mutation testing: pilot on `core/spectrum_operations.py` done (`mutmut`,
-config in `pyproject.toml`, run by hand). Remaining in phase 1: optionally
-mutmut on the fitting modules; log replay
-and V1 `.acs` archives wait for sessions from Guido.
+J0103-1305 and on a mock), V1/V2 parity tests, mock generator, recipe-level
+and GUI smoke tests, `.acs2` round trips, error-scaling check, mutation
+testing (`mutmut`, config in `pyproject.toml`, run by hand). Coverage of
+the V2 code: 56%. Slow tests (`pytest --run-slow`) run in a separate CI job.
+Still waiting for data from Guido: sessions for log replay, V1 `.acs`
+archives, sample files for the loaders.
+
+Now: **phase 1-bis**, the findings register (`ROADMAP.md`, section 3.2)
+item by item, in the order of section 3.3. One item per PR; wait for the
+merge before the next. Turn the related strict xfail into a passing test
+(or add a regression test) and state the numerical effect in the PR. The
+proposals are agreed in general, but items marked "decision" need a short
+proposal agreed with Guido before changing code.
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido at the end of phase 1;
