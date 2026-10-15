@@ -171,10 +171,24 @@ def _check(snapshot, case, arrays):
     assert not failures, "\n".join(failures)
 
 
+def _check_intent(arrays):
+    """What the automatic pipelines are meant to guarantee, independently of
+    the snapshots: no component broader than the pipeline bound on b
+    (``max_b``, 50 km/s). Without the bound, ``lya_auto`` on J0103-1305 takes
+    4 times longer and gives spurious broad lines (F32)."""
+    for stage in ("doublets", "forest"):
+        b = arrays[f"{stage}_b"]
+        assert np.all(b <= 50.0 + 1e-6), f"{stage}: b up to {b.max():.1f} km/s"
+
+
 @pytest.mark.slow
 def test_full_chain_j0103(snapshot, tmp_path):
-    _check(snapshot, "j0103", _run_chain("j0103", tmp_path))
+    arrays = _run_chain("j0103", tmp_path)
+    _check_intent(arrays)
+    _check(snapshot, "j0103", arrays)
 
 
 def test_full_chain_mock(snapshot, tmp_path):
-    _check(snapshot, "mock", _run_chain("mock", tmp_path))
+    arrays = _run_chain("mock", tmp_path)
+    _check_intent(arrays)
+    _check(snapshot, "mock", arrays)
