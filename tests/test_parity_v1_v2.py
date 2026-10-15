@@ -292,12 +292,26 @@ def test_continuum_red_side(continua):
 
 
 def test_v1_auto_fudge_is_small(continua):
-    # The V1 automatic fudge is effective but small on this spectrum, so the
-    # V2 regression F3 (fudge always 1) has little practical effect here
+    # The V1 automatic fudge is effective but small on this spectrum: it
+    # corrects the running mean V1 builds the continuum from (5th-95th
+    # percentile 0.998-1.002 in the forest, 0.999-1.000 on the red side)
     c = continua
     ratio = c.cont1 / c.cont1_nofudge
     assert np.nanmedian(ratio[c.forest]) == pytest.approx(1.0, abs=1e-3)
     assert np.nanmedian(ratio[c.red]) == pytest.approx(1.0, abs=1e-3)
+
+
+def test_v2_auto_fudge_is_one(j0103_window):
+    # Characterization (findings register F3, accepted): V2 interpolates the
+    # unabsorbed pixels, so the residuals the automatic fudge is computed
+    # from are zero and the fudge is exactly 1. A V1-like local fudge was
+    # tried and does not reproduce V1 (the V2 continuum is not a running
+    # mean): see the F3 entry of the register.
+    absorbed = j0103_window.find_absorbed(5000 * au.km / au.s, 400 * au.km / au.s,
+                                          2.0, False)
+    auto = absorbed.fit_continuum("auto", 400.0).get_column("cont").value
+    one = absorbed.fit_continuum("1.0", 400.0).get_column("cont").value
+    np.testing.assert_array_equal(auto, one)
 
 
 @pytest.mark.xfail(strict=True, reason=(
