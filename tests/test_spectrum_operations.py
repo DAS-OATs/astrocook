@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from astropy import units as au
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
 from astrocook.core.spectrum_operations import rebin_spectrum
@@ -68,10 +67,6 @@ def test_rebin_weighted_average(tolerance=1e-9):
     assert np.isclose(y_out.value[0], expected_y.value[0], atol=tolerance)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Rebinned errors do not decrease with the number of pixels per bin: the "
-    "code gives 0.0686 = 0.0485 * sqrt(2). See "
-    "https://github.com/DAS-OATs/astrocook/issues/490"))
 def test_rebin_weighted_average_error(tolerance=1e-9):
     _, dy_out, _, expected_dy = _rebin_case1()
     assert np.isclose(dy_out.value[0], expected_dy.value[0], atol=tolerance)
