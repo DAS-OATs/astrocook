@@ -470,7 +470,7 @@ Exception: anything that loses user data or crashes is reported at once.
 
 | ID | Area | Finding | Impact | Recorded by | Status |
 |---|---|---|---|---|---|
-| F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error` (strict xfail) | issue [#490](https://github.com/DAS-OATs/astrocook/issues/490); V2 regression (V1 gives σ/√N), scheduled as a bug (section 3.1) |
+| F1 | `rebin_spectrum` | Errors do not decrease with the number of pixels per output bin (σ instead of σ/√N) | numerical | `test_rebin_weighted_average_error`, `test_rebin_errors` (V1 parity; regression) | fixed (phase 1-bis): error of the weighted mean as in V1, sqrt(sum w^2 sigma^2) / sum w; issue [#490](https://github.com/DAS-OATs/astrocook/issues/490) |
 | F2 | `rebin_spectrum` | Sigma clipping uses the first-pass bin mean, which includes the outlier: with few pixels per bin (e.g. 3) a single spike can make the whole bin NaN. Clipping runs once, docstring says "iterative". Not a pure V2 regression: V1 clips with `sigma_clip` within each bin, which keeps the bin but cannot remove an isolated spike with 3-5 pixels per bin; neither version removes it. Related to #465 | numerical | snapshot `rebin_spectrum_nm_clip`; `test_rebin_clipping_keeps_bins_with_a_spike` (strict xfail) | open |
 | F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*` | V2 regression (V1 uses a running mean, so the fudge is effective and local), scheduled as a bug (section 3.1). Small in practice: on J0103-1305 the V1 fudge changes the continuum by < 0.05% (`test_v1_auto_fudge_is_small`) |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
@@ -627,7 +627,7 @@ review); each of its decisions goes into the log.
 | Initial analysis and roadmap | done (October 2026) |
 | 0 – Environment | done (October 2026) |
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
-| 1-bis – Findings and urgent issues (section 3.3) | in progress: F24, F26, F32, F25, F19 done |
+| 1-bis – Findings and urgent issues (section 3.3) | in progress: F24, F26, F32, F25, F19, F1 done |
 | 2 – Cleanup and packaging | not started |
 | 3 – Decoupling from legacy | not started |
 | 4 – Splitting large files | not started |

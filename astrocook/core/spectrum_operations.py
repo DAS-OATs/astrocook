@@ -316,6 +316,7 @@ def rebin_spectrum(
         
         num = np.zeros(N_out)
         den = np.zeros(N_out)
+        var = np.zeros(N_out)  # sum of weights^2 * sigma^2, for the error
         
         if resol_val is not None:
             res_v = resol_val[mask_in]
@@ -351,6 +352,7 @@ def rebin_spectrum(
             
             np.add.at(num, bin_idx, y_v[valid_sub] * weights)
             np.add.at(den, bin_idx, weights)
+            np.add.at(var, bin_idx, weights**2 * sigma_sq)
 
             # --- Proper 1/R^2 weighted resolution accumulation ---
             if resol_val is not None:
@@ -361,10 +363,10 @@ def rebin_spectrum(
                     np.add.at(num_res, bin_idx[valid_res], w_res * inv_r_sq)
                     np.add.at(den_res, bin_idx[valid_res], w_res)
             
-        return num, den, num_res, den_res
+        return num, den, var, num_res, den_res
 
     # --- PASS 1: Consensus ---
-    num1, den1, num_res1, den_res1 = _drizzle_pass(valid_mask)
+    num1, den1, _, num_res1, den_res1 = _drizzle_pass(valid_mask)
     
     # --- ITERATIVE LOCAL CLIPPING ---
     if kappa is not None:
@@ -393,7 +395,7 @@ def rebin_spectrum(
         valid_mask &= ~is_outlier
 
     # --- PASS 2: Final Rebinning ---
-    num_final, den_final, num_res_final, den_res_final = _drizzle_pass(valid_mask)
+    num_final, den_final, var_final, num_res_final, den_res_final = _drizzle_pass(valid_mask)
 
     # Finalize Output
     valid_out = den_final > 0
@@ -401,7 +403,10 @@ def rebin_spectrum(
     dy_out_val = np.full(N_out, filling)
     
     y_out_val[valid_out] = num_final[valid_out] / den_final[valid_out]
-    dy_out_val[valid_out] = 1.0 / np.sqrt(den_final[valid_out])
+    # Error of the weighted mean, as in V1: sqrt(sum w^2 sigma^2) / sum w,
+    # with w = frac / sigma^2 (sigma / sqrt(N) for N equal, fully covered
+    # pixels). 1 / sqrt(sum w) would be right only for frac = 1.
+    dy_out_val[valid_out] = np.sqrt(var_final[valid_out]) / den_final[valid_out]
     
     # --- Finalize Resolution Array ---
     resol_out = None

@@ -73,9 +73,6 @@ def test_rebin_flux(dx):
     np.testing.assert_allclose(y2, y1, rtol=1e-10)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "V2 rebinned errors do not decrease with the number of pixels per bin; "
-    "V1 gives ~sigma/sqrt(N). Findings register F1, issue #490."))
 def test_rebin_errors():
     (_, dy1), (_, dy2) = _rebin_both(_arrays(500.0, 508.0, 0.004), 501.0, 507.0, 0.02, None)
     np.testing.assert_allclose(dy2, dy1, rtol=1e-6)
