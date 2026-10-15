@@ -1079,7 +1079,9 @@ class RecipeAbsorbersV2:
         """
         Delete component(s).
 
-        Removes specified components and updates the model.
+        Removes specified components and updates the model. Without a
+        continuum the model cannot be computed: the components are deleted
+        anyway and the ``model`` column, if any, is removed.
         Delegates to :meth:`astrocook.core.system_list.SystemListV2.delete_component`
         and :meth:`astrocook.core.spectrum.SpectrumV2.update_model`.
 
@@ -1101,13 +1103,24 @@ class RecipeAbsorbersV2:
             # 1. Delegate to SystemListV2 (which we updated to handle lists)
             # We pass both arguments; SystemListV2 handles the set logic.
             new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
-            
-            # 2. Recompute Model (Only once!)
-            fitter = VoigtFitterV2(self._session.spec, new_systs)
+            spec = self._session.spec
+
+            # 2. Without a continuum the model cannot be computed: delete the
+            # components anyway and drop the model column, which would still
+            # include them.
+            if spec.norm is None:
+                logging.warning("delete_component: no continuum, the model is not "
+                                "recomputed (the 'model' column is removed).")
+                if spec.has_aux_column('model'):
+                    spec = spec.remove_columns(['model'])
+                return self._session.with_new_spectrum(spec).with_new_system_list(new_systs)
+
+            # 3. Recompute Model (Only once!)
+            fitter = VoigtFitterV2(spec, new_systs)
             _, model_flux = fitter.compute_model_flux()
             
-            # 3. Update Spectrum
-            new_spec = self._session.spec.update_model(model_flux)
+            # 4. Update Spectrum
+            new_spec = spec.update_model(model_flux)
             
             return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             

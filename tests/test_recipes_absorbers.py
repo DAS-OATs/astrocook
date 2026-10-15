@@ -14,11 +14,11 @@ noise 0.02). Fitted values are compared with the known input within loose
 tolerances, not stored as snapshots: they depend on the machine (see
 ``test_snapshots_full_chain.py``).
 
-These tests record the current behaviour, including F25 (findings
-register, ``ROADMAP.md``, section 3.2): components cannot be deleted from a
-spectrum without a continuum. F24 (``fit_bayesian`` with at most 200 MCMC
-steps overwrote the component parameters with NaN) is fixed and covered by
-regression tests.
+These tests record the current behaviour. F24 (``fit_bayesian`` with at
+most 200 MCMC steps overwrote the component parameters with NaN) and F25
+(components could not be deleted from a spectrum without a continuum) are
+fixed and covered by regression tests (findings register, ``ROADMAP.md``,
+section 3.2).
 """
 import numpy as np
 import pytest
@@ -138,23 +138,27 @@ def test_delete_component_recomputes_model(data):
     assert both.systs.components == []
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "delete_component recomputes the model, which needs a continuum: on a "
-    "spectrum in physical units without one, VoigtFitterV2 raises, the error "
-    "is logged and the session is returned unchanged, so the component is "
-    "not deleted (also clean_negligible). Findings register F25 "
-    "(ROADMAP.md, section 3.2)."))
 def test_delete_component_without_continuum(data):
+    # Regression test for F25: without a continuum the model could not be
+    # recomputed, the error was logged and the component was not deleted
     import astropy.units as au
     from test_recipes_edit_flux import _spec
     # Physical flux (the fitter takes a median flux between 0.1 and 10 as
     # already normalised)
-    session = _session(_spec(scale=1e-16), _systs(("CIV", 2.97, 13.6, 12.0)))
+    session = _session(_spec(scale=1e-16), _systs(("CIV", 2.97, 13.6, 12.0),
+                                                   ("CIV", 2.98, 11.0, 12.0)))
     session = session.edit.delete("cont")
     assert session.spec.y.unit != au.dimensionless_unscaled
     assert session.spec.norm is None
+    session = session.with_new_spectrum(
+        session.spec.update_model(np.ones_like(session.spec.y.value)))
     out = session.absorbers.delete_component(uuid=session.systs.components[0].uuid)
-    assert out.systs.components == []
+    assert [c.z for c in out.systs.components] == [2.98]
+    # The model, which still included the deleted component, is dropped
+    assert not out.spec.has_aux_column("model")
+    # "Clean negligible" goes through delete_component
+    cleaned = session.absorbers.clean_negligible(min_logN="11.5")
+    assert [c.z for c in cleaned.systs.components] == [2.97]
 
 
 def test_delete_component_resets_links_to_it(data):
