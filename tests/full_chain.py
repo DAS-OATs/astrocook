@@ -5,12 +5,11 @@ defaults: Edit > Set properties (z_em, R), Continuum > Auto-estimate,
 Absorbers > Auto-detect doublets (red side), Absorbers > Auto-fit Ly-alpha
 forest.
 
-The result of the automatic pipelines depends on the order in which
-``refit_all`` picks its seeds from a set of component UUIDs, i.e. on the
-random UUIDs and on the string hash seed (findings register F19,
-``ROADMAP.md``). To get a reproducible result the chain runs in a child
-process with ``PYTHONHASHSEED=0`` and with ``uuid.uuid4`` replaced by a
-seeded generator. Usage::
+The chain runs in a child process with ``PYTHONHASHSEED=0`` and with
+``uuid.uuid4`` replaced by a seeded generator. Since the fix of F19
+(findings register, ``ROADMAP.md``: ``refit_all`` used to pick its seeds
+from a set of random UUIDs) the result no longer depends on either; they
+are kept so that the UUIDs in the output are reproducible too. Usage::
 
     PYTHONHASHSEED=0 python tests/full_chain.py <case> <output.npz>
 

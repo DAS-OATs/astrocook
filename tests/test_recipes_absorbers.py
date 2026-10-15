@@ -272,6 +272,29 @@ def test_clean_negligible_nothing_to_do(data):
     assert session.absorbers.clean_negligible(min_logN="x") == 0
 
 
+# --- Reproducibility of refit_all (F19) ----------------------------------
+
+def test_refit_all_does_not_depend_on_the_uuids(data):
+    # Regression test for F19: with group_depth >= 1 the seeds of the groups
+    # were taken from a set of random UUIDs, so the depth-limited groups (and
+    # the fitted values) changed with the UUIDs and from run to run.
+    import dataclasses
+    # A chain of blended Ly-alpha lines around the one in the spectrum:
+    # neighbours overlap, so a depth-1 group depends on its seed
+    z0, dz = 4.0590, 25.0 / C_KMS * (1 + 4.0590)
+    params = [("Ly_a", z0 + k * dz, 13.0, 20.0) for k in range(-4, 5)]
+    results = []
+    for labels in range(6):
+        rng = np.random.default_rng(labels)
+        comps = [dataclasses.replace(c, uuid=f"{rng.integers(1 << 62):x}")
+                 for c in _systs(*params).components]
+        systs = SystemListV2(SystemListDataV2(components=comps))
+        out = _session(data, systs).absorbers.refit_all(
+            max_nfev="30", group_depth="1", max_group_size="3")
+        results.append(sorted((c.z, c.logN, c.b) for c in out.systs.components))
+    assert all(r == results[0] for r in results[1:])
+
+
 # --- Upper bound on b (F32) ---------------------------------------------
 
 def test_refit_all_max_b(one_civ):

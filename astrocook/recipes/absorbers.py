@@ -1730,9 +1730,14 @@ class RecipeAbsorbersV2:
                 # (We only start groups from valid seeds, but neighbors outside region can still be pulled in)
                 todo_uuids = uuids_in_region.copy()
                 comp_map = {c.uuid: c for c in current_session.systs.components}
+                # Seeds in a deterministic order (increasing z): the depth-limited
+                # group depends on the seed, and the iteration order of a set of
+                # random UUIDs changes from run to run
+                seed_order = sorted(todo_uuids,
+                                    key=lambda u: (comp_map[u].z, comp_map[u].series))
 
-                while todo_uuids:
-                    seed = next(iter(todo_uuids))
+                for seed in seed_order:
+                    if seed not in todo_uuids: continue
                     
                     # Find group (physics-based)
                     group = current_session.systs.get_connected_group([seed], max_depth=depth_i)
@@ -1740,7 +1745,7 @@ class RecipeAbsorbersV2:
                     if not group: 
                         todo_uuids.remove(seed); continue
                     
-                    group_list = list(group)
+                    group_list = sorted(group, key=lambda u: (comp_map[u].z, comp_map[u].series))
                     
                     # Chunking Logic
                     if len(group_list) <= max_size_i:
