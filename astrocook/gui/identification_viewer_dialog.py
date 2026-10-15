@@ -72,8 +72,12 @@ class IdentificationViewerDialog(QDialog):
             return
 
         try:
-            # 1. De-serialize the JSON string
-            ident_dict_raw = json.loads(json_string)
+            # 1. De-serialize: a JSON string as written by identify_lines, or
+            # already a dict after an .acs2 round trip (findings register F27)
+            if isinstance(json_string, str):
+                ident_dict_raw = json.loads(json_string)
+            else:
+                ident_dict_raw = json_string
             ident_dict = {int(k): v for k, v in ident_dict_raw.items()}
             num_regions_identified = len(ident_dict)
 
