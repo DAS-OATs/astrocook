@@ -194,14 +194,16 @@ def test_bayesian_results_are_saved(rich_session, tmp_path):
     assert uuid in reloaded.systs._data.meta.get("bayesian_results", {})
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "After an .acs2 round trip region_identifications is a dict (the loader "
-    "parses the JSON and makes the keys integers), but the identification "
-    "viewer calls json.loads on it and shows 'Error parsing metadata'. "
-    "Findings register F27 (ROADMAP.md, section 3.2)."))
-def test_identification_viewer_after_round_trip(qtbot, rich_session, tmp_path):
+@pytest.mark.parametrize("round_trip", [False, True])
+def test_identification_viewer_after_round_trip(qtbot, rich_session, tmp_path,
+                                                round_trip):
+    # Regression test for F27: after an .acs2 round trip
+    # region_identifications is a dict (the loader parses the JSON and makes
+    # the keys integers), and the viewer, which called json.loads on it,
+    # showed "Error parsing metadata"
     from astrocook.gui.identification_viewer_dialog import IdentificationViewerDialog
-    reloaded, _ = _round_trip(rich_session, tmp_path)
-    dialog = IdentificationViewerDialog(reloaded.spec, "rich")
+    session = _round_trip(rich_session, tmp_path)[0] if round_trip else rich_session
+    dialog = IdentificationViewerDialog(session.spec, "rich")
     qtbot.addWidget(dialog)
     assert "Error" not in dialog.summary_label.text()
+    assert "Found <b>" in dialog.summary_label.text()
