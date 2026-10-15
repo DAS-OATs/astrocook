@@ -268,6 +268,28 @@ def test_clean_negligible_nothing_to_do(data):
     assert session.absorbers.clean_negligible(min_logN="x") == 0
 
 
+# --- Upper bound on b (F32) ---------------------------------------------
+
+def test_refit_all_max_b(one_civ):
+    out = one_civ.absorbers.refit_all(max_b="8.0")
+    assert all(c.b <= 8.0 + 1e-9 for c in out.systs.components)
+    assert one_civ.absorbers.refit_all(max_b="x") == 0
+
+
+def test_pipelines_bound_b_and_manual_fits_do_not():
+    import inspect
+    from astrocook.recipes.absorbers import RecipeAbsorbersV2, ABSORBERS_RECIPES_SCHEMAS
+    for name in ("components_auto", "doublets_auto", "lya_auto", "forest_auto",
+                 "metals_auto"):
+        sig = inspect.signature(getattr(RecipeAbsorbersV2, name))
+        assert sig.parameters["max_b"].default == "50.0", name
+        schema = {p["name"]: p for p in ABSORBERS_RECIPES_SCHEMAS[name]["params"]}
+        assert schema["max_b"]["default"] == 50.0, name
+    sig = inspect.signature(RecipeAbsorbersV2.refit_all)
+    assert sig.parameters["max_b"].default == "300.0"
+    assert "max_b" not in inspect.signature(RecipeAbsorbersV2.fit_component).parameters
+
+
 # --- Bayesian, anchor -----------------------------------------------------
 
 def test_fit_bayesian_mcmc(one_civ):

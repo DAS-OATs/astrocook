@@ -53,6 +53,13 @@ This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** t
 :align: center
 ```
 
+(absorbers-b-bound)=
+:::{important}
+**Upper bound on b in the pipelines.** The automated pipelines (Ly-alpha forest, doublets, general component detection, Lyman series, associated metals) fit with an upper bound on the Doppler parameter, **Max b** (default `50` km/s). Without it, components in crowded regions such as the forest tend to broaden into their neighbours: the fits become several times slower and produce spurious broad lines.
+
+A component that ends exactly at the bound (e.g. `b = 50` km/s) may be broader in reality. Select it in the System Inspector and use **Refit Selected**: manual fits use only the physical limit (`300` km/s), so the line can reach its true width. **Refit All** also takes a **Max b** parameter (default `300` km/s).
+:::
+
 (system-inspector)=
 ## 2. The System Inspector
 
@@ -146,6 +153,8 @@ After manual edits, you often need to re-optimize the fit:
 
 - **Refit Selected:** Select one **or more** components in the table, right-click, and choose "Refit Selected". This will optimize all highlighted lines (and their physical neighbors) in a batch process.
 - **Refit All:** Go to **Absorbers > Refit All Systems...** (in the main window) to re-optimize the entire spectrum, handling blends automatically.
+
+Manual fits (fit after adding a component, **Refit Selected**, **Refit All** with its defaults) bound `b` only at the physical limit of `300` km/s, while the automated pipelines use a tighter bound ([see above](#absorbers-b-bound)). Components that end at the pipeline bound are good candidates for a manual refit.
 
 ```{image} ../_static/absorbers_linking.png
 :alt: Linking parameters via the context menu

@@ -426,6 +426,18 @@ class VoigtFitterV2:
             
         return final_model
 
+    def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
+               b_max: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Lower the upper bound of the free b parameters to ``b_max``."""
+        lower, upper = bounds[0].copy(), bounds[1].copy()
+        is_free_mask = self._constraints._param_map['is_free']
+        free_idx_map = np.cumsum(is_free_mask) - 1
+        for idx_b in range(2, len(is_free_mask), 4):
+            if is_free_mask[idx_b]:
+                j = free_idx_map[idx_b]
+                upper[j] = max(min(upper[j], b_max), lower[j] + 1e-6)
+        return lower, upper
+
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
         # Check for stop request
         if self._check_stop and self._check_stop():
@@ -439,25 +451,6 @@ class VoigtFitterV2:
         
         final_resid = resid[self._fit_mask_calc]
         
-        # Optional: Soft penalty for b > 50 km/s to prevent runaways
-        p_full = self._constraints.map_p_free_to_full(p_free)
-        is_free_mask = self._constraints._param_map['is_free']
-        num_params = 4
-        penalty_list = []
-        
-        for i in range(len(p_full) // num_params):
-            idx_b = i * num_params + 2
-            if is_free_mask[idx_b]:
-                b_val = p_full[idx_b]
-                if b_val > 50.0:
-                    penalty = 5.0 * (b_val - 50.0)
-                    penalty_list.append(penalty)
-                else:
-                    penalty_list.append(0.0)
-        
-        if penalty_list:
-            final_resid = np.concatenate((final_resid, penalty_list))
-
         return final_resid
     
     def _find_feature_limits(self, z_center: float, trans_name: str, 
@@ -855,7 +848,8 @@ class VoigtFitterV2:
         }
 
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
-            z_window_kms: float = 20.0, verbose: int = 0) -> Tuple[SystemListV2, np.ndarray, Any]:
+            z_window_kms: float = 20.0, verbose: int = 0,
+            b_max: Optional[float] = None) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
         Execute the Voigt profile optimization.
 
@@ -874,6 +868,13 @@ class VoigtFitterV2:
             Defaults to ``20.0``.
         verbose : int, optional
             Verbosity level for ``scipy.optimize.least_squares``. Defaults to ``0``.
+        b_max : float, optional
+            Upper bound (km/s) on the free b parameters, tighter than the
+            physical limit of the constraint model (300 km/s). Used by the
+            automatic pipelines to keep the components from broadening into
+            their neighbours; components that end at this bound may be broader
+            and can be refitted without it. Defaults to ``None`` (no extra
+            bound).
 
         Returns
         -------
@@ -907,6 +908,8 @@ class VoigtFitterV2:
         self._system_list = SystemListV2(replace(old_systs._data, components=new_comps))
 
         bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
+        if b_max is not None:
+            bounds = self._cap_b(bounds, b_max)
 
         # Clamp p0 to bounds
         p0 = np.clip(p0, bounds[0], bounds[1])

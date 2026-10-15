@@ -4,8 +4,9 @@ Written after mutation testing of ``fitting/`` (``mutmut``, phase 1, item 6
 of ``ROADMAP.md``): the turbulent broadening could be changed (e.g.
 sqrt(b^2 - btur^2)) without any test failing, and no test fitted a line
 broader than 50 km/s. Data from the mock generator (independent of the
-fitting code). Records F32 (findings register): a penalty on b > 50 km/s
-biases the fits of broad lines.
+fitting code). F32 (findings register): a penalty on b > 50 km/s biased the
+fits of broad lines; it is replaced by an explicit upper bound on b
+(``b_max``), used only by the automatic pipelines.
 """
 import numpy as np
 import pytest
@@ -62,13 +63,24 @@ def test_fit_narrow_line():
     assert fitted.components[0].b == pytest.approx(40.0, rel=0.1)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "_residual_function appends a penalty 5 (b - 50) for b > 50 km/s to the "
-    "residuals: at S/N 20 a line with b = 80 km/s is fitted with b ~ 50 km/s "
-    "and logN 0.1 dex low (b = 120: logN 0.35 dex low). Findings register F32 "
-    "(ROADMAP.md, section 3.2)."))
-def test_fit_broad_line():
-    spec = _mock(snr=20.0, b=80.0)
-    fitted, _, _ = VoigtFitterV2(spec, _systs(b=64.0, logN=13.5)).fit(
+@pytest.mark.parametrize("b", [60.0, 80.0, 120.0])
+def test_fit_broad_line(b):
+    # Regression test for F32: with the penalty on b > 50 km/s these lines
+    # came out with b ~ 50 km/s and logN low by 0.1-0.3 dex
+    spec = _mock(snr=100.0, b=b)
+    fitted, _, _ = VoigtFitterV2(spec, _systs(b=0.8 * b, logN=13.5)).fit(
         max_nfev=3000, z_window_kms=20.0)
-    assert fitted.components[0].b == pytest.approx(80.0, rel=0.1)
+    comp = fitted.components[0]
+    assert abs(comp.b - b) < 3 * comp.db
+    assert abs(comp.logN - 13.8) < 3 * comp.dlogN
+
+
+def test_b_max_bounds_the_fit():
+    spec = _mock(snr=100.0, b=80.0)
+    fitted, _, _ = VoigtFitterV2(spec, _systs(b=64.0, logN=13.5)).fit(
+        max_nfev=3000, z_window_kms=20.0, b_max=50.0)
+    assert fitted.components[0].b == pytest.approx(50.0, abs=1e-6)
+    # A starting value above the bound is brought inside it
+    fitted, _, _ = VoigtFitterV2(spec, _systs(b=70.0, logN=13.5)).fit(
+        max_nfev=3000, z_window_kms=20.0, b_max=50.0)
+    assert fitted.components[0].b <= 50.0
