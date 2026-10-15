@@ -13,8 +13,9 @@ inputs:
 
 Unlike the stage snapshots, each stage here takes the output of the
 previous one, so a change anywhere in the chain shows up. The chain runs in
-a child process with a fixed hash seed and seeded UUIDs: without them the
-result changes from run to run (findings register F19, ``ROADMAP.md``).
+a child process with a fixed hash seed and seeded UUIDs; until F19 was
+fixed (findings register, ``ROADMAP.md``) the result changed from run to
+run without them.
 
 Even so, the automatic pipelines amplify floating-point differences: on
 another CPU, the J0103-1305 chain gives one Lyman-alpha component less and
@@ -28,7 +29,7 @@ groupings (F19) and between machines, and much narrower than a real
 regression (e.g. a wrong resolution or continuum).
 
 These are characterization tests: they record what the chain does now,
-including the questionable results listed in the register (F19-F21), not
+including the questionable results listed in the register (F20, F21), not
 what is correct.
 """
 import os
