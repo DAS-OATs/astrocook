@@ -90,21 +90,37 @@ def test_model_global_and_flat_column_agree():
         rtol=1e-10)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "convolve_flux groups pixels by resolution rounded to 100 (R) or 0.5 km/s, "
-    "but selects them by the raw value: pixels whose resolution is not already "
-    "rounded are never filled and the model is 0 there. Findings register F10 "
-    "(ROADMAP.md, section 3.2)."))
+def _nan_middle(n):
+    col = np.full(n, R_SYNTH)
+    col[n // 3: n // 2] = np.nan
+    return col
+
+
 @pytest.mark.parametrize("label, resol_col", [
     ("flat_not_round", lambda n: np.full(n, 45050.0)),
     ("varying", lambda n: np.linspace(40000.0, 50000.0, n)),
+    ("with_nan", _nan_middle),
 ])
 def test_model_column_resolution_is_not_zero(label, resol_col):
+    # Regression test for F10: pixels were grouped by the rounded resolution
+    # but selected by the raw value, so those with a non-round resolution
+    # (and those with NaN) were never filled and the model was 0 there
     n = _n(_synthetic_spectrum())
     spec = _synthetic_spectrum(resol_col=resol_col(n))
     model = _model(spec, _system_list(TRUE_COMPONENTS))
     # Far from the lines the normalised model must be close to 1
     assert np.all(model > 0.1)
+
+
+def test_model_column_resolution_is_rounded():
+    # The kernel uses the resolution rounded to 100: a flat column at
+    # R = 45050 gives the same model as one at 45000
+    n = _n(_synthetic_spectrum())
+    systs = _system_list(TRUE_COMPONENTS)
+    np.testing.assert_allclose(
+        _model(_synthetic_spectrum(resol_col=np.full(n, 45050.0)), systs),
+        _model(_synthetic_spectrum(resol_col=np.full(n, 45000.0)), systs),
+        rtol=1e-12)
 
 
 def test_model_component_resolution(snapshot):

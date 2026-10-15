@@ -235,11 +235,9 @@ def test_voigt_model(series, z, logN, b, ew_rtol, resol):
     assert np.sum(1 - v2) == pytest.approx(np.sum(1 - v1), rel=ew_rtol)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "V1 takes the resolution from the column at the system centre; V2 "
-    "convolve_flux leaves pixels with a non-round resolution at 0. Findings "
-    "register F10."))
 def test_voigt_model_with_resolution_column():
+    # Regression test for F10 (V2 left the pixels with a non-round
+    # resolution at 0); V1 takes the resolution at the system centre
     resol = 45050.0
     v1 = _voigt_v1(VOIGT_X, 0.002, "CIV", 2.97, 13.6, 12.0, resol)
     v2 = _voigt_v2(VOIGT_X, 0.002, "CIV", 2.97, 13.6, 12.0,

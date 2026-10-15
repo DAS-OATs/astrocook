@@ -80,9 +80,11 @@ def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: s
         unique_resols = np.unique(rounded_resol)
         
         for r_val in unique_resols:
-            if r_val <= 0: continue
+            if not r_val > 0: continue  # also skips NaN
             
-            mask_r = np.isclose(resol_arr, r_val, atol=1e-3)
+            # Select by the ROUNDED value: selecting by the raw value left the
+            # pixels with a non-round resolution at 0 (findings register F10)
+            mask_r = rounded_resol == r_val
             
             # Use median wavelength of the masked region for kernel width approximation
             local_wave = np.median(x_ang[mask_r])
@@ -95,8 +97,8 @@ def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: s
             else:
                 final_convolved[mask_r] = flux[mask_r]
 
-        # Fill gaps (where resol <= 0)
-        mask_no_res = (resol_arr <= 0)
+        # Fill gaps (where resol <= 0 or NaN)
+        mask_no_res = ~(rounded_resol > 0)
         if np.any(mask_no_res):
             final_convolved[mask_no_res] = flux[mask_no_res]
             

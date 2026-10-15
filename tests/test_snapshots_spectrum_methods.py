@@ -111,11 +111,6 @@ def test_split_and_scale_flux(snapshot, exposures):
                    _columns(scaled, ("x", "y", "dy", "cont", "resol")))
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "The coadd combines the resolution columns into non-round values, and "
-    "convolve_flux leaves pixels with non-round resolution at 0: the Voigt "
-    "model of a coadded spectrum is 0 on most pixels. Findings register F10 "
-    "(ROADMAP.md, section 3.2)."))
 def test_voigt_model_on_coadded_spectrum_is_not_zero(exposures):
     from astrocook.core.structures import ComponentDataV2, SystemListDataV2
     from astrocook.core.system_list import SystemListV2
