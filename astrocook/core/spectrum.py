@@ -1979,7 +1979,14 @@ class SpectrumV2:
         Parameters
         ----------
         fudge : float or str
-            Fudge factor. Can be a float or ``'auto'``.
+            Fudge factor. Can be a float or ``'auto'``. With ``'auto'`` the
+            factor is computed from the residuals of the unabsorbed pixels
+            around the interpolated continuum, which passes through those
+            pixels: it is 1 by construction. In V1 the automatic fudge
+            corrected the running mean from which V1 builds the continuum;
+            V2 interpolates instead, so there is nothing to correct
+            (findings register F3, accepted). The bias of the final
+            smoothing is not corrected.
         smooth_std_kms : float
             Smoothing width for the continuum spline in km/s.
         mask_col : str, optional

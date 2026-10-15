@@ -624,6 +624,10 @@ def compute_auto_fudge(
     """
     Calculates a scalar fudge factor to center the continuum residuals.
     Fixes the 'Low Bias' issue where sigma-clipped continuums sit too low.
+
+    In ``SpectrumV2.fit_continuum`` it is applied to the interpolated
+    continuum, which passes through the unabsorbed pixels, so it returns 1
+    there (findings register F3, accepted: see ``fit_continuum``).
     """
     mask_unabs = ~mask_abs
     if np.sum(mask_unabs) < 10: 
