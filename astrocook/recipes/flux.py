@@ -233,9 +233,11 @@ class RecipeFluxV2:
             
             norm_b = str(norm) == 'True' # Handle boolean flag
             filling_f = float(filling) if filling != 'nan' else np.nan
-        except ValueError:
-            # Replicates V1 error handling path to avoid crash in the GUI context
+        except (ValueError, TypeError):
+            # Replicates V1 error handling path to avoid crash in the GUI context;
+            # return 0 like the other recipes (findings register F23)
             logging.error(msg_param_fail)
+            return 0
 
         # 5. Execute the immutable V2 operation
         new_spec_v2 = self._session.spec.rebin(

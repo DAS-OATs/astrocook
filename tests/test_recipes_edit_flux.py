@@ -329,12 +329,12 @@ def test_rebin(snapshot):
                                          "dy": out.spec.dy}, rtol=1e-8)
 
 
-@pytest.mark.xfail(strict=True, raises=UnboundLocalError, reason=(
-    "flux.rebin logs the parsing error but goes on, so a non-numeric "
-    "parameter raises UnboundLocalError instead of returning 0. Findings "
-    "register F23 (ROADMAP.md, section 3.2)."))
-def test_rebin_bad_input_returns_0():
-    assert _session().flux.rebin(dx="abc") == 0
+@pytest.mark.parametrize("params", [{"dx": "abc"}, {"xunit": "not_a_unit"},
+                                    {"kappa": "x"}, {"xstart": "?"}])
+def test_rebin_bad_input_returns_0(params):
+    # Regression test for F23: the parsing error was logged but the recipe
+    # went on and raised UnboundLocalError instead of returning 0
+    assert _session().flux.rebin(**params) == 0
 
 
 def test_smooth_bad_input_returns_0():
