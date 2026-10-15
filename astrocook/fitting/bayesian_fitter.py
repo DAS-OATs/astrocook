@@ -131,7 +131,7 @@ class BayesianVoigtFitter:
         return lp + self.ln_likelihood(p_free)
 
     def run_mcmc(self, nwalkers: int = 32, nsteps: int = 1000, 
-                 burn_in: int = 200, progress: bool = True) -> Dict[str, Any]:
+                 burn_in: Optional[int] = None, progress: bool = True) -> Dict[str, Any]:
         """
         Execute Markov Chain Monte Carlo (MCMC) sampling using ``emcee``.
 
@@ -145,7 +145,9 @@ class BayesianVoigtFitter:
         nsteps : int, optional
             Number of sampling steps per walker. Defaults to ``1000``.
         burn_in : int, optional
-            Number of initial steps to discard as burn-in. Defaults to ``200``.
+            Number of initial steps to discard as burn-in. Defaults to
+            ``min(200, nsteps // 2)``, so that at least half of the chain is
+            kept. Must be smaller than ``nsteps``.
         progress : bool, optional
             If True, pipes progress percentage to the logger. Defaults to ``True``.
 
@@ -162,9 +164,20 @@ class BayesianVoigtFitter:
         ------
         ImportError
             If the ``emcee`` package is not installed.
+        ValueError
+            If ``nsteps < 1`` or ``burn_in`` is not smaller than ``nsteps``
+            (the chain left after the burn-in would be empty).
         """
         if emcee is None:
             raise ImportError("emcee is not installed. Please install it to use MCMC.")
+        if nsteps < 1:
+            raise ValueError(f"nsteps must be at least 1 (got {nsteps}).")
+        if burn_in is None:
+            burn_in = min(200, nsteps // 2)
+        if not 0 <= burn_in < nsteps:
+            raise ValueError(
+                f"burn_in ({burn_in}) must be between 0 and nsteps - 1 "
+                f"(nsteps = {nsteps}).")
             
         # Initialize walkers in a small cluster around the best-fit / initial guess
         # We add some noise but stay within bounds
