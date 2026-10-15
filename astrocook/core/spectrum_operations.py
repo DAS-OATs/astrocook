@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
 from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter1d, label
+from scipy.ndimage import gaussian_filter1d, label, median_filter
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks, savgol_filter
 from scipy.special import erf, erfinv
@@ -264,7 +264,9 @@ def rebin_spectrum(
     ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity]:
     """
     High-performance vectorized rebinning (Inverse/Drizzle method)
-    with Iterative Local Sigma Clipping.
+    with optional local sigma clipping (single pass): pixels further than
+    ``kappa`` sigma from a running median of the input pixels are rejected,
+    but a bin is never emptied by the clipping.
     """
     # 1. Prepare Units and Arrays
     xunit_target = dx.unit
@@ -368,34 +370,43 @@ def rebin_spectrum(
     # --- PASS 1: Consensus ---
     num1, den1, _, num_res1, den_res1 = _drizzle_pass(valid_mask)
     
-    # --- ITERATIVE LOCAL CLIPPING ---
-    if kappa is not None:
-        # 1. Compute Model (Pass 1 Result)
-        valid_bins = den1 > 0
-        y_model_grid = np.zeros(N_out)
-        y_model_grid[valid_bins] = num1[valid_bins] / den1[valid_bins]
-        
-        # 2. Interpolate Model to Input Coordinates
-        # Use nearest neighbor or linear to map output bin value to input pixel
-        # (Linear is safer for sub-pixel accuracy)
-        model_interp = interp1d(x_out_val, y_model_grid, kind='linear', 
-                                bounds_error=False, fill_value=0.0)
-        
-        y_predicted = model_interp(x_in_val)
-        
-        # 3. Compute Residuals (Local deviation)
-        residuals = np.abs(y_val - y_predicted)
-        
-        # 4. Clip
-        # We assume 'dy_val' is the sigma. 
-        # Points > kappa * sigma away from the consensus are rejected.
-        is_outlier = residuals > (kappa * dy_val)
-        
-        # Update Mask (Keep original valid points that are NOT outliers)
-        valid_mask &= ~is_outlier
+    # --- LOCAL CLIPPING (single pass) ---
+    # Each pixel is compared with a running median of the input pixels
+    # (robust against the outliers themselves, unlike the mean of the first
+    # pass), over at least 5 pixels or the number of pixels per output bin.
+    restore_candidates = None
+    if kappa is not None and np.any(valid_mask):
+        order = np.argsort(x_in_val)
+        sorted_valid = order[valid_mask[order]]
+        dx_in = np.nanmedian(xmax_in_val[sorted_valid] - xmin_in_val[sorted_valid])
+        n_per_bin = int(np.ceil(dx_val / dx_in)) if dx_in > 0 else 1
+        window = max(5, n_per_bin)
+        window += 1 - window % 2  # odd
+        y_median = np.full_like(y_val, np.nan)
+        y_median[sorted_valid] = median_filter(y_val[sorted_valid], size=window,
+                                               mode='nearest')
+        deviation = np.abs(y_val - y_median)
+        is_outlier = valid_mask & (deviation > kappa * dy_val)
+        restore_candidates = (is_outlier, deviation / dy_val)
+        valid_mask = valid_mask & ~is_outlier
 
     # --- PASS 2: Final Rebinning ---
     num_final, den_final, var_final, num_res_final, den_res_final = _drizzle_pass(valid_mask)
+
+    # Never empty a bin by clipping: where all the pixels of a bin were
+    # rejected, keep the one closest to the running median
+    if restore_candidates is not None:
+        is_outlier, score = restore_candidates
+        emptied = (den_final <= 0) & (den1 > 0)
+        if np.any(emptied):
+            out_idx = np.flatnonzero(is_outlier)
+            bin_of = np.searchsorted(edges_out, x_in_val[out_idx], side='right') - 1
+            for b in np.flatnonzero(emptied):
+                cand = out_idx[bin_of == b]
+                if len(cand):
+                    valid_mask[cand[np.argmin(score[cand])]] = True
+            num_final, den_final, var_final, num_res_final, den_res_final = \
+                _drizzle_pass(valid_mask)
 
     # Finalize Output
     valid_out = den_final > 0
