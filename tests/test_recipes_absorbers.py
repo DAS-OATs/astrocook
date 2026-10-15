@@ -14,10 +14,11 @@ noise 0.02). Fitted values are compared with the known input within loose
 tolerances, not stored as snapshots: they depend on the machine (see
 ``test_snapshots_full_chain.py``).
 
-These tests record the current behaviour, including F24 and F25 (findings
-register, ``ROADMAP.md``, section 3.2): ``fit_bayesian`` with at most 200
-MCMC steps overwrites the component parameters with NaN; components cannot
-be deleted from a spectrum without a continuum.
+These tests record the current behaviour, including F25 (findings
+register, ``ROADMAP.md``, section 3.2): components cannot be deleted from a
+spectrum without a continuum. F24 (``fit_bayesian`` with at most 200 MCMC
+steps overwrote the component parameters with NaN) is fixed and covered by
+regression tests.
 """
 import numpy as np
 import pytest
@@ -281,22 +282,49 @@ def test_fit_bayesian_mcmc(one_civ):
     assert stored["engine"] == "mcmc" and len(stored["samples"]) > 0
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "run_mcmc discards a fixed burn-in of 200 steps: with nsteps <= 200 the "
-    "chain is empty, the medians are NaN and they overwrite z, logN and b of "
-    "the components (and the model). Findings register F24 (ROADMAP.md, "
-    "section 3.2)."))
-def test_fit_bayesian_few_steps_keeps_parameters(one_civ):
+@pytest.mark.parametrize("nsteps", ["200", "10"])
+def test_fit_bayesian_few_steps_keeps_parameters(one_civ, nsteps):
+    # Regression test for F24: the burn-in was a fixed 200 steps, so a chain
+    # of at most 200 steps was empty and the NaN medians overwrote the
+    # components and the model.
     uuid = one_civ.systs.components[0].uuid
-    out = one_civ.absorbers.fit_bayesian([uuid], nsteps="200")
+    out = one_civ.absorbers.fit_bayesian([uuid], nsteps=nsteps)
     comp = out.systs.components[0]
     assert np.isfinite([comp.z, comp.logN, comp.b]).all()
+    assert np.isfinite(out.spec.model.value).all()
+    stored = out.systs._data.meta["bayesian_results"][uuid]
+    assert len(stored["samples"]) > 0
+
+
+def test_fit_bayesian_non_finite_result_returns_0(one_civ, monkeypatch):
+    from astrocook.fitting.bayesian_fitter import BayesianVoigtFitter
+
+    def nan_mcmc(self, **kwargs):
+        return {"samples": np.empty((0, self.ndim)),
+                "medians": np.full(self.ndim, np.nan),
+                "std": np.full(self.ndim, np.nan)}
+
+    monkeypatch.setattr(BayesianVoigtFitter, "run_mcmc", nan_mcmc)
+    uuid = one_civ.systs.components[0].uuid
+    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="500") == 0
+
+
+def test_run_mcmc_rejects_an_empty_chain(one_civ):
+    from astrocook.fitting.bayesian_fitter import BayesianVoigtFitter
+    uuid = one_civ.systs.components[0].uuid
+    with one_civ.systs.fitting_context([uuid], group_depth=0):
+        b_fitter = BayesianVoigtFitter(one_civ.spec, one_civ.systs)
+        with pytest.raises(ValueError):
+            b_fitter.run_mcmc(nsteps=0, progress=False)
+        with pytest.raises(ValueError):
+            b_fitter.run_mcmc(nsteps=100, burn_in=100, progress=False)
 
 
 def test_fit_bayesian_bad_input_returns_0(one_civ):
     uuid = one_civ.systs.components[0].uuid
     assert one_civ.absorbers.fit_bayesian(None) == 0
     assert one_civ.absorbers.fit_bayesian([uuid], nsteps="x") == 0
+    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="0") == 0
 
 
 def test_detect_anchor_without_sibling(one_civ):

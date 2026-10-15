@@ -1493,6 +1493,12 @@ class RecipeAbsorbersV2:
                     logging.info(f"Running MCMC (nsteps={nsteps_i})...")
                     res = b_fitter.run_mcmc(nsteps=nsteps_i)
 
+                # Never overwrite the components with non-finite values
+                if not np.all(np.isfinite(res['medians'])):
+                    logging.error("fit_bayesian: the sampler returned non-finite "
+                                  "parameters; components left unchanged.")
+                    return 0
+
                 # 1. Update component parameters with medians
                 # We do this INSIDE the context so the fitter's constraints match the sampling results
                 new_systs = b_fitter.apply_results(res)
