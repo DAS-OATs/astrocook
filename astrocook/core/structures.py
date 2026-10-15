@@ -402,6 +402,48 @@ class HistoryLogV2:
             return True
         return False
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serialize the active history (entries up to ``current_index``).
+
+        Entries undone and not redone are not part of the saved state and are
+        left out.
+
+        Returns
+        -------
+        dict
+            ``{'entries': [{'recipe_name': ..., 'params': ...}, ...],
+            'current_index': ...}``.
+        """
+        active = self.entries[:self.current_index + 1]
+        return {
+            'entries': [{'recipe_name': e.recipe_name, 'params': e.params}
+                        for e in active],
+            'current_index': len(active) - 1,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'HistoryLogV2':
+        """
+        Rebuild a log from the output of :meth:`to_dict`.
+
+        Parameters
+        ----------
+        data : dict
+            The serialized log. Missing or malformed keys give an empty log.
+
+        Returns
+        -------
+        HistoryLogV2
+            The log, pointing at its last entry.
+        """
+        log = cls()
+        for e in (data or {}).get('entries', []) or []:
+            log.entries.append(LogEntryV2(recipe_name=e['recipe_name'],
+                                          params=dict(e.get('params') or {})))
+        log.current_index = len(log.entries) - 1
+        return log
+
 # --- V1 Compatibility Wrapper ---
 
 class V1LogArtifact:

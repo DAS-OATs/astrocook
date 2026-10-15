@@ -269,7 +269,7 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
     log_type = "unknown"
 
     if isinstance(log_manager_to_save, HistoryLogV2):
-        log_history_data = dataclasses.asdict(log_manager_to_save)
+        log_history_data = log_manager_to_save.to_dict()
         log_type = "v2"
     elif isinstance(log_manager_to_save, V1LogArtifact):
         log_history_data = log_manager_to_save.v1_json

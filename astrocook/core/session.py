@@ -148,7 +148,14 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             v2_metadata=v2_metadata
         )
 
-        return SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
+        session = SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
+        if v2_metadata and v2_metadata.get('log_type') == 'v2':
+            try:
+                session.log_manager = HistoryLogV2.from_dict(
+                    v2_metadata.get('log_history_json'))
+            except (KeyError, TypeError, AttributeError) as e:
+                logging.warning(f"Could not restore the session log: {e}")
+        return session
 
     except Exception as e: 
         logging.error(f"Load failed: {e}", exc_info=True)

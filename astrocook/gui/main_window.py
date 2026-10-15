@@ -193,8 +193,7 @@ class MainWindowV2(QMainWindow):
         for i, session in enumerate(init_list):
             if isinstance(session, SessionV2) and session.spec and len(session.spec.x) > 0:
                 
-                # Per previous logic: Always create new history/log for new sessions
-                log_object = HistoryLogV2()
+                log_object = self._log_for_new_session(session)
                 new_history = SessionHistory(session, log_object)
                 
                 # Link real GUI
@@ -1718,12 +1717,25 @@ class MainWindowV2(QMainWindow):
 
         self._update_undo_redo_actions()
     
+    def _log_for_new_session(self, session):
+        """Return the log for a new session history.
+
+        A V2 log restored from an ``.acs2`` archive is kept; any other session
+        (including a duplicate, whose log belongs to another history) starts
+        with a new, empty log.
+        """
+        log = getattr(session, 'log_manager', None)
+        histories = getattr(self, 'session_histories', [])
+        if isinstance(log, HistoryLogV2) and not any(
+                h.log_manager is log for h in histories):
+            return log
+        return HistoryLogV2()
+
     def _add_session_internal(self, new_session, is_initial=False):
         """Creates and adds a new SessionHistory manager."""
         if new_session is None or isinstance(new_session, int): return
 
-        # Per Point 3, we *always* create a new, empty log
-        log_object = HistoryLogV2()
+        log_object = self._log_for_new_session(new_session)
         
         # 1. Always create a new history for a newly loaded session
         new_history = SessionHistory(new_session, log_object)

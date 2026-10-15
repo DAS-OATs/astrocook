@@ -8,10 +8,10 @@ J0103-1305 archives, and a second round trip (save, load, save, load) to
 check that the format is stable.
 
 What is lost or changed is recorded (findings register, ``ROADMAP.md``,
-section 3.2): the V2 session log (F26, data loss, strict xfail),
-``region_identifications`` reloaded as a dict instead of a JSON string
+section 3.2): ``region_identifications`` reloaded as a dict instead of a JSON string
 (F27), the Bayesian samples (F28, strict xfail), and the metadata key
-``resol`` reloaded as ``RESOL`` (FITS header, see F8).
+``resol`` reloaded as ``RESOL`` (FITS header, see F8). The V2 session log
+(F26) is now kept, without the entries undone at save time.
 """
 import dataclasses
 import json
@@ -143,22 +143,39 @@ def test_large_archive_round_trip(tmp_path):
     _assert_same(original, reloaded)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "The .acs2 archive does not keep the V2 session log: _serialize_v2_metadata "
-    "writes dataclasses.asdict(HistoryLogV2), which is {} because the log "
-    "entries are set in __init__, not as dataclass fields; the loader does "
-    "not read the log back either. Findings register F26 (ROADMAP.md, "
-    "section 3.2)."))
 def test_session_log_is_saved(rich_session, tmp_path):
+    # Regression test for F26: the archive stored dataclasses.asdict of the
+    # log, which was {}, and the loader did not read the log back.
     log = HistoryLogV2()
     log.add_entry("set_properties", {"z_em": "4.1"})
     log.add_entry("smooth", {"sigma_kms": "20"})
     rich_session.log_manager = log
-    _, path = _round_trip(rich_session, tmp_path)
+    reloaded, path = _round_trip(rich_session, tmp_path)
     with tarfile.open(path) as tar:
         meta = json.load(tar.extractfile("session_meta.json"))
     assert meta["log_type"] == "v2"
     assert "smooth" in json.dumps(meta["log_history_json"])
+    restored = reloaded.log_manager
+    assert isinstance(restored, HistoryLogV2)
+    assert [(e.recipe_name, e.params) for e in restored.entries] == [
+        ("set_properties", {"z_em": "4.1"}), ("smooth", {"sigma_kms": "20"})]
+    assert restored.current_index == 1
+
+
+def test_undone_log_entries_are_not_saved(rich_session, tmp_path):
+    log = HistoryLogV2()
+    log.add_entry("set_properties", {"z_em": "4.1"})
+    log.add_entry("smooth", {"sigma_kms": "20"})
+    log.undo()
+    rich_session.log_manager = log
+    reloaded, _ = _round_trip(rich_session, tmp_path)
+    assert [e.recipe_name for e in reloaded.log_manager.entries] == ["set_properties"]
+    assert reloaded.log_manager.current_index == 0
+
+
+def test_session_without_log_reloads_without_log(rich_session, tmp_path):
+    reloaded, _ = _round_trip(rich_session, tmp_path)
+    assert reloaded.log_manager is None
 
 
 @pytest.mark.xfail(strict=True, reason=(
