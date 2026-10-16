@@ -347,7 +347,8 @@ class SystemListV2:
         finally:
             # Robust cleanup
             try:
-                self.constraint_model.set_active_components(original_active)
+                # Restore exactly the previous set (no further expansion)
+                self.constraint_model.set_active_components(original_active, group_depth=0)
             except Exception as e:
                 logging.error(f"fitting_context cleanup failed: {e}. Forcing reset to None.")
                 # Fail-safe: Unlock everything to prevent persistent 'Frozen' state

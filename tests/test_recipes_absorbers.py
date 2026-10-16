@@ -295,6 +295,43 @@ def test_refit_all_does_not_depend_on_the_uuids(data):
     assert all(r == results[0] for r in results[1:])
 
 
+# --- group_depth (F11) ----------------------------------------------------
+
+def _lya_chain(n=7):
+    # 60 km/s apart, b = 20 km/s: only adjacent lines overlap (threshold
+    # max(4 b, 30 km/s) = 80 km/s), so each depth step adds two neighbours
+    z0, dz = 4.0590, 60.0 / C_KMS * (1 + 4.0590)
+    return _systs(*[("Ly_a", z0 + k * dz, 13.0, 20.0) for k in range(-(n // 2), n // 2 + 1)])
+
+
+def test_set_active_components_honours_group_depth():
+    # Regression test for F11: the depth was ignored and 2 was always used
+    systs = _lya_chain()
+    centre = systs.components[3].uuid
+    model = systs.constraint_model
+    sizes = {}
+    for depth in (0, 1, 2):
+        model.set_active_components([centre], group_depth=depth)
+        sizes[depth] = len(model._active_uuids)
+    model.set_active_components(None)
+    assert sizes[0] == 1
+    assert sizes[0] < sizes[1] < sizes[2]
+
+
+def test_fit_component_group_depth_0_freezes_neighbours(data):
+    session = _session(data, _lya_chain())
+    centre = session.systs.components[3]
+    out = session.absorbers.fit_component(centre.uuid, group_depth="0")
+    changed = [c.uuid for c, old in zip(out.systs.components, session.systs.components)
+               if (c.z, c.logN, c.b) != (old.z, old.logN, old.b)]
+    assert changed == [centre.uuid]
+    # The default (2) fits the neighbours too
+    out2 = session.absorbers.fit_component(centre.uuid)
+    changed2 = [c for c, old in zip(out2.systs.components, session.systs.components)
+                if (c.z, c.logN, c.b) != (old.z, old.logN, old.b)]
+    assert len(changed2) > 1
+
+
 # --- Upper bound on b (F32) ---------------------------------------------
 
 def test_refit_all_max_b(one_civ):

@@ -19,6 +19,15 @@ from astrocook.legacy.message import msg_param_fail
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
+# Depth of the friends-of-friends expansion used when fitting the groups
+# built by refit_all and metals_auto. These calls asked for depth 0, but
+# set_active_components ignored the depth and always used 2 (findings
+# register F11). Depth 2 is kept on purpose: with 0 the neighbours stay
+# frozen at their initial values, and on the J0103-1305 full chain the fits
+# got 2.75 times faster but worse (chi2 +14% in the forest, CIV logN off by
+# up to 0.5 dex). Decided with Guido.
+FIT_EXPANSION_DEPTH = 2
+
 ABSORBERS_RECIPES_SCHEMAS = {
     # --- 1. THE MASTER PIPELINE ---
     "components_auto": {
@@ -740,7 +749,7 @@ class RecipeAbsorbersV2:
                 group = trial_systs.get_connected_group([new_uuid])
                 
                 try:
-                    with trial_systs.fitting_context(list(group), group_depth=0):
+                    with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH):
                         fitter = VoigtFitterV2(current_session.spec, trial_systs)
                         fitted_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win, verbose=0,
                                                                    b_max=b_max)
@@ -1648,7 +1657,7 @@ class RecipeAbsorbersV2:
 
                 try:
                     # Execute a single fit pass for the entire 'Super-Group'
-                    with current_session.systs.fitting_context(list(combined_active_set), group_depth=0):
+                    with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH):
                         fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
                                               check_stop=self._is_stop_requested)
                         new_systs, model_flux, res = fitter.fit(
@@ -1813,7 +1822,7 @@ class RecipeAbsorbersV2:
                 try:
                     fitter = VoigtFitterV2(current_session.spec, local_systs)
                     
-                    with local_systs.fitting_context(target_uuids, group_depth=0):
+                    with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH):
                         new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0,
                                                                      b_max=b_max_f)
                     
