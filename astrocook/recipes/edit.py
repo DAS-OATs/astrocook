@@ -81,6 +81,16 @@ EDIT_RECIPES_SCHEMAS = {
         ],
         "url": "absorbers_cb.html#import_systems"
     },
+    "import_systems_ascii": {
+        "brief": "Import systems from an ASCII file.",
+        "details": "Read absorption components from an ASCII/CSV table with a header (columns series, z and optionally logN, b, btur, dz, dlogN, db), e.g. the _systems.csv written by Export ASCII.",
+        "params": [
+            {"name": "file_path", "type": str, "default": "", "doc": "Path of the ASCII/CSV file.", "gui_hidden": True},
+            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."},
+            {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems to the new data immediately?"}
+        ],
+        "url": "absorbers_cb.html#import_systems_ascii"
+    },
     "delete": {
         "brief": "Delete elements.",
         "details": "Remove columns from the spectrum or clear the line list.",
@@ -625,10 +635,6 @@ class RecipeEditV2:
         do_append = str(append) == 'True'
         do_refit = str(refit) == 'True'
 
-        import numpy as np
-        from astrocook.core.structures import SystemListDataV2
-        from astrocook.core.system_list import SystemListV2
-
         # 1. Find the source session
         target_hist = None
         if hasattr(self._session, '_gui'):
@@ -645,6 +651,17 @@ class RecipeEditV2:
         if not source_systs or not source_systs.components:
             logging.warning(f"Source session '{source_session}' has no systems.")
             return self._session
+
+        return self._merge_imported_systems(source_systs, do_append, do_refit,
+                                            label=f"'{source_session}'")
+
+    def _merge_imported_systems(self, source_systs, do_append: bool, do_refit: bool,
+                                label: str) -> 'SessionV2':
+        """Filter by spectral range, merge and optionally refit imported systems
+        (shared by :meth:`import_systems` and :meth:`import_systems_ascii`)."""
+        import numpy as np
+        from astrocook.core.structures import SystemListDataV2
+        from astrocook.core.system_list import SystemListV2
 
         # 2. Prepare current list
         if do_append and self._session.systs:
@@ -674,7 +691,7 @@ class RecipeEditV2:
             return self._session
 
         # 4. Merge
-        logging.info(f"Importing {len(source_systs.components)} systems from '{source_session}'...")
+        logging.info(f"Importing {len(source_systs.components)} systems from {label}...")
         new_systs = base_systs.merge(source_systs, copy_uuids=False)
         
         # Create intermediate session with imported (but unfitted) systems
@@ -707,6 +724,81 @@ class RecipeEditV2:
         # Return unfitted result
         return intermediate_session
         
+    def import_systems_ascii(self, file_path: str, append: str = 'True',
+                             refit: str = 'False') -> 'SessionV2':
+        """
+        Import systems from an ASCII file (issue #480).
+
+        Reads a table with a header, in any format astropy can guess (CSV,
+        whitespace-separated, ...), e.g. the ``_systems.csv`` written by
+        :meth:`astrocook.recipes.file.RecipeFileV2.export_ascii`. Required
+        columns: ``series`` and ``z``; optional: ``logN`` (default 13.0), ``b``
+        (default 10.0 km/s), ``btur`` (default 0), ``dz``, ``dlogN``, ``db``.
+        Other columns are ignored. Components outside the spectral range are
+        skipped.
+
+        Parameters
+        ----------
+        file_path : str
+            Path of the file.
+        append : str, optional
+            If ``'True'``, add to the existing systems; otherwise replace them.
+            Defaults to ``'True'``.
+        refit : str, optional
+            If ``'True'``, refit the systems after importing. Defaults to ``'False'``.
+
+        Returns
+        -------
+        SessionV2
+            A new session with the imported systems, or 0 if the file cannot
+            be read or lacks the required columns.
+        """
+        import numpy as np
+        from astropy.io import ascii as ap_ascii
+        from astrocook.core.structures import ComponentDataV2, SystemListDataV2
+        from astrocook.core.system_list import SystemListV2
+
+        try:
+            table = ap_ascii.read(file_path, guess=True)
+        except Exception as e:
+            logging.error(f"Could not read '{file_path}': {e}")
+            return 0
+        missing = [c for c in ('series', 'z') if c not in table.colnames]
+        if missing:
+            logging.error(f"'{file_path}' lacks the column(s) {', '.join(missing)}.")
+            return 0
+
+        def value(row, name, default):
+            if name not in table.colnames:
+                return default
+            v = row[name]
+            if np.ma.is_masked(v):
+                return default
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                return default
+            return default if not np.isfinite(v) else v
+
+        comps = []
+        for i, row in enumerate(table):
+            try:
+                comps.append(ComponentDataV2(
+                    id=i + 1, series=str(row['series']).strip(), z=float(row['z']),
+                    dz=value(row, 'dz', None), logN=value(row, 'logN', 13.0),
+                    dlogN=value(row, 'dlogN', None), b=value(row, 'b', 10.0),
+                    db=value(row, 'db', None), btur=value(row, 'btur', 0.0)))
+            except (TypeError, ValueError) as e:
+                logging.warning(f"Row {i + 1} of '{file_path}' skipped: {e}")
+        if not comps:
+            logging.warning(f"No valid systems in '{file_path}'.")
+            return self._session
+
+        source_systs = SystemListV2(SystemListDataV2(components=comps))
+        return self._merge_imported_systems(source_systs, str(append) == 'True',
+                                            str(refit) == 'True',
+                                            label=f"'{file_path}'")
+
     def delete(self, targets: str) -> 'SessionV2':
         """
         Delete elements.
