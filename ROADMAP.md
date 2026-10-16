@@ -628,7 +628,7 @@ review); each of its decisions goes into the log.
 | Initial analysis and roadmap | done (October 2026) |
 | 0 – Environment | done (October 2026) |
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
-| 1-bis – Findings and urgent issues (section 3.3) | in progress: F24, F26, F32, F25, F19, F1, F2 done, F3 accepted, F10 minimal fix (rest: #526), F27 done |
+| 1-bis – Findings and urgent issues (section 3.3) | in progress: F24, F26, F32, F25, F19, F1, F2 done, F3 accepted, F10 minimal fix (rest: #526), F27, F20 done |
 | 2 – Cleanup and packaging | not started |
 | 3 – Decoupling from legacy | not started |
 | 4 – Splitting large files | not started |
