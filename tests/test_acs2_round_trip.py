@@ -111,6 +111,16 @@ def test_rich_session_round_trip(rich_session, tmp_path):
     assert after["region_identifications"] == {1: [["CIV", 0.9]]}
 
 
+def test_integer_aux_column_round_trip(rich_session, tmp_path):
+    # Integer region ids, as written by identify_lines (this case was in
+    # tests/test_v2_io_integrity.py, removed: findings register F33)
+    ids = np.zeros(N, dtype=int)
+    ids[N // 3: N // 2] = 1
+    spec = rich_session.spec.update_column("abs_ids", ids)
+    reloaded, _ = _round_trip(rich_session.with_new_spectrum(spec), tmp_path)
+    np.testing.assert_array_equal(reloaded.spec.get_column("abs_ids").value, ids)
+
+
 def test_second_round_trip_is_identical(rich_session, tmp_path):
     first, _ = _round_trip(rich_session, tmp_path, "first")
     second, _ = _round_trip(first, tmp_path, "second")
