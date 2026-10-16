@@ -943,6 +943,11 @@ class VoigtFitterV2:
             # error: reported below instead of a bare RuntimeWarning (F20)
             with np.errstate(invalid='ignore'):
                 p_free_errors = np.sqrt(np.diag(cov))
+            # Scaled by sqrt(reduced chi2), as in V1 (lmfit scale_covar=True):
+            # right also when the error spectrum is off by a constant factor
+            # (findings register F29, decided with Guido). The reduced chi2
+            # is stored in each fitted component (chi2).
+            p_free_errors = p_free_errors * np.sqrt(red_chi2)
             logging.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
