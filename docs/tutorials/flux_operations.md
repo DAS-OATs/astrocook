@@ -43,7 +43,10 @@ Rebinning is more rigorous than smoothing. It combines adjacent pixels into larg
 2. **Step Size (dx)**: Enter the desired size of the new bins.
 3. **Unit:** Choose the unit for `dx` (e.g., `km/s` or `nm`).
 4. **Wavelength Range (Optional)**: You can define a specific start (`xstart`) and end (`xend`) wavelength. Leaving them as None will use the full existing range.
-5. Click **Run**.
+5. **Kappa (Optional)**: Sigma-clipping threshold. Pixels more than `kappa` sigma *above* a running median of the input pixels (spikes, cosmic rays) are rejected before rebinning; absorption features are never clipped, and a bin is never left empty. `None` turns the clipping off.
+6. Click **Run**.
+
+The error of each new bin is the error of the weighted mean of the pixels it contains (it decreases as $\sigma/\sqrt{N}$ for $N$ equal pixels).
 
 :::{note}
 Unlike smoothing, rebinning changes the X-axis grid. The new flux values are calculated to preserve the physical energy/counts per bin.

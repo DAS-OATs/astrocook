@@ -1,3 +1,32 @@
+## [2.0.2] - 2026-10-16
+
+Corrective release. **Some numerical results change**: see "Changed behaviour" below.
+
+### Fixed
+- *Data loss*: Bayesian fit (MCMC) with 200 steps or fewer overwrote the component parameters with NaN; the burn-in now adapts to the number of steps.
+- *Data loss*: the `.acs2` archive did not keep the session log; it is now saved and restored (also in the GUI).
+- Voigt fits of broad lines (b > 50 km/s) were biased (e.g. b = 80 fitted as ~50, logN 0.1 dex low): the soft penalty is removed (see below).
+- Rebinned and co-added errors did not decrease with the number of pixels per bin (#490).
+- Rebin clipping could empty bins and removed the cores of narrow absorption lines; it now clips spikes only (upward, against a running median) and never empties a bin.
+- The Voigt model was zero on pixels whose resolution column held non-round or NaN values (e.g. co-added spectra).
+- The automatic pipelines (`doublets_auto`, `lya_auto`, ...) gave different results at every run; they are now reproducible.
+- Components could not be deleted from a spectrum without a continuum.
+- `group_depth` was ignored in the fits ("Fit component", Bayesian fit).
+- Rebin with a non-numeric parameter raised an error instead of aborting cleanly.
+- The identification viewer failed on sessions reloaded from `.acs2`.
+- NaN uncertainties (ill-conditioned fits) are now reported in the log with the components involved.
+- ASCII export (#476, #481); warning when saving a session with a V2 log to the V1 `.acs` format.
+
+### Added
+- *Edit > Import Systems from ASCII*: read absorption components from a CSV or whitespace-separated table (columns `series`, `z`, optionally `logN`, `b`, ...) (#480).
+- Stitching overlapping regions switches the plot to scatter style (#442).
+- `max_b` parameter of the automatic pipelines (default 50 km/s) and of *Refit All* (default 300 km/s).
+
+### Changed behaviour
+- **Uncertainties**: the errors of the fitted parameters are scaled by sqrt(reduced chi2), as in Astrocook v1; the reduced chi2 is computed on the pixels that constrain the fit and, after the automatic pipelines, on the final model. Errors become larger where the model does not describe the data well (e.g. unresolved blends).
+- **Broad lines**: the automatic pipelines bound b to 50 km/s (as the former penalty did, but without biasing the fits); manual fits use only the physical limit (300 km/s). Components that end at 50 km/s may be broader and can be refitted by hand.
+- **Continuum smoothing**: the width is now given as a FWHM (`smooth_fwhm`, default 800 km/s, which reproduces the v1 continuum). The former `smooth_std` (a standard deviation, default 500 km/s) is still accepted. The default continuum is smoothed less than in 2.0.1, so continua and the results of the automatic pipelines change slightly.
+
 ## [2.0.1] - 2026-04-21
 
 - *Feature*: Added "Equalize and Stitch" to the GUI with dynamic parameters.

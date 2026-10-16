@@ -81,6 +81,10 @@ Astrocook handles instrumental resolution ($R$) flexibly to support both constan
 2. **The `resol` Column:** If your spectrum data contains a `resol` auxiliary column (visible in the Data Inspector), Astrocook will use the specific resolution value at the pixel where the absorption line is centered. This allows for accurate modeling of spectra where $R$ changes with wavelength.
 3. **Global Session Resolution (Fallback):** If no component-specific override exists and no `resol` column is present, Astrocook falls back to the global scalar resolution set via **Edit > Set Properties...**. Note that setting a global resolution will automatically generate a flat `resol` column across the entire spectrum.
 
+:::{note}
+In the current version, every fit also records the resolution it used in the fitted components, and setting the resolution via **Set Properties** writes it into all components. These values then take priority over the `resol` column in later fits. If you change the resolution of a spectrum after fitting, set it again on the components (right-click > resolution). A single, consistent handling of the resolution is planned.
+:::
+
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
@@ -147,6 +151,9 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 Astrocook also tracks a turbulent broadening parameter `btur` separately. It is available in the table but **frozen (italic)** by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.
 :::
 
+### Uncertainties
+The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by $\sqrt{\chi^2_\nu}$ of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced $\chi^2_\nu$ is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large $\chi^2_\nu$ (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.
+
 ### Importing a Line List
 **Edit > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export ASCII** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
 
@@ -172,7 +179,7 @@ To run a Bayesian fit:
 1. Select the component(s) you wish to fit in the System List.
 2. **Right-click** to open the context menu and locate the **Bayesian Fitting** section.
 3. Select **Refit Bayesian (MCMC)**. 
-4. The sampling will run as a batch process, with progress tracked in the main window's progress bar.
+4. The sampling will run as a batch process, with progress tracked in the main window's progress bar. The first steps of the chain (up to 200, and at most half of the chain) are discarded as burn-in; use enough steps (the default is 500) for the chain to converge.
 
 **Visualizing Posteriors (Corner Plots)**
 Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:

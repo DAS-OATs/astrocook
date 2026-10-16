@@ -166,7 +166,7 @@ The **View** menu also provides access to specialized analysis windows:
 
 When you have finished your analysis (or if you want to save your progress):
 
-1. **Save**: Go to **File > Save Session...** or right-click the session in the list. This saves your work as an `.acs2` file, preserving all your continuum fits and line lists.
+1. **Save**: Go to **File > Save Session...** or right-click the session in the list. This saves your work as an `.acs2` file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).
 2. **Close**: You can close a specific session via the right-click menu, or close the active session via **File > Close Session**.
 
 ```{image} ../_static/getting_started_session_list.png

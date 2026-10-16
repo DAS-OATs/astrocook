@@ -429,12 +429,12 @@ an item to discuss.
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
 Plan (proposed, each release still Guido's decision):
-- **2.0.2 (corrective), right after phase 1:** the V2 regressions (F1, F3,
-  F10) and the urgent issues #465 and #480, together with the fixes
-  already on master (ASCII export #476/#481, Voigt fitter context, warning
-  on saving to V1 `.acs`). Release notes state which numerical results
-  change. A 2.0.2 with only the fixes already on master can be brought
-  forward if users need the ASCII export earlier.
+- **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
+  fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
+  F29, F32, #534) and issues #480, #442, together with the earlier fixes
+  (ASCII export #476/#481, warning on saving to V1 `.acs`). #465 and the
+  rest of F10 were deferred (#465, #526). Release notes in `CHANGELOG.md`
+  state which numerical results change.
 - **2.1 (first consolidated release), after phases 2-3:** clean packaging
   (LICENSE, entry point, realistic dependency versions); first
   publication on PyPI. Also the macOS app, as before.
