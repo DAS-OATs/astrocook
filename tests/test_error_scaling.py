@@ -7,13 +7,11 @@ code): one CIV component (z = 2.97, logN = 13.5, b = 12 km/s), R = 45000,
 in many noise realizations. The "pull" (fitted - true) / error must have a
 standard deviation of 1 if the errors are right.
 
-Current behaviour: the errors are sqrt(diag((J^T J)^-1)) with residuals
-weighted by 1/dy, not scaled by the reduced chi-squared (the comment in
-``VoigtFitterV2.fit`` says they are). So they are correct when the error
-spectrum is correct, and wrong by the same factor as the error spectrum
-when it is not; scaling by sqrt(reduced chi2), which is what V1 did
-(lmfit, ``scale_covar=True`` by default), gives the right errors in both
-cases. Whether to scale is Guido's decision (findings register F29).
+The errors are sqrt(diag((J^T J)^-1)) with residuals weighted by 1/dy,
+scaled by sqrt(reduced chi2) as in V1 (lmfit, ``scale_covar=True``):
+findings register F29, decided with Guido. Unscaled, they were right only
+when the error spectrum was right, and wrong by the same factor as the
+error spectrum otherwise; scaled, they are right in all three cases.
 """
 import dataclasses
 
@@ -56,12 +54,11 @@ def monte_carlo(request):
     return request.param, rows
 
 
-def _pulls(rows, scaled):
-    z, dz, logN, dlogN, b, db, red_chi2 = rows.T
-    scale = np.sqrt(red_chi2) if scaled else 1.0
-    return {"z": (z - TRUE["z"]) / (dz * scale),
-            "logN": (logN - TRUE["logN"]) / (dlogN * scale),
-            "b": (b - TRUE["b"]) / (db * scale)}
+def _pulls(rows):
+    z, dz, logN, dlogN, b, db, _ = rows.T
+    return {"z": (z - TRUE["z"]) / dz,
+            "logN": (logN - TRUE["logN"]) / dlogN,
+            "b": (b - TRUE["b"]) / db}
 
 
 def test_reduced_chi2_follows_the_error_spectrum(monte_carlo):
@@ -69,17 +66,10 @@ def test_reduced_chi2_follows_the_error_spectrum(monte_carlo):
     assert np.median(rows[:, -1]) == pytest.approx(dy_factor ** -2, rel=0.15)
 
 
-def test_errors_are_not_scaled(monte_carlo):
-    # Unscaled errors: pull std = 1 with the right error spectrum, otherwise
-    # off by the same factor as the error spectrum
-    dy_factor, rows = monte_carlo
-    for name, pull in _pulls(rows, scaled=False).items():
-        assert np.std(pull) == pytest.approx(1.0 / dy_factor, rel=PULL_TOL), name
-
-
-def test_scaled_errors_are_right_in_all_cases(monte_carlo):
-    # What scaling by sqrt(reduced chi2) (V1 behaviour) would give
+def test_errors_are_right_in_all_cases(monte_carlo):
+    # Regression test for F29: with the errors scaled by sqrt(reduced chi2)
+    # the pulls have std 1 also when the error spectrum is off by 2 or 1/2
     _, rows = monte_carlo
-    for name, pull in _pulls(rows, scaled=True).items():
+    for name, pull in _pulls(rows).items():
         assert np.std(pull) == pytest.approx(1.0, rel=PULL_TOL), name
         assert abs(np.mean(pull)) < 0.35, name
