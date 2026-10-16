@@ -428,6 +428,78 @@ class VoigtFitterV2:
             
         return final_model
 
+    @staticmethod
+    def _scaled_errors(residuals: np.ndarray, jac: np.ndarray) -> Tuple[np.ndarray, float]:
+        """Parameter errors sqrt(diag((J^T J)^-1)) scaled by sqrt(reduced chi2).
+
+        Scaled as in V1 (lmfit ``scale_covar=True``; findings register F29,
+        decided with Guido): right also when the error spectrum is off by a
+        constant factor. The reduced chi2 is computed only on the pixels that
+        constrain the fitted parameters (rows of the Jacobian that are not
+        negligible), so that unrelated absorption or misfit elsewhere in the
+        fit window does not inflate the errors (issue #534). It is returned
+        and stored in each fitted component (``chi2``).
+        """
+        n_par = jac.shape[1]
+        row_norm = np.sqrt(np.sum(jac ** 2, axis=1))
+        used = row_norm > 1e-3 * np.max(row_norm) if row_norm.size else row_norm.astype(bool)
+        dof = max(1, int(np.sum(used)) - n_par)
+        red_chi2 = float(np.sum(residuals[used] ** 2) / dof)
+        cov = pinv(jac.T @ jac)
+        # A negative diagonal element (ill-conditioned fit) gives a NaN
+        # error: reported by fit() instead of a bare RuntimeWarning (F20)
+        with np.errstate(invalid='ignore'):
+            errors = np.sqrt(np.diag(cov)) * np.sqrt(red_chi2)
+        return errors, red_chi2
+
+    def evaluate_uncertainties(self, z_window_kms: float = 20.0) -> SystemListV2:
+        """
+        Recompute the uncertainties of the active components at their current
+        values, without fitting.
+
+        Used at the end of the automatic pipelines: ``refit_all`` fits each
+        group while its neighbours still have their initial values, so the
+        chi2 of that fit is not the chi2 of the final model (issue #534).
+        One numerical Jacobian is computed at the current parameters.
+
+        Returns
+        -------
+        SystemListV2
+            A new system list with ``dz``, ``dlogN``, ``db`` and ``chi2`` of the
+            active components updated.
+        """
+        lower, upper = self.prepare_fit_context(z_window_kms=z_window_kms)
+        p0 = np.clip(self._constraints.p_free_vector, lower, upper)
+        r0 = self._residual_function(p0)
+        jac = np.empty((len(r0), len(p0)))
+        for k in range(len(p0)):
+            h = 1e-6 * max(1.0, abs(p0[k]))
+            step = h if p0[k] + h <= upper[k] else -h
+            p = p0.copy(); p[k] += step
+            jac[:, k] = (self._residual_function(p) - r0) / step
+        self._active_fit_components = None
+        self._active_lines_data = None
+        try:
+            errors, red_chi2 = self._scaled_errors(r0, jac)
+        except Exception as e:
+            logging.warning(f"Error calc failed: {e}")
+            return self._system_list
+        is_free_mask = self._constraints._param_map['is_free']
+        full_errors = np.full(len(is_free_mask), np.nan)
+        full_errors[is_free_mask] = errors
+        active = self._constraints._active_uuids
+        comps = []
+        for i, c in enumerate(self._system_list.components):
+            if active is not None and c.uuid not in active:
+                comps.append(c); continue
+            idx = i * 4
+            new = {'chi2': red_chi2}
+            for name, j in (('dz', idx), ('dlogN', idx + 1), ('db', idx + 2)):
+                if is_free_mask[j]:
+                    new[name] = full_errors[j]
+            comps.append(dataclasses.replace(c, **new))
+        return SystemListV2(dataclasses.replace(self._system_list._data, components=comps))
+
     def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
                b_max: float) -> Tuple[np.ndarray, np.ndarray]:
         """Lower the upper bound of the free b parameters to ``b_max``."""
@@ -929,25 +1001,9 @@ class VoigtFitterV2:
         # Statistics
         p_free_errors = np.zeros_like(res.x)
         is_free_mask = self._constraints._param_map['is_free']
-        chi2 = 0; red_chi2 = 0
+        red_chi2 = 0
         try:
-            residuals = res.fun 
-            chi2 = np.sum(residuals**2)
-            n_data = np.sum(self._fit_mask_calc)
-            dof = max(1, n_data - len(res.x))
-            red_chi2 = chi2 / dof
-            J = res.jac
-            cov = pinv(J.T @ J) 
-            # Scale errors by reduced chi-square for a more realistic estimate
-            # A negative diagonal element (ill-conditioned fit) gives a NaN
-            # error: reported below instead of a bare RuntimeWarning (F20)
-            with np.errstate(invalid='ignore'):
-                p_free_errors = np.sqrt(np.diag(cov))
-            # Scaled by sqrt(reduced chi2), as in V1 (lmfit scale_covar=True):
-            # right also when the error spectrum is off by a constant factor
-            # (findings register F29, decided with Guido). The reduced chi2
-            # is stored in each fitted component (chi2).
-            p_free_errors = p_free_errors * np.sqrt(red_chi2)
+            p_free_errors, red_chi2 = self._scaled_errors(res.fun, res.jac)
             logging.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
@@ -1073,7 +1129,7 @@ class VoigtFitterV2:
         
         final_model_flux = final_model_norm * self._norm
 
-        logging.debug(f"Fit complete. Chi2: {chi2:.2f} (Red: {red_chi2:.2f}) over {n_data} pixels.")
+        logging.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
         return new_system_list, final_model_flux, res
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
