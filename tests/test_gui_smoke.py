@@ -197,7 +197,7 @@ def test_recipe_returning_a_new_session(qtbot, ready, messages):
 
 @pytest.mark.parametrize("name, params, title", [
     ("smooth", {"sigma_kms": "abc"}, "Recipe Aborted"),  # recipe returns 0
-    ("rebin", {"dx": "abc"}, "Recipe Error: rebin"),     # recipe raises (F23)
+    ("rebin", {"dx": "abc"}, "Recipe Aborted"),   # returns 0 since the F23 fix
 ])
 def test_recipe_errors_are_reported(qtbot, loaded, messages, name, params, title):
     history = loaded.active_history
