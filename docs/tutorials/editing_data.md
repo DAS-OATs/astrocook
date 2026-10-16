@@ -120,7 +120,7 @@ If you have multiple exposures of the same object, you can combine them directly
 
 ### Co-adding Spectra
 
-This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins).
+This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional `kappa` clipping rejects only upward outliers (spikes), as in **Flux > Rebin Spectrum** (see [Flux Operations](flux_operations.md)).
 
 1. Load all the spectra you wish to combine.
 2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select multiple sessions.
@@ -142,6 +142,7 @@ If you have spectra covering _different_ wavelength ranges (e.g., Blue and Red a
 3. This concatenates the data arrays without resampling.
    :::{note}
    The recipe automatically cleans up `NaN` values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from "scatter-plot" artifacts.
+   If the stitched spectra **overlap**, the pixels of the overlap region are interleaved: the result is shown as a scatter plot instead of a line (for up to 20000 visible points; zoom in on longer spectra), so that the overlap is clearly visible. Rebinning or co-adding returns to the line view.
    :::
 
 ### Equalize and Stitch Arms

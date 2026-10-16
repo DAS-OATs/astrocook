@@ -14,7 +14,7 @@ This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing,
 2. Adjust the parameters if necessary:
    - Smoothing (Ly-a / Out): Defines the scale of the smoothing spline. The default `5000` km/s for the Ly-alpha forest and `400` km/s for the red side usually work well.
    - Kappa: The sigma threshold for clipping absorption (default `2.0`). Lower values make the algorithm more aggressive at finding lines.
-   - Fudge: Leave as `auto`. This calculates a correction factor to ensure the residuals of the unabsorbed regions are centered on zero.
+   - Fudge: A multiplicative factor applied to the continuum (default `1.0`). `auto` computes it from the residuals of the unabsorbed pixels; since Astrocook v2 interpolates the continuum through those pixels, `auto` currently gives exactly `1.0`.
    - Smooth FWHM: The width of the final Gaussian smoothing of the continuum, as a FWHM in km/s (default `800`, which reproduces the V1 continuum). Older scripts may pass `smooth_std` (a standard deviation, as in earlier V2 versions): it is still accepted and takes precedence.
 3. Click **Run**.
 

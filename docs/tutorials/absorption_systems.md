@@ -81,6 +81,10 @@ Astrocook handles instrumental resolution ($R$) flexibly to support both constan
 2. **The `resol` Column:** If your spectrum data contains a `resol` auxiliary column (visible in the Data Inspector), Astrocook will use the specific resolution value at the pixel where the absorption line is centered. This allows for accurate modeling of spectra where $R$ changes with wavelength.
 3. **Global Session Resolution (Fallback):** If no component-specific override exists and no `resol` column is present, Astrocook falls back to the global scalar resolution set via **Edit > Set Properties...**. Note that setting a global resolution will automatically generate a flat `resol` column across the entire spectrum.
 
+:::{note}
+In the current version, every fit also records the resolution it used in the fitted components, and setting the resolution via **Set Properties** writes it into all components. These values then take priority over the `resol` column in later fits. If you change the resolution of a spectrum after fitting, set it again on the components (right-click > resolution). A single, consistent handling of the resolution is planned.
+:::
+
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
@@ -175,7 +179,7 @@ To run a Bayesian fit:
 1. Select the component(s) you wish to fit in the System List.
 2. **Right-click** to open the context menu and locate the **Bayesian Fitting** section.
 3. Select **Refit Bayesian (MCMC)**. 
-4. The sampling will run as a batch process, with progress tracked in the main window's progress bar.
+4. The sampling will run as a batch process, with progress tracked in the main window's progress bar. The first steps of the chain (up to 200, and at most half of the chain) are discarded as burn-in; use enough steps (the default is 500) for the chain to converge.
 
 **Visualizing Posteriors (Corner Plots)**
 Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:
