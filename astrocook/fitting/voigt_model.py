@@ -77,6 +77,7 @@ class VoigtModelConstraintV2:
             If ``None``, ALL components are considered active.
         group_depth : int, optional
             How many degrees of separation to traverse when finding connected components.
+            - ``0``: The targets only (neighbours frozen).
             - ``1``: Direct neighbors/links only.
             - ``2``: Neighbors of neighbors (Friends of Friends).
             Defaults to ``2``.
@@ -85,7 +86,14 @@ class VoigtModelConstraintV2:
             self._active_uuids = None
         else:
             # Use the shared logic from the SystemList
-            self._active_uuids = self._system_list.get_connected_group(target_uuids)
+            # Honour group_depth (findings register F11: the default depth 2
+            # was always used). The recipes keep depth 2 as their default,
+            # which is what all fits used until now; a smaller depth freezes
+            # the neighbours (faster, but blends are fitted worse: on the
+            # J0103-1305 full chain, depth 0 in refit_all raised chi2 by 14%
+            # in the forest)
+            self._active_uuids = self._system_list.get_connected_group(
+                target_uuids, max_depth=group_depth)
             logging.debug(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
