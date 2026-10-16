@@ -454,7 +454,7 @@ features after, except urgent features in stable areas.
 | Right after phase 1, before phase 2 | [#480](https://github.com/DAS-OATs/astrocook/issues/480) | import of line lists as ASCII (urgent): done in phase 1-bis (Edit > Import Systems from ASCII) |
 | With the natural-language log work | [#424](https://github.com/DAS-OATs/astrocook/issues/424) | logging of manual continuum edits |
 | After phase 1-bis | [#526](https://github.com/DAS-OATs/astrocook/issues/526) | resolution as a single column and exact convolution (F8, F22, rest of F10, F9); design and decisions in the issue |
-| After phase 1-bis | [#534](https://github.com/DAS-OATs/astrocook/issues/534) | which chi2 the fit uncertainties are scaled with (follow-up of F29); decision by Guido |
+| Before release 2.0.2 (decided with Guido) | [#534](https://github.com/DAS-OATs/astrocook/issues/534) | which chi2 the fit uncertainties are scaled with (follow-up of F29): done, option (a) |
 | After phase 1-bis | [#517](https://github.com/DAS-OATs/astrocook/issues/517), [#518](https://github.com/DAS-OATs/astrocook/issues/518) | from the findings review: flag and refit components at the parameter bounds, with F21 (`lya_auto` output); editable z window in the manual fits (F4) |
 | After phase 3/4 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
 | After phase 4 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |

@@ -332,6 +332,25 @@ def test_fit_component_group_depth_0_freezes_neighbours(data):
     assert len(changed2) > 1
 
 
+def test_refit_all_errors_come_from_the_final_model(data):
+    # Issue #534: refit_all fits each unit while its neighbours still have
+    # their initial values; the errors and chi2 are recomputed on the final
+    # model, so they match an evaluation at the final parameters
+    import dataclasses
+    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.recipes.absorbers import FIT_EXPANSION_DEPTH
+    out = _session(data, _lya_chain()).absorbers.refit_all(
+        max_nfev="50", group_depth="1", max_group_size="3")
+    systs = out.systs
+    target = systs.components[3]
+    local = SystemListV2(dataclasses.replace(systs._data, components=list(systs.components)))
+    with local.fitting_context([target.uuid], group_depth=FIT_EXPANSION_DEPTH):
+        evaluated = VoigtFitterV2(out.spec, local).evaluate_uncertainties(100.0)
+    again = next(c for c in evaluated.components if c.uuid == target.uuid)
+    assert again.chi2 == pytest.approx(target.chi2, rel=0.2)
+    assert again.dlogN == pytest.approx(target.dlogN, rel=0.2)
+
+
 # --- Upper bound on b (F32) ---------------------------------------------
 
 def test_refit_all_max_b(one_civ):

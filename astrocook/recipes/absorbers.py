@@ -1847,6 +1847,13 @@ class RecipeAbsorbersV2:
             new_systs_data = dataclasses.replace(reference_systs._data, components=final_comps)
             final_systs = SystemListV2(new_systs_data)
 
+            # 3b. Uncertainties on the final model (issue #534): each unit was
+            # fitted while its neighbours still had their initial values, so
+            # the errors are recomputed at the final parameters (one Jacobian
+            # per unit, no refit)
+            final_systs = self._final_uncertainties(current_session.spec, final_systs,
+                                                    work_units, z_win_f)
+
             # 4. Final Global Model
             if final_systs.constraint_model:
                 final_systs.constraint_model.set_active_components(None)
@@ -1863,6 +1870,33 @@ class RecipeAbsorbersV2:
             logging.error(f"refit_all failed: {e}", exc_info=True)
             return 0
         
+    def _final_uncertainties(self, spec, systs, work_units, z_window_kms):
+        """Recompute the uncertainties of each work unit on the final model."""
+        import dataclasses
+        from astrocook.core.system_list import SystemListV2
+        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        c_kms = 299792.458
+        updated = {}
+        for target_uuids in work_units:
+            targets = [c for c in systs.components if c.uuid in target_uuids]
+            if not targets:
+                continue
+            dz_buffer = (1 + max(c.z for c in targets)) * (1000.0 / c_kms)
+            z_lo = min(c.z for c in targets) - dz_buffer
+            z_hi = max(c.z for c in targets) + dz_buffer
+            local = SystemListV2(dataclasses.replace(
+                systs._data, components=[c for c in systs.components if z_lo <= c.z <= z_hi]))
+            try:
+                with local.fitting_context(list(target_uuids), group_depth=FIT_EXPANSION_DEPTH):
+                    evaluated = VoigtFitterV2(spec, local).evaluate_uncertainties(z_window_kms)
+                for c in evaluated.components:
+                    if c.uuid in target_uuids:
+                        updated[c.uuid] = c
+            except Exception as e:
+                logging.warning(f"Could not recompute the uncertainties of a group: {e}")
+        comps = [updated.get(c.uuid, c) for c in systs.components]
+        return SystemListV2(dataclasses.replace(systs._data, components=comps))
+
     def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
                        min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
         r"""
