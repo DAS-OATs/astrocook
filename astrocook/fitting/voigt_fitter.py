@@ -939,7 +939,10 @@ class VoigtFitterV2:
             J = res.jac
             cov = pinv(J.T @ J) 
             # Scale errors by reduced chi-square for a more realistic estimate
-            p_free_errors = np.sqrt(np.diag(cov))
+            # A negative diagonal element (ill-conditioned fit) gives a NaN
+            # error: reported below instead of a bare RuntimeWarning (F20)
+            with np.errstate(invalid='ignore'):
+                p_free_errors = np.sqrt(np.diag(cov))
             logging.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
@@ -1019,6 +1022,20 @@ class VoigtFitterV2:
             )
             new_components.append(new_comp)
             
+        # Report the components whose uncertainties could not be computed
+        # (findings register F20): the errors stay NaN, which the tables show
+        nan_errors = [c for c, old in zip(new_components, old_components)
+                      if (active_uuids is None or old.uuid in active_uuids)
+                      and any(e is not None and np.isnan(e)
+                              for e in (c.dz, c.dlogN, c.db))]
+        if nan_errors:
+            listed = ", ".join(f"{c.series} at z = {c.z:.5f}" for c in nan_errors[:10])
+            more = f" and {len(nan_errors) - 10} more" if len(nan_errors) > 10 else ""
+            logging.warning(
+                f"Uncertainties could not be computed (ill-conditioned fit) for "
+                f"{len(nan_errors)} component(s): {listed}{more}. "
+                f"Their errors are NaN; consider refitting or freezing parameters.")
+
         new_data_core = dataclasses.replace(self._system_list._data, components=new_components)
         new_system_list = SystemListV2(new_data_core)
         
