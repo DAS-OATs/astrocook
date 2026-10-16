@@ -62,3 +62,16 @@ def test_fit_continuum(snapshot, absorbed, fudge):
 def test_fit_powerlaw(snapshot, j0103_window):
     cont_pl = j0103_window.fit_powerlaw(POWERLAW_REGIONS, 3.0).get_column("cont_pl")
     snapshot.check("continuum_j0103_powerlaw", {"cont_pl": cont_pl[::STEP]})
+
+
+def test_estimate_auto_smoothing_is_a_fwhm(j0103_window):
+    # F16 (findings register, decided with Guido): the final smoothing is
+    # given as a FWHM (default 800 km/s); the deprecated smooth_std is a sigma
+    from astrocook.core.session import SessionV2
+    session = SessionV2("w", None, spec=j0103_window)
+    default = session.continuum.estimate_auto().spec.get_column("cont").value
+    as_sigma = session.continuum.estimate_auto(
+        smooth_std=str(800.0 / 2.354820045)).spec.get_column("cont").value
+    np.testing.assert_allclose(default, as_sigma, rtol=1e-12)
+    wider = session.continuum.estimate_auto(smooth_fwhm="1600").spec.get_column("cont").value
+    assert not np.allclose(default, wider)
