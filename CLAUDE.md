@@ -71,25 +71,33 @@ Current version: 2.0.1. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0 and 1 done (October 2026; details per item in `ROADMAP.md`,
-phase 1). The safety net: numerical snapshots (pure functions, continuum,
+Phases 0, 1 and 1-bis done (October 2026; details per item in `ROADMAP.md`).
+The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
-J0103-1305 and on a mock), V1/V2 parity tests, mock generator, recipe-level
-and GUI smoke tests, `.acs2` round trips, error-scaling check, mutation
-testing (`mutmut`, config in `pyproject.toml`, run by hand). Coverage of
-the V2 code: 56%. Slow tests (`pytest --run-slow`) run in a separate CI job.
-Still waiting for data from Guido: sessions for log replay, V1 `.acs`
-archives, sample files for the loaders.
+J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
+generator, recipe-level and GUI smoke tests, `.acs2` round trips,
+error-scaling check, mutation testing (`mutmut`, config in
+`pyproject.toml`, run by hand), timing benchmark
+(`benchmarks/bench_fitting.py`, run by hand). Slow tests
+(`pytest --run-slow`) run in a separate CI job. Still waiting for data from
+Guido: sessions for log replay, V1 `.acs` archives, sample files for the
+loaders, X-Shooter VIS/NIR data (F15).
 
-Now: **phase 1-bis**, the findings register (`ROADMAP.md`, section 3.2)
-item by item, in the order of section 3.3. One item per PR; wait for the
-merge before the next. Turn the related strict xfail into a passing test
-(or add a regression test) and state the numerical effect in the PR. The
-proposals are agreed in general, but items marked "decision" need a short
-proposal agreed with Guido before changing code.
+Phase 1-bis (findings register, `ROADMAP.md` section 3.2) fixed F1, F2, F5,
+F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33
+and issues #480, #442; F3 accepted. Deferred to GitHub issues, to be
+scheduled with Guido: #526 (resolution as a single column, exact
+convolution: F8, F22, rest of F10, F9, F14), #534 (which chi2 to scale the
+fit uncertainties with), #465 (continuum: spikes, F30, F17), #517
+(components at the bounds, F21), #518 (editable z window, F4). F15 waits
+for data.
+
+Next: to be decided with Guido (release 2.0.2, the deferred issues, or
+phase 2). Work in small PRs, one at a time; wait for the merge before the
+next.
 
 Questionable behaviour found along the way goes in the findings register
-(`ROADMAP.md`, section 3.2), reviewed with Guido at the end of phase 1;
+(`ROADMAP.md`, section 3.2), reviewed with Guido;
 anything that loses user data or crashes is reported at once. Open GitHub
 issues are scheduled in `ROADMAP.md`, section 3.1. Wait for each PR to be
 merged before opening the next. Update this section and the table in
