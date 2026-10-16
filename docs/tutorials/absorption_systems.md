@@ -147,6 +147,9 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 Astrocook also tracks a turbulent broadening parameter `btur` separately. It is available in the table but **frozen (italic)** by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.
 :::
 
+### Importing a Line List
+**Edit > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export ASCII** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
+
 ### Refitting
 
 After manual edits, you often need to re-optimize the fit:

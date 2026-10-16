@@ -288,6 +288,37 @@ def test_import_systems_nothing_to_import():
         assert session.edit.import_systems(name) is session
 
 
+# --- Edit > Import systems from ASCII (#480) ------------------------------
+
+def test_import_systems_ascii_round_trip(tmp_path):
+    # The _systems.csv written by Export ASCII can be read back
+    source = _session(systs=_systs(2.95, 2.97))
+    assert source.file.export_ascii("systems", str(tmp_path), "src")
+    session = _session(systs=_systs(2.96))
+    out = session.edit.import_systems_ascii(str(tmp_path / "src_systems.csv"))
+    assert sorted(c.z for c in out.systs.components) == [2.95, 2.96, 2.97]
+    replaced = session.edit.import_systems_ascii(str(tmp_path / "src_systems.csv"),
+                                                 append="False")
+    assert sorted(c.z for c in replaced.systs.components) == [2.95, 2.97]
+
+
+def test_import_systems_ascii_minimal_columns(tmp_path):
+    # Whitespace-separated, only series and z; out-of-range rows skipped
+    path = tmp_path / "list.txt"
+    path.write_text("series z b\nCIV 2.97 15.0\nCIV 3.5 10.0\nSiIV 4.0 8\n")
+    out = _session().edit.import_systems_ascii(str(path))
+    comps = out.systs.components
+    assert [(c.series, c.z, c.b, c.logN) for c in comps] == [("CIV", 2.97, 15.0, 13.0)]
+
+
+def test_import_systems_ascii_bad_input(tmp_path):
+    path = tmp_path / "bad.csv"
+    path.write_text("name,redshift\nCIV,2.97\n")
+    session = _session()
+    assert session.edit.import_systems_ascii(str(path)) == 0
+    assert session.edit.import_systems_ascii(str(tmp_path / "missing.csv")) == 0
+
+
 # --- Edit > Stitch, Co-add ------------------------------------------------
 
 def test_stitch():

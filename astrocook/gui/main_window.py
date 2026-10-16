@@ -977,6 +977,14 @@ class MainWindowV2(QMainWindow):
         edit_menu.addAction(import_sys_action)
         self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
 
+        # import_systems_ascii Action (issue #480)
+        import_sys_ascii_action = QAction("Import Systems from &ASCII...", self)
+        import_sys_ascii_action.setToolTip("Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).")
+        import_sys_ascii_action.triggered.connect(self._import_systems_ascii)
+        edit_menu.addAction(import_sys_ascii_action)
+        self.import_systems_ascii_action = import_sys_ascii_action
+        self.import_systems_ascii_action.setEnabled(False)
+
         # delete Action
         delete_action = QAction("&Delete Elements...", self)
         delete_action.setToolTip("Delete columns or clear the line list")
@@ -3251,6 +3259,17 @@ class MainWindowV2(QMainWindow):
             # 3. Execute via standard recipe pipeline to ensure it's in the Undo history
             self._on_recipe_requested("file", "import_ascii", {"file_path": file_path}, {})
 
+    def _import_systems_ascii(self):
+        """Choose an ASCII/CSV system table and import it (appended, not refitted)."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select ASCII/CSV System Table", "",
+            "CSV Files (*.csv);;Text Files (*.txt *.dat);;All Files (*)"
+        )
+        if file_path:
+            self._on_recipe_requested("edit", "import_systems_ascii",
+                                      {"file_path": file_path, "append": "True",
+                                       "refit": "False"}, {})
+
     def _on_recipe_requested(self, category: str, recipe_name: str, 
                              params: dict, alias_map: dict):
         """
@@ -4132,6 +4151,7 @@ class MainWindowV2(QMainWindow):
         if hasattr(self, 'mask_expression_action'): self.mask_expression_action.setEnabled(enable_recipes)
         if hasattr(self, 'smooth_column_action'): self.smooth_column_action.setEnabled(enable_recipes)
         if hasattr(self, 'import_systems_action'): self.import_systems_action.setEnabled(enable_recipes)
+        if hasattr(self, 'import_systems_ascii_action'): self.import_systems_ascii_action.setEnabled(enable_recipes)
         if hasattr(self, 'delete_action'): self.delete_action.setEnabled(enable_recipes)
         if hasattr(self, 'split_action'): self.split_action.setEnabled(enable_recipes)
         if hasattr(self, 'extract_preset_action'): self.extract_preset_action.setEnabled(enable_recipes)
