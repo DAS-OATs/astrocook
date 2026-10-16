@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -48,7 +48,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -58,7 +58,7 @@
     <link rel="prev" title="astrocook.fitting package" href="astrocook.fitting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -558,7 +558,7 @@ free parameters (e.g., column density between 10.0 and 23.0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc">
-<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
 <dd><p>Execute Markov Chain Monte Carlo (MCMC) sampling using <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>Initializes walkers around the initial parameter guess and samples the
 posterior distribution.</p>
@@ -567,7 +567,9 @@ posterior distribution.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nwalkers</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of MCMC walkers. Defaults to <code class="docutils literal notranslate"><span class="pre">32</span></code>.</p></li>
 <li><p><strong>nsteps</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of sampling steps per walker. Defaults to <code class="docutils literal notranslate"><span class="pre">1000</span></code>.</p></li>
-<li><p><strong>burn_in</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of initial steps to discard as burn-in. Defaults to <code class="docutils literal notranslate"><span class="pre">200</span></code>.</p></li>
+<li><p><strong>burn_in</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of initial steps to discard as burn-in. Defaults to
+<code class="docutils literal notranslate"><span class="pre">min(200,</span> <span class="pre">nsteps</span> <span class="pre">//</span> <span class="pre">2)</span></code>, so that at least half of the chain is
+kept. Must be smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>.</p></li>
 <li><p><strong>progress</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, pipes progress percentage to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 </ul>
 </dd>
@@ -582,7 +584,11 @@ posterior distribution.</p>
 <dd class="field-odd"><p>dict</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ImportError</strong> – If the <code class="docutils literal notranslate"><span class="pre">emcee</span></code> package is not installed.</p>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ImportError</strong> – If the <code class="docutils literal notranslate"><span class="pre">emcee</span></code> package is not installed.</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">&lt;</span> <span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">burn_in</span></code> is not smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>
+    (the chain left after the burn-in would be empty).</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Flux Operations &#8212; Astrocook 2.0.1 documentation</title>
+    <title>Flux Operations &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,15 +40,17 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/flux_operations';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -58,7 +60,7 @@
     <link rel="prev" title="Editing Data" href="editing_data.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -487,8 +489,10 @@
 <li><p><strong>Step Size (dx)</strong>: Enter the desired size of the new bins.</p></li>
 <li><p><strong>Unit:</strong> Choose the unit for <code class="docutils literal notranslate"><span class="pre">dx</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">km/s</span></code> or <code class="docutils literal notranslate"><span class="pre">nm</span></code>).</p></li>
 <li><p><strong>Wavelength Range (Optional)</strong>: You can define a specific start (<code class="docutils literal notranslate"><span class="pre">xstart</span></code>) and end (<code class="docutils literal notranslate"><span class="pre">xend</span></code>) wavelength. Leaving them as None will use the full existing range.</p></li>
+<li><p><strong>Kappa (Optional)</strong>: Sigma-clipping threshold. Pixels more than <code class="docutils literal notranslate"><span class="pre">kappa</span></code> sigma <em>above</em> a running median of the input pixels (spikes, cosmic rays) are rejected before rebinning; absorption features are never clipped, and a bin is never left empty. <code class="docutils literal notranslate"><span class="pre">None</span></code> turns the clipping off.</p></li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
+<p>The error of each new bin is the error of the weighted mean of the pixels it contains (it decreases as <span class="math notranslate nohighlight">\(\sigma/\sqrt{N}\)</span> for <span class="math notranslate nohighlight">\(N\)</span> equal pixels).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Unlike smoothing, rebinning changes the X-axis grid. The new flux values are calculated to preserve the physical energy/counts per bin.</p>

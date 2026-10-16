@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Editing Data &#8212; Astrocook 2.0.1 documentation</title>
+    <title>Editing Data &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -50,7 +50,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Getting Started" href="getting_started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -583,7 +583,7 @@
 <p>If you have multiple exposures of the same object, you can combine them directly from the Session List.</p>
 <section id="co-adding-spectra">
 <h3>Co-adding Spectra<a class="headerlink" href="#co-adding-spectra" title="Link to this heading">#</a></h3>
-<p>This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins).</p>
+<p>This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional <code class="docutils literal notranslate"><span class="pre">kappa</span></code> clipping rejects only upward outliers (spikes), as in <strong>Flux &gt; Rebin Spectrum</strong> (see <a class="reference internal" href="flux_operations.html"><span class="std std-doc">Flux Operations</span></a>).</p>
 <ol class="arabic simple">
 <li><p>Load all the spectra you wish to combine.</p></li>
 <li><p>In the <strong>Session List</strong>, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) and click to select multiple sessions.</p></li>
@@ -606,7 +606,8 @@
 <li><p>This concatenates the data arrays without resampling.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The recipe automatically cleans up <code class="docutils literal notranslate"><span class="pre">NaN</span></code> values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from “scatter-plot” artifacts.</p>
+<p>The recipe automatically cleans up <code class="docutils literal notranslate"><span class="pre">NaN</span></code> values (e.g., gaps between detectors) to ensure the resulting plot is continuous and does not suffer from “scatter-plot” artifacts.
+If the stitched spectra <strong>overlap</strong>, the pixels of the overlap region are interleaved: the result is shown as a scatter plot instead of a line (for up to 20000 visible points; zoom in on longer spectra), so that the overlap is clearly visible. Rebinning or co-adding returns to the line view.</p>
 </div>
 </li>
 </ol>

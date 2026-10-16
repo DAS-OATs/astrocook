@@ -1,0 +1,983 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>astrocook.mocks package &#8212; Astrocook 2.0.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=cc54fbde" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
+    <script src="../static/doctools.js?v=9bcbadda"></script>
+    <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.mocks';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.0.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.mocks package</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="astrocook-mocks-package">
+<h1>astrocook.mocks package<a class="headerlink" href="#astrocook-mocks-package" title="Link to this heading">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.make_grid"><code class="docutils literal notranslate"><span class="pre">make_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.normalized_flux"><code class="docutils literal notranslate"><span class="pre">normalized_flux()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.continuum"><code class="docutils literal notranslate"><span class="pre">continuum()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.spike_indices"><code class="docutils literal notranslate"><span class="pre">spike_indices()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.generate"><code class="docutils literal notranslate"><span class="pre">generate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.transitions"><code class="docutils literal notranslate"><span class="pre">transitions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.optical_depth"><code class="docutils literal notranslate"><span class="pre">optical_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.convolve_velocity"><code class="docutils literal notranslate"><span class="pre">convolve_velocity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.expected_forest_lines"><code class="docutils literal notranslate"><span class="pre">expected_forest_lines()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.mean_transmission_fg08"><code class="docutils literal notranslate"><span class="pre">mean_transmission_fg08()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.lya_forest"><code class="docutils literal notranslate"><span class="pre">lya_forest()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.metal_systems"><code class="docutils literal notranslate"><span class="pre">metal_systems()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent"><code class="docutils literal notranslate"><span class="pre">MockComponent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.series"><code class="docutils literal notranslate"><span class="pre">MockComponent.series</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.z"><code class="docutils literal notranslate"><span class="pre">MockComponent.z</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.logN"><code class="docutils literal notranslate"><span class="pre">MockComponent.logN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.b"><code class="docutils literal notranslate"><span class="pre">MockComponent.b</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.btur"><code class="docutils literal notranslate"><span class="pre">MockComponent.btur</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent.__init__"><code class="docutils literal notranslate"><span class="pre">MockComponent.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine"><code class="docutils literal notranslate"><span class="pre">EmissionLine</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.rest_nm"><code class="docutils literal notranslate"><span class="pre">EmissionLine.rest_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.amplitude"><code class="docutils literal notranslate"><span class="pre">EmissionLine.amplitude</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.fwhm_kms"><code class="docutils literal notranslate"><span class="pre">EmissionLine.fwhm_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.__init__"><code class="docutils literal notranslate"><span class="pre">EmissionLine.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.QSO_EMISSION_LINES"><code class="docutils literal notranslate"><span class="pre">QSO_EMISSION_LINES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth"><code class="docutils literal notranslate"><span class="pre">MockTruth</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.components"><code class="docutils literal notranslate"><span class="pre">MockTruth.components</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.lam_min_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.lam_min_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.lam_max_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.lam_max_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.dv_kms"><code class="docutils literal notranslate"><span class="pre">MockTruth.dv_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.resol"><code class="docutils literal notranslate"><span class="pre">MockTruth.resol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.snr"><code class="docutils literal notranslate"><span class="pre">MockTruth.snr</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.z_em"><code class="docutils literal notranslate"><span class="pre">MockTruth.z_em</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.seed"><code class="docutils literal notranslate"><span class="pre">MockTruth.seed</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.oversample"><code class="docutils literal notranslate"><span class="pre">MockTruth.oversample</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.cont_amplitude"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_amplitude</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.cont_slope"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_slope</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.cont_ref_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_ref_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.emission_lines"><code class="docutils literal notranslate"><span class="pre">MockTruth.emission_lines</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.n_spikes"><code class="docutils literal notranslate"><span class="pre">MockTruth.n_spikes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.spike_amplitude"><code class="docutils literal notranslate"><span class="pre">MockTruth.spike_amplitude</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.from_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.from_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_json"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.from_json"><code class="docutils literal notranslate"><span class="pre">MockTruth.from_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.__init__"><code class="docutils literal notranslate"><span class="pre">MockTruth.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="module-astrocook.mocks">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-astrocook.mocks" title="Link to this heading">#</a></h2>
+<p>Synthetic quasar spectra with known parameters (mocks).</p>
+<p>The generator is independent of the V2 fitting code: it has its own Voigt
+profile, convolution and pixel integration, so that the fitting code can be
+tested against it. It shares only the atomic data table
+(<code class="xref py py-data docutils literal notranslate"><span class="pre">astrocook.core.atomic_data.ATOM_DATA</span></code>).</p>
+<p>Typical use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.mocks</span><span class="w"> </span><span class="kn">import</span> <span class="n">MockComponent</span><span class="p">,</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">generate</span>
+
+<span class="n">truth</span> <span class="o">=</span> <span class="n">MockTruth</span><span class="p">(</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">MockComponent</span><span class="p">(</span><span class="s2">&quot;CIV&quot;</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">2.97</span><span class="p">,</span> <span class="n">logN</span><span class="o">=</span><span class="mf">13.5</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)],</span>
+    <span class="n">lam_min_nm</span><span class="o">=</span><span class="mf">612.0</span><span class="p">,</span> <span class="n">lam_max_nm</span><span class="o">=</span><span class="mf">620.0</span><span class="p">,</span> <span class="n">dv_kms</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span>
+    <span class="n">resol</span><span class="o">=</span><span class="mf">45000.0</span><span class="p">,</span> <span class="n">snr</span><span class="o">=</span><span class="mf">50.0</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="mf">3.1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">spectrum</span> <span class="o">=</span> <span class="n">generate</span><span class="p">(</span><span class="n">truth</span><span class="p">)</span>          <span class="c1"># SpectrumV2</span>
+<span class="n">truth</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="s2">&quot;mock_truth.json&quot;</span><span class="p">)</span>    <span class="c1"># ground truth, for later comparison</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.mocks.EmissionLine">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">EmissionLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rest_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fwhm_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#EmissionLine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.EmissionLine" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Gaussian emission line added to the continuum (quasar frame).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rest_nm</strong> (<em>float</em>) – Rest-frame wavelength (nm); observed at <code class="docutils literal notranslate"><span class="pre">rest_nm</span> <span class="pre">*</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">z_em)</span></code>.</p></li>
+<li><p><strong>amplitude</strong> (<em>float</em>) – Peak height, in units of the power-law continuum.</p></li>
+<li><p><strong>fwhm_kms</strong> (<em>float</em>) – Full width at half maximum (km/s).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.EmissionLine.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rest_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fwhm_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.mocks.EmissionLine.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.EmissionLine.rest_nm">
+<span class="sig-name descname"><span class="pre">rest_nm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.EmissionLine.rest_nm" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.EmissionLine.amplitude">
+<span class="sig-name descname"><span class="pre">amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.EmissionLine.amplitude" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.EmissionLine.fwhm_kms">
+<span class="sig-name descname"><span class="pre">fwhm_kms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.EmissionLine.fwhm_kms" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">MockComponent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btur</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockComponent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockComponent" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>One Voigt component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series</strong> (<em>str</em>) – A transition (e.g. <code class="docutils literal notranslate"><span class="pre">'CIV_1548'</span></code>), a multiplet of
+<code class="docutils literal notranslate"><span class="pre">STANDARD_MULTIPLETS</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">'CIV'</span></code>) or a comma-separated list
+of transitions.</p></li>
+<li><p><strong>z</strong> (<em>float</em>) – Redshift.</p></li>
+<li><p><strong>logN</strong> (<em>float</em>) – Log10 of the column density (cm^-2).</p></li>
+<li><p><strong>b</strong> (<em>float</em>) – Doppler parameter (km/s).</p></li>
+<li><p><strong>btur</strong> (<em>float</em><em>, </em><em>optional</em>) – Turbulent broadening (km/s), added in quadrature to <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btur</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.mocks.MockComponent.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.btur">
+<span class="sig-name descname"><span class="pre">btur</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#astrocook.mocks.MockComponent.btur" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.series">
+<span class="sig-name descname"><span class="pre">series</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#astrocook.mocks.MockComponent.series" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.z">
+<span class="sig-name descname"><span class="pre">z</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockComponent.z" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.logN">
+<span class="sig-name descname"><span class="pre">logN</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockComponent.logN" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockComponent.b">
+<span class="sig-name descname"><span class="pre">b</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockComponent.b" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">MockTruth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.mocks.truth.MockComponent],</span> <span class="pre">lam_min_nm:</span> <span class="pre">float,</span> <span class="pre">lam_max_nm:</span> <span class="pre">float,</span> <span class="pre">dv_kms:</span> <span class="pre">float,</span> <span class="pre">resol:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">45000.0,</span> <span class="pre">snr:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">50.0,</span> <span class="pre">z_em:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">seed:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">oversample:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">5,</span> <span class="pre">cont_amplitude:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0,</span> <span class="pre">cont_slope:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">cont_ref_nm:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">500.0,</span> <span class="pre">emission_lines:</span> <span class="pre">~typing.List[~astrocook.mocks.truth.EmissionLine]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">n_spikes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">spike_amplitude:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">10.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockTruth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockTruth" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Everything needed to generate, and later evaluate, a mock spectrum.</p>
+<p>The wavelength grid is uniform in velocity (pixel size <code class="docutils literal notranslate"><span class="pre">dv_kms</span></code>), as
+for echelle spectrographs. The continuum is a power law
+<code class="docutils literal notranslate"><span class="pre">cont_amplitude</span> <span class="pre">*</span> <span class="pre">(lambda</span> <span class="pre">/</span> <span class="pre">cont_ref_nm)</span> <span class="pre">**</span> <span class="pre">cont_slope</span></code>. The noise is
+Gaussian, with a constant signal-to-noise ratio <code class="docutils literal notranslate"><span class="pre">snr</span></code> per pixel at the
+continuum level (<code class="docutils literal notranslate"><span class="pre">None</span></code>: noiseless).</p>
+<p><code class="docutils literal notranslate"><span class="pre">resol</span></code> is the resolving power, either a single value or <code class="docutils literal notranslate"><span class="pre">None</span></code> (no
+instrumental broadening). <code class="docutils literal notranslate"><span class="pre">oversample</span></code> is the number of sub-pixels on
+which the model is computed before being averaged over each pixel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">emission_lines</span></code> are added to the continuum (the absorbers absorb
+them too). <code class="docutils literal notranslate"><span class="pre">n_spikes</span></code> single-pixel positive spikes of
+<code class="docutils literal notranslate"><span class="pre">spike_amplitude</span></code> times the local error are added after the noise, at
+random positions; their indices are not part of the truth but are
+reproducible from the seed (see <a class="reference internal" href="#astrocook.mocks.spike_indices" title="astrocook.mocks.spike_indices"><code class="xref py py-func docutils literal notranslate"><span class="pre">astrocook.mocks.spike_indices()</span></code></a>).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.mocks.truth.MockComponent],</span> <span class="pre">lam_min_nm:</span> <span class="pre">float,</span> <span class="pre">lam_max_nm:</span> <span class="pre">float,</span> <span class="pre">dv_kms:</span> <span class="pre">float,</span> <span class="pre">resol:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">45000.0,</span> <span class="pre">snr:</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">50.0,</span> <span class="pre">z_em:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">seed:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">oversample:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">5,</span> <span class="pre">cont_amplitude:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0,</span> <span class="pre">cont_slope:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">cont_ref_nm:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">500.0,</span> <span class="pre">emission_lines:</span> <span class="pre">~typing.List[~astrocook.mocks.truth.EmissionLine]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">n_spikes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">spike_amplitude:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">10.0</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.mocks.MockTruth.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.cont_amplitude">
+<span class="sig-name descname"><span class="pre">cont_amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.cont_amplitude" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.cont_ref_nm">
+<span class="sig-name descname"><span class="pre">cont_ref_nm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">500.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.cont_ref_nm" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.cont_slope">
+<span class="sig-name descname"><span class="pre">cont_slope</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.cont_slope" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockTruth.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockTruth.from_dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.from_json">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockTruth.from_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockTruth.from_json" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.n_spikes">
+<span class="sig-name descname"><span class="pre">n_spikes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.n_spikes" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.oversample">
+<span class="sig-name descname"><span class="pre">oversample</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.oversample" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.resol">
+<span class="sig-name descname"><span class="pre">resol</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">45000.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.resol" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.seed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.snr">
+<span class="sig-name descname"><span class="pre">snr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">50.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.snr" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.spike_amplitude">
+<span class="sig-name descname"><span class="pre">spike_amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.spike_amplitude" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockTruth.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockTruth.to_dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/truth.html#MockTruth.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.MockTruth.to_json" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.z_em">
+<span class="sig-name descname"><span class="pre">z_em</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.z_em" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.components">
+<span class="sig-name descname"><span class="pre">components</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent" title="astrocook.mocks.truth.MockComponent"><span class="pre">MockComponent</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.components" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.lam_min_nm">
+<span class="sig-name descname"><span class="pre">lam_min_nm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.lam_min_nm" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.lam_max_nm">
+<span class="sig-name descname"><span class="pre">lam_max_nm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.lam_max_nm" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.dv_kms">
+<span class="sig-name descname"><span class="pre">dv_kms</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.dv_kms" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.mocks.MockTruth.emission_lines">
+<span class="sig-name descname"><span class="pre">emission_lines</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine" title="astrocook.mocks.truth.EmissionLine"><span class="pre">EmissionLine</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#astrocook.mocks.MockTruth.emission_lines" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.continuum">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/generate.html#continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.continuum" title="Link to this definition">#</a></dt>
+<dd><p>Power law plus the Gaussian emission lines of <code class="docutils literal notranslate"><span class="pre">truth</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.generate">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/mocks/generate.html#generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate" title="Link to this definition">#</a></dt>
+<dd><p>Mock spectrum for <code class="docutils literal notranslate"><span class="pre">truth</span></code>.</p>
+<p>The spectrum has the true continuum (with emission lines) in the
+<code class="docutils literal notranslate"><span class="pre">cont</span></code> column and the noiseless flux in <code class="docutils literal notranslate"><span class="pre">mock_flux</span></code>; <code class="docutils literal notranslate"><span class="pre">z_em</span></code> and the resolving power are
+set (the latter also in the metadata, so that it survives a save).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.make_grid">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">make_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lam_min_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lam_max_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dv_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/generate.html#make_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.make_grid" title="Link to this definition">#</a></dt>
+<dd><p>Pixel centres and edges (nm), uniform in velocity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x, xmin, xmax</strong> – Centres and edges; the edges of adjacent pixels coincide.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.normalized_flux">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">normalized_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/generate.html#normalized_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.normalized_flux" title="Link to this definition">#</a></dt>
+<dd><p>Noiseless normalised flux, convolved and averaged over each pixel.</p>
+<p>The model is computed on <code class="docutils literal notranslate"><span class="pre">oversample</span></code> sub-pixels per pixel, convolved
+with the instrumental profile on that grid, then averaged over the
+sub-pixels of each pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x_nm, flux</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.spike_indices">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">spike_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/generate.html#spike_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.spike_indices" title="Link to this definition">#</a></dt>
+<dd><p>Pixel indices of the spikes of <code class="docutils literal notranslate"><span class="pre">truth</span></code> (reproducible from the seed).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.optical_depth">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">optical_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lam_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">btur</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/physics.html#optical_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.optical_depth" title="Link to this definition">#</a></dt>
+<dd><p>Optical depth of one component at observed wavelengths (Angstrom).</p>
+<p>tau = (pi e^2 / m_e c) f lambda_0 N / (sqrt(pi) b) H(a, u), with
+u = (lambda_rest - lambda_0) / Delta lambda_D,
+Delta lambda_D = (b / c) lambda_0, a = Gamma lambda_0 / (4 pi b) and
+H(a, u) = Re[w(u + i a)].</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.convolve_velocity">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">convolve_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dv_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/physics.html#convolve_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.convolve_velocity" title="Link to this definition">#</a></dt>
+<dd><p>Gaussian instrumental convolution on a grid uniform in velocity.</p>
+<p>The kernel at each pixel has FWHM = c / R(pixel), so a varying
+resolution is handled exactly (no grouping of pixels). The flux is
+extended with its edge values to avoid edge effects.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.expected_forest_lines">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">expected_forest_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dndz_at_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1700.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/populations.html#expected_forest_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.expected_forest_lines" title="Link to this definition">#</a></dt>
+<dd><p>Expected number of forest lines between z_min and z_max.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.lya_forest">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">lya_forest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Generator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(12.0,</span> <span class="pre">17.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_median</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_sigma_dex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dndz_at_3</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1700.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent" title="astrocook.mocks.truth.MockComponent"><span class="pre">MockComponent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/populations.html#lya_forest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.lya_forest" title="Link to this definition">#</a></dt>
+<dd><p>Random Lyman-alpha forest between <code class="docutils literal notranslate"><span class="pre">z_min</span></code> and <code class="docutils literal notranslate"><span class="pre">z_max</span></code>.</p>
+<p>The number of lines is Poisson-distributed around
+<a class="reference internal" href="#astrocook.mocks.expected_forest_lines" title="astrocook.mocks.expected_forest_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">expected_forest_lines()</span></code></a>; <code class="docutils literal notranslate"><span class="pre">dndz_at_3</span></code> is the line density at
+z = 3 for column densities in <code class="docutils literal notranslate"><span class="pre">logN_range</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.mean_transmission_fg08">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">mean_transmission_fg08</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/populations.html#mean_transmission_fg08"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.mean_transmission_fg08" title="Link to this definition">#</a></dt>
+<dd><p>Mean Lyman-alpha forest transmission, exp(-0.0018 (1 + z)^3.92).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.metal_systems">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.</span></span><span class="sig-name descname"><span class="pre">metal_systems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Generator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_systems</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('CIV',</span> <span class="pre">'SiIV',</span> <span class="pre">'MgII')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dv_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(12.0,</span> <span class="pre">14.5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(4.0,</span> <span class="pre">15.0)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent" title="astrocook.mocks.truth.MockComponent"><span class="pre">MockComponent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/mocks/populations.html#metal_systems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.metal_systems" title="Link to this definition">#</a></dt>
+<dd><p>Random metal systems, each with 1 to <code class="docutils literal notranslate"><span class="pre">max_components</span></code> components
+of one species, spread within +/- <code class="docutils literal notranslate"><span class="pre">dv_kms</span></code> of the system redshift.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.mocks">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.EmissionLine"><code class="docutils literal notranslate"><span class="pre">EmissionLine</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.EmissionLine.__init__"><code class="docutils literal notranslate"><span class="pre">EmissionLine.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.EmissionLine.rest_nm"><code class="docutils literal notranslate"><span class="pre">EmissionLine.rest_nm</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.EmissionLine.amplitude"><code class="docutils literal notranslate"><span class="pre">EmissionLine.amplitude</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.EmissionLine.fwhm_kms"><code class="docutils literal notranslate"><span class="pre">EmissionLine.fwhm_kms</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent"><code class="docutils literal notranslate"><span class="pre">MockComponent</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.__init__"><code class="docutils literal notranslate"><span class="pre">MockComponent.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.btur"><code class="docutils literal notranslate"><span class="pre">MockComponent.btur</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.series"><code class="docutils literal notranslate"><span class="pre">MockComponent.series</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.z"><code class="docutils literal notranslate"><span class="pre">MockComponent.z</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.logN"><code class="docutils literal notranslate"><span class="pre">MockComponent.logN</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockComponent.b"><code class="docutils literal notranslate"><span class="pre">MockComponent.b</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth"><code class="docutils literal notranslate"><span class="pre">MockTruth</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.__init__"><code class="docutils literal notranslate"><span class="pre">MockTruth.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.cont_amplitude"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_amplitude</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.cont_ref_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_ref_nm</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.cont_slope"><code class="docutils literal notranslate"><span class="pre">MockTruth.cont_slope</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.from_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.from_dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.from_json"><code class="docutils literal notranslate"><span class="pre">MockTruth.from_json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.n_spikes"><code class="docutils literal notranslate"><span class="pre">MockTruth.n_spikes</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.oversample"><code class="docutils literal notranslate"><span class="pre">MockTruth.oversample</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.resol"><code class="docutils literal notranslate"><span class="pre">MockTruth.resol</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.seed"><code class="docutils literal notranslate"><span class="pre">MockTruth.seed</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.snr"><code class="docutils literal notranslate"><span class="pre">MockTruth.snr</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.spike_amplitude"><code class="docutils literal notranslate"><span class="pre">MockTruth.spike_amplitude</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.to_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.to_json"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_json()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.z_em"><code class="docutils literal notranslate"><span class="pre">MockTruth.z_em</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.components"><code class="docutils literal notranslate"><span class="pre">MockTruth.components</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.lam_min_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.lam_min_nm</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.lam_max_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.lam_max_nm</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.dv_kms"><code class="docutils literal notranslate"><span class="pre">MockTruth.dv_kms</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.MockTruth.emission_lines"><code class="docutils literal notranslate"><span class="pre">MockTruth.emission_lines</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.continuum"><code class="docutils literal notranslate"><span class="pre">continuum()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate"><code class="docutils literal notranslate"><span class="pre">generate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.make_grid"><code class="docutils literal notranslate"><span class="pre">make_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.normalized_flux"><code class="docutils literal notranslate"><span class="pre">normalized_flux()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.spike_indices"><code class="docutils literal notranslate"><span class="pre">spike_indices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.optical_depth"><code class="docutils literal notranslate"><span class="pre">optical_depth()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.convolve_velocity"><code class="docutils literal notranslate"><span class="pre">convolve_velocity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.expected_forest_lines"><code class="docutils literal notranslate"><span class="pre">expected_forest_lines()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.lya_forest"><code class="docutils literal notranslate"><span class="pre">lya_forest()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.mean_transmission_fg08"><code class="docutils literal notranslate"><span class="pre">mean_transmission_fg08()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.metal_systems"><code class="docutils literal notranslate"><span class="pre">metal_systems()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../sources/api/astrocook.mocks.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

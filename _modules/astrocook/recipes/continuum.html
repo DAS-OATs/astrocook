@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.continuum &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.recipes.continuum &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -449,7 +449,7 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_len_out&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Smoothing length outside Ly-a forest (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma threshold for clipping&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;fudge&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Fudge factor. Use &#39;auto&#39; or a float (e.g., &#39;1.0&#39;).&quot;</span><span class="p">},</span> 
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_std&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing std (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_fwhm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing FWHM (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Use QSO template to trace Lyman-alpha emission&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">],</span>
@@ -472,7 +472,7 @@
         <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="c1"># CHANGED: type is now str, default is &quot;auto&quot;</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;fudge&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Fudge factor. Use &#39;auto&#39; or a float (e.g., &#39;1.0&#39;).&quot;</span><span class="p">},</span> 
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_std&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing std (km/s)&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_fwhm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing FWHM (km/s)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mask_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;abs_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Mask column to use (True=Absorbed)&quot;</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">],</span>
@@ -500,6 +500,22 @@
 <span class="p">}</span>
 
 
+<span class="n">FWHM_TO_SIGMA</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">2.354820045</span>  <span class="c1"># 1 / (2 sqrt(2 ln 2))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sigma (km/s) of the final continuum smoothing.</span>
+
+<span class="sd">    The width is given as a FWHM (findings register F16, decided with</span>
+<span class="sd">    Guido; default 800 km/s, within 0.5% of the V1 continuum on J0103-1305).</span>
+<span class="sd">    ``smooth_std`` is the deprecated V2 parameter (a sigma, for old scripts</span>
+<span class="sd">    and logs) and takes precedence when given.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">smooth_std</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;None&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_std</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">)</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span>
+
+
 <div class="viewcode-block" id="RecipeContinuumV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeContinuumV2</span><span class="p">:</span>
@@ -520,7 +536,8 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">estimate_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5000.0&#39;</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;400.0&#39;</span><span class="p">,</span> 
                       <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2.0&#39;</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;1.0&#39;</span><span class="p">,</span> 
-                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;500.0&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+                      <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;800.0&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span>
+                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Auto-estimate continuum (single-click).</span>
 
@@ -541,9 +558,11 @@
 <span class="sd">            A multiplicative factor. Can be a float (e.g., ``&#39;1.0&#39;``) or ``&#39;auto&#39;``.</span>
 <span class="sd">            If ``&#39;auto&#39;``, the factor is calculated to center the continuum residuals.</span>
 <span class="sd">            Defaults to ``&#39;1.0&#39;``.</span>
+<span class="sd">        smooth_fwhm : str, optional</span>
+<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``&#39;800.0&#39;``.</span>
 <span class="sd">        smooth_std : str, optional</span>
-<span class="sd">            Standard deviation (km/s) for the final Gaussian smoothing.</span>
-<span class="sd">            Defaults to ``&#39;500.0&#39;``.</span>
+<span class="sd">            Deprecated: the standard deviation (km/s) used before; overrides</span>
+<span class="sd">            ``smooth_fwhm`` when given. Defaults to ``None``.</span>
 <span class="sd">        template : str, optional</span>
 <span class="sd">            If ``&#39;True&#39;``, use a QSO template. Defaults to ``&#39;False&#39;``.</span>
 <span class="sd">        renorm_model : str, optional</span>
@@ -566,7 +585,7 @@
                 <span class="n">fudge_f</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">fudge_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge</span><span class="p">)</span>
-            <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_std</span><span class="p">)</span> <span class="c1"># This is in km/s</span>
+            <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="n">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">)</span>  <span class="c1"># sigma, km/s</span>
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="c1"># Read z_em from session</span>
             <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -662,8 +681,9 @@
 
 <div class="viewcode-block" id="RecipeContinuumV2.fit_continuum">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;500.0&#39;</span><span class="p">,</span> 
-                      <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;800.0&#39;</span><span class="p">,</span> 
+                      <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
+                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fit continuum to mask (V1 logic).</span>
 
@@ -676,8 +696,11 @@
 <span class="sd">        fudge : str, optional</span>
 <span class="sd">            Fudge factor. Can be a float (e.g., ``&#39;1.0&#39;``) or ``&#39;auto&#39;``.</span>
 <span class="sd">            Defaults to ``&#39;auto&#39;``.</span>
+<span class="sd">        smooth_fwhm : str, optional</span>
+<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``&#39;800.0&#39;``.</span>
 <span class="sd">        smooth_std : str, optional</span>
-<span class="sd">            Final Gaussian smoothing standard deviation (km/s). Defaults to ``&#39;500.0&#39;``.</span>
+<span class="sd">            Deprecated: the standard deviation (km/s) used before; overrides</span>
+<span class="sd">            ``smooth_fwhm`` when given. Defaults to ``None``.</span>
 <span class="sd">        mask_col : str, optional</span>
 <span class="sd">            Name of the mask column to use (True=Absorbed). Defaults to ``&#39;abs_mask&#39;``.</span>
 <span class="sd">        renorm_model : str, optional</span>
@@ -692,7 +715,7 @@
 <span class="sd">            column added/updated, or 0 on failure.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_std</span><span class="p">)</span>
+            <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="n">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">)</span>
             <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
             <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
             

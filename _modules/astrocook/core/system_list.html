@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.system_list &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.core.system_list &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -435,13 +435,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtModelConstraintV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">ParameterConstraintV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list_migration</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_component_v2_to_v1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.syst_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystList</span> <span class="k">as</span> <span class="n">SystListV1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 
 <div class="viewcode-block" id="get_all_w_rest">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.get_all_w_rest">[docs]</a>
@@ -787,7 +790,8 @@
         <span class="k">finally</span><span class="p">:</span>
             <span class="c1"># Robust cleanup</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">)</span>
+                <span class="c1"># Restore exactly the previous set (no further expansion)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fitting_context cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Forcing reset to None.&quot;</span><span class="p">)</span>
                 <span class="c1"># Fail-safe: Unlock everything to prevent persistent &#39;Frozen&#39; state</span>

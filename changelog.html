@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Changelog &#8212; Astrocook 2.0.1 documentation</title>
+    <title>Changelog &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="static/documentation_options.js?v=c2377ec0"></script>
     <script src="static/doctools.js?v=9bcbadda"></script>
     <script src="static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="static/design-tabs.js?v=f930bc37"></script>
@@ -48,7 +48,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="Credits" href="credits.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -440,14 +440,52 @@
   <section class="tex2jax_ignore mathjax_ignore" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
 <section id="id1">
-<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><em>Data loss</em>: Bayesian fit (MCMC) with 200 steps or fewer overwrote the component parameters with NaN; the burn-in now adapts to the number of steps.</p></li>
+<li><p><em>Data loss</em>: the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive did not keep the session log; it is now saved and restored (also in the GUI).</p></li>
+<li><p>Voigt fits of broad lines (b &gt; 50 km/s) were biased (e.g. b = 80 fitted as ~50, logN 0.1 dex low): the soft penalty is removed (see below).</p></li>
+<li><p>Rebinned and co-added errors did not decrease with the number of pixels per bin (#490).</p></li>
+<li><p>Rebin clipping could empty bins and removed the cores of narrow absorption lines; it now clips spikes only (upward, against a running median) and never empties a bin.</p></li>
+<li><p>The Voigt model was zero on pixels whose resolution column held non-round or NaN values (e.g. co-added spectra).</p></li>
+<li><p>The automatic pipelines (<code class="docutils literal notranslate"><span class="pre">doublets_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">lya_auto</span></code>, …) gave different results at every run; they are now reproducible.</p></li>
+<li><p>Components could not be deleted from a spectrum without a continuum.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_depth</span></code> was ignored in the fits (“Fit component”, Bayesian fit).</p></li>
+<li><p>Rebin with a non-numeric parameter raised an error instead of aborting cleanly.</p></li>
+<li><p>The identification viewer failed on sessions reloaded from <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>.</p></li>
+<li><p>NaN uncertainties (ill-conditioned fits) are now reported in the log with the components involved.</p></li>
+<li><p>ASCII export (#476, #481); warning when saving a session with a V2 log to the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p></li>
+</ul>
+</section>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><em>Edit &gt; Import Systems from ASCII</em>: read absorption components from a CSV or whitespace-separated table (columns <code class="docutils literal notranslate"><span class="pre">series</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, …) (#480).</p></li>
+<li><p>Stitching overlapping regions switches the plot to scatter style (#442).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_b</span></code> parameter of the automatic pipelines (default 50 km/s) and of <em>Refit All</em> (default 300 km/s).</p></li>
+</ul>
+</section>
+<section id="changed-behaviour">
+<h3>Changed behaviour<a class="headerlink" href="#changed-behaviour" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Uncertainties</strong>: the errors of the fitted parameters are scaled by sqrt(reduced chi2), as in Astrocook v1; the reduced chi2 is computed on the pixels that constrain the fit and, after the automatic pipelines, on the final model. Errors become larger where the model does not describe the data well (e.g. unresolved blends).</p></li>
+<li><p><strong>Broad lines</strong>: the automatic pipelines bound b to 50 km/s (as the former penalty did, but without biasing the fits); manual fits use only the physical limit (300 km/s). Components that end at 50 km/s may be broader and can be refitted by hand.</p></li>
+<li><p><strong>Continuum smoothing</strong>: the width is now given as a FWHM (<code class="docutils literal notranslate"><span class="pre">smooth_fwhm</span></code>, default 800 km/s, which reproduces the v1 continuum). The former <code class="docutils literal notranslate"><span class="pre">smooth_std</span></code> (a standard deviation, default 500 km/s) is still accepted. The default continuum is smoothed less than in 2.0.1, so continua and the results of the automatic pipelines change slightly.</p></li>
+</ul>
+</section>
+</section>
+<section id="id2">
+<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><em>Feature</em>: Added “Equalize and Stitch” to the GUI with dynamic parameters.</p></li>
 <li><p><em>Fix</em>: Prevented FITS save crashes from Ly-α identifications and ensured tooltips render safely upon reloading.</p></li>
 </ul>
 </section>
-<section id="id2">
-<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<section id="id3">
+<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Added an experimental Bayesian fitting engine supporting MCMC (<code class="docutils literal notranslate"><span class="pre">emcee</span></code>).</p></li>
 <li><p>Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.</p></li>
@@ -532,8 +570,14 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.0.1] - 2026-04-21</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">[2.0.0] - 2026-04-07</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-behaviour">Changed behaviour</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">[2.0.1] - 2026-04-21</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">[2.0.0] - 2026-04-07</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-3-2026-02-18">[2.0.0-beta.3] - 2026-02-18</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-2-2026-01-22">[2.0.0-beta.2] - 2026-01-22</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-1-2026-01-02">[2.0.0-beta.1] - 2026-01-02</a></li>

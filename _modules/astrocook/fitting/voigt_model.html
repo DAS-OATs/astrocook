@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_model &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.fitting.voigt_model &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -514,6 +514,7 @@
 <span class="sd">            If ``None``, ALL components are considered active.</span>
 <span class="sd">        group_depth : int, optional</span>
 <span class="sd">            How many degrees of separation to traverse when finding connected components.</span>
+<span class="sd">            - ``0``: The targets only (neighbours frozen).</span>
 <span class="sd">            - ``1``: Direct neighbors/links only.</span>
 <span class="sd">            - ``2``: Neighbors of neighbors (Friends of Friends).</span>
 <span class="sd">            Defaults to ``2``.</span>
@@ -522,7 +523,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Use the shared logic from the SystemList</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span>
+            <span class="c1"># Honour group_depth (findings register F11: the default depth 2</span>
+            <span class="c1"># was always used). The recipes keep depth 2 as their default,</span>
+            <span class="c1"># which is what all fits used until now; a smaller depth freezes</span>
+            <span class="c1"># the neighbours (faster, but blends are fitted worse: on the</span>
+            <span class="c1"># J0103-1305 full chain, depth 0 in refit_all raised chi2 by 14%</span>
+            <span class="c1"># in the forest)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span>
+                <span class="n">target_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components.&quot;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_state</span><span class="p">()</span></div>

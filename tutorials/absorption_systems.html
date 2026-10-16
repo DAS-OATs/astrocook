@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.0.1 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -50,7 +50,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="Continuum Fitting" href="continuum_fitting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -507,6 +507,11 @@
 <p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> and <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
 </div>
 <img alt="The Auto-fit Ly-alpha Forest dialog" class="align-center" src="../images/absorbers_auto_pipeline.png" />
+<div class="admonition important" id="absorbers-b-bound">
+<p class="admonition-title">Important</p>
+<p><strong>Upper bound on b in the pipelines.</strong> The automated pipelines (Ly-alpha forest, doublets, general component detection, Lyman series, associated metals) fit with an upper bound on the Doppler parameter, <strong>Max b</strong> (default <code class="docutils literal notranslate"><span class="pre">50</span></code> km/s). Without it, components in crowded regions such as the forest tend to broaden into their neighbours: the fits become several times slower and produce spurious broad lines.</p>
+<p>A component that ends exactly at the bound (e.g. <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">50</span></code> km/s) may be broader in reality. Select it in the System Inspector and use <strong>Refit Selected</strong>: manual fits use only the physical limit (<code class="docutils literal notranslate"><span class="pre">300</span></code> km/s), so the line can reach its true width. <strong>Refit All</strong> also takes a <strong>Max b</strong> parameter (default <code class="docutils literal notranslate"><span class="pre">300</span></code> km/s).</p>
+</div>
 </section>
 </section>
 <section id="the-system-inspector">
@@ -531,6 +536,10 @@
 <li><p><strong>The <code class="docutils literal notranslate"><span class="pre">resol</span></code> Column:</strong> If your spectrum data contains a <code class="docutils literal notranslate"><span class="pre">resol</span></code> auxiliary column (visible in the Data Inspector), Astrocook will use the specific resolution value at the pixel where the absorption line is centered. This allows for accurate modeling of spectra where <span class="math notranslate nohighlight">\(R\)</span> changes with wavelength.</p></li>
 <li><p><strong>Global Session Resolution (Fallback):</strong> If no component-specific override exists and no <code class="docutils literal notranslate"><span class="pre">resol</span></code> column is present, Astrocook falls back to the global scalar resolution set via <strong>Edit &gt; Set Properties…</strong>. Note that setting a global resolution will automatically generate a flat <code class="docutils literal notranslate"><span class="pre">resol</span></code> column across the entire spectrum.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In the current version, every fit also records the resolution it used in the fitted components, and setting the resolution via <strong>Set Properties</strong> writes it into all components. These values then take priority over the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column in later fits. If you change the resolution of a spectrum after fitting, set it again on the components (right-click &gt; resolution). A single, consistent handling of the resolution is planned.</p>
+</div>
 </section>
 </section>
 <section id="right-panel-velocity-plot">
@@ -605,6 +614,14 @@
 <p>Astrocook also tracks a turbulent broadening parameter <code class="docutils literal notranslate"><span class="pre">btur</span></code> separately. It is available in the table but <strong>frozen (italic)</strong> by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.</p>
 </div>
 </section>
+<section id="uncertainties">
+<h3>Uncertainties<a class="headerlink" href="#uncertainties" title="Link to this heading">#</a></h3>
+<p>The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by <span class="math notranslate nohighlight">\(\sqrt{\chi^2_\nu}\)</span> of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced <span class="math notranslate nohighlight">\(\chi^2_\nu\)</span> is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large <span class="math notranslate nohighlight">\(\chi^2_\nu\)</span> (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.</p>
+</section>
+<section id="importing-a-line-list">
+<h3>Importing a Line List<a class="headerlink" href="#importing-a-line-list" title="Link to this heading">#</a></h3>
+<p><strong>Edit &gt; Import Systems from ASCII…</strong> reads absorption components from a table with a header, in CSV or whitespace-separated format: columns <code class="docutils literal notranslate"><span class="pre">series</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> (required) and optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code> (default 13.0), <code class="docutils literal notranslate"><span class="pre">b</span></code> (default 10 km/s), <code class="docutils literal notranslate"><span class="pre">btur</span></code>, <code class="docutils literal notranslate"><span class="pre">dz</span></code>, <code class="docutils literal notranslate"><span class="pre">dlogN</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>. The <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> written by <strong>File &gt; Export ASCII</strong> can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with <strong>Refit All</strong>.</p>
+</section>
 <section id="refitting">
 <h3>Refitting<a class="headerlink" href="#refitting" title="Link to this heading">#</a></h3>
 <p>After manual edits, you often need to re-optimize the fit:</p>
@@ -612,6 +629,7 @@
 <li><p><strong>Refit Selected:</strong> Select one <strong>or more</strong> components in the table, right-click, and choose “Refit Selected”. This will optimize all highlighted lines (and their physical neighbors) in a batch process.</p></li>
 <li><p><strong>Refit All:</strong> Go to <strong>Absorbers &gt; Refit All Systems…</strong> (in the main window) to re-optimize the entire spectrum, handling blends automatically.</p></li>
 </ul>
+<p>Manual fits (fit after adding a component, <strong>Refit Selected</strong>, <strong>Refit All</strong> with its defaults) bound <code class="docutils literal notranslate"><span class="pre">b</span></code> only at the physical limit of <code class="docutils literal notranslate"><span class="pre">300</span></code> km/s, while the automated pipelines use a tighter bound (<a class="reference internal" href="#absorbers-b-bound">see above</a>). Components that end at the pipeline bound are good candidates for a manual refit.</p>
 <img alt="Linking parameters via the context menu" class="align-center" src="../images/absorbers_linking.png" />
 </section>
 <section id="bayesian-fitting-experimental">
@@ -622,7 +640,7 @@
 <li><p>Select the component(s) you wish to fit in the System List.</p></li>
 <li><p><strong>Right-click</strong> to open the context menu and locate the <strong>Bayesian Fitting</strong> section.</p></li>
 <li><p>Select <strong>Refit Bayesian (MCMC)</strong>.</p></li>
-<li><p>The sampling will run as a batch process, with progress tracked in the main window’s progress bar.</p></li>
+<li><p>The sampling will run as a batch process, with progress tracked in the main window’s progress bar. The first steps of the chain (up to 200, and at most half of the chain) are discarded as burn-in; use enough steps (the default is 500) for the chain to converge.</p></li>
 </ol>
 <p><strong>Visualizing Posteriors (Corner Plots)</strong>
 Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:</p>
@@ -716,6 +734,8 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-components">Adding Components</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#constraints-fix-free">Constraints (Fix/Free)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-linking">Parameter Linking</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainties">Uncertainties</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-a-line-list">Importing a Line List</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refitting">Refitting</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesian-fitting-experimental">Bayesian Fitting (Experimental)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cleaning-results">Cleaning Results</a></li>

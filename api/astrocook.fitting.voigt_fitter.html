@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting.voigt_fitter module &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.fitting.voigt_fitter module &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../static/doctools.js?v=9bcbadda"></script>
     <script src="../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -50,7 +50,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -60,7 +60,7 @@
     <link rel="prev" title="astrocook.fitting.bayesian_fitter module" href="astrocook.fitting.bayesian_fitter.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -533,6 +533,26 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'R'</sp
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties">
+<span class="sig-name descname"><span class="pre">evaluate_uncertainties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.evaluate_uncertainties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties" title="Link to this definition">#</a></dt>
+<dd><p>Recompute the uncertainties of the active components at their current
+values, without fitting.</p>
+<p>Used at the end of the automatic pipelines: <code class="docutils literal notranslate"><span class="pre">refit_all</span></code> fits each
+group while its neighbours still have their initial values, so the
+chi2 of that fit is not the chi2 of the final model (issue #534).
+One numerical Jacobian is computed at the current parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new system list with <code class="docutils literal notranslate"><span class="pre">dz</span></code>, <code class="docutils literal notranslate"><span class="pre">dlogN</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code> and <code class="docutils literal notranslate"><span class="pre">chi2</span></code> of the
+active components updated.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context">
 <span class="sig-name descname"><span class="pre">prepare_fit_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.prepare_fit_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context" title="Link to this definition">#</a></dt>
 <dd><p>Prepares the internal state for fitting (masks, background, vectorized data).</p>
@@ -571,7 +591,7 @@ after <a class="reference internal" href="#astrocook.fitting.voigt_fitter.VoigtF
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.VoigtFitterV2.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_nfev</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'trf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/voigt_fitter.html#VoigtFitterV2.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit" title="Link to this definition">#</a></dt>
 <dd><p>Execute the Voigt profile optimization.</p>
 <p>Performs a least-squares fit of the active components to the spectrum.
 Includes automatic spatial pre-filtering (fitting only pixels near the lines)
@@ -584,6 +604,12 @@ and vectorized optical depth calculation.</p>
 <li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity window (km/s) around component centers to include in the fit mask.
 Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 <li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbosity level for <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>b_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Upper bound (km/s) on the free b parameters, tighter than the
+physical limit of the constraint model (300 km/s). Used by the
+automatic pipelines to keep the components from broadening into
+their neighbours; components that end at this bound may be broader
+and can be refitted without it. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> (no extra
+bound).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -676,6 +702,7 @@ system list, without performing any fitting/optimization.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.convolve_flux"><code class="docutils literal notranslate"><span class="pre">convolve_flux()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.evaluate_uncertainties()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.prepare_fit_context()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.get_fit_context_data"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.get_fit_context_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.fit()</span></code></a></li>

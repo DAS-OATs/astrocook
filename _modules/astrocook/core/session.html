@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.session &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.core.session &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -580,7 +580,14 @@
             <span class="n">v2_metadata</span><span class="o">=</span><span class="n">v2_metadata</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v2_metadata</span> <span class="ow">and</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;log_type&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;v2&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+                    <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;log_history_json&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not restore the session log: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">session</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> 
         <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Load failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -776,6 +783,29 @@
         <span class="k">return</span> <span class="n">new_session</span></div>
 
     
+<div class="viewcode-block" id="SessionV2.log_lost_on_save">
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.log_lost_on_save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_lost_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tell whether saving to ``file_path`` would drop the session log.</span>
+
+<span class="sd">        The V1 ``.acs`` format cannot store a V2 log (:class:`HistoryLogV2`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_path : str</span>
+<span class="sd">            The destination path, as passed to :meth:`save`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            ``True`` if the file would be saved in V1 format and the session</span>
+<span class="sd">            has a V2 log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_v1</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.acs2&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">is_v1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="SessionV2.save">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
@@ -830,11 +860,11 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="p">,</span> <span class="n">V1LogArtifact</span><span class="p">):</span>
                 <span class="n">json_log_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="o">.</span><span class="n">v1_json</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">):</span>
-                <span class="c1"># We can serialize the V2 log for documentation in V1</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">json_log_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="p">))</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="n">json_log_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;set_menu&quot;</span><span class="p">:</span> <span class="p">[]})</span>
+                <span class="c1"># The V1 format cannot store the V2 log: it is dropped on purpose</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;The V1 .acs format does not store the V2 session log: the log &quot;</span>
+                    <span class="s2">&quot;was not saved. Save as .acs2 to keep it.&quot;</span><span class="p">)</span>
+                <span class="n">json_log_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;set_menu&quot;</span><span class="p">:</span> <span class="p">[]})</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Cannot save V2 log to V1 .acs archive. Log will be empty.&quot;</span><span class="p">)</span>
                 <span class="n">json_log_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;set_menu&quot;</span><span class="p">:</span> <span class="p">[]})</span>

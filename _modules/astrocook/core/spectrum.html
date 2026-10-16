@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.spectrum &#8212; Astrocook 2.0.1 documentation</title>
+    <title>astrocook.core.spectrum &#8212; Astrocook 2.0.2 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../static/documentation_options.js?v=f5cff4aa"></script>
+    <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
     <script src="../../../static/doctools.js?v=9bcbadda"></script>
     <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.1" />
+  <meta name="docsearch:version" content="2.0.2" />
   </head>
   
   
@@ -1567,6 +1567,12 @@
         <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x_final</span><span class="p">,</span> <span class="n">x_u</span><span class="p">)</span>
         <span class="n">new_meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
         <span class="n">new_meta</span><span class="p">[</span><span class="s1">&#39;stitched&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Overlapping inputs give interleaved pixels, which a step plot draws</span>
+        <span class="c1"># as a zigzag: ask the GUI for a scatter plot (issue #442). Rebin and</span>
+        <span class="c1"># coadd remove the tag again.</span>
+        <span class="n">ranges</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">lo</span> <span class="o">&lt;</span> <span class="n">prev_hi</span> <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">prev_hi</span><span class="p">),</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ranges</span><span class="p">,</span> <span class="n">ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+            <span class="n">new_meta</span><span class="p">[</span><span class="s1">&#39;plot_style&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scatter&#39;</span>
         
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x_final</span><span class="p">,</span> <span class="n">x_u</span><span class="p">),</span>
@@ -2500,7 +2506,14 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        fudge : float or str</span>
-<span class="sd">            Fudge factor. Can be a float or ``&#39;auto&#39;``.</span>
+<span class="sd">            Fudge factor. Can be a float or ``&#39;auto&#39;``. With ``&#39;auto&#39;`` the</span>
+<span class="sd">            factor is computed from the residuals of the unabsorbed pixels</span>
+<span class="sd">            around the interpolated continuum, which passes through those</span>
+<span class="sd">            pixels: it is 1 by construction. In V1 the automatic fudge</span>
+<span class="sd">            corrected the running mean from which V1 builds the continuum;</span>
+<span class="sd">            V2 interpolates instead, so there is nothing to correct</span>
+<span class="sd">            (findings register F3, accepted). The bias of the final</span>
+<span class="sd">            smoothing is not corrected.</span>
 <span class="sd">        smooth_std_kms : float</span>
 <span class="sd">            Smoothing width for the continuum spline in km/s.</span>
 <span class="sd">        mask_col : str, optional</span>
