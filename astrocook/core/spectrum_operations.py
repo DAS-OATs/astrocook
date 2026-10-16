@@ -451,42 +451,51 @@ def rebin_spectrum(
     
     return x_out, xmin_out, xmax_out, y_out, dy_out, resol_out
 
+def _window_mean(values: np.ndarray, valid: np.ndarray, h: int) -> np.ndarray:
+    """Mean over a window of 2h+1 pixels of the valid values only
+    (normalized convolution): exact at the edges, where the window holds
+    fewer pixels, and with NaN or masked pixels ignored."""
+    kernel = np.ones(2 * h + 1)
+    w = valid.astype(float)
+    num = np.convolve(np.where(valid, values, 0.0), kernel, mode='same')
+    den = np.convolve(w, kernel, mode='same')
+    with np.errstate(invalid='ignore', divide='ignore'):
+        return np.where(den > 0, num / den, np.nan)
+
+
 def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
-    Computes a running mean of an array.
+    Computes a running mean of an array over windows of 2h+1 pixels.
+
+    Normalized convolution (findings register F30, decided with Guido): at
+    the edges the mean is taken over the pixels available in the window,
+    and NaN values are ignored. A plain ``np.convolve(mode='same')`` pads
+    with zeros, which biased the first and last h values towards 0.
     """
+    y = np.asarray(y, dtype=float)
     window_size = 2 * h + 1
     if window_size > len(y):
         logging.warning(f"Running mean window ({window_size}) is larger than array ({len(y)}), returning array mean.")
-        return np.full_like(y, np.mean(y))
-        
-    # Use 'same' mode to keep array length, symmetric padding
-    return np.convolve(y, np.ones(window_size) / window_size, mode='same')
+        return np.full_like(y, np.nanmean(y))
+    return _window_mean(y, np.isfinite(y), h)
 
 def running_std(y: np.ndarray, h: int) -> np.ndarray:
     """
     Computes a running standard deviation (RMS with respect to the local mean).
-    Uses the identity: var = <y^2> - <y>^2
+    Uses the identity: var = <y^2> - <y>^2, with the same normalized
+    convolution as :func:`running_mean` (exact at the edges, NaN ignored).
     """
+    y = np.asarray(y, dtype=float)
     window_size = 2 * h + 1
     if window_size > len(y):
         logging.warning(f"Window ({window_size}) larger than array ({len(y)}), returning overall std.")
         return np.full_like(y, np.nanstd(y))
-        
-    kernel = np.ones(window_size) / window_size
-    
-    # 1. Calculate running mean of y: <y>
-    mean_y = np.convolve(y, kernel, mode='same')
-    
-    # 2. Calculate running mean of y squared: <y^2>
-    mean_y_sq = np.convolve(y**2, kernel, mode='same')
-    
-    # 3. Calculate variance: <y^2> - <y>^2
+    valid = np.isfinite(y)
+    mean_y = _window_mean(y, valid, h)
+    mean_y_sq = _window_mean(y**2, valid, h)
     running_var = mean_y_sq - mean_y**2
-    
-    # 4. Clip small negative values due to floating-point errors
+    # Clip small negative values due to floating-point errors
     running_var[running_var < 0] = 0
-    
     return np.sqrt(running_var)
 
 def find_absorbed_regions(

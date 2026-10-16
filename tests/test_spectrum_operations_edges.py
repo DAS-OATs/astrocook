@@ -76,16 +76,26 @@ def test_running_std_of_a_constant_is_zero():
     np.testing.assert_array_less(out[3:-3], 1e-6)
 
 
-def test_running_mean_and_std_pad_the_edges_with_zeros():
-    # Characterization of F30: np.convolve(mode='same') pads with zeros, so
-    # the first and last h values are biased towards 0 (V1 repeats the first
-    # and last full-window value instead)
-    y = np.ones(50)
+def test_running_mean_and_std_are_exact_at_the_edges():
+    # Regression test for F30: np.convolve(mode='same') padded with zeros,
+    # so the first and last h values were biased towards 0 (4/7 of the
+    # true mean at the edge for h = 3). Normalized convolution: the mean of
+    # the pixels available in the window
     h = 3
-    mean = running_mean(y, h)
-    np.testing.assert_allclose(mean[:h + 1], [4 / 7, 5 / 7, 6 / 7, 1.0])
-    np.testing.assert_allclose(mean[h:-h], 1.0)
-    assert running_std(y, h)[0] > 0.4
+    np.testing.assert_allclose(running_mean(np.ones(50), h), 1.0)
+    np.testing.assert_allclose(running_std(np.ones(50), h), 0.0, atol=1e-12)
+    ramp = np.arange(50.0)
+    mean = running_mean(ramp, h)
+    np.testing.assert_allclose(mean[:2], [1.5, 2.0])   # mean of 0..3, 0..4
+    np.testing.assert_allclose(mean[h:-h], ramp[h:-h])
+
+
+def test_running_mean_and_std_ignore_nan():
+    y = np.ones(30)
+    y[10] = np.nan
+    assert np.all(np.isfinite(running_mean(y, 2)))
+    np.testing.assert_allclose(running_mean(y, 2), 1.0)
+    np.testing.assert_allclose(running_std(y, 2), 0.0, atol=1e-12)
 
 
 # --- compute_auto_fudge, interpolate_continuum_mask -----------------------
