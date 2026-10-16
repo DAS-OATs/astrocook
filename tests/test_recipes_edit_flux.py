@@ -333,6 +333,21 @@ def test_stitch():
     assert session.edit.stitch([]) is session
 
 
+def test_stitch_overlap_asks_for_scatter_plot():
+    # Issue #442: overlapping regions give interleaved pixels, drawn as a
+    # zigzag by the default step plot; stitch asks the GUI for a scatter plot
+    blue, red = _spec(612.0, 616.5), _spec(616.0, 620.0, seed=1)
+    session = _session(blue, gui=_gui(red=SimpleNamespace(spec=red)))
+    assert session.edit.stitch(["red"]).spec.meta.get("plot_style") == "scatter"
+    # Adjacent regions: no overlap, default style
+    adjacent = _session(_spec(612.0, 616.0), gui=_gui(red=SimpleNamespace(
+        spec=_spec(616.0, 620.0, seed=1))))
+    assert "plot_style" not in adjacent.edit.stitch(["red"]).spec.meta
+    # Rebinning the stitched spectrum goes back to the default style
+    rebinned = session.edit.stitch(["red"]).flux.rebin(dx="5.0")
+    assert "plot_style" not in rebinned.spec.meta
+
+
 def test_coadd(snapshot):
     a, b = _spec(seed=1), _spec(seed=2, scale=1.1)
     gui = _gui(a=SimpleNamespace(spec=a), b=SimpleNamespace(spec=b))

@@ -1085,6 +1085,12 @@ class SpectrumV2:
         xmin, xmax = _auto_limits(x_final, x_u)
         new_meta = deepcopy(self.meta)
         new_meta['stitched'] = True
+        # Overlapping inputs give interleaved pixels, which a step plot draws
+        # as a zigzag: ask the GUI for a scatter plot (issue #442). Rebin and
+        # coadd remove the tag again.
+        ranges = sorted((np.nanmin(x), np.nanmax(x)) for x in xs if len(x))
+        if any(lo < prev_hi for (_, prev_hi), (lo, _) in zip(ranges, ranges[1:])):
+            new_meta['plot_style'] = 'scatter'
         
         new_data = SpectrumDataV2(
             x=DataColumnV2(x_final, x_u),
