@@ -8,8 +8,10 @@ Packaging release. **No numerical result changes** with respect to 2.0.2.
 - Optional extras `[docs]` (to build the documentation) and `[build]` (to build the macOS app).
 
 ### Fixed
+- *Security*: opening a crafted `.acs2` or `.acs` archive could write files outside the temporary folder; such archives are now refused.
 - Installed with pip, the GUI started without its window icon and splash screen: the images now ship with the package.
 - The macOS build (`Astrocook.spec`) worked only on one machine (absolute paths); `build_app.sh` ran PyInstaller twice.
+- The online documentation is now published automatically after each change.
 - The documentation and build scripts stop at once with the command to run when Sphinx or PyInstaller is missing.
 
 ### Removed

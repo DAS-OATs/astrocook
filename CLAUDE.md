@@ -112,8 +112,8 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 
 Phase 2 done, released as 2.0.3 (packaging, no numerical changes). Left
 open from phase 2 (`ROADMAP.md`, phase 2): LICENSE (GPLv3 or later, PR #549
-draft, waits for INAF), optional `[bayes]` extra, automatic docs
-deployment, Docker renewal, size of the telluric files.
+draft, waits for INAF), optional `[bayes]` extra, Docker renewal, size
+of the telluric files.
 
 Current: phase 3. Work in small PRs, one at a time; wait for the merge
 before the next. While #549 is open, each new PR goes on its own

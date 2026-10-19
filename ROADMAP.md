@@ -408,7 +408,7 @@ calibrated on the observed variation; a resolving power wrong by 11% on the
 mock fails them.
 
 ### Phase 2 – Cleanup and packaging
-Done (October 2026), PRs #543-#552:
+Done (October 2026), PRs #543-#554:
 - obsolete files removed after checking that nothing uses them:
   `legacy_home/`, backup data files shipped in every package (~54 MB),
   the Gemfile of the V1 docs (`docs_backup/`, still deployed under
@@ -420,9 +420,12 @@ Done (October 2026), PRs #543-#552:
 - GUI images inside the package (`astrocook/assets/`);
 - macOS build: relative paths in `Astrocook.spec`, single PyInstaller run
   in `build_app.sh`; build and docs scripts check their tools;
-- docs: installation with pip from GitHub;
+- docs: installation with pip from GitHub; the website is published by
+  `.github/workflows/docs.yml` after each merge (`build_site.sh`,
+  `deploy_docs.sh` kept as a manual fallback);
 - F18 (all Dependabot alerts were on the V1 Gemfile), F31 (dead
-  identification code) fixed; F34 found.
+  identification code), F35 (archives unpacked without a path check)
+  fixed; F34 found.
 
 Left open:
 - **LICENSE**: GPLv3 or later agreed with Guido; PR #549 waits as a draft
@@ -430,8 +433,6 @@ Left open:
   PyPI publication (2.1.0).
 - Optional `[bayes]` extra (emcee, dynesty, corner optional, with a clear
   message and the GUI entries disabled): Guido's decision.
-- Automatic docs deployment with GitHub Actions instead of
-  `deploy_docs.sh`: agreed, not done yet.
 - Docker containers (`containers/`, broken since the V1 launchers moved):
   renewal to be discussed with Guido.
 - `telluric.fits` and `sky_telluric.fits` (~62 MB each, used only by
@@ -484,7 +485,8 @@ Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 3 →
   state which numerical results change.
 - **2.0.3 (packaging), after phase 2 (October 2026):** the `astrocook`
   command, installation with pip from GitHub, images in the package,
-  macOS build fixes, cleanup; no numerical result changes. No license
+  macOS build fixes, safe unpacking of archives (F35), automatic docs
+  deployment, cleanup; no numerical result changes. No license
   yet (#549).
 - **2.1.0 (first consolidated release), after phases 2-3:** clean packaging
   (LICENSE, entry point, realistic dependency versions), V2 no longer
