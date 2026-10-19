@@ -1,35 +1,26 @@
-# pyproject.toml
-
 [build-system]
-# Specifies that setuptools is needed to build the package
-requires = ["setuptools>=61.0"] # Use a reasonably modern version of setuptools
-# Specifies the function setuptools uses to build the package
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# --- Core Metadata (PEP 621) ---
 name = "astrocook"
-# !! IMPORTANT: Replace "1" with your actual current version !!
-# Consider using setuptools-scm later to get version from Git tags automatically
 version = "2.0.2"
 description = "Python package for the analysis of quasar spectra"
-readme = "README.md" # Assumes you have a README.md file
-requires-python = ">=3.12" # Specify the minimum Python version you support
-#license = { file = "LICENSE" } # Assumes you have a LICENSE file in the root
+readme = "README.md"
+requires-python = ">=3.12"
+# License: GPLv3, to be added with the LICENSE file (phase 2, ROADMAP.md)
+#license = { file = "LICENSE" }
 authors = [
-  # !! IMPORTANT: Replace with your actual name and email !!
   { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
 ]
 maintainers = [
-  # !! IMPORTANT: Replace with your actual name and email !!
   { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
 ]
 keywords = ["astronomy", "spectroscopy", "quasar", "science", "spectra"]
 classifiers = [
-    # Choose appropriate classifiers from https://pypi.org/classifiers/
-    "Development Status :: 4 - Beta", # Or 3 - Alpha / 5 - Production/Stable
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    #"License :: OSI Approved :: GNU General Public License v3 (GPLv3)", # Match your LICENSE
+    #"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -37,33 +28,29 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Astronomy",
 ]
 
-# --- Dependencies ---
+# Lower bounds: the oldest versions with Python 3.12 support where known;
+# to be reviewed with the Dependabot alerts (F18, phase 2)
 dependencies = [
-    # !! IMPORTANT: List ALL essential runtime dependencies here !!
-    # Check your imports carefully. This is a starting guess:
     "PySide6>=6.10",
-    "astropy>=6.1",      # Core astronomy data structures (Table, units)
-    "tqdm>=4.66",
+    "astropy>=6.1",
+    "numpy>=1.26",
+    "scipy>=1.14",
     "matplotlib>=3.9",
-    "scipy>=1.14",        # Scientific algorithms (fitting, interpolation)
-    "lmfit>=1.3",
     "scienceplots>=2.1",
-    "specutils>=0.6",
-    "numpy>=1.17.3",       # Core numerical operations
-    "cycler>=0.10",
-    "statsmodels>=0.10.1",   # Plotting library
     "numexpr",
     "qtawesome",
+    # Bayesian fit (fitting/bayesian_fitter.py, gui/corner_plot.py)
     "emcee",
     "dynesty",
     "corner",
-    # Add any others you import directly (e.g., requests, emcee, etc.)
+    # Used only by astrocook/legacy/ (phase 3)
+    "lmfit>=1.3",
+    "tqdm>=4.66",
+    "cycler>=0.10",
 ]
 
-# --- Optional Dependencies ---
 [project.optional-dependencies]
 test = [
-    # Dependencies needed only for running tests
     "pytest",
     "pytest-mock",
     "pytest-qt",
@@ -75,35 +62,27 @@ dev = [
     "ruff",
     "mutmut",
 ]
-# You could add other groups like 'docs' or 'bayesian' later
-
+# V1 wx GUI (astrocook/legacy/, phase 3)
 legacy = ["wxPython"]
 
-# --- Entry Points (e.g., for command-line scripts) ---
 [project.scripts]
-# If running `astrocook-gui` should launch your GUI:
-#astrocook-gui = "astrocook.gui:main" # Assumes gui.py has a main() function
+# Launch the GUI: `astrocook [file ...]` (same as `python -m astrocook`)
+astrocook = "astrocook._run_astrocook:main"
 
-# --- Project URLs ---
 [project.urls]
-Homepage = "https://github.com/DAS-OATs/astrocook" # Or your specific homepage
+Homepage = "https://github.com/DAS-OATs/astrocook"
 Repository = "https://github.com/DAS-OATs/astrocook"
-# Bug-Tracker = "https://github.com/DAS-OATs/astrocook/issues" # Optional
+Issues = "https://github.com/DAS-OATs/astrocook/issues"
 
-
-# --- Setuptools specific configuration ---
 [tool.setuptools]
-# This is where include-package-data belongs:
+# Ships astrocook/data (grafted in MANIFEST.in)
 include-package-data = true
 
 [tool.setuptools.packages.find]
-# Tells setuptools to automatically find packages in the current directory (.)
-# It will find the 'astrocook' directory containing an '__init__.py'.
 where = ["."]
-include = ["astrocook*"] # Include directories starting with 'astrocook'
-exclude = ["tests*"]     # Exclude the tests directory from the package itself
+include = ["astrocook*"]
+exclude = ["tests*"]
 
-# --- Pytest specific configuration (optional but helpful) ---
 [tool.pytest.ini_options]
 minversion = "6.0"
 # Show summary of all failures/errors/skips/xfails/xpasses at the end (-ra)
@@ -125,19 +104,15 @@ extend-exclude = ["astrocook/legacy", "docs_backup"]
 select = ["F"]
 
 [tool.coverage.run]
-# CRITICAL FIX: Tell the coverage tool that the source code starts in the 'astrocook' directory.
-# This resolves the "Module was never imported" error.
 source = ["astrocook"]
 # Also measure the child processes (the full-chain snapshots run the chain
 # in a subprocess, see tests/full_chain.py)
 patch = ["subprocess"]
 
 [tool.coverage.report]
-# Configure which files to include/exclude from the report (optional)
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
-    # Add other boilerplate lines to exclude here
 ]
 
 # Mutation testing (phase 1, item 6 of ROADMAP.md): run by hand, not in CI.
