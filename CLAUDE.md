@@ -27,7 +27,8 @@ Current version: 2.0.2. Python ≥3.12.
 - `astrocook/mocks/` – synthetic spectra with known parameters, independent
   of the fitting code (do not make it depend on `fitting/`).
 - `astrocook/legacy/` – V1 code, still imported by several V2 modules.
-  To be removed progressively (phase 3); do not use it for new code.
+  To be removed progressively in phase 3 (the V1 routines used by the parity
+  tests move to a test-only reference module); do not use it for new code.
 
 ## How to work
 - Environment: in cloud sessions `.claude/hooks/session-start.sh` installs
@@ -85,17 +86,28 @@ loaders, X-Shooter VIS/NIR data (F15).
 
 Phase 1-bis (findings register, `ROADMAP.md` section 3.2) fixed F1, F2, F5,
 F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33
-and issues #480, #442; F3 accepted. Deferred to GitHub issues, to be
-scheduled with Guido: #526 (resolution as a single column, exact
+and issues #480, #442; F3 accepted. Deferred to GitHub issues, scheduled
+for phase 4: #526 (resolution as a single column, exact
 convolution: F8, F22, rest of F10, F9, F14), #465 (continuum: spikes, F30,
 F17), #517
 (components at the bounds, F21), #518 (editable z window, F4). F15 waits
 for data.
 
 Release 2.0.2 (October 2026) includes phase 1-bis and #534 (errors scaled
-with the chi2 of the final model). Next: to be decided with Guido (the
-deferred issues or phase 2). Work in small PRs, one at a time; wait for the merge before the
-next.
+with the chi2 of the final model). Sequence agreed with Guido (October
+2026; `ROADMAP.md`, section 3):
+1. phase 2 – cleanup and packaging (obsolete files, `pyproject.toml`,
+   LICENSE, F18, F31);
+2. phase 3 – decoupling from `legacy/` (the V1 routines used by the parity
+   tests move to a test-only reference module, they are not deleted);
+3. release 2.1.0, first publication on PyPI;
+4. phase 4 – scientific correctness: #526, #517, #465, #518;
+5. release 2.2.0;
+6. phase 5 – splitting large files;
+7. phase 6 – error handling.
+
+Current: phase 2. Work in small PRs, one at a time; wait for the merge
+before the next.
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;
