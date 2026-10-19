@@ -18,5 +18,11 @@ Partly funded by the PRIN PNRR project “Next generation computing & data techn
 
 If you use Astrocook in your research, please cite: **[Cupani et al. 2020](https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/abstract)**.
 
+## License
+Astrocook is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE).
+
 ## Disclaimer
 THE SOFTWARE ASTROCOOK IS PROVIDED ​“AS IS”. THE DEVELOPERS OF ASTROCOOK MAKE NO OTHER WARRANTIES, EXPRESS OR IMPLIED, AND HEREBY DISCLAIM ALL IMPLIED WARRANTIES, INCLUDING ANY WARRANTY OF MERCHANTABILITY AND WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE.
