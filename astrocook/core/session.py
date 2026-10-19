@@ -98,7 +98,9 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             logging.debug(f"Unpacking V2 archive: {archive_path}")
             temp_dir = tempfile.mkdtemp()
             with tarfile.open(archive_path, 'r:gz') as tar:
-                tar.extractall(path=temp_dir)
+                # "data" filter: refuse members that would land outside
+                # temp_dir (absolute paths, "..", links), F35
+                tar.extractall(path=temp_dir, filter="data")
             
             # 1. FIND THE ACTUAL FITS FILE
             spec_file_path = None

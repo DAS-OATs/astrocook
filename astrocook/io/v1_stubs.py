@@ -25,7 +25,9 @@ class V1ArchiveManager:
         try:
             self.temp_dir = tempfile.mkdtemp()
             with tarfile.open(self.acs_path, 'r:gz') as tar:
-                tar.extractall(path=self.temp_dir)
+                # "data" filter: refuse members that would land outside
+                # temp_dir (absolute paths, "..", links), F35
+                tar.extractall(path=self.temp_dir, filter="data")
             logging.debug(f"Unpacked archive to temporary directory: {self.temp_dir}")
             return self.temp_dir
         except Exception as e:
