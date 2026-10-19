@@ -1,11 +1,11 @@
 #!/bin/bash
 
+# Builds the website (build_site.sh) and pushes it to gh-pages by hand.
+# The same happens automatically after each merge to master
+# (.github/workflows/docs.yml); this script stays as a fallback.
+
 # --- Configuration ---
-DOCS_DIR="docs"
-BUILD_OUTPUT="docs/_build/html"
 TARGET_BRANCH="gh-pages"
-TARGET_FOLDER="."
-SOURCE_PACKAGE="astrocook" 
 
 # Stop the script if any command fails
 set -e
@@ -30,67 +30,10 @@ fi
 
 CURRENT_BRANCH=$(git branch --show-current)
 
-# 1. Regenerate API stubs
-echo -e "${BLUE}Step 1: Regenerating API stubs...${NC}"
-sphinx-apidoc -f -e --no-toc -o "$DOCS_DIR/api" "$SOURCE_PACKAGE" \
-    astrocook/core/atomic_data.py \
-    astrocook/core/photometry.py \
-    astrocook/core/session_manager.py \
-    astrocook/core/spectrum_operations.py \
-    astrocook/core/system_list_migration.py \
-    astrocook/core/utils.py \
-    astrocook/gui/*.py \
-    astrocook/io/*.py
-
-rm docs/api/astrocook.rst docs/api/astrocook.settings.rst
-
-# 2. Build the HTML
-echo -e "${BLUE}Step 2: Building HTML...${NC}"
-cd "$DOCS_DIR"
-make clean
-make html
-cd ..
-
-# 3. Post-Processing: Rename folders to bypass Jekyll ignore rules
-# This is crucial for hosting on gh-pages without a .nojekyll file
-echo -e "${BLUE}Step 3: Patching HTML for Jekyll compatibility...${NC}"
-
-# Create a temp dir
+# 1-3. Build the site (V2 docs, V1 docs under /v1/, Jekyll patches)
+echo -e "${BLUE}Steps 1-3: Building the site...${NC}"
 TEMP_DIR=$(mktemp -d)
-cp -r "$BUILD_OUTPUT"/* "$TEMP_DIR"
-
-# Explicitly copy the switcher file to the root of the website
-cp switcher.json "$TEMP_DIR/" 2>/dev/null || cp docs/switcher.json "$TEMP_DIR/"
-
-# Inject the V1 legacy documentation
-echo -e "${BLUE}Injecting V1 legacy documentation into /v1/...${NC}"
-mkdir -p "$TEMP_DIR/v1"
-# Copy the pre-built V1 HTML files into the new v1 directory
-cp -r docs_backup/* "$TEMP_DIR/v1/" 2>/dev/null || echo "Warning: docs_backup not found"
-
-# Restore the Jekyll config to the root so the V1 theme loads
-cp docs_backup/_config.yml "$TEMP_DIR/" 2>/dev/null || echo "Warning: _config.yml not found"
-
-# Go into the temp dir to perform operations
-pushd "$TEMP_DIR" > /dev/null
-
-# A. Rename directories if they exist
-[ -d "_static" ] && mv "_static" "static"
-[ -d "_images" ] && mv "_images" "images"
-[ -d "_sources" ] && mv "_sources" "sources"
-
-# B. Patch the HTML files (MacOS compatible sed)
-# We look for references to _static, _images, etc., and remove the underscore
-find . -name '*.html' -type f -exec sed -i '' 's/_static/static/g' {} +
-find . -name '*.html' -type f -exec sed -i '' 's/_images/images/g' {} +
-find . -name '*.html' -type f -exec sed -i '' 's/_sources/sources/g' {} +
-
-# C. Patch the Javascript search index (attempts to fix search box)
-find . -name '*.js' -type f -exec sed -i '' 's/_static/static/g' {} +
-find . -name '*.js' -type f -exec sed -i '' 's/_images/images/g' {} +
-find . -name '*.js' -type f -exec sed -i '' 's/_sources/sources/g' {} +
-
-popd > /dev/null
+./build_site.sh "$TEMP_DIR"
 
 # 4. Switch to gh-pages and Deploy
 echo -e "${BLUE}Step 4: Switching to $TARGET_BRANCH...${NC}"
