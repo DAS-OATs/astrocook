@@ -62,6 +62,17 @@ dev = [
     "ruff",
     "mutmut",
 ]
+# User documentation (docs/; generate_sphinx.sh, generate_html.sh,
+# deploy_docs.sh)
+docs = [
+    "sphinx",
+    "myst-parser",
+    "sphinx-design",
+    "pydata-sphinx-theme",
+]
+# macOS app (build_app.sh, Astrocook.spec); the DMG also needs create-dmg
+# (brew install create-dmg)
+build = ["pyinstaller"]
 # V1 wx GUI (astrocook/legacy/, phase 3)
 legacy = ["wxPython"]
 

@@ -18,6 +18,10 @@ NC='\033[0m'
 echo -e "${BLUE}=== Starting Documentation Deployment (Jekyll-Friendly Mode) ===${NC}"
 
 # 0. Safety Check
+if ! command -v sphinx-apidoc &> /dev/null; then
+    echo "Error: sphinx-apidoc not found. Install it with: pip install -e \".[docs]\""
+    exit 1
+fi
 if [[ -n $(git status -s) ]]; then
     echo "Error: Your working directory is not clean."
     echo "Please commit or stash your changes before running this script."
