@@ -549,7 +549,9 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unpacking V2 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
             <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="s1">'r:gz'</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
-                <span class="n">tar</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">temp_dir</span><span class="p">)</span>
+                <span class="c1"># "data" filter: refuse members that would land outside</span>
+                <span class="c1"># temp_dir (absolute paths, "..", links), F35</span>
+                <span class="n">tar</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">temp_dir</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s2">"data"</span><span class="p">)</span>
             
             <span class="c1"># 1. FIND THE ACTUAL FITS FILE</span>
             <span class="n">spec_file_path</span> <span class="o">=</span> <span class="kc">None</span>
