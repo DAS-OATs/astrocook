@@ -408,9 +408,36 @@ calibrated on the observed variation; a resolving power wrong by 11% on the
 mock fails them.
 
 ### Phase 2 – Cleanup and packaging
-Obsolete and backup files; `pyproject.toml` (placeholders, version
-constraints, entry point, optional `[bayes]` extra); **LICENSE (Guido's
-decision)**.
+Done (October 2026), PRs #543-#554:
+- obsolete files removed after checking that nothing uses them:
+  `legacy_home/`, backup data files shipped in every package (~54 MB),
+  the Gemfile of the V1 docs (`docs_backup/`, still deployed under
+  `/v1/`, stays); the `legacy/*_old.py` modules stay for phase 3;
+- `pyproject.toml`: placeholders removed, unused dependencies
+  (`statsmodels`, `specutils`) dropped, `numpy>=1.26`, `astrocook`
+  command (launcher moved into the package, `python -m astrocook` works
+  from any directory), extras `[docs]` and `[build]`;
+- GUI images inside the package (`astrocook/assets/`);
+- macOS build: relative paths in `Astrocook.spec`, single PyInstaller run
+  in `build_app.sh`; build and docs scripts check their tools;
+- docs: installation with pip from GitHub; the website is published by
+  `.github/workflows/docs.yml` after each merge (`build_site.sh`,
+  `deploy_docs.sh` kept as a manual fallback);
+- F18 (all Dependabot alerts were on the V1 Gemfile), F31 (dead
+  identification code), F35 (archives unpacked without a path check)
+  fixed; F34 found.
+
+Left open:
+- **LICENSE**: GPLv3 or later agreed with Guido; PR #549 waits as a draft
+  for INAF (copyright holder) and for the contributors. Needed before the
+  PyPI publication (2.1.0).
+- Optional `[bayes]` extra (emcee, dynesty, corner optional, with a clear
+  message and the GUI entries disabled): Guido's decision.
+- Docker containers (`containers/`, broken since the V1 launchers moved):
+  renewal to be discussed with Guido.
+- `telluric.fits` and `sky_telluric.fits` (~62 MB each, used only by
+  `legacy/`) keep the wheel near PyPI's 100 MB limit: to be decided in
+  phase 3.
 
 ### Phase 3 – Decoupling from legacy
 One dependency at a time (`Defaults`, `trans_parse`, `xem_d`, … become V2
@@ -448,14 +475,19 @@ an item to discuss.
 ### Releases
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
-Sequence agreed with Guido (October 2026): phase 2 → phase 3 → 2.1.0 →
-phase 4 → 2.2.0 → phase 5 → phase 6.
+Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 3 →
+2.1.0 → phase 4 → 2.2.0 → phase 5 → phase 6.
 - **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
   fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
   F29, F32, #534) and issues #480, #442, together with the earlier fixes
   (ASCII export #476/#481, warning on saving to V1 `.acs`). #465 and the
   rest of F10 were deferred (#465, #526). Release notes in `CHANGELOG.md`
   state which numerical results change.
+- **2.0.3 (packaging), after phase 2 (October 2026):** the `astrocook`
+  command, installation with pip from GitHub, images in the package,
+  macOS build fixes, safe unpacking of archives (F35), automatic docs
+  deployment, cleanup; no numerical result changes. No license
+  yet (#549).
 - **2.1.0 (first consolidated release), after phases 2-3:** clean packaging
   (LICENSE, entry point, realistic dependency versions), V2 no longer
   importing `legacy/`; first publication on PyPI. Also the macOS app, as
@@ -573,7 +605,7 @@ phase: F18, F31 (phase 2); F6, F7 (phases 3/5); F12, F13 (phase 5); F28
 the availability of test data.
 
 ### Decisions reserved to Guido
-- License.
+- License: GPLv3 or later (decided); copyright holder pending INAF (#549).
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
@@ -657,7 +689,7 @@ review); each of its decisions goes into the log.
 | 0 – Environment | done (October 2026) |
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
 | 1-bis – Findings and urgent issues (section 3.3) | done (October 2026): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33, #480, #442 fixed; F3 accepted; deferred to issues: #526 (F8, F22, F10, F9, F14), #534, #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data |
-| 2 – Cleanup and packaging | not started |
+| 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 3 – Decoupling from legacy | not started |
 | 4 – Scientific correctness (#526, #517, #465, #518) | not started |
 | 5 – Splitting large files | not started |

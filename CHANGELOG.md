@@ -1,3 +1,23 @@
+## [2.0.3] - 2026-10-19
+
+Packaging release. **No numerical result changes** with respect to 2.0.2.
+
+### Added
+- `astrocook [file ...]` command to launch the GUI; `python -m astrocook` now works from any directory (it needed the root of a source checkout).
+- Installation with pip directly from GitHub: `pip install git+https://github.com/DAS-OATs/astrocook.git` (see the installation page; Astrocook is not on PyPI yet).
+- Optional extras `[docs]` (to build the documentation) and `[build]` (to build the macOS app).
+
+### Fixed
+- *Security*: opening a crafted `.acs2` or `.acs` archive could write files outside the temporary folder; such archives are now refused.
+- Installed with pip, the GUI started without its window icon and splash screen: the images now ship with the package.
+- The macOS build (`Astrocook.spec`) worked only on one machine (absolute paths); `build_app.sh` ran PyInstaller twice.
+- The online documentation is now published automatically after each change.
+- The documentation and build scripts stop at once with the command to run when Sphinx or PyInstaller is missing.
+
+### Removed
+- Unused dependencies `statsmodels` and `specutils`; the minimum NumPy version is now 1.26.
+- Backup data files that were shipped in every package (~54 MB), the old V1 launchers (`legacy_home/`), unused identification code, and the Gemfile of the V1 documentation (the source of all the Dependabot security alerts).
+
 ## [2.0.2] - 2026-10-16
 
 Corrective release. **Some numerical results change**: see "Changed behaviour" below.
