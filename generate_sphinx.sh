@@ -1,3 +1,9 @@
+#!/bin/bash
+if ! command -v sphinx-apidoc &> /dev/null; then
+    echo "Error: sphinx-apidoc not found. Install it with: pip install -e \".[docs]\""
+    exit 1
+fi
+
 sphinx-apidoc -f -e --no-toc -o \
     docs/api astrocook \
     astrocook/core/atomic_data.py \

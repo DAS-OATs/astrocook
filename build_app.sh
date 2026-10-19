@@ -1,4 +1,8 @@
 #!/bin/bash
+if ! command -v pyinstaller &> /dev/null; then
+    echo "Error: pyinstaller not found. Install it with: pip install -e \".[build]\""
+    exit 1
+fi
 # Builds dist/Astrocook.app from Astrocook.spec (do not delete the spec)
 
 # 1. Pulizia

@@ -63,3 +63,8 @@ Code changes take effect without reinstalling. After a `git pull` that
 changes `pyproject.toml` (dependencies, commands), run
 `pip install -e ".[dev]"` again: commands such as `astrocook` are created at
 installation time. The tests run with `pytest`.
+
+Optional extras for maintenance tasks: `pip install -e ".[docs]"` to build
+this documentation (`generate_html.sh`, `deploy_docs.sh`) and
+`pip install -e ".[build]"` to build the macOS app (`build_app.sh`; the DMG
+also needs `brew install create-dmg`).
