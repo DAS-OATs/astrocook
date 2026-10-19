@@ -13,7 +13,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.0.2. Python ≥3.12.
+Current version: 2.0.3. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -73,7 +73,7 @@ Current version: 2.0.2. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1 and 1-bis done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis and 2 done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -107,8 +107,14 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 6. phase 5 – splitting large files;
 7. phase 6 – error handling.
 
-Current: phase 2. Work in small PRs, one at a time; wait for the merge
-before the next.
+Phase 2 done, released as 2.0.3 (packaging, no numerical changes). Left
+open from phase 2 (`ROADMAP.md`, phase 2): LICENSE (GPLv3 or later, PR #549
+draft, waits for INAF), optional `[bayes]` extra, automatic docs
+deployment, Docker renewal, size of the telluric files.
+
+Current: phase 3. Work in small PRs, one at a time; wait for the merge
+before the next. While #549 is open, each new PR goes on its own
+`claude/...` branch (agreed with Guido; say which branch).
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;

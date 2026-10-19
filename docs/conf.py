@@ -79,7 +79,7 @@ html_theme_options = {
         "json_url": "https://das-oats.github.io/astrocook/switcher.json",
         
         # This tells the theme which version THIS build represents.
-        "version_match": "2.0.2",
+        "version_match": "2.0.3",
     },
     "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
 }
