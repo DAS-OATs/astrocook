@@ -5,6 +5,7 @@ include README.md
 
 # Include all files in the astrocook/data directory
 graft astrocook/data
+graft astrocook/assets
 # OR, more explicitly:
 # recursive-include astrocook/data *
 

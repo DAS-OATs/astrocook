@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import collect_all
 # works from any checkout
 datas = [
     (os.path.join(SPECPATH, 'astrocook', 'data'), 'astrocook/data'),
-    (os.path.join(SPECPATH, 'assets'), 'assets'),
+    (os.path.join(SPECPATH, 'astrocook', 'assets'), 'assets'),
     ]
 binaries = []
 hiddenimports = ['astrocook.legacy.vars']
@@ -48,7 +48,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets/icon_3d_HR.icns'],
+    icon=['astrocook/assets/icon_3d_HR.icns'],
 )
 coll = COLLECT(
     exe,
@@ -62,7 +62,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Astrocook.app',
-    icon='assets/icon_3d_HR.icns',
+    icon='astrocook/assets/icon_3d_HR.icns',
     bundle_identifier='com.inaf.astrocook',
     info_plist={
         'CFBundleDocumentTypes': [

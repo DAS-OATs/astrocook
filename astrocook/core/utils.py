@@ -73,7 +73,7 @@ def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base_path = Path(sys._MEIPASS)
     else:
-        # Adatta questo path in base a dove si trova launch_pyside_app.py
-        # Se è nella root del progetto:
-        base_path = Path(__file__).resolve().parent.parent.parent
+        # The package directory (astrocook/assets/ is installed with it;
+        # Astrocook.spec copies it to 'assets' in the frozen app)
+        base_path = Path(__file__).resolve().parent.parent
     return str(base_path / relative_path)

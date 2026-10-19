@@ -29,7 +29,18 @@ def test_python_m_astrocook_parses_arguments():
     assert "session_files" in result.stdout
 
 
-def test_assets_resolved_from_the_repository_root():
+def test_assets_resolved_from_the_package():
     path = launcher.resource_path("assets/logo_3d_LR.png")
     assert path.endswith("assets/logo_3d_LR.png")
     assert os.path.exists(path)
+
+
+# Images the GUI loads by name (launcher and gui/main_window.py)
+GUI_ASSETS = ["icon_3d_HR_round.png", "icon_3d_HR.icns", "logo_3d_LR.png",
+              "logo_3d_HR.png", "icon_3d_HR.png"]
+
+
+def test_gui_assets_ship_with_the_package():
+    from astrocook.core.utils import resource_path
+    for name in GUI_ASSETS:
+        assert os.path.exists(resource_path(os.path.join("assets", name))), name
