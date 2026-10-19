@@ -15,9 +15,8 @@ def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base_path = Path(sys._MEIPASS)
     else:
-        # Repository root (assets/ is not installed with the package: from a
-        # pip install the icon and the splash screen are skipped)
-        base_path = Path(__file__).resolve().parent.parent
+        # The package directory (astrocook/assets/ is installed with it)
+        base_path = Path(__file__).resolve().parent
     return str(base_path / relative_path)
 
 # Minimal V1/V2 Context Mocks

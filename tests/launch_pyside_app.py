@@ -20,9 +20,8 @@ def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base_path = Path(sys._MEIPASS)
     else:
-        # Adatta questo path in base a dove si trova launch_pyside_app.py
-        # Se è nella root del progetto:
-        base_path = Path(__file__).resolve().parent.parent
+        # The package directory (holds assets/)
+        base_path = Path(__file__).resolve().parent.parent / "astrocook"
     return str(base_path / relative_path)
 
 # Minimal V1/V2 Context Mocks

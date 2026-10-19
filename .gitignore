@@ -34,7 +34,7 @@ tests/data/J0103-1305_red-side_meta.json
 tests/data/J0103-1305_metallines_lya_new_meta.json
 build/
 dist/
-assets/full_set/
+astrocook/assets/full_set/
 containers/
 *.key
 *.dmg
