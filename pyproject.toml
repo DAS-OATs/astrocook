@@ -117,8 +117,8 @@ markers = [
 ]
 
 [tool.ruff]
-# V1 code and backup directories are not linted (to be removed in phases 2-3)
-extend-exclude = ["astrocook/legacy", "docs_backup", "legacy_home"]
+# V1 code and the V1 docs (deployed under /v1/ by deploy_docs.sh) are not linted
+extend-exclude = ["astrocook/legacy", "docs_backup"]
 
 [tool.ruff.lint]
 # Start with pyflakes rules only (likely bugs, not style); extend gradually
