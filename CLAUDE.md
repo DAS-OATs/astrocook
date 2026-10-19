@@ -55,7 +55,10 @@ Current version: 2.0.2. Python ≥3.12.
 - Work in small PRs; the test suite must be green before and after.
 - Do not change numerical behaviour without Guido's agreement: if a
   behaviour looks like a bug, report it instead of silently fixing it.
-- User documentation (Sphinx + MyST) lives in `docs/`.
+- User documentation (Sphinx + MyST) lives in `docs/`. After each merge to
+  master that touches it, `.github/workflows/docs.yml` builds the site
+  (`build_site.sh`) and publishes it on `gh-pages`; `deploy_docs.sh` does
+  the same by hand.
 - Heuristics (thresholds, penalties, bounds, magic numbers) often encode a
   purpose that no test records (e.g. the penalty on b > 50 km/s kept the
   forest fits fast, F32). Before removing or changing one, ask Guido what it
