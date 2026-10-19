@@ -1,15 +1,9 @@
 #!/bin/bash
-rm -rf build dist release
-# Nota: NON cancellare più *.spec!
-
-# Lancia PyInstaller usando il file spec
-pyinstaller --clean --noconfirm Astrocook.spec
-
-#!/bin/bash
+# Builds dist/Astrocook.app from Astrocook.spec (do not delete the spec)
 
 # 1. Pulizia
 echo "🧹  Clean previous builds..."
-rm -rf build dist 
+rm -rf build dist release
 # Nota: Rimuoviamo anche eventuali DMG vecchi per evitare errori
 rm -f Astrocook.dmg
 

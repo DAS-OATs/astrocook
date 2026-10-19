@@ -1,9 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+
 from PyInstaller.utils.hooks import collect_all
 
+# Paths relative to this file (SPECPATH is set by PyInstaller), so the build
+# works from any checkout
 datas = [
-    ('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/astrocook/data', 'astrocook/data'),
-    ('/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/assets', 'assets'),
+    (os.path.join(SPECPATH, 'astrocook', 'data'), 'astrocook/data'),
+    (os.path.join(SPECPATH, 'assets'), 'assets'),
     ]
 binaries = []
 hiddenimports = ['astrocook.legacy.vars']
