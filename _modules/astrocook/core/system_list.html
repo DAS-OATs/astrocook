@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -26,50 +25,58 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
     <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
-    <script src="../../../static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/core/system_list';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="2.0.2" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -95,9 +102,9 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -184,7 +191,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -194,11 +201,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -231,8 +245,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -243,7 +256,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -326,11 +339,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -363,8 +383,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -449,29 +468,29 @@
 <div class="viewcode-block" id="get_all_w_rest">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.get_all_w_rest">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_all_w_rest</span><span class="p">(</span><span class="n">series_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns a list of rest wavelengths in Angstroms for a given series name.</span>
 <span class="sd">    Handles single lines, standard multiplets, and custom comma-separated lists.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># 1. Check if it&#39;s a known single transition</span>
+<span class="sd">    """</span>
+    <span class="c1"># 1. Check if it's a known single transition</span>
     <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]]</span>
     
-    <span class="c1"># 2. Check if it&#39;s a standard multiplet tag (e.g., &#39;CIV&#39;)</span>
+    <span class="c1"># 2. Check if it's a standard multiplet tag (e.g., 'CIV')</span>
     <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
         <span class="n">waves</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">line_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">])</span>
+                <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">line_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">waves</span>
 
-    <span class="c1"># 3. Handle custom comma-separated strings (e.g., &#39;CIV_1548,CIV_1550&#39;)</span>
-    <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">series_name</span><span class="p">:</span>
+    <span class="c1"># 3. Handle custom comma-separated strings (e.g., 'CIV_1548,CIV_1550')</span>
+    <span class="k">if</span> <span class="s1">','</span> <span class="ow">in</span> <span class="n">series_name</span><span class="p">:</span>
         <span class="n">waves</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">series_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">series_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">])</span>
+                <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">waves</span>
 
     <span class="k">return</span> <span class="p">[]</span></div>
@@ -480,9 +499,9 @@
 <div class="viewcode-block" id="are_overlapping">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.are_overlapping">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">are_overlapping</span><span class="p">(</span><span class="n">c1</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">c2</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">constraints_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if two components should be grouped together for fitting.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
     
     <span class="c1"># 1. CONSTRAINT CHECK (Highest Priority)</span>
@@ -490,10 +509,10 @@
     <span class="k">for</span> <span class="n">c_src</span><span class="p">,</span> <span class="n">c_other</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">),</span> <span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">c1</span><span class="p">)]:</span>
         <span class="k">if</span> <span class="n">c_src</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">c_src</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">c_other</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">'target_uuid'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="o">==</span> <span class="n">c_other</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="c1"># 2. SPECTRAL OVERLAP (The &quot;Blend&quot; Logic)</span>
+    <span class="c1"># 2. SPECTRAL OVERLAP (The "Blend" Logic)</span>
     <span class="c1"># Check if ANY transition from system 1 is near ANY transition from system 2.</span>
     <span class="c1"># We use a threshold based on the thermal width (b-parameter) or a 30 km/s floor.</span>
     <span class="n">threshold_kms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">c2</span><span class="o">.</span><span class="n">b</span><span class="p">),</span> <span class="mf">30.0</span><span class="p">)</span>
@@ -522,7 +541,7 @@
 <div class="viewcode-block" id="SystemListV2">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SystemListV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    API layer for managing component lists, constraints, and fitting.</span>
 
 <span class="sd">    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2`</span>
@@ -533,7 +552,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    data : SystemListDataV2</span>
 <span class="sd">        The core data container holding the list of components and constraint maps.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     
 <div class="viewcode-block" id="SystemListV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.__init__">[docs]</a>
@@ -549,15 +568,15 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_clean_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Robustly initializes data core.</span>
 <span class="sd">        1. Sanitize artifacts in ID map.</span>
-<span class="sd">        2. HYDRATE &#39;v2_constraints_map&#39; (Dict -&gt; ParameterConstraintV2).</span>
+<span class="sd">        2. HYDRATE 'v2_constraints_map' (Dict -&gt; ParameterConstraintV2).</span>
 <span class="sd">        3. Recover parsed constraints from the clean map if present.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">dirty</span> <span class="o">=</span> <span class="kc">False</span>
         
-        <span class="c1"># A. Fix ID Map (Str &quot;123&quot; -&gt; Int 123)</span>
+        <span class="c1"># A. Fix ID Map (Str "123" -&gt; Int 123)</span>
         <span class="n">id_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">v1_id_to_uuid_map</span>
         <span class="n">clean_id_map</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">id_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -581,10 +600,10 @@
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                         <span class="c1"># Convert Dict -&gt; Dataclass</span>
                         <span class="n">hydrated_v2_map</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span>
-                            <span class="n">is_free</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_free&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
-                            <span class="n">target_uuid</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;target_uuid&#39;</span><span class="p">),</span>
-                            <span class="n">expression</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expression&#39;</span><span class="p">),</span>
-                            <span class="n">v1_target_id</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;v1_target_id&#39;</span><span class="p">)</span>
+                            <span class="n">is_free</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'is_free'</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                            <span class="n">target_uuid</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'target_uuid'</span><span class="p">),</span>
+                            <span class="n">expression</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'expression'</span><span class="p">),</span>
+                            <span class="n">v1_target_id</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'v1_target_id'</span><span class="p">)</span>
                         <span class="p">)</span>
                         <span class="n">constraints_dirty</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">else</span><span class="p">:</span>
@@ -600,7 +619,7 @@
             <span class="c1"># Use the clean rebuilt map</span>
             <span class="n">clean_parsed</span> <span class="o">=</span> <span class="n">new_parsed</span>
             <span class="n">constraints_dirty</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SystemListV2: Hydrated constraints from clean JSON map.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"SystemListV2: Hydrated constraints from clean JSON map."</span><span class="p">)</span>
         
         <span class="c1"># 3. Legacy Fallback: If V2 map empty, Sanitize Parsed Map &amp; Populate V2</span>
         <span class="k">elif</span> <span class="n">clean_parsed</span><span class="p">:</span>
@@ -608,14 +627,14 @@
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">clean_parsed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">final_key</span> <span class="o">=</span> <span class="n">k</span>
                 
-                <span class="c1"># Fix Stringified Tuples &quot;(&#39;u&#39;, &#39;z&#39;)&quot;</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;(&#39;</span><span class="p">):</span>
+                <span class="c1"># Fix Stringified Tuples "('u', 'z')"</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'('</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span> <span class="n">final_key</span> <span class="o">=</span> <span class="n">val</span>
                     <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
                 
-                <span class="c1"># Fix Stringified Ints in Tuples (&quot;123&quot;, &#39;z&#39;)</span>
+                <span class="c1"># Fix Stringified Ints in Tuples ("123", 'z')</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span> <span class="o">=</span> <span class="n">final_key</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">p0</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
@@ -626,18 +645,18 @@
                 <span class="c1"># Ensure value is an object (defensive)</span>
                 <span class="n">val_obj</span> <span class="o">=</span> <span class="n">v</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="c1"># If parsing &#39;btur&#39;, default to False. For everything else, True.</span>
+                    <span class="c1"># If parsing 'btur', default to False. For everything else, True.</span>
                     <span class="c1"># We need to extract the param name from the key.</span>
                     <span class="n">default_free</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                         <span class="n">p_name</span> <span class="o">=</span> <span class="n">final_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="k">if</span> <span class="n">p_name</span> <span class="o">==</span> <span class="s1">&#39;btur&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">p_name</span> <span class="o">==</span> <span class="s1">'btur'</span><span class="p">:</span>
                             <span class="n">default_free</span> <span class="o">=</span> <span class="kc">False</span>
 
                     <span class="n">val_obj</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span>
-                        <span class="n">is_free</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_free&#39;</span><span class="p">,</span> <span class="n">default_free</span><span class="p">),</span>
-                        <span class="n">target_uuid</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;target_uuid&#39;</span><span class="p">),</span>
-                        <span class="n">expression</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expression&#39;</span><span class="p">)</span>
+                        <span class="n">is_free</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'is_free'</span><span class="p">,</span> <span class="n">default_free</span><span class="p">),</span>
+                        <span class="n">target_uuid</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'target_uuid'</span><span class="p">),</span>
+                        <span class="n">expression</span><span class="o">=</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'expression'</span><span class="p">)</span>
                     <span class="p">)</span>
                     <span class="n">sanitized_parsed</span><span class="p">[</span><span class="n">final_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_obj</span>
 
@@ -649,7 +668,7 @@
 
             <span class="n">clean_parsed</span> <span class="o">=</span> <span class="n">sanitized_parsed</span>
             <span class="n">constraints_dirty</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SystemListV2: Sanitized legacy constraints and populated clean map.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"SystemListV2: Sanitized legacy constraints and populated clean map."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dirty</span> <span class="ow">or</span> <span class="n">constraints_dirty</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -663,9 +682,9 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span> <span class="o">=</span> <span class="n">VoigtModelConstraintV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to initialize VoigtModelConstraintV2: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to initialize VoigtModelConstraintV2: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Creating fallback empty constraint model.&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Creating fallback empty constraint model."</span><span class="p">)</span>
                 <span class="n">dummy_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">SystemListV2</span><span class="p">)</span>
                 <span class="n">dummy_systs</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">SystemListDataV2</span><span class="p">()</span>
                 <span class="n">dummy_systs</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="p">[]</span>
@@ -675,15 +694,15 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of all component data objects.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List of all component data objects."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">t</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Table</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns an Astropy Table representation of the system list.</span>
 <span class="sd">        Useful for quick inspection or V1 compatibility.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">z_list</span><span class="p">,</span> <span class="n">dz_list</span><span class="p">,</span> <span class="n">logN_list</span><span class="p">,</span> <span class="n">dlogN_list</span><span class="p">,</span> <span class="n">b_list</span><span class="p">,</span> <span class="n">db_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span>
         <span class="n">btur_list</span><span class="p">,</span> <span class="n">dbtur_list</span><span class="p">,</span> <span class="n">func_list</span><span class="p">,</span> <span class="n">series_list</span><span class="p">,</span> <span class="n">id_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
         <span class="n">chi2_list</span><span class="p">,</span> <span class="n">resol_list</span> <span class="o">=</span> <span class="p">([]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
@@ -704,37 +723,37 @@
             <span class="n">resol_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
         <span class="n">t</span> <span class="o">=</span> <span class="n">Table</span><span class="p">()</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">z_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;dz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dz_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;logN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">logN_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;dlogN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dlogN_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">b_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;db&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">db_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;btur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">btur_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;dbtur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dbtur_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;func&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">func_list</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">series_list</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">id_list</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
-        <span class="n">t</span><span class="p">[</span><span class="s1">&#39;resol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">z_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'dz'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dz_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">logN_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'dlogN'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dlogN_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'b'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">b_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'db'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">db_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'btur'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">btur_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'dbtur'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">dbtur_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'func'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">func_list</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'series'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">series_list</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">id_list</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'chi2'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'chi2'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">chi2_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">resol_list</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">t</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of redshifts for all components.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List of redshifts for all components."""</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of series names for all components.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List of series names for all components."""</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
         
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of integer IDs for all components.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List of integer IDs for all components."""</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
 
     <span class="nd">@property</span>
@@ -743,7 +762,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">constraint_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary reflecting the free/fixed status of parameters.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Dictionary reflecting the free/fixed status of parameters."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_param_map</span>
     
     <span class="nd">@property</span>
@@ -761,7 +780,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.fitting_context">[docs]</a>
     <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fitting_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Context manager for safe fitting.</span>
 
 <span class="sd">        Temporarily sets the active fitting mask on the constraint model and</span>
@@ -773,7 +792,7 @@
 <span class="sd">            List of UUIDs to set as active.</span>
 <span class="sd">        group_depth : int, optional</span>
 <span class="sd">            Grouping depth for finding connected components. Defaults to ``2``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
             <span class="k">yield</span>
             <span class="k">return</span>
@@ -793,8 +812,8 @@
                 <span class="c1"># Restore exactly the previous set (no further expansion)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;fitting_context cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Forcing reset to None.&quot;</span><span class="p">)</span>
-                <span class="c1"># Fail-safe: Unlock everything to prevent persistent &#39;Frozen&#39; state</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"fitting_context cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Forcing reset to None."</span><span class="p">)</span>
+                <span class="c1"># Fail-safe: Unlock everything to prevent persistent 'Frozen' state</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -805,7 +824,7 @@
 <div class="viewcode-block" id="SystemListV2.to_v1_systlist">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.to_v1_systlist">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_v1_systlist</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Table</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert the V2 system list to a V1-compatible Astropy Table.</span>
 
 <span class="sd">        Used for saving archives in the legacy ``.acs`` format.</span>
@@ -814,32 +833,32 @@
 <span class="sd">        -------</span>
 <span class="sd">        astropy.table.Table or None</span>
 <span class="sd">            A table containing the system list in V1 format, or ``None`` if the list is empty.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Simplified V2-&gt;V1 system list conversion. V1 constraints may be lost.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Simplified V2-&gt;V1 system list conversion. V1 constraints may be lost."</span><span class="p">)</span>
         <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;dz&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dz</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;logN&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;dlogN&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dlogN</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dlogN</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;db&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">db</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;btur&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">btur</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;dbtur&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;func&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">func</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;series&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;chi2&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
-            <span class="s1">&#39;resol&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
+            <span class="s1">'id'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'z'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'dz'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dz</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'logN'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'dlogN'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dlogN</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dlogN</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'b'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'db'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">db</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'btur'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">btur</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'dbtur'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dbtur</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'func'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">func</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'series'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'chi2'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">chi2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">],</span>
+            <span class="s1">'resol'</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">Table</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="SystemListV2.add_components_from_regions">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_components_from_regions">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_components_from_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                                  <span class="n">series_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">z_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_components_from_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                                  <span class="n">series_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">z_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Populate the list with initial components based on identified regions.</span>
 
 <span class="sd">        Parameters</span>
@@ -847,7 +866,7 @@
 <span class="sd">        spec : SpectrumV2</span>
 <span class="sd">            The spectrum containing the region definitions.</span>
 <span class="sd">        region_id_col : str</span>
-<span class="sd">            Name of the column containing region IDs (e.g., ``&#39;abs_ids&#39;``).</span>
+<span class="sd">            Name of the column containing region IDs (e.g., ``'abs_ids'``).</span>
 <span class="sd">        series_map : dict</span>
 <span class="sd">            Mapping ``{region_id: series_name}``.</span>
 <span class="sd">        z_map : dict</span>
@@ -857,9 +876,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance populated with the identified components.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="n">region_id_col</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;add_components: &#39;</span><span class="si">{</span><span class="n">region_id_col</span><span class="si">}</span><span class="s2">&#39; not in spectrum. No components added.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"add_components: '</span><span class="si">{</span><span class="n">region_id_col</span><span class="si">}</span><span class="s2">' not in spectrum. No components added."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="n">new_components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
@@ -867,7 +886,7 @@
         <span class="k">if</span> <span class="n">new_components</span><span class="p">:</span>
             <span class="n">next_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_components</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Populating SystemList with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components...&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Populating SystemList with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components..."</span><span class="p">)</span>
         
         <span class="k">for</span> <span class="n">rid</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">rid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">z_map</span><span class="p">:</span> <span class="k">continue</span>
@@ -882,7 +901,7 @@
                 <span class="n">db</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
                 <span class="n">btur</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                 <span class="n">dbtur</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">func</span><span class="o">=</span><span class="s1">&#39;voigt&#39;</span><span class="p">,</span>
+                <span class="n">func</span><span class="o">=</span><span class="s1">'voigt'</span><span class="p">,</span>
                 <span class="n">series</span><span class="o">=</span><span class="n">series</span>
             <span class="p">)</span>
             <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_comp</span><span class="p">)</span>
@@ -895,8 +914,8 @@
 <div class="viewcode-block" id="SystemListV2.add_component">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.add_component">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">13.5</span><span class="p">,</span> 
-                      <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                      <span class="n">b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SystemList with properties of a specific component updated.</span>
 
 <span class="sd">        Parameters</span>
@@ -910,7 +929,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with the updated component.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 
         <span class="n">current_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span>
@@ -924,8 +943,8 @@
             <span class="n">logN</span><span class="o">=</span><span class="n">logN</span><span class="p">,</span> <span class="n">dlogN</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">btur</span><span class="o">=</span><span class="n">btur</span><span class="p">,</span> <span class="n">dbtur</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">func</span><span class="o">=</span><span class="s1">&#39;voigt&#39;</span><span class="p">,</span> 
-            <span class="n">series</span><span class="o">=</span><span class="n">series</span> <span class="c1"># Simply store &#39;CIV&#39;</span>
+            <span class="n">func</span><span class="o">=</span><span class="s1">'voigt'</span><span class="p">,</span> 
+            <span class="n">series</span><span class="o">=</span><span class="n">series</span> <span class="c1"># Simply store 'CIV'</span>
         <span class="p">)</span>
         
         <span class="c1"># Standard append logic (no expansion, no linking)</span>
@@ -944,7 +963,7 @@
 <div class="viewcode-block" id="SystemListV2.get_component_by_uuid">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_component_by_uuid">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_component_by_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieve a component object by its UUID.</span>
 
 <span class="sd">        Parameters</span>
@@ -956,7 +975,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        ComponentDataV2 or None</span>
 <span class="sd">            The component object, or None if not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span> <span class="k">return</span> <span class="n">c</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -964,8 +983,8 @@
 
 <div class="viewcode-block" id="SystemListV2.update_component">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_component">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SystemList with properties of a specific component updated.</span>
 
 <span class="sd">        Parameters</span>
@@ -979,7 +998,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with the updated component.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
@@ -993,7 +1012,7 @@
                 <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Component </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> not found for update.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> not found for update."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_components</span><span class="p">)</span>
@@ -1003,8 +1022,8 @@
 
 <div class="viewcode-block" id="SystemListV2.update_components">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.update_components">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Batch update parameters for multiple components in a single pass.</span>
 
 <span class="sd">        This method is significantly faster than calling :meth:`update_component` </span>
@@ -1023,7 +1042,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with the components updated.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Convert list to set for O(1) lookups</span>
         <span class="n">target_uuids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1049,8 +1068,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                           <span class="n">is_free</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                           <span class="n">expression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                          <span class="n">target_uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                          <span class="n">target_uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update the constraint for a specific component parameter.</span>
 
 <span class="sd">        Parameters</span>
@@ -1058,11 +1077,11 @@
 <span class="sd">        uuid : str</span>
 <span class="sd">            The component UUID.</span>
 <span class="sd">        param : str</span>
-<span class="sd">            The parameter name (e.g., ``&#39;z&#39;``, ``&#39;logN&#39;``).</span>
+<span class="sd">            The parameter name (e.g., ``'z'``, ``'logN'``).</span>
 <span class="sd">        is_free : bool, optional</span>
 <span class="sd">            If True, parameter varies freely. If False, it is fixed or linked.</span>
 <span class="sd">        expression : str, optional</span>
-<span class="sd">            Mathematical string for linking (e.g. ``&quot;p[&#39;target_uuid&#39;].z&quot;``).</span>
+<span class="sd">            Mathematical string for linking (e.g. ``"p['target_uuid'].z"``).</span>
 <span class="sd">        target_uuid : str, optional</span>
 <span class="sd">            UUID of the component this parameter is linked to.</span>
 
@@ -1070,7 +1089,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with the updated constraints.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">current_parsed</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">parsed_constraints</span><span class="p">)</span>
         
         <span class="c1"># 1. Resolve Existing</span>
@@ -1088,15 +1107,15 @@
         <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                  <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span>
-                     <span class="n">is_free</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_free&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> 
-                     <span class="n">expression</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;expression&#39;</span><span class="p">),</span>
-                     <span class="n">target_uuid</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span>
+                     <span class="n">is_free</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'is_free'</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> 
+                     <span class="n">expression</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'expression'</span><span class="p">),</span>
+                     <span class="n">target_uuid</span><span class="o">=</span><span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'target_uuid'</span><span class="p">)</span>
                  <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                  <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">existing</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Default btur to Frozen, others to Free</span>
-            <span class="n">default_free</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">param</span> <span class="o">==</span> <span class="s1">&#39;btur&#39;</span> <span class="k">else</span> <span class="kc">True</span>
+            <span class="n">default_free</span> <span class="o">=</span> <span class="kc">False</span> <span class="k">if</span> <span class="n">param</span> <span class="o">==</span> <span class="s1">'btur'</span> <span class="k">else</span> <span class="kc">True</span>
             <span class="n">base_constraint</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="n">default_free</span><span class="p">)</span>
 
         <span class="c1"># 3. Apply Changes</span>
@@ -1130,8 +1149,8 @@
 
 <div class="viewcode-block" id="SystemListV2.delete_component">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove component(s) and clean up constraints linking to them.</span>
 
 <span class="sd">        Parameters</span>
@@ -1145,7 +1164,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with components removed and constraints cleaned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterConstraintV2</span>
 
@@ -1183,7 +1202,7 @@
                         <span class="n">to_reset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span> <span class="ow">in</span> <span class="n">to_reset</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing broken link from </span><span class="si">{</span><span class="n">u_src</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">p_name</span><span class="si">}</span><span class="s2"> (target deleted).&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing broken link from </span><span class="si">{</span><span class="n">u_src</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">p_name</span><span class="si">}</span><span class="s2"> (target deleted)."</span><span class="p">)</span>
             <span class="c1"># Reset to Free</span>
             <span class="n">clean_constr</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_uuid</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
             
@@ -1204,10 +1223,10 @@
 <div class="viewcode-block" id="SystemListV2.get_connected_group">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a set of components that must be fitted together.</span>
 
-<span class="sd">        This method traverses relationships to find all &quot;fluid neighbors&quot; of</span>
+<span class="sd">        This method traverses relationships to find all "fluid neighbors" of</span>
 <span class="sd">        the seed components (via links, spectral overlap, or kinematic proximity).</span>
 
 <span class="sd">        Parameters</span>
@@ -1221,7 +1240,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        set of str</span>
 <span class="sd">            The full set of UUIDs in the connected group.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
 
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
@@ -1269,13 +1288,13 @@
                     <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">current_members</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">:</span>
                             <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">'target_uuid'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span><span class="p">:</span>
                                     <span class="n">candidate_uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span><span class="p">)</span>
 
                     <span class="c1"># Also check if anyone links TO our current members (Inverse search)</span>
                     <span class="k">for</span> <span class="n">cand_uuid</span><span class="p">,</span> <span class="n">c_map</span> <span class="ow">in</span> <span class="n">constraints_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">c_map</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">&#39;target_uuid&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="ow">in</span> <span class="n">group_uuids</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">constr</span><span class="p">,</span> <span class="s1">'target_uuid'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">target_uuid</span> <span class="ow">in</span> <span class="n">group_uuids</span><span class="p">:</span>
                                 <span class="n">candidate_uuids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cand_uuid</span><span class="p">)</span>
 
             <span class="c1"># --- STEP 3: Detailed Physics and Constraint Validation ---</span>
@@ -1299,24 +1318,24 @@
         <span class="k">return</span> <span class="n">group_uuids</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_after_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes the &#39;active_components&#39; mask from a system list.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_after_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">'SystemListV2'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Removes the 'active_components' mask from a system list.</span>
 <span class="sd">        This ensures that when we generate models from it, ALL components are included.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>
             <span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">systs</span>
 
     <span class="c1"># --- HELPER 3: Compute Fixed AIC ---</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_fixed_aic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">,</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_fixed_aic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">'SystemListV2'</span><span class="p">,</span> 
                            <span class="n">static_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">k_free</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculates AIC on a FIXED set of pixels (static_mask).</span>
 <span class="sd">        </span>
 <span class="sd">        AIC = Chi2 + 2*k</span>
 <span class="sd">        Chi2 = Sum( (Flux - Model)^2 / Error^2 ) masked</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
         
         <span class="c1"># 1. Generate Full Model (No masking allowed here!)</span>
@@ -1336,8 +1355,8 @@
     
 <div class="viewcode-block" id="SystemListV2.merge">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.merge">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s1">'SystemListV2'</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Merge components from another system list into this one.</span>
 
 <span class="sd">        Parameters</span>
@@ -1352,7 +1371,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new merged system list.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 
@@ -1365,10 +1384,10 @@
 
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="c1"># Prepare the arguments we want to change</span>
-            <span class="n">changes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">next_id</span><span class="p">}</span>
+            <span class="n">changes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'id'</span><span class="p">:</span> <span class="n">next_id</span><span class="p">}</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">copy_uuids</span><span class="p">:</span>
-                <span class="n">changes</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+                <span class="n">changes</span><span class="p">[</span><span class="s1">'uuid'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
             
             <span class="c1"># [FIX] Apply changes using replace() instead of direct assignment</span>
             <span class="n">new_c</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
@@ -1384,12 +1403,12 @@
     
 <div class="viewcode-block" id="SystemListV2.optimize_hierarchy">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.optimize_hierarchy">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">&#39;SpectrumV2&#39;</span><span class="p">,</span> <span class="n">uuid_seed</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimize_hierarchy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> <span class="n">uuid_seed</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                            <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span>
                            <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
                            <span class="n">min_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># &lt;--- NEW PARAMETER</span>
-                           <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                           <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iteratively adds components to a system to minimize residuals using the</span>
 <span class="sd">        Akaike Information Criterion (AIC).</span>
 
@@ -1417,7 +1436,7 @@
 <span class="sd">            a new component trial (default: 2.5).</span>
 <span class="sd">        aic_penalty : float, optional</span>
 <span class="sd">            Minimum AIC improvement required to accept a new component (default: 0.0).</span>
-<span class="sd">            Higher values favor simpler models (Occam&#39;s razor).</span>
+<span class="sd">            Higher values favor simpler models (Occam's razor).</span>
 <span class="sd">        z_window_kms : float, optional</span>
 <span class="sd">            The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</span>
 <span class="sd">        min_dv : float, optional</span>
@@ -1432,7 +1451,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new system list containing the optimized components.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
 
@@ -1443,8 +1462,8 @@
 
         <span class="n">series_name</span> <span class="o">=</span> <span class="n">target_comp</span><span class="o">.</span><span class="n">series</span>
         <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="mf">1215.67</span>
-        <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]][</span><span class="s1">'wave'</span><span class="p">]</span>
         
         <span class="n">lam_target_nm</span> <span class="o">=</span> <span class="n">lam_target_ang</span> <span class="o">/</span> <span class="mf">10.0</span>
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
@@ -1455,7 +1474,7 @@
         <span class="n">static_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dv_arr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">z_window_kms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">static_mask</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;optimize_hierarchy: Window contains no valid data.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"optimize_hierarchy: Window contains no valid data."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="c1"># [FIX] Initialize Taboo Mask (Rejected Pixels)</span>
@@ -1472,7 +1491,7 @@
                     <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
                 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span> <span class="n">systs_obj</span> 
+                    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">),</span> <span class="n">systs_obj</span> 
 
                 <span class="c1"># Fixed AIC</span>
                 <span class="n">eval_fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">)</span>
@@ -1489,9 +1508,9 @@
                 <span class="k">return</span> <span class="n">aic</span><span class="p">,</span> <span class="n">new_systs</span>
 
         <span class="c1"># 3. Baseline Fit</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optimizing </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2"> hierarchy...&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Optimizing </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2"> hierarchy..."</span><span class="p">)</span>
         <span class="n">best_aic</span><span class="p">,</span> <span class="n">best_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">current_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">])</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Baseline AIC: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Baseline AIC: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         
         <span class="n">current_systs</span> <span class="o">=</span> <span class="n">best_systs</span>
         <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1502,7 +1521,7 @@
             <span class="n">eval_fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">best_systs</span><span class="p">)</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">model_phys</span> <span class="o">=</span> <span class="n">eval_fitter</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
             
-            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
                 <span class="n">sigma_resid</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">model_phys</span><span class="p">)</span> <span class="o">/</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span>
             
             <span class="c1"># Apply Masks (Window + Taboo)</span>
@@ -1514,7 +1533,7 @@
             <span class="n">min_val</span> <span class="o">=</span> <span class="n">sigma_resid</span><span class="p">[</span><span class="n">min_idx</span><span class="p">]</span>
             
             <span class="k">if</span> <span class="n">min_val</span> <span class="o">&gt;</span> <span class="o">-</span><span class="n">threshold_sigma</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Converged. Max resid </span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s &gt; </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Converged. Max resid </span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s &gt; </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">break</span>
                 
             <span class="c1"># C. Create Candidate</span>
@@ -1530,13 +1549,13 @@
                         <span class="n">too_close</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
             
             <span class="k">if</span> <span class="n">too_close</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate too close (</span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2"> km/s). Masking and retrying.&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate too close (</span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2"> km/s). Masking and retrying."</span><span class="p">)</span>
                 <span class="c1"># [FIX] Mask this spot and CONTINUE (Do not Break!)</span>
                 <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">6</span><span class="p">))</span>
                 <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">continue</span> 
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate at </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> (Sigma=</span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate at </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> (Sigma=</span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
             
             <span class="c1"># E. Add &amp; Fit</span>
             <span class="n">cand_systs</span> <span class="o">=</span> <span class="n">best_systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series_name</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z_new</span><span class="p">,</span> <span class="n">logN</span><span class="o">=</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">15.0</span><span class="p">)</span>
@@ -1547,20 +1566,20 @@
             <span class="c1"># F. Compare</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="n">trial_aic</span> <span class="o">-</span> <span class="n">best_aic</span>
             <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">aic_penalty</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Accepted. AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (Delta: </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Accepted. AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (Delta: </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
                 <span class="n">best_aic</span> <span class="o">=</span> <span class="n">trial_aic</span>
                 <span class="n">best_systs</span> <span class="o">=</span> <span class="n">trial_systs</span>
                 <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; Rejected. AIC Delta </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Rejected. AIC Delta </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">trials_without_imp</span> <span class="o">+=</span> <span class="mi">1</span>
                 
-                <span class="c1"># [FIX] Mask this spot so we don&#39;t loop forever</span>
+                <span class="c1"># [FIX] Mask this spot so we don't loop forever</span>
                 <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">10</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">11</span><span class="p">))</span>
                 <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             
             <span class="k">if</span> <span class="n">trials_without_imp</span> <span class="o">&gt;=</span> <span class="n">patience</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Patience exhausted.&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Patience exhausted."</span><span class="p">)</span>
                 <span class="k">break</span>
         
         <span class="k">return</span> <span class="n">best_systs</span></div>
@@ -1568,8 +1587,8 @@
     
 <div class="viewcode-block" id="SystemListV2.remove_in_region">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.remove_in_region">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">remove_in_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_in_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove components whose center falls within the observed wavelength range.</span>
 
 <span class="sd">        Parameters</span>
@@ -1581,7 +1600,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with components removed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">surviving_comps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
         
@@ -1589,12 +1608,12 @@
             <span class="c1"># Resolve Rest Wavelength</span>
             <span class="n">lam_rest</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+                <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
                  <span class="c1"># Use primary line for location check</span>
                  <span class="n">prim</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                  <span class="k">if</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
-                     <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">prim</span><span class="p">][</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span>
+                     <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">prim</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
             
             <span class="n">should_delete</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">if</span> <span class="n">lam_rest</span><span class="p">:</span>
@@ -1611,15 +1630,15 @@
         <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Smart clean: Removed </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components in region </span><span class="si">{</span><span class="n">obs_min</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">obs_max</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart clean: Removed </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components in region </span><span class="si">{</span><span class="n">obs_min</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">obs_max</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">surviving_comps</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SystemListV2.filter_by_criteria">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_criteria">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition_func</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove components whose center falls within the observed wavelength range.</span>
 
 <span class="sd">        Parameters</span>
@@ -1631,7 +1650,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with components removed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">valid_comps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">deleted_count</span> <span class="o">=</span> <span class="mi">0</span>
         
@@ -1644,15 +1663,15 @@
         <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
             
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filtered </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Filtered </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components."</span><span class="p">)</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">valid_comps</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="SystemListV2.filter_by_range">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.filter_by_range">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmin_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xmax_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SystemListV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_by_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmin_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xmax_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SystemListV2 containing only components within the range.</span>
 
 <span class="sd">        Parameters</span>
@@ -1664,7 +1683,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        SystemListV2</span>
 <span class="sd">            A new instance with filtered components.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
@@ -1682,23 +1701,23 @@
             <span class="c1"># 1. Identify which lines this component represents</span>
             <span class="n">lines_to_check</span> <span class="o">=</span> <span class="p">[]</span>
             
-            <span class="c1"># Case A: It&#39;s a specific line (e.g., &quot;CIV 1548&quot;)</span>
+            <span class="c1"># Case A: It's a specific line (e.g., "CIV 1548")</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span>
                 <span class="n">lines_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
             
-            <span class="c1"># Case B: It&#39;s a Multiplet Tag (e.g., &quot;CIV&quot;)</span>
+            <span class="c1"># Case B: It's a Multiplet Tag (e.g., "CIV")</span>
             <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
                 <span class="n">lines_to_check</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">])</span>
                 
-            <span class="c1"># Case C: Try normalized name (e.g., &quot;CIV 1548&quot; vs &quot;CIV_1548&quot;)</span>
+            <span class="c1"># Case C: Try normalized name (e.g., "CIV 1548" vs "CIV_1548")</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">norm</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">' '</span><span class="p">,</span> <span class="s1">'_'</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">norm</span> <span class="ow">in</span> <span class="n">xem_d</span><span class="p">:</span>
                     <span class="n">lines_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
 
             <span class="c1"># 2. Check if ANY line falls in range</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">lines_to_check</span><span class="p">:</span>
-                <span class="c1"># If we can&#39;t identify the line physics, we default to KEEPING it</span>
+                <span class="c1"># If we can't identify the line physics, we default to KEEPING it</span>
                 <span class="c1"># (Safe fallback for custom markers)</span>
                 <span class="n">is_in_range</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1749,8 +1768,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1770,8 +1789,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
-    <br/>
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
   </p>
 </div>
       
@@ -1784,7 +1802,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

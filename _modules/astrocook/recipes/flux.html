@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -26,50 +25,58 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
     <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
-    <script src="../../../static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/recipes/flux';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="2.0.2" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -95,9 +102,9 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -184,7 +191,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -194,11 +201,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -231,8 +245,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -243,7 +256,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -326,11 +339,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -363,8 +383,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -445,73 +464,73 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
 
 <span class="n">FLUX_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;calculate_running_std&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Calculate running standard deviation.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Calculate a running Root-Mean-Square on a column (e.g., &#39;y&#39;) to estimate local error.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;input_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Column to use for StdDev calculation (e.g., y)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;output_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;running_std&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the new column to create (e.g., running_std)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;window_pix&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Total window size in pixels (should be odd)&quot;</span><span class="p">}</span>
+    <span class="s2">"calculate_running_std"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Calculate running standard deviation."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Calculate a running Root-Mean-Square on a column (e.g., 'y') to estimate local error."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"input_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"y"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column to use for StdDev calculation (e.g., y)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"output_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"running_std"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the new column to create (e.g., running_std)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"window_pix"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Total window size in pixels (should be odd)"</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#calculate_running_std&quot;</span> <span class="c1"># Placeholder URL</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calculate_running_std"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
-    <span class="s2">&quot;smooth&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Smooth spectrum.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sigma_kms&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Standard deviation for Gaussian kernel (km/s)&quot;</span><span class="p">},</span>
+    <span class="s2">"smooth"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Smooth spectrum."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"sigma_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Standard deviation for Gaussian kernel (km/s)"</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#smooth&quot;</span> <span class="c1"># Placeholder URL</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#smooth"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
-    <span class="s2">&quot;rebin&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Rebin spectrum.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Apply a new binning to a spectrum, with a constant bin size.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="c1"># CRITICAL: Use string &quot;None&quot; to represent the Python None object</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xstart&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Start wavelength (nm, None for auto)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xend&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;End wavelength (nm, None for auto)&quot;</span><span class="p">},</span>
+    <span class="s2">"rebin"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Rebin spectrum."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Apply a new binning to a spectrum, with a constant bin size."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="c1"># CRITICAL: Use string "None" to represent the Python None object</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xstart"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Start wavelength (nm, None for auto)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xend"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"End wavelength (nm, None for auto)"</span><span class="p">},</span>
             
             <span class="c1"># CRITICAL: dx needs to be a number (10.0) but the V1 flow expects km/s unit conversion later.</span>
             <span class="c1"># We use the raw value here, and the adapter handles the unit.</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Step in x&quot;</span><span class="p">},</span> 
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"dx"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Step in x"</span><span class="p">},</span> 
             
-            <span class="c1"># Use string &quot;km/s&quot; for the unit input field</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;xunit&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;km/s&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Unit of wavelength or velocity&quot;</span><span class="p">},</span>
+            <span class="c1"># Use string "km/s" for the unit input field</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xunit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"km/s"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Unit of wavelength or velocity"</span><span class="p">},</span>
             
-            <span class="c1"># Use string &quot;None&quot;</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma clipping threshold (None for off)&quot;</span><span class="p">},</span>
+            <span class="c1"># Use string "None"</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma clipping threshold (None for off)"</span><span class="p">},</span>
             
-            <span class="c1"># CRITICAL: V1 uses &#39;norm&#39; as a boolean flag. Keep it as string &#39;False&#39; for dialog logic.</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;norm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;False&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Return normalized spectrum, if continuum exists&quot;</span><span class="p">},</span> 
+            <span class="c1"># CRITICAL: V1 uses 'norm' as a boolean flag. Keep it as string 'False' for dialog logic.</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"norm"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"False"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Return normalized spectrum, if continuum exists"</span><span class="p">},</span> 
 
-            <span class="c1"># CRITICAL: Use string representation &#39;nan&#39;</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;filling&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;nan&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Value to fill region without data&quot;</span><span class="p">},</span> 
+            <span class="c1"># CRITICAL: Use string representation 'nan'</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"filling"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"nan"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Value to fill region without data"</span><span class="p">},</span> 
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#rebin&quot;</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#rebin"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;equalize&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Equalize flux to reference.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Scale the flux of this session to match another &#39;reference&#39; session.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;reference_session&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the reference session&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;order&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Polynomial order (-1=spline, 0=scalar)&quot;</span><span class="p">}</span>
+    <span class="s2">"equalize"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Equalize flux to reference."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scale the flux of this session to match another 'reference' session."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"reference_session"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the reference session"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"order"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Polynomial order (-1=spline, 0=scalar)"</span><span class="p">}</span>
         <span class="p">]</span>
     <span class="p">},</span>
-    <span class="s2">&quot;resample&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Resample on another grid.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;target_session&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the session to use as the grid&quot;</span><span class="p">}</span>
+    <span class="s2">"resample"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Resample on another grid."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"target_session"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the session to use as the grid"</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#resample&quot;</span> <span class="c1"># Placeholder URL</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#resample"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
-    <span class="s2">&quot;calibrate_from_magnitudes&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Flux calibrate (multi-band).&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Warp the spectrum SED to match multiple photometric points. Enter as &#39;Filter=Mag&#39; pairs separated by commas.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;magnitudes&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;SDSS_r=17.0&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;List of &#39;Filter=Mag&#39; pairs (e.g., &#39;SDSS_g=17.5, SDSS_r=17.0&#39;)&quot;</span><span class="p">}</span>
+    <span class="s2">"calibrate_from_magnitudes"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Flux calibrate (multi-band)."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Warp the spectrum SED to match multiple photometric points. Enter as 'Filter=Mag' pairs separated by commas."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"magnitudes"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"List of 'Filter=Mag' pairs (e.g., 'SDSS_g=17.5, SDSS_r=17.0')"</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;edit_cb.html#calibrate&quot;</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calibrate"</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -519,26 +538,26 @@
 <div class="viewcode-block" id="RecipeFluxV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeFluxV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Recipes for manipulating spectral flux and grid sampling.</span>
 
 <span class="sd">    These methods are accessed via the ``session.flux`` attribute and delegate</span>
 <span class="sd">    logic to :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 <div class="viewcode-block" id="RecipeFluxV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">'SessionV2'</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session_v2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">&#39;cb&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">'cb'</span></div>
 
 
 <div class="viewcode-block" id="RecipeFluxV2.calculate_running_std">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
-                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> 
-                              <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;running_std&#39;</span><span class="p">,</span> 
-                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;21&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'y'</span><span class="p">,</span> 
+                              <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'running_std'</span><span class="p">,</span> 
+                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'21'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate running standard deviation.</span>
 
 <span class="sd">        Calculates a running Root-Mean-Square (RMS) on a specific column to estimate</span>
@@ -548,24 +567,24 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        input_col : str, optional</span>
-<span class="sd">            The column to use for StdDev calculation (e.g., ``&#39;y&#39;``). Defaults to ``&#39;y&#39;``.</span>
+<span class="sd">            The column to use for StdDev calculation (e.g., ``'y'``). Defaults to ``'y'``.</span>
 <span class="sd">        output_col : str, optional</span>
-<span class="sd">            Name of the new column to create (e.g., ``&#39;running_std&#39;``).</span>
-<span class="sd">            Defaults to ``&#39;running_std&#39;``.</span>
+<span class="sd">            Name of the new column to create (e.g., ``'running_std'``).</span>
+<span class="sd">            Defaults to ``'running_std'``.</span>
 <span class="sd">        window_pix : str, optional</span>
-<span class="sd">            Total window size in pixels (should be odd). Defaults to ``&#39;21&#39;``.</span>
+<span class="sd">            Total window size in pixels (should be odd). Defaults to ``'21'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,</span>
 <span class="sd">            or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_pix</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="n">window_pix_i</span> <span class="o">=</span> <span class="mi">3</span>
-            <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it&#39;s odd</span>
+            <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
                 <span class="n">window_pix_i</span> <span class="o">+=</span> <span class="mi">1</span>
                 
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -584,14 +603,14 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during calculate_running_std: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during calculate_running_std: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeFluxV2.smooth">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.smooth">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;100.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Smooth spectrum.</span>
 
 <span class="sd">        Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),</span>
@@ -601,14 +620,14 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        sigma_kms : str, optional</span>
-<span class="sd">            Standard deviation for Gaussian kernel in km/s. Defaults to ``&#39;100.0&#39;``.</span>
+<span class="sd">            Standard deviation for Gaussian kernel in km/s. Defaults to ``'100.0'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns,</span>
 <span class="sd">            or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sigma_kms_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma_kms</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -621,15 +640,15 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during smooth: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during smooth: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeFluxV2.rebin">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.rebin">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;10.0&#39;</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;km/s&#39;</span><span class="p">,</span>
-              <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5.0&#39;</span><span class="p">,</span> <span class="n">filling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;nan&#39;</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'10.0'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span>
+              <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5.0'</span><span class="p">,</span> <span class="n">filling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'nan'</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Rebin spectrum.</span>
 
 <span class="sd">        Applies a new binning to a spectrum with a constant bin size.</span>
@@ -638,44 +657,44 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        xstart : str, optional</span>
-<span class="sd">            Start wavelength/velocity. ``&#39;None&#39;`` for auto (data minimum).</span>
-<span class="sd">            Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">            Start wavelength/velocity. ``'None'`` for auto (data minimum).</span>
+<span class="sd">            Defaults to ``'None'``.</span>
 <span class="sd">        xend : str, optional</span>
-<span class="sd">            End wavelength/velocity. ``&#39;None&#39;`` for auto (data maximum).</span>
-<span class="sd">            Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">            End wavelength/velocity. ``'None'`` for auto (data maximum).</span>
+<span class="sd">            Defaults to ``'None'``.</span>
 <span class="sd">        dx : str, optional</span>
-<span class="sd">            Step size in x. Defaults to ``&#39;10.0&#39;``.</span>
+<span class="sd">            Step size in x. Defaults to ``'10.0'``.</span>
 <span class="sd">        xunit : str, optional</span>
-<span class="sd">            Unit of wavelength or velocity for the step size (e.g., ``&#39;km/s&#39;``, ``&#39;nm&#39;``).</span>
-<span class="sd">            Defaults to ``&#39;km/s&#39;``.</span>
+<span class="sd">            Unit of wavelength or velocity for the step size (e.g., ``'km/s'``, ``'nm'``).</span>
+<span class="sd">            Defaults to ``'km/s'``.</span>
 <span class="sd">        kappa : str, optional</span>
-<span class="sd">            Sigma clipping threshold for binning. ``&#39;None&#39;`` for off. Defaults to ``&#39;5.0&#39;``.</span>
+<span class="sd">            Sigma clipping threshold for binning. ``'None'`` for off. Defaults to ``'5.0'``.</span>
 <span class="sd">        filling : str, optional</span>
-<span class="sd">            Value to fill regions without data. Defaults to ``&#39;nan&#39;``.</span>
+<span class="sd">            Value to fill regions without data. Defaults to ``'nan'``.</span>
 <span class="sd">        norm : str, optional</span>
-<span class="sd">            (Legacy flag, currently unused). Defaults to ``&#39;False&#39;``.</span>
+<span class="sd">            (Legacy flag, currently unused). Defaults to ``'False'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum,</span>
 <span class="sd">            or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># 4. Perform Type Casting</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Type Casting based on string input</span>
-            <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xstart</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="n">xend_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xend</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xend</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xstart</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">xend_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xend</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xend</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
             
             <span class="c1"># V1 logic from cookbook_flux.py uses the unit attached to xunit for dx</span>
             <span class="n">dx_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span> 
             <span class="n">dx_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="n">dx_unit</span><span class="p">)</span> 
 
-            <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">&#39;None&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
             
-            <span class="n">norm_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span> <span class="c1"># Handle boolean flag</span>
-            <span class="n">filling_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filling</span><span class="p">)</span> <span class="k">if</span> <span class="n">filling</span> <span class="o">!=</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">norm_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span> <span class="c1"># Handle boolean flag</span>
+            <span class="n">filling_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filling</span><span class="p">)</span> <span class="k">if</span> <span class="n">filling</span> <span class="o">!=</span> <span class="s1">'nan'</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context;</span>
             <span class="c1"># return 0 like the other recipes (findings register F23)</span>
@@ -693,8 +712,8 @@
     
 <div class="viewcode-block" id="RecipeFluxV2.equalize">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.equalize">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Equalize flux to a reference session.</span>
 
 <span class="sd">        Scales the flux of the current session to match the flux level of a </span>
@@ -703,18 +722,18 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        reference_session : str, optional</span>
-<span class="sd">            The name of the reference session. Defaults to ``&#39;None&#39;``.</span>
+<span class="sd">            The name of the reference session. Defaults to ``'None'``.</span>
 <span class="sd">        order : str, optional</span>
-<span class="sd">            The polynomial order for the scaling model (``&#39;0&#39;`` = scalar, ``&#39;-1&#39;`` = spline). </span>
-<span class="sd">            Defaults to ``&#39;0&#39;``.</span>
+<span class="sd">            The polynomial order for the scaling model (``'0'`` = scalar, ``'-1'`` = spline). </span>
+<span class="sd">            Defaults to ``'0'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new session with the scaled flux. Returns ``0`` (int) on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No reference session selected.&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'None'</span><span class="p">,</span> <span class="s1">''</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No reference session selected."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">order_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
@@ -723,21 +742,21 @@
                             <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">reference_session</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_hist</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Session &#39;</span><span class="si">{</span><span class="n">reference_session</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="n">reference_session</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
 
             <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
                 <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order_i</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Equalize failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Equalize failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
     
 <div class="viewcode-block" id="RecipeFluxV2.resample">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.resample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resample on another grid.</span>
 
 <span class="sd">        Resamples this spectrum onto the exact wavelength grid of another open session.</span>
@@ -754,26 +773,26 @@
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid,</span>
 <span class="sd">            or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span> <span class="ow">or</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No target session was selected for resampling.&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">'None'</span> <span class="ow">or</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No target session was selected for resampling."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Find the target session object from the main window</span>
             <span class="n">target_hist</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">&#39;_gui&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="p">,</span> <span class="s1">&#39;session_histories&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">'_gui'</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="p">,</span> <span class="s1">'session_histories'</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">target_session</span><span class="p">:</span>
                         <span class="n">target_hist</span> <span class="o">=</span> <span class="n">hist</span>
                         <span class="k">break</span>
             
             <span class="k">if</span> <span class="n">target_hist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find an open session named &#39;</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find an open session named '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 
             <span class="n">target_spec</span> <span class="o">=</span> <span class="n">target_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span>
             <span class="k">if</span> <span class="n">target_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target session &#39;</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">&#39; has no spectrum data.&quot;</span><span class="p">)</span>
+                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Target session '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">' has no spectrum data."</span><span class="p">)</span>
 
             <span class="c1"># 2. Execute the immutable V2 operation</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">resample_on_grid</span><span class="p">(</span>
@@ -784,14 +803,14 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during resample: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during resample: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
         
 <div class="viewcode-block" id="RecipeFluxV2.calibrate_from_magnitudes">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SDSS_r=17.0&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flux calibrate (multi-band).</span>
 
 <span class="sd">        Warps the spectrum SED to match multiple photometric points.</span>
@@ -800,15 +819,15 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        magnitudes : str, optional</span>
-<span class="sd">            List of &#39;Filter=Mag&#39; pairs separated by commas (e.g., ``&quot;SDSS_g=17.5, SDSS_r=17.0&quot;``).</span>
-<span class="sd">            Defaults to ``&quot;SDSS_r=17.0&quot;``.</span>
+<span class="sd">            List of 'Filter=Mag' pairs separated by commas (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``).</span>
+<span class="sd">            Defaults to ``"SDSS_r=17.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux,</span>
 <span class="sd">            or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># The API layer now handles all the complexity</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
@@ -816,7 +835,7 @@
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="c1"># Standard error logging for the worker</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during calibrate_from_magnitudes: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during calibrate_from_magnitudes: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 
@@ -849,8 +868,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -870,8 +889,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
-    <br/>
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
   </p>
 </div>
       
@@ -884,7 +902,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

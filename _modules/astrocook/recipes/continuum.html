@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -26,50 +25,58 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="../../../static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
   
   <!-- So that users can add custom icons -->
-  <script src="../../../static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
     <script src="../../../static/documentation_options.js?v=c2377ec0"></script>
-    <script src="../../../static/doctools.js?v=9bcbadda"></script>
-    <script src="../../../static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/recipes/continuum';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.16.1';
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.2';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             false;
         </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="2.0.2" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -95,9 +102,9 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -184,7 +191,7 @@
         <div class="navbar-item navbar-persistent--container">
           
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -194,11 +201,18 @@
       
         <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
       
         <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -231,8 +245,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
       
@@ -243,7 +256,7 @@
   
     <div class="navbar-persistent--mobile">
 
-<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
  <i class="fa-solid fa-magnifying-glass"></i>
  <span class="search-button__default-text">Search</span>
  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -326,11 +339,18 @@
         
           <div class="navbar-item">
 
-<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
-  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
-  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
-  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
-</button></div>
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
         
           <div class="navbar-item">
 <div class="version-switcher__container dropdown pst-js-only">
@@ -363,8 +383,7 @@
           
           
           
-          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
         </li>
 </ul></div>
         
@@ -441,59 +460,59 @@
 
 <span class="c1"># --- Schemas for the Continuum Menu ---</span>
 <span class="n">CONTINUUM_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;estimate_auto&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Auto-estimate continuum (single-click).&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;A single-click recipe that runs &#39;find_absorbed&#39; and then &#39;fit_continuum&#39; in sequence, based on the V1 &#39;clip_flux&#39; algorithm.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_len_lya&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Smoothing length in Ly-a forest (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_len_out&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Smoothing length outside Ly-a forest (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma threshold for clipping&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;fudge&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Fudge factor. Use &#39;auto&#39; or a float (e.g., &#39;1.0&#39;).&quot;</span><span class="p">},</span> 
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_fwhm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing FWHM (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Use QSO template to trace Lyman-alpha emission&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="s2">"estimate_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-estimate continuum (single-click)."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"A single-click recipe that runs 'find_absorbed' and then 'fit_continuum' in sequence, based on the V1 'clip_flux' algorithm."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_len_lya"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Smoothing length in Ly-a forest (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_len_out"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Smoothing length outside Ly-a forest (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma threshold for clipping"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"fudge"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"auto"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fudge factor. Use 'auto' or a float (e.g., '1.0')."</span><span class="p">},</span> 
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_fwhm"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Final Gaussian smoothing FWHM (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"template"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Use QSO template to trace Lyman-alpha emission"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Also re-normalize 'model'?"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;continuum_cb.html#estimate_auto&quot;</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#estimate_auto"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;find_absorbed&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Find absorbed regions (V1 logic).&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Run the V1 &#39;clip_flux&#39; kappa-sigma algorithm (with Ly-a split) to create a &#39;mask_unabs&#39; column.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_len_lya&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Smoothing length in Ly-a forest (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_len_out&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Smoothing length outside Ly-a forest (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma threshold for clipping&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Use QSO template (NOT IMPLEMENTED)&quot;</span><span class="p">},</span>
+    <span class="s2">"find_absorbed"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Find absorbed regions (V1 logic)."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Run the V1 'clip_flux' kappa-sigma algorithm (with Ly-a split) to create a 'mask_unabs' column."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_len_lya"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5000.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Smoothing length in Ly-a forest (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_len_out"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">400.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Smoothing length outside Ly-a forest (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma threshold for clipping"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"template"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Use QSO template (NOT IMPLEMENTED)"</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;continuum_cb.html#find_absorbed&quot;</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#find_absorbed"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;fit_continuum&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit continuum to mask (V1 logic).&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Interpolate unabsorbed regions from a mask, optionally auto-center (fudge=&#39;auto&#39;), and smooth result.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="c1"># CHANGED: type is now str, default is &quot;auto&quot;</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;fudge&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Fudge factor. Use &#39;auto&#39; or a float (e.g., &#39;1.0&#39;).&quot;</span><span class="p">},</span> 
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;smooth_fwhm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Final Gaussian smoothing FWHM (km/s)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mask_col&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;abs_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Mask column to use (True=Absorbed)&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="s2">"fit_continuum"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit continuum to mask (V1 logic)."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Interpolate unabsorbed regions from a mask, optionally auto-center (fudge='auto'), and smooth result."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="c1"># CHANGED: type is now str, default is "auto"</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"fudge"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"auto"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fudge factor. Use 'auto' or a float (e.g., '1.0')."</span><span class="p">},</span> 
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"smooth_fwhm"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">800.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Final Gaussian smoothing FWHM (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"abs_mask"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask column to use (True=Absorbed)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Also re-normalize 'model'?"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;continuum_cb.html#fit_continuum&quot;</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#fit_continuum"</span>
     <span class="p">},</span>
-    <span class="s2">&quot;fit_powerlaw&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit power-law continuum.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates &#39;cont_pl&#39; column.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;regions&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;128.0-129.0, 131.5-132.5, 134.5-136.0&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Comma-separated rest-frame regions (nm), e.g., &#39;128-129,131-132&#39;&quot;</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kappa&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Sigma threshold for clipping outliers&quot;</span><span class="p">},</span>
+    <span class="s2">"fit_powerlaw"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit power-law continuum."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates 'cont_pl' column."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"regions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"128.0-129.0, 131.5-132.5, 134.5-136.0"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma threshold for clipping outliers"</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;continuum_cb.html#fit_powerlaw&quot;</span> <span class="c1"># Placeholder URL</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#fit_powerlaw"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
-    <span class="s2">&quot;update_from_knots&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;brief&quot;</span><span class="p">:</span> <span class="s2">&quot;Update continuum from manual knots.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;details&quot;</span><span class="p">:</span> <span class="s2">&quot;Interpolate a spline through manually placed knots and update the continuum.&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;knots_x&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;List of x coordinates&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;knots_y&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;List of y coordinates&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;renorm_model&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Also re-normalize &#39;model&#39;?&quot;</span><span class="p">,</span> <span class="s2">&quot;gui_hidden&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="s2">"update_from_knots"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Update continuum from manual knots."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Interpolate a spline through manually placed knots and update the continuum."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"knots_x"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"List of x coordinates"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"knots_y"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"List of y coordinates"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Also re-normalize 'model'?"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="c1"># No URL needed for internal interactive recipes, but you can add one if you have docs</span>
     <span class="p">},</span>
@@ -504,14 +523,14 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sigma (km/s) of the final continuum smoothing.</span>
+<span class="w">    </span><span class="sd">"""Sigma (km/s) of the final continuum smoothing.</span>
 
 <span class="sd">    The width is given as a FWHM (findings register F16, decided with</span>
 <span class="sd">    Guido; default 800 km/s, within 0.5% of the V1 continuum on J0103-1305).</span>
 <span class="sd">    ``smooth_std`` is the deprecated V2 parameter (a sigma, for old scripts</span>
 <span class="sd">    and logs) and takes precedence when given.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">smooth_std</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;None&#39;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">smooth_std</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">'None'</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_std</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">)</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span>
 
@@ -519,84 +538,84 @@
 <div class="viewcode-block" id="RecipeContinuumV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeContinuumV2</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Recipes for estimating and fitting the quasar continuum.</span>
 
 <span class="sd">    These methods are accessed via the ``session.continuum`` attribute and delegate</span>
 <span class="sd">    heavy logic to :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 <div class="viewcode-block" id="RecipeContinuumV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">'SessionV2'</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session_v2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">&#39;cont&#39;</span> <span class="c1"># V1 tag for this menu</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">'cont'</span> <span class="c1"># V1 tag for this menu</span></div>
 
 
 <div class="viewcode-block" id="RecipeContinuumV2.estimate_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5000.0&#39;</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;400.0&#39;</span><span class="p">,</span> 
-                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2.0&#39;</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;1.0&#39;</span><span class="p">,</span> 
-                      <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;800.0&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span>
-                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5000.0'</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'400.0'</span><span class="p">,</span> 
+                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'1.0'</span><span class="p">,</span> 
+                      <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'800.0'</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'True'</span><span class="p">,</span>
+                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-estimate continuum (single-click).</span>
 
 <span class="sd">        A single-click recipe that runs ``find_absorbed`` and then ``fit_continuum``</span>
-<span class="sd">        in sequence, based on the V1 &#39;clip_flux&#39; algorithm.</span>
+<span class="sd">        in sequence, based on the V1 'clip_flux' algorithm.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        smooth_len_lya : str, optional</span>
 <span class="sd">            Smoothing length (km/s) for initial guess in the Ly-alpha forest.</span>
-<span class="sd">            Defaults to ``&#39;5000.0&#39;``.</span>
+<span class="sd">            Defaults to ``'5000.0'``.</span>
 <span class="sd">        smooth_len_out : str, optional</span>
 <span class="sd">            Smoothing length (km/s) for initial guess outside the forest.</span>
-<span class="sd">            Defaults to ``&#39;400.0&#39;``.</span>
+<span class="sd">            Defaults to ``'400.0'``.</span>
 <span class="sd">        kappa : str, optional</span>
-<span class="sd">            Sigma threshold for finding absorption. Defaults to ``&#39;2.0&#39;``.</span>
+<span class="sd">            Sigma threshold for finding absorption. Defaults to ``'2.0'``.</span>
 <span class="sd">        fudge : str, optional</span>
-<span class="sd">            A multiplicative factor. Can be a float (e.g., ``&#39;1.0&#39;``) or ``&#39;auto&#39;``.</span>
-<span class="sd">            If ``&#39;auto&#39;``, the factor is calculated to center the continuum residuals.</span>
-<span class="sd">            Defaults to ``&#39;1.0&#39;``.</span>
+<span class="sd">            A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.</span>
+<span class="sd">            If ``'auto'``, the factor is calculated to center the continuum residuals.</span>
+<span class="sd">            Defaults to ``'1.0'``.</span>
 <span class="sd">        smooth_fwhm : str, optional</span>
-<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``&#39;800.0&#39;``.</span>
+<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.</span>
 <span class="sd">        smooth_std : str, optional</span>
 <span class="sd">            Deprecated: the standard deviation (km/s) used before; overrides</span>
 <span class="sd">            ``smooth_fwhm`` when given. Defaults to ``None``.</span>
 <span class="sd">        template : str, optional</span>
-<span class="sd">            If ``&#39;True&#39;``, use a QSO template. Defaults to ``&#39;False&#39;``.</span>
+<span class="sd">            If ``'True'``, use a QSO template. Defaults to ``'False'``.</span>
 <span class="sd">        renorm_model : str, optional</span>
-<span class="sd">            If ``&#39;True&#39;``, re-normalize the &#39;model&#39; column to match the new continuum.</span>
-<span class="sd">            Defaults to ``&#39;True&#39;``.</span>
+<span class="sd">            If ``'True'``, re-normalize the 'model' column to match the new continuum.</span>
+<span class="sd">            Defaults to ``'True'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with updated continuum</span>
 <span class="sd">            and absorption mask, or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">smooth_len_lya_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_len_lya</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
             <span class="n">smooth_len_out_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_len_out</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
             <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span>
-            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
-            <span class="c1"># Allow &#39;auto&#39; or parse float</span>
-            <span class="k">if</span> <span class="n">fudge</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
-                <span class="n">fudge_f</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span>
+            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
+            <span class="c1"># Allow 'auto' or parse float</span>
+            <span class="k">if</span> <span class="n">fudge</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">:</span>
+                <span class="n">fudge_f</span> <span class="o">=</span> <span class="s1">'auto'</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">fudge_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge</span><span class="p">)</span>
             <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="n">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">)</span>  <span class="c1"># sigma, km/s</span>
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="c1"># Read z_em from session</span>
-            <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+            <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">if</span> <span class="n">z_em_f</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;z_em is 0.0. Run &#39;Edit &gt; Set Properties&#39; first.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' first."</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Auto-continuum: Finding absorbed regions...&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Finding absorbed regions..."</span><span class="p">)</span>
             <span class="c1"># 1. Call the first API method</span>
             <span class="n">spec_with_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
                 <span class="n">smooth_len_lya</span><span class="o">=</span><span class="n">smooth_len_lya_q</span><span class="p">,</span>
@@ -605,11 +624,11 @@
                 <span class="n">template</span><span class="o">=</span><span class="n">template_b</span>
             <span class="p">)</span>
             
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Auto-continuum: Fitting continuum to mask...&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Fitting continuum to mask..."</span><span class="p">)</span>
             <span class="n">spec_with_cont</span> <span class="o">=</span> <span class="n">spec_with_mask</span><span class="o">.</span><span class="n">fit_continuum</span><span class="p">(</span>
                 <span class="n">fudge</span><span class="o">=</span><span class="n">fudge_f</span><span class="p">,</span>
                 <span class="n">smooth_std_kms</span><span class="o">=</span><span class="n">smooth_std_f</span><span class="p">,</span>
-                <span class="n">mask_col</span><span class="o">=</span><span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span>
+                <span class="n">mask_col</span><span class="o">=</span><span class="s1">'abs_mask'</span><span class="p">,</span>
                 <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model_b</span><span class="p">,</span>
                 <span class="n">template</span><span class="o">=</span><span class="n">template_b</span>
             <span class="p">)</span>
@@ -617,18 +636,18 @@
             <span class="c1"># 3. Return the final new state</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec_with_cont</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during estimate_auto: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during estimate_auto: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeContinuumV2.find_absorbed">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">find_absorbed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;5000.0&#39;</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;400.0&#39;</span><span class="p">,</span> 
-                        <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2.0&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_absorbed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5000.0'</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'400.0'</span><span class="p">,</span> 
+                        <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find absorbed regions (V1 logic).</span>
 
-<span class="sd">        Runs the V1 &#39;clip_flux&#39; kappa-sigma algorithm (with Ly-alpha forest split)</span>
+<span class="sd">        Runs the V1 'clip_flux' kappa-sigma algorithm (with Ly-alpha forest split)</span>
 <span class="sd">        to create a boolean mask (``abs_mask``) where True indicates absorption.</span>
 <span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.find_absorbed`.</span>
 
@@ -636,35 +655,35 @@
 <span class="sd">        ----------</span>
 <span class="sd">        smooth_len_lya : str, optional</span>
 <span class="sd">            Smoothing length (km/s) for initial guess in the Ly-alpha forest.</span>
-<span class="sd">            Defaults to ``&#39;5000.0&#39;``.</span>
+<span class="sd">            Defaults to ``'5000.0'``.</span>
 <span class="sd">        smooth_len_out : str, optional</span>
 <span class="sd">            Smoothing length (km/s) for initial guess outside the forest.</span>
-<span class="sd">            Defaults to ``&#39;400.0&#39;``.</span>
+<span class="sd">            Defaults to ``'400.0'``.</span>
 <span class="sd">        kappa : str, optional</span>
 <span class="sd">            Sigma threshold for clipping. Flux below ``mean - kappa * sigma`` is</span>
-<span class="sd">            considered absorbed. Defaults to ``&#39;2.0&#39;``.</span>
+<span class="sd">            considered absorbed. Defaults to ``'2.0'``.</span>
 <span class="sd">        template : str, optional</span>
-<span class="sd">            If ``&#39;True&#39;``, use a QSO template (Not Implemented). Defaults to ``&#39;False&#39;``.</span>
+<span class="sd">            If ``'True'``, use a QSO template (Not Implemented). Defaults to ``'False'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the ``abs_mask``</span>
 <span class="sd">            column added/updated, or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">smooth_len_lya_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_len_lya</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
             <span class="n">smooth_len_out_q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smooth_len_out</span><span class="p">)</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
             <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span>
-            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="c1"># Read z_em from session</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="n">z_em_f</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;z_em is 0.0. Run &#39;Edit &gt; Set Properties&#39; before continuum fitting.&quot;</span><span class="p">)</span>
-            <span class="c1"># We don&#39;t stop, as the operation function handles z_em=0.0</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' before continuum fitting."</span><span class="p">)</span>
+            <span class="c1"># We don't stop, as the operation function handles z_em=0.0</span>
             
         <span class="k">try</span><span class="p">:</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
@@ -675,16 +694,16 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during find_absorbed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during find_absorbed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeContinuumV2.fit_continuum">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.fit_continuum">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;800.0&#39;</span><span class="p">,</span> 
-                      <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abs_mask&#39;</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span><span class="p">,</span>
-                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span> <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'800.0'</span><span class="p">,</span> 
+                      <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'abs_mask'</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'True'</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">,</span>
+                      <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fit continuum to mask (V1 logic).</span>
 
 <span class="sd">        Interpolates unabsorbed regions from a mask, optionally applies an auto-fudge</span>
@@ -694,34 +713,34 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        fudge : str, optional</span>
-<span class="sd">            Fudge factor. Can be a float (e.g., ``&#39;1.0&#39;``) or ``&#39;auto&#39;``.</span>
-<span class="sd">            Defaults to ``&#39;auto&#39;``.</span>
+<span class="sd">            Fudge factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.</span>
+<span class="sd">            Defaults to ``'auto'``.</span>
 <span class="sd">        smooth_fwhm : str, optional</span>
-<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``&#39;800.0&#39;``.</span>
+<span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.</span>
 <span class="sd">        smooth_std : str, optional</span>
 <span class="sd">            Deprecated: the standard deviation (km/s) used before; overrides</span>
 <span class="sd">            ``smooth_fwhm`` when given. Defaults to ``None``.</span>
 <span class="sd">        mask_col : str, optional</span>
-<span class="sd">            Name of the mask column to use (True=Absorbed). Defaults to ``&#39;abs_mask&#39;``.</span>
+<span class="sd">            Name of the mask column to use (True=Absorbed). Defaults to ``'abs_mask'``.</span>
 <span class="sd">        renorm_model : str, optional</span>
-<span class="sd">            If ``&#39;True&#39;``, re-normalize the &#39;model&#39; column. Defaults to ``&#39;True&#39;``.</span>
+<span class="sd">            If ``'True'``, re-normalize the 'model' column. Defaults to ``'True'``.</span>
 <span class="sd">        template : str, optional</span>
-<span class="sd">            If ``&#39;True&#39;``, use a QSO template. Defaults to ``&#39;False&#39;``.</span>
+<span class="sd">            If ``'True'``, use a QSO template. Defaults to ``'False'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the ``cont``</span>
 <span class="sd">            column added/updated, or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">smooth_std_f</span> <span class="o">=</span> <span class="n">_smoothing_sigma</span><span class="p">(</span><span class="n">smooth_fwhm</span><span class="p">,</span> <span class="n">smooth_std</span><span class="p">)</span>
-            <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
-            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+            <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
+            <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
             
-            <span class="c1"># Allow &#39;auto&#39; or parse float</span>
-            <span class="k">if</span> <span class="n">fudge</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
-                <span class="n">fudge_arg</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span>
+            <span class="c1"># Allow 'auto' or parse float</span>
+            <span class="k">if</span> <span class="n">fudge</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">:</span>
+                <span class="n">fudge_arg</span> <span class="o">=</span> <span class="s1">'auto'</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">fudge_arg</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge</span><span class="p">)</span>
                 
@@ -739,15 +758,15 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during fit_continuum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_continuum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
         
 <div class="viewcode-block" id="RecipeContinuumV2.fit_powerlaw">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.fit_powerlaw">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_powerlaw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;128.0-129.0, 131.5-132.5, 134.5-136.0&#39;</span><span class="p">,</span>
-                     <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;3.0&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_powerlaw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'128.0-129.0, 131.5-132.5, 134.5-136.0'</span><span class="p">,</span>
+                     <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'3.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fit power-law continuum.</span>
 
 <span class="sd">        Fits a power-law (linear in log-log space) to user-defined, unabsorbed</span>
@@ -758,20 +777,20 @@
 <span class="sd">        ----------</span>
 <span class="sd">        regions : str, optional</span>
 <span class="sd">            Comma-separated rest-frame wavelength regions (nm).</span>
-<span class="sd">            Example: ``&#39;128.0-129.0, 131.5-132.5&#39;``.</span>
-<span class="sd">            Defaults to ``&#39;128.0-129.0, 131.5-132.5, 134.5-136.0&#39;``.</span>
+<span class="sd">            Example: ``'128.0-129.0, 131.5-132.5'``.</span>
+<span class="sd">            Defaults to ``'128.0-129.0, 131.5-132.5, 134.5-136.0'``.</span>
 <span class="sd">        kappa : str, optional</span>
-<span class="sd">            Sigma threshold for clipping outliers within regions. Defaults to ``&#39;3.0&#39;``.</span>
+<span class="sd">            Sigma threshold for clipping outliers within regions. Defaults to ``'3.0'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the ``cont_pl``</span>
 <span class="sd">            column added/updated, or 0 on failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Cannot fit power-law: Emission Redshift (z_em) is 0.0. &quot;</span>
-                          <span class="s2">&quot;Run &#39;Edit &gt; Set Properties&#39; first.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Cannot fit power-law: Emission Redshift (z_em) is 0.0. "</span>
+                          <span class="s2">"Run 'Edit &gt; Set Properties' first."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">try</span><span class="p">:</span>
@@ -783,14 +802,14 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed during fit_powerlaw: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_powerlaw: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
     
 <div class="viewcode-block" id="RecipeContinuumV2.update_from_knots">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.update_from_knots">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_knots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knots_x</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">knots_y</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SessionV2&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_knots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knots_x</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">knots_y</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update continuum from manual knots.</span>
 
 <span class="sd">        Interpolates a Cubic Spline through manually placed knots and updates the</span>
@@ -804,14 +823,14 @@
 <span class="sd">        knots_y : list</span>
 <span class="sd">            List of y coordinates (flux) for the knots.</span>
 <span class="sd">        renorm_model : bool, optional</span>
-<span class="sd">            If ``True``, re-normalize the &#39;model&#39; column to match the new continuum.</span>
+<span class="sd">            If ``True``, re-normalize the 'model' column to match the new continuum.</span>
 <span class="sd">            Defaults to ``True``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the updated continuum.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># 1. Delegate Business Logic to Core</span>
         <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_continuum_from_knots</span><span class="p">(</span>
             <span class="n">knots_x</span><span class="p">,</span> <span class="n">knots_y</span><span class="p">,</span> <span class="n">renorm_model</span>
@@ -820,11 +839,11 @@
         <span class="c1"># 2. Logging (Specific to the Recipe layer)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">log_manager</span><span class="p">:</span>
             <span class="n">log_params</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;knots_x&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">knots_x</span><span class="p">),</span> <span class="c1"># Ensure list</span>
-                <span class="s1">&#39;knots_y&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">knots_y</span><span class="p">),</span>
-                <span class="s1">&#39;renorm_model&#39;</span><span class="p">:</span> <span class="n">renorm_model</span>
+                <span class="s1">'knots_x'</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">knots_x</span><span class="p">),</span> <span class="c1"># Ensure list</span>
+                <span class="s1">'knots_y'</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">knots_y</span><span class="p">),</span>
+                <span class="s1">'renorm_model'</span><span class="p">:</span> <span class="n">renorm_model</span>
             <span class="p">}</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">log_manager</span><span class="o">.</span><span class="n">add_entry</span><span class="p">(</span><span class="s2">&quot;update_from_knots&quot;</span><span class="p">,</span> <span class="n">log_params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">log_manager</span><span class="o">.</span><span class="n">add_entry</span><span class="p">(</span><span class="s2">"update_from_knots"</span><span class="p">,</span> <span class="n">log_params</span><span class="p">)</span>
 
         <span class="c1"># 3. Return new session</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
@@ -859,8 +878,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -880,8 +899,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
-    <br/>
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
   </p>
 </div>
       
@@ -894,7 +912,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

@@ -14,48 +14,57 @@ If you are on a Mac and want to use the GUI immediately without managing Python 
 If you see a security warning, you may need to Right-Click the app and select 'Open' the first time, or explicitly authorize the app on System Settings).
 :::
 
-## Developer Installation (Python)
+## Installing with pip (Linux, Windows, macOS)
 
-For Linux/Windows users, or developers who want to modify the code, install from source.
+Astrocook requires **Python 3.12 or later**. `pip` installs all the other
+dependencies (PySide6, astropy, numpy, scipy, matplotlib, ...).
 
-### Prerequisites
-
-Astrocook requires Python 3.9 or later and the following libraries:
-- **GUI**: `PySide6`
-- **Science**: `astropy`, `numpy`, `scipy`
-- **Plotting**: `matplotlib`, `scienceplots`
-- **Utils**: `qtawesome`, `numexpr`
-
-### Installing from Source
-
-1. Clone the repository:
+Astrocook is not on PyPI yet; install it directly from GitHub, preferably in
+a virtual environment:
 ```
-git clone https://github.com/das-oats/astrocook.git
-cd astrocook
-```
-
-2. Create a virtual environment (Recommended):
-```
-python -m venv ac2
+python3 -m venv ac2
 source ac2/bin/activate  # On Windows: ac2\Scripts\activate
+pip install git+https://github.com/DAS-OATs/astrocook.git
 ```
 
 :::{note}
-If the `venv` command fails, you may need to install the module first (e.g., `sudo apt install python3-venv` on Ubuntu/Debian).
+If the `venv` command fails, you may need to install the module first (e.g., `sudo apt install python3-venv` on Ubuntu/Debian). Check the Python version with `python3 --version`; if it is older than 3.12, use a newer interpreter (e.g., `python3.12 -m venv ac2`).
 :::
 
-3. Install dependencies:
-```
-pip install -e .
-```
+To update to the latest version, run the same `pip install` command with
+`--upgrade`.
 
-### Running the App
+## Running the App
 
-To launch the GUI from the source code, run this from the root directory:
+With the virtual environment active, launch the GUI from any directory:
 ```
-python -m astrocook
+astrocook [file ...]
 ```
+`python -m astrocook [file ...]` is equivalent. The optional arguments are
+spectra or sessions to open at startup.
 
 :::{note}
 If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., `sudo apt install libxcb-cursor0`).
 :::
+
+## Developer Installation
+
+To modify the code, clone the repository and install it in editable mode,
+with the test and development tools:
+```
+git clone https://github.com/DAS-OATs/astrocook.git
+cd astrocook
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+Code changes take effect without reinstalling. After a `git pull` that
+changes `pyproject.toml` (dependencies, commands), run
+`pip install -e ".[dev]"` again: commands such as `astrocook` are created at
+installation time. The tests run with `pytest`.
+
+Optional extras for maintenance tasks: `pip install -e ".[docs]"` to build
+this documentation (`generate_html.sh`, `deploy_docs.sh`) and
+`pip install -e ".[build]"` to build the macOS app (`build_app.sh`; the DMG
+also needs `brew install create-dmg`).
