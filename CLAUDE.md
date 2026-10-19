@@ -42,7 +42,8 @@ Current version: 2.0.2. Python ≥3.12.
   (undefined names only). The slow tests (`pytest --run-slow -m slow`) run
   in a separate job, not on pull requests: after each merge to master,
   weekly (Mondays) and on demand from the Actions page.
-- Launch the GUI: `python run_astrocook.py [file ...]`
+- Launch the GUI: `astrocook [file ...]`, `python -m astrocook` or
+  `python run_astrocook.py` (launcher in `astrocook/_run_astrocook.py`)
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`); coverage with
   `pytest --cov=astrocook`. Coverage is still low (56% of the V2 code):

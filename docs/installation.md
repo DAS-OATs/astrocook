@@ -51,10 +51,12 @@ pip install -e .
 
 ### Running the App
 
-To launch the GUI from the source code, run this from the root directory:
+To launch the GUI, run (from any directory):
 ```
-python -m astrocook
+astrocook [file ...]
 ```
+`python -m astrocook [file ...]` is equivalent. The optional arguments are
+spectra or sessions to open at startup.
 
 :::{note}
 If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., `sudo apt install libxcb-cursor0`).
