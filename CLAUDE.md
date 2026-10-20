@@ -76,7 +76,7 @@ Current version: 2.0.3. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis and 2 done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2 and 2-bis done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -114,10 +114,12 @@ Phase 2 done, released as 2.0.3 (packaging, no numerical changes).
 LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker
 renewal: to be discussed with Guido.
 
-Current: phase 2-bis (`ROADMAP.md`), before phase 3: F34 (window icon),
-Ruff warnings (then full `ruff check .` in CI), Sphinx warnings, `[bayes]`
-extra. Work in small PRs, one at a time; wait for the merge before the
-next. While #549 is open, each new PR goes on its own
+Phase 2-bis done (October 2026): F34 (window icon), Ruff warnings (full
+`ruff check .` in CI), Sphinx warnings, optional `[bayes]` extra (emcee,
+dynesty, corner); found F36 and F37, deferred to #559 and #560 (phase 4).
+
+Current: phase 3 (`ROADMAP.md`), decoupling from `legacy/`. Work in small
+PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
 Questionable behaviour found along the way goes in the findings register

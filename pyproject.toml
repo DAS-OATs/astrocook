@@ -39,10 +39,6 @@ dependencies = [
     "scienceplots>=2.1",
     "numexpr",
     "qtawesome",
-    # Bayesian fit (fitting/bayesian_fitter.py, gui/corner_plot.py)
-    "emcee",
-    "dynesty",
-    "corner",
     # Used only by astrocook/legacy/ (phase 3)
     "lmfit>=1.3",
     "tqdm>=4.66",
@@ -56,9 +52,18 @@ test = [
     "pytest-qt",
     "pytest-cov",
 ]
+# Bayesian fit (fitting/bayesian_fitter.py, gui/corner_plot.py): without
+# them the fit raises an error naming this extra and the GUI disables its
+# entries
+bayes = [
+    "emcee",
+    "dynesty",
+    "corner",
+]
 dev = [
-    # Test dependencies plus development tools (linter, mutation testing)
-    "astrocook[test]",
+    # Test dependencies plus development tools (linter, mutation testing);
+    # the tests also cover the Bayesian fit
+    "astrocook[test,bayes]",
     "ruff",
     "mutmut",
 ]
@@ -70,9 +75,9 @@ docs = [
     "sphinx-design",
     "pydata-sphinx-theme",
 ]
-# macOS app (build_app.sh, Astrocook.spec); the DMG also needs create-dmg
-# (brew install create-dmg)
-build = ["pyinstaller"]
+# macOS app (build_app.sh, Astrocook.spec), which includes the Bayesian
+# fit; the DMG also needs create-dmg (brew install create-dmg)
+build = ["pyinstaller", "astrocook[bayes]"]
 # V1 wx GUI (astrocook/legacy/, phase 3)
 legacy = ["wxPython"]
 
