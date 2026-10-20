@@ -35,10 +35,6 @@ ALLOWED = {
     ("astrocook/io/v1_stubs.py", "astrocook.legacy.spectrum"),
     ("astrocook/io/v1_stubs.py", "astrocook.legacy.syst_list"),
     ("astrocook/recipes/absorbers.py", "astrocook.legacy.functions"),
-    ("astrocook/recipes/absorbers.py", "astrocook.legacy.message"),
-    ("astrocook/recipes/continuum.py", "astrocook.legacy.message"),
-    ("astrocook/recipes/edit.py", "astrocook.legacy.message"),
-    ("astrocook/recipes/flux.py", "astrocook.legacy.message"),
 }
 
 

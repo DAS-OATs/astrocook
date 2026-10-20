@@ -2,7 +2,7 @@ import astropy.units as au
 import logging
 from typing import TYPE_CHECKING
 
-from astrocook.legacy.message import msg_param_fail
+from astrocook.recipes._messages import msg_param_fail
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2

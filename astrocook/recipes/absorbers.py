@@ -11,7 +11,7 @@ try:
     from astrocook.legacy.functions import trans_parse
 except ImportError:
     trans_parse = lambda s: []
-from astrocook.legacy.message import msg_param_fail
+from astrocook.recipes._messages import msg_param_fail
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
