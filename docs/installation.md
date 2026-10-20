@@ -56,6 +56,27 @@ spectra or sessions to open at startup.
 If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., `sudo apt install libxcb-cursor0`).
 :::
 
+## Using Astrocook from Python
+
+The package can also be used from your own scripts, without the GUI. For
+example, to open a session and smooth its spectrum:
+```python
+from astrocook.core.session import load_session_from_file
+
+session = load_session_from_file("my_session.acs2", "my_session", None, "auto")
+smoothed = session.flux.smooth(sigma_kms="50.0")
+```
+
+Astrocook reports its progress with Python's `logging` module and, like
+other libraries, leaves its configuration to your script: by default only
+warnings and errors are shown. To see the progress messages as well, add
+these lines at the start of the script:
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+```
+The GUI shows them anyway.
+
 ## Developer Installation
 
 To modify the code, clone the repository and install it in editable mode,
