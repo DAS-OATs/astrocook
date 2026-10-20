@@ -21,7 +21,6 @@ ALLOWED = {
     ("astrocook/core/session.py", "astrocook.legacy.gui_log"),
     ("astrocook/core/session_manager.py", "astrocook.legacy.gui_log"),
     ("astrocook/core/spectrum.py", "astrocook.legacy.spectrum"),
-    ("astrocook/core/spectrum.py", "astrocook.legacy.vars"),
     ("astrocook/core/system_list_migration.py", "astrocook.legacy.syst_list"),
     ("astrocook/gui/log_scripter_dialog.py", "astrocook.legacy.gui_log"),
     ("astrocook/gui/main_window.py", "astrocook.legacy.defaults"),

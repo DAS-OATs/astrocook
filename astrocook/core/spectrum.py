@@ -2022,25 +2022,21 @@ class SpectrumV2:
         
         # --- NEW: Apply QSO Template Normalization ---
         if template:
-            try:
-                from astrocook.legacy.vars import qso_composite
-                from scipy.interpolate import interp1d
-                
-                # qso_composite['x'] is in Angstroms. Convert to nm and shift to observed frame.
-                x_template_nm = (qso_composite['x'] / 10.0) * (1.0 + self._data.z_em)
-                y_template = qso_composite['y']
-                
-                # Interpolate template onto the current spectrum's grid (in nm)
-                interp_fn = interp1d(x_template_nm, y_template, bounds_error=False, fill_value=1.0)
-                y_interp = interp_fn(self.x.to_value(au.nm))
-                
-                # Normalize the working flux to flatten the emission peak
-                valid = y_interp > 0
-                y_fit[valid] = y_fit[valid] / y_interp[valid]
-                logging.info("Applied QSO template for continuum fitting.")
-            except ImportError:
-                logging.warning("Template requested but qso_composite not found in legacy.vars.")
-                template = False
+            from astrocook.core.templates import qso_composite
+            from scipy.interpolate import interp1d
+
+            # The composite is in Angstroms. Convert to nm and shift to observed frame.
+            x_template, y_template = qso_composite()
+            x_template_nm = (x_template / 10.0) * (1.0 + self._data.z_em)
+
+            # Interpolate template onto the current spectrum's grid (in nm)
+            interp_fn = interp1d(x_template_nm, y_template, bounds_error=False, fill_value=1.0)
+            y_interp = interp_fn(self.x.to_value(au.nm))
+
+            # Normalize the working flux to flatten the emission peak
+            valid = y_interp > 0
+            y_fit[valid] = y_fit[valid] / y_interp[valid]
+            logging.info("Applied QSO template for continuum fitting.")
         # ---------------------------------------------
 
         # 2. Step A: Interpolate (Raw Guess)
