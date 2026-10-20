@@ -1,23 +1,20 @@
 #!/bin/bash
+# Builds the website (build_site.sh) and pushes it to gh-pages by hand:
+#   ./deploy_docs.sh stable   docs of the checked-out release at the root
+#                             (check out its tag first: git checkout v2.0.3)
+#   ./deploy_docs.sh dev      docs of the checked-out master under /dev/
+# The same happens automatically (.github/workflows/docs.yml) when a
+# release is published and after each merge to master; this script stays
+# as a fallback. gh-pages is updated in a separate worktree, so files of
+# this working directory (sessions, caches) cannot end up on the site.
 
-# Builds the website (build_site.sh) and pushes it to gh-pages by hand.
-# The same happens automatically after each merge to master
-# (.github/workflows/docs.yml); this script stays as a fallback.
-
-# --- Configuration ---
-TARGET_BRANCH="gh-pages"
-
-# Stop the script if any command fails
 set -e
 
-# Colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-echo -e "${BLUE}=== Starting Documentation Deployment (Jekyll-Friendly Mode) ===${NC}"
-
-# 0. Safety Check
+TARGET="$1"
+if [ "$TARGET" != stable ] && [ "$TARGET" != dev ]; then
+    echo "Usage: ./deploy_docs.sh stable|dev"
+    exit 1
+fi
 if ! command -v sphinx-apidoc &> /dev/null; then
     echo "Error: sphinx-apidoc not found. Install it with: pip install -e \".[docs]\""
     exit 1
@@ -28,30 +25,30 @@ if [[ -n $(git status -s) ]]; then
     exit 1
 fi
 
-CURRENT_BRANCH=$(git branch --show-current)
-
-# 1-3. Build the site (V2 docs, V1 docs under /v1/, Jekyll patches)
-echo -e "${BLUE}Steps 1-3: Building the site...${NC}"
 TEMP_DIR=$(mktemp -d)
-./build_site.sh "$TEMP_DIR"
+trap 'git worktree remove --force "$TEMP_DIR/gh-pages" 2>/dev/null; rm -rf "$TEMP_DIR"' EXIT
 
-# 4. Switch to gh-pages and Deploy
-echo -e "${BLUE}Step 4: Switching to $TARGET_BRANCH...${NC}"
-git checkout "$TARGET_BRANCH"
+# 1. Build the site; switcher.json at the root always comes from master
+./build_site.sh "$TEMP_DIR/site" "$TARGET"
+git fetch origin master gh-pages
+git show origin/master:switcher.json > "$TEMP_DIR/switcher.json"
 
-echo -e "${BLUE}Step 5: Updating root directory...${NC}"
-# Copy the new V2 files to the root, overwriting the old ones
-cp -r "$TEMP_DIR"/* .
+# 2. Replace the root (but /dev/) or /dev/ on gh-pages
+git worktree add "$TEMP_DIR/gh-pages" origin/gh-pages
+cd "$TEMP_DIR/gh-pages"
+if [ "$TARGET" = stable ]; then
+    find . -mindepth 1 -maxdepth 1 ! -name .git ! -name dev -exec rm -rf {} +
+    cp -r "$TEMP_DIR/site"/. .
+else
+    rm -rf dev
+    mkdir dev
+    cp -r "$TEMP_DIR/site"/. dev/
+fi
+cp "$TEMP_DIR/switcher.json" switcher.json
 
-echo -e "${BLUE}Step 6: Committing and Pushing...${NC}"
-git add .
-git commit -m "Deploy V2 docs to root" || echo "No changes to commit"
-git push origin "$TARGET_BRANCH"
+# 3. Commit and push
+git add -A
+git commit -m "Deploy $TARGET docs by hand" || echo "No changes to commit"
+git push origin HEAD:gh-pages
 
-# 5. Cleanup
-echo -e "${BLUE}Step 7: Returning to $CURRENT_BRANCH...${NC}"
-rm -rf "$TEMP_DIR"
-git checkout "$CURRENT_BRANCH"
-
-echo -e "${GREEN}=== Deployment Complete! ===${NC}"
-echo "Your patched V2 docs are at: https://das-oats.github.io/astrocook/"
+echo "Done: https://das-oats.github.io/astrocook/"

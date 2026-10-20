@@ -2,7 +2,13 @@
   {
     "name": "2.0.3 (Stable)",
     "version": "2.0.3",
-    "url": "https://das-oats.github.io/astrocook/"
+    "url": "https://das-oats.github.io/astrocook/",
+    "preferred": true
+  },
+  {
+    "name": "dev (unreleased)",
+    "version": "dev",
+    "url": "https://das-oats.github.io/astrocook/dev/"
   },
   {
     "name": "1.9.0 (Legacy)",

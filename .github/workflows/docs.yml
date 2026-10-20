@@ -1,8 +1,17 @@
 name: Docs
 
 # Builds the website (build_site.sh) and publishes it on the gh-pages branch,
-# served at https://das-oats.github.io/astrocook/. Same steps as
-# deploy_docs.sh, which stays as a manual fallback.
+# served at https://das-oats.github.io/astrocook/:
+# - root: the docs of the latest release, rebuilt from its tag when a
+#   release is published (or by hand, giving the tag), together with the
+#   V1 docs under /v1/;
+# - /dev/: the docs of master, rebuilt after each merge (or by hand, with
+#   no tag), marked as unreleased by the version switcher.
+# Users read the docs of the version they installed; the switcher
+# (switcher.json, always taken from master) links the versions. Before
+# publishing a release, update the "preferred" entry of switcher.json on
+# master to the new version: the release build checks it.
+# deploy_docs.sh does the same by hand, as a fallback.
 on:
   push:
     branches: [master]
@@ -15,7 +24,16 @@ on:
       - "build_site.sh"
       - "generate_sphinx.sh"
       - ".github/workflows/docs.yml"
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: >-
+          Release tag to publish at the root (e.g. v2.0.3). Leave empty to
+          rebuild /dev/ from master.
+        required: false
+        default: ""
 
 # One deployment at a time; a newer one waits instead of cancelling a push
 concurrency:
@@ -32,9 +50,42 @@ jobs:
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
+      - name: Select the version to publish
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$EVENT" = release ]; then
+            if [ "$PRERELEASE" = true ]; then
+              echo "Pre-release: the docs at the root stay as they are"
+              echo "target=none" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "target=stable" >> "$GITHUB_OUTPUT"
+            echo "ref=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          elif [ -n "$INPUT_TAG" ]; then
+            echo "target=stable" >> "$GITHUB_OUTPUT"
+            echo "ref=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          else
+            if [ "$REF" != refs/heads/master ]; then
+              echo "::error::/dev/ is built from master only (got $REF)"
+              exit 1
+            fi
+            echo "target=dev" >> "$GITHUB_OUTPUT"
+            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.target.outputs.target != 'none'
+        with:
+          ref: ${{ steps.target.outputs.ref }}
 
       - uses: actions/setup-python@v5
+        if: steps.target.outputs.target != 'none'
         with:
           python-version: "3.13"
           cache: pip
@@ -42,23 +93,63 @@ jobs:
 
       # autodoc imports the GUI modules
       - name: Install Qt system libraries
+        if: steps.target.outputs.target != 'none'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
 
       - name: Install package
+        if: steps.target.outputs.target != 'none'
         run: pip install -e ".[docs]"
 
-      - name: Build the site
-        run: ./build_site.sh "$RUNNER_TEMP/site"
+      # The version switcher is maintained on master; a release build
+      # stops if its version is not the "preferred" entry
+      - name: Take switcher.json from master
+        if: steps.target.outputs.target != 'none'
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+        run: |
+          git fetch --depth 1 origin master:refs/remotes/origin/master
+          git show origin/master:switcher.json > "$RUNNER_TEMP/switcher.json"
+          if [ "$TARGET" = stable ]; then
+            python - "$RUNNER_TEMP/switcher.json" <<'EOF'
+          import json, sys
+          import astrocook
+          entries = json.load(open(sys.argv[1]))
+          preferred = [e["version"] for e in entries if e.get("preferred")]
+          if preferred != [astrocook.__version__]:
+              print(f"::error::switcher.json on master marks {preferred} as "
+                    f"the latest release, but this is {astrocook.__version__}: "
+                    "update it on master, then run this workflow again "
+                    "with the tag")
+              sys.exit(1)
+          EOF
+          fi
 
-      # As deploy_docs.sh: the new files overwrite the old ones on gh-pages
+      - name: Build the site
+        if: steps.target.outputs.target != 'none'
+        run: ./build_site.sh "$RUNNER_TEMP/site" "${{ steps.target.outputs.target }}"
+
+      # stable: the new files replace everything at the root but /dev/;
+      # dev: they replace /dev/. switcher.json at the root comes from master.
       - name: Publish on gh-pages
+        if: steps.target.outputs.target != 'none'
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+          REF: ${{ steps.target.outputs.ref }}
         run: |
           git fetch --depth 1 origin gh-pages
           git worktree add "$RUNNER_TEMP/gh-pages" FETCH_HEAD
-          cp -r "$RUNNER_TEMP/site"/. "$RUNNER_TEMP/gh-pages"/
           cd "$RUNNER_TEMP/gh-pages"
+          if [ "$TARGET" = stable ]; then
+            find . -mindepth 1 -maxdepth 1 ! -name .git ! -name dev -exec rm -rf {} +
+            cp -r "$RUNNER_TEMP/site"/. .
+          else
+            rm -rf dev
+            mkdir dev
+            cp -r "$RUNNER_TEMP/site"/. dev/
+          fi
+          cp "$RUNNER_TEMP/switcher.json" switcher.json
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to publish"
@@ -66,5 +157,5 @@ jobs:
           fi
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "Deploy docs from ${GITHUB_SHA::7}"
+              commit -m "Deploy $TARGET docs from ${REF}"
           git push origin HEAD:gh-pages
