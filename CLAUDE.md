@@ -9,6 +9,13 @@ Everything committed to the repository (code, comments, docs, commit
 messages, PR descriptions) is in English. Conversations with Guido are in
 Italian.
 
+## Working with Guido
+- Do not subscribe to PR activity (no automatic watching of the PRs).
+- Short progress messages during the work are fine; at the end of each
+  task, a discursive summary of what was done, why, what was found and
+  what is left (not just a terse list). Do not wait for long test runs to
+  finish before sending it: report their result when it comes.
+
 ## Project
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
@@ -105,22 +112,26 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2. phase 3 – decoupling from `legacy/` (the V1 routines used by the parity
    tests move to a test-only reference module, they are not deleted);
 3. release 2.1.0, first publication on PyPI;
-4. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560;
-5. release 2.2.0;
-6. phase 5 – splitting large files;
-7. phase 6 – error handling.
+4. MCP pilot (3–4 recipes, separate module; `ROADMAP.md`, section 4);
+5. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560;
+6. release 2.2.0;
+7. phase 5 – splitting large files;
+8. phase 6 – error handling;
+9. full MCP server, with a headless Docker image.
 
 Phase 2 done, released as 2.0.3 (packaging, no numerical changes).
-LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker
-renewal: to be discussed with Guido.
+LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker:
+no renewal for now; the V1 image (`containers/`, broken) is removed in
+phase 3.
 
 Phase 2-bis done (October 2026): F34 (window icon), Ruff warnings (full
 `ruff check .` in CI), Sphinx warnings, optional `[bayes]` extra (emcee,
 dynesty, corner); found F36 and F37, deferred to #559 and #560 (phase 4).
 
 Current: phase 3 (`ROADMAP.md`), decoupling from `legacy/`. Work in small
-PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
-`claude/...` branch (agreed with Guido; say which branch).
+PRs, one at a time; wait for the merge before the next. While #549 is
+open, each new PR goes on its own `claude/...` branch (agreed with Guido;
+say which branch).
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;
