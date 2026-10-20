@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changelog &#8212; Astrocook 2.0.3 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=cc54fbde" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="static/documentation_options.js?v=664ffad9"></script>
+    <script src="static/doctools.js?v=fd6eb6e6"></script>
+    <script src="static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'changelog';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Credits" href="credits.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.0.3" />
+  
+    
+    <script src="static/searchtools.js"></script>
+    <script src="static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#" aria-current="page">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#" aria-current="page">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Changelog</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
+<section id="id1">
+<h2>[2.0.3] - 2026-10-19<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>Packaging release. <strong>No numerical result changes</strong> with respect to 2.0.2.</p>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">[file</span> <span class="pre">...]</span></code> command to launch the GUI; <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">astrocook</span></code> now works from any directory (it needed the root of a source checkout).</p></li>
+<li><p>Installation with pip directly from GitHub: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git</span></code> (see the installation page; Astrocook is not on PyPI yet).</p></li>
+<li><p>Optional extras <code class="docutils literal notranslate"><span class="pre">[docs]</span></code> (to build the documentation) and <code class="docutils literal notranslate"><span class="pre">[build]</span></code> (to build the macOS app).</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><em>Security</em>: opening a crafted <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> or <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive could write files outside the temporary folder; such archives are now refused.</p></li>
+<li><p>Installed with pip, the GUI started without its window icon and splash screen: the images now ship with the package.</p></li>
+<li><p>The macOS build (<code class="docutils literal notranslate"><span class="pre">Astrocook.spec</span></code>) worked only on one machine (absolute paths); <code class="docutils literal notranslate"><span class="pre">build_app.sh</span></code> ran PyInstaller twice.</p></li>
+<li><p>The online documentation is now published automatically after each change.</p></li>
+<li><p>The documentation and build scripts stop at once with the command to run when Sphinx or PyInstaller is missing.</p></li>
+</ul>
+</section>
+<section id="removed">
+<h3>Removed<a class="headerlink" href="#removed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Unused dependencies <code class="docutils literal notranslate"><span class="pre">statsmodels</span></code> and <code class="docutils literal notranslate"><span class="pre">specutils</span></code>; the minimum NumPy version is now 1.26.</p></li>
+<li><p>Backup data files that were shipped in every package (~54 MB), the old V1 launchers (<code class="docutils literal notranslate"><span class="pre">legacy_home/</span></code>), unused identification code, and the Gemfile of the V1 documentation (the source of all the Dependabot security alerts).</p></li>
+</ul>
+</section>
+</section>
+<section id="id2">
+<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
+<section id="id3">
+<h3>Fixed<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><em>Data loss</em>: Bayesian fit (MCMC) with 200 steps or fewer overwrote the component parameters with NaN; the burn-in now adapts to the number of steps.</p></li>
+<li><p><em>Data loss</em>: the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive did not keep the session log; it is now saved and restored (also in the GUI).</p></li>
+<li><p>Voigt fits of broad lines (b &gt; 50 km/s) were biased (e.g. b = 80 fitted as ~50, logN 0.1 dex low): the soft penalty is removed (see below).</p></li>
+<li><p>Rebinned and co-added errors did not decrease with the number of pixels per bin (#490).</p></li>
+<li><p>Rebin clipping could empty bins and removed the cores of narrow absorption lines; it now clips spikes only (upward, against a running median) and never empties a bin.</p></li>
+<li><p>The Voigt model was zero on pixels whose resolution column held non-round or NaN values (e.g. co-added spectra).</p></li>
+<li><p>The automatic pipelines (<code class="docutils literal notranslate"><span class="pre">doublets_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">lya_auto</span></code>, …) gave different results at every run; they are now reproducible.</p></li>
+<li><p>Components could not be deleted from a spectrum without a continuum.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_depth</span></code> was ignored in the fits (“Fit component”, Bayesian fit).</p></li>
+<li><p>Rebin with a non-numeric parameter raised an error instead of aborting cleanly.</p></li>
+<li><p>The identification viewer failed on sessions reloaded from <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>.</p></li>
+<li><p>NaN uncertainties (ill-conditioned fits) are now reported in the log with the components involved.</p></li>
+<li><p>ASCII export (#476, #481); warning when saving a session with a V2 log to the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Added<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><em>Edit &gt; Import Systems from ASCII</em>: read absorption components from a CSV or whitespace-separated table (columns <code class="docutils literal notranslate"><span class="pre">series</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, …) (#480).</p></li>
+<li><p>Stitching overlapping regions switches the plot to scatter style (#442).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_b</span></code> parameter of the automatic pipelines (default 50 km/s) and of <em>Refit All</em> (default 300 km/s).</p></li>
+</ul>
+</section>
+<section id="changed-behaviour">
+<h3>Changed behaviour<a class="headerlink" href="#changed-behaviour" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Uncertainties</strong>: the errors of the fitted parameters are scaled by sqrt(reduced chi2), as in Astrocook v1; the reduced chi2 is computed on the pixels that constrain the fit and, after the automatic pipelines, on the final model. Errors become larger where the model does not describe the data well (e.g. unresolved blends).</p></li>
+<li><p><strong>Broad lines</strong>: the automatic pipelines bound b to 50 km/s (as the former penalty did, but without biasing the fits); manual fits use only the physical limit (300 km/s). Components that end at 50 km/s may be broader and can be refitted by hand.</p></li>
+<li><p><strong>Continuum smoothing</strong>: the width is now given as a FWHM (<code class="docutils literal notranslate"><span class="pre">smooth_fwhm</span></code>, default 800 km/s, which reproduces the v1 continuum). The former <code class="docutils literal notranslate"><span class="pre">smooth_std</span></code> (a standard deviation, default 500 km/s) is still accepted. The default continuum is smoothed less than in 2.0.1, so continua and the results of the automatic pipelines change slightly.</p></li>
+</ul>
+</section>
+</section>
+<section id="id5">
+<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><em>Feature</em>: Added “Equalize and Stitch” to the GUI with dynamic parameters.</p></li>
+<li><p><em>Fix</em>: Prevented FITS save crashes from Ly-α identifications and ensured tooltips render safely upon reloading.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id6" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Added an experimental Bayesian fitting engine supporting MCMC (<code class="docutils literal notranslate"><span class="pre">emcee</span></code>).</p></li>
+<li><p>Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.</p></li>
+<li><p>Fixed a critical group definition bug to ensure physically linked components are always correctly grouped during fitting.</p></li>
+<li><p>Improved continuum fitting and smoothing methods, including dynamic re-normalization of the Voigt model.</p></li>
+<li><p>Polished the GUI with publication-ready plot formatting, stacked asymmetric error labels, and scientific notation for redshift uncertainties.</p></li>
+<li><p>Finalized the transition to the immutable V2 data architecture and removed legacy dead code.</p></li>
+</ul>
+</section>
+<section id="beta-3-2026-02-18">
+<h2>[2.0.0-beta.3] - 2026-02-18<a class="headerlink" href="#beta-3-2026-02-18" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Improved robustness (crash recovery) and fitting (weak lines, Lyman forest)</p></li>
+<li><p>Updated line lists (<code class="docutils literal notranslate"><span class="pre">FeII</span></code>, <code class="docutils literal notranslate"><span class="pre">SiII</span></code>, etc.) and set turbulent broadening (<code class="docutils literal notranslate"><span class="pre">btur</span></code>) to default to frozen.</p></li>
+<li><p>Added batch actions (refit, freeze, delete), group highlighting, and visual feedback for frozen parameters</p></li>
+<li><p>Introduced a Data Inspector and a recipe to equalize flux across sessions</p></li>
+<li><p>Added Drag-and-Drop support to the main window</p></li>
+</ul>
+</section>
+<section id="beta-2-2026-01-22">
+<h2>[2.0.0-beta.2] - 2026-01-22<a class="headerlink" href="#beta-2-2026-01-22" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>More flexible way to manually edit continuum</p></li>
+<li><p>More robust fitting engine (when parameters hit boundary values)</p></li>
+<li><p>More options in adding/fitting components (single doublet component; stop button for refitting)</p></li>
+<li><p>Optional refitting of systems upon import into a session</p></li>
+</ul>
+</section>
+<section id="beta-1-2026-01-02">
+<h2>[2.0.0-beta.1] - 2026-01-02<a class="headerlink" href="#beta-1-2026-01-02" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed a typo in the <code class="docutils literal notranslate"><span class="pre">Continuum</span></code> menu.</p></li>
+</ul>
+</section>
+<section id="beta-2025-12-23">
+<h2>[2.0.0-beta] - 2025-12-23<a class="headerlink" href="#beta-2025-12-23" title="Link to this heading">#</a></h2>
+<p>Includes</p>
+<ul class="simple">
+<li><p>a fully redesigned architecture, with immutable structures and exposed APIs;</p></li>
+<li><p>a new PySide6 QUI</p></li>
+<li><p>countless improvements to the V1 algorithms and new algorithms (especially for continuum and absorber fitting)</p></li>
+</ul>
+<p>Also downloadable as a macOS App.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="credits.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Credits</p>
+      </div>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.0.3] - 2026-10-19</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#removed">Removed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-behaviour">Changed behaviour</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">[2.0.1] - 2026-04-21</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">[2.0.0] - 2026-04-07</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-3-2026-02-18">[2.0.0-beta.3] - 2026-02-18</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-2-2026-01-22">[2.0.0-beta.2] - 2026-01-22</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-1-2026-01-02">[2.0.0-beta.1] - 2026-01-02</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-2025-12-23">[2.0.0-beta] - 2025-12-23</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="sources/changelog.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

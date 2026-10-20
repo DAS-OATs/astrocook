@@ -1,0 +1,7 @@
+astrocook.recipes.messages module
+=================================
+
+.. automodule:: astrocook.recipes.messages
+   :members:
+   :show-inheritance:
+   :undoc-members:
