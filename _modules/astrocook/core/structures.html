@@ -449,6 +449,7 @@
   <h1>Source code for astrocook.core.structures</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -802,17 +803,20 @@
 <span class="sd">    This class maintains a list of :class:`LogEntryV2` objects matching the</span>
 <span class="sd">    stack of immutable states in the session manager. It supports truncation</span>
 <span class="sd">    to handle branching history (undo/redo logic).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    entries : list of LogEntryV2</span>
+<span class="sd">        The list of operations performed.</span>
+<span class="sd">    current_index : int</span>
+<span class="sd">        Pointer to the currently active log entry (state).</span>
 <span class="sd">    """</span>
-    <span class="c1"># The attributes are documented by the #: comments below and not in an</span>
-    <span class="c1"># "Attributes" section, which Sphinx would describe twice</span>
 <div class="viewcode-block" id="HistoryLogV2.__init__">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1">#: The list of operations performed (list of :class:`LogEntryV2`).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogEntryV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1">#: Pointer to the currently active log entry (state), i.e. the last</span>
-        <span class="c1">#: valid entry.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span></div>
+        <span class="c1"># current_index points to the *last valid entry*</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> </div>
 
 
     <span class="nd">@property</span>

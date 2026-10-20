@@ -448,11 +448,17 @@
                   
   <h1>Source code for astrocook.recipes.flux</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.photometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_synthetic_ab_mag</span><span class="p">,</span> <span class="n">STANDARD_FILTERS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">SpectrumV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">rebin_spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
@@ -687,9 +693,7 @@
 
             <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
             
-            <span class="c1"># Parsed but not applied: the spectrum is never normalized</span>
-            <span class="c1"># (findings register F37)</span>
-            <span class="n">norm_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>  <span class="c1"># noqa: F841</span>
+            <span class="n">norm_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span> <span class="c1"># Handle boolean flag</span>
             <span class="n">filling_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filling</span><span class="p">)</span> <span class="k">if</span> <span class="n">filling</span> <span class="o">!=</span> <span class="s1">'nan'</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context;</span>

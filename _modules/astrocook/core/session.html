@@ -447,17 +447,22 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.core.session</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.defaults</span><span class="w"> </span><span class="kn">import</span> <span class="n">Defaults</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">Format</span> 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.gui_log</span><span class="w"> </span><span class="kn">import</span> <span class="n">GUILog</span> 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_stubs</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span><span class="p">,</span> <span class="n">save_archive_v1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
@@ -466,9 +471,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFluxV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
+    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">LogEntryV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list_migration</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_system_list_v1_to_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">guarded_deepcopy_v1_state</span>
 
 <span class="c1"># Define the type for the log manager</span>

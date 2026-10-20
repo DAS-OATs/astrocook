@@ -460,7 +460,7 @@
 
 
 <div class="viewcode-block" id="make_grid">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.make_grid">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.make_grid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_grid</span><span class="p">(</span><span class="n">lam_min_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lam_max_nm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
               <span class="n">dv_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Pixel centres and edges (nm), uniform in velocity.</span>
@@ -479,7 +479,7 @@
 
 
 <div class="viewcode-block" id="normalized_flux">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.normalized_flux">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.normalized_flux">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">normalized_flux</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Noiseless normalised flux, convolved and averaged over each pixel.</span>
 
@@ -506,7 +506,7 @@
 
 
 <div class="viewcode-block" id="continuum">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.continuum">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.continuum">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">continuum</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">x_nm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Power law plus the Gaussian emission lines of ``truth``."""</span>
     <span class="n">power_law</span> <span class="o">=</span> <span class="n">truth</span><span class="o">.</span><span class="n">cont_amplitude</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_nm</span> <span class="o">/</span> <span class="n">truth</span><span class="o">.</span><span class="n">cont_ref_nm</span><span class="p">)</span> <span class="o">**</span> <span class="n">truth</span><span class="o">.</span><span class="n">cont_slope</span>
@@ -520,7 +520,7 @@
 
 
 <div class="viewcode-block" id="spike_indices">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.spike_indices">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.spike_indices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">spike_indices</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">n_pixels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Pixel indices of the spikes of ``truth`` (reproducible from the seed)."""</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">([</span><span class="n">truth</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
@@ -529,7 +529,7 @@
 
 
 <div class="viewcode-block" id="generate">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.generate">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Mock spectrum for ``truth``.</span>
 

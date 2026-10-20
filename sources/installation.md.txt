@@ -27,15 +27,6 @@ source ac2/bin/activate  # On Windows: ac2\Scripts\activate
 pip install git+https://github.com/DAS-OATs/astrocook.git
 ```
 
-The Bayesian fit (MCMC and nested sampling, corner plots) needs optional
-dependencies (emcee, dynesty, corner), which the macOS app already
-includes. To install them with the package:
-```
-pip install "astrocook[bayes] @ git+https://github.com/DAS-OATs/astrocook.git"
-```
-Without them, the Bayesian entries of the system inspector are disabled and
-the `fit_bayesian` recipe raises an error naming this command.
-
 :::{note}
 If the `venv` command fails, you may need to install the module first (e.g., `sudo apt install python3-venv` on Ubuntu/Debian). Check the Python version with `python3 --version`; if it is older than 3.12, use a newer interpreter (e.g., `python3.12 -m venv ac2`).
 :::
