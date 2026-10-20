@@ -456,10 +456,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">trans_parse</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">trans_parse</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">[]</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
