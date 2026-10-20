@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Removed
+- Saving sessions in the V1 `.acs` format: sessions are saved as `.acs2` only (`.acs2` is added to a file name without it, and an `.acs` name is refused with a message). V1 `.acs` archives can still be opened; Astrocook 1.9.0 can still write them.
+
 ## [2.0.3] - 2026-10-19
 
 Packaging release. **No numerical result changes** with respect to 2.0.2.

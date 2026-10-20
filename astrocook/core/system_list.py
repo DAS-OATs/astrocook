@@ -356,36 +356,6 @@ class SystemListV2:
                     # Last resort: direct attribute clear
                     self.constraint_model._active_uuids = None
 
-    def to_v1_systlist(self) -> Optional[Table]:
-        """
-        Convert the V2 system list to a V1-compatible Astropy Table.
-
-        Used for saving archives in the legacy ``.acs`` format.
-
-        Returns
-        -------
-        astropy.table.Table or None
-            A table containing the system list in V1 format, or ``None`` if the list is empty.
-        """
-        if not self.components: return None
-        logging.warning("Simplified V2->V1 system list conversion. V1 constraints may be lost.")
-        data_dict = {
-            'id': [c.id for c in self.components],
-            'z': [c.z for c in self.components],
-            'dz': [c.dz if c.dz is not None else 0.0 for c in self.components],
-            'logN': [c.logN for c in self.components],
-            'dlogN': [c.dlogN if c.dlogN is not None else 0.0 for c in self.components],
-            'b': [c.b for c in self.components],
-            'db': [c.db if c.db is not None else 0.0 for c in self.components],
-            'btur': [c.btur for c in self.components],
-            'dbtur': [c.dbtur if c.dbtur is not None else 0.0 for c in self.components],
-            'func': [c.func for c in self.components],
-            'series': [c.series for c in self.components],
-            'chi2': [c.chi2 if c.chi2 is not None else np.nan for c in self.components],
-            'resol': [c.resol if c.resol is not None else np.nan for c in self.components]
-        }
-        return Table(data_dict)
-    
     def add_components_from_regions(self, spec: 'SpectrumV2', region_id_col: str,
                                   series_map: Dict[int, str], z_map: Dict[int, float]) -> 'SystemListV2':
         """

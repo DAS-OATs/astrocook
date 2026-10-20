@@ -20,7 +20,6 @@ from astrocook.core.spectrum_operations import (
 )
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
-from astrocook.legacy.spectrum import Spectrum as SpectrumV1
 
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,
@@ -348,66 +347,6 @@ class SpectrumV2:
         col = self._data.aux_cols.get(name)
         return col.quantity if col else None
 
-    def to_v1_spectrum(self) -> SpectrumV1:
-        """
-        Convert the immutable SpectrumV2 back into a mutable SpectrumV1 object.
-
-        This method extracts core data arrays and auxiliary columns to reconstruct
-        the legacy object required for saving in the ``.acs`` format.
-
-        Returns
-        -------
-        astrocook.legacy.spectrum.Spectrum
-            A legacy Spectrum object containing the current data and metadata.
-        """
-        # NOTE: This is complex because we need to extract the data and auxiliary columns
-        # and feed them to the V1 SpectrumV1 constructor (which calls FrameV1.__init__).
-        
-        data_core = self._data
-        
-        # 1. Prepare core data lists/arrays
-        x_list = data_core.x.values
-        xmin_list = data_core.xmin.values
-        xmax_list = data_core.xmax.values
-        y_list = data_core.y.values
-        dy_list = data_core.dy.values
-        
-        # 2. Instantiate the V1 Spectrum object
-        v1_spec = SpectrumV1(
-            x_list, xmin_list, xmax_list, 
-            y_list, dy_list, 
-            xunit=data_core.x.unit, 
-            yunit=data_core.y.unit, 
-            meta=data_core.meta
-        )
-
-        # NOTE: V1 Spectrum objects often store meta in an internal dict/Astropy Header.
-        # We assume the V1 constructor places 'meta' into an accessible attribute like v1_spec._meta
-        
-        # Ensure the V1 object's metadata is explicitly set to include 'ORIGIN'
-        if not hasattr(v1_spec, 'meta'):
-             # If V1 object doesn't have 'meta', we cannot easily inject it.
-             # Assume V1 objects have a standard attribute for metadata.
-             # We rely on the V1 object having a setter or an accessible dictionary.
-             
-             # If using a direct attribute:
-             # v1_spec._meta['ORIGIN'] = 'Astrocook V2' 
-             
-             # If using the provided dictionary directly (best approach):
-             v1_spec.meta['ORIGIN'] = 'Astrocook V2' 
-
-        else:
-             # If V1 object exposes metadata via a property (safer):
-             v1_spec.meta['ORIGIN'] = 'Astrocook V2'
-
-             
-        # 3. Add auxiliary columns (e.g., cont, model, etc.)
-        for name, data_col in data_core.aux_cols.items():
-            # Directly add the column to the V1 object's internal table (_t)
-            v1_spec._t[name] = data_col.quantity # Quantity ensures unit is preserved
-            
-        return v1_spec
-    
     def with_properties(self, z_em: float, resol: float = 0.0, 
                         object_name: Optional[str] = None,
                         overwrite_resol_col: bool = True) -> 'SpectrumV2':
