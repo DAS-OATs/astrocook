@@ -9,7 +9,9 @@ log is replaced with an empty one.
 
 The snapshots were recorded with the former reader, which went through
 the V1 classes of ``astrocook/legacy`` (before phase 3, 8b), and are
-compared exactly: the native reader gives the same session.
+compared exactly: the native reader gives the same session. They were
+recorded again for F42 (findings register): the flux unit and the btur,
+dbtur and chi2r columns, which the former reader dropped, are now read.
 """
 import io
 import json
@@ -24,7 +26,8 @@ from astrocook.core.session import load_session_from_file
 
 DATA = Path(__file__).parent / "data"
 ARCHIVES = ["v1_systems", "v1_metals_constraints"]
-PARAMS = ["z", "dz", "logN", "dlogN", "b", "db", "btur", "resol"]
+PARAMS = ["z", "dz", "logN", "dlogN", "b", "db", "btur", "dbtur", "chi2",
+          "resol"]
 
 
 def _load(name, fmt="auto"):
@@ -64,8 +67,6 @@ def test_systems(snapshot, archive):
     values["id"] = np.array([c.id for c in comps])
     values["series"] = np.array([c.series for c in comps])
     values["func"] = np.array([c.func for c in comps])
-    values["dbtur_is_none"] = np.array([c.dbtur is None for c in comps])
-    values["chi2_is_none"] = np.array([c.chi2 is None for c in comps])
     parsed = session.systs._data.parsed_constraints
     keys = sorted(parsed, key=str)
     values["constraint_keys"] = np.array([str(k) for k in keys])
@@ -86,6 +87,26 @@ def test_v1_archive_contents():
     assert parsed[(147, "z")].expression == "lines_voigt_14_z"
     assert parsed[(147, "b")].expression == "lines_voigt_14_b*0.65395596200518"
     assert parsed[(14, "b")].expression is None and not parsed[(14, "b")].is_free
+
+
+def test_v1_columns_are_read():
+    # F42: btur, dbtur and chi2r of the V1 table, and the V1 flux unit
+    session = _load("v1_metals_constraints")
+    with tarfile.open(DATA / "v1_metals_constraints.acs") as tar:
+        with fits.open(io.BytesIO(tar.extractfile(
+                "v1_metals_constraints_systs.fits").read())) as hdul:
+            table = {int(r["id"]): r for r in hdul[1].data}
+    for c in session.systs.components:
+        row = table[int(c.id)]
+        assert c.btur == row["btur"]
+        assert np.array_equal(c.dbtur, row["dbtur"], equal_nan=True)
+        assert c.chi2 == row["chi2r"]
+    flux = "erg / (Angstrom s cm2)"
+    data = session.spec._data
+    assert str(data.y.unit) == str(data.dy.unit) == flux
+    for name, column in data.aux_cols.items():
+        expected = flux if name in ("cont", "model", "deabs") else ""
+        assert str(column.unit) == expected, name
 
 
 def test_format_name_does_not_matter():

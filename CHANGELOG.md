@@ -2,10 +2,11 @@
 
 ### Fixed
 - *Data loss*: a session that could not be read (an `.acs2` archive without its metadata file, a damaged `.acs` archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An `.acs2` archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.
+- V1 `.acs` archives: the turbulent broadening (`btur`) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit > Convert y axis) work on V1 sessions.
 
 ### Changed
 - Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the new tutorial *Using Astrocook from Python*): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
-- V1 `.acs` archives are read by a new reader that does not use the V1 code; the result is the same as before.
+- V1 `.acs` archives are read by a new reader that does not use the V1 code; apart from the fixes above, the result is the same as before.
 
 ### Removed
 - Saving sessions in the V1 `.acs` format: sessions are saved as `.acs2` only (`.acs2` is added to a file name without it, and an `.acs` name is refused with a message). V1 `.acs` archives can still be opened; Astrocook 1.9.0 can still write them.
