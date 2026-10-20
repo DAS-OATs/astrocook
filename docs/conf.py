@@ -91,6 +91,10 @@ autodoc_default_options = {
     'undoc-members': True,     # Even those without docstrings
     'show-inheritance': True,  # Show parent classes
     'special-members': '__init__', # Document the __init__ method
+    # Document only what a module defines: the re-exports listed in the
+    # __all__ of a package (astrocook.core, astrocook.mocks) would be
+    # described twice
+    'ignore-module-all': True,
     # 'private-members': True, # Uncomment if you also want _functions
 }
 

@@ -327,18 +327,15 @@ class HistoryLogV2:
     This class maintains a list of :class:`LogEntryV2` objects matching the
     stack of immutable states in the session manager. It supports truncation
     to handle branching history (undo/redo logic).
-
-    Attributes
-    ----------
-    entries : list of LogEntryV2
-        The list of operations performed.
-    current_index : int
-        Pointer to the currently active log entry (state).
     """
+    # The attributes are documented by the #: comments below and not in an
+    # "Attributes" section, which Sphinx would describe twice
     def __init__(self):
+        #: The list of operations performed (list of :class:`LogEntryV2`).
         self.entries: List[LogEntryV2] = []
-        # current_index points to the *last valid entry*
-        self.current_index: int = -1 
+        #: Pointer to the currently active log entry (state), i.e. the last
+        #: valid entry.
+        self.current_index: int = -1
 
     @property
     def is_v2_log(self) -> bool:
