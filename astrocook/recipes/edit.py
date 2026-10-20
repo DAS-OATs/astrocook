@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
-from astrocook.legacy.message import msg_param_fail
+from astrocook.recipes.messages import msg_param_fail
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
