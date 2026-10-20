@@ -5,8 +5,9 @@ An ``.acs`` archive is a tar.gz with one FITS table per structure
 (``<name>.json``). The spectrum and the system list are read here directly
 into V2 structures. The result is the same as with the former reader,
 which went through the V1 classes (``Format.astrocook``, ``Spectrum``,
-``SystList``) and converted them to V2: the choices of that reader are
-kept and marked below (findings register, ``ROADMAP.md`` section 3.2).
+``SystList``) and converted them to V2, except for what it dropped
+(findings register F42, fixed with Guido): the flux unit, and the
+``btur``, ``dbtur`` and ``chi2r`` columns of the system table.
 The other structures (nodes, lines, models) and the V1 log are not read.
 
 Saving in the ``.acs`` format was removed: Astrocook 1.9.0 can still
@@ -31,6 +32,10 @@ _SPEC_CORE = ['x', 'xmin', 'xmax', 'y', 'dy']
 # V1 placed these columns first, in this order, then the others in the
 # order of the file ('dx' was skipped)
 _SPEC_FIRST = ['cont', 'conv', 'line_mask', 'model', 'deabs', 'resol']
+# Flux unit of the V1 spectrum table (as in the V2 'astrocook_fits'
+# loader); V1 gave it also to these auxiliary columns
+_V1_FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.Angstrom)
+_SPEC_FLUX_COLS = ['cont', 'conv', 'model', 'deabs']
 
 
 class V1ArchiveManager:
@@ -98,8 +103,8 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
     Returns
     -------
     SpectrumDataV2
-        x, xmin, xmax in nm; y, dy and the other columns without units
-        (V1 wrote the flux in erg/(cm2 s Angstrom), not kept); ``z_em`` 0
+        x, xmin, xmax in nm; y, dy, cont, conv, model and deabs in
+        erg/(cm2 s Angstrom), the other columns without units; ``z_em`` 0
         (V1 did not store it in the table). If the table has no ``resol``
         column, one filled with NaN comes first among the auxiliary
         columns.
@@ -116,8 +121,8 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
         x = core('x', au.nm, "Channels")
         xmin = core('xmin', au.nm, "Lower channel limit")
         xmax = core('xmax', au.nm, "Upper channel limit")
-        y = core('y', au.dimensionless_unscaled, "Flux density")
-        dy = core('dy', au.dimensionless_unscaled, "Error on Flux")
+        y = core('y', _V1_FLUX_UNIT, "Flux density")
+        dy = core('dy', _V1_FLUX_UNIT, "Error on Flux")
 
         order = [c for c in _SPEC_FIRST if c in names]
         order += [c for c in names
@@ -128,8 +133,10 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
                 np.full(len(x.values), np.nan), au.dimensionless_unscaled,
                 description="Spectral Resolution")
         for name in order:
+            unit = (_V1_FLUX_UNIT if name in _SPEC_FLUX_COLS
+                    else au.dimensionless_unscaled)
             aux_cols[name] = DataColumnV2(
-                np.array(data[name]), au.dimensionless_unscaled,
+                np.array(data[name]), unit,
                 description=f"Auxiliary column: {name}")
         meta = _v1_meta(hdr)
 
@@ -150,10 +157,9 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
     -------
     SystemListDataV2
         One component per row, in order of V1 id, with the constraints of
-        the ``AC CONSTR`` header keywords. As with the former reader,
-        ``btur`` is set to 0 and ``dbtur`` is not read (the ``btur``,
-        ``dbtur`` and ``chi2r`` columns are ignored); ``chi2`` is read only
-        from a ``chi2`` column, which V1 did not write.
+        the ``AC CONSTR`` header keywords. ``chi2`` is the reduced chi2 of
+        V1 (``chi2r``); without the ``btur`` and ``dbtur`` columns (early
+        V1 archives) ``btur`` is 0 and ``dbtur`` is None, as in V1.
     """
     with fits.open(path) as hdul:
         hdr = dict(hdul[1].header)
@@ -165,8 +171,7 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
         for i in np.argsort(data['id'], kind='stable'):
             rows[data['id'][i]] = i
 
-        # chi2 came only from a 'chi2' column (V1 wrote 'chi2r')
-        has_chi2 = 'chi2' in data.columns.names
+        names = data.columns.names
         components = []
         id_to_uuid = {}
         for v1_id, i in rows.items():
@@ -176,9 +181,10 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
                 z=float(row['z']), dz=float(row['dz']),
                 logN=float(row['logN']), dlogN=float(row['dlogN']),
                 b=float(row['b']), db=float(row['db']),
-                btur=0.0, dbtur=None,
+                btur=float(row['btur']) if 'btur' in names else 0.0,
+                dbtur=float(row['dbtur']) if 'dbtur' in names else None,
                 func=str(row['func']), series=str(row['series']),
-                chi2=float(row['chi2']) if has_chi2 else None,
+                chi2=float(row['chi2r']) if 'chi2r' in names else None,
                 resol=float(row['resol']),
             )
             id_to_uuid[comp.id] = comp.uuid
