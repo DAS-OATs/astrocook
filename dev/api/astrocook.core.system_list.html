@@ -615,21 +615,6 @@ guarantees cleanup (resetting the mask) even if errors occur.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.to_v1_systlist">
-<span class="sig-name descname"><span class="pre">to_v1_systlist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/core/system_list.html#SystemListV2.to_v1_systlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.to_v1_systlist" title="Link to this definition">#</a></dt>
-<dd><p>Convert the V2 system list to a V1-compatible Astropy Table.</p>
-<p>Used for saving archives in the legacy <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A table containing the system list in V1 format, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the list is empty.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>astropy.table.Table or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.add_components_from_regions">
 <span class="sig-name descname"><span class="pre">add_components_from_regions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_id_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/system_list.html#SystemListV2.add_components_from_regions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.add_components_from_regions" title="Link to this definition">#</a></dt>
 <dd><p>Populate the list with initial components based on identified regions.</p>
@@ -985,7 +970,6 @@ existing components. Lower this to de-blend close doublets (default: 10.0).</p><
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.parsed_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListV2.parsed_constraints</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.v2_constraints_for_save"><code class="docutils literal notranslate"><span class="pre">SystemListV2.v2_constraints_for_save</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.fitting_context"><code class="docutils literal notranslate"><span class="pre">SystemListV2.fitting_context()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.to_v1_systlist"><code class="docutils literal notranslate"><span class="pre">SystemListV2.to_v1_systlist()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.add_components_from_regions"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_components_from_regions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.add_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.add_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.get_component_by_uuid"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_component_by_uuid()</span></code></a></li>

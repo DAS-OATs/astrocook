@@ -717,43 +717,22 @@ continuum fitting) to ensure history preservation.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.session.SessionV2.log_lost_on_save">
-<span class="sig-name descname"><span class="pre">log_lost_on_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../modules/astrocook/core/session.html#SessionV2.log_lost_on_save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.log_lost_on_save" title="Link to this definition">#</a></dt>
-<dd><p>Tell whether saving to <code class="docutils literal notranslate"><span class="pre">file_path</span></code> would drop the session log.</p>
-<p>The V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format cannot store a V2 log (<code class="xref py py-class docutils literal notranslate"><span class="pre">HistoryLogV2</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The destination path, as passed to <a class="reference internal" href="#astrocook.core.session.SessionV2.save" title="astrocook.core.session.SessionV2.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a>.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the file would be saved in V1 format and the session
-has a V2 log.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/session.html#SessionV2.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.session.SessionV2.save" title="Link to this definition">#</a></dt>
-<dd><p>Save the current session state to a file.</p>
-<p>This method supports two formats:</p>
-<ol class="arabic simple">
-<li><p><strong>.acs2 (Recommended)</strong>: A zipped archive containing the full session state,
-metadata, and (optionally) the original data if <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> is provided.</p></li>
-<li><p><strong>.acs (Legacy)</strong>: A folder-based or zipped structure compatible with
-Astrocook V1.</p></li>
-</ol>
+<dd><p>Save the current session state to an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive.</p>
+<p>The archive contains the full session state, metadata, the session
+log and (if <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> is provided) the original data.
+Saving in the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format is no longer supported: V1
+archives can still be opened, and Astrocook 1.9.0 can still write
+them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file_path</strong> (<em>str</em>) – The destination path. The extension (<code class="docutils literal notranslate"><span class="pre">.acs</span></code> vs <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>) determines the format.</p></li>
-<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><em>optional</em>) – The state of the session <em>before</em> any modifications. This is required
-when saving to <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> format to ensure the archive contains the
-original raw data for reproducibility.</p></li>
-<li><p><strong>models</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag for V1 backward compatibility (unused in V2 native saves).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>) – The destination path. <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> is appended if missing.</p></li>
+<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><em>optional</em>) – The state of the session <em>before</em> any modifications, saved in the
+archive so that it contains the original raw data for
+reproducibility.</p></li>
+<li><p><strong>models</strong> (<em>bool</em><em>, </em><em>optional</em>) – Unused; kept for backward compatibility of the signature.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -761,6 +740,9 @@ original raw data for reproducibility.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">file_path</span></code> has the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> extension.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -831,7 +813,6 @@ original raw data for reproducibility.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.open_new"><code class="docutils literal notranslate"><span class="pre">SessionV2.open_new()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_spectrum()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.with_new_system_list"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_system_list()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.log_lost_on_save"><code class="docutils literal notranslate"><span class="pre">SessionV2.log_lost_on_save()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.save"><code class="docutils literal notranslate"><span class="pre">SessionV2.save()</span></code></a></li>
 </ul>
 </li>

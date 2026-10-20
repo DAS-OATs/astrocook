@@ -469,7 +469,6 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">DataColumnV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span> <span class="k">as</span> <span class="n">SpectrumV1</span>
 
 <span class="n">_NE_GLOBAL_DICT</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">'min'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">,</span>
@@ -814,69 +813,6 @@
         <span class="k">return</span> <span class="n">col</span><span class="o">.</span><span class="n">quantity</span> <span class="k">if</span> <span class="n">col</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="SpectrumV2.to_v1_spectrum">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.to_v1_spectrum">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_v1_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumV1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Convert the immutable SpectrumV2 back into a mutable SpectrumV1 object.</span>
-
-<span class="sd">        This method extracts core data arrays and auxiliary columns to reconstruct</span>
-<span class="sd">        the legacy object required for saving in the ``.acs`` format.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        astrocook.legacy.spectrum.Spectrum</span>
-<span class="sd">            A legacy Spectrum object containing the current data and metadata.</span>
-<span class="sd">        """</span>
-        <span class="c1"># NOTE: This is complex because we need to extract the data and auxiliary columns</span>
-        <span class="c1"># and feed them to the V1 SpectrumV1 constructor (which calls FrameV1.__init__).</span>
-        
-        <span class="n">data_core</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
-        
-        <span class="c1"># 1. Prepare core data lists/arrays</span>
-        <span class="n">x_list</span> <span class="o">=</span> <span class="n">data_core</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">xmin_list</span> <span class="o">=</span> <span class="n">data_core</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">xmax_list</span> <span class="o">=</span> <span class="n">data_core</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">y_list</span> <span class="o">=</span> <span class="n">data_core</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span>
-        <span class="n">dy_list</span> <span class="o">=</span> <span class="n">data_core</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">values</span>
-        
-        <span class="c1"># 2. Instantiate the V1 Spectrum object</span>
-        <span class="n">v1_spec</span> <span class="o">=</span> <span class="n">SpectrumV1</span><span class="p">(</span>
-            <span class="n">x_list</span><span class="p">,</span> <span class="n">xmin_list</span><span class="p">,</span> <span class="n">xmax_list</span><span class="p">,</span> 
-            <span class="n">y_list</span><span class="p">,</span> <span class="n">dy_list</span><span class="p">,</span> 
-            <span class="n">xunit</span><span class="o">=</span><span class="n">data_core</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> 
-            <span class="n">yunit</span><span class="o">=</span><span class="n">data_core</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> 
-            <span class="n">meta</span><span class="o">=</span><span class="n">data_core</span><span class="o">.</span><span class="n">meta</span>
-        <span class="p">)</span>
-
-        <span class="c1"># NOTE: V1 Spectrum objects often store meta in an internal dict/Astropy Header.</span>
-        <span class="c1"># We assume the V1 constructor places 'meta' into an accessible attribute like v1_spec._meta</span>
-        
-        <span class="c1"># Ensure the V1 object's metadata is explicitly set to include 'ORIGIN'</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v1_spec</span><span class="p">,</span> <span class="s1">'meta'</span><span class="p">):</span>
-             <span class="c1"># If V1 object doesn't have 'meta', we cannot easily inject it.</span>
-             <span class="c1"># Assume V1 objects have a standard attribute for metadata.</span>
-             <span class="c1"># We rely on the V1 object having a setter or an accessible dictionary.</span>
-             
-             <span class="c1"># If using a direct attribute:</span>
-             <span class="c1"># v1_spec._meta['ORIGIN'] = 'Astrocook V2' </span>
-             
-             <span class="c1"># If using the provided dictionary directly (best approach):</span>
-             <span class="n">v1_spec</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'ORIGIN'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'Astrocook V2'</span> 
-
-        <span class="k">else</span><span class="p">:</span>
-             <span class="c1"># If V1 object exposes metadata via a property (safer):</span>
-             <span class="n">v1_spec</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'ORIGIN'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'Astrocook V2'</span>
-
-             
-        <span class="c1"># 3. Add auxiliary columns (e.g., cont, model, etc.)</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data_col</span> <span class="ow">in</span> <span class="n">data_core</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Directly add the column to the V1 object's internal table (_t)</span>
-            <span class="n">v1_spec</span><span class="o">.</span><span class="n">_t</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_col</span><span class="o">.</span><span class="n">quantity</span> <span class="c1"># Quantity ensures unit is preserved</span>
-            
-        <span class="k">return</span> <span class="n">v1_spec</span></div>
-
-    
 <div class="viewcode-block" id="SpectrumV2.with_properties">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.with_properties">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> 
