@@ -15,6 +15,7 @@ write it.
 """
 import logging
 import os
+import re
 import tarfile
 import tempfile
 from typing import Any, Dict, Tuple
@@ -36,6 +37,10 @@ _SPEC_FIRST = ['cont', 'conv', 'line_mask', 'model', 'deabs', 'resol']
 # loader); V1 gave it also to these auxiliary columns
 _V1_FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.Angstrom)
 _SPEC_FLUX_COLS = ['cont', 'conv', 'model', 'deabs']
+# Voigt parameters by their lower-case name, as V1 may write them
+_V2_PARAMS = {p.lower(): p for p in ('z', 'logN', 'b', 'btur')}
+# A V1 link names a parameter of the V1 lmfit model: lines_voigt_<id>_<par>
+_V1_LINK = re.compile(r"lines_voigt_(\d+)_(z|logN|b|btur)\b")
 
 
 class V1ArchiveManager:
@@ -194,9 +199,49 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
         components=components,
         meta={},
         v1_header_constraints=hdr,
-        parsed_constraints=parse_v1_fits_constraints(hdr),
+        parsed_constraints=_translate_v1_links(
+            parse_v1_fits_constraints(hdr), id_to_uuid),
         v1_id_to_uuid_map=id_to_uuid,
     )
+
+
+def _translate_v1_links(parsed: Dict[Tuple[int, str], Dict[str, Any]],
+                        id_to_uuid: Dict[Any, str]) -> Dict[Tuple[Any, str], Dict[str, Any]]:
+    """
+    Turn the V1 constraints into V2 ones (findings register F43).
+
+    The keys become ``(uuid, parameter)``, as for the constraints made in
+    V2: ``SystemListV2`` then puts them in its V2 map, which the grouping
+    of the fits and the ``.acs2`` archives use (with V1 ids as keys the
+    linked components were fitted in separate groups). The links are
+    translated into the V2 syntax: V1 stores them as expressions on the
+    parameters of its lmfit model, e.g. ``lines_voigt_14_b*0.654``; V2
+    evaluates ``p['<uuid>'].b*0.654`` (``VoigtModelConstraintV2``), and the
+    target is the first component named by the expression.
+
+    A constraint on a component that is not in the list keeps its V1 key;
+    an expression naming such a component is kept as it is, with a
+    warning (the parameter is then frozen at its value).
+    """
+    translated = {}
+    for (comp_id, param), constraint in parsed.items():
+        constraint = dict(constraint)
+        expression = constraint.get('expression')
+        if expression:
+            ids = [int(m.group(1)) for m in _V1_LINK.finditer(expression)]
+            if ids and all(i in id_to_uuid for i in ids):
+                constraint['expression'] = _V1_LINK.sub(
+                    lambda m: f"p['{id_to_uuid[int(m.group(1))]}'].{m.group(2)}",
+                    expression)
+                constraint['target_uuid'] = id_to_uuid[ids[0]]
+            else:
+                logging.warning(
+                    f"V1 constraint on component {comp_id} ({param} = "
+                    f"{expression}) names a component that is not in the "
+                    "list: not translated, the parameter stays frozen.")
+        key = (id_to_uuid.get(comp_id, comp_id), param)
+        translated[key] = constraint
+    return translated
 
 
 def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict[str, Any]]:
@@ -231,7 +276,8 @@ def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict
                     if index_type == 'ID':
                         constraint_data[n]['id'] = int(value)
                     elif index_type == 'PAR':
-                        constraint_data[n]['par'] = value.lower() # Normalize parameter name
+                        # V2 parameter name (logN, not logn: F43)
+                        constraint_data[n]['par'] = _V2_PARAMS.get(value.lower(), value.lower())
                     elif index_type == 'VAL':
                         constraint_data[n]['val'] = value
 
