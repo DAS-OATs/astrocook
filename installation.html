@@ -492,6 +492,14 @@ a virtual environment:</p>
 <span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">DAS</span><span class="o">-</span><span class="n">OATs</span><span class="o">/</span><span class="n">astrocook</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
+<p>The Bayesian fit (MCMC and nested sampling, corner plots) needs optional
+dependencies (emcee, dynesty, corner), which the macOS app already
+includes. To install them with the package:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"astrocook[bayes] @ git+https://github.com/DAS-OATs/astrocook.git"</span>
+</pre></div>
+</div>
+<p>Without them, the Bayesian entries of the system inspector are disabled and
+the <code class="docutils literal notranslate"><span class="pre">fit_bayesian</span></code> recipe raises an error naming this command.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If the <code class="docutils literal notranslate"><span class="pre">venv</span></code> command fails, you may need to install the module first (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python3-venv</span></code> on Ubuntu/Debian). Check the Python version with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">--version</span></code>; if it is older than 3.12, use a newer interpreter (e.g., <code class="docutils literal notranslate"><span class="pre">python3.12</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">ac2</span></code>).</p>

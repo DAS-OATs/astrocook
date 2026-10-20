@@ -2032,12 +2032,22 @@
 <span class="sd">            Number of live points for Nested Sampling (default: '250').</span>
 <span class="sd">        group_depth : str, optional</span>
 <span class="sd">            Depth of connected group search (FoF) to define the fitting group (default: '2').</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ImportError</span>
+<span class="sd">            If the sampler of ``engine`` is not installed (optional</span>
+<span class="sd">            dependencies: ``pip install "astrocook[bayes]"``).</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">uuids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuids</span><span class="p">]</span> <span class="c1"># Fallback for single uuid string</span>
 
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..fitting.bayesian_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianVoigtFitter</span><span class="p">,</span> <span class="n">require_bayes_engine</span>
+        <span class="c1"># Raised, not turned into a return value of 0 like the other</span>
+        <span class="c1"># failures: the user must know what to install</span>
+        <span class="n">require_bayes_engine</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span>
+
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">..fitting.bayesian_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianVoigtFitter</span>
             <span class="n">nsteps_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nsteps</span><span class="p">);</span> <span class="n">nlive_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nlive</span><span class="p">);</span> <span class="n">depth_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group_depth</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>

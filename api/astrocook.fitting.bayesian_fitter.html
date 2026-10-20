@@ -513,6 +513,18 @@
                   
   <section id="module-astrocook.fitting.bayesian_fitter">
 <span id="astrocook-fitting-bayesian-fitter-module"></span><h1>astrocook.fitting.bayesian_fitter module<a class="headerlink" href="#module-astrocook.fitting.bayesian_fitter" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.require_bayes_engine">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">require_bayes_engine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mcmc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#require_bayes_engine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.require_bayes_engine" title="Link to this definition">#</a></dt>
+<dd><p>Raise an ImportError naming the extra if the sampler is not installed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>engine</strong> (<em>{'mcmc'</em><em>, </em><em>'nested'}</em><em>, </em><em>optional</em>) – The sampling engine: <code class="docutils literal notranslate"><span class="pre">'mcmc'</span></code> needs <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, <code class="docutils literal notranslate"><span class="pre">'nested'</span></code> needs
+<code class="docutils literal notranslate"><span class="pre">dynesty</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">BayesianVoigtFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter" title="Link to this definition">#</a></dt>
@@ -732,6 +744,7 @@ in the system list. Fixed or linked parameters maintain their prior state.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.require_bayes_engine"><code class="docutils literal notranslate"><span class="pre">require_bayes_engine()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_likelihood"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter.ln_likelihood()</span></code></a></li>

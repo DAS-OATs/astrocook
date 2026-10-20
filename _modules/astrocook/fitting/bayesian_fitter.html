@@ -462,6 +462,29 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">dynesty</span> <span class="o">=</span> <span class="kc">None</span>
 
+<span class="c1"># emcee, dynesty and corner are optional dependencies (extra "bayes")</span>
+<span class="n">BAYES_INSTALL_HINT</span> <span class="o">=</span> <span class="s1">'pip install "astrocook[bayes]"'</span>
+
+
+<div class="viewcode-block" id="require_bayes_engine">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.require_bayes_engine">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">require_bayes_engine</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'mcmc'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Raise an ImportError naming the extra if the sampler is not installed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    engine : {'mcmc', 'nested'}, optional</span>
+<span class="sd">        The sampling engine: ``'mcmc'`` needs ``emcee``, ``'nested'`` needs</span>
+<span class="sd">        ``dynesty``.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="p">((</span><span class="s1">'dynesty'</span><span class="p">,</span> <span class="n">dynesty</span><span class="p">)</span> <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span>
+                    <span class="k">else</span> <span class="p">(</span><span class="s1">'emcee'</span><span class="p">,</span> <span class="n">emcee</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The Bayesian fit needs </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, which is not installed. "</span>
+            <span class="sa">f</span><span class="s2">"Install the optional dependencies with: </span><span class="si">{</span><span class="n">BAYES_INSTALL_HINT</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="BayesianVoigtFitter">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BayesianVoigtFitter</span><span class="p">:</span>
@@ -633,8 +656,7 @@
 <span class="sd">            If ``nsteps &lt; 1`` or ``burn_in`` is not smaller than ``nsteps``</span>
 <span class="sd">            (the chain left after the burn-in would be empty).</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">emcee</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">"emcee is not installed. Please install it to use MCMC."</span><span class="p">)</span>
+        <span class="n">require_bayes_engine</span><span class="p">(</span><span class="s1">'mcmc'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">nsteps</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"nsteps must be at least 1 (got </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">burn_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -715,8 +737,7 @@
 <span class="sd">        ImportError</span>
 <span class="sd">            If the ``dynesty`` package is not installed.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">dynesty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">"dynesty is not installed. Please install it to use Nested Sampling."</span><span class="p">)</span>
+        <span class="n">require_bayes_engine</span><span class="p">(</span><span class="s1">'nested'</span><span class="p">)</span>
             
         <span class="k">def</span><span class="w"> </span><span class="nf">prior_transform</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">"""Transform uniform unit cube to physical bounds."""</span>
