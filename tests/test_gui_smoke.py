@@ -316,15 +316,36 @@ def test_branch_copies_the_log(qtbot, ready):
     assert len(original.states) == 2  # the parent session does not change
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "A recipe that opens a new session (extract_preset, split, coadd, ...) "
-    "is also recorded in the log of the parent session, which does not "
-    "change: the parent log no longer matches its states, also when saved "
-    "and replayed. Findings register F41 (ROADMAP.md, section 3.2)."))
 def test_branch_does_not_change_the_parent_log(qtbot, ready):
+    # The parent session does not change, so neither does its log (F41)
     original = ready.active_history
     _run_recipe(qtbot, ready, "edit", "extract_preset", {"region": "red_side"})
     assert _recipes(original.log_manager) == ["set_properties"]
+    assert original.log_manager.current_index == original.current_index - 1
+
+
+def test_branch_after_undo_keeps_the_parent_redo(qtbot, ready):
+    # Logging the branch on the parent also truncated its redo entries (F41)
+    original = ready.active_history
+    _run_recipe(qtbot, ready, "flux", "smooth", {"sigma_kms": "50.0"})
+    ready._undo_last_action()
+    _run_recipe(qtbot, ready, "edit", "extract_preset", {"region": "red_side"})
+    assert _recipes(original.log_manager) == ["set_properties", "smooth"]
+    assert original.can_redo() and original.log_manager.current_index == 0
+    branch = ready.session_histories[1]
+    assert _recipes(branch.log_manager) == ["set_properties", "extract_preset"]
+    assert len(branch.states) == 3
+
+
+def test_each_branch_logs_the_recipe(qtbot, ready):
+    original = ready.active_history
+    _run_recipe(qtbot, ready, "edit", "extract_preset",
+                {"region": "lya_forest,red_side"})
+    assert len(ready.session_histories) == 3
+    assert _recipes(original.log_manager) == ["set_properties"]
+    for branch in ready.session_histories[1:]:
+        assert _recipes(branch.log_manager) == ["set_properties", "extract_preset"]
+        assert branch.log_manager.current_index == branch.current_index - 1
 
 
 def test_script_run_builds_a_v2_history(ready):
