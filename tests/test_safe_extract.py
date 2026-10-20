@@ -9,7 +9,7 @@ import io
 import tarfile
 
 from astrocook.core.session import load_session_from_file
-from astrocook.io.v1_stubs import V1ArchiveManager
+from astrocook.io.v1_archive import V1ArchiveManager
 
 
 def _malicious_archive(path):

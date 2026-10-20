@@ -7,10 +7,10 @@ import numpy as np
 import os
 import tarfile
 import tempfile
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 # --- V2 Imports ---
-from .v1_stubs import load_v1_spec_object, load_v1_systs_object
+from .v1_archive import read_v1_spectrum, read_v1_system_list
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
@@ -41,48 +41,15 @@ def _register_custom_multiplets(components: List[ComponentDataV2]):
             STANDARD_MULTIPLETS[series] = members
             logging.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
 
-# ... (v1_table_to_data_v2 remains unchanged) ...
-def v1_table_to_data_v2(v1_spectrum_instance: Any) -> SpectrumDataV2:
-    t_v1 = v1_spectrum_instance._t 
-    meta_v1 = v1_spectrum_instance._meta
-    x_unit = v1_spectrum_instance._xunit
-    v1_y_unit = v1_spectrum_instance._yunit 
-    y_unit = au.dimensionless_unscaled
-
-    x_col = DataColumnV2(t_v1['x'].value, x_unit, description="Channels")
-    y_col = DataColumnV2(t_v1['y'].value, y_unit, description="Flux density")
-    dy_col = DataColumnV2(t_v1['dy'].value, y_unit, description="Error on Flux")
-    xmin_col = DataColumnV2(t_v1['xmin'].value, x_unit, description="Lower channel limit")
-    xmax_col = DataColumnV2(t_v1['xmax'].value, x_unit, description="Upper channel limit")
-
-    aux_cols = {}
-    if 'resol' not in t_v1.colnames:
-        nan_array = np.full_like(t_v1['x'].value, np.nan)
-        aux_cols['resol'] = DataColumnV2(nan_array, au.dimensionless_unscaled, description="Spectral Resolution")
-
-    for colname in t_v1.colnames:
-        if colname not in ['x', 'xmin', 'xmax', 'y', 'dy']:
-            try:
-                col_data = t_v1[colname]
-                col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
-                if v1_y_unit is not None and col_unit.is_equivalent(v1_y_unit):
-                    col_unit = au.dimensionless_unscaled
-                aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
-            except Exception: continue
-
-    return SpectrumDataV2(
-        x=x_col, xmin=xmin_col, xmax=xmax_col, 
-        y=y_col, dy=dy_col, 
-        aux_cols=aux_cols, 
-        meta=meta_v1,
-        z_em=getattr(v1_spectrum_instance, '_zem', 0.0)
-    )
-
 def load_and_migrate_structure(archive_root, structure_name, gui_context, format_name, spec_file_path=None, v2_metadata=None):
     """
     Loads a V1 or V2 structure. 
     CRITICAL CHANGE: If v2_metadata is present, we DO NOT catch exceptions.
     We let them propagate so the user knows why V2 loading failed.
+
+    ``v2_metadata`` is None for a V1 archive (``format_name='archive'``,
+    read by ``io.v1_archive``) and a dict for a V2 one (empty if the
+    archive has no ``_meta.json``).
     """
     path_to_load = spec_file_path if structure_name == 'spec' else f"{archive_root}_systs.fits"
     
@@ -90,7 +57,7 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
          raise FileNotFoundError(f"File not found: {path_to_load}")
          
     if structure_name == 'spec':
-        if v2_metadata:
+        if v2_metadata is not None:
             # Load the standard FITS data
             spec_v2 = load_spec_data_v2_from_archive(path_to_load)
             
@@ -121,27 +88,28 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
                 
             return spec_v2
 
-        v1_spec = load_v1_spec_object(path_to_load, format_name, gui_context)
-        if not v1_spec: raise RuntimeError("V1 load failed.")
-        return SpectrumV2(data=v1_table_to_data_v2(v1_spec))
+        if format_name != 'archive':
+            # A raw file whose format has no V2 loader (the V1 loaders of
+            # astrocook.legacy were the fallback before phase 3)
+            raise ValueError(f"No loader for the file format '{format_name}'.")
+        return SpectrumV2(data=read_v1_spectrum(path_to_load))
 
     elif structure_name == 'systs':
         if not os.path.exists(path_to_load): return SystemListV2(data=SystemListDataV2()) 
 
-        if v2_metadata:
+        if v2_metadata is not None:
             # [FIX] Removed try/except. Fail loudly if V2 fails.
             return load_systs_data_v2_from_archive(path_to_load, v2_metadata)
 
-        from astrocook.core.system_list_migration import migrate_system_list_v1_to_v2
         try:
-            v1_systs, syst_header = load_v1_systs_object(path_to_load)
-            migrated_data = migrate_system_list_v1_to_v2(v1_systs, syst_header)
-            
-            # [FIX] Register custom multiplets found in V1 data
-            if migrated_data and migrated_data.components:
-                _register_custom_multiplets(migrated_data.components)
-            return SystemListV2(data=migrate_system_list_v1_to_v2(v1_systs, syst_header))
-        except Exception: return SystemListV2(data=SystemListDataV2())
+            migrated_data = read_v1_system_list(path_to_load)
+        except Exception as e:
+            logging.error(f"Could not read the V1 system list {path_to_load}: {e}")
+            return SystemListV2(data=SystemListDataV2())
+        # [FIX] Register custom multiplets found in V1 data
+        if migrated_data.components:
+            _register_custom_multiplets(migrated_data.components)
+        return SystemListV2(data=migrated_data)
 
     return None
 
