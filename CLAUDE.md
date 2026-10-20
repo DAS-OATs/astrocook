@@ -110,13 +110,14 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 6. phase 5 – splitting large files;
 7. phase 6 – error handling.
 
-Phase 2 done, released as 2.0.3 (packaging, no numerical changes). Left
-open from phase 2 (`ROADMAP.md`, phase 2): LICENSE (GPLv3 or later, PR #549
-draft, waits for INAF), optional `[bayes]` extra, Docker renewal, size
-of the telluric files.
+Phase 2 done, released as 2.0.3 (packaging, no numerical changes).
+LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker
+renewal: to be discussed with Guido.
 
-Current: phase 3. Work in small PRs, one at a time; wait for the merge
-before the next. While #549 is open, each new PR goes on its own
+Current: phase 2-bis (`ROADMAP.md`), before phase 3: F34 (window icon),
+Ruff warnings (then full `ruff check .` in CI), Sphinx warnings, `[bayes]`
+extra. Work in small PRs, one at a time; wait for the merge before the
+next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
 Questionable behaviour found along the way goes in the findings register
