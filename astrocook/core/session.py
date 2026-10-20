@@ -1,19 +1,14 @@
-import astropy.units as au
-from copy import deepcopy
 import json
 import logging
-import numpy as np
 import os
 import shutil
 import tarfile 
 import tempfile
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from astrocook.legacy.defaults import Defaults
-from astrocook.legacy.format import Format 
 from astrocook.legacy.gui_log import GUILog 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
-from astrocook.io.loaders import get_loader
 from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
 from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.absorbers import RecipeAbsorbersV2
@@ -22,10 +17,9 @@ from astrocook.recipes.file import RecipeFileV2
 from astrocook.recipes.flux import RecipeFluxV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
-    SystemListDataV2, HistoryLogV2, LogEntryV2, V1LogArtifact
+    SystemListDataV2, HistoryLogV2, V1LogArtifact
 )
 from astrocook.core.system_list import SystemListV2
-from astrocook.core.system_list_migration import migrate_system_list_v1_to_v2
 from astrocook.core.utils import guarded_deepcopy_v1_state
 
 # Define the type for the log manager

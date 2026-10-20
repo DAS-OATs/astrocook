@@ -3,13 +3,11 @@ import os
 import sys
 import logging
 import subprocess 
-import numpy as np
 
 # Ensure we can import astrocook
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from astrocook.core.session import SessionV2
-from astrocook.core.atomic_data import ATOM_DATA
 
 # --- CONFIGURATION ---
 SPECIES_CONFIG = {

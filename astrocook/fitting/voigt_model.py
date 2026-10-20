@@ -1,10 +1,9 @@
-from astropy.table import Table
 import logging
 import numpy as np
 import re
 from typing import List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
 
-from astrocook.core.structures import ComponentDataV2, ParameterConstraintV2 
+from astrocook.core.structures import ParameterConstraintV2 
 
 if TYPE_CHECKING:
     from astrocook.core.system_list import SystemListV2

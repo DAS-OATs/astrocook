@@ -2,7 +2,7 @@ import logging
 import webbrowser
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
-    QPushButton, QDialogButtonBox, QWidget, QGroupBox, QComboBox, QMessageBox, QVBoxLayout, QApplication
+    QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout, QApplication
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
@@ -105,7 +105,7 @@ class RecipeDialog(QDialog):
                 'dy': 'dF'
             }
             return [pretty_mapping.get(c, c) for c in internal_cols]
-        except Exception as e:
+        except Exception:
             return []
             
     def _build_alias_map(self) -> dict:

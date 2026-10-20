@@ -1,14 +1,8 @@
 from astropy import units as au
-from copy import deepcopy
-import dataclasses
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
-from astrocook.core.photometry import calculate_synthetic_ab_mag, STANDARD_FILTERS
-from astrocook.core.spectrum import DataColumnV2, SpectrumDataV2, SpectrumV2
-from astrocook.core.spectrum_operations import rebin_spectrum
-from astrocook.core.structures import HistoryLogV2
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:
@@ -231,7 +225,9 @@ class RecipeFluxV2:
 
             kappa_f = float(kappa) if kappa != 'None' else None
             
-            norm_b = str(norm) == 'True' # Handle boolean flag
+            # Parsed but not applied: the spectrum is never normalized
+            # (findings register F37)
+            norm_b = str(norm) == 'True'  # noqa: F841
             filling_f = float(filling) if filling != 'nan' else np.nan
         except (ValueError, TypeError):
             # Replicates V1 error handling path to avoid crash in the GUI context;

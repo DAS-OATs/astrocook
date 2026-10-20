@@ -1,6 +1,4 @@
-import sys
 from astropy.io import fits
-import numpy as np
 
 def inspect_fits(file_path):
     print(f"\n{'='*60}")
@@ -17,7 +15,7 @@ def inspect_fits(file_path):
                 
                 # Check for Image Data (1D/2D arrays)
                 if hdu.is_image and hdu.data is not None:
-                    print(f"Type: Image Data")
+                    print("Type: Image Data")
                     print(f"Shape: {hdu.data.shape}")
                     # Check for WCS Keywords (if it's a 1D spectrum in an image)
                     wcs_keys = ['CRVAL1', 'CDELT1', 'CRPIX1', 'CUNIT1']
@@ -27,7 +25,7 @@ def inspect_fits(file_path):
                         
                 # Check for Table Data (Binary Tables)
                 elif isinstance(hdu, (fits.BinTableHDU, fits.TableHDU)):
-                    print(f"Type: Table Data")
+                    print("Type: Table Data")
                     print(f"Columns: {hdu.columns.names}")
                     # Print units if available
                     if hasattr(hdu.columns, 'units'):

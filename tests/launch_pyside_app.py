@@ -129,7 +129,7 @@ def main():
     logging.info("Importing heavy modules...")
     
     # --- SPOSTA GLI IMPORT QUI ---
-    from astrocook.core.session import SessionV2, load_session_from_file
+    from astrocook.core.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
     # -----------------------------
 

@@ -73,7 +73,7 @@ def aggregate_results(output_dir, species, final_catalog_name="master_catalog.cs
             match = re.search(r"los_(\d+)_", basename)
             if match: df['los_id'] = match.group(1)
             combined_df.append(df)
-        except Exception as e:
+        except Exception:
             pass # Silent skip for aggregation
 
     if combined_df:

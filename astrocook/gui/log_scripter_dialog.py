@@ -1,11 +1,9 @@
 import logging
-import json
 from PySide6.QtWidgets import (
     QDialog, QMessageBox, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QDialogButtonBox, 
-    QListWidgetItem, QFileDialog, QMenu
+    QFileDialog, QMenu
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QKeySequence, QTextCursor
+from PySide6.QtGui import QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Union, Optional
 
 # --- V2 Imports ---
@@ -15,7 +13,6 @@ from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
-from astrocook.core.utils import get_recipe_schema # For inserting recipes
 # --- V1 Imports ---
 from astrocook.legacy.gui_log import GUILog
 

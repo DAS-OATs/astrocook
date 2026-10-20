@@ -1,12 +1,10 @@
 from astropy import units as au
-from copy import deepcopy
-import dataclasses
 import logging
 import numpy as np
 import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
-from astrocook.core.structures import HistoryLogV2, DataColumnV2, SpectrumDataV2, SystemListDataV2  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
 from astrocook.legacy.message import msg_param_fail
 
@@ -1145,8 +1143,6 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` containing the equalized 
             and stitched spectrum, or 0 on failure.
         """
-        from astrocook.core.session import SessionV2
-        import astropy.units as au
         
         # 1. Parse Input Lists
         others_list = [s.strip() for s in other_sessions.split(',') if s.strip()]

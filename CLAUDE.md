@@ -38,10 +38,10 @@ Current version: 2.0.3. Python ≥3.12.
 - Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
   now, `legacy/` excluded). New code must not add warnings.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
-  3.12 and 3.13 (coverage report on 3.13), and `ruff check --select F821`
-  (undefined names only). The slow tests (`pytest --run-slow -m slow`) run
-  in a separate job, not on pull requests: after each merge to master,
-  weekly (Mondays) and on demand from the Actions page.
+  3.12 and 3.13 (coverage report on 3.13), and `ruff check .`. The slow
+  tests (`pytest --run-slow -m slow`) run in a separate job, not on pull
+  requests: after each merge to master, weekly (Mondays) and on demand
+  from the Actions page.
 - Launch the GUI: `astrocook [file ...]`, `python -m astrocook` or
   `python run_astrocook.py` (launcher in `astrocook/_run_astrocook.py`)
   (headless: `QT_QPA_PLATFORM=offscreen`).
@@ -105,7 +105,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2. phase 3 – decoupling from `legacy/` (the V1 routines used by the parity
    tests move to a test-only reference module, they are not deleted);
 3. release 2.1.0, first publication on PyPI;
-4. phase 4 – scientific correctness: #526, #517, #465, #518;
+4. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560;
 5. release 2.2.0;
 6. phase 5 – splitting large files;
 7. phase 6 – error handling.

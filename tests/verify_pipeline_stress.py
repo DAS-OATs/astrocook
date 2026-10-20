@@ -109,7 +109,6 @@ def run_stress_test():
     
     # Matching Logic
     unmatched_truth = truth_list.copy()
-    matches = []
     
     print("\n[MATCHED COMPONENTS]")
     print(f"{'d_vel':<8} | {'z_fit':<9} | {'logN (Fit/True)':<18} | {'b (Fit/True)':<15}")

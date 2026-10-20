@@ -1,14 +1,11 @@
 import astropy.units as au
-from copy import deepcopy
 import json
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.core.structures import HistoryLogV2
-from astrocook.gui.debug_utils import GLOBAL_PLOTTER
 
 try:
     from astrocook.legacy.functions import trans_parse
@@ -709,7 +706,7 @@ class RecipeAbsorbersV2:
         """
         try:
             ion_list = [i.strip() for i in ions.split(',')]
-            aic_pen = float(aic_penalty)
+            float(aic_penalty)  # validated only, not used (see the docstring)
             z_win = float(z_window_kms)
             b_max = float(max_b)
         except ValueError: return 0
@@ -1423,7 +1420,7 @@ class RecipeAbsorbersV2:
         temp_session = current_session.with_new_system_list(new_systs)
         temp_recipe = RecipeAbsorbersV2(temp_session)
         
-        logging.info(f"Fitting linked system group...")
+        logging.info("Fitting linked system group...")
         # Fit centered on Primary
         final_session = temp_recipe.fit_component(primary_uuid, z_window_kms=str(z_window_kms))
         
@@ -1728,7 +1725,7 @@ class RecipeAbsorbersV2:
 
             # 1. Define Work Units
             if depth_i == 0:
-                logging.debug(f"Refit All: Strategy = Iterative Single-Component (Robust).")
+                logging.debug("Refit All: Strategy = Iterative Single-Component (Robust).")
                 # Filter the list, then sort by Z
                 valid_comps = [c for c in current_session.systs.components if c.uuid in uuids_in_region]
                 sorted_comps = sorted(valid_comps, key=lambda c: c.z)

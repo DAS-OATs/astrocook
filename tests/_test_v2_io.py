@@ -34,7 +34,6 @@ def test_spectrum_data_integrity():
     
     # B. Unit Check (Verify the units are set correctly)
     expected_x_unit = au.nm
-    expected_y_unit = au.erg / au.cm**2 / au.s / au.Angstrom # Based on common V1 units
     print(f"X Unit: {spec_v2.x.unit}")
     print(f"Y Unit: {spec_v2.y.unit}")
     assert spec_v2.x.unit == expected_x_unit, f"X Unit mismatch: Expected {expected_x_unit}, got {spec_v2.x.unit}"

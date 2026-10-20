@@ -1,6 +1,4 @@
-import logging
-import threading
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal
 
 class AppController(QObject):
     """
