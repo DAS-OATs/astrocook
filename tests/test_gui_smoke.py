@@ -286,3 +286,60 @@ def test_close_session(loaded):
     loaded._close_session(loaded.active_history)
     assert loaded.session_histories == []
     assert loaded.active_history is None
+
+
+# --- Session logs ---------------------------------------------------------
+# Characterization for phase 3 (removal of the V1 GUILog): the log of every
+# history is a HistoryLogV2, shared by all its states; a branch gets a copy.
+
+def _recipes(log):
+    return [e.recipe_name for e in log.entries]
+
+
+def test_history_log_is_v2(ready):
+    from astrocook.core.structures import HistoryLogV2
+    history = ready.active_history
+    assert isinstance(history.log_manager, HistoryLogV2)
+    assert _recipes(history.log_manager) == ["set_properties"]
+    assert all(s.log_manager is history.log_manager for s in history.states)
+
+
+def test_branch_copies_the_log(qtbot, ready):
+    from astrocook.core.structures import HistoryLogV2
+    original = ready.active_history
+    _run_recipe(qtbot, ready, "edit", "extract_preset", {"region": "red_side"})
+    branch = ready.session_histories[1]
+    assert isinstance(branch.log_manager, HistoryLogV2)
+    assert branch.log_manager is not original.log_manager
+    assert _recipes(branch.log_manager) == ["set_properties", "extract_preset"]
+    assert all(s.log_manager is branch.log_manager for s in branch.states)
+    assert len(original.states) == 2  # the parent session does not change
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "A recipe that opens a new session (extract_preset, split, coadd, ...) "
+    "is also recorded in the log of the parent session, which does not "
+    "change: the parent log no longer matches its states, also when saved "
+    "and replayed. Findings register F41 (ROADMAP.md, section 3.2)."))
+def test_branch_does_not_change_the_parent_log(qtbot, ready):
+    original = ready.active_history
+    _run_recipe(qtbot, ready, "edit", "extract_preset", {"region": "red_side"})
+    assert _recipes(original.log_manager) == ["set_properties"]
+
+
+def test_script_run_builds_a_v2_history(ready):
+    from astrocook.core.structures import HistoryLogV2
+    from astrocook.gui.qt_workers import ScriptWorker
+    script = ("set_properties(z_em='4.072', resol='45000')\n"
+              "# a comment\n"
+              "smooth(sigma_kms='50.0')\n")
+    worker = ScriptWorker(script, ready.active_history.states[0], ready)
+    results, errors = [], []
+    worker.signals.finished.connect(results.append)
+    worker.signals.error.connect(errors.append)
+    worker.run()  # synchronously, in this thread
+    assert errors == []
+    (history,) = results
+    assert isinstance(history.log_manager, HistoryLogV2)
+    assert _recipes(history.log_manager) == ["set_properties", "smooth"]
+    assert len(history.states) == 3

@@ -13,8 +13,6 @@ from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
-# --- V1 Imports ---
-from astrocook.legacy.gui_log import GUILog
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
@@ -29,7 +27,7 @@ ALL_SCHEMAS = {
 }
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
+LogManager = Union[HistoryLogV2, V1LogArtifact]
 
 
 class LogScripterDialog(QDialog):
@@ -153,10 +151,6 @@ class LogScripterDialog(QDialog):
         
         elif hasattr(self.log_object, 'is_v2_log') and not self.log_object.is_v2_log:
             self._populate_v1_script(self.log_object.v1_json)
-            
-        elif isinstance(self.log_object, GUILog):
-            logging.warning("LogScripterDialog received raw GUILog, parsing .json")
-            self._populate_v1_script(self.log_object.json)
             
         else:
             self.scripter_edit.setPlainText(f"# Error: Unknown log object type: {type(self.log_object)}")

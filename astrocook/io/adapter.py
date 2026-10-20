@@ -22,7 +22,6 @@ from astrocook.core.structures import (
 from astrocook.core.spectrum import SpectrumV2 
 from astrocook.core.system_list import SystemListV2
 # --- V1 Imports ---
-from astrocook.legacy.gui_log import GUILog
 
 # --- Helper for Multiplet Registration ---
 def _register_custom_multiplets(components: List[ComponentDataV2]):
@@ -274,10 +273,6 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
     elif isinstance(log_manager_to_save, V1LogArtifact):
         log_history_data = log_manager_to_save.v1_json
         log_type = "v1_artifact"
-    elif isinstance(log_manager_to_save, GUILog):
-        try: log_history_data = json.loads(log_manager_to_save.str)
-        except json.JSONDecodeError: log_history_data = {"set_menu": []} 
-        log_type = "v1_legacy"
     else:
         log_history_data = {}
     

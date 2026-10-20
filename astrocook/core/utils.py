@@ -1,4 +1,3 @@
-from copy import deepcopy
 import importlib
 from pathlib import Path
 import sys
@@ -38,29 +37,6 @@ def get_recipe_schema(category: str, recipe_name: str) -> Dict[str, Any]:
         raise NotImplementedError(f"Schema not found for recipe {category}.{recipe_name}: {e}")
         
     return schema
-
-def guarded_deepcopy_v1_state(v1_state_object: Any) -> Any:
-    """
-    Performs a deepcopy on a V1 state object (like GUILog) 
-    by temporarily removing the uncopyable '_gui' reference.
-    """
-    
-    # 1. Store and temporarily break the dangerous reference
-    original_gui_ref = v1_state_object._gui
-    v1_state_object._gui = None
-
-    try:
-        # 2. Perform the safe deepcopy
-        copied_object = deepcopy(v1_state_object) 
-        
-    finally:
-        # 3. Always restore the reference to the original object
-        v1_state_object._gui = original_gui_ref
-
-    # 4. Restore the reference in the copied object as well
-    copied_object._gui = original_gui_ref
-    
-    return copied_object
 
 def is_branching_recipe(recipe_name: str) -> bool:
     """

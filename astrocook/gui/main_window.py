@@ -1,6 +1,5 @@
 from copy import deepcopy
 import dataclasses
-import json
 import logging
 import numpy as np
 import os
@@ -31,10 +30,9 @@ from .recipe_dialog import RecipeDialog
 from .script_dialog import ScriptDialog
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
-from astrocook.core.structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.structures import HistoryLogV2
 from .system_inspector import SystemInspector
-from astrocook.core.utils import guarded_deepcopy_v1_state, is_branching_recipe, resource_path # Import recipe helpers
-from astrocook.legacy.gui_log import GUILog
+from astrocook.core.utils import is_branching_recipe, resource_path # Import recipe helpers
 
 # --- *** RECIPE LOOKUP MAP *** ---
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
@@ -184,7 +182,6 @@ class MainWindowV2(QMainWindow):
                 
                 # Link real GUI
                 session._gui = self
-                session.log = GUILog(self.mock_gui_context)
                 
                 self.session_histories.append(new_history)
 
@@ -1565,41 +1562,21 @@ class MainWindowV2(QMainWindow):
 
         if is_branching:
             logging.debug("Branching: Creating new SessionHistory from current state.")
-            # 1. Get the source log and create a V1-safe deep copy
+            # 1. Get the source log and copy it (HistoryLogV2 is safe to deepcopy)
             source_log_manager = target_history.log_manager
-            new_log_copy = None
-            # Check if it's a V1-style log that needs special handling
-            if hasattr(source_log_manager, '_gui'):
-                logging.debug("Branching: Found V1-style log, using guarded_deepcopy_v1_state.")
-                new_log_copy = guarded_deepcopy_v1_state(source_log_manager)
-            else:
-                # It's a V2-style log (like HistoryLogV2), which is safe to deepcopy
-                logging.debug("Branching: Found V2-style log, using standard deepcopy.")
-                try:
-                    new_log_copy = deepcopy(source_log_manager)
-                except Exception as e:
-                    logging.error(f"Standard deepcopy failed on log manager: {e}")
-                    new_log_copy = None # Ensure it's None on failure
+            try:
+                new_log_copy = deepcopy(source_log_manager)
+            except Exception as e:
+                logging.error(f"Standard deepcopy failed on log manager: {e}")
+                new_log_copy = None
 
             if new_log_copy is None:
-                logging.error("Failed to deepcopy GUILog for branching, aborting.")
+                logging.error("Failed to copy the session log for branching, aborting.")
                 QMessageBox.critical(self, "Branching Error", "Could not copy session log state.")
                 return
 
             # 2. Update the new state from the recipe to point to the *new* log
             new_session.log_manager = new_log_copy
-            
-            # ** FIX: The new state's .log attribute also needs the *new* log object **
-            if isinstance(new_log_copy, GUILog):
-                new_session.log = new_log_copy
-            elif isinstance(new_log_copy, V1LogArtifact):
-                 # Create a *new* GUILog stub populated from the V1 artifact
-                 new_session.log = GUILog(self.mock_gui_context)
-                 try: new_session.log.str = json.dumps(new_log_copy.v1_json)
-                 except Exception: pass
-            else: # It's a HistoryLogV2
-                 # We still need a V1 .log stub for V1 recipes
-                 new_session.log = GUILog(self.mock_gui_context)
 
 
             # 3. Create the new history manager
@@ -1635,7 +1612,6 @@ class MainWindowV2(QMainWindow):
 
             initial_state_copy.name = new_branch_name
             initial_state_copy.log_manager = new_log_copy
-            initial_state_copy.log = new_session.log # Use the new log stub
 
             # 4. Create the new history manager with the *copied* initial state
             new_history = SessionHistory(initial_state_copy, new_log_copy)
@@ -1652,7 +1628,6 @@ class MainWindowV2(QMainWindow):
 
                 state_copy.name = new_branch_name # Ensure name consistency
                 state_copy.log_manager = new_log_copy # Re-link to the new log
-                state_copy.log = new_session.log # Re-link V1 stub
                 other_states_to_copy.append(state_copy)
             
             # 6. Manually set the full state list for the new history
@@ -1735,11 +1710,6 @@ class MainWindowV2(QMainWindow):
         
         # Overwrite the mock GUI context with the real one
         new_session._gui = self
-        
-        # 2. Manually set the V1 log stub on the new session
-        new_session.log = GUILog(self.mock_gui_context)
-        
-        # We no longer need to check for V1LogArtifact
         
         self.session_histories.append(new_history)
         self.active_history = new_history # Newly loaded becomes active

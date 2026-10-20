@@ -6,7 +6,6 @@ import tarfile
 import tempfile
 from typing import Any, Optional, Union
 
-from astrocook.legacy.gui_log import GUILog 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
 from astrocook.recipes.continuum import RecipeContinuumV2
@@ -21,7 +20,7 @@ from astrocook.core.structures import (
 from astrocook.core.system_list import SystemListV2
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
+LogManager = Union[HistoryLogV2, V1LogArtifact]
 
 def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
     """
@@ -200,7 +199,6 @@ class SessionV2:
 
         self._gui = gui
         self.name = name
-        self.log: Optional[GUILog] = GUILog(self._gui)
         self.log_manager: Optional[LogManager] = None
         self._current_spectrum = spec
         self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
@@ -298,7 +296,6 @@ class SessionV2:
             'systs': self.systs,
         }
         new_session = SessionV2(**constructor_args)
-        new_session.log = self.log 
         new_session.log_manager = self.log_manager 
         return new_session
 
@@ -323,7 +320,6 @@ class SessionV2:
             'systs': new_systs,
         }
         new_session = SessionV2(**constructor_args)
-        new_session.log = self.log 
         new_session.log_manager = self.log_manager
         return new_session
     
@@ -394,9 +390,7 @@ class SessionV2:
                 raise 
             
             json_log_str = ""
-            if isinstance(self.log_manager, GUILog):
-                json_log_str = self.log_manager.str
-            elif isinstance(self.log_manager, V1LogArtifact):
+            if isinstance(self.log_manager, V1LogArtifact):
                 json_log_str = json.dumps(self.log_manager.v1_json)
             elif isinstance(self.log_manager, HistoryLogV2):
                 # The V1 format cannot store the V2 log: it is dropped on purpose
