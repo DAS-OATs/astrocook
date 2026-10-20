@@ -148,8 +148,8 @@ kept as assets of the pre-release `data-telluric-2026`); docs published per
 version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 in
 phase 3-bis); #566 (centralized messages) in phase 6.
 
-Next: phase 3-bis (`ROADMAP.md`, section 3), then release 2.1.0. Work in small PRs, one at a time; wait for the merge
-before the next. While #549 is open, each new PR goes on its own
+Next: phase 3-bis (`ROADMAP.md`, section 3), then release 2.1.0. Work in
+small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
 Questionable behaviour found along the way goes in the findings register
