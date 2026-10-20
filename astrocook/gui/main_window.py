@@ -35,7 +35,6 @@ from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 from .system_inspector import SystemInspector
 from astrocook.core.utils import guarded_deepcopy_v1_state, is_branching_recipe, resource_path # Import recipe helpers
 from astrocook.legacy.gui_log import GUILog
-from astrocook.legacy.defaults import Defaults
 
 # --- *** RECIPE LOOKUP MAP *** ---
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
@@ -186,7 +185,6 @@ class MainWindowV2(QMainWindow):
                 # Link real GUI
                 session._gui = self
                 session.log = GUILog(self.mock_gui_context)
-                session.defs = Defaults(self.mock_gui_context)
                 
                 self.session_histories.append(new_history)
 
@@ -1738,9 +1736,8 @@ class MainWindowV2(QMainWindow):
         # Overwrite the mock GUI context with the real one
         new_session._gui = self
         
-        # 2. Manually set the V1 stubs (log and defs) on the new session
+        # 2. Manually set the V1 log stub on the new session
         new_session.log = GUILog(self.mock_gui_context)
-        new_session.defs = Defaults(self.mock_gui_context)
         
         # We no longer need to check for V1LogArtifact
         

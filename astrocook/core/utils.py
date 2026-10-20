@@ -41,7 +41,7 @@ def get_recipe_schema(category: str, recipe_name: str) -> Dict[str, Any]:
 
 def guarded_deepcopy_v1_state(v1_state_object: Any) -> Any:
     """
-    Performs a deepcopy on a V1 state object (like GUILog or Defaults) 
+    Performs a deepcopy on a V1 state object (like GUILog) 
     by temporarily removing the uncopyable '_gui' reference.
     """
     

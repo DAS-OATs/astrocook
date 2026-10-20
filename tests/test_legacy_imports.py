@@ -17,15 +17,12 @@ PACKAGE_DIR = Path(astrocook.__file__).parent
 
 # (module, imported legacy module) pairs still allowed
 ALLOWED = {
-    ("astrocook/core/session.py", "astrocook.legacy.defaults"),
     ("astrocook/core/session.py", "astrocook.legacy.gui_log"),
     ("astrocook/core/session_manager.py", "astrocook.legacy.gui_log"),
     ("astrocook/core/spectrum.py", "astrocook.legacy.spectrum"),
     ("astrocook/core/system_list_migration.py", "astrocook.legacy.syst_list"),
     ("astrocook/gui/log_scripter_dialog.py", "astrocook.legacy.gui_log"),
-    ("astrocook/gui/main_window.py", "astrocook.legacy.defaults"),
     ("astrocook/gui/main_window.py", "astrocook.legacy.gui_log"),
-    ("astrocook/gui/qt_workers.py", "astrocook.legacy.defaults"),
     ("astrocook/gui/qt_workers.py", "astrocook.legacy.gui_log"),
     ("astrocook/io/adapter.py", "astrocook.legacy.gui_log"),
     ("astrocook/io/v1_stubs.py", "astrocook.legacy.format"),

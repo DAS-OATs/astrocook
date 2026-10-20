@@ -6,7 +6,6 @@ import tarfile
 import tempfile
 from typing import Any, Optional, Union
 
-from astrocook.legacy.defaults import Defaults
 from astrocook.legacy.gui_log import GUILog 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
@@ -20,7 +19,6 @@ from astrocook.core.structures import (
     SystemListDataV2, HistoryLogV2, V1LogArtifact
 )
 from astrocook.core.system_list import SystemListV2
-from astrocook.core.utils import guarded_deepcopy_v1_state
 
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
@@ -203,7 +201,6 @@ class SessionV2:
         self._gui = gui
         self.name = name
         self.log: Optional[GUILog] = GUILog(self._gui)
-        self.defs: Optional[Defaults] = Defaults(self._gui)
         self.log_manager: Optional[LogManager] = None
         self._current_spectrum = spec
         self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
@@ -302,7 +299,6 @@ class SessionV2:
         }
         new_session = SessionV2(**constructor_args)
         new_session.log = self.log 
-        new_session.defs = guarded_deepcopy_v1_state(self.defs)
         new_session.log_manager = self.log_manager 
         return new_session
 
@@ -328,7 +324,6 @@ class SessionV2:
         }
         new_session = SessionV2(**constructor_args)
         new_session.log = self.log 
-        new_session.defs = guarded_deepcopy_v1_state(self.defs)
         new_session.log_manager = self.log_manager
         return new_session
     
