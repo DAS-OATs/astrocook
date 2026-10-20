@@ -111,19 +111,25 @@ for data.
 
 Release 2.0.2 (October 2026) includes phase 1-bis and #534 (errors scaled
 with the chi2 of the final model). Sequence agreed with Guido (October
-2026; `ROADMAP.md`, section 3):
-1. phase 2 – cleanup and packaging (obsolete files, `pyproject.toml`,
-   LICENSE, F18, F31);
-2. phase 3 – decoupling from `legacy/` (the V1 routines used by the parity
-   tests move to a test-only reference module, they are not deleted);
-3. release 2.1.0, first publication on PyPI;
-4. MCP pilot (3–4 recipes, separate module; `ROADMAP.md`, section 4);
-5. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560,
+2026, revised after phase 3; `ROADMAP.md`, section 3):
+1. phase 2 – cleanup and packaging (done, release 2.0.3);
+2. phase 3 – decoupling from `legacy/` (done);
+3. phase 3-bis – small fixes before the release: #575 (F41, priority),
+   F6, F13; #559 and #560 possibly brought forward from phase 4 (to be
+   decided with Guido);
+4. release 2.1.0, on GitHub with the macOS app, not on PyPI;
+5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
+   `ROADMAP.md`, section 4);
+6. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560,
    #568, #573;
-6. release 2.2.0;
-7. phase 5 – splitting large files;
-8. phase 6 – error handling;
-9. full MCP server, with a headless Docker image.
+7. release 2.2.0;
+8. phase 5 – splitting large files;
+9. phase 6 – error handling;
+10. full MCP server, with a headless Docker image.
+
+LICENSE (#549) and the first publication on PyPI are an independent step:
+they go into the first release after INAF answers (2.1.1 if before phase
+4, otherwise 2.2.0 or the current version then).
 
 Phase 2 done, released as 2.0.3 (packaging, no numerical changes).
 LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker:
@@ -139,11 +145,10 @@ V1 `.acs` archives read by `io/v1_archive.py` (saving in `.acs` removed);
 the V1 routines of the parity tests in `tests/reference/v1/`; logging left
 to the application; the data files used only by V1 removed (telluric data
 kept as assets of the pre-release `data-telluric-2026`); docs published per
-version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 to be
-scheduled); #566 (centralized messages) in phase 6.
+version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 in
+phase 3-bis); #566 (centralized messages) in phase 6.
 
-Next: release 2.1.0, first publication on PyPI (needs the LICENSE, #549,
-waiting for INAF). Work in small PRs, one at a time; wait for the merge
+Next: phase 3-bis (`ROADMAP.md`, section 3), then release 2.1.0. Work in small PRs, one at a time; wait for the merge
 before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
