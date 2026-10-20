@@ -425,19 +425,38 @@ Done (October 2026), PRs #543-#554:
   `deploy_docs.sh` kept as a manual fallback);
 - F18 (all Dependabot alerts were on the V1 Gemfile), F31 (dead
   identification code), F35 (archives unpacked without a path check)
-  fixed; F34 found.
+  fixed; F34 found (phase 2-bis).
 
 Left open:
 - **LICENSE**: GPLv3 or later agreed with Guido; PR #549 waits as a draft
   for INAF (copyright holder) and for the contributors. Needed before the
   PyPI publication (2.1.0).
-- Optional `[bayes]` extra (emcee, dynesty, corner optional, with a clear
-  message and the GUI entries disabled): Guido's decision.
+- Optional `[bayes]` extra: agreed, moved to phase 2-bis.
 - Docker containers (`containers/`, broken since the V1 launchers moved):
   renewal to be discussed with Guido.
 - `telluric.fits` and `sky_telluric.fits` (~62 MB each, used only by
   `legacy/`) keep the wheel near PyPI's 100 MB limit: to be decided in
   phase 3.
+
+### Phase 2-bis – Leftovers of phase 2
+Agreed with Guido (October 2026), before phase 3; one small PR each, in
+this order:
+1. **F34**: main window icon from the existing `logo_3d_HR.png` (file to
+   be confirmed by Guido in the PR).
+2. **Ruff warnings**: clean up the ~80 pyflakes warnings (unused imports
+   and variables, f-strings without placeholders, redefinitions), each
+   unused variable checked by hand since it may hide a bug; then CI runs
+   `ruff check .` with all the configured rules instead of F821 only.
+3. **Sphinx warnings**: the 4 warnings of the docs build (duplicate object
+   descriptions, `api/astrocook.mocks` not in a toctree).
+4. **`[bayes]` extra**: emcee, dynesty and corner become optional; the
+   Bayesian fit raises a clear error naming `pip install
+   "astrocook[bayes]"`, the GUI disables its entries with a tooltip; the
+   macOS app and `[dev]` keep them.
+
+Not in phase 2-bis: LICENSE (#549, draft until INAF answers; needed only
+for PyPI, 2.1.0), Docker renewal (to be discussed with Guido), size of
+the telluric files (phase 3).
 
 ### Phase 3 – Decoupling from legacy
 One dependency at a time (`Defaults`, `trans_parse`, `xem_d`, … become V2
@@ -475,8 +494,8 @@ an item to discuss.
 ### Releases
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
-Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 3 →
-2.1.0 → phase 4 → 2.2.0 → phase 5 → phase 6.
+Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
+→ phase 3 → 2.1.0 → phase 4 → 2.2.0 → phase 5 → phase 6.
 - **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
   fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
   F29, F32, #534) and issues #480, #442, together with the earlier fixes
@@ -690,6 +709,7 @@ review); each of its decisions goes into the log.
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
 | 1-bis – Findings and urgent issues (section 3.3) | done (October 2026): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33, #480, #442 fixed; F3 accepted; deferred to issues: #526 (F8, F22, F10, F9, F14), #534, #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data |
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
+| 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | not started |
 | 3 – Decoupling from legacy | not started |
 | 4 – Scientific correctness (#526, #517, #465, #518) | not started |
 | 5 – Splitting large files | not started |
