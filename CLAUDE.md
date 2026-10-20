@@ -105,7 +105,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2. phase 3 – decoupling from `legacy/` (the V1 routines used by the parity
    tests move to a test-only reference module, they are not deleted);
 3. release 2.1.0, first publication on PyPI;
-4. phase 4 – scientific correctness: #526, #517, #465, #518;
+4. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560;
 5. release 2.2.0;
 6. phase 5 – splitting large files;
 7. phase 6 – error handling.

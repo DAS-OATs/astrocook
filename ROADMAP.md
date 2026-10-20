@@ -450,7 +450,7 @@ this order:
    `ruff check .` with all the configured rules instead of F821 only.
    Done: 162 warnings with Ruff 0.17 (116 unused imports, 24 unused
    variables, 16 f-strings, 6 redefinitions); found F36 and F37 (left
-   unchanged, `# noqa` with a reference); the unused `aic_penalty` of
+   unchanged, `# noqa` with a reference; deferred to #559 and #560); the unused `aic_penalty` of
    `metals_auto` is already documented as such in its docstring.
 3. **Sphinx warnings**: the 4 warnings of the docs build (duplicate object
    descriptions, `api/astrocook.mocks` not in a toctree).
@@ -484,7 +484,11 @@ PR, with the slow tests run before the merge:
 - [#465](https://github.com/DAS-OATs/astrocook/issues/465): continuum
   sensitivity to spikes, with F30 and F17;
 - [#518](https://github.com/DAS-OATs/astrocook/issues/518): editable z window
-  in the manual fits (F4).
+  in the manual fits (F4);
+- [#559](https://github.com/DAS-OATs/astrocook/issues/559): `dbtur` not
+  updated after a Voigt fit (F36, found in phase 2-bis);
+- [#560](https://github.com/DAS-OATs/astrocook/issues/560): `norm` parameter
+  of the `rebin` recipe ignored (F37, found in phase 2-bis).
 
 The order is to be agreed with Guido at the start of the phase.
 
@@ -536,6 +540,7 @@ features after, except urgent features in stable areas.
 | Phase 4 | [#526](https://github.com/DAS-OATs/astrocook/issues/526) | resolution as a single column and exact convolution (F8, F22, rest of F10, F9); design and decisions in the issue |
 | Before release 2.0.2 (decided with Guido) | [#534](https://github.com/DAS-OATs/astrocook/issues/534) | which chi2 the fit uncertainties are scaled with (follow-up of F29): done, option (a) |
 | Phase 4 | [#517](https://github.com/DAS-OATs/astrocook/issues/517), [#518](https://github.com/DAS-OATs/astrocook/issues/518) | from the findings review: flag and refit components at the parameter bounds, with F21 (`lya_auto` output); editable z window in the manual fits (F4) |
+| Phase 4 | [#559](https://github.com/DAS-OATs/astrocook/issues/559), [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36); `norm` of the `rebin` recipe ignored (F37) |
 | After phase 5 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
 | After phase 5 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |
 | After phase 5 | [#446](https://github.com/DAS-OATs/astrocook/issues/446), [#437](https://github.com/DAS-OATs/astrocook/issues/437) | flux-calibration filters; independent, not urgent |
@@ -587,8 +592,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F33 | tests (`.acs2` I/O) | `tests/test_v2_io_integrity.py` wraps its checks in `try/except` and only prints the error, so it can never fail. It currently prints "INTEGRITY CHECK FAILED": it checks that "CIV" is in `region_identifications` as a string, while after loading it is a dict (same mismatch as F27). Found in phase 1-bis while running the slow tests | test quality | `test_integer_aux_column_round_trip` | fixed (phase 1-bis, decided with Guido): test removed; its only check not covered by `tests/test_acs2_round_trip.py` (integer `abs_ids`) added there |
 | F34 | GUI | `gui/main_window.py` sets the main window icon from `assets/logo_3d.png`, which does not exist (the available logos are `logo_3d_HR.png` and `logo_3d_LR.png`): the icon is silently missing. Found in phase 2 while moving `assets/` into the package | GUI | — | fixed (phase 2-bis): icon from `logo_3d_HR.png`, smoke test checks it is not null |
 | F35 | security | `.acs2` (`core/session.py`) and `.acs` (`io/v1_stubs.py`) archives were unpacked with a plain `tarfile.extractall`: a crafted archive could write files outside the temporary folder (path traversal). V1 had a check (`legacy/session.py`, `safe_extract`) that V2 lost. Found in phase 2 from a Python 3.14 deprecation warning in the slow tests | security | `tests/test_safe_extract.py` | fixed (phase 2): `extractall(..., filter="data")`, which refuses members outside the folder |
-| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | open |
-| F37 | `rebin` recipe (`recipes/flux.py`) | The `norm` parameter ("Return normalized spectrum, if continuum exists") is parsed and ignored: the rebinned spectrum is never normalized. Found in phase 2-bis while cleaning up the Ruff warnings | silently ignored parameter | — | open |
+| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | deferred to [#559](https://github.com/DAS-OATs/astrocook/issues/559) (phase 4) |
+| F37 | `rebin` recipe (`recipes/flux.py`) | The `norm` parameter ("Return normalized spectrum, if continuum exists") is parsed and ignored: the rebinned spectrum is never normalized. Found in phase 2-bis while cleaning up the Ruff warnings | silently ignored parameter | — | deferred to [#560](https://github.com/DAS-OATs/astrocook/issues/560) (phase 4) |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -718,6 +723,6 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | in progress: F34, Ruff done |
 | 3 – Decoupling from legacy | not started |
-| 4 – Scientific correctness (#526, #517, #465, #518) | not started |
+| 4 – Scientific correctness (#526, #517, #465, #518, #559, #560) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
