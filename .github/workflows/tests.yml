@@ -11,9 +11,12 @@ on:
   schedule:
     - cron: "17 5 * * 1"
 
+# A new push cancels the run in progress on the same PR; on master every
+# run completes, so that two merges in a row do not cancel the slow tests
+# of the first one
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
