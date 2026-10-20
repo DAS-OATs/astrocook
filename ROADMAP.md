@@ -435,7 +435,9 @@ Left open:
   PyPI publication (2.1.0).
 - Optional `[bayes]` extra: agreed, moved to phase 2-bis.
 - Docker containers (`containers/`, broken since the V1 launchers moved):
-  renewal to be discussed with Guido.
+  decided with Guido (October 2026): no renewal for now; `containers/` is
+  removed in phase 3; a headless image comes with the full MCP server
+  (section 4); an image with the GUI only if users ask for it.
 - `telluric.fits` and `sky_telluric.fits` (~62 MB each, used only by
   `legacy/`) keep the wheel near PyPI's 100 MB limit: to be decided in
   phase 3.
@@ -480,7 +482,8 @@ The V1 numerical routines used by the parity tests (phase 1, item 11) are
 not deleted: they are moved into a test-only reference module (e.g.
 `tests/reference/`), so that V2 can still be checked against the validated
 V1 behaviour. Only the code needed by the wx GUI and the rest of V1 is
-removed.
+removed, together with the V1 Docker image (`containers/`, broken: it
+installs the V1 dependencies and launches the removed `ac_gui.py`).
 
 ### Phase 4 – Scientific correctness
 The issues deferred from phase 1-bis, one PR (or a short series) each, every
@@ -514,7 +517,8 @@ an item to discuss.
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
 Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
-→ phase 3 → 2.1.0 → phase 4 → 2.2.0 → phase 5 → phase 6.
+→ phase 3 → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 → phase 6 →
+full MCP server (section 4).
 - **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
   fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
   F29, F32, #534) and issues #480, #442, together with the earlier fixes
@@ -670,7 +674,17 @@ LLM.
 4. **GUI as a review bench:** the agent does the repetitive work, the human
    inspects, corrects and approves.
 
-Proposed pilot: MCP server with 3–4 recipes, after phase 1.
+When (agreed with Guido, October 2026):
+- **Pilot, right after 2.1.0** (before phase 4): MCP server with 3–4
+  recipes (open a spectrum, continuum, identification, fit), as a separate
+  module that does not touch the existing code. With 2.1.0 on PyPI it
+  installs with `pip`; it shows which structured outputs and error
+  messages an agent needs, so that phases 4 and 6 can take them into
+  account.
+- **Full server, after phase 6:** all the recipes, structured outputs,
+  natural-language log, and a headless Docker image to distribute it. An
+  agent working on its own needs correct results (phase 4) and clean error
+  handling (phase 6).
 
 ---
 
