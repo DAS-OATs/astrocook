@@ -94,6 +94,11 @@ def test_main_window_starts_empty(window):
     assert not window.undo_action.isEnabled()
 
 
+def test_main_window_has_icon(window):
+    # QIcon of a missing file is silently null (F34)
+    assert not window.windowIcon().isNull()
+
+
 def test_open_session(loaded, messages):
     history = loaded.active_history
     assert history.display_name == SESSION_FILE.stem
