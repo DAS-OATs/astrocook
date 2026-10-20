@@ -7,12 +7,7 @@ from PySide6.QtWidgets import (
 )
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
-try:
-    from astrocook.legacy.functions import trans_parse
-    V1_FUNCTIONS_AVAILABLE = True
-except ImportError:
-    V1_FUNCTIONS_AVAILABLE = False
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
@@ -107,11 +102,10 @@ class IdentificationViewerDialog(QDialog):
             return STANDARD_MULTIPLETS[series_name][0]
         if series_name in xem_d:
             return series_name
-        if V1_FUNCTIONS_AVAILABLE:
-            try:
-                return trans_parse(series_name)[0] # V1 fallback
-            except Exception:
-                pass
+        try:
+            return trans_parse(series_name)[0] # V1 series syntax
+        except Exception:
+            pass
         return None
 
     def _invert_identifications(self, 

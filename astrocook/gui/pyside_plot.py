@@ -19,21 +19,14 @@ from PySide6.QtWidgets import (
 import qtawesome as qta
 from typing import Optional, TYPE_CHECKING
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
+from astrocook.core.spectrum_operations import convert_axis_velocity
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2 
 
-try:
-    from astrocook.legacy.functions import trans_parse, x_convert
-    V1_FUNCTIONS_AVAILABLE = True
-except ImportError:
-    V1_FUNCTIONS_AVAILABLE = False
-    trans_parse = lambda s: [s] # Dummy function
-    logging.error("V1 'trans_parse' not found. Displaying V1-style systems may fail.")
-
-# Keys must match exactly what is in your legacy.vars.xem_d dictionary
+# Keys must match exactly what is in xem_d (core/atomic_data.py)
 STRONG_EMISSION_LINES = {
     'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 
     'CIII_1908', 'MgII_2796', 'H_b', 'OIII_5008', 'H_a'
@@ -95,7 +88,6 @@ def get_style_color(key: str, cycle: list):
 # The x_plot it receives is *always* in the data's native units (nm)
 def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
     """Converts plot X coordinate (in data units, nm) back to redshift."""
-    if not V1_FUNCTIONS_AVAILABLE: return None
     try:
         z = (x_plot_nm / xem_nm) - 1.0 # Simple calculation
         return z
@@ -1129,7 +1121,7 @@ class SpectrumPlotWidget(QWidget):
                     logging.warning(f"Could not plot auxiliary column '{aux_col_to_plot}': {e}")
 
             # 5. Plot Systems
-            if self.main_window.systems_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE and systs and systs.components:
+            if self.main_window.systems_checkbox.isChecked() and systs and systs.components:
                 # Get current plot limits to only draw visible lines
                 xlim = ax.get_xlim()
 
@@ -1153,12 +1145,11 @@ class SpectrumPlotWidget(QWidget):
                         # 1. Try V2-native lookup (e.g., "CIV")
                         transitions = STANDARD_MULTIPLETS[comp.series]
                     except KeyError:
-                        if V1_FUNCTIONS_AVAILABLE:
-                            # 2. Try V1 trans_parse (e.g., "CIV_1548,CIV_1550")
-                            try:
-                                transitions = trans_parse(comp.series)
-                            except Exception:
-                                pass # Will be caught by logging below
+                        # 2. Try the V1 series syntax (e.g., "CIV_1548,CIV_1550")
+                        try:
+                            transitions = trans_parse(comp.series)
+                        except Exception:
+                            pass # Will be caught by logging below
                         
                         # 3. Fallback for single lines (e.g., "Ly_a")
                         if not transitions and comp.series in xem_d:
@@ -1173,7 +1164,7 @@ class SpectrumPlotWidget(QWidget):
                     for t in transitions:
                         if t in xem_d:
                             try:
-                                x_plot = x_convert((1 + z) * xem_d[t].to_value(au.nm) * au.nm, zem=zem, xunit=spec.x.unit).value
+                                x_plot = convert_axis_velocity((1 + z) * xem_d[t].to_value(au.nm) * au.nm, zem, spec.x.unit).value
                             except Exception: continue
 
                             # Check xlim *before* appending to keep lists small
@@ -1218,7 +1209,7 @@ class SpectrumPlotWidget(QWidget):
                         ax.axvline(hx, color='#f5a100', alpha=0.6, lw=1.0, linestyle=':', zorder=4)
                         
             # 6. Plot Redshift Cursor
-            if self.main_window.cursor_show_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE:
+            if self.main_window.cursor_show_checkbox.isChecked():
                 try:
                     z_cursor = float(self.main_window.cursor_z_input.text())
                     # Calculate positions using helper
@@ -1355,7 +1346,7 @@ class SpectrumPlotWidget(QWidget):
                     sec_ax.xaxis.set_major_locator(plt_ticker.AutoLocator())
 
             # 3. Emission Line Labels
-            if z_em > 0.0 and V1_FUNCTIONS_AVAILABLE and spec.x.unit.is_equivalent(au.nm):
+            if z_em > 0.0 and spec.x.unit.is_equivalent(au.nm):
                 # Get current view limits (native units, usually nm)
                 # We use the limits *we are about to set* if we know them, 
                 # otherwise we rely on what Matplotlib will autoscale to.
@@ -1508,7 +1499,7 @@ class SpectrumPlotWidget(QWidget):
         positions = []
         spec = session_state.spec
         main_window = self.main_window # type: MainWindowV2
-        if not spec or not V1_FUNCTIONS_AVAILABLE: return []
+        if not spec: return []
         try:
             # V1/V2 Fallback Logic for Transitions
             series_str = main_window.cursor_series_input.text()
@@ -1517,12 +1508,11 @@ class SpectrumPlotWidget(QWidget):
                 # 1. Try V2-native lookup
                 transitions = STANDARD_MULTIPLETS[series_str]
             except KeyError:
-                if V1_FUNCTIONS_AVAILABLE:
-                    # 2. Try V1 trans_parse
-                    try:
-                        transitions = trans_parse(series_str)
-                    except Exception:
-                        pass
+                # 2. Try the V1 series syntax
+                try:
+                    transitions = trans_parse(series_str)
+                except Exception:
+                    pass
                         
                 # 3. Fallback for single lines
                 if not transitions and series_str in xem_d:
@@ -1544,7 +1534,7 @@ class SpectrumPlotWidget(QWidget):
         Helper to calculate redshift from a wavelength (nm) based on
         the currently active cursor series.
         """
-        if not self.main_window or not V1_FUNCTIONS_AVAILABLE:
+        if not self.main_window:
             return None
         try:
             # V1/V2 Fallback Logic for Transitions
@@ -1554,12 +1544,11 @@ class SpectrumPlotWidget(QWidget):
                 # 1. Try V2-native lookup
                 transitions = STANDARD_MULTIPLETS[series_str]
             except KeyError:
-                if V1_FUNCTIONS_AVAILABLE:
-                    # 2. Try V1 trans_parse
-                    try:
-                        transitions = trans_parse(series_str)
-                    except Exception:
-                        pass
+                # 2. Try the V1 series syntax
+                try:
+                    transitions = trans_parse(series_str)
+                except Exception:
+                    pass
 
                 # 3. Fallback for single lines
                 if not transitions and series_str in xem_d:
