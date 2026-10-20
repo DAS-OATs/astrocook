@@ -1,11 +1,11 @@
 """Opening V1 ``.acs`` archives (``astrocook/io/v1_archive.py``, phase 3).
 
 Two small archives cut from real V1 sessions provided by Guido:
-``v1_systems.acs`` (a spectrum with all its systems fitted) and
-``v1_metals_constraints.acs`` (metal systems with V1 constraints). The
-spectrum is cut to 395-412 nm, the system tables are complete, and the
-headers are anonymised (object, coordinates, dates, file names); the V1 log
-is replaced with an empty one.
+``v1_systems.acs`` (ten fitted components) and ``v1_metals_constraints.acs``
+(five CIV/SiIV pairs, with the SiIV z and b linked to the CIV ones and some
+b frozen: the V1 constraints). The spectrum is cut to 405-412 nm, the
+headers are anonymised (object, coordinates, dates, file names) and the V1
+log is replaced with an empty one.
 
 The snapshots were recorded with the former reader, which went through
 the V1 classes of ``astrocook/legacy`` (before phase 3, 8b), and are
@@ -76,14 +76,16 @@ def test_systems(snapshot, archive):
 def test_v1_archive_contents():
     # What the tests cover, independently of the snapshots
     systems = _load("v1_systems")
-    assert len(systems.spec.x) == 6316 and len(systems.systs.components) == 425
+    assert len(systems.spec.x) == 2569 and len(systems.systs.components) == 10
     ids = [c.id for c in systems.systs.components]
     assert ids == sorted(ids)  # V1 order of the components
     metals = _load("v1_metals_constraints")
-    assert len(metals.systs.components) == 185
+    assert len(metals.systs.components) == 10
     parsed = metals.systs._data.parsed_constraints
-    assert len(parsed) == 226
+    assert len(parsed) == 15
     assert parsed[(147, "z")].expression == "lines_voigt_14_z"
+    assert parsed[(147, "b")].expression == "lines_voigt_14_b*0.65395596200518"
+    assert parsed[(14, "b")].expression is None and not parsed[(14, "b")].is_free
 
 
 def test_format_name_does_not_matter():
