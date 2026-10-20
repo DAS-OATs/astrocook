@@ -447,9 +447,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.core.spectrum</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">template</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.constants</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">const</span>
+<span></span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
@@ -462,7 +460,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">METAL_MULTIPLETS</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">xem_d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">xem_d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.photometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_calibration_curve</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">convert_axis_velocity</span><span class="p">,</span> 
@@ -471,7 +469,6 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">DataColumnV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">Frame</span> <span class="k">as</span> <span class="n">FrameV1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span> <span class="k">as</span> <span class="n">SpectrumV1</span>
 
 <span class="n">_NE_GLOBAL_DICT</span> <span class="o">=</span> <span class="p">{</span>
@@ -499,9 +496,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_data_dict</span> <span class="o">=</span> <span class="n">data_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">colnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
-        
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         
     <span class="c1"># Crucially, add a method to simulate row access (needed for row iteration)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -2771,7 +2765,6 @@
         <span class="c1"># 4. Handle Model Renormalization</span>
         <span class="k">if</span> <span class="n">renorm_model</span> <span class="ow">and</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'model'</span><span class="p">):</span>
             <span class="n">old_cont_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'cont'</span><span class="p">)</span>
-            <span class="n">old_model_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'model'</span><span class="p">)</span>
             
             <span class="c1"># We can use the helper we used in smooth_column/fit_continuum</span>
             <span class="c1"># Note: We access _data directly inside the class for the helper</span>
@@ -2900,7 +2893,7 @@
         <span class="c1"># Import SciPy signal processing tools</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_peaks</span><span class="p">,</span> <span class="n">peak_widths</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"identify_lines (De-blending): Starting identification..."</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"identify_lines (De-blending): Starting identification..."</span><span class="p">)</span>
 
         <span class="c1"># 1. Silently create abs_mask if it doesn't exist</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="n">mask_col</span><span class="p">):</span>

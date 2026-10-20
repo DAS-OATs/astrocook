@@ -447,8 +447,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.fitting.voigt_fitter</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.constants</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">const</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">least_squares</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">wofz</span>
@@ -462,7 +461,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtModelConstraintV2</span>
 
 <div class="viewcode-block" id="convolve_flux">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.convolve_flux">[docs]</a>
@@ -1518,7 +1516,9 @@
             <span class="n">dz_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
             <span class="n">dlogN_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dlogN</span><span class="p">)</span>
             <span class="n">db_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
-            <span class="n">dbtur_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dbtur</span><span class="p">)</span>
+            <span class="c1"># Computed but not stored: dbtur keeps its old value after the</span>
+            <span class="c1"># fit (findings register F36)</span>
+            <span class="n">dbtur_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dbtur</span><span class="p">)</span>  <span class="c1"># noqa: F841</span>
             
             <span class="c1"># Metadata Update</span>
             <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">chi2</span>

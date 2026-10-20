@@ -43,6 +43,8 @@
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.core';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
@@ -720,6 +722,389 @@
 </section>
 <section id="module-astrocook.core">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-astrocook.core" title="Link to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.</span></span><span class="sig-name descname"><span class="pre">SessionV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The central coordinator for an Astrocook analysis session.</p>
+<p>This class encapsulates the state of a single spectrum and its associated
+models (systems, components). It serves as the primary entry point for
+high-level analysis workflows (“Recipes”).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Immutability Pattern</strong>: In Astrocook V2, the <code class="docutils literal notranslate"><span class="pre">SessionV2</span></code> object is designed
+to be treated as immutable within the undo/redo history stack. Operations that
+modify data (like smoothing flux or fitting a continuum) do not modify the object
+in-place; instead, they return a <em>new</em> <code class="docutils literal notranslate"><span class="pre">SessionV2</span></code> instance containing the
+updated data structures.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#astrocook.core.SessionV2.name" title="Link to this definition">#</a></dt>
+<dd><p>The display name of the session (e.g., filename without extension).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.systs">
+<span class="sig-name descname"><span class="pre">systs</span></span><a class="headerlink" href="#astrocook.core.SessionV2.systs" title="Link to this definition">#</a></dt>
+<dd><p>The container for identified absorption systems and Voigt profile components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.file">
+<span class="sig-name descname"><span class="pre">file</span></span><a class="headerlink" href="#astrocook.core.SessionV2.file" title="Link to this definition">#</a></dt>
+<dd><p>Access to file import/export recipes (e.g., <code class="docutils literal notranslate"><span class="pre">import_ascii</span></code>, <code class="docutils literal notranslate"><span class="pre">export_ascii</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2" title="astrocook.recipes.file.RecipeFileV2">astrocook.recipes.file.RecipeFileV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.edit">
+<span class="sig-name descname"><span class="pre">edit</span></span><a class="headerlink" href="#astrocook.core.SessionV2.edit" title="Link to this definition">#</a></dt>
+<dd><p>Access to editing recipes (e.g., <code class="docutils literal notranslate"><span class="pre">set_properties</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_x_axis</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2" title="astrocook.recipes.edit.RecipeEditV2">astrocook.recipes.edit.RecipeEditV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.flux">
+<span class="sig-name descname"><span class="pre">flux</span></span><a class="headerlink" href="#astrocook.core.SessionV2.flux" title="Link to this definition">#</a></dt>
+<dd><p>Access to flux manipulation recipes (e.g., <code class="docutils literal notranslate"><span class="pre">smooth</span></code>, <code class="docutils literal notranslate"><span class="pre">rebin</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2" title="astrocook.recipes.flux.RecipeFluxV2">astrocook.recipes.flux.RecipeFluxV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.continuum">
+<span class="sig-name descname"><span class="pre">continuum</span></span><a class="headerlink" href="#astrocook.core.SessionV2.continuum" title="Link to this definition">#</a></dt>
+<dd><p>Access to continuum estimation and fitting recipes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2" title="astrocook.recipes.continuum.RecipeContinuumV2">astrocook.recipes.continuum.RecipeContinuumV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.absorbers">
+<span class="sig-name descname"><span class="pre">absorbers</span></span><a class="headerlink" href="#astrocook.core.SessionV2.absorbers" title="Link to this definition">#</a></dt>
+<dd><p>Access to line identification and fitting recipes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="astrocook.recipes.absorbers.RecipeAbsorbersV2">astrocook.recipes.absorbers.RecipeAbsorbersV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.spec">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">spec</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.core.SessionV2.spec" title="Link to this definition">#</a></dt>
+<dd><p>The main container for spectral data (flux, wavelength, error, etc.).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.lines">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">lines</span></span><a class="headerlink" href="#astrocook.core.SessionV2.lines" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.open_new">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">open_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.open_new"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.open_new" title="Link to this definition">#</a></dt>
+<dd><p>Factory method: Create a new SessionV2 by loading data from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> (<em>str</em>) – The system path to the file (FITS or ACS/ACS2 archive).</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – The name to give the new session.</p></li>
+<li><p><strong>gui_context</strong> (<em>Any</em>) – The GUI parent object (used for logging/dialogs).</p></li>
+<li><p><strong>format_name</strong> (<em>str</em>) – Hint for the file format loader (e.g. <code class="docutils literal notranslate"><span class="pre">'generic_spectrum'</span></code>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new SessionV2 instance, or 0 on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.SessionV2" title="astrocook.core.SessionV2">SessionV2</a> or int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.with_new_spectrum">
+<span class="sig-name descname"><span class="pre">with_new_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_spectrum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.with_new_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.with_new_spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Return a new SessionV2 instance with an updated spectrum.</p>
+<p>This is used by recipes that modify spectral data (e.g., smoothing,
+continuum fitting) to ensure history preservation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_spectrum</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The new spectral data object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A shallow copy of the session pointing to the new spectrum.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.SessionV2" title="astrocook.core.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.with_new_system_list">
+<span class="sig-name descname"><span class="pre">with_new_system_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.with_new_system_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.with_new_system_list" title="Link to this definition">#</a></dt>
+<dd><p>Return a new SessionV2 instance with an updated system list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The new system list object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A shallow copy of the session pointing to the new system list.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.SessionV2" title="astrocook.core.SessionV2">SessionV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.log_lost_on_save">
+<span class="sig-name descname"><span class="pre">log_lost_on_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.log_lost_on_save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.log_lost_on_save" title="Link to this definition">#</a></dt>
+<dd><p>Tell whether saving to <code class="docutils literal notranslate"><span class="pre">file_path</span></code> would drop the session log.</p>
+<p>The V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format cannot store a V2 log (<code class="xref py py-class docutils literal notranslate"><span class="pre">HistoryLogV2</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The destination path, as passed to <a class="reference internal" href="#astrocook.core.SessionV2.save" title="astrocook.core.SessionV2.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the file would be saved in V1 format and the session
+has a V2 log.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SessionV2.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/session.html#SessionV2.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SessionV2.save" title="Link to this definition">#</a></dt>
+<dd><p>Save the current session state to a file.</p>
+<p>This method supports two formats:</p>
+<ol class="arabic simple">
+<li><p><strong>.acs2 (Recommended)</strong>: A zipped archive containing the full session state,
+metadata, and (optionally) the original data if <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> is provided.</p></li>
+<li><p><strong>.acs (Legacy)</strong>: A folder-based or zipped structure compatible with
+Astrocook V1.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> (<em>str</em>) – The destination path. The extension (<code class="docutils literal notranslate"><span class="pre">.acs</span></code> vs <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>) determines the format.</p></li>
+<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.SessionV2" title="astrocook.core.SessionV2"><em>SessionV2</em></a><em>, </em><em>optional</em>) – The state of the session <em>before</em> any modifications. This is required
+when saving to <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> format to ensure the archive contains the
+original raw data for reproducibility.</p></li>
+<li><p><strong>models</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag for V1 backward compatibility (unused in V2 native saves).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns 0 on success.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.</span></span><span class="sig-name descname"><span class="pre">SpectrumDataV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~astrocook.core.structures.DataColumnV2]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/structures.html#SpectrumDataV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SpectrumDataV2" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Immutable core container for all spectral data.</p>
+<p>This class holds the “heavy” numerical arrays (flux, wavelength, error)
+and auxiliary columns. It is the data payload for <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – The independent variable (wavelength or velocity).</p></li>
+<li><p><strong>xmin</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – Lower bound of the x-bins.</p></li>
+<li><p><strong>xmax</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – Upper bound of the x-bins.</p></li>
+<li><p><strong>y</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – The dependent variable (flux density).</p></li>
+<li><p><strong>dy</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – The 1-sigma uncertainty on <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p></li>
+<li><p><strong>aux_cols</strong> (<em>dict</em><em> of </em><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><em>DataColumnV2</em></a>) – Additional columns (e.g. <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, <code class="docutils literal notranslate"><span class="pre">'model'</span></code>, <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>).</p></li>
+<li><p><strong>meta</strong> (<em>dict</em>) – Header keywords and other metadata.</p></li>
+<li><p><strong>z_em</strong> (<em>float</em>) – Emission redshift of the target object.</p></li>
+<li><p><strong>resol</strong> (<em>float</em>) – Median resolving power <span class="math notranslate nohighlight">\(R = \lambda / \Delta\lambda\)</span>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.x">
+<span class="sig-name descname"><span class="pre">x</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.x" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.xmin">
+<span class="sig-name descname"><span class="pre">xmin</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.xmin" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.xmax">
+<span class="sig-name descname"><span class="pre">xmax</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.xmax" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.y">
+<span class="sig-name descname"><span class="pre">y</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.y" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.dy">
+<span class="sig-name descname"><span class="pre">dy</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.dy" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.aux_cols">
+<span class="sig-name descname"><span class="pre">aux_cols</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.aux_cols" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.meta" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.z_em">
+<span class="sig-name descname"><span class="pre">z_em</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.z_em" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.resol">
+<span class="sig-name descname"><span class="pre">resol</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.resol" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.from_flat_data">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_flat_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></span><a class="reference internal" href="../_modules/astrocook/core/structures.html#SpectrumDataV2.from_flat_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SpectrumDataV2.from_flat_data" title="Link to this definition">#</a></dt>
+<dd><p>Factory method to create a SpectrumDataV2 from raw NumPy arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_values</strong> (<em>np.ndarray</em>) – Wavelength/Velocity data.</p></li>
+<li><p><strong>x_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the x-axis.</p></li>
+<li><p><strong>y_values</strong> (<em>np.ndarray</em>) – Flux data.</p></li>
+<li><p><strong>y_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the y-axis (and dy).</p></li>
+<li><p><strong>dy_values</strong> (<em>np.ndarray</em>) – Error data.</p></li>
+<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
+<li><p><strong>meta</strong> (<em>dict</em><em>, </em><em>optional</em>) – Metadata dictionary.</p></li>
+<li><p><strong>z_em</strong> (<em>float</em><em>, </em><em>optional</em>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The initialized data object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.SpectrumDataV2" title="astrocook.core.SpectrumDataV2">SpectrumDataV2</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SpectrumDataV2.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.DataColumnV2" title="astrocook.core.structures.DataColumnV2"><span class="pre">DataColumnV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~astrocook.core.structures.DataColumnV2]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.core.SpectrumDataV2.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.</span></span><span class="sig-name descname"><span class="pre">SystemListDataV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.core.structures.ComponentDataV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_header_constraints:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">parsed_constraints:</span> <span class="pre">~typing.Dict[~typing.Tuple[str,</span> <span class="pre">str],</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v2_constraints_map:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_id_to_uuid_map:</span> <span class="pre">~typing.Dict[int,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_models_t:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">meta:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/core/structures.html#SystemListDataV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.SystemListDataV2" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Immutable container for system components and constraints.</p>
+<p>This class replaces the mutable tables used in V1. It holds the list
+of components and the maps defining their relationships.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.components">
+<span class="sig-name descname"><span class="pre">components</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2" title="astrocook.core.structures.ComponentDataV2"><span class="pre">ComponentDataV2</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.components" title="Link to this definition">#</a></dt>
+<dd><p>The list of absorption components.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.v1_header_constraints">
+<span class="sig-name descname"><span class="pre">v1_header_constraints</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.v1_header_constraints" title="Link to this definition">#</a></dt>
+<dd><p>Legacy constraints from V1 file headers.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.parsed_constraints">
+<span class="sig-name descname"><span class="pre">parsed_constraints</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2" title="astrocook.core.structures.ParameterConstraintV2"><span class="pre">ParameterConstraintV2</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.parsed_constraints" title="Link to this definition">#</a></dt>
+<dd><p>Map of (Component UUID, Parameter Name) -&gt; ConstraintDataV2.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.core.structures.ComponentDataV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_header_constraints:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">parsed_constraints:</span> <span class="pre">~typing.Dict[~typing.Tuple[str,</span> <span class="pre">str],</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v2_constraints_map:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_id_to_uuid_map:</span> <span class="pre">~typing.Dict[int,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_models_t:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">meta:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.v2_constraints_map">
+<span class="sig-name descname"><span class="pre">v2_constraints_map</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2" title="astrocook.core.structures.ParameterConstraintV2"><span class="pre">ParameterConstraintV2</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.v2_constraints_map" title="Link to this definition">#</a></dt>
+<dd><p>Constraint}}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Nested map {UUID</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>{ParamName</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.v1_id_to_uuid_map">
+<span class="sig-name descname"><span class="pre">v1_id_to_uuid_map</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.v1_id_to_uuid_map" title="Link to this definition">#</a></dt>
+<dd><p>Map of integer IDs to V2 UUIDs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.v1_models_t">
+<span class="sig-name descname"><span class="pre">v1_models_t</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.v1_models_t" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.SystemListDataV2.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.SystemListDataV2.meta" title="Link to this definition">#</a></dt>
+<dd><p>Metadata for the system list.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -771,7 +1156,52 @@
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.core">Module contents</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-astrocook.core">Module contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2"><code class="docutils literal notranslate"><span class="pre">SessionV2</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.name"><code class="docutils literal notranslate"><span class="pre">SessionV2.name</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.systs"><code class="docutils literal notranslate"><span class="pre">SessionV2.systs</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.file"><code class="docutils literal notranslate"><span class="pre">SessionV2.file</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.edit"><code class="docutils literal notranslate"><span class="pre">SessionV2.edit</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.flux"><code class="docutils literal notranslate"><span class="pre">SessionV2.flux</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.continuum"><code class="docutils literal notranslate"><span class="pre">SessionV2.continuum</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.absorbers"><code class="docutils literal notranslate"><span class="pre">SessionV2.absorbers</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.__init__"><code class="docutils literal notranslate"><span class="pre">SessionV2.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.spec"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.lines"><code class="docutils literal notranslate"><span class="pre">SessionV2.lines</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.open_new"><code class="docutils literal notranslate"><span class="pre">SessionV2.open_new()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_spectrum()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.with_new_system_list"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_system_list()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.log_lost_on_save"><code class="docutils literal notranslate"><span class="pre">SessionV2.log_lost_on_save()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SessionV2.save"><code class="docutils literal notranslate"><span class="pre">SessionV2.save()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.x"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.x</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.xmin"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.xmin</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.xmax"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.xmax</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.y"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.y</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.dy"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.dy</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.aux_cols"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.aux_cols</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.meta"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.meta</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.z_em"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.z_em</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.resol"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.resol</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.from_flat_data"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.from_flat_data()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SpectrumDataV2.__init__"><code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.components"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.components</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.v1_header_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_header_constraints</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.parsed_constraints"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.parsed_constraints</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.__init__"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.__init__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.v2_constraints_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v2_constraints_map</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.v1_id_to_uuid_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_id_to_uuid_map</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.v1_models_t"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_models_t</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.SystemListDataV2.meta"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.meta</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
   </nav></div>
 

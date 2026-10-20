@@ -447,22 +447,17 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.core.session</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.defaults</span><span class="w"> </span><span class="kn">import</span> <span class="n">Defaults</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">Format</span> 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.gui_log</span><span class="w"> </span><span class="kn">import</span> <span class="n">GUILog</span> 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_loader</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_stubs</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span><span class="p">,</span> <span class="n">save_archive_v1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
@@ -471,17 +466,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFluxV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">LogEntryV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
+    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list_migration</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_system_list_v1_to_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">guarded_deepcopy_v1_state</span>
 
 <span class="c1"># Define the type for the log manager</span>
 <span class="n">LogManager</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span><span class="p">,</span> <span class="n">GUILog</span><span class="p">]</span>
 
 <div class="viewcode-block" id="load_session_from_file">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.load_session_from_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Orchestrate the loading of a session from a file or archive.</span>
@@ -621,7 +615,7 @@
             
 
 <div class="viewcode-block" id="SessionV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SessionV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The central coordinator for an Astrocook analysis session.</span>
@@ -655,7 +649,7 @@
 <span class="sd">        Access to line identification and fitting recipes.</span>
 <span class="sd">    """</span>
 <div class="viewcode-block" id="SessionV2.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.__init__">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                  <span class="n">gui</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> 
@@ -708,7 +702,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span> 
 
 <div class="viewcode-block" id="SessionV2.open_new">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.open_new">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.open_new">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>        
 <span class="w">        </span><span class="sd">"""</span>
@@ -744,7 +738,7 @@
 
 
 <div class="viewcode-block" id="SessionV2.with_new_spectrum">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_spectrum">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.with_new_spectrum">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SessionV2 instance with an updated spectrum.</span>
@@ -776,7 +770,7 @@
 
 
 <div class="viewcode-block" id="SessionV2.with_new_system_list">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_system_list">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.with_new_system_list">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">with_new_system_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SessionV2 instance with an updated system list.</span>
@@ -805,7 +799,7 @@
 
     
 <div class="viewcode-block" id="SessionV2.log_lost_on_save">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.log_lost_on_save">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.log_lost_on_save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_lost_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Tell whether saving to ``file_path`` would drop the session log.</span>
@@ -828,7 +822,7 @@
 
 
 <div class="viewcode-block" id="SessionV2.save">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.save">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.SessionV2.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
              <span class="n">initial_session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
              <span class="n">models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>

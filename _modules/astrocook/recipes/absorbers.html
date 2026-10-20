@@ -448,16 +448,13 @@
                   
   <h1>Source code for astrocook.recipes.absorbers</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">ATOM_DATA</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.gui.debug_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">GLOBAL_PLOTTER</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.legacy.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">trans_parse</span>
@@ -1177,7 +1174,7 @@
 <span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">ion_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ions</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)]</span>
-            <span class="n">aic_pen</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">aic_penalty</span><span class="p">)</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">aic_penalty</span><span class="p">)</span>  <span class="c1"># validated only, not used (see the docstring)</span>
             <span class="n">z_win</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
             <span class="n">b_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
@@ -1924,7 +1921,7 @@
         <span class="n">temp_session</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
         <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting linked system group..."</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting linked system group..."</span><span class="p">)</span>
         <span class="c1"># Fit centered on Primary</span>
         <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">fit_component</span><span class="p">(</span><span class="n">primary_uuid</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">))</span>
         
@@ -2238,7 +2235,7 @@
 
             <span class="c1"># 1. Define Work Units</span>
             <span class="k">if</span> <span class="n">depth_i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refit All: Strategy = Iterative Single-Component (Robust)."</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Refit All: Strategy = Iterative Single-Component (Robust)."</span><span class="p">)</span>
                 <span class="c1"># Filter the list, then sort by Z</span>
                 <span class="n">valid_comps</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">uuids_in_region</span><span class="p">]</span>
                 <span class="n">sorted_comps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">valid_comps</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
