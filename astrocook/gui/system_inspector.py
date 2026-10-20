@@ -4,22 +4,20 @@ import astropy.units as au
 from scipy.special import wofz
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-import matplotlib.gridspec as gridspec
-import matplotlib.ticker as ticker
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale, QPoint
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
-    QPushButton, QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
-    QScrollArea, QSizePolicy, QMessageBox, QLabel, QLineEdit, QLayout, QFrame, QScrollBar, QCheckBox, QToolTip,
+    QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
+    QSizePolicy, QMessageBox, QLabel, QLineEdit, QScrollBar, QCheckBox, QToolTip,
     QStyledItemDelegate
 )
-from typing import List, Optional
+from typing import List
 
 from ..core.structures import ComponentDataV2
-from ..core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from .corner_plot import CornerPlotWindow
-from .pyside_plot import AstrocookToolbar, get_color_cycle, PLOT_STYLE, get_style_color
+from .pyside_plot import AstrocookToolbar, get_color_cycle, get_style_color
 
 # --- [CHANGE] Robust Convolution Import with Local Fallback ---
 try:
@@ -880,7 +878,6 @@ class VelocityPlotWidget(QWidget):
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return
         
-        closest_dist = 10.0 
         tooltip_text = ""
         view_width = self._xlim[1] - self._xlim[0]
         tol_v = view_width * 0.015 
@@ -1774,7 +1771,7 @@ class SystemInspector(QWidget):
         #act_bayesian_nested.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'nested'))
         #m.addAction(act_bayesian_nested)
         
-        act_corner = QAction(f"Show Corner Plot", m)
+        act_corner = QAction("Show Corner Plot", m)
         
         # Check if Bayesian results exist for this specific component
         has_results = False

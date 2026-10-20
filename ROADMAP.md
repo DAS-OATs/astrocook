@@ -306,7 +306,8 @@ No changes to production code.
    ~2.5 minutes (was ~1). Found F25.
 8. **CI:** GitHub Actions (Python 3.12, 3.13). Done (brought forward): tests on both versions;
    Ruff blocking on undefined names (`F821`) only, until the other pyflakes
-   warnings are cleaned up in a dedicated PR.
+   warnings are cleaned up in a dedicated PR (done in phase 2-bis: CI now
+   runs `ruff check .`).
 9. **First scientific checks:** oversampling of the Voigt model; scaling of
    uncertainties by the reduced χ².
    Preliminary result on oversampling (mock generator vs V2 model, CIV,
@@ -447,6 +448,10 @@ this order:
    and variables, f-strings without placeholders, redefinitions), each
    unused variable checked by hand since it may hide a bug; then CI runs
    `ruff check .` with all the configured rules instead of F821 only.
+   Done: 162 warnings with Ruff 0.17 (116 unused imports, 24 unused
+   variables, 16 f-strings, 6 redefinitions); found F36 and F37 (left
+   unchanged, `# noqa` with a reference); the unused `aic_penalty` of
+   `metals_auto` is already documented as such in its docstring.
 3. **Sphinx warnings**: the 4 warnings of the docs build (duplicate object
    descriptions, `api/astrocook.mocks` not in a toctree).
 4. **`[bayes]` extra**: emcee, dynesty and corner become optional; the
@@ -582,6 +587,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F33 | tests (`.acs2` I/O) | `tests/test_v2_io_integrity.py` wraps its checks in `try/except` and only prints the error, so it can never fail. It currently prints "INTEGRITY CHECK FAILED": it checks that "CIV" is in `region_identifications` as a string, while after loading it is a dict (same mismatch as F27). Found in phase 1-bis while running the slow tests | test quality | `test_integer_aux_column_round_trip` | fixed (phase 1-bis, decided with Guido): test removed; its only check not covered by `tests/test_acs2_round_trip.py` (integer `abs_ids`) added there |
 | F34 | GUI | `gui/main_window.py` sets the main window icon from `assets/logo_3d.png`, which does not exist (the available logos are `logo_3d_HR.png` and `logo_3d_LR.png`): the icon is silently missing. Found in phase 2 while moving `assets/` into the package | GUI | — | fixed (phase 2-bis): icon from `logo_3d_HR.png`, smoke test checks it is not null |
 | F35 | security | `.acs2` (`core/session.py`) and `.acs` (`io/v1_stubs.py`) archives were unpacked with a plain `tarfile.extractall`: a crafted archive could write files outside the temporary folder (path traversal). V1 had a check (`legacy/session.py`, `safe_extract`) that V2 lost. Found in phase 2 from a Python 3.14 deprecation warning in the slow tests | security | `tests/test_safe_extract.py` | fixed (phase 2): `extractall(..., filter="data")`, which refuses members outside the folder |
+| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | open |
+| F37 | `rebin` recipe (`recipes/flux.py`) | The `norm` parameter ("Return normalized spectrum, if continuum exists") is parsed and ignored: the rebinned spectrum is never normalized. Found in phase 2-bis while cleaning up the Ruff warnings | silently ignored parameter | — | open |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -709,7 +716,7 @@ review); each of its decisions goes into the log.
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
 | 1-bis – Findings and urgent issues (section 3.3) | done (October 2026): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33, #480, #442 fixed; F3 accepted; deferred to issues: #526 (F8, F22, F10, F9, F14), #534, #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data |
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
-| 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | in progress: F34 |
+| 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | in progress: F34, Ruff done |
 | 3 – Decoupling from legacy | not started |
 | 4 – Scientific correctness (#526, #517, #465, #518) | not started |
 | 5 – Splitting large files | not started |

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from astropy import units as au
-from astropy.table import Table
 import logging
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple

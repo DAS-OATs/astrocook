@@ -1,6 +1,5 @@
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollBar, QLabel, QSizePolicy
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QScrollBar, QSizePolicy
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from .pyside_plot import AstrocookToolbar 
 from matplotlib.figure import Figure

@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Tuple, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from .voigt_fitter import VoigtFitterV2
 
 try:
@@ -85,7 +85,7 @@ class BayesianVoigtFitter:
                         penalty_chi2 += (5.0 * (b_val - 50.0))**2
             
             return -0.5 * (np.sum(resid**2) + penalty_chi2)
-        except Exception as e:
+        except Exception:
             return -np.inf
 
     def ln_prior(self, p_free: np.ndarray) -> float:

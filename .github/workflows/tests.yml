@@ -86,7 +86,6 @@ jobs:
       - name: Install Ruff
         run: pip install ruff==0.17.0
 
-      # Only undefined names are blocking for now; the other pyflakes
-      # warnings will be cleaned up in a dedicated PR (see ROADMAP.md).
-      - name: Ruff (undefined names)
-        run: ruff check --select F821 .
+      # All the rules configured in pyproject.toml (pyflakes for now)
+      - name: Ruff
+        run: ruff check .

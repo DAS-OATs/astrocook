@@ -1,5 +1,3 @@
-import traceback
-from matplotlib import pylab
 import astropy.constants as const
 import astropy.units as au
 import json
@@ -10,22 +8,18 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import matplotlib.style as mplstyle
 import matplotlib.ticker as plt_ticker
 import numpy as np
-from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QAction, QCursor, QIcon, QColor
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QCursor, QColor
 from PySide6.QtWidgets import (
-    QApplication, QMenu, QStyle, QToolTip, QVBoxLayout, QWidget, QDialog, QDialogButtonBox, QAbstractItemView,
+    QApplication, QMenu, QToolTip, QVBoxLayout, QWidget, QDialog, QDialogButtonBox, QAbstractItemView,
     QTableWidget, QTableWidgetItem, QHeaderView
 )
 import qtawesome as qta
-import scienceplots
-from scipy.interpolate import PchipInterpolator
 from typing import Optional, TYPE_CHECKING
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d, is_hydrogen_line
-from astrocook.core.photometry import STANDARD_FILTERS, get_filter_transmission
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
@@ -246,12 +240,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
-        capture_successful = False
         try:
             if self.background is None and self.figure.get_size_inches().any():
                 if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
                     self.background = self.copy_from_bbox(self.axes.bbox)
-                    capture_successful = True
         except Exception as e:
             logging.error(f"Failed during background copy: {e}")
             self.background = None
@@ -339,7 +331,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 return  # Can't do conversions without a spec
             
             # --- Always update on motion if cursor is active ---
-            mouse_x = event.xdata
             spec = session_state.spec
             if not spec: return
 
@@ -917,7 +908,6 @@ class SpectrumPlotWidget(QWidget):
                 except Exception as e:
                     logging.warning(f"Failed to apply zoom slice: {e}")
 
-            x_unit = str(spec.x.unit)
                     
             colors = get_color_cycle(5, cmap='tab20') # Get colors
             #colors[0] = "#296bff"
@@ -1142,8 +1132,6 @@ class SpectrumPlotWidget(QWidget):
             if self.main_window.systems_checkbox.isChecked() and V1_FUNCTIONS_AVAILABLE and systs and systs.components:
                 # Get current plot limits to only draw visible lines
                 xlim = ax.get_xlim()
-                added_hi_label = False
-                added_metal_label = False
 
                 # Define Y position for markers (e.g., slightly below top, in axis coords)
                 marker_y_axis_coord = 0.05 # 5% from the bottom
@@ -1540,8 +1528,6 @@ class SpectrumPlotWidget(QWidget):
                 if not transitions and series_str in xem_d:
                     transitions = [series_str]
 
-            zem = getattr(spec, '_zem', 0.0) # Get spec RF z
-            x_unit = spec.x.unit # Get spec current x unit
 
             for t in transitions:
                 if t in xem_d:
@@ -1766,7 +1752,7 @@ class SpectrumPlotWidget(QWidget):
                         while isinstance(ident_labels, str):
                             try:
                                 ident_labels = json.loads(ident_labels)
-                            except json.JSONDecodeError as e:
+                            except json.JSONDecodeError:
                                 break 
                         
                         if isinstance(ident_labels, dict):
@@ -1792,7 +1778,7 @@ class SpectrumPlotWidget(QWidget):
                 else:
                     region_id_val = 0
 
-            except Exception as e:
+            except Exception:
                 pass
 
         # --- 4. Data Points (Zoom Check) ---

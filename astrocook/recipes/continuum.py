@@ -1,9 +1,7 @@
 import astropy.units as au
 import logging
-import numpy as np
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from astrocook.core.structures import HistoryLogV2, LogEntryV2
 from astrocook.legacy.message import msg_param_fail
 
 if TYPE_CHECKING:

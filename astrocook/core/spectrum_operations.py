@@ -1,19 +1,14 @@
-import bisect
 from astropy import units as au
 from astropy.constants import c as c_light
-from astropy.stats import sigma_clip
 import logging
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter1d, label, median_filter
-from scipy.optimize import curve_fit
-from scipy.signal import savgol_filter
 from scipy.stats import binned_statistic
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
-from astrocook.legacy.functions import x_convert as x_convert_v1 
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2 
 from astrocook.gui.debug_utils import GLOBAL_PLOTTER
 
@@ -255,7 +250,6 @@ def compute_flux_scaling(
     else:
         # Polynomial Fit to the smooth ratio
         coeffs = np.polyfit(bin_centers[valid], ratio_grid[valid], order)
-        from numpy.polynomial.polynomial import polyval
         # Note: np.polyfit returns coeffs highest-to-lowest. 
         # numpy.polynomial.polynomial.polyval expects lowest-to-highest.
         # We use np.polyval (standard) for consistency with polyfit.
@@ -933,7 +927,7 @@ def _find_kinematic_doublet_candidates(
     try:
         # 1. Get velocity lags
         lags_kms = get_multiplet_velocity_lags(multiplet_name)
-        primary_line, secondary_line = lines[0], lines[1]
+        secondary_line = lines[1]
         dv_kms = lags_kms[secondary_line] # e.g., ~498 km/s for CIV
         
         # 2. Get x-axis in velocity space
@@ -1024,7 +1018,6 @@ def rate_doublet_candidate(
 
         # 2. Get Velocity Grid (relative to primary)
         primary_wave_obs = xem_d[primary_line] * (1.0 + z_test)
-        c_kms = c_light.to(au.km/au.s)
         
         x_kms_test_frame = (spectrum.x - primary_wave_obs).to(
             au.km/au.s, equivalencies=au.equivalencies.doppler_optical(primary_wave_obs)

@@ -2,8 +2,6 @@ from copy import deepcopy
 import dataclasses
 import json
 import logging
-import trace
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 from PySide6.QtCore import (
@@ -17,8 +15,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap, QDesktopServices
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QInputDialog,
-    QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
     QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
 )
@@ -28,7 +25,6 @@ from typing import Any, Dict, List, Optional, Union
 from .debug_utils import GLOBAL_PLOTTER
 from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
-from astrocook.core.photometry import STANDARD_FILTERS
 from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
@@ -37,16 +33,9 @@ from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 from .system_inspector import SystemInspector
-from astrocook.core.utils import guarded_deepcopy_v1_state, get_recipe_schema, is_branching_recipe, resource_path # Import recipe helpers
+from astrocook.core.utils import guarded_deepcopy_v1_state, is_branching_recipe, resource_path # Import recipe helpers
 from astrocook.legacy.gui_log import GUILog
 from astrocook.legacy.defaults import Defaults
-try:
-    from astrocook.legacy.functions import trans_parse
-    from astrocook.legacy.vars import xem_d
-    V1_FUNCTIONS_AVAILABLE = True
-except ImportError:
-    logging.error("Could not import V1 functions (trans_parse, xem_d) needed for redshift cursor.")
-    V1_FUNCTIONS_AVAILABLE = False
 
 # --- *** RECIPE LOOKUP MAP *** ---
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
@@ -1577,7 +1566,7 @@ class MainWindowV2(QMainWindow):
         new_session._gui = self
 
         if is_branching:
-            logging.debug(f"Branching: Creating new SessionHistory from current state.")
+            logging.debug("Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and create a V1-safe deep copy
             source_log_manager = target_history.log_manager
             new_log_copy = None
@@ -1691,7 +1680,7 @@ class MainWindowV2(QMainWindow):
             )
 
         else: # Linear update
-            logging.debug(f"Linear update: Adding state to active SessionHistory.")
+            logging.debug("Linear update: Adding state to active SessionHistory.")
             # Add state to the *current* history manager
             target_history.add_state(new_session) # Handles truncation and index update
             # Update the name in the sidebar model *if* the active history corresponds to the last item
@@ -2376,7 +2365,7 @@ class MainWindowV2(QMainWindow):
         history_item = self.session_histories[row]
 
         # --- *** NEW: Info action *** ---
-        info_action = QAction(f"View Info", self)
+        info_action = QAction("View Info", self)
         info_action.triggered.connect(
             # Use lambda to pass the specific history item
             lambda checked=False, item=history_item: self._on_session_info(item)
@@ -2384,13 +2373,13 @@ class MainWindowV2(QMainWindow):
         menu.addAction(info_action)
 
         # --- View Log action ---
-        view_action = QAction(f"View Log", self)
+        view_action = QAction("View Log", self)
         view_action.triggered.connect(
             lambda: self._launch_log_scripter(history_item)
         )
         menu.addAction(view_action)
 
-        view_ids_action = QAction(f"View Identifications", self)
+        view_ids_action = QAction("View Identifications", self)
         view_ids_action.triggered.connect(
             lambda: self._launch_identification_viewer(history_item)
         )
@@ -2411,14 +2400,14 @@ class MainWindowV2(QMainWindow):
         menu.addSeparator()
         
         # --- Save Session Action ---
-        save_action = QAction(f"Save as...", self)
+        save_action = QAction("Save as...", self)
         save_action.triggered.connect(
             lambda: self._on_save_session_context(history_item)
         )
         menu.addAction(save_action)
 
         # --- Close Session Action ---
-        close_action = QAction(f"Close", self)
+        close_action = QAction("Close", self)
         close_action.triggered.connect(
             lambda: self._on_close_session_requested(history_item)
         )
@@ -2959,7 +2948,7 @@ class MainWindowV2(QMainWindow):
             logging.info(f"Saving session to: {file_name}")
             try:
                 # Pass *both* sessions to the save method
-                result = session_to_save_final.save(
+                session_to_save_final.save(
                     file_path=file_name,
                     initial_session=session_to_save_initial
                 )
@@ -4471,7 +4460,7 @@ class RecipeProgressDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         
         # Header
-        self.header_label = QLabel(f"Recipe Running...")
+        self.header_label = QLabel("Recipe Running...")
         self.header_label.setStyleSheet("font-size: 14px;")
         layout.addWidget(self.header_label)
 

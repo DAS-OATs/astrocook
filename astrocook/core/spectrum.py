@@ -1,6 +1,4 @@
-from tempfile import template
 
-import astropy.constants as const
 import astropy.units as au
 from copy import deepcopy
 import dataclasses
@@ -13,7 +11,7 @@ from scipy.interpolate import PchipInterpolator
 from scipy.ndimage import gaussian_filter1d
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from astrocook.core.atomic_data import METAL_MULTIPLETS, STANDARD_MULTIPLETS, xem_d
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, xem_d
 from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import (
     convert_axis_velocity, 
@@ -22,7 +20,6 @@ from astrocook.core.spectrum_operations import (
 )
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
-from astrocook.legacy.frame import Frame as FrameV1
 from astrocook.legacy.spectrum import Spectrum as SpectrumV1
 
 _NE_GLOBAL_DICT = {
@@ -45,9 +42,6 @@ class TableAdapterV2(object):
     def __init__(self, data_dict):
         self._data_dict = data_dict
         self.colnames = list(data_dict.keys())
-        
-    def __getitem__(self, key):
-        return self._data_dict[key]
         
     # Crucially, add a method to simulate row access (needed for row iteration)
     def __len__(self):
@@ -2225,7 +2219,6 @@ class SpectrumV2:
         # 4. Handle Model Renormalization
         if renorm_model and new_spec.has_aux_column('model'):
             old_cont_col = self.get_column('cont')
-            old_model_col = self.get_column('model')
             
             # We can use the helper we used in smooth_column/fit_continuum
             # Note: We access _data directly inside the class for the helper
@@ -2348,7 +2341,7 @@ class SpectrumV2:
         # Import SciPy signal processing tools
         from scipy.signal import find_peaks, peak_widths
         
-        logging.info(f"identify_lines (De-blending): Starting identification...")
+        logging.info("identify_lines (De-blending): Starting identification...")
 
         # 1. Silently create abs_mask if it doesn't exist
         if not spec.has_aux_column(mask_col):

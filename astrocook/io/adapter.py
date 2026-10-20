@@ -7,7 +7,7 @@ import numpy as np
 import os
 import tarfile
 import tempfile
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 # --- V2 Imports ---
 from .v1_stubs import load_v1_spec_object, load_v1_systs_object
@@ -17,7 +17,7 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,
-    HistoryLogV2, V1LogArtifact, LogEntryV2
+    HistoryLogV2, V1LogArtifact
 )
 from astrocook.core.spectrum import SpectrumV2 
 from astrocook.core.system_list import SystemListV2

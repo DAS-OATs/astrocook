@@ -1,9 +1,7 @@
 import numpy as np
 import astropy.units as au
-import matplotlib.pyplot as plt
 import logging
 import argparse
-import sys
 import os
 
 # Import Astrocook Core

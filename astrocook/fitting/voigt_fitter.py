@@ -1,4 +1,3 @@
-import astropy.constants as const
 import astropy.units as au
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import least_squares
@@ -13,7 +12,6 @@ from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import ComponentDataV2
 from astrocook.core.system_list import SystemListV2
-from .voigt_model import VoigtModelConstraintV2
 
 def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
     r"""
@@ -1050,7 +1048,9 @@ class VoigtFitterV2:
             dz_new = resolve_error(idx, old_comp.dz)
             dlogN_new = resolve_error(idx+1, old_comp.dlogN)
             db_new = resolve_error(idx+2, old_comp.db)
-            dbtur_new = resolve_error(idx+3, old_comp.dbtur)
+            # Computed but not stored: dbtur keeps its old value after the
+            # fit (findings register F36)
+            dbtur_new = resolve_error(idx+3, old_comp.dbtur)  # noqa: F841
             
             # Metadata Update
             comp_chi2 = old_comp.chi2

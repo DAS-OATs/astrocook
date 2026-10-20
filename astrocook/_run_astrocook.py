@@ -4,7 +4,6 @@ import logging
 import os
 from pathlib import Path
 import sys
-import time
 
 # PySide6 Imports
 from PySide6.QtWidgets import QApplication, QSplashScreen
@@ -152,7 +151,7 @@ def main():
 
     logging.info("Importing heavy modules...")
     
-    from astrocook.core.session import SessionV2, load_session_from_file
+    from astrocook.core.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
     
     elapsed = time.time() - start_time

@@ -1,6 +1,5 @@
 import logging
 import re
-import numpy as np
 from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
@@ -109,7 +108,7 @@ class RecipeWorker(QRunnable):
                 return
 
             if not new_session_state or new_session_state == 0:
-                raise ValueError(f"Recipe failed to execute (returned 0). Check logs.")
+                raise ValueError("Recipe failed to execute (returned 0). Check logs.")
             
             # 4. Success!
             self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
@@ -238,7 +237,7 @@ class ScriptWorker(QRunnable):
                 new_session_state = recipe_method(**params_dict)
                 
                 if not new_session_state or new_session_state == 0:
-                    raise ValueError(f"Recipe failed to execute (returned 0).")
+                    raise ValueError("Recipe failed to execute (returned 0).")
                     
                 # 3c. Success! Add to the new history
                 params_to_log = params_dict.copy()

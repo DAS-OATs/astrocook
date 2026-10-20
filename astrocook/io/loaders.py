@@ -983,7 +983,6 @@ def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumDataV2:
             # 5. Units & Sort
             # Heuristic: Angstroms vs nm
             x, x_unit = _x_unit_heuristics(x)
-            y_unit = au.dimensionless_unscaled
             
             # Sort by wavelength (crucial for Astrocook)
             sort_idx = np.argsort(x)

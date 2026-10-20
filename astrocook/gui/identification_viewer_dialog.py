@@ -56,15 +56,12 @@ class IdentificationViewerDialog(QDialog):
 
         json_string = spec.meta.get('region_identifications')
 
-        total_regions = 0
         region_map = None
         if spec.has_aux_column('abs_ids'): # <<< *** Use new column name 'abs_ids' ***
             try:
                 region_map = spec.get_column('abs_ids').value
-                # Find all unique non-zero IDs
-                total_regions = len(np.unique(region_map[region_map > 0]))
             except Exception as e:
-                logging.warning(f"Could not count regions from 'abs_ids': {e}")
+                logging.warning(f"Could not read 'abs_ids': {e}")
 
         if not json_string:
             self.summary_label.setText("No identifications found in session metadata.")
