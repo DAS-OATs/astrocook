@@ -1525,12 +1525,22 @@ class RecipeAbsorbersV2:
             Number of live points for Nested Sampling (default: '250').
         group_depth : str, optional
             Depth of connected group search (FoF) to define the fitting group (default: '2').
+
+        Raises
+        ------
+        ImportError
+            If the sampler of ``engine`` is not installed (optional
+            dependencies: ``pip install "astrocook[bayes]"``).
         """
         if uuids is None: return 0
         if isinstance(uuids, str): uuids = [uuids] # Fallback for single uuid string
 
+        from ..fitting.bayesian_fitter import BayesianVoigtFitter, require_bayes_engine
+        # Raised, not turned into a return value of 0 like the other
+        # failures: the user must know what to install
+        require_bayes_engine(str(engine))
+
         try:
-            from ..fitting.bayesian_fitter import BayesianVoigtFitter
             nsteps_i = int(nsteps); nlive_i = int(nlive); depth_i = int(group_depth)
             
             if not self._session.systs: return 0

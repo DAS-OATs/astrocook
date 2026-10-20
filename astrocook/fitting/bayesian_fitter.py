@@ -13,6 +13,26 @@ try:
 except ImportError:
     dynesty = None
 
+# emcee, dynesty and corner are optional dependencies (extra "bayes")
+BAYES_INSTALL_HINT = 'pip install "astrocook[bayes]"'
+
+
+def require_bayes_engine(engine: str = 'mcmc') -> None:
+    """Raise an ImportError naming the extra if the sampler is not installed.
+
+    Parameters
+    ----------
+    engine : {'mcmc', 'nested'}, optional
+        The sampling engine: ``'mcmc'`` needs ``emcee``, ``'nested'`` needs
+        ``dynesty``.
+    """
+    name, module = (('dynesty', dynesty) if engine.lower() == 'nested'
+                    else ('emcee', emcee))
+    if module is None:
+        raise ImportError(
+            f"The Bayesian fit needs {name}, which is not installed. "
+            f"Install the optional dependencies with: {BAYES_INSTALL_HINT}")
+
 class BayesianVoigtFitter:
     """
     Bayesian engine for Voigt profile fitting.
@@ -168,8 +188,7 @@ class BayesianVoigtFitter:
             If ``nsteps < 1`` or ``burn_in`` is not smaller than ``nsteps``
             (the chain left after the burn-in would be empty).
         """
-        if emcee is None:
-            raise ImportError("emcee is not installed. Please install it to use MCMC.")
+        require_bayes_engine('mcmc')
         if nsteps < 1:
             raise ValueError(f"nsteps must be at least 1 (got {nsteps}).")
         if burn_in is None:
@@ -247,8 +266,7 @@ class BayesianVoigtFitter:
         ImportError
             If the ``dynesty`` package is not installed.
         """
-        if dynesty is None:
-            raise ImportError("dynesty is not installed. Please install it to use Nested Sampling.")
+        require_bayes_engine('nested')
             
         def prior_transform(u):
             """Transform uniform unit cube to physical bounds."""

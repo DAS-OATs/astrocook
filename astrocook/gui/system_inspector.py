@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 import numpy as np
 import astropy.units as au
@@ -16,7 +17,7 @@ from typing import List
 
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
-from .corner_plot import CornerPlotWindow
+from ..fitting import bayesian_fitter
 from .pyside_plot import AstrocookToolbar, get_color_cycle, get_style_color
 
 # --- [CHANGE] Robust Convolution Import with Local Fallback ---
@@ -371,6 +372,11 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         except (ValueError, TypeError): 
             return str(l_data) < str(r_data)
         
+def _corner_installed() -> bool:
+    """Whether corner (optional dependency, for the corner plot) is installed."""
+    return importlib.util.find_spec("corner") is not None
+
+
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
     if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
     
@@ -1762,9 +1768,17 @@ class SystemInspector(QWidget):
 
         m.addSeparator()
         m.addSection("Bayesian Fitting")
-        
+        # emcee and corner are optional: without them the entries are
+        # disabled and their tooltip says what to install
+        m.setToolTipsVisible(True)
+        missing_tip = (f"Needs the optional dependencies: "
+                       f"{bayesian_fitter.BAYES_INSTALL_HINT}")
+
         act_bayesian_mcmc = QAction(f"Refit Bayesian (MCMC){suffix}", m)
         act_bayesian_mcmc.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'mcmc'))
+        if bayesian_fitter.emcee is None:
+            act_bayesian_mcmc.setEnabled(False)
+            act_bayesian_mcmc.setToolTip(missing_tip)
         m.addAction(act_bayesian_mcmc)
 
         #act_bayesian_nested = QAction(f"Refit Bayesian (Nested){suffix}", m)
@@ -1781,6 +1795,9 @@ class SystemInspector(QWidget):
                 has_results = True
                 
         act_corner.setEnabled(has_results)
+        if not _corner_installed():
+            act_corner.setEnabled(False)
+            act_corner.setToolTip(missing_tip)
         act_corner.triggered.connect(lambda: self._show_corner_plot(clicked_comp))
         m.addAction(act_corner)
         
@@ -1886,6 +1903,8 @@ class SystemInspector(QWidget):
             self.corner_win.raise_()
             self.corner_win.activateWindow()
         else:
+            # Imported here: corner is an optional dependency
+            from .corner_plot import CornerPlotWindow
             self.corner_win = CornerPlotWindow(samples, labels, title=title, parent=self)
             self.corner_win.show()
 

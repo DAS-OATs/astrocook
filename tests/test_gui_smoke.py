@@ -11,6 +11,9 @@ closed.
 Message boxes are replaced by stubs that record what would have been shown
 (modal dialogs would block an offscreen test).
 """
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -233,6 +236,50 @@ def test_tool_windows_open(loaded):
     assert loaded.log_scripter_dialog.isVisible()
     loaded._on_view_script_console()
     assert loaded.script_dialog.isVisible()
+
+
+@pytest.mark.parametrize("installed", [True, False])
+def test_inspector_bayesian_entries(loaded, monkeypatch, installed):
+    # emcee and corner are optional (extra "bayes"): without them the menu
+    # entries are disabled and their tooltip names the extra
+    from PySide6.QtWidgets import QMenu
+    from astrocook.fitting import bayesian_fitter
+    from astrocook.gui import system_inspector
+    if not installed:
+        monkeypatch.setattr(bayesian_fitter, "emcee", None)
+        monkeypatch.setattr(system_inspector, "_corner_installed", lambda: False)
+    menus = []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):  # record the menu instead of showing it
+            menus.append(self)
+
+    monkeypatch.setattr(system_inspector, "QMenu", RecordedMenu)
+
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    pos = inspector.table_view.visualRect(inspector.proxy_model.index(0, 0)).center()
+    inspector._on_context_menu(pos)
+    actions = {a.text(): a for a in menus[0].actions()}
+    mcmc = next(a for t, a in actions.items() if t.startswith("Refit Bayesian (MCMC)"))
+    corner = actions["Show Corner Plot"]
+    assert mcmc.isEnabled() == installed
+    assert not corner.isEnabled()  # no Bayesian results in this session
+    for action in (mcmc, corner):
+        assert ('astrocook[bayes]' in action.toolTip()) == (not installed)
+
+
+def test_gui_starts_without_corner():
+    # corner is optional (extra "bayes"): the GUI must import without it.
+    # In a subprocess, where importing corner fails.
+    code = ("import sys; sys.modules['corner'] = None\n"
+            "from PySide6.QtWidgets import QApplication\n"
+            "app = QApplication([])\n"
+            "import astrocook.gui.main_window\n")
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                            text=True, timeout=120,
+                            env={**os.environ, "QT_QPA_PLATFORM": "offscreen"})
+    assert result.returncode == 0, result.stderr[-2000:]
 
 
 def test_close_session(loaded):

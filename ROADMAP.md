@@ -56,7 +56,8 @@ in `astrocook/legacy/`.
 5. **Packaging:** no LICENSE file (field commented out in `pyproject.toml`);
    template placeholders still present; `astrocook-gui` entry point
    commented out; `numpy>=1.17.3` is unrealistic with Python ≥3.12;
-   emcee/dynesty/corner are required instead of optional.
+   emcee/dynesty/corner are required instead of optional (made optional
+   in phase 2-bis: extra `[bayes]`).
 6. **Repository clutter:** `docs_backup/`, `*_old.py` files, `*.bck`,
    `telluric_old.fits`, `atom_par_backup.dat` (some shipped in the package).
 
@@ -463,6 +464,10 @@ this order:
    Bayesian fit raises a clear error naming `pip install
    "astrocook[bayes]"`, the GUI disables its entries with a tooltip; the
    macOS app and `[dev]` keep them.
+   Done: `fit_bayesian` raises an `ImportError` naming the extra (instead
+   of returning 0) before sampling; the system inspector imports the
+   corner plot only when it opens it (before, the GUI did not start
+   without corner); `[dev]` and `[build]` include `[bayes]`.
 
 Not in phase 2-bis: LICENSE (#549, draft until INAF answers; needed only
 for PyPI, 2.1.0), Docker renewal (to be discussed with Guido), size of
@@ -726,7 +731,7 @@ review); each of its decisions goes into the log.
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
 | 1-bis – Findings and urgent issues (section 3.3) | done (October 2026): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33, #480, #442 fixed; F3 accepted; deferred to issues: #526 (F8, F22, F10, F9, F14), #534, #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data |
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
-| 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | in progress: F34, Ruff, Sphinx done |
+| 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | not started |
 | 4 – Scientific correctness (#526, #517, #465, #518, #559, #560) | not started |
 | 5 – Splitting large files | not started |

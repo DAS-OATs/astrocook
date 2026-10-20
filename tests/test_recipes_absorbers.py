@@ -425,6 +425,17 @@ def test_run_mcmc_rejects_an_empty_chain(one_civ):
             b_fitter.run_mcmc(nsteps=100, burn_in=100, progress=False)
 
 
+@pytest.mark.parametrize("engine, package", [("mcmc", "emcee"), ("nested", "dynesty")])
+def test_fit_bayesian_without_the_extra_names_it(one_civ, monkeypatch, engine, package):
+    # emcee and dynesty are optional (extra "bayes"): the error says what
+    # to install instead of the recipe returning 0
+    from astrocook.fitting import bayesian_fitter
+    monkeypatch.setattr(bayesian_fitter, package, None)
+    uuid = one_civ.systs.components[0].uuid
+    with pytest.raises(ImportError, match=r'astrocook\[bayes\]'):
+        one_civ.absorbers.fit_bayesian([uuid], engine=engine)
+
+
 def test_fit_bayesian_bad_input_returns_0(one_civ):
     uuid = one_civ.systs.components[0].uuid
     assert one_civ.absorbers.fit_bayesian(None) == 0
