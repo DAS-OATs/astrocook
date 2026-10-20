@@ -4,7 +4,7 @@
 - *Data loss*: a session that could not be read (an `.acs2` archive without its metadata file, a damaged `.acs` archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An `.acs2` archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.
 
 ### Changed
-- Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the installation page): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
+- Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the new tutorial *Using Astrocook from Python*): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
 - V1 `.acs` archives are read by a new reader that does not use the V1 code; the result is the same as before.
 
 ### Removed

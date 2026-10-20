@@ -10,4 +10,5 @@ editing_data
 flux_operations
 continuum_fitting
 absorption_systems
+scripting
 ```
