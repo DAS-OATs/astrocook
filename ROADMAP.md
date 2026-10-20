@@ -440,7 +440,7 @@ Left open:
   (section 4); an image with the GUI only if users ask for it.
 - `telluric.fits` and `sky_telluric.fits` (~62 MB each, used only by
   `legacy/`) keep the wheel near PyPI's 100 MB limit: to be decided in
-  phase 3.
+  phase 3. Decided: removed from the package (see phase 3).
 
 ### Phase 2-bis – Leftovers of phase 2
 Agreed with Guido (October 2026), before phase 3; one small PR each, in
@@ -484,6 +484,20 @@ not deleted: they are moved into a test-only reference module (e.g.
 V1 behaviour. Only the code needed by the wx GUI and the rest of V1 is
 removed, together with the V1 Docker image (`containers/`, broken: it
 installs the V1 dependencies and launches the removed `ac_gui.py`).
+
+Data files used only by the V1 code, removed from `astrocook/data/`
+(October 2026, agreed with Guido): `defaults.json`, `espr_spec_form.dat`,
+`table2_inoue.dat` and the telluric data. The telluric data, useful for a
+future telluric correction in V2 (e.g. masking of telluric lines), are kept
+as assets of the pre-release
+[`data-telluric-2026`](https://github.com/DAS-OATs/astrocook/releases/tag/data-telluric-2026)
+(not a software release): `sky_telluric.fits` (ESO SkyCalc sky model,
+300-2500 nm, 18 columns; V1 used `lam`, `flux_ael`, `trans_ma`) and
+`telluric.dat` (360-808 nm, value and T/F flag, origin to be documented),
+with their SHA-256. `telluric.fits` was byte-identical to
+`sky_telluric.fits`. When V2 needs them, download them on first use and
+cache them (e.g. `astropy.utils.data.download_file`), checking the
+SHA-256; all files are also in the git history.
 
 ### Phase 4 – Scientific correctness
 The issues deferred from phase 1-bis, one PR (or a short series) each, every
