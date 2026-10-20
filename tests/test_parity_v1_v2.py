@@ -1,7 +1,9 @@
 """V1/V2 parity tests (ROADMAP.md, phase 1, item 11).
 
-The V1 code in ``astrocook/legacy/`` is the validated reference behind the
-published papers. Each test runs V1 and V2 on the same input: where the
+The V1 code is the validated reference behind the published papers; the
+routines used here are verbatim copies of ``astrocook/legacy/`` in
+``tests/reference/v1/`` (phase 3), so that they outlive the removal of the
+V1 code from the package. Each test runs V1 and V2 on the same input: where the
 algorithm is the same the outputs must agree; known differences are strict
 xfails pointing to the findings register (ROADMAP.md, section 3.2) or
 characterizations of a documented difference.
@@ -15,7 +17,7 @@ import pytest
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.spectrum_operations import rebin_spectrum, smooth_spectrum
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-from astrocook.legacy.spectrum import Spectrum as SpectrumV1
+from reference.v1.spectrum import Spectrum as SpectrumV1
 
 FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.nm)
 
@@ -161,7 +163,7 @@ def test_smoothing_width_differs_by_sqrt2():
 def test_equalization_factor():
     # V1: ratio of the medians of y in a window. V2: equalize_to_reference
     # (order 0). On a featureless overlap both must recover the scale.
-    from astrocook.legacy.cookbook_general import CookbookGeneral
+    from reference.v1.cookbook_general import CookbookGeneral
 
     def flat(start, stop, step, scale, seed):
         rng = np.random.default_rng(seed)
@@ -188,7 +190,7 @@ def test_equalization_factor():
 
 def _voigt_v1(x, step, series, z, logN, b, resol):
     """V1 model as in SystModel: lines_voigt convolved with spec.psf_gauss."""
-    from astrocook.legacy.functions import convolve_simple, lines_voigt
+    from reference.v1.functions import convolve_simple, lines_voigt
     one = np.ones_like(x)
     spec = _v1(x, step, one, 0.02 * one)
     model = lines_voigt(x, z, logN, b, 0.0, series)
@@ -255,7 +257,7 @@ def continua(j0103_window):
     sigma = 283 km/s, see F16), to compare the algorithms rather than the
     smoothing convention.
     """
-    from astrocook.legacy.cookbook_continuum import CookbookContinuum
+    from reference.v1.cookbook_continuum import CookbookContinuum
     from conftest import J0103_Z_EM
 
     w = j0103_window

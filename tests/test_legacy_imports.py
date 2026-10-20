@@ -69,6 +69,22 @@ def test_no_new_legacy_imports():
         f"write a V2 equivalent): {sorted(new)}")
 
 
+def test_tests_use_the_v1_reference():
+    # The parity tests compare V2 with the V1 copies in tests/reference/v1,
+    # which stay when astrocook/legacy goes
+    tests_dir = Path(__file__).parent
+    found = []
+    for path in sorted(tests_dir.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom)
+                     else [])
+            found += [(path.name, n) for n in names
+                      if n == "astrocook.legacy" or n.startswith("astrocook.legacy.")]
+    assert not found, f"Use reference.v1 instead of astrocook.legacy: {found}"
+
+
 def test_allowed_list_is_up_to_date():
     stale = ALLOWED - _legacy_imports()
     assert not stale, (
