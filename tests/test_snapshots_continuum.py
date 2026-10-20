@@ -75,3 +75,14 @@ def test_estimate_auto_smoothing_is_a_fwhm(j0103_window):
     np.testing.assert_allclose(default, as_sigma, rtol=1e-12)
     wider = session.continuum.estimate_auto(smooth_fwhm="1600").spec.get_column("cont").value
     assert not np.allclose(default, wider)
+
+
+def test_fit_continuum_template(snapshot, absorbed):
+    # template=True divides the flux by the QSO composite (data file
+    # qso_composite.dat, Angstrom, shifted to z_em) before the interpolation
+    # and multiplies the continuum back: the window covers the Lyman-alpha
+    # emission, where the template matters
+    cont = absorbed.fit_continuum(1.0, SMOOTH_STD_KMS, template=True).get_column("cont")
+    plain = absorbed.fit_continuum(1.0, SMOOTH_STD_KMS).get_column("cont")
+    assert not np.allclose(cont.value, plain.value)
+    snapshot.check("continuum_j0103_fit_template", {"cont": cont[::STEP]})
