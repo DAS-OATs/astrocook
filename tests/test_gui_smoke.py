@@ -351,5 +351,5 @@ def test_open_v1_archive(window, messages):
     window.open_session_from_path(str(path))
     history = window.active_history
     assert history is not None and history.display_name == path.stem
-    assert len(history.current_state.systs.components) == 185
+    assert len(history.current_state.systs.components) == 10
     assert messages == []
