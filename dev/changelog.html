@@ -472,13 +472,14 @@
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Data loss</em>: a session that could not be read (an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without its metadata file, a damaged <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.</p></li>
+<li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives: the turbulent broadening (<code class="docutils literal notranslate"><span class="pre">btur</span></code>) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit &gt; Convert y axis) work on V1 sessions.</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Scripts that use Astrocook show only warnings and errors unless they configure logging (<code class="docutils literal notranslate"><span class="pre">logging.basicConfig(level=logging.INFO)</span></code> shows the progress messages too, see the new tutorial <em>Using Astrocook from Python</em>): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.</p></li>
-<li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives are read by a new reader that does not use the V1 code; the result is the same as before.</p></li>
+<li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives are read by a new reader that does not use the V1 code; apart from the fixes above, the result is the same as before.</p></li>
 </ul>
 </section>
 <section id="removed">
