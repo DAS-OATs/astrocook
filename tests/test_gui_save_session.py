@@ -52,29 +52,19 @@ def _answer_dialog(monkeypatch, window, answer):
     return calls
 
 
-def test_saving_v2_log_to_acs_asks_and_can_be_cancelled(
-        window_with_v2_session, monkeypatch, tmp_path):
+def test_saving_to_acs_shows_an_error(window_with_v2_session, monkeypatch, tmp_path):
+    # Saving in the V1 .acs format was removed (phase 3): the GUI reports
+    # the error and writes nothing
     window, history = window_with_v2_session
     path = tmp_path / "session.acs"
     _choose_file(monkeypatch, path)
-    calls = _answer_dialog(monkeypatch, window, QMessageBox.StandardButton.Cancel)
+    errors = []
+    monkeypatch.setattr(QMessageBox, "critical",
+                        staticmethod(lambda *args, **kwargs: errors.append(args[2])))
 
     assert window._save_session(history) is False
-    assert len(calls) == 1
-    assert ".acs2" in calls[0]["text"]
-    assert not os.path.exists(path)
-
-
-def test_saving_v2_log_to_acs_proceeds_when_confirmed(
-        window_with_v2_session, monkeypatch, tmp_path):
-    window, history = window_with_v2_session
-    path = tmp_path / "session.acs"
-    _choose_file(monkeypatch, path)
-    calls = _answer_dialog(monkeypatch, window, QMessageBox.StandardButton.Save)
-
-    assert window._save_session(history) is True
-    assert len(calls) == 1
-    assert os.path.exists(path)
+    assert len(errors) == 1 and ".acs2" in errors[0]
+    assert os.listdir(tmp_path) == []
 
 
 def test_saving_to_acs2_does_not_ask(window_with_v2_session, monkeypatch, tmp_path):

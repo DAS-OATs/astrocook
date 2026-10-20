@@ -17,7 +17,6 @@ PACKAGE_DIR = Path(astrocook.__file__).parent
 
 # (module, imported legacy module) pairs still allowed
 ALLOWED = {
-    ("astrocook/core/spectrum.py", "astrocook.legacy.spectrum"),
     ("astrocook/core/system_list_migration.py", "astrocook.legacy.syst_list"),
     ("astrocook/io/v1_stubs.py", "astrocook.legacy.format"),
     ("astrocook/io/v1_stubs.py", "astrocook.legacy.spectrum"),

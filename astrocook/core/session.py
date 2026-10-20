@@ -7,7 +7,7 @@ import tempfile
 from typing import Any, Optional, Union
 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
-from astrocook.io.v1_stubs import V1ArchiveManager, save_archive_v1
+from astrocook.io.v1_stubs import V1ArchiveManager
 from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.absorbers import RecipeAbsorbersV2
 from astrocook.recipes.edit import RecipeEditV2
@@ -323,94 +323,50 @@ class SessionV2:
         new_session.log_manager = self.log_manager
         return new_session
     
-    def log_lost_on_save(self, file_path: str) -> bool:
-        """
-        Tell whether saving to ``file_path`` would drop the session log.
-
-        The V1 ``.acs`` format cannot store a V2 log (:class:`HistoryLogV2`).
-
-        Parameters
-        ----------
-        file_path : str
-            The destination path, as passed to :meth:`save`.
-
-        Returns
-        -------
-        bool
-            ``True`` if the file would be saved in V1 format and the session
-            has a V2 log.
-        """
-        is_v1 = not file_path.lower().endswith('.acs2')
-        return is_v1 and isinstance(self.log_manager, HistoryLogV2)
-
     def save(self, file_path: str, 
              initial_session: Optional['SessionV2'] = None, 
              models: bool = False):
         """
-        Save the current session state to a file.
+        Save the current session state to an ``.acs2`` archive.
 
-        This method supports two formats:
-
-        1. **.acs2 (Recommended)**: A zipped archive containing the full session state,
-           metadata, and (optionally) the original data if ``initial_session`` is provided.
-        2. **.acs (Legacy)**: A folder-based or zipped structure compatible with
-           Astrocook V1.
+        The archive contains the full session state, metadata, the session
+        log and (if ``initial_session`` is provided) the original data.
+        Saving in the V1 ``.acs`` format is no longer supported: V1
+        archives can still be opened, and Astrocook 1.9.0 can still write
+        them.
 
         Parameters
         ----------
         file_path : str
-            The destination path. The extension (``.acs`` vs ``.acs2``) determines the format.
+            The destination path. ``.acs2`` is appended if missing.
         initial_session : SessionV2, optional
-            The state of the session *before* any modifications. This is required
-            when saving to ``.acs2`` format to ensure the archive contains the
-            original raw data for reproducibility.
+            The state of the session *before* any modifications, saved in the
+            archive so that it contains the original raw data for
+            reproducibility.
         models : bool, optional
-            Flag for V1 backward compatibility (unused in V2 native saves).
+            Unused; kept for backward compatibility of the signature.
 
         Returns
         -------
         int
             Returns 0 on success.
+
+        Raises
+        ------
+        ValueError
+            If ``file_path`` has the V1 ``.acs`` extension.
         """
-        if file_path.lower().endswith('.acs2'):
-            # Pass *both* the initial and final (self) session states
-            save_archive_v2(
-                session_v2_final=self, 
-                session_v2_initial=initial_session,
-                file_path=file_path
-            )
-            logging.info(f"V2 Session state saved successfully to {file_path}.")
-        else:
-            # ... (V1 save logic is unchanged, it only saves final state) ...
-            try:
-                v1_spec_for_save = self.spec.to_v1_spectrum() 
-                v1_systs_for_save = self.systs.to_v1_systlist() 
-            except Exception as e:
-                logging.error(f"FATAL: V2-to-V1 conversion failed during saving: {e}")
-                raise 
-            
-            json_log_str = ""
-            if isinstance(self.log_manager, V1LogArtifact):
-                json_log_str = json.dumps(self.log_manager.v1_json)
-            elif isinstance(self.log_manager, HistoryLogV2):
-                # The V1 format cannot store the V2 log: it is dropped on purpose
-                logging.warning(
-                    "The V1 .acs format does not store the V2 session log: the log "
-                    "was not saved. Save as .acs2 to keep it.")
-                json_log_str = json.dumps({"set_menu": []})
-            else:
-                logging.warning("Cannot save V2 log to V1 .acs archive. Log will be empty.")
-                json_log_str = json.dumps({"set_menu": []})
-            
-            try:
-                save_archive_v1(
-                    v1_spec_for_save, 
-                    v1_systs_for_save, 
-                    json_log_str,
-                    file_path
-                )
-                logging.info(f"V1 compatibility session saved successfully to {file_path}.")
-            except Exception as e:
-                logging.error(f"FATAL: V1 archive writing failed: {e}")
-                raise 
+        if file_path.lower().endswith('.acs'):
+            raise ValueError(
+                "Saving in the V1 .acs format is no longer supported: save as "
+                ".acs2, or use Astrocook 1.9.0 to write .acs archives.")
+        if not file_path.lower().endswith('.acs2'):
+            file_path += '.acs2'
+        # Pass *both* the initial and final (self) session states
+        save_archive_v2(
+            session_v2_final=self, 
+            session_v2_initial=initial_session,
+            file_path=file_path
+        )
+        logging.info(f"V2 Session state saved successfully to {file_path}.")
         return 0
