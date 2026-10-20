@@ -13,7 +13,6 @@ from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.legacy.gui_log import GUILog
-from astrocook.legacy.defaults import Defaults
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2
@@ -186,7 +185,6 @@ class ScriptWorker(QRunnable):
             # Re-link the new state to the GUI and V1 stubs
             initial_state_copy._gui = self.main_window
             initial_state_copy.log = GUILog(self.main_window.mock_gui_context) 
-            initial_state_copy.defs = Defaults(self.main_window.mock_gui_context)
             
             new_history = SessionHistory(initial_state_copy, new_log)
             current_processing_state = initial_state_copy
