@@ -74,3 +74,18 @@ a:hover {
 #pst-back-to-top:hover {
     background-color: #f5a100 !important; /* Your blue color */
 }
+/* Version switcher: the same width for every version (the width of
+   "2.0.3 (Stable)"), so that switching version never changes the layout
+   of the header (with "dev" it was narrower, with longer names wider and
+   the header went on two lines). The theme's selector is button.<class>. */
+button.version-switcher__button {
+    min-width: 8.25rem;
+}
+
+/* The "Switch to stable version" button of the version-warning banner (dev
+   docs) is a link: keep it white on the red button, instead of the blue
+   (orange on hover) forced on all the links above */
+#bd-header-version-warning a.btn,
+#bd-header-version-warning a.btn:hover {
+    color: #fff !important;
+}

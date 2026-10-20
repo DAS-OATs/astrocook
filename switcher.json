@@ -6,7 +6,7 @@
     "preferred": true
   },
   {
-    "name": "dev (unreleased)",
+    "name": "dev",
     "version": "dev",
     "url": "https://das-oats.github.io/astrocook/dev/"
   },

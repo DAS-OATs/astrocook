@@ -6,7 +6,15 @@
 import os
 import sys
 
-from astrocook import __version__ as version
+from astrocook import __version__
+
+# Version of these docs: "dev" for the docs of master (published under
+# /dev/), the package version for a release (published at the root); set
+# by build_site.sh. It is shown in the pages, and the version switcher and
+# its warning banner compare it with switcher.json: with the version of the
+# last release, the theme would take the dev docs for the release docs and
+# show no banner.
+version = os.environ.get("ASTROCOOK_DOCS_VERSION", __version__)
 
 myst_substitutions = {
     "version": version
@@ -20,10 +28,6 @@ project = 'Astrocook'
 copyright = '2026, Guido Cupani'
 author = 'Guido Cupani'
 release = version
-# Version of these docs for the version switcher: "dev" for the docs of
-# master (published under /dev/), the package version for a release
-# (published at the root). Set by build_site.sh.
-docs_version = os.environ.get("ASTROCOOK_DOCS_VERSION", version)
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -84,7 +88,7 @@ html_theme_options = {
         "json_url": "https://das-oats.github.io/astrocook/switcher.json",
         
         # This tells the theme which version THIS build represents.
-        "version_match": docs_version,
+        "version_match": version,
     },
     # Banner on the pages of any version other than the latest release
     # (the dev docs), with a link to it
