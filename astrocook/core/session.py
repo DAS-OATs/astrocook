@@ -7,7 +7,7 @@ import tempfile
 from typing import Any, Optional, Union
 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
-from astrocook.io.v1_stubs import V1ArchiveManager
+from astrocook.io.v1_archive import V1ArchiveManager
 from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.absorbers import RecipeAbsorbersV2
 from astrocook.recipes.edit import RecipeEditV2
@@ -111,6 +111,16 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             if os.path.exists(meta_file_path):
                 with open(meta_file_path, 'r') as f:
                     v2_metadata = json.load(f)
+            else:
+                # Read the tables anyway (before phase 3 such an archive went
+                # to the V1 reader, which replaced the spectrum with mock
+                # data); the metadata (constraints, log, identifications)
+                # are missing
+                logging.warning(
+                    f"{archive_path} has no metadata file (_meta.json): the "
+                    "spectrum and the systems are read, without constraints, "
+                    "session log and identifications.")
+                v2_metadata = {}
 
         elif archive_path_lower.endswith('.acs'):
             # ... (V1 logic remains same) ...

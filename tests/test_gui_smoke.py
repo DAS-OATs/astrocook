@@ -343,3 +343,13 @@ def test_script_run_builds_a_v2_history(ready):
     assert isinstance(history.log_manager, HistoryLogV2)
     assert _recipes(history.log_manager) == ["set_properties", "smooth"]
     assert len(history.states) == 3
+
+
+def test_open_v1_archive(window, messages):
+    # V1 .acs archives are read by io/v1_archive.py (phase 3)
+    path = Path(__file__).parent / "data" / "v1_metals_constraints.acs"
+    window.open_session_from_path(str(path))
+    history = window.active_history
+    assert history is not None and history.display_name == path.stem
+    assert len(history.current_state.systs.components) == 185
+    assert messages == []

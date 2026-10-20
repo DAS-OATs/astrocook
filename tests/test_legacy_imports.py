@@ -15,13 +15,9 @@ import astrocook
 
 PACKAGE_DIR = Path(astrocook.__file__).parent
 
-# (module, imported legacy module) pairs still allowed
-ALLOWED = {
-    ("astrocook/core/system_list_migration.py", "astrocook.legacy.syst_list"),
-    ("astrocook/io/v1_stubs.py", "astrocook.legacy.format"),
-    ("astrocook/io/v1_stubs.py", "astrocook.legacy.spectrum"),
-    ("astrocook/io/v1_stubs.py", "astrocook.legacy.syst_list"),
-}
+# (module, imported legacy module) pairs still allowed: none since the
+# native reader of the V1 archives (io/v1_archive.py)
+ALLOWED = set()
 
 
 def _imported_modules(path):

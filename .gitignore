@@ -61,3 +61,7 @@ astrocook.egg-info/
 
 # Local virtual environment
 .venv/
+
+# V1 archives used by the tests (tests/test_v1_archive.py); after the
+# tests/data/*.acs rule above, which it overrides
+!tests/data/v1_*.acs
