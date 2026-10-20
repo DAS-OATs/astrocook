@@ -529,21 +529,23 @@ SHA-256; all files are also in the git history.
 ### Phase 3-bis – Small fixes before 2.1.0
 Agreed with Guido (October 2026): a few small fixes before release 2.1.0,
 one small PR each, with the related strict xfail turned into a passing test
-(or a new regression test). Candidates:
-- [#575](https://github.com/DAS-OATs/astrocook/issues/575) (F41, priority):
-  a recipe that opens a new session is also recorded in the log of the
-  parent session;
-- F6: `core/spectrum_operations.py` imports `gui.debug_utils`, so the core
-  depends on the GUI (importing it also imports PySide6);
-- F13: link colours not recomputed in the System Inspector when a link is
-  created with the group still selected (strict xfail already in place);
-- to be evaluated with Guido: bringing forward from phase 4
-  [#559](https://github.com/DAS-OATs/astrocook/issues/559) (`dbtur` not
-  updated after a fit, F36) and
-  [#560](https://github.com/DAS-OATs/astrocook/issues/560) (`norm` of the
-  `rebin` recipe ignored, F37).
+(or a new regression test). Order agreed with Guido:
+1. [#575](https://github.com/DAS-OATs/astrocook/issues/575) (F41,
+   priority): a recipe that opens a new session is also recorded in the
+   log of the parent session;
+2. F6: `core/spectrum_operations.py` imports `gui.debug_utils`, so the core
+   depends on the GUI (importing it also imports PySide6; matters for the
+   headless MCP pilot). Proposed: an optional debug hook in `core`, which
+   the GUI connects to its signal; no numerical change;
+3. F13: link colours not recomputed in the System Inspector when a link is
+   created with the group still selected (strict xfail already in place);
+4. [#559](https://github.com/DAS-OATs/astrocook/issues/559) (F36, brought
+   forward from phase 4): `dbtur` not updated after a fit; changes only
+   the uncertainty of `btur`, slow tests run before the merge.
 
-The order of the PRs is to be agreed with Guido at the start of the phase.
+[#560](https://github.com/DAS-OATs/astrocook/issues/560) (`norm` of the
+`rebin` recipe ignored, F37): to be discussed with Guido when reached
+(meaning of the normalized output first); it may stay in phase 4.
 
 ### Phase 4 – Scientific correctness
 The issues deferred from phase 1-bis, one PR (or a short series) each, every
@@ -559,7 +561,8 @@ PR, with the slow tests run before the merge:
 - [#518](https://github.com/DAS-OATs/astrocook/issues/518): editable z window
   in the manual fits (F4);
 - [#559](https://github.com/DAS-OATs/astrocook/issues/559): `dbtur` not
-  updated after a Voigt fit (F36, found in phase 2-bis);
+  updated after a Voigt fit (F36, found in phase 2-bis); brought forward
+  to phase 3-bis;
 - [#560](https://github.com/DAS-OATs/astrocook/issues/560): `norm` parameter
   of the `rebin` recipe ignored (F37, found in phase 2-bis);
 - [#568](https://github.com/DAS-OATs/astrocook/issues/568): a single table of
@@ -613,7 +616,7 @@ shows the docs of the latest release, `/dev/` those of master (see
 - **2.1.1 (only if INAF answers before phase 4):** LICENSE and first
   publication on PyPI, no other changes.
 - **2.2.0, after phase 4:** the scientific-correctness fixes (#526, #517,
-  #465, #518, #559, #560, #568, #573, unless brought forward); release
+  #465, #518, #560, #568, #573); release
   notes state which numerical results change. Also LICENSE and PyPI, if
   not already in 2.1.1 and INAF has answered.
 
@@ -634,7 +637,8 @@ features after, except urgent features in stable areas.
 | Phase 4 | [#526](https://github.com/DAS-OATs/astrocook/issues/526) | resolution as a single column and exact convolution (F8, F22, rest of F10, F9); design and decisions in the issue |
 | Before release 2.0.2 (decided with Guido) | [#534](https://github.com/DAS-OATs/astrocook/issues/534) | which chi2 the fit uncertainties are scaled with (follow-up of F29): done, option (a) |
 | Phase 4 | [#517](https://github.com/DAS-OATs/astrocook/issues/517), [#518](https://github.com/DAS-OATs/astrocook/issues/518) | from the findings review: flag and refit components at the parameter bounds, with F21 (`lya_auto` output); editable z window in the manual fits (F4) |
-| Phase 4 (possibly phase 3-bis, to be decided with Guido) | [#559](https://github.com/DAS-OATs/astrocook/issues/559), [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36); `norm` of the `rebin` recipe ignored (F37) |
+| Phase 3-bis (brought forward) | [#559](https://github.com/DAS-OATs/astrocook/issues/559) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36) |
+| Phase 4 (possibly phase 3-bis, to be discussed with Guido) | [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `norm` of the `rebin` recipe ignored (F37) |
 | Phase 4 | [#568](https://github.com/DAS-OATs/astrocook/issues/568), [#573](https://github.com/DAS-OATs/astrocook/issues/573) | found in phase 3: a single table of atomic parameters (F38, F39); recipe defaults differing between GUI and API (F40) |
 | Phase 3-bis (priority) | [#575](https://github.com/DAS-OATs/astrocook/issues/575) | found in phase 3: a recipe that opens a new session is also recorded in the log of the parent session (F41); small fix, touches the reproducibility of the log |
 | Phase 6 | [#566](https://github.com/DAS-OATs/astrocook/issues/566) | centralize the log messages (started in phase 3 with `recipes/messages.py`), with the move to per-module loggers |
@@ -689,7 +693,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F33 | tests (`.acs2` I/O) | `tests/test_v2_io_integrity.py` wraps its checks in `try/except` and only prints the error, so it can never fail. It currently prints "INTEGRITY CHECK FAILED": it checks that "CIV" is in `region_identifications` as a string, while after loading it is a dict (same mismatch as F27). Found in phase 1-bis while running the slow tests | test quality | `test_integer_aux_column_round_trip` | fixed (phase 1-bis, decided with Guido): test removed; its only check not covered by `tests/test_acs2_round_trip.py` (integer `abs_ids`) added there |
 | F34 | GUI | `gui/main_window.py` sets the main window icon from `assets/logo_3d.png`, which does not exist (the available logos are `logo_3d_HR.png` and `logo_3d_LR.png`): the icon is silently missing. Found in phase 2 while moving `assets/` into the package | GUI | — | fixed (phase 2-bis): icon from `logo_3d_HR.png`, smoke test checks it is not null |
 | F35 | security | `.acs2` (`core/session.py`) and `.acs` (`io/v1_stubs.py`) archives were unpacked with a plain `tarfile.extractall`: a crafted archive could write files outside the temporary folder (path traversal). V1 had a check (`legacy/session.py`, `safe_extract`) that V2 lost. Found in phase 2 from a Python 3.14 deprecation warning in the slow tests | security | `tests/test_safe_extract.py` | fixed (phase 2): `extractall(..., filter="data")`, which refuses members outside the folder |
-| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | deferred to [#559](https://github.com/DAS-OATs/astrocook/issues/559) (phase 4) |
+| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | deferred to [#559](https://github.com/DAS-OATs/astrocook/issues/559) (phase 3-bis, brought forward from phase 4) |
 | F37 | `rebin` recipe (`recipes/flux.py`) | The `norm` parameter ("Return normalized spectrum, if continuum exists") is parsed and ignored: the rebinned spectrum is never normalized. Found in phase 2-bis while cleaning up the Ruff warnings | silently ignored parameter | — | deferred to [#560](https://github.com/DAS-OATs/astrocook/issues/560) (phase 4) |
 | F38 | atomic data (`core/atomic_data.py`) | `ATOM_DATA` (V2, 210 transitions) differs from `data/atom_par.dat` (V1, 829) for some values. Many differences look intended (updated Lyman oscillator strengths, masses filled in where V1 had 0), but some look like transcription errors in V2: wavelength of `OIII_832` (832.29 vs 832.93 Å), `PIII_913` (913.40 vs 913.97 Å), `PV_1117` (1117.80 vs 1117.98 Å), `FeI_2501` (2501.19 vs 2501.89 Å), and the damping constant of `ArI_1066` (1.32e7 vs 1.32e8 s^-1). The V1 values agree with the standard line lists. Found in phase 3 (PR 3) | numerical | — | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
 | F39 | `trans_parse` (GUI) | The V1 series (`trans_parse`, used by the GUI when a series is not in `STANDARD_MULTIPLETS`) keep the order of `atom_par.dat`: `'Ly'` goes from `Ly_lim` to `Ly_a` (also `H`, `D`), and the redshift cursor takes the first transition known to `xem_d` as reference, so with the series `Ly` the cursor z refers to `Ly_lim`, not `Ly_a`. Also, only whole strings are looked up in `STANDARD_MULTIPLETS`: `MgII` gives the doublet, `MgII;Ly_b` the six MgII lines of `atom_par.dat` (1025-2803 Å). Building the series from `ATOM_DATA` instead would change this order and add `OI_988a/b` to `OI`. Kept as in V1 in phase 3 (PR 3) | behaviour | `test_atomic_data.py` (`test_trans_parse_lyman_order`), `test_gui_series_lookup.py` | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
@@ -838,7 +842,7 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
-| 3-bis – Small fixes before 2.1.0 (#575, F6, F13; possibly #559, #560) | not started |
-| 4 – Scientific correctness (#526, #517, #465, #518, #559, #560, #568, #573) | not started |
+| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559; possibly #560) | not started |
+| 4 – Scientific correctness (#526, #517, #465, #518, #560, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |

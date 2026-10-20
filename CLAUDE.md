@@ -114,13 +114,13 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2026, revised after phase 3; `ROADMAP.md`, section 3):
 1. phase 2 – cleanup and packaging (done, release 2.0.3);
 2. phase 3 – decoupling from `legacy/` (done);
-3. phase 3-bis – small fixes before the release: #575 (F41, priority),
-   F6, F13; #559 and #560 possibly brought forward from phase 4 (to be
-   decided with Guido);
+3. phase 3-bis – small fixes before the release, in this order: #575
+   (F41, priority), F6, F13, #559 (F36, brought forward from phase 4);
+   #560 to be discussed with Guido when reached;
 4. release 2.1.0, on GitHub with the macOS app, not on PyPI;
 5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
    `ROADMAP.md`, section 4);
-6. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560,
+6. phase 4 – scientific correctness: #526, #517, #465, #518, #560,
    #568, #573;
 7. release 2.2.0;
 8. phase 5 – splitting large files;
