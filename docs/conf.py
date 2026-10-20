@@ -20,6 +20,10 @@ project = 'Astrocook'
 copyright = '2026, Guido Cupani'
 author = 'Guido Cupani'
 release = version
+# Version of these docs for the version switcher: "dev" for the docs of
+# master (published under /dev/), the package version for a release
+# (published at the root). Set by build_site.sh.
+docs_version = os.environ.get("ASTROCOOK_DOCS_VERSION", version)
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -75,12 +79,16 @@ html_theme_options = {
     # --- Add these lines ---
     "navbar_align": "content", # Align navbar items to the content
     "switcher": {
-        # This must be the absolute URL to the JSON file you just uploaded
+        # One list for all the versions, at the root of the site; its
+        # "preferred" entry is the latest release (switcher.json)
         "json_url": "https://das-oats.github.io/astrocook/switcher.json",
         
         # This tells the theme which version THIS build represents.
-        "version_match": "2.0.3",
+        "version_match": docs_version,
     },
+    # Banner on the pages of any version other than the latest release
+    # (the dev docs), with a link to it
+    "show_version_warning_banner": True,
     "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
 }
 

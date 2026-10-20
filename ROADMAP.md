@@ -519,6 +519,10 @@ releases page (not the Mac App Store); Astrocook is not on PyPI yet.
 Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
 → phase 3 → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 → phase 6 →
 full MCP server (section 4).
+Documentation (agreed with Guido, October 2026): the root of the website
+shows the docs of the latest release, `/dev/` those of master (see
+`.github/workflows/docs.yml`). Before publishing a release, update the
+"preferred" entry of `switcher.json` on master to the new version.
 - **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
   fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
   F29, F32, #534) and issues #480, #442, together with the earlier fixes
