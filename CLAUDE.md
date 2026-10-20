@@ -33,9 +33,9 @@ Current version: 2.0.3. Python ≥3.12.
 - `astrocook/io/` – loaders and V1 → V2 migration.
 - `astrocook/mocks/` – synthetic spectra with known parameters, independent
   of the fitting code (do not make it depend on `fitting/`).
-- `astrocook/legacy/` – V1 code, still imported by several V2 modules.
-  To be removed progressively in phase 3 (the V1 routines used by the parity
-  tests move to a test-only reference module); do not use it for new code.
+- V1 code: removed from the package in phase 3. V1 `.acs` archives are read
+  by `astrocook/io/v1_archive.py`; the V1 routines used by the parity tests
+  are verbatim copies in `tests/reference/v1/` (test-only, do not edit).
 
 ## How to work
 - Environment: in cloud sessions `.claude/hooks/session-start.sh` installs
@@ -43,7 +43,7 @@ Current version: 2.0.3. Python ≥3.12.
   `.venv/`, and sets `QT_QPA_PLATFORM=offscreen` and `MPLBACKEND=Agg`.
   Locally: `python -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
 - Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
-  now, `legacy/` excluded). New code must not add warnings.
+  now, `tests/reference/v1/` excluded). New code must not add warnings.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
   3.12 and 3.13 (coverage report on 3.13), and `ruff check .`. The slow
   tests (`pytest --run-slow -m slow`) run in a separate job, not on pull

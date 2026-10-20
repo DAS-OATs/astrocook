@@ -11,6 +11,7 @@
 - V1 `.acs` archives are read by a new reader that does not use the V1 code; apart from the fixes above, the result is the same as before.
 
 ### Removed
+- The V1 code (`astrocook/legacy/`, ~22,500 lines, with the old wxPython interface): Astrocook no longer depends on it. Dependencies no longer installed: `lmfit`, `tqdm` and `cycler` (the latter still comes with matplotlib); the `[legacy]` extra (wxPython) and the broken V1 Docker image (`containers/`) are gone too.
 - Saving sessions in the V1 `.acs` format: sessions are saved as `.acs2` only (`.acs2` is added to a file name without it, and an `.acs` name is refused with a message). V1 `.acs` archives can still be opened; Astrocook 1.9.0 can still write them.
 
 ## [2.0.3] - 2026-10-19

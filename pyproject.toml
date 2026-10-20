@@ -39,10 +39,6 @@ dependencies = [
     "scienceplots>=2.1",
     "numexpr",
     "qtawesome",
-    # Used only by astrocook/legacy/ (phase 3)
-    "lmfit>=1.3",
-    "tqdm>=4.66",
-    "cycler>=0.10",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +47,8 @@ test = [
     "pytest-mock",
     "pytest-qt",
     "pytest-cov",
+    # Used by the V1 reference of the parity tests (tests/reference/v1)
+    "tqdm>=4.66",
 ]
 # Bayesian fit (fitting/bayesian_fitter.py, gui/corner_plot.py): without
 # them the fit raises an error naming this extra and the GUI disables its
@@ -78,8 +76,6 @@ docs = [
 # macOS app (build_app.sh, Astrocook.spec), which includes the Bayesian
 # fit; the DMG also needs create-dmg (brew install create-dmg)
 build = ["pyinstaller", "astrocook[bayes]"]
-# V1 wx GUI (astrocook/legacy/, phase 3)
-legacy = ["wxPython"]
 
 [project.scripts]
 # Launch the GUI: `astrocook [file ...]` (same as `python -m astrocook`)
@@ -112,9 +108,9 @@ markers = [
 ]
 
 [tool.ruff]
-# V1 code, its verbatim reference copy for the parity tests and the V1 docs
+# The verbatim copy of the V1 code for the parity tests and the V1 docs
 # (deployed under /v1/ by deploy_docs.sh) are not linted
-extend-exclude = ["astrocook/legacy", "tests/reference/v1", "docs_backup"]
+extend-exclude = ["tests/reference/v1", "docs_backup"]
 
 [tool.ruff.lint]
 # Start with pyflakes rules only (likely bugs, not style); extend gradually
