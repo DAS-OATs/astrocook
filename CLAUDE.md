@@ -87,7 +87,7 @@ Current version: 2.0.3. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2 and 2-bis done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis and 3 done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -96,8 +96,9 @@ error-scaling check, mutation testing (`mutmut`, config in
 `pyproject.toml`, run by hand), timing benchmark
 (`benchmarks/bench_fitting.py`, run by hand). Slow tests
 (`pytest --run-slow`) run in a separate CI job. Still waiting for data from
-Guido: sessions for log replay, V1 `.acs` archives, sample files for the
-loaders, X-Shooter VIS/NIR data (F15).
+Guido: sessions for log replay, sample files for the loaders, X-Shooter
+VIS/NIR data (F15). V1 `.acs` archives: received in phase 3 (two sessions,
+cut down and anonymised in `tests/data/v1_*.acs`).
 
 Phase 1-bis (findings register, `ROADMAP.md` section 3.2) fixed F1, F2, F5,
 F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33
@@ -117,7 +118,8 @@ with the chi2 of the final model). Sequence agreed with Guido (October
    tests move to a test-only reference module, they are not deleted);
 3. release 2.1.0, first publication on PyPI;
 4. MCP pilot (3–4 recipes, separate module; `ROADMAP.md`, section 4);
-5. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560;
+5. phase 4 – scientific correctness: #526, #517, #465, #518, #559, #560,
+   #568, #573;
 6. release 2.2.0;
 7. phase 5 – splitting large files;
 8. phase 6 – error handling;
@@ -132,10 +134,18 @@ Phase 2-bis done (October 2026): F34 (window icon), Ruff warnings (full
 `ruff check .` in CI), Sphinx warnings, optional `[bayes]` extra (emcee,
 dynesty, corner); found F36 and F37, deferred to #559 and #560 (phase 4).
 
-Current: phase 3 (`ROADMAP.md`), decoupling from `legacy/`. Work in small
-PRs, one at a time; wait for the merge before the next. While #549 is
-open, each new PR goes on its own `claude/...` branch (agreed with Guido;
-say which branch).
+Phase 3 done (October 2026, PRs #565-#584): `astrocook/legacy/` removed;
+V1 `.acs` archives read by `io/v1_archive.py` (saving in `.acs` removed);
+the V1 routines of the parity tests in `tests/reference/v1/`; logging left
+to the application; the data files used only by V1 removed (telluric data
+kept as assets of the pre-release `data-telluric-2026`); docs published per
+version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 to be
+scheduled); #566 (centralized messages) in phase 6.
+
+Next: release 2.1.0, first publication on PyPI (needs the LICENSE, #549,
+waiting for INAF). Work in small PRs, one at a time; wait for the merge
+before the next. While #549 is open, each new PR goes on its own
+`claude/...` branch (agreed with Guido; say which branch).
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;
