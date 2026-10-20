@@ -10,8 +10,9 @@ log is replaced with an empty one.
 The snapshots were recorded with the former reader, which went through
 the V1 classes of ``astrocook/legacy`` (before phase 3, 8b), and are
 compared exactly: the native reader gives the same session. They were
-recorded again for F42 (findings register): the flux unit and the btur,
-dbtur and chi2r columns, which the former reader dropped, are now read.
+recorded again for F42 and F43 (findings register): the flux unit and
+the btur, dbtur and chi2r columns, which the former reader dropped, are
+now read, and the V1 links are translated into V2 constraints.
 """
 import io
 import json
@@ -67,10 +68,18 @@ def test_systems(snapshot, archive):
     values["id"] = np.array([c.id for c in comps])
     values["series"] = np.array([c.series for c in comps])
     values["func"] = np.array([c.func for c in comps])
+    # Constraints with V1 ids in place of the UUIDs, which change at each load
     parsed = session.systs._data.parsed_constraints
-    keys = sorted(parsed, key=str)
-    values["constraint_keys"] = np.array([str(k) for k in keys])
-    values["constraint_values"] = np.array([str(parsed[k]) for k in keys])
+    uuid_to_id = {c.uuid: f"id{c.id}" for c in comps}
+
+    def stable(text):
+        for uuid, cid in uuid_to_id.items():
+            text = text.replace(uuid, cid)
+        return text
+
+    keys = sorted(parsed, key=lambda k: stable(str(k)))
+    values["constraint_keys"] = np.array([stable(str(k)) for k in keys])
+    values["constraint_values"] = np.array([stable(str(parsed[k])) for k in keys])
     snapshot.check(f"v1_archive_{name}_systems", values, rtol=0.0)
 
 
@@ -84,9 +93,12 @@ def test_v1_archive_contents():
     assert len(metals.systs.components) == 10
     parsed = metals.systs._data.parsed_constraints
     assert len(parsed) == 15
-    assert parsed[(147, "z")].expression == "lines_voigt_14_z"
-    assert parsed[(147, "b")].expression == "lines_voigt_14_b*0.65395596200518"
-    assert parsed[(14, "b")].expression is None and not parsed[(14, "b")].is_free
+    uuid = {int(c.id): c.uuid for c in metals.systs.components}
+    # V1 links translated into the V2 syntax (F43, test_v1_constraints.py)
+    assert parsed[(uuid[147], "z")].expression == f"p['{uuid[14]}'].z"
+    assert parsed[(uuid[147], "b")].expression == f"p['{uuid[14]}'].b*0.65395596200518"
+    frozen = parsed[(uuid[14], "b")]
+    assert frozen.expression is None and not frozen.is_free
 
 
 def test_v1_columns_are_read():
