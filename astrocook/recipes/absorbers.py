@@ -7,10 +7,6 @@ from typing import TYPE_CHECKING
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
-try:
-    from astrocook.legacy.functions import trans_parse
-except ImportError:
-    trans_parse = lambda s: []
 from astrocook.recipes.messages import msg_param_fail
 
 if TYPE_CHECKING:

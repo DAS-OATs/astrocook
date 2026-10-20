@@ -1,7 +1,9 @@
 from astropy import constants as const
 from astropy import units as au
+import functools
 import numpy as np
-from typing import Dict
+from pathlib import Path
+from typing import Dict, List
 
 
 # --- 1. Master Atomic Data Registry ---
@@ -345,3 +347,57 @@ def get_multiplet_velocity_lags(multiplet_name: str) -> Dict[str, float]:
         lags[line_id] = dv
         
     return lags
+
+
+# --- 3. Series names of V1 ---
+# The series of V1 (``series_d`` in the former ``legacy/vars.py``): every
+# transition of ``data/atom_par.dat``, grouped by the part of the name before
+# the underscore, in the order of the file (e.g. 'Ly' goes from 'Ly_lim' to
+# 'Ly_a'), plus three Lyman aliases. It has more transitions than ATOM_DATA
+# (H2, CO, Paschen, Brackett, ...); the callers keep only those in xem_d.
+ATOM_PAR_PATH = Path(__file__).resolve().parent.parent / 'data' / 'atom_par.dat'
+
+@functools.cache
+def _v1_series() -> Dict[str, List[str]]:
+    """Transitions of each V1 series, read once from ``atom_par.dat``."""
+    lines = ATOM_PAR_PATH.read_text().splitlines()[1:]  # skip the header
+    series: Dict[str, List[str]] = {}
+    for name in (line.split()[0] for line in lines if line.strip()):
+        series.setdefault(name.split('_')[0], []).append(name)
+    series['Ly-a'] = ['Ly_a']
+    series['Ly-ab'] = ['Ly_b', 'Ly_a']
+    series['Ly-abg'] = ['Ly_g', 'Ly_b', 'Ly_a']
+    return series
+
+def trans_parse(series: str) -> List[str]:
+    """
+    Expand a series string into the list of its transitions (V1 syntax).
+
+    The string is split at commas, semicolons and colons. Items with an
+    underscore are taken as transitions (e.g. ``'CIV_1548'``), the others
+    as V1 series names, expanded with all their transitions (e.g. ``'CIV'``
+    gives ``['CIV_1548', 'CIV_1550']``).
+
+    Parameters
+    ----------
+    series : str
+        Series string, e.g. ``'CIV'``, ``'Ly_a'`` or ``'CIV_1548,SiIV'``.
+
+    Returns
+    -------
+    list of str
+        The transitions, in the order of the string and, within a series,
+        of ``atom_par.dat``.
+
+    Raises
+    ------
+    KeyError
+        If an item without an underscore is not a V1 series name.
+    """
+    trans = []
+    for s in series.replace(';', ',').replace(':', ',').split(','):
+        if '_' in s:
+            trans.append(s.strip())
+        else:
+            trans.extend(_v1_series()[s.strip()])
+    return trans
