@@ -5,6 +5,8 @@
 *.acs
 *.pyc
 *.dat
+# V1 data files of the reference for the parity tests (tests/reference/v1)
+!tests/reference/v1/data/*.dat
 *.pyc
 QSO_constants/
 __pycache__/
