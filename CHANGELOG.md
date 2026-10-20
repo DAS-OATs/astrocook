@@ -12,6 +12,7 @@
 
 ### Removed
 - The V1 code (`astrocook/legacy/`, ~22,500 lines, with the old wxPython interface): Astrocook no longer depends on it. Dependencies no longer installed: `lmfit`, `tqdm` and `cycler` (the latter still comes with matplotlib); the `[legacy]` extra (wxPython) and the broken V1 Docker image (`containers/`) are gone too.
+- Data files used only by the V1 code (~140 MB): `telluric.fits`, `sky_telluric.fits` (identical to each other), `telluric.dat`, `defaults.json`, `espr_spec_form.dat`, `table2_inoue.dat`. The telluric data are kept for a future telluric correction as assets of the GitHub pre-release `data-telluric-2026`.
 - Saving sessions in the V1 `.acs` format: sessions are saved as `.acs2` only (`.acs2` is added to a file name without it, and an `.acs` name is refused with a message). V1 `.acs` archives can still be opened; Astrocook 1.9.0 can still write them.
 
 ## [2.0.3] - 2026-10-19
