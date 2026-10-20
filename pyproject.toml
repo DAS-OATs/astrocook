@@ -112,8 +112,9 @@ markers = [
 ]
 
 [tool.ruff]
-# V1 code and the V1 docs (deployed under /v1/ by deploy_docs.sh) are not linted
-extend-exclude = ["astrocook/legacy", "docs_backup"]
+# V1 code, its verbatim reference copy for the parity tests and the V1 docs
+# (deployed under /v1/ by deploy_docs.sh) are not linted
+extend-exclude = ["astrocook/legacy", "tests/reference/v1", "docs_backup"]
 
 [tool.ruff.lint]
 # Start with pyflakes rules only (likely bugs, not style); extend gradually

@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from astrocook.core.templates import qso_composite
-from astrocook.legacy import vars as vars_v1
+from reference.v1 import vars as vars_v1
 
 
 def test_qso_composite_matches_v1():

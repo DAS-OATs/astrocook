@@ -13,9 +13,9 @@ import pytest
 
 from astrocook.core.atomic_data import _v1_series, trans_parse
 from astrocook.core.spectrum_operations import convert_axis_velocity
-from astrocook.legacy import vars as vars_v1
-from astrocook.legacy.functions import trans_parse as trans_parse_v1
-from astrocook.legacy.functions import x_convert as x_convert_v1
+from reference.v1 import vars as vars_v1
+from reference.v1.functions import trans_parse as trans_parse_v1
+from reference.v1.functions import x_convert as x_convert_v1
 
 
 def test_series_match_v1():
