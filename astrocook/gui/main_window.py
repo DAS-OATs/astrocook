@@ -141,9 +141,7 @@ class MainWindowV2(QMainWindow):
             self.move(window_rect.topLeft())
 
         try:
-            # Usa pure logo_3d.png per ora. 
-            # Se in futuro crei un 'logo_small.png' o 'logo_bw.png', cambia qui il nome.
-            icon_path = resource_path(os.path.join("assets", "logo_3d.png"))
+            icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             self.setWindowIcon(QIcon(icon_path))
         except Exception as e:
             logging.warning(f"Could not set window icon: {e}")
