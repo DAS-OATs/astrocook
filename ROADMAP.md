@@ -432,7 +432,7 @@ Done (October 2026), PRs #543-#554:
 Left open:
 - **LICENSE**: GPLv3 or later agreed with Guido; PR #549 waits as a draft
   for INAF (copyright holder) and for the contributors. Needed before the
-  PyPI publication (2.1.0).
+  PyPI publication (independent of the phases: see "Releases").
 - Optional `[bayes]` extra: agreed, moved to phase 2-bis.
 - Docker containers (`containers/`, broken since the V1 launchers moved):
   decided with Guido (October 2026): no renewal for now; `containers/` is
@@ -526,6 +526,27 @@ with their SHA-256. `telluric.fits` was byte-identical to
 cache them (e.g. `astropy.utils.data.download_file`), checking the
 SHA-256; all files are also in the git history.
 
+### Phase 3-bis – Small fixes before 2.1.0
+Agreed with Guido (October 2026): a few small fixes before release 2.1.0,
+one small PR each, with the related strict xfail turned into a passing test
+(or a new regression test). Order agreed with Guido:
+1. [#575](https://github.com/DAS-OATs/astrocook/issues/575) (F41,
+   priority): a recipe that opens a new session is also recorded in the
+   log of the parent session;
+2. F6: `core/spectrum_operations.py` imports `gui.debug_utils`, so the core
+   depends on the GUI (importing it also imports PySide6; matters for the
+   headless MCP pilot). Proposed: an optional debug hook in `core`, which
+   the GUI connects to its signal; no numerical change;
+3. F13: link colours not recomputed in the System Inspector when a link is
+   created with the group still selected (strict xfail already in place);
+4. [#559](https://github.com/DAS-OATs/astrocook/issues/559) (F36, brought
+   forward from phase 4): `dbtur` not updated after a fit; changes only
+   the uncertainty of `btur`, slow tests run before the merge.
+
+[#560](https://github.com/DAS-OATs/astrocook/issues/560) (`norm` of the
+`rebin` recipe ignored, F37): to be discussed with Guido when reached
+(meaning of the normalized output first); it may stay in phase 4.
+
 ### Phase 4 – Scientific correctness
 The issues deferred from phase 1-bis, one PR (or a short series) each, every
 numerical choice agreed with Guido and every changed result stated in the
@@ -540,7 +561,8 @@ PR, with the slow tests run before the merge:
 - [#518](https://github.com/DAS-OATs/astrocook/issues/518): editable z window
   in the manual fits (F4);
 - [#559](https://github.com/DAS-OATs/astrocook/issues/559): `dbtur` not
-  updated after a Voigt fit (F36, found in phase 2-bis);
+  updated after a Voigt fit (F36, found in phase 2-bis); brought forward
+  to phase 3-bis;
 - [#560](https://github.com/DAS-OATs/astrocook/issues/560): `norm` parameter
   of the `rebin` recipe ignored (F37, found in phase 2-bis);
 - [#568](https://github.com/DAS-OATs/astrocook/issues/568): a single table of
@@ -563,8 +585,14 @@ an item to discuss.
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
 Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
-→ phase 3 → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 → phase 6 →
-full MCP server (section 4).
+→ phase 3 → phase 3-bis → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 →
+phase 6 → full MCP server (section 4). Revised after phase 3: 2.1.0 is
+published on GitHub (with the macOS app) without waiting for PyPI.
+**LICENSE and PyPI** (agreed with Guido, October 2026): an independent
+step, not tied to a phase. The LICENSE (#549) and the first publication on
+PyPI go into the first release after INAF answers: 2.1.1 if the answer
+comes before phase 4, otherwise 2.2.0 or whatever the current version is
+then. Until then Astrocook installs with pip from GitHub.
 Documentation (agreed with Guido, October 2026): the root of the website
 shows the docs of the latest release, `/dev/` those of master (see
 `.github/workflows/docs.yml`). Before publishing a release, update the
@@ -580,12 +608,17 @@ shows the docs of the latest release, `/dev/` those of master (see
   macOS build fixes, safe unpacking of archives (F35), automatic docs
   deployment, cleanup; no numerical result changes. No license
   yet (#549).
-- **2.1.0 (first consolidated release), after phases 2-3:** clean packaging
-  (LICENSE, entry point, realistic dependency versions), V2 no longer
-  importing `legacy/`; first publication on PyPI. Also the macOS app, as
-  before.
+- **2.1.0 (first consolidated release), after phases 3 and 3-bis:** V2 no
+  longer depends on `legacy/` (removed), native reader of the V1 archives,
+  `.acs` saving removed, smaller wheel, the fixes of phase 3-bis. Published
+  on GitHub with the macOS app, as before; not on PyPI (no LICENSE yet,
+  #549).
+- **2.1.1 (only if INAF answers before phase 4):** LICENSE and first
+  publication on PyPI, no other changes.
 - **2.2.0, after phase 4:** the scientific-correctness fixes (#526, #517,
-  #465, #518); release notes state which numerical results change.
+  #465, #518, #560, #568, #573); release
+  notes state which numerical results change. Also LICENSE and PyPI, if
+  not already in 2.1.1 and INAF has answered.
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
@@ -604,9 +637,10 @@ features after, except urgent features in stable areas.
 | Phase 4 | [#526](https://github.com/DAS-OATs/astrocook/issues/526) | resolution as a single column and exact convolution (F8, F22, rest of F10, F9); design and decisions in the issue |
 | Before release 2.0.2 (decided with Guido) | [#534](https://github.com/DAS-OATs/astrocook/issues/534) | which chi2 the fit uncertainties are scaled with (follow-up of F29): done, option (a) |
 | Phase 4 | [#517](https://github.com/DAS-OATs/astrocook/issues/517), [#518](https://github.com/DAS-OATs/astrocook/issues/518) | from the findings review: flag and refit components at the parameter bounds, with F21 (`lya_auto` output); editable z window in the manual fits (F4) |
-| Phase 4 | [#559](https://github.com/DAS-OATs/astrocook/issues/559), [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36); `norm` of the `rebin` recipe ignored (F37) |
+| Phase 3-bis (brought forward) | [#559](https://github.com/DAS-OATs/astrocook/issues/559) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36) |
+| Phase 4 (possibly phase 3-bis, to be discussed with Guido) | [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `norm` of the `rebin` recipe ignored (F37) |
 | Phase 4 | [#568](https://github.com/DAS-OATs/astrocook/issues/568), [#573](https://github.com/DAS-OATs/astrocook/issues/573) | found in phase 3: a single table of atomic parameters (F38, F39); recipe defaults differing between GUI and API (F40) |
-| To be scheduled with Guido | [#575](https://github.com/DAS-OATs/astrocook/issues/575) | found in phase 3: a recipe that opens a new session is also recorded in the log of the parent session (F41); small fix, touches the reproducibility of the log |
+| Phase 3-bis (priority) | [#575](https://github.com/DAS-OATs/astrocook/issues/575) | found in phase 3: a recipe that opens a new session is also recorded in the log of the parent session (F41); small fix, touches the reproducibility of the log |
 | Phase 6 | [#566](https://github.com/DAS-OATs/astrocook/issues/566) | centralize the log messages (started in phase 3 with `recipes/messages.py`), with the move to per-module loggers |
 | After phase 5 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
 | After phase 5 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |
@@ -629,14 +663,14 @@ Exception: anything that loses user data or crashes is reported at once.
 | F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*`; `test_v2_auto_fudge_is_one` (characterization) | accepted (phase 1-bis, decided with Guido): not a regression in substance. The V1 fudge corrects the running mean V1 builds the continuum from; V2 interpolates the unabsorbed pixels, so the fudge is 1 by construction. Local fudges after the smoothing were tried on J0103-1305: none reproduces V1 (effect ±1% or more vs ±0.2%, no correlation), they would correct the bias of the final smoothing instead. Documented in `fit_continuum`; the smoothing bias goes with #465, F17, F30 |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | fixed (phase 1-bis): annotation and docstring list the three returned values |
-| F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3/5 |
+| F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3-bis |
 | F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 5 |
 | F8 | resolution handling | The resolution lives in five places (per-component value, `resol` column, `SpectrumDataV2.resol`, meta `resol`/`RESOL`, meta `resol_fwhm`), each read with a different priority by the fitter, the `.acs2` loader, coadd and the GUI. The `.acs2` save does not write the attribute: it survives only through the meta keys (set by "Set properties"). The fitter stamps the resolution used into every fitted component, which then overrides later changes. R vs km/s is guessed from a threshold of 500. The J0103-1305 archive (older version) stores no resolution at all. To be analysed by Guido | behaviour, possible data loss | — (map in the PR that added this row) | design agreed, deferred after phase 1-bis: [#526](https://github.com/DAS-OATs/astrocook/issues/526) |
 | F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9): the V2 model, sampled at pixel centres, overestimates the equivalent width of CIV by 4% at b = 1 km/s and 0.3% at 3 km/s (2.5 km/s pixels, R = 45000) | numerical | — | with the exact convolution, [#526](https://github.com/DAS-OATs/astrocook/issues/526) (timing to be checked) |
 | F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra (coadding three synthetic exposures at R = 42000-47500 gives a non-round column on 90% of the pixels and a zero Voigt model on 90% of them, `test_voigt_model_on_coadded_spectrum_is_not_zero`), RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero`, `test_voigt_model_on_coadded_spectrum_is_not_zero`, `test_voigt_model_with_resolution_column` (regression) | selection bug fixed (phase 1-bis): pixels selected by the rounded resolution, NaN filled with the unconvolved flux. Kernel width far from the median wavelength and exact convolution: [#526](https://github.com/DAS-OATs/astrocook/issues/526), after phase 1-bis |
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | `test_set_active_components_honours_group_depth`, `test_fit_component_group_depth_0_freezes_neighbours` (regression) | fixed (phase 1-bis, decided with Guido): `group_depth` honoured, default 2 everywhere; the internal fits of `refit_all`/`metals_auto` keep the depth-2 expansion they always had (`FIT_EXPANSION_DEPTH`), since depth 0 there was 2.75x faster but fitted blends worse (J0103-1305: chi2 +14% in the forest); the user can reduce the depth in "Fit component" and in the Bayesian fit |
 | F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
-| F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured` (strict xfail) | open |
+| F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured` (strict xfail) | phase 3-bis |
 | F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_ignores_resolution` (characterization) | deferred to [#526](https://github.com/DAS-OATs/astrocook/issues/526) (decided with Guido): the grouping needs the single per-pixel resolution |
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
 | F16 | smoothing | For the same "std" parameter, V1 `_gauss_convolve` uses the kernel exp(-(dv/std)^2), i.e. sigma = std/sqrt(2), while V2 `smooth_spectrum` uses sigma = std: V2 smooths sqrt(2) wider. Affects the continuum smoothing (default 500 km/s: effective sigma 354 km/s in V1, 500 km/s in V2) and any other use of the parameter. Which convention to keep is Guido's decision | numerical | `test_smoothing_width_differs_by_sqrt2` (characterization); `test_estimate_auto_smoothing_is_a_fwhm` | fixed (phase 1-bis, decided with Guido): the continuum smoothing is given as a FWHM (`smooth_fwhm`, default 800 km/s, within 0.5% of the V1 continuum on J0103-1305; FWHM 500 would change it by up to 10% in the forest); `smooth_std` (sigma) kept as a deprecated alias |
@@ -659,7 +693,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F33 | tests (`.acs2` I/O) | `tests/test_v2_io_integrity.py` wraps its checks in `try/except` and only prints the error, so it can never fail. It currently prints "INTEGRITY CHECK FAILED": it checks that "CIV" is in `region_identifications` as a string, while after loading it is a dict (same mismatch as F27). Found in phase 1-bis while running the slow tests | test quality | `test_integer_aux_column_round_trip` | fixed (phase 1-bis, decided with Guido): test removed; its only check not covered by `tests/test_acs2_round_trip.py` (integer `abs_ids`) added there |
 | F34 | GUI | `gui/main_window.py` sets the main window icon from `assets/logo_3d.png`, which does not exist (the available logos are `logo_3d_HR.png` and `logo_3d_LR.png`): the icon is silently missing. Found in phase 2 while moving `assets/` into the package | GUI | — | fixed (phase 2-bis): icon from `logo_3d_HR.png`, smoke test checks it is not null |
 | F35 | security | `.acs2` (`core/session.py`) and `.acs` (`io/v1_stubs.py`) archives were unpacked with a plain `tarfile.extractall`: a crafted archive could write files outside the temporary folder (path traversal). V1 had a check (`legacy/session.py`, `safe_extract`) that V2 lost. Found in phase 2 from a Python 3.14 deprecation warning in the slow tests | security | `tests/test_safe_extract.py` | fixed (phase 2): `extractall(..., filter="data")`, which refuses members outside the folder |
-| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | deferred to [#559](https://github.com/DAS-OATs/astrocook/issues/559) (phase 4) |
+| F36 | `VoigtFitterV2` (errors) | After a fit, `dz`, `dlogN` and `db` are updated, but `dbtur` is computed (`dbtur_new`) and never stored: it keeps its value from before the fit, even when `btur` is free or frozen by the user (where the other errors become 0). Found in phase 2-bis while cleaning up the Ruff warnings | numerical, wrong uncertainties | — | deferred to [#559](https://github.com/DAS-OATs/astrocook/issues/559) (phase 3-bis, brought forward from phase 4) |
 | F37 | `rebin` recipe (`recipes/flux.py`) | The `norm` parameter ("Return normalized spectrum, if continuum exists") is parsed and ignored: the rebinned spectrum is never normalized. Found in phase 2-bis while cleaning up the Ruff warnings | silently ignored parameter | — | deferred to [#560](https://github.com/DAS-OATs/astrocook/issues/560) (phase 4) |
 | F38 | atomic data (`core/atomic_data.py`) | `ATOM_DATA` (V2, 210 transitions) differs from `data/atom_par.dat` (V1, 829) for some values. Many differences look intended (updated Lyman oscillator strengths, masses filled in where V1 had 0), but some look like transcription errors in V2: wavelength of `OIII_832` (832.29 vs 832.93 Å), `PIII_913` (913.40 vs 913.97 Å), `PV_1117` (1117.80 vs 1117.98 Å), `FeI_2501` (2501.19 vs 2501.89 Å), and the damping constant of `ArI_1066` (1.32e7 vs 1.32e8 s^-1). The V1 values agree with the standard line lists. Found in phase 3 (PR 3) | numerical | — | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
 | F39 | `trans_parse` (GUI) | The V1 series (`trans_parse`, used by the GUI when a series is not in `STANDARD_MULTIPLETS`) keep the order of `atom_par.dat`: `'Ly'` goes from `Ly_lim` to `Ly_a` (also `H`, `D`), and the redshift cursor takes the first transition known to `xem_d` as reference, so with the series `Ly` the cursor z refers to `Ly_lim`, not `Ly_a`. Also, only whole strings are looked up in `STANDARD_MULTIPLETS`: `MgII` gives the doublet, `MgII;Ly_b` the six MgII lines of `atom_par.dat` (1025-2803 Å). Building the series from `ATOM_DATA` instead would change this order and add `OI_988a/b` to `OI`. Kept as in V1 in phase 3 (PR 3) | behaviour | `test_atomic_data.py` (`test_trans_parse_lyman_order`), `test_gui_series_lookup.py` | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
@@ -714,8 +748,9 @@ the availability of test data.
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
-- Releases (see "Releases" above): timing of 2.1.0 and 2.2.0, PyPI
-  publication, macOS app signing and notarization.
+- Releases (see "Releases" above): timing of 2.1.0 and 2.2.0, macOS app
+  signing and notarization. PyPI publication: decided, with the first
+  release after INAF answers on the LICENSE.
 
 ---
 
@@ -737,10 +772,10 @@ LLM.
 When (agreed with Guido, October 2026):
 - **Pilot, right after 2.1.0** (before phase 4): MCP server with 3–4
   recipes (open a spectrum, continuum, identification, fit), as a separate
-  module that does not touch the existing code. With 2.1.0 on PyPI it
-  installs with `pip`; it shows which structured outputs and error
-  messages an agent needs, so that phases 4 and 6 can take them into
-  account.
+  module that does not touch the existing code. It installs with `pip`
+  from GitHub, without waiting for PyPI; it shows which structured outputs
+  and error messages an agent needs, so that phases 4 and 6 can take them
+  into account.
 - **Full server, after phase 6:** all the recipes, structured outputs,
   natural-language log, and a headless Docker image to distribute it. An
   agent working on its own needs correct results (phase 4) and clean error
@@ -807,6 +842,7 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
-| 4 – Scientific correctness (#526, #517, #465, #518, #559, #560, #568, #573) | not started |
+| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559; possibly #560) | not started |
+| 4 – Scientific correctness (#526, #517, #465, #518, #560, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
