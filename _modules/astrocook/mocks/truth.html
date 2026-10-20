@@ -454,7 +454,7 @@
 
 
 <div class="viewcode-block" id="MockComponent">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockComponent">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MockComponent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One Voigt component.</span>
@@ -483,7 +483,7 @@
 
 
 <div class="viewcode-block" id="EmissionLine">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.EmissionLine">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EmissionLine</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Gaussian emission line added to the continuum (quasar frame).</span>
@@ -510,7 +510,7 @@
 
 
 <div class="viewcode-block" id="MockTruth">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockTruth">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MockTruth</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Everything needed to generate, and later evaluate, a mock spectrum.</span>
@@ -548,13 +548,13 @@
     <span class="n">spike_amplitude</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span>
 
 <div class="viewcode-block" id="MockTruth.to_dict">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockTruth.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MockTruth.from_dict">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockTruth.from_dict">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"MockTruth"</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -565,14 +565,14 @@
 
 
 <div class="viewcode-block" id="MockTruth.to_json">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockTruth.to_json">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_json">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MockTruth.from_json">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.MockTruth.from_json">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"MockTruth"</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>

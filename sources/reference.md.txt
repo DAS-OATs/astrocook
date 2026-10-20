@@ -20,3 +20,9 @@ api/astrocook.recipes
 
 api/astrocook.fitting
 ```
+```{toctree}
+:maxdepth: 2
+:caption: Synthetic spectra with known parameters, for testing
+
+api/astrocook.mocks
+```

@@ -467,7 +467,7 @@
 
 
 <div class="viewcode-block" id="transitions">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.transitions">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.transitions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">transitions</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Transitions of a series (single line, standard multiplet or list)."""</span>
     <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
@@ -481,7 +481,7 @@
 
 
 <div class="viewcode-block" id="optical_depth">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.optical_depth">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.optical_depth">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">optical_depth</span><span class="p">(</span><span class="n">lam_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                   <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Optical depth of one component at observed wavelengths (Angstrom).</span>
@@ -509,7 +509,7 @@
 
 
 <div class="viewcode-block" id="convolve_velocity">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.convolve_velocity">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.convolve_velocity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convolve_velocity</span><span class="p">(</span><span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dv_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                       <span class="n">resol</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Gaussian instrumental convolution on a grid uniform in velocity.</span>
