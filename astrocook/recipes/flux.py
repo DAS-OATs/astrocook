@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING
 
-from astrocook.recipes._messages import msg_param_fail
+from astrocook.recipes.messages import msg_param_fail
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2 
