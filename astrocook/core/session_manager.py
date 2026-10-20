@@ -4,11 +4,9 @@ from typing import List, Optional, Union
 # --- V2 Imports ---
 from astrocook.core.session import SessionV2
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
-# --- V1 Imports (for type hinting only) ---
-from astrocook.legacy.gui_log import GUILog 
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact, GUILog]
+LogManager = Union[HistoryLogV2, V1LogArtifact]
 
 class SessionHistory:
     """Manages the list of states and current index for one session lineage."""
@@ -16,7 +14,7 @@ class SessionHistory:
     def __init__(self, initial_state: SessionV2, log_object: LogManager):
         if not isinstance(initial_state, SessionV2):
             raise TypeError("SessionHistory must be initialized with a SessionV2 object.")
-        if not isinstance(log_object, (HistoryLogV2, V1LogArtifact, GUILog)):
+        if not isinstance(log_object, (HistoryLogV2, V1LogArtifact)):
              raise TypeError(f"SessionHistory initialized with invalid log object: {type(log_object)}")
         
         self.states: List[SessionV2] = [initial_state]
@@ -27,9 +25,6 @@ class SessionHistory:
         # Link the log manager to the session state for recipes to access
         # We use a new attribute 'log_manager' to avoid V1 conflicts
         initial_state.log_manager = self.log_manager
-        # Also set the old .log for V1 recipes if they're still used
-        if isinstance(log_object, GUILog):
-            initial_state.log = log_object
 
     @property
     def current_state(self) -> SessionV2:
@@ -67,9 +62,6 @@ class SessionHistory:
         if not hasattr(new_state, 'log_manager') or new_state.log_manager is not self.log_manager:
             logging.warning("SessionHistory.add_state: New state had incorrect log reference. Forcibly linking.")
             new_state.log_manager = self.log_manager
-            # Also re-link the old .log attribute
-            if isinstance(self.log_manager, GUILog):
-                new_state.log = self.log_manager
 
         # 3. Append the new state
         self.states.append(new_state)
