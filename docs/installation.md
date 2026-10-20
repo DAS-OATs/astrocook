@@ -56,6 +56,11 @@ spectra or sessions to open at startup.
 If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., `sudo apt install libxcb-cursor0`).
 :::
 
+## Using Astrocook from Python
+
+Astrocook can also be used from your own scripts, without the GUI: see the
+tutorial [Using Astrocook from Python](tutorials/scripting).
+
 ## Developer Installation
 
 To modify the code, clone the repository and install it in editable mode,
