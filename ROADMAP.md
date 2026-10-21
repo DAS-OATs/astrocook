@@ -579,9 +579,11 @@ of the fitted components (#559). Order agreed with Guido:
    (e.g. to ASCII) may come later.
 
 ### Phase 4 – Scientific correctness
-The issues deferred from phase 1-bis, one PR (or a short series) each, every
-numerical choice agreed with Guido and every changed result stated in the
-PR, with the slow tests run before the merge:
+First the validation on mocks (below), so that every fix of this phase is
+measured on it; then the issues deferred from phase 1-bis, one PR (or a
+short series) each, every numerical choice agreed with Guido and every
+changed result stated in the PR (also on the benchmark), with the slow
+tests run before the merge:
 - [#526](https://github.com/DAS-OATs/astrocook/issues/526): resolution as a
   single per-pixel column and exact convolution (F8, F22, rest of F10, F9,
   F14);
@@ -603,7 +605,32 @@ PR, with the slow tests run before the merge:
 - [#573](https://github.com/DAS-OATs/astrocook/issues/573): recipe defaults
   that differ between the GUI and the API (F40, found in phase 3).
 
-The order is to be agreed with Guido at the start of the phase.
+The order of the issues is to be agreed with Guido at the start of the
+phase.
+
+**Validation on mocks** (agreed with Guido at the start of the MCP pilot,
+October 2026, as the first part of this phase). The
+snapshots record what the recipes return, not whether it is right: no
+recipe has a measured accuracy today. The validation measures the current
+continuum, identification and doublet fit (the recipes of the MCP pilot)
+on mocks with known parameters, with no numerical change; the numbers
+become the baseline that every later change is measured against
+(the fixes of this phase, phase 7, and the "Validation" item of
+section 2).
+- Mocks: the generator of phase 1, extended where needed with the cases
+  the recipes are known to handle badly (DLAs and sub-DLAs, strong
+  emission lines, BALs if feasible), over a grid of S/N, resolution and
+  z_em.
+- Continuum: ratio of estimated to true continuum as a function of
+  wavelength, z and S/N, inside and outside the forest; the failure cases.
+- Identification: precision and recall per species, as a function of
+  logN, b and S/N; the fraction of the absorbed pixels that no
+  identification explains.
+- Fit (`doublets_auto`): bias and pulls ((fit - true) / error) of z, logN
+  and b; components at the bounds (#517).
+- A benchmark script (`benchmarks/`, run by hand, and possibly as a slow
+  test with loose thresholds) and a report in this section. Weak points
+  go to the findings register.
 
 ### Phase 5 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
@@ -613,6 +640,54 @@ the same public API through delegation; same approach for the GUI.
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
 
+### Phase 6-bis – Recipe API
+Agreed with Guido at the start of the MCP pilot (October 2026). The
+interface of the recipes redesigned once, for the GUI, the scripts and
+the agents together, starting from the report of the MCP pilot (section
+4.1):
+- typed parameters instead of strings, with a single set of defaults
+  (F40, #573, if not already done in phase 4);
+- a structured result for every recipe (the new session, a summary,
+  quality flags, warnings), instead of results left in the session or in
+  the metadata (e.g. the identifications as JSON strings);
+- exceptions with a message instead of `return 0` and a log line (with
+  phase 6);
+- names and descriptions reviewed where the pilot showed them unclear;
+- the recipe registry (the `*_RECIPES_SCHEMAS`, from which the GUI
+  builds its menus and dialogs) as the single description of a recipe
+  for the GUI, the scripts and the server, with its result type and
+  whether it is offered to agents: adding a recipe means adding it
+  there, and nothing else;
+- room in the results for what the algorithms do not provide yet (the
+  uncertainty of the continuum, the credibility of an identification and
+  its alternatives, section 5), so that phase 7 changes the algorithms
+  without changing the interface.
+The full MCP server (section 4) is generated from this API.
+
+### Phase 7 – Robust components: emission model and identification
+Proposed at the start of the MCP pilot (October 2026), to be agreed with
+Guido. The goal of section 5, a complete fit of a spectrum in a single
+operation, rests on its components: today the continuum works "well
+enough" but is not robust, gives no uncertainty and fails in some cases
+(DLAs, among others); the identification is fairly accurate, but its
+precision and recall are not measured and it cannot account for *all*
+the absorption. Both are redesigned before the full loop of section 5 is
+built:
+- **Emission model:** continuum (and emission lines) with an
+  uncertainty, robust to strong absorbers (DLAs, BALs) and to the forest
+  (directions in section 2, "Continuum");
+- **Absorption identification:** every absorbed region accounted for,
+  identified or explicitly unidentified, with alternatives and a
+  credibility (directions in section 2, "System identification").
+These are algorithmic choices, possibly complex, and they are Guido's:
+for each component a design document first (options, costs, what the
+literature does), then a prototype measured on the benchmark of phase
+4 (validation on mocks). A new algorithm sits next to the old one, selectable, until the
+benchmark shows it better; then it becomes the default, with the change
+stated in the release notes. #465 (phase 4) is a robustness fix of the
+current continuum, not a replacement. This phase is the first step of the
+path of section 5, and a possible basis for a paper.
+
 ### Releases
 So far, releases have been distributed as a macOS app through the GitHub
 releases page (not the Mac App Store); Astrocook is not on PyPI yet.
@@ -620,6 +695,9 @@ Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
 → phase 3 → phase 3-bis → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 →
 phase 6 → full MCP server (section 4). Revised after phase 3: 2.1.0 is
 published on GitHub (with the macOS app) without waiting for PyPI.
+Revised at the start of the MCP pilot (validation on mocks in phase 4,
+phase 6-bis agreed, phase 7 proposed): phase 4 (validation first) →
+2.2.0 → phase 5 → phase 6 → phase 6-bis → full MCP server → phase 7.
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
 PyPI go into the first release after INAF answers: 2.1.1 if the answer
@@ -816,11 +894,154 @@ When (agreed with Guido, October 2026):
   module that does not touch the existing code. It installs with `pip`
   from GitHub, without waiting for PyPI; it shows which structured outputs
   and error messages an agent needs, so that phases 4 and 6 can take them
-  into account.
-- **Full server, after phase 6:** all the recipes, structured outputs,
+  into account. Scope in section 4.1.
+- **Full server, after phase 6-bis:** all the recipes, structured outputs,
   natural-language log, and a headless Docker image to distribute it. An
-  agent working on its own needs correct results (phase 4) and clean error
-  handling (phase 6).
+  agent working on its own needs correct and measured results (phase 4),
+  clean error handling (phase 6) and a stable recipe API (phase 6-bis).
+  The tools are generated from the recipe registry (the schemas the GUI
+  already builds its menus and dialogs from), not written by hand: a
+  recipe added or changed later reaches the server with no server code,
+  and a test checks that every recipe is a tool or is explicitly
+  excluded (interactive recipes such as `update_from_knots`). This is
+  why the server can come before phase 7: its new and improved recipes
+  reach the agents as they reach the GUI.
+
+### 4.1 MCP pilot: scope
+Proposed in October 2026, to be agreed with Guido before the code.
+
+**What MCP is.** The Model Context Protocol is an open standard for
+connecting an LLM application (Claude Code, Claude Desktop, other agents:
+the *client*) to external programs (the *servers*). A server declares a
+list of *tools*, each with a name, a description and a JSON schema of its
+parameters and of its output; the client shows them to the model, which
+decides when to call them; the client runs the call and gives the result
+back to the model. For a local program like Astrocook the client launches
+the server as a subprocess and talks to it over stdin/stdout (`stdio`
+transport): no network, no account, the data stay on the machine. The
+model never sees Astrocook's code, only the tool descriptions and what the
+tools return: those are the whole interface, and what the pilot is about.
+
+**Tools (4 recipes and a save).** Each tool calls one existing recipe of
+`SessionV2` and returns a structured summary, not the spectrum. The
+sessions live in the server process, under an identifier the tools return
+and take. A tool is named as its recipe, prefixed with its menu
+(`<menu>_<recipe>`, agreed with Guido): a single vocabulary in the tools,
+the log, the archives and the docs, and the full server can generate its
+tools from the recipe schemas (`*_RECIPES_SCHEMAS`: names, descriptions,
+parameters). An underscore rather than a dot, since some clients accept
+only letters, digits, `_` and `-`. A recipe name unclear to a model is a
+finding on the recipe, fixed at the source (phase 6-bis), not hidden by
+the server. Opening and saving are methods of `SessionV2`, not recipes:
+`session_open` and `session_save`.
+
+| Tool | Recipe | Main parameters | Structured output |
+|---|---|---|---|
+| `session_open` | `SessionV2.open_new` (+ `edit.set_properties` if `z_em` or `resol` are given) | path, format (`auto`), `z_em`, `resol` | session id; number of pixels; wavelength range and unit; `z_em`; resolution; continuum and components present; warnings |
+| `continuum_estimate_auto` | `continuum.estimate_auto` | session id; `kappa`, `smooth_fwhm` (others at the recipe default) | fraction of pixels flagged as absorbed; median S/N; warnings (e.g. `z_em` = 0) |
+| `absorbers_identify_lines` | `absorbers.identify_lines` | session id; multiplets, `score_threshold` | list of candidates: region, wavelength range, series, z, score; no component is created |
+| `absorbers_doublets_auto` | `absorbers.doublets_auto` | session id; multiplets, `score_threshold`, `max_b` | table of the components: series, z, logN, b with errors, reduced chi2; flags: NaN errors (F20), at a bound (F21, #517); warnings |
+| `session_save` | `SessionV2.save` | session id; path (`.acs2`) | path; number of log entries |
+
+The fit is `doublets_auto` (identification and fit on the red side in one
+recipe, the most tested path: full-chain snapshots) rather than a fit of
+the candidates chosen by the agent, because that path goes through
+`populate_from_identification`, which takes the identifications as JSON
+strings stored in the spectrum metadata: a first finding on structured
+outputs. `lya_auto` and the forest are left out of the pilot (slow, and
+the forest is where the continuum is weakest, #465). `save_session` is
+not a recipe, but without it the human cannot open the agent's work in
+the GUI (the review bench of item 4).
+
+**A thin layer.** The server translates, it does not redesign: the
+recipes are good starting points, but not robust and not validated
+scientifically, and a server that corrected them on its own would
+diverge from the GUI and the scripts (as the double defaults of F40, on a
+larger scale). Their weak points are exposed and recorded, and fixed in
+the recipes themselves (phases 4, 6-bis and 7, section 3).
+
+**Module.** A subpackage `astrocook/mcp_server/` in this repository, with
+an optional extra `[mcp]` and an entry point `astrocook-mcp`: same
+version and same tests as the rest, nothing to install separately. The
+existing code is not changed: what the pilot needs and the recipes do not
+offer goes into the findings register, not into a quick fix.
+- `server.py`: the server and the tool definitions (names, descriptions,
+  typed parameters);
+- `sessions.py`: the sessions in memory, one `SessionHistory` per
+  identifier, so that the log is kept as the GUI keeps it (the log entries
+  are written by the GUI, not by the recipes: a headless caller must add
+  them itself);
+- `outputs.py`: the output models (pydantic, from which the SDK derives
+  the output schemas);
+- `errors.py`: runs a recipe while collecting its log records; a recipe
+  returning 0 becomes an MCP error carrying the logged message, the
+  warnings go into the output.
+Tests (`tests/test_mcp_server.py`) call the server in process through the
+SDK client, on the mock and on J0103-1305; skipped if `mcp` is not
+installed, the `[dev]` extra includes it so that CI runs them.
+
+**SDK.** The official Python SDK (`mcp` on PyPI, MIT license, version 2.3
+in October 2026, Python >= 3.10), with its high-level `MCPServer` class
+(called `FastMCP` in the 1.x series): a decorated function is a tool, the
+parameter types give the input schema and the return type the output
+schema. Pinned to `mcp>=2.3,<3`, since 2.0 changed the API. Two
+behaviours to keep in mind, checked on 2.3: an unexpected exception
+reaches the model only as "Error executing tool <name>", without the
+message, so the expected failures must be raised as `ToolError`; and
+anything written to stdout breaks the `stdio` transport (no `print` in
+the non-GUI code today; the logging goes to stderr).
+
+**Installation.** From GitHub, as Astrocook itself until PyPI:
+
+    pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook"
+
+then the server is registered in the client, e.g. for Claude Code
+`claude mcp add astrocook -- astrocook-mcp` (Claude Desktop: the same
+command in its JSON configuration). PySide6 is installed too, as a
+dependency of Astrocook, though the server does not use the GUI; a
+lighter headless installation is for the Docker image of the full server.
+The docs get a short page "Astrocook from an agent".
+
+**What we want to learn.** The pilot ends with a short report (in this
+section), written after using the server from an agent on the mock and on
+J0103-1305, with answers to:
+1. *Outputs (for phase 6-bis and the full server):* which fields the agent
+   needs to decide (quality flags, chi2, components at the bounds, F21,
+   #517) and which the recipes do not return today (identifications in
+   the metadata, results only in the session); whether a common output
+   format for the recipes is worth adding to the API.
+2. *Errors (for phases 6 and 6-bis):* how many failures reach the agent with a
+   useful message; which recipes return 0 or log only a warning (e.g.
+   `z_em` = 0 before the continuum) where an exception or a structured
+   warning would be better; a list of cases for #566 and for the broad
+   `except` clauses.
+3. *Parameters (for #573):* recipe parameters are strings
+   (`kappa: str = '2.0'`) and have two sets of defaults (F40); which
+   types and defaults the tools need.
+4. *Log:* whether the log of a session built by an agent is readable and
+   replayable in the GUI, and what is missing for a natural-language log
+   (item 3).
+5. *Usability:* whether the descriptions are enough for the model to
+   chain the tools correctly, and how long the calls take (`doublets_auto`
+   on J0103-1305).
+The answers become findings, issues, or items of phases 4 and 6, agreed
+with Guido as usual; none changes the recipes within the pilot.
+
+**PRs, in order (one at a time, each merged before the next):**
+1. This scope in `ROADMAP.md` (no code).
+2. Skeleton: `astrocook/mcp_server/`, `[mcp]` extra, `astrocook-mcp`
+   entry point, the sessions, the error capture, `session_open` and
+   `session_save`, with tests (the `.acs2` saved by the server reopens in
+   the GUI with its log).
+3. `continuum_estimate_auto` and `absorbers_identify_lines`, with tests.
+4. `absorbers_doublets_auto`, with tests on the mock (components recovered within
+   their errors) and on J0103-1305 (slow test).
+5. Docs page (installation, registration in the clients, an example
+   session) and a test of the server launched as a subprocess over stdio.
+6. Report: a session with an agent on the mock and on J0103-1305, the
+   answers above in this section, the new findings; `CLAUDE.md` and the
+   progress table updated. The report is the starting point of the
+   recipe API (phase 6-bis). Then phase 4.
 
 ---
 
@@ -861,6 +1082,8 @@ Mocks with known ground truth: completeness, purity, bias on N/b/z as a
 function of S/N and resolution, misidentification rate.
 
 ### Path
+First the robust components (phase 7: emission model and identification,
+measured on the benchmark of phase 4), then the loop.
 Pilot on metals outside the forest, then extension to the Lyα forest. The
 LLM agent stays at the margins (strategy in stuck cases, guidance during
 review); each of its decisions goes into the log.
@@ -884,6 +1107,9 @@ review); each of its decisions goes into the log.
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
-| 4 – Scientific correctness (#526, #517, #465, #518, #568, #573) | not started |
+| MCP pilot (section 4.1) | scope proposed (October 2026) |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
+| 6-bis – Recipe API | not started |
+| 7 – Robust components (proposed) | not started |
