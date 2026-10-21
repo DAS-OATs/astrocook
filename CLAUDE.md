@@ -160,7 +160,7 @@ the old `resol` meta key).
 Release 2.1.0 (October 2026): phases 3 and 3-bis, on GitHub with the
 macOS app, not on PyPI (steps of a release in `ROADMAP.md`, "Releases").
 
-Next: the MCP pilot (`ROADMAP.md`, section 4). Work in
+Next: the MCP pilot (`ROADMAP.md`, section 4.1: scope, tools, PR order). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
