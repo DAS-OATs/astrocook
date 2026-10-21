@@ -66,6 +66,20 @@ def continuum(truth: MockTruth, x_nm: np.ndarray) -> np.ndarray:
     return power_law * (1.0 + bumps)
 
 
+def noise_sigma(truth: MockTruth, cont: np.ndarray,
+                true_flux: np.ndarray) -> np.ndarray:
+    """Error per pixel of ``truth`` (see :class:`MockTruth`, ``snr`` and
+    ``noise_floor``), from the continuum and the noiseless flux."""
+    sigma_cont = cont / truth.snr
+    if truth.noise_floor is None:
+        return sigma_cont
+    a = float(truth.noise_floor)
+    if not 0.0 <= a <= 1.0:
+        raise ValueError(f"noise_floor must be between 0 and 1, not {a}")
+    ratio = np.clip(true_flux / cont, 0.0, None)
+    return sigma_cont * np.sqrt(a + (1.0 - a) * ratio)
+
+
 def spike_indices(truth: MockTruth, n_pixels: int) -> np.ndarray:
     """Pixel indices of the spikes of ``truth`` (reproducible from the seed)."""
     rng = np.random.default_rng([truth.seed, 1])
@@ -93,7 +107,7 @@ def generate(truth: MockTruth, truth_columns: bool = True) -> SpectrumV2:
         dy = np.zeros_like(x)
     else:
         rng = np.random.default_rng(truth.seed)
-        dy = cont / truth.snr
+        dy = noise_sigma(truth, cont, true_flux)
         y = true_flux + rng.standard_normal(len(x)) * dy
     if truth.n_spikes:
         spikes = spike_indices(truth, len(x))

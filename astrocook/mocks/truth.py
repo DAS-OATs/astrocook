@@ -61,8 +61,13 @@ class MockTruth:
     The wavelength grid is uniform in velocity (pixel size ``dv_kms``), as
     for echelle spectrographs. The continuum is a power law
     ``cont_amplitude * (lambda / cont_ref_nm) ** cont_slope``. The noise is
-    Gaussian, with a constant signal-to-noise ratio ``snr`` per pixel at the
-    continuum level (``None``: noiseless).
+    Gaussian, with a signal-to-noise ratio ``snr`` per pixel at the
+    continuum level (``None``: noiseless). With ``noise_floor = None`` (the
+    default) the error is the same at any flux, ``cont / snr``; with a
+    value ``a`` between 0 and 1 it follows the flux, as for photon noise
+    of the source on a background: sigma = (cont / snr) sqrt(a + (1 - a)
+    F / cont), with F the noiseless flux, so that ``a`` is the variance at
+    zero flux relative to the continuum.
 
     ``resol`` is the resolving power, either a single value or ``None`` (no
     instrumental broadening). ``oversample`` is the number of sub-pixels on
@@ -92,6 +97,7 @@ class MockTruth:
     n_spikes: int = 0
     spike_amplitude: float = 10.0
     lyman_limit: bool = False
+    noise_floor: Optional[float] = None
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)

@@ -59,7 +59,9 @@ def lya_forest(rng: np.random.Generator, z_min: float, z_max: float,
                logN_range: Tuple[float, float] = (12.0, 17.0), beta: float = 1.5,
                b_median: float = 25.0, b_sigma_dex: float = 0.15,
                b_min: float = 10.0, dndz_at_3: float = 1700.0,
-               gamma: float = 2.5, series: str = "Ly_a") -> List[MockComponent]:
+               gamma: float = 2.5, series: str = "Ly_a",
+               strong_series: Optional[str] = None,
+               strong_logN: float = 15.0) -> List[MockComponent]:
     """Random Lyman-alpha forest between ``z_min`` and ``z_max``.
 
     The number of lines is Poisson-distributed around
@@ -67,14 +69,22 @@ def lya_forest(rng: np.random.Generator, z_min: float, z_max: float,
     z = 3 for column densities in ``logN_range``. ``series`` is the series
     of every line: ``'Ly_a'`` (the default), ``'Ly_ab'``, or
     :data:`~astrocook.mocks.physics.LYMAN_SERIES` for the whole series.
+    With ``strong_series`` the lines with logN >= ``strong_logN`` get that
+    series instead, e.g. the whole Lyman series only where the higher
+    lines matter (a few percent of the lines with the defaults, so the
+    mock stays fast); the draws are the same.
     """
     n = rng.poisson(expected_forest_lines(z_min, z_max, dndz_at_3, gamma))
     z = _redshifts(rng, n, z_min, z_max, gamma)
     logN = np.log10(_power_law(rng, n, 10**logN_range[0], 10**logN_range[1], beta))
     b = np.maximum(b_median * 10 ** (b_sigma_dex * rng.standard_normal(n)), b_min)
     order = np.argsort(z)
-    return [MockComponent(series, float(z[i]), float(logN[i]), float(b[i]))
-            for i in order]
+    def series_of(n):
+        if strong_series is not None and n >= strong_logN:
+            return strong_series
+        return series
+    return [MockComponent(series_of(logN[i]), float(z[i]), float(logN[i]),
+                          float(b[i])) for i in order]
 
 
 def metal_systems(rng: np.random.Generator, n_systems: int, z_min: float,

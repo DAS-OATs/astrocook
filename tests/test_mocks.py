@@ -367,3 +367,42 @@ def test_truth_round_trip_with_and_without_lyman_limit():
     old = truth.to_dict()
     del old["lyman_limit"]  # a truth saved before the option existed
     assert MockTruth.from_dict(old).lyman_limit is False
+
+
+def test_noise_follows_the_flux():
+    # sigma = (cont / snr) sqrt(a + (1 - a) F / cont): the continuum value
+    # where unabsorbed, sqrt(a) of it in a black core
+    snr, floor = 20.0, 0.1
+    comps = [MockComponent("CIV", Z, 15.5, 10.0)]
+    flat = generate(_truth(comps, snr=snr))
+    truth = _truth(comps, snr=snr, noise_floor=floor)
+    spec = generate(truth)
+    cont = spec.get_column("cont").value
+    true_flux = spec.get_column("mock_flux").value
+    dy = spec.dy.value
+    assert flat.dy.value == pytest.approx(cont / snr)  # default: constant
+    clean = true_flux / cont > 0.999
+    black = true_flux / cont < 1e-3
+    assert clean.any() and black.any()
+    assert dy[clean] == pytest.approx(cont[clean] / snr, rel=1e-3)
+    assert dy[black] == pytest.approx(cont[black] / snr * np.sqrt(floor), rel=1e-2)
+    # Same random draws, scaled: the residuals in units of the error match
+    pulls = (spec.y.value - true_flux) / dy
+    assert pulls == pytest.approx((flat.y.value - true_flux) / flat.dy.value)
+
+
+@pytest.mark.parametrize("floor", [-0.1, 1.5])
+def test_noise_floor_out_of_range(floor):
+    with pytest.raises(ValueError, match="noise_floor"):
+        generate(_truth([], snr=20.0, noise_floor=floor))
+
+
+def test_forest_strong_lines_get_their_series():
+    plain = lya_forest(np.random.default_rng(5), 2.8, 3.0)
+    mixed = lya_forest(np.random.default_rng(5), 2.8, 3.0,
+                       strong_series=LYMAN_SERIES, strong_logN=15.0)
+    assert [(c.z, c.logN, c.b) for c in mixed] == [(c.z, c.logN, c.b) for c in plain]
+    strong = [c for c in mixed if c.logN >= 15.0]
+    assert strong and all(c.series == LYMAN_SERIES for c in strong)
+    assert all(c.series == "Ly_a" for c in mixed if c.logN < 15.0)
+    assert len(strong) < 0.1 * len(mixed)
