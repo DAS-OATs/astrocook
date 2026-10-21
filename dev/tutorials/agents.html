@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.mcp_server.errors module &#8212; Astrocook dev documentation</title>
+    <title>Using Astrocook from an AI Agent &#8212; Astrocook dev documentation</title>
   
   
   
@@ -43,7 +43,7 @@
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.mcp_server.errors';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/agents';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
@@ -54,6 +54,8 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../reference.html" />
+    <link rel="prev" title="Using Astrocook from Python" href="scripting.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
@@ -154,8 +156,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
@@ -303,8 +305,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
     Tutorials
   </a>
 </li>
@@ -407,7 +409,16 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"></div>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">Using Astrocook from Python</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Using Astrocook from an AI Agent</a></li>
+</ul>
+</div>
 </nav></div>
     </div>
   
@@ -446,7 +457,10 @@
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.mcp_server.errors module</span></li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Using Astrocook from an AI Agent</span></li>
   </ul>
 </nav>
 </div>
@@ -463,8 +477,151 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="astrocook-mcp-server-errors-module">
-<h1>astrocook.mcp_server.errors module<a class="headerlink" href="#astrocook-mcp-server-errors-module" title="Link to this heading">#</a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="using-astrocook-from-an-ai-agent">
+<h1>Using Astrocook from an AI Agent<a class="headerlink" href="#using-astrocook-from-an-ai-agent" title="Link to this heading">#</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a <strong>pilot</strong>: a few recipes only, to learn what an agent needs
+from Astrocook. Tools, parameters and outputs may change in later
+versions.</p>
+</div>
+<p>An AI agent, such as <a class="reference external" href="https://claude.com/claude-code">Claude Code</a> or the
+Claude desktop app, can drive Astrocook for you: you ask in plain words
+(“estimate the continuum and fit the CIV doublets”), the agent calls the
+Astrocook recipes, reads their results and tells you what it found. You
+then review its work in the GUI.</p>
+<p>The agent talks to Astrocook through the <strong>Model Context Protocol (MCP)</strong>,
+an open standard for connecting AI applications to other programs.
+Astrocook provides an MCP <em>server</em>: a small program, <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code>,
+that the agent (the <em>client</em>) starts on your computer and that offers it
+a list of <em>tools</em>, each a recipe with a description and typed
+parameters. Everything runs locally: your data are read from your disk
+and stay there, though what the tools return (summaries, not the
+spectra) is sent to the AI model, as anything else in the conversation.</p>
+<section id="installation">
+<h2>1. Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
+<p>The server is an optional part of Astrocook, installed with the <code class="docutils literal notranslate"><span class="pre">[mcp]</span></code>
+extra (Python 3.12 or later, preferably in a virtual environment, see
+<a class="reference internal" href="../installation.html"><span class="doc std std-doc">Installation</span></a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"</span>
+</pre></div>
+</div>
+<p>This also installs the <code class="docutils literal notranslate"><span class="pre">mcp</span></code> package (the official Python SDK of the
+protocol) and the <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code> command. The macOS app does not include
+the server.</p>
+<p>Find the full path of the command, which the client needs (it does not
+see your virtual environment):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">which</span> <span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span>     <span class="c1"># On Windows: where astrocook-mcp</span>
+</pre></div>
+</div>
+<p>e.g. <code class="docutils literal notranslate"><span class="pre">/Users/me/ac2/bin/astrocook-mcp</span></code>.</p>
+</section>
+<section id="registering-the-server">
+<h2>2. Registering the Server<a class="headerlink" href="#registering-the-server" title="Link to this heading">#</a></h2>
+<p><strong>Claude Code:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">claude</span> <span class="n">mcp</span> <span class="n">add</span> <span class="n">astrocook</span> <span class="o">--</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">me</span><span class="o">/</span><span class="n">ac2</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span>
+</pre></div>
+</div>
+<p>Add <code class="docutils literal notranslate"><span class="pre">--scope</span> <span class="pre">user</span></code> to have it in all your projects. <code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">mcp</span> <span class="pre">list</span></code>
+shows the registered servers; in a session, <code class="docutils literal notranslate"><span class="pre">/mcp</span></code> shows their state.</p>
+<p><strong>Claude desktop app:</strong> add the server to its configuration file
+(Settings &gt; Developer &gt; Edit Config; on macOS
+<code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/Claude/claude_desktop_config.json</span></code>, on
+Windows <code class="docutils literal notranslate"><span class="pre">%APPDATA%\Claude\claude_desktop_config.json</span></code>), then restart the
+app:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"astrocook"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/Users/me/ac2/bin/astrocook-mcp"</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Other clients:</strong> any MCP client that can start a local server over
+<em>stdio</em> works the same way: the command is <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code>, with no
+arguments.</p>
+</section>
+<section id="the-tools">
+<h2>3. The Tools<a class="headerlink" href="#the-tools" title="Link to this heading">#</a></h2>
+<p>Each tool is named after the recipe it runs, prefixed with its menu, and
+uses the same defaults as the recipe dialog of the GUI.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_open</span></code></p></td>
+<td><p>Opens a spectrum or a session file (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code>) as a new session; optionally sets z_em and the resolving power (<em>Edit &gt; Set Properties</em>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code></p></td>
+<td><p><em>Continuum &gt; Auto-estimate Continuum</em>. Returns the fraction of absorbed pixels (in the Lyman-alpha forest and on the red side) and the S/N.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_identify_lines</span></code></p></td>
+<td><p><em>Absorbers &gt; Identify Absorption Lines</em>, without creating components. Returns the identified regions with their candidate transitions and scores, and the candidate systems.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code></p></td>
+<td><p><em>Absorbers &gt; Auto-detect Doublets</em>: identifies and fits the CIV, SiIV and MgII doublets on the red side. Returns the new components, with errors, reduced chi2 and flags for the ones stuck at a bound of the fit.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
+<td><p>Saves the session as <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, with the original data and the session log.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The sessions live in the server while the client is running: save the
+result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
+</section>
+<section id="an-example">
+<h2>4. An Example<a class="headerlink" href="#an-example" title="Link to this heading">#</a></h2>
+<p>A request like this one:</p>
+<blockquote>
+<div><p>Open <code class="docutils literal notranslate"><span class="pre">/data/J0103-1305.acs2</span></code>, with z_em = 4.072 and R = 45000. Estimate
+the continuum, fit the metal doublets on the red side, and save the
+result as <code class="docutils literal notranslate"><span class="pre">/data/J0103-1305_agent.acs2</span></code>. Which components are not
+reliable?</p>
+</div></blockquote>
+<p>leads the agent to call <code class="docutils literal notranslate"><span class="pre">session_open</span></code>, <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> and <code class="docutils literal notranslate"><span class="pre">session_save</span></code> in turn. Each call returns
+a structured summary, for instance (from <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">"continuum"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"absorbed_fraction"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.648</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"absorbed_fraction_forest"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.862</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"absorbed_fraction_red"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.207</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"snr_median"</span><span class="p">:</span><span class="w"> </span><span class="mf">29.6</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>and, from <code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, the number of components added and
+removed and the list of the new ones, each with its flags (e.g.
+<code class="docutils literal notranslate"><span class="pre">b_at_lower_bound</span></code>), from which the agent answers the last question.</p>
+<p>If something goes wrong (a missing file, z_em not set), the tool returns
+Astrocook’s error message, and the agent can usually correct its request
+by itself.</p>
+</section>
+<section id="reviewing-the-result-in-the-gui">
+<h2>5. Reviewing the Result in the GUI<a class="headerlink" href="#reviewing-the-result-in-the-gui" title="Link to this heading">#</a></h2>
+<p>Open the saved archive in the GUI (<code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">/data/J0103-1305_agent.acs2</span></code>).
+The session log (<em>View &gt; View Session Log</em>) lists the recipes the agent ran, with
+their parameters, as if you had run them from the menus: you can inspect
+the components in the System Inspector, correct them, refit them, or
+replay the log as a script.</p>
+</section>
+<section id="limits-of-the-pilot">
+<h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Only the five tools above: no manual editing of components, no Lyman
+forest fit, no export.</p></li>
+<li><p>Paths are on the computer where the server runs; give them in full.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> removes the components already on the red
+side before fitting, and replaces the absorbed mask with one made with
+the default parameters. A call can take minutes on a large spectrum.</p></li>
+<li><p>The recipes are the same as in the GUI, with the same strengths and
+weaknesses: check the results.</p></li>
+</ul>
+</section>
 </section>
 
 
@@ -477,6 +634,24 @@
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="scripting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Using Astrocook from Python</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../reference.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div>
                 </footer>
               
@@ -489,9 +664,26 @@
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">1. Installation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#registering-the-server">2. Registering the Server</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-tools">3. The Tools</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#an-example">4. An Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reviewing-the-result-in-the-gui">5. Reviewing the Result in the GUI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits-of-the-pilot">6. Limits of the Pilot</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../sources/api/astrocook.mcp_server.errors.rst.txt">
+    <a href="../sources/tutorials/agents.md.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>
