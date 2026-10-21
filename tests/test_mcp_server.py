@@ -14,15 +14,17 @@ from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 from astrocook import __version__  # noqa: E402
 from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.errors import run_recipe  # noqa: E402
-from astrocook.mcp_server.outputs import identification_summary  # noqa: E402
+from astrocook.core.structures import ComponentDataV2  # noqa: E402
+from astrocook.mcp_server.outputs import (  # noqa: E402
+    component_flags, identification_summary)
 from astrocook.mcp_server.server import SCHEMAS, build_server  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
 from conftest import J0103_SESSION, J0103_Z_EM  # noqa: E402
-from full_chain import mock_session  # noqa: E402
+from full_chain import mock_session, mock_truth  # noqa: E402
 
 TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
-         "absorbers_identify_lines"}
+         "absorbers_identify_lines", "absorbers_doublets_auto"}
 
 
 def call(server, tool, **args):
@@ -254,7 +256,8 @@ def test_recipe_tool_defaults_are_the_gui_defaults():
     tools = {t.name: t for t in asyncio.run(go())}
     for name, (menu, recipe) in {
             "continuum_estimate_auto": ("continuum", "estimate_auto"),
-            "absorbers_identify_lines": ("absorbers", "identify_lines")}.items():
+            "absorbers_identify_lines": ("absorbers", "identify_lines"),
+            "absorbers_doublets_auto": ("absorbers", "doublets_auto")}.items():
         schema = {p["name"]: p for p in SCHEMAS[menu][recipe]["params"]}
         props = tools[name].input_schema["properties"]
         for param, prop in props.items():
@@ -392,3 +395,114 @@ def test_j0103_continuum_and_identification():
     assert {"CIV", "MgII", "Ly_a"} <= set(ident["systems_by_series"])
     assert ident["truncated"]
     assert 0 < ident["absorbed_fraction_identified"] < 1
+
+
+# --- Doublet fit -------------------------------------------------------------
+
+#: Largest pull (fit - true) / error accepted for the true CIV components
+MAX_PULL = 5.0
+
+
+def doublets(archive, *more):
+    """Open, continuum, doublets_auto (and more steps) on a new server."""
+    return calls(build_server(),
+                 ("session_open", {"path": str(archive)}),
+                 ("continuum_estimate_auto", {"session_id": archive.stem}),
+                 ("absorbers_doublets_auto", {"session_id": archive.stem}),
+                 *more)
+
+
+def test_doublets_auto_recovers_the_mock_civ(forest_archive):
+    result = doublets(forest_archive)[-1]
+    assert not result.is_error
+    info = result.structured_content
+    fit = info["fit"]
+    assert info["log_entries"] == 2  # continuum, doublets
+    assert fit["n_removed"] == 0
+    assert fit["n_added"] == fit["n_components"] == len(fit["components"])
+    assert info["spectrum"]["n_components"] == fit["n_components"]
+    zs = [c["z"] for c in fit["components"]]
+    assert zs == sorted(zs)
+    for true in (c for c in mock_truth().components if c.series == "CIV"):
+        comp = min(fit["components"], key=lambda c: abs(c["z"] - true.z))
+        assert comp["series"] == "CIV"
+        assert abs(comp["z"] - true.z) / (1 + true.z) * C_KMS < 2, true
+        for par, value in (("logN", true.logN), ("b", true.b)):
+            pull = (comp[par] - value) / comp["d" + par]
+            assert abs(pull) < MAX_PULL, (true, par, pull)
+        assert not comp["flags"], true
+        assert comp["chi2r"] == pytest.approx(1, abs=0.5)
+
+
+def test_doublets_auto_adds_spurious_components(forest_archive):
+    # Characterization (F49): the second candidate of a doublet adds weak
+    # components near the real ones (1 and 19 km/s here), with large
+    # errors (with kappa = 3 in the continuum one ends at the lower bound
+    # of b)
+    comps = doublets(forest_archive)[-1].structured_content["fit"]["components"]
+    true_z = [c.z for c in mock_truth().components if c.series == "CIV"]
+    matched = {min(comps, key=lambda c: abs(c["z"] - z))["uuid"] for z in true_z}
+    spurious = [c for c in comps if c["uuid"] not in matched]
+    assert len(comps) == 6 and len(matched) == 4  # 4 true components
+    for c in spurious:
+        assert c["dlogN"] > 0.5
+
+
+def test_doublets_auto_replaces_the_red_side_components(forest_archive):
+    first, second = doublets(
+        forest_archive,
+        ("absorbers_doublets_auto", {"session_id": "forest",
+                                     "max_listed": 1}))[-2:]
+    n = first.structured_content["fit"]["n_components"]
+    fit = second.structured_content["fit"]
+    assert fit["n_removed"] == n
+    assert fit["n_components"] == fit["n_added"]
+    assert len(fit["components"]) == 1 and fit["truncated"]
+
+
+def test_doublets_auto_replaces_the_mask_of_the_continuum(forest_archive):
+    # Characterization (F50): components_auto makes a new absorbed mask
+    # with the default parameters of find_absorbed, so the mask of an
+    # estimate_auto with other parameters is lost, and clears the region
+    # left out by region_limit
+    session = load_session_from_file(str(forest_archive), "f", None, "auto")
+    cont = session.continuum.estimate_auto(kappa="3.0")
+    fitted = cont.absorbers.doublets_auto()
+    mask_cont = cont.spec.get_column("abs_mask").value
+    mask_fit = fitted.spec.get_column("abs_mask").value
+    assert (mask_cont != mask_fit).any()
+    assert fitted.spec.cont.value == pytest.approx(cont.spec.cont.value)
+    # The forest (left out by region_limit) is no longer flagged as absorbed
+    x = fitted.spec.x.value
+    forest = x < 121.567 * (1 + fitted.spec._data.z_em)
+    assert mask_cont[forest].any() and not mask_fit[forest].any()
+
+
+@pytest.mark.parametrize("kwargs, flags", [
+    ({}, []),
+    ({"logN": 10.0}, ["logN_at_lower_bound"]),
+    ({"logN": 23.0}, ["logN_at_upper_bound"]),
+    ({"b": 1.0}, ["b_at_lower_bound"]),
+    ({"b": 50.0}, ["b_at_max_b"]),
+    ({"dlogN": float("nan")}, ["nan_errors"]),
+])
+def test_component_flags(kwargs, flags):
+    values = dict(id=1, z=2.0, dz=1e-5, logN=13.5, dlogN=0.1, b=10.0, db=1.0)
+    values.update(kwargs)
+    assert component_flags(ComponentDataV2(**values), max_b=50.0) == flags
+
+
+@pytest.mark.slow
+def test_j0103_doublets():
+    stem = J0103_SESSION.stem
+    *_, result = calls(
+        build_server(),
+        ("session_open", {"path": str(J0103_SESSION), "z_em": J0103_Z_EM,
+                          "resol": 45000}),
+        ("continuum_estimate_auto", {"session_id": stem}),
+        ("absorbers_doublets_auto", {"session_id": stem}))
+    fit = result.structured_content["fit"]
+    # The archive already holds components: those on the red side go
+    assert fit["n_removed"] > 0 and fit["n_added"] > 0
+    assert fit["truncated"]
+    assert {c["series"] for c in fit["components"]} <= {"CIV", "SiIV", "MgII"}

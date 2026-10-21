@@ -25,8 +25,8 @@ from astrocook import __version__
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    ContinuumInfo, IdentificationInfo, SaveResult, SessionInfo,
-    continuum_summary, identification_summary, spectrum_summary)
+    ContinuumInfo, FitInfo, IdentificationInfo, SaveResult, SessionInfo,
+    continuum_summary, fit_summary, identification_summary, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
@@ -235,6 +235,40 @@ def build_server() -> MCPServer:
             return IdentificationInfo(
                 **info(session_id, warnings).model_dump(),
                 identification=identification_summary(state, max_listed))
+
+    @server.tool(description=description("absorbers", "doublets_auto", (
+        "Identifies the doublets redwards of the Lyman-alpha emission, adds "
+        "a component for each candidate and fits them (Voigt profiles, "
+        "least squares). Needs z_em and the resolution (session_open) and "
+        "a continuum (made with the default parameters if missing). It "
+        "makes a new absorbed mask with the default parameters, replacing "
+        "the one of continuum_estimate_auto, and removes the components "
+        "already on the red side before fitting. Can take minutes on a "
+        "large spectrum. Returns the components added, with errors, "
+        "reduced chi2 and flags for the ones at a bound of the fit.")))
+    def absorbers_doublets_auto(
+        session_id: SESSION_ID,
+        multiplets: Annotated[str, Field(description=doc(
+            "absorbers", "doublets_auto", "multiplets"))] = default("absorbers", "doublets_auto", "multiplets"),
+        score_threshold: Annotated[float, Field(description=doc(
+            "absorbers", "doublets_auto", "score_threshold"))] = default("absorbers", "doublets_auto", "score_threshold"),
+        z_window_kms: Annotated[float, Field(description=doc(
+            "absorbers", "doublets_auto", "z_window_kms"))] = default("absorbers", "doublets_auto", "z_window_kms"),
+        max_b: Annotated[float, Field(description=doc(
+            "absorbers", "doublets_auto", "max_b"))] = default("absorbers", "doublets_auto", "max_b"),
+        max_listed: Annotated[int, Field(ge=0, description=(
+            "Maximum number of components listed in the output; the "
+            "counts are always complete."))] = 50,
+    ) -> FitInfo:
+        params = {"multiplets": multiplets,
+                  "score_threshold": str(score_threshold),
+                  "z_window_kms": str(z_window_kms), "max_b": str(max_b)}
+        with store.lock:
+            before = store.get(session_id).current_state
+            state, warnings = run(session_id, "absorbers", "doublets_auto",
+                                  params)
+            return FitInfo(**info(session_id, warnings).model_dump(),
+                           fit=fit_summary(before, state, max_b, max_listed))
 
     return server
 
