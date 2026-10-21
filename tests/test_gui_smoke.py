@@ -97,6 +97,26 @@ def test_main_window_starts_empty(window):
     assert not window.undo_action.isEnabled()
 
 
+def test_debug_plots_of_the_core_reach_the_gui(window, monkeypatch):
+    # The core requests debug plots through a hook, not by importing the GUI
+    # (F6); the window sends them to the main thread through its signal
+    import matplotlib.pyplot as plt
+    from astrocook.core import debug_hooks
+    from astrocook.gui.debug_utils import GLOBAL_PLOTTER
+    received = []
+    GLOBAL_PLOTTER.plot_requested.connect(received.append)
+    monkeypatch.setattr(plt, "show", lambda *args, **kwargs: None)
+    plot = {"title": "CIV z=3.0000 (R2=0.990)", "v_compare": [0.0, 1.0],
+            "Y_data": [0.1, 0.2], "Y_model": [0.1, 0.2]}
+    try:
+        debug_hooks.request_debug_plot(plot)
+    finally:
+        GLOBAL_PLOTTER.plot_requested.disconnect(received.append)
+        debug_hooks.set_debug_plot_handler(None)
+        plt.close("all")
+    assert received == [plot]
+
+
 def test_main_window_has_icon(window):
     # QIcon of a missing file is silently null (F34)
     assert not window.windowIcon().isNull()

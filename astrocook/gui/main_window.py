@@ -28,6 +28,7 @@ from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
 from .script_dialog import ScriptDialog
+from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
 from astrocook.core.structures import HistoryLogV2
@@ -199,6 +200,9 @@ class MainWindowV2(QMainWindow):
         self.setAcceptDrops(True)
 
         self._update_undo_redo_actions()
+        # The debug plots requested by the core (from worker threads) reach
+        # the main thread through the signal (F6)
+        set_debug_plot_handler(GLOBAL_PLOTTER.plot_requested.emit)
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
 
     def resizeEvent(self, event):

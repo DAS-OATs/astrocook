@@ -9,6 +9,7 @@
 
 ### Changed
 - Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the new tutorial *Using Astrocook from Python*): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
+- Using Astrocook from Python (scripts, notebooks) no longer imports the GUI toolkit (PySide6): the core requested its debug plots through the GUI.
 - V1 `.acs` archives are read by a new reader that does not use the V1 code; apart from the fixes above, the result is the same as before.
 
 ### Removed
