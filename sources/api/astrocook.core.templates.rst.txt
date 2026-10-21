@@ -1,0 +1,7 @@
+astrocook.core.templates module
+===============================
+
+.. automodule:: astrocook.core.templates
+   :members:
+   :show-inheritance:
+   :undoc-members:

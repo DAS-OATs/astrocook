@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Installation &#8212; Astrocook 2.0.3 documentation</title>
+    <title>Installation &#8212; Astrocook 2.1.0 documentation</title>
   
   
   
@@ -31,7 +31,7 @@
 
     <link rel="stylesheet" type="text/css" href="static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=cc54fbde" />
+    <link rel="stylesheet" type="text/css" href="static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
   <script defer src="static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="static/documentation_options.js?v=664ffad9"></script>
+    <script src="static/documentation_options.js?v=20623aea"></script>
     <script src="static/doctools.js?v=fd6eb6e6"></script>
     <script src="static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="static/design-tabs.js?v=f930bc37"></script>
@@ -47,9 +47,9 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.3';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
-            false;
+            true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.3" />
+  <meta name="docsearch:version" content="2.1.0" />
   
     
     <script src="static/searchtools.js"></script>
@@ -492,6 +492,14 @@ a virtual environment:</p>
 <span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">DAS</span><span class="o">-</span><span class="n">OATs</span><span class="o">/</span><span class="n">astrocook</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
+<p>The Bayesian fit (MCMC and nested sampling, corner plots) needs optional
+dependencies (emcee, dynesty, corner), which the macOS app already
+includes. To install them with the package:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"astrocook[bayes] @ git+https://github.com/DAS-OATs/astrocook.git"</span>
+</pre></div>
+</div>
+<p>Without them, the Bayesian entries of the system inspector are disabled and
+the <code class="docutils literal notranslate"><span class="pre">fit_bayesian</span></code> recipe raises an error naming this command.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If the <code class="docutils literal notranslate"><span class="pre">venv</span></code> command fails, you may need to install the module first (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python3-venv</span></code> on Ubuntu/Debian). Check the Python version with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">--version</span></code>; if it is older than 3.12, use a newer interpreter (e.g., <code class="docutils literal notranslate"><span class="pre">python3.12</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">ac2</span></code>).</p>
@@ -511,6 +519,11 @@ spectra or sessions to open at startup.</p>
 <p class="admonition-title">Note</p>
 <p>If the app fails to launch with a Qt/xcb error, ensure your system has the necessary Qt libraries installed (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">libxcb-cursor0</span></code>).</p>
 </div>
+</section>
+<section id="using-astrocook-from-python">
+<h2>Using Astrocook from Python<a class="headerlink" href="#using-astrocook-from-python" title="Link to this heading">#</a></h2>
+<p>Astrocook can also be used from your own scripts, without the GUI: see the
+tutorial <a class="reference internal" href="tutorials/scripting.html"><span class="doc std std-doc">Using Astrocook from Python</span></a>.</p>
 </section>
 <section id="developer-installation">
 <h2>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading">#</a></h2>
@@ -584,6 +597,7 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start-macos">Quick Start ( macOS)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-with-pip-linux-windows-macos">Installing with pip (Linux, Windows, macOS)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-app">Running the App</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-astrocook-from-python">Using Astrocook from Python</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#developer-installation">Developer Installation</a></li>
 </ul>
   </nav></div>
@@ -631,7 +645,7 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
   </p>
 </div>
       

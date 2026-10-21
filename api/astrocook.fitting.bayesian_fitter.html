@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.0.3 documentation</title>
+    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.1.0 documentation</title>
   
   
   
@@ -31,7 +31,7 @@
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=cc54fbde" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../static/documentation_options.js?v=664ffad9"></script>
+    <script src="../static/documentation_options.js?v=20623aea"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,9 +47,9 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.3';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
-            false;
+            true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.3" />
+  <meta name="docsearch:version" content="2.1.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -412,10 +412,12 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -427,6 +429,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -436,6 +439,16 @@
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.fitting.bayesian_fitter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Synthetic spectra with known parameters, for testing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.mocks.html">astrocook.mocks package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -503,9 +516,21 @@
                   
   <section id="module-astrocook.fitting.bayesian_fitter">
 <span id="astrocook-fitting-bayesian-fitter-module"></span><h1>astrocook.fitting.bayesian_fitter module<a class="headerlink" href="#module-astrocook.fitting.bayesian_fitter" title="Link to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.require_bayes_engine">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">require_bayes_engine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mcmc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#require_bayes_engine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.require_bayes_engine" title="Link to this definition">#</a></dt>
+<dd><p>Raise an ImportError naming the extra if the sampler is not installed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>engine</strong> (<em>{'mcmc'</em><em>, </em><em>'nested'}</em><em>, </em><em>optional</em>) – The sampling engine: <code class="docutils literal notranslate"><span class="pre">'mcmc'</span></code> needs <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, <code class="docutils literal notranslate"><span class="pre">'nested'</span></code> needs
+<code class="docutils literal notranslate"><span class="pre">dynesty</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">BayesianVoigtFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">BayesianVoigtFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Bayesian engine for Voigt profile fitting.</p>
 <p>This class wraps a <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a>
@@ -523,12 +548,12 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</s
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_likelihood">
-<span class="sig-name descname"><span class="pre">ln_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_likelihood" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">ln_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_likelihood" title="Link to this definition">#</a></dt>
 <dd><p>Compute the log-likelihood of a parameter vector.</p>
 <p>Evaluates the standard Gaussian log-likelihood for the active fit region,
 incorporating any penalty terms (e.g., Doppler parameter runaways)
@@ -548,7 +573,7 @@ inherited from the frequentist fitter.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_prior">
-<span class="sig-name descname"><span class="pre">ln_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_prior" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">ln_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_prior" title="Link to this definition">#</a></dt>
 <dd><p>Compute the log-prior probability of a parameter vector.</p>
 <p>Applies a uniform flat prior defined by the physical boundaries of the
 free parameters (e.g., column density between 10.0 and 23.0).</p>
@@ -567,7 +592,7 @@ free parameters (e.g., column density between 10.0 and 23.0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_posterior">
-<span class="sig-name descname"><span class="pre">ln_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_posterior" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">ln_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_free</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.ln_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_posterior" title="Link to this definition">#</a></dt>
 <dd><p>Compute the total log-posterior probability.</p>
 <p>Calculates the sum of the log-prior and log-likelihood.</p>
 <dl class="field-list simple">
@@ -585,7 +610,7 @@ free parameters (e.g., column density between 10.0 and 23.0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc">
-<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
 <dd><p>Execute Markov Chain Monte Carlo (MCMC) sampling using <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>Initializes walkers around the initial parameter guess and samples the
 posterior distribution.</p>
@@ -622,7 +647,7 @@ kept. Must be smaller than <code class="docutils literal notranslate"><span clas
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested">
-<span class="sig-name descname"><span class="pre">run_nested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nlive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">250</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_nested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run_nested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nlive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">250</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_nested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested" title="Link to this definition">#</a></dt>
 <dd><p>Execute Nested Sampling using <code class="docutils literal notranslate"><span class="pre">dynesty</span></code>.</p>
 <p>Samples the parameter space to estimate both the posterior distribution
 and the Bayesian evidence (log-Z).</p>
@@ -653,7 +678,7 @@ and the Bayesian evidence (log-Z).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.apply_results">
-<span class="sig-name descname"><span class="pre">apply_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.apply_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.apply_results" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">apply_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.apply_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.apply_results" title="Link to this definition">#</a></dt>
 <dd><p>Apply Bayesian medians and uncertainties back to the system list.</p>
 <p>Extracts the posterior medians and standard deviations, maps them back
 to the full parameter vector, and updates the corresponding components
@@ -722,6 +747,7 @@ in the system list. Fixed or linked parameters maintain their prior state.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.require_bayes_engine"><code class="docutils literal notranslate"><span class="pre">require_bayes_engine()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.ln_likelihood"><code class="docutils literal notranslate"><span class="pre">BayesianVoigtFitter.ln_likelihood()</span></code></a></li>
@@ -778,7 +804,7 @@ in the system list. Fixed or linked parameters maintain their prior state.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
   </p>
 </div>
       

@@ -7,10 +7,12 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   astrocook.core.debug_hooks
    astrocook.core.session
    astrocook.core.spectrum
    astrocook.core.structures
    astrocook.core.system_list
+   astrocook.core.templates
 
 Module contents
 ---------------

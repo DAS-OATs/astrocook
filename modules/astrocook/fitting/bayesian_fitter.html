@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.bayesian_fitter &#8212; Astrocook 2.0.3 documentation</title>
+    <title>astrocook.fitting.bayesian_fitter &#8212; Astrocook 2.1.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
@@ -38,17 +38,17 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../../static/documentation_options.js?v=664ffad9"></script>
+    <script src="../../../static/documentation_options.js?v=20623aea"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/fitting/bayesian_fitter';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/bayesian_fitter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.3';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
-            false;
+            true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.3" />
+  <meta name="docsearch:version" content="2.1.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -449,7 +449,7 @@
   <h1>Source code for astrocook.fitting.bayesian_fitter</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -461,6 +461,29 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">dynesty</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">dynesty</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># emcee, dynesty and corner are optional dependencies (extra "bayes")</span>
+<span class="n">BAYES_INSTALL_HINT</span> <span class="o">=</span> <span class="s1">'pip install "astrocook[bayes]"'</span>
+
+
+<div class="viewcode-block" id="require_bayes_engine">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.require_bayes_engine">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">require_bayes_engine</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'mcmc'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Raise an ImportError naming the extra if the sampler is not installed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    engine : {'mcmc', 'nested'}, optional</span>
+<span class="sd">        The sampling engine: ``'mcmc'`` needs ``emcee``, ``'nested'`` needs</span>
+<span class="sd">        ``dynesty``.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="o">=</span> <span class="p">((</span><span class="s1">'dynesty'</span><span class="p">,</span> <span class="n">dynesty</span><span class="p">)</span> <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span>
+                    <span class="k">else</span> <span class="p">(</span><span class="s1">'emcee'</span><span class="p">,</span> <span class="n">emcee</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"The Bayesian fit needs </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, which is not installed. "</span>
+            <span class="sa">f</span><span class="s2">"Install the optional dependencies with: </span><span class="si">{</span><span class="n">BAYES_INSTALL_HINT</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="BayesianVoigtFitter">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter">[docs]</a>
@@ -541,7 +564,7 @@
                         <span class="n">penalty_chi2</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">5.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">b_val</span> <span class="o">-</span> <span class="mf">50.0</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
             
             <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">resid</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">penalty_chi2</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span></div>
 
 
@@ -633,8 +656,7 @@
 <span class="sd">            If ``nsteps &lt; 1`` or ``burn_in`` is not smaller than ``nsteps``</span>
 <span class="sd">            (the chain left after the burn-in would be empty).</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">emcee</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">"emcee is not installed. Please install it to use MCMC."</span><span class="p">)</span>
+        <span class="n">require_bayes_engine</span><span class="p">(</span><span class="s1">'mcmc'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">nsteps</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"nsteps must be at least 1 (got </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">burn_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -715,8 +737,7 @@
 <span class="sd">        ImportError</span>
 <span class="sd">            If the ``dynesty`` package is not installed.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">dynesty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">"dynesty is not installed. Please install it to use Nested Sampling."</span><span class="p">)</span>
+        <span class="n">require_bayes_engine</span><span class="p">(</span><span class="s1">'nested'</span><span class="p">)</span>
             
         <span class="k">def</span><span class="w"> </span><span class="nf">prior_transform</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">"""Transform uniform unit cube to physical bounds."""</span>
@@ -877,7 +898,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
   </p>
 </div>
       

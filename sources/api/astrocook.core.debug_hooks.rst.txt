@@ -1,0 +1,7 @@
+astrocook.core.debug\_hooks module
+==================================
+
+.. automodule:: astrocook.core.debug_hooks
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.mocks.physics &#8212; Astrocook 2.0.3 documentation</title>
+    <title>astrocook.mocks.physics &#8212; Astrocook 2.1.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
-    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=cc54fbde" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
@@ -38,17 +38,17 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../../static/documentation_options.js?v=664ffad9"></script>
+    <script src="../../../static/documentation_options.js?v=20623aea"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/astrocook/mocks/physics';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/mocks/physics';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.0.3';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
-            false;
+            true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.0.3" />
+  <meta name="docsearch:version" content="2.1.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -467,7 +467,7 @@
 
 
 <div class="viewcode-block" id="transitions">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.transitions">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.transitions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">transitions</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Transitions of a series (single line, standard multiplet or list)."""</span>
     <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
@@ -481,7 +481,7 @@
 
 
 <div class="viewcode-block" id="optical_depth">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.optical_depth">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.optical_depth">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">optical_depth</span><span class="p">(</span><span class="n">lam_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                   <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Optical depth of one component at observed wavelengths (Angstrom).</span>
@@ -509,7 +509,7 @@
 
 
 <div class="viewcode-block" id="convolve_velocity">
-<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.convolve_velocity">[docs]</a>
+<a class="viewcode-back" href="../../../api/astrocook.mocks.physics.html#astrocook.mocks.physics.convolve_velocity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convolve_velocity</span><span class="p">(</span><span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dv_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                       <span class="n">resol</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Gaussian instrumental convolution on a grid uniform in velocity.</span>
@@ -584,7 +584,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
   </p>
 </div>
       
