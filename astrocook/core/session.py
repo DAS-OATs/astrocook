@@ -152,6 +152,11 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         )
 
         session = SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
+        if v2_metadata:
+            # Not recorded before 2.1 (F45)
+            session.saved_with_version = v2_metadata.get('astrocook_version')
+            logging.info(f"{os.path.basename(archive_path)} was saved by Astrocook "
+                         f"{session.saved_with_version or '2.0.3 or earlier'}.")
         if v2_metadata and v2_metadata.get('log_type') == 'v2':
             try:
                 session.log_manager = HistoryLogV2.from_dict(
@@ -188,6 +193,10 @@ class SessionV2:
     ----------
     name : str
         The display name of the session (e.g., filename without extension).
+    saved_with_version : str or None
+        The version of Astrocook that saved the ``.acs2`` archive this session
+        was opened from; ``None`` if it was not opened from an ``.acs2``
+        archive, or if the archive does not record it (versions up to 2.0.3).
     systs : astrocook.core.system_list.SystemListV2, optional
         The container for identified absorption systems and Voigt profile components.
     file : astrocook.recipes.file.RecipeFileV2
@@ -210,6 +219,8 @@ class SessionV2:
         self._gui = gui
         self.name = name
         self.log_manager: Optional[LogManager] = None
+        # Documented in "Attributes" above (F45)
+        self.saved_with_version: Optional[str] = None
         self._current_spectrum = spec
         self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
         
@@ -307,6 +318,7 @@ class SessionV2:
         }
         new_session = SessionV2(**constructor_args)
         new_session.log_manager = self.log_manager 
+        new_session.saved_with_version = self.saved_with_version
         return new_session
 
     def with_new_system_list(self, new_systs: SystemListV2) -> 'SessionV2':
@@ -331,6 +343,7 @@ class SessionV2:
         }
         new_session = SessionV2(**constructor_args)
         new_session.log_manager = self.log_manager
+        new_session.saved_with_version = self.saved_with_version
         return new_session
     
     def save(self, file_path: str, 

@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+- `.acs2` archives record the version of Astrocook that saved them (`astrocook_version` in the metadata file); a session opened from an archive reports it as `saved_with_version` (`None` for archives saved by 2.0.3 or earlier). Older versions of Astrocook ignore it.
+
 ### Fixed
 - *Data loss*: a session that could not be read (an `.acs2` archive without its metadata file, a damaged `.acs` archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An `.acs2` archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.
 - V1 `.acs` archives: the turbulent broadening (`btur`) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit > Convert y axis) work on V1 sessions.

@@ -138,6 +138,31 @@ def test_archive_contents(rich_session, tmp_path):
                      "session_spec_orig.fits", "session_systs.fits"]
 
 
+def test_archive_records_the_version(rich_session, tmp_path):
+    # F45: the version that saved the archive, to recognise problems tied to
+    # a version on load (e.g. the log entries of F41, 2.0.2 and 2.0.3)
+    import astrocook
+    assert rich_session.saved_with_version is None  # not opened from an archive
+    reloaded, path = _round_trip(rich_session, tmp_path)
+    with tarfile.open(path) as tar:
+        meta = json.load(tar.extractfile("session_meta.json"))
+    assert meta["astrocook_version"] == astrocook.__version__
+    assert reloaded.saved_with_version == astrocook.__version__
+    # Kept by the states derived from the loaded one
+    derived = reloaded.with_new_spectrum(reloaded.spec).with_new_system_list(reloaded.systs)
+    assert derived.saved_with_version == astrocook.__version__
+
+
+def test_archive_without_version(tmp_path):
+    # Archives saved up to 2.0.3 do not record the version
+    with tarfile.open(SMALL_ARCHIVE) as tar:
+        names = [n for n in tar.getnames() if n.endswith("_meta.json")]
+        meta = json.load(tar.extractfile(names[0]))
+    assert "astrocook_version" not in meta
+    session = SessionV2.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
+    assert session.saved_with_version is None
+
+
 def test_small_archive_round_trip(tmp_path):
     original = SessionV2.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
     reloaded, _ = _round_trip(original, tmp_path)
