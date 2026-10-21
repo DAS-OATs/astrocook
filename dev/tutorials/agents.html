@@ -518,11 +518,14 @@ see your virtual environment):</p>
 </section>
 <section id="registering-the-server">
 <h2>2. Registering the Server<a class="headerlink" href="#registering-the-server" title="Link to this heading">#</a></h2>
-<p><strong>Claude Code:</strong></p>
+<p><strong>Claude Code</strong> (the <code class="docutils literal notranslate"><span class="pre">claude</span></code> command; if it is not installed, see
+<a class="reference external" href="https://code.claude.com/docs/en/setup">its setup page</a>; on macOS and
+Linux: <code class="docutils literal notranslate"><span class="pre">curl</span> <span class="pre">-fsSL</span> <span class="pre">https://claude.ai/install.sh</span> <span class="pre">|</span> <span class="pre">bash</span></code>):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">claude</span> <span class="n">mcp</span> <span class="n">add</span> <span class="n">astrocook</span> <span class="o">--</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">me</span><span class="o">/</span><span class="n">ac2</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span>
 </pre></div>
 </div>
-<p>Add <code class="docutils literal notranslate"><span class="pre">--scope</span> <span class="pre">user</span></code> to have it in all your projects. <code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">mcp</span> <span class="pre">list</span></code>
+<p>To have it in all your projects, add <code class="docutils literal notranslate"><span class="pre">--scope</span> <span class="pre">user</span></code> before the name
+(<code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">mcp</span> <span class="pre">add</span> <span class="pre">--scope</span> <span class="pre">user</span> <span class="pre">astrocook</span> <span class="pre">--</span> <span class="pre">...</span></code>). <code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">mcp</span> <span class="pre">list</span></code>
 shows the registered servers; in a session, <code class="docutils literal notranslate"><span class="pre">/mcp</span></code> shows their state.</p>
 <p><strong>Claude desktop app:</strong> add the server to its configuration file
 (Settings &gt; Developer &gt; Edit Config; on macOS
