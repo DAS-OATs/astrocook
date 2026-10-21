@@ -43,6 +43,11 @@ If the `venv` command fails, you may need to install the module first (e.g., `su
 To update to the latest version, run the same `pip install` command with
 `--upgrade`.
 
+AI agents (Claude Code, the Claude desktop app, other MCP clients) can
+drive Astrocook through its MCP server, a pilot installed with the `[mcp]`
+extra: see the tutorial
+[Using Astrocook from an AI Agent](tutorials/agents).
+
 ## Running the App
 
 With the virtual environment active, launch the GUI from any directory:
