@@ -123,8 +123,9 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
    `ROADMAP.md`, section 4) (done);
 6. phase 4 – scientific correctness: first a validation on mocks
-   (baseline of continuum, identification, doublet fit), then #526,
-   #517, #465, #518, #568, #573, each measured on it;
+   (baseline of continuum, identification, doublet fit), then, each
+   measured on it, #573, #518, #568, F55/F49/F50, #465, #526, #517
+   (plan agreed, `ROADMAP.md` "Plan of the phase");
 7. release 2.2.0;
 8. phase 5 – splitting large files;
 9. phase 6 – error handling;
@@ -175,8 +176,8 @@ tools, a thin layer over the recipes, defaults from the recipe schemas),
 docs page "Using Astrocook from an AI Agent"; report from two trials with
 fresh agents and Guido's own trial; found F46-F55 (phases 4, 6-bis, 7).
 
-Next: phase 4 (`ROADMAP.md`, section 3), starting with the validation on
-mocks; the order of the issues to be agreed with Guido. Work in
+Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
+"Plan of the phase"); first the validation on mocks. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
