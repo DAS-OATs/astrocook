@@ -11,4 +11,5 @@ flux_operations
 continuum_fitting
 absorption_systems
 scripting
+agents
 ```

@@ -12,6 +12,7 @@ sphinx-apidoc -f -e --no-toc -o \
     astrocook/core/spectrum_operations.py \
     astrocook/core/utils.py \
     astrocook/gui/*.py \
-    astrocook/io/*.py
+    astrocook/io/*.py \
+    astrocook/mcp_server/*.py
 
 rm docs/api/astrocook.rst docs/api/astrocook.settings.rst

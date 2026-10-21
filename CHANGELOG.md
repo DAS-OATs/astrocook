@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Added
+- MCP server for AI agents (pilot): Claude Code, the Claude desktop app or other MCP clients can open a spectrum, estimate the continuum, identify lines, fit the metal doublets and save the session, through the `astrocook-mcp` command (install with `pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"`). The tools return structured summaries and Astrocook's error messages, and record their recipes in the session log, so that the result can be reviewed in the GUI. See the new tutorial *Using Astrocook from an AI Agent*. No existing behaviour changes.
+
 ## [2.1.0] - 2026-10-21
 
 First consolidated release (phases 3 and 3-bis of the consolidation): Astrocook no longer depends on the V1 code, which is removed, and V1 `.acs` archives are read by a new native reader. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub). **Some results change**: refitting a V1 session with links between parameters (now kept as constraints), and the `dbtur` column of the fitted components (now updated; 0 when `btur` is frozen). Nothing else changes numerically with respect to 2.0.3.

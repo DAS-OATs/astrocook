@@ -2,13 +2,16 @@
 client, connected to the server in process."""
 import asyncio
 import logging
+import sys
 import threading
+from importlib.metadata import entry_points
+from pathlib import Path
 
 import pytest
 
 pytest.importorskip("mcp")
 
-from mcp import Client  # noqa: E402
+from mcp import Client, StdioServerParameters  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 from astrocook import __version__  # noqa: E402
@@ -17,6 +20,7 @@ from astrocook.mcp_server.errors import run_recipe  # noqa: E402
 from astrocook.core.structures import ComponentDataV2  # noqa: E402
 from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
+from astrocook.mcp_server import server as server_module  # noqa: E402
 from astrocook.mcp_server.server import SCHEMAS, build_server  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
@@ -506,3 +510,50 @@ def test_j0103_doublets():
     assert fit["n_removed"] > 0 and fit["n_added"] > 0
     assert fit["truncated"]
     assert {c["series"] for c in fit["components"]} <= {"CIV", "SiIV", "MgII"}
+
+
+# --- The server as a separate process (stdio), as a client starts it ---------
+
+def test_console_script_points_to_the_server():
+    (ep,) = [ep for ep in entry_points(group="console_scripts")
+             if ep.name == "astrocook-mcp"]
+    assert ep.value == "astrocook.mcp_server.server:main"
+    assert ep.load() is server_module.main
+
+
+def stdio_calls(params, *steps):
+    """List the tools and run the steps on a server in a subprocess."""
+    async def go():
+        async with Client(params) as client:
+            tools = (await client.list_tools()).tools
+            return tools, [await client.call_tool(t, a) for t, a in steps]
+    return asyncio.run(go())
+
+
+def test_stdio(mock_archive, tmp_path):
+    # Anything written to stdout by Astrocook would break the protocol;
+    # the save logs a warning (astropy), which must go to stderr
+    params = StdioServerParameters(
+        command=sys.executable, args=["-m", "astrocook.mcp_server.server"])
+    tools, (opened, saved, missing) = stdio_calls(
+        params,
+        ("session_open", {"path": str(mock_archive), "z_em": 2.1}),
+        ("session_save", {"session_id": "mock",
+                          "path": str(tmp_path / "out.acs2")}),
+        ("session_open", {"path": str(tmp_path / "missing.fits")}))
+    assert {t.name for t in tools} == TOOLS
+    assert opened.structured_content["spectrum"]["z_em"] == pytest.approx(2.1)
+    assert saved.structured_content["log_entries"] == 1
+    assert (tmp_path / "out.acs2").is_file()
+    assert "No such file" in error_text(missing)
+
+
+def test_stdio_console_script(mock_archive):
+    script = Path(sys.executable).with_name("astrocook-mcp")
+    if not script.exists():
+        pytest.skip("astrocook-mcp not installed next to the interpreter")
+    tools, (opened,) = stdio_calls(
+        StdioServerParameters(command=str(script)),
+        ("session_open", {"path": str(mock_archive)}))
+    assert {t.name for t in tools} == TOOLS
+    assert not opened.is_error
