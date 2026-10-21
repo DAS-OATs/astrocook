@@ -540,7 +540,10 @@ one small PR each, with the related strict xfail turned into a passing test
 2. F6: `core/spectrum_operations.py` imports `gui.debug_utils`, so the core
    depends on the GUI (importing it also imports PySide6; matters for the
    headless MCP pilot). Proposed: an optional debug hook in `core`, which
-   the GUI connects to its signal; no numerical change;
+   the GUI connects to its signal; no numerical change. Done:
+   `core/debug_hooks.py`; importing the core, recipes, fitting, I/O and
+   mocks no longer imports PySide6 (checked by a test); the docstring of
+   `rate_doublet_candidate` had the order of the two regions reversed;
 3. F13: link colours not recomputed in the System Inspector when a link is
    created with the group still selected (strict xfail already in place);
 4. [#559](https://github.com/DAS-OATs/astrocook/issues/559) (F36, brought
@@ -669,7 +672,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F3 | `fit_continuum` | `fudge='auto'` (recipe default) is always exactly 1.0: computed on residuals that are zero by construction, before the smoothing. Related to #465 | numerical | snapshots `continuum_j0103_*`; `test_v2_auto_fudge_is_one` (characterization) | accepted (phase 1-bis, decided with Guido): not a regression in substance. The V1 fudge corrects the running mean V1 builds the continuum from; V2 interpolates the unabsorbed pixels, so the fudge is 1 by construction. Local fudges after the smoothing were tried on J0103-1305: none reproduces V1 (effect ±1% or more vs ±0.2%, no correlation), they would correct the bias of the final smoothing instead. Documented in `fit_continuum`; the smoothing bias goes with #465, F17, F30 |
 | F4 | `VoigtFitterV2` | z is bounded to ±`z_window_kms` (default 20 km/s) around the initial guess; a guess further away cannot reach the true value. Intended? | behaviour | `test_fitting.py` (guess inside the window) | open |
 | F5 | `convert_y_axis` | Annotation declares 2 return values, the function returns 3 | code quality | snapshot `convert_y_axis` | fixed (phase 1-bis): annotation and docstring list the three returned values |
-| F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | — | phase 3-bis |
+| F6 | architecture | `core/spectrum_operations.py` imports `gui.debug_utils`: core depends on the GUI | architecture | `test_debug_hooks.py` (`test_import_does_not_load_the_gui`) | fixed (phase 3-bis): the core requests the debug plots through a hook (`core/debug_hooks.py`) that the GUI connects to its signal |
 | F7 | GUI | `gui/main_window.py` imports `matplotlib.pyplot` before `pyside_plot.py` selects QtAgg: importing the GUI without a `QApplication` (and no display) fails | architecture | workaround in `tests/test_gui_save_session.py` | phase 5 |
 | F8 | resolution handling | The resolution lives in five places (per-component value, `resol` column, `SpectrumDataV2.resol`, meta `resol`/`RESOL`, meta `resol_fwhm`), each read with a different priority by the fitter, the `.acs2` loader, coadd and the GUI. The `.acs2` save does not write the attribute: it survives only through the meta keys (set by "Set properties"). The fitter stamps the resolution used into every fitted component, which then overrides later changes. R vs km/s is guessed from a threshold of 500. The J0103-1305 archive (older version) stores no resolution at all. To be analysed by Guido | behaviour, possible data loss | — (map in the PR that added this row) | design agreed, deferred after phase 1-bis: [#526](https://github.com/DAS-OATs/astrocook/issues/526) |
 | F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9): the V2 model, sampled at pixel centres, overestimates the equivalent width of CIV by 4% at b = 1 km/s and 0.3% at 3 km/s (2.5 km/s pixels, R = 45000) | numerical | — | with the exact convolution, [#526](https://github.com/DAS-OATs/astrocook/issues/526) (timing to be checked) |
@@ -849,7 +852,7 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
-| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45; possibly #560) | in progress: #575 done |
+| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45; possibly #560) | in progress: #575, F6 done |
 | 4 – Scientific correctness (#526, #517, #465, #518, #560, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2 
-from astrocook.gui.debug_utils import GLOBAL_PLOTTER
+from astrocook.core.debug_hooks import request_debug_plot
 
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
@@ -995,8 +995,9 @@ def rate_doublet_candidate(
     
     Physics: tau_1 = gamma * tau_2  ==>  F_1 = F_2 ^ gamma
     
-    NOTE: region_mask_1 is the BLUER region (e.g., CIV_1548)
-          region_mask_2 is the REDDER region (e.g., CIV_1550)
+    NOTE: region_mask_1 is the REDDER region (e.g., CIV_1550)
+          region_mask_2 is the BLUER region (e.g., CIV_1548),
+          as found by _find_kinematic_doublet_candidates
     """
     try:
         # 1. Get lines and data
@@ -1090,7 +1091,7 @@ def rate_doublet_candidate(
                 'Y_data': Y_data,   # Blue Absorption (1-F)
                 'Y_model': Y_model, # Modeled Blue Absorption
             }
-            GLOBAL_PLOTTER.plot_requested.emit(plot_data)
+            request_debug_plot(plot_data)
 
         return max(0.0, r2_score)
 
