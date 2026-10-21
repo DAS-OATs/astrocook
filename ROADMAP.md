@@ -665,8 +665,7 @@ the agents together, starting from the report of the MCP pilot (section
 The full MCP server (section 4) is generated from this API.
 
 ### Phase 7 – Robust components: emission model and identification
-Proposed at the start of the MCP pilot (October 2026), to be agreed with
-Guido. The goal of section 5, a complete fit of a spectrum in a single
+Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
 operation, rests on its components: today the continuum works "well
 enough" but is not robust, gives no uncertainty and fails in some cases
 (DLAs, among others); the identification is fairly accurate, but its
@@ -696,7 +695,7 @@ Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
 phase 6 → full MCP server (section 4). Revised after phase 3: 2.1.0 is
 published on GitHub (with the macOS app) without waiting for PyPI.
 Revised at the start of the MCP pilot (validation on mocks in phase 4,
-phase 6-bis agreed, phase 7 proposed): phase 4 (validation first) →
+phases 6-bis and 7 agreed): phase 4 (validation first) →
 2.2.0 → phase 5 → phase 6 → phase 6-bis → full MCP server → phase 7.
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
@@ -821,6 +820,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F43 | V1 constraints | V1 links are stored as `lines_voigt_<id>_<par>` (e.g. `lines_voigt_14_b*0.65...`), but the conversion to V2 (`VoigtModelConstraintV2._convert_v1_to_v2`) only translates `p[<id>]`: the linked parameters (124 in the sample archive) are frozen at their V1 values with no target, the expression fails silently at each evaluation, and the System Inspector cannot show the link (reported by Guido). Found in phase 3 (PR 8b) | behaviour | `test_v1_constraints.py` | fixed (phase 3): the V1 reader translates the links into V2 constraints keyed by UUID (target, `p['<uuid>'].<par>` syntax), so that grouping, fit, `.acs2` and System Inspector see them; `logN` constraints are no longer lost (the parameter name was lower-cased). A refit of a V1 session now follows the links |
 | F44 | opening archives | A spectrum the V1 reader could not read was replaced with mock data (flux 1 between 100 and 500 nm, no systems) with only a log warning: an `.acs2` archive without `_meta.json`, a damaged `.acs`, or a raw file whose format has no V2 loader. Saving such a session overwrote the data. Found in phase 3 (PR 8b) | data loss | `test_v1_archive.py` | fixed (phase 3, PR 8b): `.acs2` without metadata read with the V2 readers (without constraints, log, identifications), the other cases are errors |
 | F45 | `.acs2` archives | The archive does not record the Astrocook version that saved it, so a problem tied to a version cannot be recognised on load: e.g. the spurious log entries of F41 in archives saved with 2.0.2 and 2.0.3, left as they are because they cannot be told apart from correct ones. Proposed: write the version in the archive metadata from now on (small, separate PR). Found in phase 3-bis (#575) | data provenance | `test_acs2_round_trip.py` (`test_archive_records_the_version`, `test_archive_without_version`) | fixed (phase 3-bis): `astrocook_version` in `_meta.json`, read back as `SessionV2.saved_with_version` |
+| F46 | `edit.set_properties` | The values are not checked: z_em = -5 and R = -1 are accepted without a warning (also from the GUI dialog). An agent passing a wrong value gets no signal. Found in the MCP pilot (PR 2) | behaviour, error handling | `test_mcp_server.py` (`test_unphysical_properties_are_accepted`, characterization) | open: phase 6-bis (typed, checked parameters) |
+| F47 | `set_properties` (GUI) | When R is changed, the GUI (`_process_recipe_result` in `gui/main_window.py`) writes the new value into every component; the recipe does not, so a script or the MCP server setting R on a session with components leaves the old per-component resolution, which the fitter uses (F8). Same kind of logic as the session log, kept in the GUI instead of the recipe. Found in the MCP pilot (PR 2) | behaviour | — | open: with [#526](https://github.com/DAS-OATs/astrocook/issues/526) (single source of the resolution) |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -1107,9 +1108,9 @@ review); each of its decisions goes into the log.
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
-| MCP pilot (section 4.1) | scope proposed (October 2026) |
+| MCP pilot (section 4.1) | in progress: scope agreed (#595); skeleton with `session_open`, `session_save` (PR 2); found F46, F47 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
-| 7 – Robust components (proposed) | not started |
+| 7 – Robust components | not started |

@@ -31,6 +31,8 @@ Current version: 2.1.0. Python ≥3.12.
 - `astrocook/recipes/` – user-facing operations, with structured parameters.
 - `astrocook/gui/` – PySide6 interface.
 - `astrocook/io/` – loaders and V1 → V2 migration.
+- `astrocook/mcp_server/` – MCP server for agents (pilot, `ROADMAP.md`
+  section 4.1): a thin layer over the recipes, optional `[mcp]` extra.
 - `astrocook/mocks/` – synthetic spectra with known parameters, independent
   of the fitting code (do not make it depend on `fitting/`).
 - V1 code: removed from the package in phase 3. V1 `.acs` archives are read
@@ -130,7 +132,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
     exceptions), from the report of the MCP pilot;
 11. full MCP server, with a headless Docker image, its tools generated
     from the recipe registry;
-12. phase 7 (proposed) – robust components: emission model and
+12. phase 7 – robust components: emission model and
     absorption identification, algorithmic choices by Guido, measured
     on the benchmark of phase 4.
 
@@ -167,7 +169,8 @@ the old `resol` meta key).
 Release 2.1.0 (October 2026): phases 3 and 3-bis, on GitHub with the
 macOS app, not on PyPI (steps of a release in `ROADMAP.md`, "Releases").
 
-Next: the MCP pilot (`ROADMAP.md`, section 4.1: scope, tools, PR order). Work in
+MCP pilot in progress (`ROADMAP.md`, section 4.1: scope, tools, PR order;
+`astrocook/mcp_server/`, `[mcp]` extra, `astrocook-mcp`). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

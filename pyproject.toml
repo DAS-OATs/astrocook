@@ -60,8 +60,8 @@ bayes = [
 ]
 dev = [
     # Test dependencies plus development tools (linter, mutation testing);
-    # the tests also cover the Bayesian fit
-    "astrocook[test,bayes]",
+    # the tests also cover the Bayesian fit and the MCP server
+    "astrocook[test,bayes,mcp]",
     "ruff",
     "mutmut",
 ]
@@ -76,10 +76,15 @@ docs = [
 # macOS app (build_app.sh, Astrocook.spec), which includes the Bayesian
 # fit; the DMG also needs create-dmg (brew install create-dmg)
 build = ["pyinstaller", "astrocook[bayes]"]
+# MCP server for agents (astrocook/mcp_server, ROADMAP.md section 4.1);
+# the 2.x API differs from 1.x
+mcp = ["mcp>=2.3,<3"]
 
 [project.scripts]
 # Launch the GUI: `astrocook [file ...]` (same as `python -m astrocook`)
 astrocook = "astrocook._run_astrocook:main"
+# MCP server for agents, over stdio (needs the [mcp] extra)
+astrocook-mcp = "astrocook.mcp_server.server:main"
 
 [project.urls]
 Homepage = "https://github.com/DAS-OATs/astrocook"
