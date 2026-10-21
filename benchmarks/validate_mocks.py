@@ -349,13 +349,16 @@ def run_point(point):
 # --- Summary ------------------------------------------------------------
 
 def _stats(values):
+    """Median, robust sigma (half the 16-84% interval: a few components
+    with errors of ~0 give pulls of 1e6 or more, which would dominate a
+    standard deviation) and the fraction beyond 3 (for the pulls)."""
     v = np.asarray(values, dtype=float)
     v = v[np.isfinite(v)]
     if not v.size:
         return None
+    p16, p84 = np.percentile(v, [16, 84])
     return dict(n=int(v.size), median=float(np.median(v)),
-                std=float(np.std(v)), p16=float(np.percentile(v, 16)),
-                p84=float(np.percentile(v, 84)),
+                sigma=float((p84 - p16) / 2), p16=float(p16), p84=float(p84),
                 frac_gt3=float(np.mean(np.abs(v) > 3)))
 
 
@@ -436,7 +439,7 @@ def print_summary(result):
     for par in ("z", "logN", "b"):
         p = f[f"pull_{par}"]
         if p:
-            print(f"  pull {par}: median {p['median']:.2f}, std {p['std']:.2f}, "
+            print(f"  pull {par}: median {p['median']:.2f}, sigma {p['sigma']:.2f}, "
                   f"|pull|>3 {p['frac_gt3']:.2f}")
 
 

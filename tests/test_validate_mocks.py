@@ -192,3 +192,12 @@ def test_tiny_grid():
         assert 0 <= s["identification"][species]["n_found"] <= vm.METAL_SYSTEMS[species]
     assert s["fit"]["n_true"] > 0
     assert set(result["summary"]["by_snr"]) == {"30.0"}
+
+
+def test_robust_stats():
+    values = list(np.random.default_rng(0).standard_normal(10000)) + [1e9]
+    st = vm._stats(values)
+    assert st["sigma"] == pytest.approx(1.0, abs=0.03)
+    assert st["median"] == pytest.approx(0.0, abs=0.03)
+    assert st["frac_gt3"] == pytest.approx(0.0027, abs=0.002)
+    assert vm._stats([np.nan]) is None
