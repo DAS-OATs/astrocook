@@ -61,15 +61,22 @@ class MockTruth:
     The wavelength grid is uniform in velocity (pixel size ``dv_kms``), as
     for echelle spectrographs. The continuum is a power law
     ``cont_amplitude * (lambda / cont_ref_nm) ** cont_slope``. The noise is
-    Gaussian, with a constant signal-to-noise ratio ``snr`` per pixel at the
-    continuum level (``None``: noiseless).
+    Gaussian, with a signal-to-noise ratio ``snr`` per pixel at the
+    continuum level (``None``: noiseless). With ``noise_floor = None`` (the
+    default) the error is the same at any flux, ``cont / snr``; with a
+    value ``a`` between 0 and 1 it follows the flux, as for photon noise
+    of the source on a background: sigma = (cont / snr) sqrt(a + (1 - a)
+    F / cont), with F the noiseless flux, so that ``a`` is the variance at
+    zero flux relative to the continuum.
 
     ``resol`` is the resolving power, either a single value or ``None`` (no
     instrumental broadening). ``oversample`` is the number of sub-pixels on
     which the model is computed before being averaged over each pixel.
 
     ``emission_lines`` are added to the continuum (the absorbers absorb
-    them too). ``n_spikes`` single-pixel positive spikes of
+    them too). With ``lyman_limit`` the H I components (those with Lyman
+    lines) also absorb the continuum below their Lyman limit (off by
+    default, so that the mocks made before it are unchanged). ``n_spikes`` single-pixel positive spikes of
     ``spike_amplitude`` times the local error are added after the noise, at
     random positions; their indices are not part of the truth but are
     reproducible from the seed (see :func:`astrocook.mocks.spike_indices`).
@@ -89,6 +96,8 @@ class MockTruth:
     emission_lines: List[EmissionLine] = dataclasses.field(default_factory=list)
     n_spikes: int = 0
     spike_amplitude: float = 10.0
+    lyman_limit: bool = False
+    noise_floor: Optional[float] = None
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)

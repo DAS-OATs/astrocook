@@ -20,17 +20,24 @@ from astrocook.mocks.truth import (
     EmissionLine, MockComponent, MockTruth, QSO_EMISSION_LINES,
 )
 from astrocook.mocks.generate import (
-    continuum, generate, make_grid, normalized_flux, spike_indices,
+    continuum, generate, make_grid, noise_sigma, normalized_flux,
+    spike_indices,
 )
-from astrocook.mocks.physics import optical_depth, convolve_velocity
+from astrocook.mocks.physics import (
+    LYMAN_SERIES, convolve_velocity, lyman_limit_optical_depth, optical_depth,
+)
 from astrocook.mocks.populations import (
-    expected_forest_lines, lya_forest, mean_transmission_fg08, metal_systems,
+    DLA_LOGN, LLS_LOGN, SUBDLA_LOGN, expected_forest_lines, lya_forest,
+    mean_transmission_fg08, metal_systems, strong_hi_systems,
 )
 
 __all__ = [
     "EmissionLine", "MockComponent", "MockTruth", "QSO_EMISSION_LINES",
-    "continuum", "generate", "make_grid", "normalized_flux", "spike_indices",
-    "optical_depth", "convolve_velocity",
-    "expected_forest_lines", "lya_forest", "mean_transmission_fg08",
-    "metal_systems",
+    "continuum", "generate", "make_grid", "noise_sigma", "normalized_flux",
+    "spike_indices",
+    "LYMAN_SERIES", "optical_depth", "convolve_velocity",
+    "lyman_limit_optical_depth",
+    "DLA_LOGN", "LLS_LOGN", "SUBDLA_LOGN", "expected_forest_lines",
+    "lya_forest", "mean_transmission_fg08", "metal_systems",
+    "strong_hi_systems",
 ]
