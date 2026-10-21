@@ -116,6 +116,8 @@ class SystemTableModel(QAbstractTableModel):
 
         # Store constraints: {uuid: {param: ConstraintObj}}
         self._constraints_map = {} 
+        # Link colours of the selected group: {(target_uuid, param): QColor}
+        self._link_color_map = {}
 
     def update_data(self, components: List[ComponentDataV2], constraints_map: dict = None):
         """
@@ -124,6 +126,9 @@ class SystemTableModel(QAbstractTableModel):
         self.beginResetModel()
         self._components = components
         self._constraints_map = constraints_map if constraints_map else {}
+        # The links may have changed while the group stays selected, and
+        # set_highlighted_uuids skips an unchanged selection (F13)
+        self._update_link_colors()
         self.endResetModel()
 
     def set_highlighted_uuids(self, primary_uuids: set, secondary_uuids: set):
@@ -132,10 +137,22 @@ class SystemTableModel(QAbstractTableModel):
             
         self._primary_uuids = primary_uuids
         self._secondary_uuids = secondary_uuids
-        
-        # --- Dynamically map link colors for the active group ---
+        self._update_link_colors()
+
+        if self._components:
+            top_left = self.index(0, 0)
+            bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
+            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
+
+    def _update_link_colors(self):
+        """Map a colour to each link of the selected group.
+
+        A link keeps its colour while it stays in the map, so that the colours
+        do not change when another link is added or removed.
+        """
+        previous = self._link_color_map
         self._link_color_map = {}
-        active_uuids = primary_uuids | secondary_uuids
+        active_uuids = self._primary_uuids | self._secondary_uuids
         
         if active_uuids:
             link_clusters = set()
@@ -148,14 +165,15 @@ class SystemTableModel(QAbstractTableModel):
 
             # Color palette (Deep Blue, Magenta, Forest Green, Purple, Teal, Maroon)
             palette = ["#296bff", "#d90077", "#008a00", "#7030a0", "#008080", "#800000"]
-            for i, cluster in enumerate(link_clusters):
-                self._link_color_map[cluster] = QColor(palette[i % len(palette)])
+            kept = {c: previous[c] for c in link_clusters if c in previous}
+            used = [color.name() for color in kept.values()]
+            free = [color for color in palette if color not in used] or palette
+            # New links in a fixed order (the set order depends on the UUIDs)
+            new = sorted(c for c in link_clusters if c not in kept)
+            for i, cluster in enumerate(new):
+                kept[cluster] = QColor(free[i % len(free)])
+            self._link_color_map = kept
 
-        if self._components:
-            top_left = self.index(0, 0)
-            bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
-            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
-            
     def rowCount(self, parent=QModelIndex()): return len(self._components)
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
     
