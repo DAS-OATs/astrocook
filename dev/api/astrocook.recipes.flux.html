@@ -593,7 +593,11 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'None'<
 Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
 <li><p><strong>kappa</strong> (<em>str</em><em>, </em><em>optional</em>) – Sigma clipping threshold for binning. <code class="docutils literal notranslate"><span class="pre">'None'</span></code> for off. Defaults to <code class="docutils literal notranslate"><span class="pre">'5.0'</span></code>.</p></li>
 <li><p><strong>filling</strong> (<em>str</em><em>, </em><em>optional</em>) – Value to fill regions without data. Defaults to <code class="docutils literal notranslate"><span class="pre">'nan'</span></code>.</p></li>
-<li><p><strong>norm</strong> (<em>str</em><em>, </em><em>optional</em>) – (Legacy flag, currently unused). Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
+<li><p><strong>norm</strong> (<em>str</em><em>, </em><em>optional</em>) – Ignored, kept so that scripts and logs written for V1 still run:
+the rebinned spectrum is never normalized, and <code class="docutils literal notranslate"><span class="pre">'True'</span></code> only
+logs a warning. To see the normalized flux, use the normalized
+view of the plot, or <code class="docutils literal notranslate"><span class="pre">apply_expression</span></code> with <code class="docutils literal notranslate"><span class="pre">y/cont</span></code>.
+Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

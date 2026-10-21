@@ -494,8 +494,8 @@
             <span class="c1"># Use string "None"</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma clipping threshold (None for off)"</span><span class="p">},</span>
             
-            <span class="c1"># CRITICAL: V1 uses 'norm' as a boolean flag. Keep it as string 'False' for dialog logic.</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"norm"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"False"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Return normalized spectrum, if continuum exists"</span><span class="p">},</span> 
+            <span class="c1"># 'norm' (V1: return the normalized spectrum) is not offered: it</span>
+            <span class="c1"># was never applied in V2 (findings register F37, #560)</span>
 
             <span class="c1"># CRITICAL: Use string representation 'nan'</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"filling"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"nan"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Value to fill region without data"</span><span class="p">},</span> 
@@ -666,7 +666,11 @@
 <span class="sd">        filling : str, optional</span>
 <span class="sd">            Value to fill regions without data. Defaults to ``'nan'``.</span>
 <span class="sd">        norm : str, optional</span>
-<span class="sd">            (Legacy flag, currently unused). Defaults to ``'False'``.</span>
+<span class="sd">            Ignored, kept so that scripts and logs written for V1 still run:</span>
+<span class="sd">            the rebinned spectrum is never normalized, and ``'True'`` only</span>
+<span class="sd">            logs a warning. To see the normalized flux, use the normalized</span>
+<span class="sd">            view of the plot, or ``apply_expression`` with ``y/cont``.</span>
+<span class="sd">            Defaults to ``'False'``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -687,15 +691,19 @@
 
             <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
             
-            <span class="c1"># Parsed but not applied: the spectrum is never normalized</span>
-            <span class="c1"># (findings register F37)</span>
-            <span class="n">norm_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>  <span class="c1"># noqa: F841</span>
             <span class="n">filling_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filling</span><span class="p">)</span> <span class="k">if</span> <span class="n">filling</span> <span class="o">!=</span> <span class="s1">'nan'</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context;</span>
             <span class="c1"># return 0 like the other recipes (findings register F23)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># The V1 normalization was never applied in V2 and is not offered</span>
+        <span class="c1"># any more (F37, #560): say so instead of ignoring it silently</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"rebin: 'norm' is ignored, the rebinned spectrum is "</span>
+                            <span class="s2">"not normalized; use the normalized view of the "</span>
+                            <span class="s2">"plot, or apply_expression with y/cont."</span><span class="p">)</span>
 
         <span class="c1"># 5. Execute the immutable V2 operation</span>
         <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span>
