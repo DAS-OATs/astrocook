@@ -20,7 +20,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.0.3. Python ≥3.12.
+Current version: 2.1.0. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -117,7 +117,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 3. phase 3-bis – small fixes before the release (done): #575 (F41),
    F6, F13, #559 (F36, brought forward from phase 4), F45 (version in the
    `.acs2` archive), #560 (`norm` of `rebin` no longer offered);
-4. release 2.1.0, on GitHub with the macOS app, not on PyPI;
+4. release 2.1.0, on GitHub with the macOS app, not on PyPI (done);
 5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
    `ROADMAP.md`, section 4);
 6. phase 4 – scientific correctness: #526, #517, #465, #518, #568,
@@ -157,8 +157,10 @@ version (F45, `SessionV2.saved_with_version`); `norm` of `rebin` no longer
 offered (#560, F37, Guido's decision). Note on F8 for #526 (`rebin` keeps
 the old `resol` meta key).
 
-Next: release 2.1.0, on GitHub with the macOS app, not on PyPI (steps in
-`ROADMAP.md`, "Releases"); then the MCP pilot. Work in
+Release 2.1.0 (October 2026): phases 3 and 3-bis, on GitHub with the
+macOS app, not on PyPI (steps of a release in `ROADMAP.md`, "Releases").
+
+Next: the MCP pilot (`ROADMAP.md`, section 4). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
