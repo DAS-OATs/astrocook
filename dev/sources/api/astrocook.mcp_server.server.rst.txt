@@ -1,0 +1,7 @@
+astrocook.mcp\_server.server module
+===================================
+
+.. automodule:: astrocook.mcp_server.server
+   :members:
+   :show-inheritance:
+   :undoc-members:

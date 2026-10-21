@@ -1,0 +1,7 @@
+astrocook.mcp\_server.sessions module
+=====================================
+
+.. automodule:: astrocook.mcp_server.sessions
+   :members:
+   :show-inheritance:
+   :undoc-members:

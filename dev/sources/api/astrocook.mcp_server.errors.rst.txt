@@ -1,0 +1,7 @@
+astrocook.mcp\_server.errors module
+===================================
+
+.. automodule:: astrocook.mcp_server.errors
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,21 @@
+astrocook.mcp\_server package
+=============================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   astrocook.mcp_server.errors
+   astrocook.mcp_server.outputs
+   astrocook.mcp_server.server
+   astrocook.mcp_server.sessions
+
+Module contents
+---------------
+
+.. automodule:: astrocook.mcp_server
+   :members:
+   :show-inheritance:
+   :undoc-members:
