@@ -229,6 +229,7 @@ def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 
     return SystemListV2(data=data_core)
 
 def _serialize_v2_metadata(session: 'SessionV2') -> str:
+    from astrocook import __version__  # at call time: astrocook imports this module
     constraint_map_obj = session.systs.constraint_model.v2_constraints_by_uuid
     log_manager_to_save = getattr(session, 'log_manager', None)
     
@@ -249,7 +250,8 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
         log_history_json=log_history_data,
         log_type=log_type,
         v1_reconstruction_data=None, 
-        component_uuids=[c.uuid for c in session.systs.components]
+        component_uuids=[c.uuid for c in session.systs.components],
+        astrocook_version=__version__
     )
     
     # NEW: Inject region_identifications into the JSON dictionary

@@ -28,6 +28,10 @@ class SessionMetadataV2:
         Defaults to ``'v1_legacy'``.
     component_uuids : list of str
         An ordered list of all component UUIDs in the session.
+    astrocook_version : str or None
+        The version of Astrocook that saved the archive; ``None`` for archives
+        saved by versions up to 2.0.3, which did not record it (findings
+        register F45).
     """
     
     # Stores constraints linked by Component UUID
@@ -44,6 +48,9 @@ class SessionMetadataV2:
     
     # Stores a list of all component UUIDs in the order they appear
     component_uuids: List[str] = field(default_factory=list)
+
+    # Version of Astrocook that saved the archive (F45)
+    astrocook_version: Optional[str] = None
 
 @dataclass(frozen=True)
 class DataColumnV2:
