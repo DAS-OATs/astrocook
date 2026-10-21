@@ -825,6 +825,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F48 | `identify_lines` (docs) | The schema and the docstring of the recipe describe `mask_col` as "True=Unabsorbed"; the `abs_mask` column made by `find_absorbed` is True for the absorbed pixels (its own description, and how `identify_lines` uses it). The schema texts are what the GUI dialogs show and what the tools of the full MCP server will show to a model. Found in the MCP pilot (PR 3) | documentation | — | open: phase 6-bis (descriptions reviewed) |
 | F49 | `identify_lines` (candidate systems) | A doublet gives one candidate system per line: the two redshifts differ by ~0.5-1 km/s and survive the de-duplication, which rounds z to 5 decimals. On the full-chain mock the 3 CIV systems (4 components) give 6 candidates; on J0103-1305, 19 pairs of CIV candidates and 2 of MgII are closer than 2 km/s. `populate_from_identification` would add a component for each. Also, the candidate systems keep neither their region nor their score. Found in the MCP pilot (PR 3) | behaviour, structured output | `test_mcp_server.py` (`test_identify_lines_doublets_counted_twice`, characterization) | open: phase 4 (validation) / phase 7 |
 | F50 | `components_auto` (`doublets_auto`, `lya_auto`, ...) | The pipeline always makes a new absorbed mask with the default parameters of `find_absorbed` (5000 and 400 km/s, kappa 2) and stores it in `abs_mask`, so the mask of an earlier "Auto-estimate continuum" with other parameters is replaced without notice (the continuum is kept); the GUI dialog and the tool expose no mask parameter. Also, the region left out by `region_limit` is cleared in the stored `abs_mask`: after `doublets_auto` on the full-chain mock no forest pixel is flagged as absorbed (36% before), so a later "Fit continuum" on that mask would treat the whole forest as unabsorbed (the automatic pipelines make a new mask each time and are not affected). Found in the MCP pilot (PR 4) | behaviour | `test_mcp_server.py` (`test_doublets_auto_replaces_the_mask_of_the_continuum`, characterization) | open: phase 4 / 6-bis |
+| F51 | `identify_lines` (forest) | Every absorbed region of the forest without a metal candidate is assigned to Ly-a (score 0, no test), even when Ly-a is not among the requested `multiplets`: `multiplets='CIV'` on the full-chain mock gives 233 Ly-a and 6 CIV candidates. In the MCP pilot the Ly-a candidates crowded out the metals in the output (833 on J0103-1305). Found in the MCP pilot (report) | behaviour | — | open: phase 4 / 7 |
+| F52 | `VoigtFitterV2` (uncertainties) | Components that end at the bounds of a fit get uncertainties far beyond any meaning, stored as results without a warning: in the `doublets_auto` fit of J0103-1305 (MCP pilot), four CIV components at z = 3.927 with logN = 10.0 and b = 1.0 km/s have dz up to 131, dlogN up to 3800 and db up to 9e4 km/s; 21 of the 101 new components have dlogN > 1 or db > b. Related to F20, F21. Found in the MCP pilot (report) | numerical, error handling | — | open: with [#517](https://github.com/DAS-OATs/astrocook/issues/517) |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -1047,6 +1049,103 @@ with Guido as usual; none changes the recipes within the pilot.
    progress table updated. The report is the starting point of the
    recipe API (phase 6-bis). Then phase 4.
 
+### 4.2 MCP pilot: report
+October 2026, after PRs #595-#599. Two trials, then Guido's own (below).
+
+**Trials.** Two fresh agents (Claude, with no knowledge of the code, the
+tests or the true parameters, told not to read them) used the server
+through a minimal MCP client, seeing only what a client shows a model:
+the server instructions, the tool descriptions and schemas, the results.
+Each got a request in plain words and answered it, then wrote a critique
+of the server. Transcripts and reports are summarized here.
+- *Full-chain mock* ("find the metal systems on the red side, fit them,
+  say which components are reliable"). 10 calls, none failed, none over
+  1 s. The agent found the 3 CIV systems and judged 6 components: the 2
+  spurious ones of F49 "not reliable" (0.7 km/s from the main component,
+  below the resolution element, dlogN 0.6 and 1.1), 3 "reliable", and
+  one real component (z = 1.83000, logN 13.4, b 8) only "tentative". It
+  explored by itself (lower `score_threshold`, wider `z_window_kms`).
+  The mock archive also carries the true continuum (`cont` from the
+  generator), which the agent used in its first session: future trials
+  should remove it.
+- *J0103-1305* ("estimate the continuum, tell me the metal systems, fit
+  the doublets; I do not want to lose my work"). 7 calls, none failed;
+  `absorbers_doublets_auto` took 168 s. The agent worked on a second copy
+  of the session to keep the original, set z_em and R (the archive had
+  neither), noticed and reported that the doublet fit removed 190 of the
+  764 components (the count is all the output gives), and singled out the
+  bad fits: CIV at z = 3.927 (4 components at logN = 10 and b = 1 km/s,
+  dz up to 131, dlogN up to 3800), z = 3.885 and 3.28 (reduced chi2 up to
+  135), several MgII with b of 1.8-2.2 km/s. It suggested telluric
+  absorption (O2 A band at 760 nm) for the worst ones, which no output
+  could confirm: to be checked by Guido.
+
+**Answers to the questions of section 4.1.**
+1. *Outputs.* The summaries were enough to chain the tools and to judge
+   most components; the agents asked for:
+   - quality beyond the bounds: today a component with dlogN of 1 dex or
+     db > b has no flag, so `n_flagged = 0` reads as "all good" (21 of
+     the 101 new components on J0103-1305); flags for large relative
+     errors, high chi2, components closer than the resolution element,
+     and a verdict per system;
+   - structure: the fit group of a component (now inferred from equal
+     chi2), its system, the transitions fitted, the velocity offsets in
+     km/s, the link between the systems of `identify_lines` and those of
+     `doublets_auto`, the score of each candidate system;
+   - provenance: what a session held when opened (an existing continuum,
+     components with an empty log, z_em and R missing), and what a recipe
+     replaced or removed (the 190 components, the continuum, the mask:
+     F50), listed, not only counted;
+   - lists that fit a model's context: 833 Ly-a candidates crowd out the
+     metals in `absorbers_identify_lines` even when Ly-a is not asked for
+     (F51); filters by series or range.
+   A common result format for the recipes (summary, what changed, flags,
+   warnings) is worth adding to the API (phase 6-bis): the server built
+   it here by comparing states, which a recipe can do better.
+2. *Errors.* No call failed in the trials; in the tests, every failure
+   reached the model with Astrocook's message (missing or unreadable
+   file, z_em not set, unknown session), thanks to the capture of the
+   logged errors (`errors.py`). The recipes also fail silently in ways no
+   message reports: unphysical values accepted (F46), absurd
+   uncertainties stored as results (F52), a mask rebuilt with defaults
+   (F50), a mask built when missing (INFO only). The only warning seen
+   was noise (astropy's `VerifyWarning` on the `resol_fwhm` FITS keyword,
+   at every save). For phase 6: structured warnings with a code, the
+   cosmetic library warnings filtered.
+3. *Parameters.* Typed parameters and the schema defaults worked; the
+   descriptions of the schemas are too short for a model (`z_window_kms`:
+   half or full width? `fudge`: what?, the "Fit window"), sometimes wrong
+   (F48), and some parameters must not be offered (column names, GUI
+   plots): the schema needs a flag for them (phase 6-bis).
+4. *Log.* The log of a session built by the agents is the one the GUI
+   would write (`set_properties`, `estimate_auto`, `identify_lines`,
+   `doublets_auto`, with their parameters as strings) and replays: the
+   entries of the mock trial, run again on the original archive, give
+   the same 6 components. For a natural-language log (section 4, item 3)
+   the entries lack what the recipe *did* (components added and removed,
+   flags): the same information as the structured outputs.
+5. *Usability.* Both agents chained the tools correctly at the first
+   attempt, from the descriptions alone, and explored parameters by
+   themselves. They could not act on their judgement: no tool to remove
+   or refit a component, compare models, list components, duplicate or
+   close a session. `absorbers_doublets_auto` is the one dangerous tool
+   (it removes components); the agent protected the user's work only by
+   opening a second copy. Calls of minutes need progress notifications.
+
+**Lessons for the full server** (section 4; not changed in the pilot):
+- tools to inspect (list components, describe a session) and to act
+  (delete, refit, add a component), and to duplicate, list and close
+  sessions;
+- destructive recipes report what they remove, and offer a dry run or a
+  "keep existing" option, or the server keeps the previous state;
+- flags: the tolerance of "at a bound" is too tight (logN = 10.013 is not
+  flagged), and the flags above;
+- progress notifications for long recipes (the recipes already log
+  `>> PROGRESS: n`);
+- separate limits per list, filters, a metals-first option.
+
+**Guido's trial.** To be added.
+
 ---
 
 ## 5. v3 vision (horizon, after v2 consolidation)
@@ -1111,7 +1210,7 @@ review); each of its decisions goes into the log.
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
-| MCP pilot (section 4.1) | in progress: scope agreed (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (PR 5); found F46-F50 |
+| MCP pilot (section 4.1) | in progress: scope agreed (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report with two agent trials (section 4.2, PR 6), Guido's trial to come; found F46-F52 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
