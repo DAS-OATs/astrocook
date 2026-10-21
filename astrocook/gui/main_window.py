@@ -3484,15 +3484,17 @@ class MainWindowV2(QMainWindow):
                         self._update_view_for_session(self.active_history.current_state)
                     continue
 
-                # --- 2. LOGGING (Only once or per item?) ---
-                # Let's log for every item to be safe, or just once if params are shared.
-                # Since params are shared, maybe just log once? 
-                # Existing logic logs every time this runs.
+                # --- 2. LOGGING ---
+                # A linear recipe is logged once on the parent. A branching
+                # recipe is logged in each new session it opens, after the
+                # branch has copied the parent log: the parent session does
+                # not change, so its log does not either (F41, #575)
+                branching = is_branching_recipe(recipe_name)
+                params_to_log = params.copy()
+                params_to_log.pop('alias_map', None)
                 try:
-                    if i == 0 and isinstance(original_parent_history.log_manager, HistoryLogV2):
-                        # Log the command once on the parent
-                        params_to_log = params.copy()
-                        params_to_log.pop('alias_map', None) 
+                    if (i == 0 and not branching
+                            and isinstance(original_parent_history.log_manager, HistoryLogV2)):
                         original_parent_history.log_manager.add_entry(recipe_name, params_to_log)
                 except Exception: pass
 
@@ -3549,7 +3551,6 @@ class MainWindowV2(QMainWindow):
                                 logging.error(f"Propagation crashed: {e}", exc_info=True)
 
                 original_history_index = self.session_histories.index(original_parent_history)
-                branching = is_branching_recipe(recipe_name)# or recipe_name == 'equalize_and_stitch'
                 
                 # --- 4. PREPARE PARENT FOR BRANCHING ---
                 # If we are branching multiple times (e.g. extract_preset="lya, red"), 
@@ -3566,6 +3567,16 @@ class MainWindowV2(QMainWindow):
                     auto_show_aux=auto_show_col,
                     force_autoscale=should_autoscale
                 )
+
+                branch_history = self.active_history
+                try:
+                    if (branching and branch_history is not original_parent_history
+                            and isinstance(branch_history.log_manager, HistoryLogV2)):
+                        branch_history.log_manager.add_entry(recipe_name, params_to_log)
+                        if (self.log_scripter_dialog and self.log_scripter_dialog.isVisible()
+                                and self.log_scripter_dialog.log_object is branch_history.log_manager):
+                            self.log_scripter_dialog.refresh()
+                except Exception: pass
 
             # After loop, the *last* created session will be active (set by update_gui_session_state).
             # This is usually the desired behavior.

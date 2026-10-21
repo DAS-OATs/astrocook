@@ -532,7 +532,11 @@ one small PR each, with the related strict xfail turned into a passing test
 (or a new regression test). Order agreed with Guido:
 1. [#575](https://github.com/DAS-OATs/astrocook/issues/575) (F41,
    priority): a recipe that opens a new session is also recorded in the
-   log of the parent session;
+   log of the parent session. Done: the entry goes only into the log of
+   each new session, after the copy of the parent log; logging on the
+   parent also deleted its redo entries after an undo, fixed with it.
+   Logs saved by earlier versions are left as they are: a spurious entry
+   in a parent log cannot be told apart from the right one in a branch;
 2. F6: `core/spectrum_operations.py` imports `gui.debug_utils`, so the core
    depends on the GUI (importing it also imports PySide6; matters for the
    headless MCP pilot). Proposed: an optional debug hook in `core`, which
@@ -541,7 +545,9 @@ one small PR each, with the related strict xfail turned into a passing test
    created with the group still selected (strict xfail already in place);
 4. [#559](https://github.com/DAS-OATs/astrocook/issues/559) (F36, brought
    forward from phase 4): `dbtur` not updated after a fit; changes only
-   the uncertainty of `btur`, slow tests run before the merge.
+   the uncertainty of `btur`, slow tests run before the merge;
+5. F45: the `.acs2` archive records the Astrocook version that saved it
+   (found with #575; added to the phase by Guido).
 
 [#560](https://github.com/DAS-OATs/astrocook/issues/560) (`norm` of the
 `rebin` recipe ignored, F37): to be discussed with Guido when reached
@@ -640,7 +646,7 @@ features after, except urgent features in stable areas.
 | Phase 3-bis (brought forward) | [#559](https://github.com/DAS-OATs/astrocook/issues/559) | found while cleaning up the Ruff warnings (phase 2-bis): `dbtur` not updated after a fit (F36) |
 | Phase 4 (possibly phase 3-bis, to be discussed with Guido) | [#560](https://github.com/DAS-OATs/astrocook/issues/560) | found while cleaning up the Ruff warnings (phase 2-bis): `norm` of the `rebin` recipe ignored (F37) |
 | Phase 4 | [#568](https://github.com/DAS-OATs/astrocook/issues/568), [#573](https://github.com/DAS-OATs/astrocook/issues/573) | found in phase 3: a single table of atomic parameters (F38, F39); recipe defaults differing between GUI and API (F40) |
-| Phase 3-bis (priority) | [#575](https://github.com/DAS-OATs/astrocook/issues/575) | found in phase 3: a recipe that opens a new session is also recorded in the log of the parent session (F41); small fix, touches the reproducibility of the log |
+| Phase 3-bis (priority) | [#575](https://github.com/DAS-OATs/astrocook/issues/575) | found in phase 3: a recipe that opens a new session is also recorded in the log of the parent session (F41); done |
 | Phase 6 | [#566](https://github.com/DAS-OATs/astrocook/issues/566) | centralize the log messages (started in phase 3 with `recipes/messages.py`), with the move to per-module loggers |
 | After phase 5 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
 | After phase 5 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |
@@ -698,10 +704,11 @@ Exception: anything that loses user data or crashes is reported at once.
 | F38 | atomic data (`core/atomic_data.py`) | `ATOM_DATA` (V2, 210 transitions) differs from `data/atom_par.dat` (V1, 829) for some values. Many differences look intended (updated Lyman oscillator strengths, masses filled in where V1 had 0), but some look like transcription errors in V2: wavelength of `OIII_832` (832.29 vs 832.93 Å), `PIII_913` (913.40 vs 913.97 Å), `PV_1117` (1117.80 vs 1117.98 Å), `FeI_2501` (2501.19 vs 2501.89 Å), and the damping constant of `ArI_1066` (1.32e7 vs 1.32e8 s^-1). The V1 values agree with the standard line lists. Found in phase 3 (PR 3) | numerical | — | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
 | F39 | `trans_parse` (GUI) | The V1 series (`trans_parse`, used by the GUI when a series is not in `STANDARD_MULTIPLETS`) keep the order of `atom_par.dat`: `'Ly'` goes from `Ly_lim` to `Ly_a` (also `H`, `D`), and the redshift cursor takes the first transition known to `xem_d` as reference, so with the series `Ly` the cursor z refers to `Ly_lim`, not `Ly_a`. Also, only whole strings are looked up in `STANDARD_MULTIPLETS`: `MgII` gives the doublet, `MgII;Ly_b` the six MgII lines of `atom_par.dat` (1025-2803 Å). Building the series from `ATOM_DATA` instead would change this order and add `OI_988a/b` to `OI`. Kept as in V1 in phase 3 (PR 3) | behaviour | `test_atomic_data.py` (`test_trans_parse_lyman_order`), `test_gui_series_lookup.py` | issue [#568](https://github.com/DAS-OATs/astrocook/issues/568), phase 4 |
 | F40 | recipe defaults | Each recipe defines its defaults twice, in the schema (GUI dialogs) and in the method signature (scripts, API): 15 optional parameters differ, e.g. `refit_all` `group_depth` 2 (GUI) vs 0 (API), `coadd` `dx`/`xunit` 10 km/s vs 0.01 nm, `optimize_system` `aic_penalty` 5 vs 0, so the same recipe gives different results from the GUI and from a script. Found in phase 3 | behaviour / numerical | — | issue [#573](https://github.com/DAS-OATs/astrocook/issues/573), phase 4 |
-| F41 | session log (GUI) | A recipe that opens a new session (`extract_preset`, `split`, `coadd`, ...) is recorded in the log of the parent session too, which does not change: the parent log no longer matches its states, and the extra entry stays in later operations, in the saved `.acs2` and in a replay of the log. Found in phase 3 (PR 6) | reproducibility | `test_gui_smoke.py` (`test_branch_does_not_change_the_parent_log`, strict xfail) | issue [#575](https://github.com/DAS-OATs/astrocook/issues/575), to be scheduled |
+| F41 | session log (GUI) | A recipe that opens a new session (`extract_preset`, `split`, `coadd`, ...) is recorded in the log of the parent session too, which does not change: the parent log no longer matches its states, and the extra entry stays in later operations, in the saved `.acs2` and in a replay of the log. Found in phase 3 (PR 6) | reproducibility | `test_gui_smoke.py` (`test_branch_does_not_change_the_parent_log`, `test_branch_after_undo_keeps_the_parent_redo`; regression) | fixed (phase 3-bis), issue [#575](https://github.com/DAS-OATs/astrocook/issues/575): the entry goes only into the log of the new session; logs saved earlier left as they are |
 | F42 | opening V1 `.acs` archives | The V1 reader, kept as it was by the native reader of phase 3 (`io/v1_archive.py`), sets `btur` to 0 and drops `dbtur` and `chi2r` from the V1 system table; the flux unit of V1 (erg/(cm2 s Angstrom)) is not kept (dimensionless). In the two sample archives `btur` is 0, `chi2r` is lost. Found in phase 3 (PR 8b) | data | `test_v1_archive.py` (snapshots, `test_v1_columns_are_read`) | fixed (phase 3): the three columns are read (`chi2r` as the reduced `chi2` of V2), the flux in erg/(cm2 s Angstrom) as in the V2 `astrocook_fits` loader (before, `y_convert` failed on V1 sessions) |
 | F43 | V1 constraints | V1 links are stored as `lines_voigt_<id>_<par>` (e.g. `lines_voigt_14_b*0.65...`), but the conversion to V2 (`VoigtModelConstraintV2._convert_v1_to_v2`) only translates `p[<id>]`: the linked parameters (124 in the sample archive) are frozen at their V1 values with no target, the expression fails silently at each evaluation, and the System Inspector cannot show the link (reported by Guido). Found in phase 3 (PR 8b) | behaviour | `test_v1_constraints.py` | fixed (phase 3): the V1 reader translates the links into V2 constraints keyed by UUID (target, `p['<uuid>'].<par>` syntax), so that grouping, fit, `.acs2` and System Inspector see them; `logN` constraints are no longer lost (the parameter name was lower-cased). A refit of a V1 session now follows the links |
 | F44 | opening archives | A spectrum the V1 reader could not read was replaced with mock data (flux 1 between 100 and 500 nm, no systems) with only a log warning: an `.acs2` archive without `_meta.json`, a damaged `.acs`, or a raw file whose format has no V2 loader. Saving such a session overwrote the data. Found in phase 3 (PR 8b) | data loss | `test_v1_archive.py` | fixed (phase 3, PR 8b): `.acs2` without metadata read with the V2 readers (without constraints, log, identifications), the other cases are errors |
+| F45 | `.acs2` archives | The archive does not record the Astrocook version that saved it, so a problem tied to a version cannot be recognised on load: e.g. the spurious log entries of F41 in archives saved with 2.0.2 and 2.0.3, left as they are because they cannot be told apart from correct ones. Proposed: write the version in the archive metadata from now on (small, separate PR). Found in phase 3-bis (#575) | data provenance | — | phase 3-bis |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -842,7 +849,7 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
-| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559; possibly #560) | not started |
+| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45; possibly #560) | in progress: #575 done |
 | 4 – Scientific correctness (#526, #517, #465, #518, #560, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |

@@ -5,6 +5,7 @@
 - V1 `.acs` archives: the turbulent broadening (`btur`) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit > Convert y axis) work on V1 sessions.
 
 - V1 `.acs` archives: the links between parameters (e.g. SiIV z and b tied to CIV) are now kept as V2 constraints. Before, the linked parameters were frozen at their V1 values, did not follow their target in a refit, and the System Inspector showed no target; constraints on logN were lost. **Refitting a V1 session with links gives different (correct) results.**
+- Session log (GUI): a recipe that opens a new session (`extract_preset`, `split`, `stitch`, `equalize_and_stitch`, `coadd`, `resample`, `identify_lines`) was also recorded in the log of the session it was run from, whose data do not change; after an undo, it also deleted that log's redo entries. It is now recorded only in the log of the new session. *Note*: `.acs2` archives saved with 2.0.2 or 2.0.3 may still contain such an entry in their log; it is left as it is (it cannot be told apart from a correct one), so check the log before replaying it as a script.
 
 ### Changed
 - Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the new tutorial *Using Astrocook from Python*): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
