@@ -42,11 +42,14 @@ e.g. `/Users/me/ac2/bin/astrocook-mcp`.
 
 ## 2. Registering the Server
 
-**Claude Code:**
+**Claude Code** (the `claude` command; if it is not installed, see
+[its setup page](https://code.claude.com/docs/en/setup); on macOS and
+Linux: `curl -fsSL https://claude.ai/install.sh | bash`):
 ```
 claude mcp add astrocook -- /Users/me/ac2/bin/astrocook-mcp
 ```
-Add `--scope user` to have it in all your projects. `claude mcp list`
+To have it in all your projects, add `--scope user` before the name
+(`claude mcp add --scope user astrocook -- ...`). `claude mcp list`
 shows the registered servers; in a session, `/mcp` shows their state.
 
 **Claude desktop app:** add the server to its configuration file
