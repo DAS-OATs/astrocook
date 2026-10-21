@@ -527,9 +527,17 @@ cache them (e.g. `astropy.utils.data.download_file`), checking the
 SHA-256; all files are also in the git history.
 
 ### Phase 3-bis – Small fixes before 2.1.0
-Agreed with Guido (October 2026): a few small fixes before release 2.1.0,
-one small PR each, with the related strict xfail turned into a passing test
-(or a new regression test). Order agreed with Guido:
+Done (October 2026), PRs #587-#592. Agreed with Guido (October 2026): a
+few small fixes before release 2.1.0, one small PR each, with the related
+strict xfail turned into a passing test (or a new regression test). Found
+along the way and fixed in the same PRs: branching after an undo deleted
+the redo entries of the parent log (#575); the docstring of
+`rate_doublet_candidate` had the order of the regions reversed (F6); the
+link colours changed at random when a link was added (F13);
+`evaluate_uncertainties` did not update `dbtur` either (#559). Found and
+recorded: F45 (added to the phase), a note on F8 (`rebin` keeps the old
+`resol` meta key; #526). The only numerical change is the `dbtur` column
+of the fitted components (#559). Order agreed with Guido:
 1. [#575](https://github.com/DAS-OATs/astrocook/issues/575) (F41,
    priority): a recipe that opens a new session is also recorded in the
    log of the parent session. Done: the entry goes only into the log of
@@ -621,6 +629,13 @@ Documentation (agreed with Guido, October 2026): the root of the website
 shows the docs of the latest release, `/dev/` those of master (see
 `.github/workflows/docs.yml`). Before publishing a release, update the
 "preferred" entry of `switcher.json` on master to the new version.
+Steps of a release (as for 2.0.2 and 2.0.3): a release PR on master with
+the version in `pyproject.toml`, `astrocook/__init__.py` and `README.md`,
+the "preferred" entry of `switcher.json`, and the `CHANGELOG.md` entry
+(the "Unreleased" section renamed, with a summary of the numerical
+changes); after the merge, the macOS app (`build_app.sh`, on a Mac) and
+the GitHub release with tag `v<version>` and the app attached, which
+publishes the docs of the tag at the root of the website.
 - **2.0.2 (corrective), released after phase 1-bis (October 2026):** the
   fixes of phase 1-bis (F1, F2, F10 minimal, F11, F16, F19, F20, F23-F27,
   F29, F32, #534) and issues #480, #442, together with the earlier fixes
@@ -867,7 +882,7 @@ review); each of its decisions goes into the log.
 | 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE pending (#549) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026): F34 fixed; Ruff and Sphinx warnings cleaned up, full `ruff check .` in CI; `[bayes]` extra; found F36, F37 (#559, #560, phase 4) |
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
-| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | in progress: all six done |
+| 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | 4 – Scientific correctness (#526, #517, #465, #518, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
