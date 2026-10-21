@@ -6,7 +6,10 @@ import astropy.units as au
 
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-from astrocook.mocks.physics import C_KMS, FWHM_TO_SIGMA, convolve_velocity, optical_depth
+from astrocook.mocks.physics import (
+    C_KMS, FWHM_TO_SIGMA, convolve_velocity, is_hydrogen,
+    lyman_limit_optical_depth, optical_depth,
+)
 from astrocook.mocks.truth import MockTruth
 
 
@@ -46,6 +49,8 @@ def normalized_flux(truth: MockTruth) -> Tuple[np.ndarray, np.ndarray]:
     for comp in truth.components:
         tau += optical_depth(sub * 10.0, comp.series, comp.z, comp.logN,
                              comp.b, comp.btur)
+        if truth.lyman_limit and is_hydrogen(comp.series):
+            tau += lyman_limit_optical_depth(sub * 10.0, comp.z, comp.logN)
     flux_sub = convolve_velocity(np.exp(-tau), truth.dv_kms / k, truth.resol)
     return x, flux_sub.reshape(len(x), k).mean(axis=1)
 
@@ -67,12 +72,16 @@ def spike_indices(truth: MockTruth, n_pixels: int) -> np.ndarray:
     return np.sort(rng.choice(n_pixels, size=truth.n_spikes, replace=False))
 
 
-def generate(truth: MockTruth) -> SpectrumV2:
+def generate(truth: MockTruth, truth_columns: bool = True) -> SpectrumV2:
     """Mock spectrum for ``truth``.
 
     The spectrum has the true continuum (with emission lines) in the
     ``cont`` column and the noiseless flux in ``mock_flux``; ``z_em`` and the resolving power are
     set (the latter also in the metadata, so that it survives a save).
+
+    With ``truth_columns=False`` the two columns are left out, as for an
+    observed spectrum: the recipes would otherwise use the true continuum
+    (in the MCP pilot an agent fitted on it). The flux is the same.
     """
     x, xmin, xmax = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
     _, flux = normalized_flux(truth)
@@ -105,6 +114,6 @@ def generate(truth: MockTruth) -> SpectrumV2:
             "cont": DataColumnV2(cont, unit, description="True continuum"),
             "mock_flux": DataColumnV2(true_flux, unit,
                                       description="Noiseless flux"),
-        },
+        } if truth_columns else {},
         meta=meta, z_em=truth.z_em, resol=resol)
     return SpectrumV2(data)

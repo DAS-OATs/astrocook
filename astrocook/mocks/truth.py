@@ -69,7 +69,9 @@ class MockTruth:
     which the model is computed before being averaged over each pixel.
 
     ``emission_lines`` are added to the continuum (the absorbers absorb
-    them too). ``n_spikes`` single-pixel positive spikes of
+    them too). With ``lyman_limit`` the H I components (those with Lyman
+    lines) also absorb the continuum below their Lyman limit (off by
+    default, so that the mocks made before it are unchanged). ``n_spikes`` single-pixel positive spikes of
     ``spike_amplitude`` times the local error are added after the noise, at
     random positions; their indices are not part of the truth but are
     reproducible from the seed (see :func:`astrocook.mocks.spike_indices`).
@@ -89,6 +91,7 @@ class MockTruth:
     emission_lines: List[EmissionLine] = dataclasses.field(default_factory=list)
     n_spikes: int = 0
     spike_amplitude: float = 10.0
+    lyman_limit: bool = False
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)

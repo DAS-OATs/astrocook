@@ -235,3 +235,135 @@ def test_full_mock_spectrum(tmp_path):
     path = tmp_path / "truth.json"
     truth.to_json(str(path))
     assert MockTruth.from_json(str(path)) == truth
+
+
+# --- Strong H I absorbers and the Lyman limit (phase 4, validation) --------
+
+from scipy.integrate import quad  # noqa: E402
+
+from astrocook.mocks import (  # noqa: E402
+    DLA_LOGN, LLS_LOGN, LYMAN_SERIES, strong_hi_systems,
+)
+from astrocook.mocks.physics import (  # noqa: E402
+    LYMAN_LIMIT_ANG, SIGMA_LYMAN_LIMIT, is_hydrogen,
+)
+
+Z_LLS = 3.0
+
+
+def _lls_truth(logN, lyman_limit):
+    # 880-1000 A rest frame, noiseless, no instrumental profile
+    return MockTruth(
+        components=[MockComponent(LYMAN_SERIES, Z_LLS, logN, 20.0)],
+        lam_min_nm=88.0 * (1 + Z_LLS), lam_max_nm=100.0 * (1 + Z_LLS),
+        dv_kms=5.0, resol=None, snr=None, lyman_limit=lyman_limit)
+
+
+def _rest_ang(x_nm):
+    return x_nm * 10.0 / (1 + Z_LLS)
+
+
+def test_lyman_series_covers_the_table():
+    names = LYMAN_SERIES.split(",")
+    assert names[0] == "Ly_a" and names[-1] == "Ly_15" and "Ly_lim" not in names
+    assert is_hydrogen(LYMAN_SERIES) and is_hydrogen("Ly_a")
+    assert not is_hydrogen("CIV")
+
+
+def test_lyman_limit_transmission():
+    # Below the edge (no lines there) the flux is exp(-N sigma (l/l_LL)^3)
+    logN = 17.5  # tau = 2 at the edge
+    x, flux = normalized_flux(_lls_truth(logN, lyman_limit=True))
+    lam = _rest_ang(x)
+    below = (lam > 885.0) & (lam < 908.0)
+    expected = np.exp(-10**logN * SIGMA_LYMAN_LIMIT * (lam / LYMAN_LIMIT_ANG) ** 3)
+    assert flux[below] == pytest.approx(expected[below], rel=1e-3)
+    assert expected[below].min() < 0.2
+
+
+def test_lyman_limit_is_off_by_default():
+    _, with_edge = normalized_flux(_lls_truth(17.5, lyman_limit=True))
+    x, without = normalized_flux(_lls_truth(17.5, lyman_limit=False))
+    lam = _rest_ang(x)
+    assert MockTruth(components=[], lam_min_nm=1, lam_max_nm=2,
+                     dv_kms=1).lyman_limit is False
+    assert without[(lam > 885.0) & (lam < 908.0)] == pytest.approx(1.0, abs=1e-3)
+    redwards = lam > LYMAN_LIMIT_ANG + 1.0
+    assert with_edge[redwards] == pytest.approx(without[redwards])
+
+
+def test_dla_damping_wings():
+    # Equivalent width of a DLA in Ly-a against the Lorentzian wings,
+    # tau = C / dlambda^2 with C = N (pi e^2 / m_e c) f gamma lambda0^4 /
+    # (4 pi^2 c^2), integrated over the same window
+    logN, half = 20.5, 60.0  # half-width of the window, Angstrom (rest)
+    lya = ATOM_DATA["Ly_a"]
+    lam0, z = lya["wave"], 3.0
+    truth = MockTruth(components=[MockComponent("Ly_a", z, logN, 20.0)],
+                      lam_min_nm=(lam0 - half) / 10 * (1 + z),
+                      lam_max_nm=(lam0 + half) / 10 * (1 + z),
+                      dv_kms=5.0, resol=None, snr=None)
+    w_mock = _ew_ang(truth) / (1 + z)
+    pi_e2_mec = (np.pi * const.e.esu**2 / (const.m_e * const.c)).cgs.value
+    c_cms = const.c.cgs.value
+    lam0_cm = lam0 * 1e-8
+    c_wing = (10**logN * pi_e2_mec * lya["f"] * lya["gamma"] * lam0_cm**4
+              / (4 * np.pi**2 * c_cms**2)) * 1e16  # cm^2 -> Angstrom^2
+    w_wing = 2 * quad(lambda d: 1 - np.exp(-c_wing / d**2), 0, half)[0]
+    assert w_mock == pytest.approx(w_wing, rel=0.02)
+    assert w_wing > 10.0  # damped regime
+
+
+def test_strong_hi_systems():
+    rng = np.random.default_rng(3)
+    comps = strong_hi_systems(rng, 200, 2.0, 3.0, logN_range=DLA_LOGN)
+    assert len(comps) == 200
+    assert all(c.series == LYMAN_SERIES for c in comps)
+    logN = np.array([c.logN for c in comps])
+    assert DLA_LOGN[0] <= logN.min() and logN.max() <= DLA_LOGN[1]
+    assert np.mean(logN < 21.0) > 0.5  # f(N) falls with N
+    assert [c.z for c in comps] == sorted(c.z for c in comps)
+    again = strong_hi_systems(np.random.default_rng(3), 200, 2.0, 3.0,
+                              logN_range=DLA_LOGN)
+    assert again == comps
+    lls = strong_hi_systems(rng, 50, 2.0, 3.0, logN_range=LLS_LOGN)
+    assert all(LLS_LOGN[0] <= c.logN <= LLS_LOGN[1] for c in lls)
+
+
+def test_metal_systems_with_hi():
+    def draw(**kwargs):
+        return metal_systems(np.random.default_rng(7), 20, 2.0, 3.0,
+                             species=("CIV", "MgII"), dv_kms=50.0, **kwargs)
+    plain, with_hi = draw(), draw(hi_logN_range=(14.0, 16.0))
+    hi = [c for c in with_hi if c.series == LYMAN_SERIES]
+    metals = [c for c in with_hi if c.series != LYMAN_SERIES]
+    assert len(hi) == 20
+    assert all(14.0 <= c.logN <= 16.0 and 15.0 <= c.b <= 35.0 for c in hi)
+    for c in hi:  # each H I sits at its system, within the metal spread
+        assert min(abs(m.z - c.z) / (1 + c.z) * C_KMS for m in metals) <= 50.0
+    assert not any(c.series == LYMAN_SERIES for c in plain)
+
+
+def test_forest_series():
+    rng = np.random.default_rng(1)
+    comps = lya_forest(rng, 2.9, 3.0, series=LYMAN_SERIES)
+    assert comps and all(c.series == LYMAN_SERIES for c in comps)
+
+
+def test_generate_without_truth_columns():
+    truth = _truth([MockComponent("CIV", Z, 13.5, 10.0)], snr=30.0)
+    observed = generate(truth, truth_columns=False)
+    full = generate(truth)
+    assert not observed.has_aux_column("cont")
+    assert not observed.has_aux_column("mock_flux")
+    assert observed.y.value == pytest.approx(full.y.value)
+    assert observed.dy.value == pytest.approx(full.dy.value)
+    assert observed._data.z_em == full._data.z_em
+
+
+def test_truth_round_trip_with_and_without_lyman_limit():
+    truth = _lls_truth(17.5, lyman_limit=True)
+    assert MockTruth.from_dict(truth.to_dict()) == truth
+    old = truth.to_dict()
+    del old["lyman_limit"]  # a truth saved before the option existed
+    assert MockTruth.from_dict(old).lyman_limit is False

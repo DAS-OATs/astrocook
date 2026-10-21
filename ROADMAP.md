@@ -1340,7 +1340,7 @@ review); each of its decisions goes into the log.
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
-| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed (#601); validation: mocks extended (PR 1 of 3) |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |

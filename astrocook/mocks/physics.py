@@ -16,6 +16,16 @@ C_KMS = const.c.to_value(au.km / au.s)
 _PI_E2_MEC = (np.pi * const.e.esu**2 / (const.m_e * const.c)).cgs.value
 FWHM_TO_SIGMA = 1.0 / (2.0 * np.sqrt(2.0 * np.log(2.0)))
 
+#: The H I Lyman series of the atomic data table, Ly_a to Ly_15 (the
+#: ``Lyman`` multiplet of ``STANDARD_MULTIPLETS`` stops at Ly_8), as a
+#: series string for :class:`~astrocook.mocks.MockComponent`
+LYMAN_SERIES = ",".join(k for k in ATOM_DATA
+                        if k.startswith("Ly_") and ATOM_DATA[k]["f"] > 0)
+#: H I ionization edge (Angstrom), as in the atomic data table
+LYMAN_LIMIT_ANG = ATOM_DATA["Ly_lim"]["wave"]
+#: H I photoionization cross section at the edge (cm^2)
+SIGMA_LYMAN_LIMIT = 6.30e-18
+
 
 def transitions(series: str) -> List[str]:
     """Transitions of a series (single line, standard multiplet or list)."""
@@ -51,6 +61,27 @@ def optical_depth(lam_ang: np.ndarray, series: str, z: float, logN: float,
         h = wofz(u + 1j * a).real
         tau += _PI_E2_MEC * atom["f"] * lam0_cm * n_col / (np.sqrt(np.pi) * b_cms) * h
     return tau
+
+
+def is_hydrogen(series: str) -> bool:
+    """True if the series has H I Lyman lines."""
+    return any(name.startswith("Ly_") for name in transitions(series))
+
+
+def lyman_limit_optical_depth(lam_ang: np.ndarray, z: float,
+                              logN: float) -> np.ndarray:
+    """Optical depth of the H I continuum below the Lyman limit.
+
+    tau = N sigma_LL (lambda_rest / lambda_LL)^3 for lambda_rest <=
+    lambda_LL, 0 above. The (nu_LL / nu)^3 law is the usual approximation
+    of the hydrogenic cross section (the exact one falls slightly more
+    slowly, ~nu^-2.75, near the edge). The Lyman lines above Ly_15 are
+    not modelled: between Ly_15 (915.3 A) and the edge they would merge
+    into the edge of a strong absorber.
+    """
+    lam_rest = np.asarray(lam_ang, dtype=float) / (1.0 + z)
+    ratio = lam_rest / LYMAN_LIMIT_ANG
+    return np.where(ratio <= 1.0, 10.0**logN * SIGMA_LYMAN_LIMIT * ratio**3, 0.0)
 
 
 def convolve_velocity(flux: np.ndarray, dv_kms: float,
