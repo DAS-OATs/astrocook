@@ -87,7 +87,7 @@ Current version: 2.0.3. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis and 3 done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3 and 3-bis done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -114,10 +114,9 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2026, revised after phase 3; `ROADMAP.md`, section 3):
 1. phase 2 – cleanup and packaging (done, release 2.0.3);
 2. phase 3 – decoupling from `legacy/` (done);
-3. phase 3-bis – small fixes before the release, in this order: #575
-   (F41, priority), F6, F13, #559 (F36, brought forward from phase 4),
-   F45 (version in the `.acs2` archive), #560 (`norm` of `rebin` no
-   longer offered);
+3. phase 3-bis – small fixes before the release (done): #575 (F41),
+   F6, F13, #559 (F36, brought forward from phase 4), F45 (version in the
+   `.acs2` archive), #560 (`norm` of `rebin` no longer offered);
 4. release 2.1.0, on GitHub with the macOS app, not on PyPI;
 5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
    `ROADMAP.md`, section 4);
@@ -139,7 +138,7 @@ phase 3.
 
 Phase 2-bis done (October 2026): F34 (window icon), Ruff warnings (full
 `ruff check .` in CI), Sphinx warnings, optional `[bayes]` extra (emcee,
-dynesty, corner); found F36 and F37, deferred to #559 and #560 (phase 4).
+dynesty, corner); found F36 and F37 (#559 and #560, fixed in phase 3-bis).
 
 Phase 3 done (October 2026, PRs #565-#584): `astrocook/legacy/` removed;
 V1 `.acs` archives read by `io/v1_archive.py` (saving in `.acs` removed);
@@ -149,7 +148,17 @@ kept as assets of the pre-release `data-telluric-2026`); docs published per
 version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 in
 phase 3-bis); #566 (centralized messages) in phase 6.
 
-Next: phase 3-bis (`ROADMAP.md`, section 3), then release 2.1.0. Work in
+Phase 3-bis done (October 2026, PRs #587-#592): branching recipes logged
+only in the new session (#575, F41); the core no longer imports the GUI
+(F6, `core/debug_hooks.py`); link colours of the System Inspector
+recomputed and stable (F13); `dbtur` stored after a fit (#559, F36: 0 when
+`btur` is frozen, the default); `.acs2` archives record the Astrocook
+version (F45, `SessionV2.saved_with_version`); `norm` of `rebin` no longer
+offered (#560, F37, Guido's decision). Note on F8 for #526 (`rebin` keeps
+the old `resol` meta key).
+
+Next: release 2.1.0, on GitHub with the macOS app, not on PyPI (steps in
+`ROADMAP.md`, "Releases"); then the MCP pilot. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
