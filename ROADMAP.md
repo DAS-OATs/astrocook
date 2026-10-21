@@ -647,7 +647,8 @@ publishes the docs of the tag at the root of the website.
   macOS build fixes, safe unpacking of archives (F35), automatic docs
   deployment, cleanup; no numerical result changes. No license
   yet (#549).
-- **2.1.0 (first consolidated release), after phases 3 and 3-bis:** V2 no
+- **2.1.0 (first consolidated release), after phases 3 and 3-bis (October
+  2026):** V2 no
   longer depends on `legacy/` (removed), native reader of the V1 archives,
   `.acs` saving removed, smaller wheel, the fixes of phase 3-bis. Published
   on GitHub with the macOS app, as before; not on PyPI (no LICENSE yet,

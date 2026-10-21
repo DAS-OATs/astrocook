@@ -1,4 +1,6 @@
-## [Unreleased]
+## [2.1.0] - 2026-10-21
+
+First consolidated release (phases 3 and 3-bis of the consolidation): Astrocook no longer depends on the V1 code, which is removed, and V1 `.acs` archives are read by a new native reader. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub). **Some results change**: refitting a V1 session with links between parameters (now kept as constraints), and the `dbtur` column of the fitted components (now updated; 0 when `btur` is frozen). Nothing else changes numerically with respect to 2.0.3.
 
 ### Added
 - `.acs2` archives record the version of Astrocook that saved them (`astrocook_version` in the metadata file); a session opened from an archive reports it as `saved_with_version` (`None` for archives saved by 2.0.3 or earlier). Older versions of Astrocook ignore it.
@@ -6,7 +8,6 @@
 ### Fixed
 - *Data loss*: a session that could not be read (an `.acs2` archive without its metadata file, a damaged `.acs` archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An `.acs2` archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.
 - V1 `.acs` archives: the turbulent broadening (`btur`) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit > Convert y axis) work on V1 sessions.
-
 - V1 `.acs` archives: the links between parameters (e.g. SiIV z and b tied to CIV) are now kept as V2 constraints. Before, the linked parameters were frozen at their V1 values, did not follow their target in a refit, and the System Inspector showed no target; constraints on logN were lost. **Refitting a V1 session with links gives different (correct) results.**
 - Session log (GUI): a recipe that opens a new session (`extract_preset`, `split`, `stitch`, `equalize_and_stitch`, `coadd`, `resample`, `identify_lines`) was also recorded in the log of the session it was run from, whose data do not change; after an undo, it also deleted that log's redo entries. It is now recorded only in the log of the new session. *Note*: `.acs2` archives saved with 2.0.2 or 2.0.3 may still contain such an entry in their log; it is left as it is (it cannot be told apart from a correct one), so check the log before replaying it as a script.
 - System Inspector: a link created or removed while its group is selected is now coloured (or uncoloured) at once, and the colours of the other links no longer change when a link is added.

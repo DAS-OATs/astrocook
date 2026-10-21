@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "astrocook"
-version = "2.0.3"
+version = "2.1.0"
 description = "Python package for the analysis of quasar spectra"
 readme = "README.md"
 requires-python = ">=3.12"
