@@ -463,8 +463,8 @@ class VoigtFitterV2:
         Returns
         -------
         SystemListV2
-            A new system list with ``dz``, ``dlogN``, ``db`` and ``chi2`` of the
-            active components updated.
+            A new system list with ``dz``, ``dlogN``, ``db``, ``dbtur`` (of the
+            free parameters) and ``chi2`` of the active components updated.
         """
         lower, upper = self.prepare_fit_context(z_window_kms=z_window_kms)
         p0 = np.clip(self._constraints.p_free_vector, lower, upper)
@@ -492,7 +492,8 @@ class VoigtFitterV2:
                 comps.append(c); continue
             idx = i * 4
             new = {'chi2': red_chi2}
-            for name, j in (('dz', idx), ('dlogN', idx + 1), ('db', idx + 2)):
+            for name, j in (('dz', idx), ('dlogN', idx + 1), ('db', idx + 2),
+                            ('dbtur', idx + 3)):
                 if is_free_mask[j]:
                     new[name] = full_errors[j]
             comps.append(dataclasses.replace(c, **new))
@@ -1048,9 +1049,10 @@ class VoigtFitterV2:
             dz_new = resolve_error(idx, old_comp.dz)
             dlogN_new = resolve_error(idx+1, old_comp.dlogN)
             db_new = resolve_error(idx+2, old_comp.db)
-            # Computed but not stored: dbtur keeps its old value after the
-            # fit (findings register F36)
-            dbtur_new = resolve_error(idx+3, old_comp.dbtur)  # noqa: F841
+            # Stored like the other errors (before, dbtur kept its value from
+            # before the fit: findings register F36). btur is frozen unless
+            # the user frees it, so its error is usually 0
+            dbtur_new = resolve_error(idx+3, old_comp.dbtur)
             
             # Metadata Update
             comp_chi2 = old_comp.chi2
@@ -1078,6 +1080,7 @@ class VoigtFitterV2:
                 dz=dz_new, 
                 dlogN=dlogN_new, 
                 db=db_new,
+                dbtur=dbtur_new,
                 chi2=comp_chi2,
                 resol=comp_resol
             )
@@ -1088,7 +1091,7 @@ class VoigtFitterV2:
         nan_errors = [c for c, old in zip(new_components, old_components)
                       if (active_uuids is None or old.uuid in active_uuids)
                       and any(e is not None and np.isnan(e)
-                              for e in (c.dz, c.dlogN, c.db))]
+                              for e in (c.dz, c.dlogN, c.db, c.dbtur))]
         if nan_errors:
             listed = ", ".join(f"{c.series} at z = {c.z:.5f}" for c in nan_errors[:10])
             more = f" and {len(nan_errors) - 10} more" if len(nan_errors) > 10 else ""
