@@ -455,7 +455,10 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">SpectrumDataV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.mocks.physics</span><span class="w"> </span><span class="kn">import</span> <span class="n">C_KMS</span><span class="p">,</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">,</span> <span class="n">convolve_velocity</span><span class="p">,</span> <span class="n">optical_depth</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.mocks.physics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">C_KMS</span><span class="p">,</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">,</span> <span class="n">convolve_velocity</span><span class="p">,</span> <span class="n">is_hydrogen</span><span class="p">,</span>
+    <span class="n">lyman_limit_optical_depth</span><span class="p">,</span> <span class="n">optical_depth</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.mocks.truth</span><span class="w"> </span><span class="kn">import</span> <span class="n">MockTruth</span>
 
 
@@ -500,6 +503,8 @@
     <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">truth</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
         <span class="n">tau</span> <span class="o">+=</span> <span class="n">optical_depth</span><span class="p">(</span><span class="n">sub</span> <span class="o">*</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span>
                              <span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">truth</span><span class="o">.</span><span class="n">lyman_limit</span> <span class="ow">and</span> <span class="n">is_hydrogen</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
+            <span class="n">tau</span> <span class="o">+=</span> <span class="n">lyman_limit_optical_depth</span><span class="p">(</span><span class="n">sub</span> <span class="o">*</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">logN</span><span class="p">)</span>
     <span class="n">flux_sub</span> <span class="o">=</span> <span class="n">convolve_velocity</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau</span><span class="p">),</span> <span class="n">truth</span><span class="o">.</span><span class="n">dv_kms</span> <span class="o">/</span> <span class="n">k</span><span class="p">,</span> <span class="n">truth</span><span class="o">.</span><span class="n">resol</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">flux_sub</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
@@ -519,6 +524,23 @@
 
 
 
+<div class="viewcode-block" id="noise_sigma">
+<a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.noise_sigma">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_sigma</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">cont</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">true_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Error per pixel of ``truth`` (see :class:`MockTruth`, ``snr`` and</span>
+<span class="sd">    ``noise_floor``), from the continuum and the noiseless flux."""</span>
+    <span class="n">sigma_cont</span> <span class="o">=</span> <span class="n">cont</span> <span class="o">/</span> <span class="n">truth</span><span class="o">.</span><span class="n">snr</span>
+    <span class="k">if</span> <span class="n">truth</span><span class="o">.</span><span class="n">noise_floor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sigma_cont</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">noise_floor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"noise_floor must be between 0 and 1, not </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">true_flux</span> <span class="o">/</span> <span class="n">cont</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sigma_cont</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">ratio</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="spike_indices">
 <a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.spike_indices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">spike_indices</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">n_pixels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -530,12 +552,16 @@
 
 <div class="viewcode-block" id="generate">
 <a class="viewcode-back" href="../../../api/astrocook.mocks.generate.html#astrocook.mocks.generate.generate">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumV2</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="n">truth</span><span class="p">:</span> <span class="n">MockTruth</span><span class="p">,</span> <span class="n">truth_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpectrumV2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Mock spectrum for ``truth``.</span>
 
 <span class="sd">    The spectrum has the true continuum (with emission lines) in the</span>
 <span class="sd">    ``cont`` column and the noiseless flux in ``mock_flux``; ``z_em`` and the resolving power are</span>
 <span class="sd">    set (the latter also in the metadata, so that it survives a save).</span>
+
+<span class="sd">    With ``truth_columns=False`` the two columns are left out, as for an</span>
+<span class="sd">    observed spectrum: the recipes would otherwise use the true continuum</span>
+<span class="sd">    (in the MCP pilot an agent fitted on it). The flux is the same.</span>
 <span class="sd">    """</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">make_grid</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">lam_min_nm</span><span class="p">,</span> <span class="n">truth</span><span class="o">.</span><span class="n">lam_max_nm</span><span class="p">,</span> <span class="n">truth</span><span class="o">.</span><span class="n">dv_kms</span><span class="p">)</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">flux</span> <span class="o">=</span> <span class="n">normalized_flux</span><span class="p">(</span><span class="n">truth</span><span class="p">)</span>
@@ -547,7 +573,7 @@
         <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">truth</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">dy</span> <span class="o">=</span> <span class="n">cont</span> <span class="o">/</span> <span class="n">truth</span><span class="o">.</span><span class="n">snr</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">noise_sigma</span><span class="p">(</span><span class="n">truth</span><span class="p">,</span> <span class="n">cont</span><span class="p">,</span> <span class="n">true_flux</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">true_flux</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">*</span> <span class="n">dy</span>
     <span class="k">if</span> <span class="n">truth</span><span class="o">.</span><span class="n">n_spikes</span><span class="p">:</span>
         <span class="n">spikes</span> <span class="o">=</span> <span class="n">spike_indices</span><span class="p">(</span><span class="n">truth</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -568,7 +594,7 @@
             <span class="s2">"cont"</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">cont</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"True continuum"</span><span class="p">),</span>
             <span class="s2">"mock_flux"</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">true_flux</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span>
                                       <span class="n">description</span><span class="o">=</span><span class="s2">"Noiseless flux"</span><span class="p">),</span>
-        <span class="p">},</span>
+        <span class="p">}</span> <span class="k">if</span> <span class="n">truth_columns</span> <span class="k">else</span> <span class="p">{},</span>
         <span class="n">meta</span><span class="o">=</span><span class="n">meta</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="n">truth</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="n">resol</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 

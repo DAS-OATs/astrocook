@@ -518,15 +518,22 @@
 <span class="sd">    The wavelength grid is uniform in velocity (pixel size ``dv_kms``), as</span>
 <span class="sd">    for echelle spectrographs. The continuum is a power law</span>
 <span class="sd">    ``cont_amplitude * (lambda / cont_ref_nm) ** cont_slope``. The noise is</span>
-<span class="sd">    Gaussian, with a constant signal-to-noise ratio ``snr`` per pixel at the</span>
-<span class="sd">    continuum level (``None``: noiseless).</span>
+<span class="sd">    Gaussian, with a signal-to-noise ratio ``snr`` per pixel at the</span>
+<span class="sd">    continuum level (``None``: noiseless). With ``noise_floor = None`` (the</span>
+<span class="sd">    default) the error is the same at any flux, ``cont / snr``; with a</span>
+<span class="sd">    value ``a`` between 0 and 1 it follows the flux, as for photon noise</span>
+<span class="sd">    of the source on a background: sigma = (cont / snr) sqrt(a + (1 - a)</span>
+<span class="sd">    F / cont), with F the noiseless flux, so that ``a`` is the variance at</span>
+<span class="sd">    zero flux relative to the continuum.</span>
 
 <span class="sd">    ``resol`` is the resolving power, either a single value or ``None`` (no</span>
 <span class="sd">    instrumental broadening). ``oversample`` is the number of sub-pixels on</span>
 <span class="sd">    which the model is computed before being averaged over each pixel.</span>
 
 <span class="sd">    ``emission_lines`` are added to the continuum (the absorbers absorb</span>
-<span class="sd">    them too). ``n_spikes`` single-pixel positive spikes of</span>
+<span class="sd">    them too). With ``lyman_limit`` the H I components (those with Lyman</span>
+<span class="sd">    lines) also absorb the continuum below their Lyman limit (off by</span>
+<span class="sd">    default, so that the mocks made before it are unchanged). ``n_spikes`` single-pixel positive spikes of</span>
 <span class="sd">    ``spike_amplitude`` times the local error are added after the noise, at</span>
 <span class="sd">    random positions; their indices are not part of the truth but are</span>
 <span class="sd">    reproducible from the seed (see :func:`astrocook.mocks.spike_indices`).</span>
@@ -546,6 +553,8 @@
     <span class="n">emission_lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">EmissionLine</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">n_spikes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">spike_amplitude</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="n">lyman_limit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">noise_floor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="MockTruth.to_dict">
 <a class="viewcode-back" href="../../../api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_dict">[docs]</a>
