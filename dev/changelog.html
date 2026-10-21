@@ -474,6 +474,7 @@
 <li><p><em>Data loss</em>: a session that could not be read (an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without its metadata file, a damaged <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.</p></li>
 <li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives: the turbulent broadening (<code class="docutils literal notranslate"><span class="pre">btur</span></code>) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit &gt; Convert y axis) work on V1 sessions.</p></li>
 <li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives: the links between parameters (e.g. SiIV z and b tied to CIV) are now kept as V2 constraints. Before, the linked parameters were frozen at their V1 values, did not follow their target in a refit, and the System Inspector showed no target; constraints on logN were lost. <strong>Refitting a V1 session with links gives different (correct) results.</strong></p></li>
+<li><p>Session log (GUI): a recipe that opens a new session (<code class="docutils literal notranslate"><span class="pre">extract_preset</span></code>, <code class="docutils literal notranslate"><span class="pre">split</span></code>, <code class="docutils literal notranslate"><span class="pre">stitch</span></code>, <code class="docutils literal notranslate"><span class="pre">equalize_and_stitch</span></code>, <code class="docutils literal notranslate"><span class="pre">coadd</span></code>, <code class="docutils literal notranslate"><span class="pre">resample</span></code>, <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code>) was also recorded in the log of the session it was run from, whose data do not change; after an undo, it also deleted that log’s redo entries. It is now recorded only in the log of the new session. <em>Note</em>: <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archives saved with 2.0.2 or 2.0.3 may still contain such an entry in their log; it is left as it is (it cannot be told apart from a correct one), so check the log before replaying it as a script.</p></li>
 </ul>
 </section>
 <section id="changed">
@@ -722,7 +723,7 @@
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
   </p>
 </div>
       
