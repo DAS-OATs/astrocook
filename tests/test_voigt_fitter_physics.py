@@ -56,6 +56,61 @@ def test_fit_with_turbulent_b():
     assert comp.logN == pytest.approx(13.8, abs=0.01)
 
 
+def _free_btur(systs):
+    # b frozen at the true thermal value, btur free: for a single line only
+    # sqrt(b^2 + btur^2) is constrained, so both cannot be free
+    uuid = systs.components[0].uuid
+    return systs.update_constraint(uuid, "b", is_free=False).update_constraint(
+        uuid, "btur", is_free=True)
+
+
+def test_fit_stores_the_btur_error():
+    # Regression test for F36 (#559): dbtur was computed and not stored, so
+    # it kept its value from before the fit (here 0.7)
+    spec = _mock(snr=50.0, b=12.0, btur=16.0)
+    systs = _free_btur(_systs(b=12.0, btur=10.0, dbtur=0.7, logN=13.6))
+    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    comp = fitted.components[0]
+    assert comp.b == 12.0 and comp.db == 0.0
+    assert 0.0 < comp.dbtur < 0.7
+    assert abs(comp.btur - 16.0) < 3 * comp.dbtur
+
+
+def test_frozen_btur_has_no_error():
+    # btur is frozen unless the user frees it: its error is 0 after a fit,
+    # as for the other frozen parameters
+    spec = _mock(snr=50.0, b=12.0, btur=16.0)
+    systs = _systs(b=15.0, btur=16.0, dbtur=0.7, logN=13.6)
+    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    assert fitted.components[0].dbtur == 0.0
+
+
+def test_spectator_keeps_its_btur_error():
+    spec = _mock(snr=50.0)
+    comps = [ComponentDataV2(id=i, z=z, dz=0.1, logN=13.6, dlogN=0.1, b=18.0,
+                             db=0.1, dbtur=0.7, series="Ly_a")
+             for i, z in ((1, 4.0), (2, 4.02))]
+    systs = SystemListV2(SystemListDataV2(components=comps))
+    with systs.fitting_context([comps[0].uuid], group_depth=0):
+        fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    fitted_comp, spectator = fitted.components
+    assert fitted_comp.dbtur == 0.0
+    assert (spectator.dz, spectator.dbtur) == (0.1, 0.7)
+
+
+def test_evaluate_uncertainties_updates_the_btur_error():
+    # The errors recomputed at the end of the pipelines (#534) include dbtur
+    import dataclasses
+    spec = _mock(snr=50.0, b=12.0, btur=16.0)
+    systs = _free_btur(_systs(b=12.0, btur=10.0, logN=13.6))
+    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    dbtur = fitted.components[0].dbtur
+    stale = SystemListV2(dataclasses.replace(fitted._data, components=[
+        dataclasses.replace(fitted.components[0], dbtur=99.0)]))
+    evaluated = VoigtFitterV2(spec, stale).evaluate_uncertainties(20.0)
+    assert evaluated.components[0].dbtur == pytest.approx(dbtur, rel=0.1)
+
+
 def test_fit_narrow_line():
     spec = _mock(snr=20.0, b=40.0)
     fitted, _, _ = VoigtFitterV2(spec, _systs(b=32.0, logN=13.5)).fit(
