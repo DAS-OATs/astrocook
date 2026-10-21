@@ -579,9 +579,11 @@ of the fitted components (#559). Order agreed with Guido:
    (e.g. to ASCII) may come later.
 
 ### Phase 4 – Scientific correctness
-The issues deferred from phase 1-bis, one PR (or a short series) each, every
-numerical choice agreed with Guido and every changed result stated in the
-PR, with the slow tests run before the merge:
+First the validation on mocks (below), so that every fix of this phase is
+measured on it; then the issues deferred from phase 1-bis, one PR (or a
+short series) each, every numerical choice agreed with Guido and every
+changed result stated in the PR (also on the benchmark), with the slow
+tests run before the merge:
 - [#526](https://github.com/DAS-OATs/astrocook/issues/526): resolution as a
   single per-pixel column and exact convolution (F8, F22, rest of F10, F9,
   F14);
@@ -603,16 +605,18 @@ PR, with the slow tests run before the merge:
 - [#573](https://github.com/DAS-OATs/astrocook/issues/573): recipe defaults
   that differ between the GUI and the API (F40, found in phase 3).
 
-The order is to be agreed with Guido at the start of the phase.
+The order of the issues is to be agreed with Guido at the start of the
+phase.
 
-### Phase 4-bis – Validation on mocks
-Agreed with Guido at the start of the MCP pilot (October 2026). The
+**Validation on mocks** (agreed with Guido at the start of the MCP pilot,
+October 2026, as the first part of this phase). The
 snapshots record what the recipes return, not whether it is right: no
-recipe has a measured accuracy today. This phase measures the current
+recipe has a measured accuracy today. The validation measures the current
 continuum, identification and doublet fit (the recipes of the MCP pilot)
 on mocks with known parameters, with no numerical change; the numbers
 become the baseline that every later change is measured against
-(phase 7, and the "Validation" item of section 2).
+(the fixes of this phase, phase 7, and the "Validation" item of
+section 2).
 - Mocks: the generator of phase 1, extended where needed with the cases
   the recipes are known to handle badly (DLAs and sub-DLAs, strong
   emission lines, BALs if feasible), over a grid of S/N, resolution and
@@ -649,6 +653,11 @@ the agents together, starting from the report of the MCP pilot (section
 - exceptions with a message instead of `return 0` and a log line (with
   phase 6);
 - names and descriptions reviewed where the pilot showed them unclear;
+- the recipe registry (the `*_RECIPES_SCHEMAS`, from which the GUI
+  builds its menus and dialogs) as the single description of a recipe
+  for the GUI, the scripts and the server, with its result type and
+  whether it is offered to agents: adding a recipe means adding it
+  there, and nothing else;
 - room in the results for what the algorithms do not provide yet (the
   uncertainty of the continuum, the credibility of an identification and
   its alternatives, section 5), so that phase 7 changes the algorithms
@@ -673,7 +682,7 @@ built:
 These are algorithmic choices, possibly complex, and they are Guido's:
 for each component a design document first (options, costs, what the
 literature does), then a prototype measured on the benchmark of phase
-4-bis. A new algorithm sits next to the old one, selectable, until the
+4 (validation on mocks). A new algorithm sits next to the old one, selectable, until the
 benchmark shows it better; then it becomes the default, with the change
 stated in the release notes. #465 (phase 4) is a robustness fix of the
 current continuum, not a replacement. This phase is the first step of the
@@ -686,9 +695,9 @@ Sequence agreed with Guido (October 2026): phase 2 → 2.0.3 → phase 2-bis
 → phase 3 → phase 3-bis → 2.1.0 → MCP pilot → phase 4 → 2.2.0 → phase 5 →
 phase 6 → full MCP server (section 4). Revised after phase 3: 2.1.0 is
 published on GitHub (with the macOS app) without waiting for PyPI.
-Revised at the start of the MCP pilot (phases 4-bis and 6-bis agreed,
-phase 7 proposed): phase 4 → 2.2.0 → phase 4-bis → phase 5 → phase 6 →
-phase 6-bis → full MCP server → phase 7.
+Revised at the start of the MCP pilot (validation on mocks in phase 4,
+phase 6-bis agreed, phase 7 proposed): phase 4 (validation first) →
+2.2.0 → phase 5 → phase 6 → phase 6-bis → full MCP server → phase 7.
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
 PyPI go into the first release after INAF answers: 2.1.1 if the answer
@@ -888,11 +897,15 @@ When (agreed with Guido, October 2026):
   into account. Scope in section 4.1.
 - **Full server, after phase 6-bis:** all the recipes, structured outputs,
   natural-language log, and a headless Docker image to distribute it. An
-  agent working on its own needs correct results (phase 4), measured ones
-  (phase 4-bis), clean error handling (phase 6) and a stable recipe API
-  (phase 6-bis), from which the tools are generated. The robust
-  components of phase 7 then change the algorithms behind the same
-  tools.
+  agent working on its own needs correct and measured results (phase 4),
+  clean error handling (phase 6) and a stable recipe API (phase 6-bis).
+  The tools are generated from the recipe registry (the schemas the GUI
+  already builds its menus and dialogs from), not written by hand: a
+  recipe added or changed later reaches the server with no server code,
+  and a test checks that every recipe is a tool or is explicitly
+  excluded (interactive recipes such as `update_from_knots`). This is
+  why the server can come before phase 7: its new and improved recipes
+  reach the agents as they reach the GUI.
 
 ### 4.1 MCP pilot: scope
 Proposed in October 2026, to be agreed with Guido before the code.
@@ -945,7 +958,7 @@ recipes are good starting points, but not robust and not validated
 scientifically, and a server that corrected them on its own would
 diverge from the GUI and the scripts (as the double defaults of F40, on a
 larger scale). Their weak points are exposed and recorded, and fixed in
-the recipes themselves (phases 4-bis, 6-bis and 7, section 3).
+the recipes themselves (phases 4, 6-bis and 7, section 3).
 
 **Module.** A subpackage `astrocook/mcp_server/` in this repository, with
 an optional extra `[mcp]` and an entry point `astrocook-mcp`: same
@@ -1070,7 +1083,7 @@ function of S/N and resolution, misidentification rate.
 
 ### Path
 First the robust components (phase 7: emission model and identification,
-measured on the benchmark of phase 4-bis), then the loop.
+measured on the benchmark of phase 4), then the loop.
 Pilot on metals outside the forest, then extension to the Lyα forest. The
 LLM agent stays at the margins (strategy in stuck cases, guidance during
 review); each of its decisions goes into the log.
@@ -1095,8 +1108,7 @@ review); each of its decisions goes into the log.
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (section 4.1) | scope proposed (October 2026) |
-| 4 – Scientific correctness (#526, #517, #465, #518, #568, #573) | not started |
-| 4-bis – Validation on mocks | not started |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | not started |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
