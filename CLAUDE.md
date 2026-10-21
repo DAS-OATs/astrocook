@@ -123,9 +123,16 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 6. phase 4 – scientific correctness: #526, #517, #465, #518, #568,
    #573;
 7. release 2.2.0;
-8. phase 5 – splitting large files;
-9. phase 6 – error handling;
-10. full MCP server, with a headless Docker image.
+8. phase 4-bis – validation on mocks (baseline of continuum,
+   identification, doublet fit);
+9. phase 5 – splitting large files;
+10. phase 6 – error handling;
+11. phase 6-bis – recipe API (typed parameters, structured results,
+    exceptions), from the report of the MCP pilot;
+12. full MCP server, with a headless Docker image;
+13. phase 7 (proposed) – robust components: emission model and
+    absorption identification, algorithmic choices by Guido, measured
+    on the benchmark of phase 4-bis.
 
 LICENSE (#549) and the first publication on PyPI are an independent step:
 they go into the first release after INAF answers (2.1.1 if before phase
