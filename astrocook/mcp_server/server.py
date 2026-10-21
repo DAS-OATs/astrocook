@@ -4,6 +4,12 @@ Each tool is named after what it calls: ``<menu>_<recipe>`` for a recipe,
 ``session_<method>`` for a method of :class:`~astrocook.core.session.SessionV2`.
 The docstrings of the tools are their descriptions for the model.
 
+The defaults and the parameter descriptions of the recipe tools are read
+from the recipe schemas (``*_RECIPES_SCHEMAS``, the ones the GUI dialogs
+use), so that the tools and the GUI share them (F40: the method
+signatures may differ). Parameters that need the GUI (debug plots) or
+the internals (column names) are left out.
+
 Launch with ``astrocook-mcp`` (``stdio`` transport); a client starts it as
 a subprocess, e.g. ``claude mcp add astrocook -- astrocook-mcp``.
 """
@@ -18,8 +24,12 @@ from pydantic import Field
 from astrocook import __version__
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
-from astrocook.mcp_server.outputs import SaveResult, SessionInfo, spectrum_summary
+from astrocook.mcp_server.outputs import (
+    ContinuumInfo, IdentificationInfo, SaveResult, SessionInfo,
+    continuum_summary, identification_summary, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
+from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
+from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 
 INSTRUCTIONS = """\
 Astrocook analyses quasar spectra: continuum, identification of absorption
@@ -31,8 +41,39 @@ the server runs; give them absolute.
 """
 
 
+SCHEMAS = {"continuum": CONTINUUM_RECIPES_SCHEMAS,
+           "absorbers": ABSORBERS_RECIPES_SCHEMAS}
+
+SESSION_ID = Annotated[str, Field(description=(
+    "Identifier returned by session_open."))]
+
+
 def _resolve(path: str) -> Path:
     return Path(os.path.expanduser(path)).resolve()
+
+
+def _param(menu: str, recipe: str, name: str) -> dict:
+    """The schema entry of a recipe parameter."""
+    for p in SCHEMAS[menu][recipe]["params"]:
+        if p["name"] == name:
+            return p
+    raise KeyError(f"{menu}.{recipe} has no parameter {name}")
+
+
+def default(menu: str, recipe: str, name: str):
+    """Default of a recipe parameter, as in the GUI dialog."""
+    return _param(menu, recipe, name)["default"]
+
+
+def doc(menu: str, recipe: str, name: str) -> str:
+    """Description of a recipe parameter, as in the GUI dialog."""
+    return _param(menu, recipe, name)["doc"]
+
+
+def description(menu: str, recipe: str, more: str) -> str:
+    """Tool description: the recipe brief and details, then ``more``."""
+    schema = SCHEMAS[menu][recipe]
+    return f"{schema['brief']} {schema['details']}\n\n{more}"
 
 
 def build_server() -> MCPServer:
@@ -51,6 +92,16 @@ def build_server() -> MCPServer:
             saved_with_version=history.states[0].saved_with_version,
             warnings=warnings,
         )
+
+    def run(session_id: str, menu: str, recipe: str, params: dict):
+        """Run a recipe on the current state of a session, record it in
+        the log and return the new state with the warnings."""
+        current = store.get(session_id).current_state
+        new_state, warnings = run_recipe(
+            f"{menu}_{recipe}", getattr(getattr(current, menu), recipe),
+            **params)
+        store.apply(session_id, new_state, recipe, params)
+        return new_state, warnings
 
     @server.tool()
     def session_open(
@@ -84,18 +135,13 @@ def build_server() -> MCPServer:
                     params["z_em"] = str(z_em)
                 if resol is not None:
                     params["resol"] = str(resol)
-                current = store.get(session_id).current_state
-                new_state, more = run_recipe(
-                    "edit_set_properties", current.edit.set_properties,
-                    **params)
-                store.apply(session_id, new_state, "set_properties", params)
-                warnings += more
+                warnings += run(session_id, "edit", "set_properties",
+                                params)[1]
             return info(session_id, warnings)
 
     @server.tool()
     def session_save(
-        session_id: Annotated[str, Field(description=(
-            "Identifier returned by session_open."))],
+        session_id: SESSION_ID,
         path: Annotated[str, Field(description=(
             "Absolute path of the archive; .acs2 is appended if missing."))],
         overwrite: Annotated[bool, Field(description=(
@@ -124,6 +170,71 @@ def build_server() -> MCPServer:
                 session_id=session_id, path=str(file_path),
                 log_entries=len(history.log_manager.to_dict()["entries"]),
                 warnings=warnings)
+
+    @server.tool(description=description("continuum", "estimate_auto", (
+        "Needs z_em (set it with session_open), to tell the Lyman-alpha "
+        "forest from the red side. Replaces any existing continuum and "
+        "mask. Returns the fraction of absorbed pixels and the S/N.")))
+    def continuum_estimate_auto(
+        session_id: SESSION_ID,
+        smooth_len_lya: Annotated[float, Field(description=doc(
+            "continuum", "estimate_auto", "smooth_len_lya"))] = default("continuum", "estimate_auto", "smooth_len_lya"),
+        smooth_len_out: Annotated[float, Field(description=doc(
+            "continuum", "estimate_auto", "smooth_len_out"))] = default("continuum", "estimate_auto", "smooth_len_out"),
+        kappa: Annotated[float, Field(description=doc(
+            "continuum", "estimate_auto", "kappa"))] = default("continuum", "estimate_auto", "kappa"),
+        fudge: Annotated[str, Field(description=doc(
+            "continuum", "estimate_auto", "fudge"))] = default("continuum", "estimate_auto", "fudge"),
+        smooth_fwhm: Annotated[float, Field(description=doc(
+            "continuum", "estimate_auto", "smooth_fwhm"))] = default("continuum", "estimate_auto", "smooth_fwhm"),
+        template: Annotated[bool, Field(description=doc(
+            "continuum", "estimate_auto", "template"))] = default("continuum", "estimate_auto", "template"),
+    ) -> ContinuumInfo:
+        params = {"smooth_len_lya": str(smooth_len_lya),
+                  "smooth_len_out": str(smooth_len_out), "kappa": str(kappa),
+                  "fudge": str(fudge), "smooth_fwhm": str(smooth_fwhm),
+                  "template": str(template)}
+        with store.lock:
+            state, warnings = run(session_id, "continuum", "estimate_auto",
+                                  params)
+            return ContinuumInfo(**info(session_id, warnings).model_dump(),
+                                 continuum=continuum_summary(state))
+
+    @server.tool(description=description("absorbers", "identify_lines", (
+        "Needs z_em; uses the absorbed mask of continuum_estimate_auto (or "
+        "makes one with the default parameters). Creates no component: "
+        "returns the identified regions with their candidate transitions "
+        "and scores, and the candidate systems with initial guesses of "
+        "logN and b.")))
+    def absorbers_identify_lines(
+        session_id: SESSION_ID,
+        multiplets: Annotated[str, Field(description=doc(
+            "absorbers", "identify_lines", "multiplets"))] = default("absorbers", "identify_lines", "multiplets"),
+        min_pix_region: Annotated[int, Field(description=doc(
+            "absorbers", "identify_lines", "min_pix_region"))] = default("absorbers", "identify_lines", "min_pix_region"),
+        merge_dv: Annotated[float, Field(description=doc(
+            "absorbers", "identify_lines", "merge_dv"))] = default("absorbers", "identify_lines", "merge_dv"),
+        score_threshold: Annotated[float, Field(description=doc(
+            "absorbers", "identify_lines", "score_threshold"))] = default("absorbers", "identify_lines", "score_threshold"),
+        bypass_scoring: Annotated[bool, Field(description=doc(
+            "absorbers", "identify_lines", "bypass_scoring"))] = default("absorbers", "identify_lines", "bypass_scoring"),
+        max_listed: Annotated[int, Field(ge=0, description=(
+            "Maximum number of regions and of systems listed in the "
+            "output; the counts are always complete."))] = 50,
+    ) -> IdentificationInfo:
+        # mask_col (a column name) and debug_rating (plots in the GUI)
+        # are left out
+        params = {"multiplets": multiplets,
+                  "min_pix_region": str(min_pix_region),
+                  "merge_dv": str(merge_dv),
+                  "score_threshold": str(score_threshold),
+                  "bypass_scoring": str(bypass_scoring)}
+        with store.lock:
+            state, warnings = run(session_id, "absorbers", "identify_lines",
+                                  params)
+            return IdentificationInfo(
+                **info(session_id, warnings).model_dump(),
+                identification=identification_summary(state, max_listed))
 
     return server
 
