@@ -383,6 +383,28 @@ def test_rebin_bad_input_returns_0(params):
     assert _session().flux.rebin(**params) == 0
 
 
+def test_rebin_does_not_offer_norm():
+    # F37 (#560): 'norm' (V1: return the normalized spectrum) was offered by
+    # the dialog but never applied; it is no longer offered
+    from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+    params = [p["name"] for p in FLUX_RECIPES_SCHEMAS["rebin"]["params"]]
+    assert "norm" not in params
+
+
+def test_rebin_norm_is_ignored_with_a_warning(caplog):
+    session = _session()
+    plain = session.flux.rebin(dx="5.0")
+    with caplog.at_level("WARNING"):
+        normed = session.flux.rebin(dx="5.0", norm="True")
+    assert "'norm' is ignored" in caplog.text
+    np.testing.assert_array_equal(normed.spec.y.value, plain.spec.y.value)
+    np.testing.assert_array_equal(normed.spec.cont.value, plain.spec.cont.value)
+    # The alternative named in the warning
+    out = plain.edit.apply_expression("y_norm", "y / cont")
+    np.testing.assert_allclose(out.spec.get_column("y_norm").value,
+                               plain.spec.y.value / plain.spec.cont.value)
+
+
 def test_smooth_bad_input_returns_0():
     assert _session().flux.smooth("abc") == 0
 

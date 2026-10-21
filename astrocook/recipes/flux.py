@@ -45,8 +45,8 @@ FLUX_RECIPES_SCHEMAS = {
             # Use string "None"
             {"name": "kappa", "type": str, "default": "None", "doc": "Sigma clipping threshold (None for off)"},
             
-            # CRITICAL: V1 uses 'norm' as a boolean flag. Keep it as string 'False' for dialog logic.
-            {"name": "norm", "type": str, "default": "False", "doc": "Return normalized spectrum, if continuum exists"}, 
+            # 'norm' (V1: return the normalized spectrum) is not offered: it
+            # was never applied in V2 (findings register F37, #560)
 
             # CRITICAL: Use string representation 'nan'
             {"name": "filling", "type": str, "default": "nan", "doc": "Value to fill region without data"}, 
@@ -204,7 +204,11 @@ class RecipeFluxV2:
         filling : str, optional
             Value to fill regions without data. Defaults to ``'nan'``.
         norm : str, optional
-            (Legacy flag, currently unused). Defaults to ``'False'``.
+            Ignored, kept so that scripts and logs written for V1 still run:
+            the rebinned spectrum is never normalized, and ``'True'`` only
+            logs a warning. To see the normalized flux, use the normalized
+            view of the plot, or ``apply_expression`` with ``y/cont``.
+            Defaults to ``'False'``.
 
         Returns
         -------
@@ -225,15 +229,19 @@ class RecipeFluxV2:
 
             kappa_f = float(kappa) if kappa != 'None' else None
             
-            # Parsed but not applied: the spectrum is never normalized
-            # (findings register F37)
-            norm_b = str(norm) == 'True'  # noqa: F841
             filling_f = float(filling) if filling != 'nan' else np.nan
         except (ValueError, TypeError):
             # Replicates V1 error handling path to avoid crash in the GUI context;
             # return 0 like the other recipes (findings register F23)
             logging.error(msg_param_fail)
             return 0
+
+        # The V1 normalization was never applied in V2 and is not offered
+        # any more (F37, #560): say so instead of ignoring it silently
+        if str(norm) == 'True':
+            logging.warning("rebin: 'norm' is ignored, the rebinned spectrum is "
+                            "not normalized; use the normalized view of the "
+                            "plot, or apply_expression with y/cont.")
 
         # 5. Execute the immutable V2 operation
         new_spec_v2 = self._session.spec.rebin(

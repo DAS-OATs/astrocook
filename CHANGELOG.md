@@ -16,6 +16,7 @@
 - Scripts that use Astrocook show only warnings and errors unless they configure logging (`logging.basicConfig(level=logging.INFO)` shows the progress messages too, see the new tutorial *Using Astrocook from Python*): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.
 - Using Astrocook from Python (scripts, notebooks) no longer imports the GUI toolkit (PySide6): the core requested its debug plots through the GUI.
 - V1 `.acs` archives are read by a new reader that does not use the V1 code; apart from the fixes above, the result is the same as before.
+- Rebin (Flux > Rebin): the option "Return normalized spectrum, if continuum exists" (`norm`) is no longer offered: it was never applied in V2, the spectrum was not normalized. Scripts that pass `norm='True'` still run, with a warning; the normalized flux is shown by the normalized view of the plot, or computed with `apply_expression` (`y / cont`).
 
 ### Removed
 - The V1 code (`astrocook/legacy/`, ~22,500 lines, with the old wxPython interface): Astrocook no longer depends on it. Dependencies no longer installed: `lmfit`, `tqdm` and `cycler` (the latter still comes with matplotlib); the `[legacy]` extra (wxPython) and the broken V1 Docker image (`containers/`) are gone too.

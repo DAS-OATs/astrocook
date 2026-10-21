@@ -116,13 +116,13 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 2. phase 3 – decoupling from `legacy/` (done);
 3. phase 3-bis – small fixes before the release, in this order: #575
    (F41, priority), F6, F13, #559 (F36, brought forward from phase 4),
-   F45 (version in the `.acs2` archive);
-   #560 to be discussed with Guido when reached;
+   F45 (version in the `.acs2` archive), #560 (`norm` of `rebin` no
+   longer offered);
 4. release 2.1.0, on GitHub with the macOS app, not on PyPI;
 5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
    `ROADMAP.md`, section 4);
-6. phase 4 – scientific correctness: #526, #517, #465, #518, #560,
-   #568, #573;
+6. phase 4 – scientific correctness: #526, #517, #465, #518, #568,
+   #573;
 7. release 2.2.0;
 8. phase 5 – splitting large files;
 9. phase 6 – error handling;
