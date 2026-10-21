@@ -632,8 +632,9 @@ section 2).
   test with loose thresholds) and a report in this section. Weak points
   go to the findings register.
 
-**Plan of the phase** (proposed at its start, October 2026, after the MCP
-pilot; to be agreed with Guido).
+**Plan of the phase** (agreed with Guido at its start, October 2026, after
+the MCP pilot: grid and 20 km/s matching tolerance as below, F49, F50 and
+F55 added to the phase, #465 brought forward before #526).
 
 *The validation, in three PRs, with no numerical change:*
 1. *Mocks.* What the generator has: power-law continuum with Gaussian
@@ -654,15 +655,17 @@ pilot; to be agreed with Guido).
    - continuum: ratio to the true one (median, 5th-95th percentiles) in
      the forest and on the red side, in bins of wavelength;
    - identification: a candidate is correct when its series and z match a
-     true system within a velocity tolerance; precision (purity) and
-     recall (completeness) per species, in bins of logN and S/N, recall
-     counted on the systems above a detection limit; duplicates (F49) and
+     true system within 20 km/s; precision (purity) and recall
+     (completeness) per species, in bins of logN and S/N, recall counted
+     on the systems above a detection limit (proposed: the weaker line of
+     the doublet detected at 3 sigma in the noiseless mock, from its
+     equivalent width and the S/N; to be confirmed with the benchmark); duplicates (F49) and
      candidates beyond z_em (F55) counted apart; the fraction of the
      absorbed pixels explained;
    - fit: true and fitted components matched in z; bias and pulls of z,
      logN and b, spurious components, components at the bounds and with
      absurd errors (#517, F52), reduced chi2.
-   Proposed grid: S/N 10, 30, 100; R 8900 (X-Shooter VIS), 45000 (UVES),
+   Grid: S/N 10, 30, 100; R 8900 (X-Shooter VIS), 45000 (UVES),
    140000 (ESPRESSO HR); z_em 2.5, 3.5, 4.5; 5 random seeds each (135
    mocks, a few minutes: the chain takes ~1 s on a mock).
 3. *Baseline.* The numbers of the current version in this section, the
@@ -682,20 +685,21 @@ on the benchmark and stated in the PR:*
    F38, F39): the wrong values first, then the single table. The mocks
    use the same table as the fitter, so its errors cancel in the
    benchmark: it is checked against standard line lists instead.
-7. Small fixes of the identification found in the pilot, if Guido agrees
-   to add them to the phase: F55 (candidates limited to z <= z_em plus a
-   proximity margin, to be decided), F49 (one candidate per doublet),
-   F50 (the pipelines keep the absorbed mask of the user, or say they
-   replace it). Measured on purity and on the spurious components.
-8. [#526](https://github.com/DAS-OATs/astrocook/issues/526) (resolution
+7. Small fixes of the identification found in the pilot (added to the
+   phase by Guido): F55 (candidates limited to z <= z_em plus a proximity
+   margin, to be decided), F49 (one candidate per doublet), F50 (the
+   pipelines keep the absorbed mask of the user, or say they replace
+   it). Measured on purity and on the spurious components.
+8. [#465](https://github.com/DAS-OATs/astrocook/issues/465) (continuum:
+   spikes, F30, F17; labelled urgent, brought forward by Guido): the
+   forest part measured on the benchmark (which continuum is closer to
+   the truth, the open question of F30); the spike part on mocks with
+   spikes at low resolution, and on real NIR data when they arrive
+   (F15).
+9. [#526](https://github.com/DAS-OATs/astrocook/issues/526) (resolution
    and exact convolution, F8, F22, F10, F9, F14): the largest change,
    at the core of every fit; four PRs as planned in the issue, after
    Guido's decisions (a)-(c) there; timing benchmark and slow tests.
-9. [#465](https://github.com/DAS-OATs/astrocook/issues/465) (continuum:
-   spikes, F30, F17): the forest part measured on the benchmark (which
-   continuum is closer to the truth, the open question of F30); the
-   spike part on mocks with spikes at low resolution, and on real NIR
-   data when they arrive (F15).
 10. [#517](https://github.com/DAS-OATs/astrocook/issues/517) (components
     at the bounds, F21, with F52): last, because how many components end
     at a bound depends on the resolution (#526), the continuum (#465) and
@@ -704,15 +708,13 @@ Then release 2.2.0.
 
 Why this order: the small, independent fixes first (they make the
 benchmark measure the right thing: defaults, z window, atomic data,
-spurious candidates), then the large changes of the model (#526) and of
-the continuum (#465), and the bounds last, tuned on the final model.
-#465 is labelled urgent (reported by XQR-30): it can be brought forward
-before #526 if Guido prefers, at the cost of measuring #517 twice.
+spurious candidates), then the large changes of the continuum (#465,
+urgent, reported by XQR-30) and of the model (#526), and the bounds last,
+tuned on the final model.
 
-*Decisions for Guido before the code:* the grid and the tolerances of the
-benchmark (velocity tolerance of the matching, detection limit for the
-recall); whether F49, F50 and F55 join the phase; the order (especially
-#465); then the decisions listed in each issue.
+*Still to decide, when the item comes:* the detection limit of the
+recall (proposed above), the proximity margin of F55, and the decisions
+listed in each issue.
 
 ### Phase 5 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
@@ -1338,7 +1340,7 @@ review); each of its decisions goes into the log.
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
-| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan proposed |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
