@@ -603,6 +603,11 @@
         <span class="p">)</span>
 
         <span class="n">session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v2_metadata</span><span class="p">:</span>
+            <span class="c1"># Not recorded before 2.1 (F45)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'astrocook_version'</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> was saved by Astrocook "</span>
+                         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'2.0.3 or earlier'</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span> <span class="ow">and</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_type'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'v2'</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
@@ -642,6 +647,10 @@
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
 <span class="sd">        The display name of the session (e.g., filename without extension).</span>
+<span class="sd">    saved_with_version : str or None</span>
+<span class="sd">        The version of Astrocook that saved the ``.acs2`` archive this session</span>
+<span class="sd">        was opened from; ``None`` if it was not opened from an ``.acs2``</span>
+<span class="sd">        archive, or if the archive does not record it (versions up to 2.0.3).</span>
 <span class="sd">    systs : astrocook.core.system_list.SystemListV2, optional</span>
 <span class="sd">        The container for identified absorption systems and Voigt profile components.</span>
 <span class="sd">    file : astrocook.recipes.file.RecipeFileV2</span>
@@ -666,6 +675,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_gui</span> <span class="o">=</span> <span class="n">gui</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LogManager</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Documented in "Attributes" above (F45)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_spectrum</span> <span class="o">=</span> <span class="n">spec</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">systs</span> <span class="k">if</span> <span class="n">systs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">SystemListDataV2</span><span class="p">())</span>
         
@@ -769,6 +780,7 @@
         <span class="p">}</span>
         <span class="n">new_session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
         <span class="n">new_session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span> 
+        <span class="n">new_session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span>
         <span class="k">return</span> <span class="n">new_session</span></div>
 
 
@@ -796,6 +808,7 @@
         <span class="p">}</span>
         <span class="n">new_session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
         <span class="n">new_session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span>
+        <span class="n">new_session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span>
         <span class="k">return</span> <span class="n">new_session</span></div>
 
     

@@ -578,6 +578,19 @@ updated data structures.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.session.SessionV2.saved_with_version">
+<span class="sig-name descname"><span class="pre">saved_with_version</span></span><a class="headerlink" href="#astrocook.core.session.SessionV2.saved_with_version" title="Link to this definition">#</a></dt>
+<dd><p>The version of Astrocook that saved the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive this session
+was opened from; <code class="docutils literal notranslate"><span class="pre">None</span></code> if it was not opened from an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>
+archive, or if the archive does not record it (versions up to 2.0.3).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.core.session.SessionV2.systs">
 <span class="sig-name descname"><span class="pre">systs</span></span><a class="headerlink" href="#astrocook.core.session.SessionV2.systs" title="Link to this definition">#</a></dt>
 <dd><p>The container for identified absorption systems and Voigt profile components.</p>
@@ -802,6 +815,7 @@ reproducibility.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.load_session_from_file"><code class="docutils literal notranslate"><span class="pre">load_session_from_file()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2"><code class="docutils literal notranslate"><span class="pre">SessionV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.name"><code class="docutils literal notranslate"><span class="pre">SessionV2.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.saved_with_version"><code class="docutils literal notranslate"><span class="pre">SessionV2.saved_with_version</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.systs"><code class="docutils literal notranslate"><span class="pre">SessionV2.systs</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.file"><code class="docutils literal notranslate"><span class="pre">SessionV2.file</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.session.SessionV2.edit"><code class="docutils literal notranslate"><span class="pre">SessionV2.edit</span></code></a></li>

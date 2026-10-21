@@ -479,6 +479,10 @@
 <span class="sd">        Defaults to ``'v1_legacy'``.</span>
 <span class="sd">    component_uuids : list of str</span>
 <span class="sd">        An ordered list of all component UUIDs in the session.</span>
+<span class="sd">    astrocook_version : str or None</span>
+<span class="sd">        The version of Astrocook that saved the archive; ``None`` for archives</span>
+<span class="sd">        saved by versions up to 2.0.3, which did not record it (findings</span>
+<span class="sd">        register F45).</span>
 <span class="sd">    """</span>
     
     <span class="c1"># Stores constraints linked by Component UUID</span>
@@ -494,7 +498,10 @@
     <span class="n">log_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"v1_legacy"</span> <span class="c1"># Default to old V1 log</span>
     
     <span class="c1"># Stores a list of all component UUIDs in the order they appear</span>
-    <span class="n">component_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+    <span class="n">component_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="c1"># Version of Astrocook that saved the archive (F45)</span>
+    <span class="n">astrocook_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="DataColumnV2">
