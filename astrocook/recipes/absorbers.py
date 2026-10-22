@@ -170,7 +170,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
-            {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations"},
+            {"name": "max_nfev", "type": int, "default": 2000, "doc": "Max iterations"},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max velocity shift allowed (km/s)"},
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"} 
         ],
@@ -218,8 +218,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID (seed)", "gui_hidden": True},
-            {"name": "max_components", "type": int, "default": 3, "doc": "Maximum number of extra components to try adding."},
-            {"name": "threshold_sigma", "type": float, "default": 3.0, "doc": "Residual threshold (sigma) required to trigger a new component."},
+            {"name": "max_components", "type": int, "default": 5, "doc": "Maximum number of extra components to try adding."},
+            {"name": "threshold_sigma", "type": float, "default": 2.5, "doc": "Residual threshold (sigma) required to trigger a new component."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "Minimum AIC improvement required to accept a new component."},
             {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."},
             {"name": "min_dv", "type": float, "default": 10.0, "doc": "Min separation (km/s). Lower for de-blending."},
@@ -232,7 +232,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Fit Bayesian.",
         "details": "Runs Bayesian sampling (MCMC or Nested) for the selected group.",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "gui_hidden": True},
+            {"name": "uuids", "type": list, "default": None, "gui_hidden": True},
             {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampling engine: 'mcmc' or 'nested'."},
             {"name": "nsteps", "type": int, "default": 500, "doc": "Number of steps (MCMC)."},
             {"name": "nlive", "type": int, "default": 250, "doc": "Number of live points (Nested)."},
@@ -668,8 +668,9 @@ class RecipeAbsorbersV2:
         
         # 4. Refit All
         rec_step3 = RecipeAbsorbersV2(session_step2)
+        # max_nfev as before the defaults were aligned with the GUI (#573)
         return rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1',
-                                   max_b=max_b)
+                                   max_nfev='100', max_b=max_b)
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0",
@@ -766,7 +767,9 @@ class RecipeAbsorbersV2:
 
         if count_added > 0:
             logging.info(f"metals_auto: Added {count_added} new systems.")
-            return self.refit_all(max_b=max_b)
+            # The values the pipeline always used, before the defaults of
+            # refit_all were aligned with the GUI (#573)
+            return self.refit_all(max_b=max_b, group_depth='0', max_nfev='100')
         else:
             logging.info("metals_auto: No new metals found.")
             return current_session
@@ -838,7 +841,7 @@ class RecipeAbsorbersV2:
             return 0
     
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
-                       series_map_json: str = None, z_map_json: str = None) -> 'SessionV2':
+                       series_map_json: str = '', z_map_json: str = '') -> 'SessionV2':
         """
         Populate components from identification.
 
@@ -1423,7 +1426,7 @@ class RecipeAbsorbersV2:
         return final_session
 
     def optimize_system(self, uuid: str, max_components: str = '5', 
-                        threshold_sigma: str = '2.5', aic_penalty: str = '0.0',
+                        threshold_sigma: str = '2.5', aic_penalty: str = '5.0',
                         z_window_kms: str = '100.0', min_dv: str = '10.0',
                         group_depth: str = '2', patience: str = '2') -> 'SessionV2':
         """
@@ -1442,7 +1445,9 @@ class RecipeAbsorbersV2:
         threshold_sigma : str, optional
             Residual threshold (sigma) to trigger new component. Defaults to ``"2.5"``.
         aic_penalty : str, optional
-            Min AIC improvement to accept new component. Defaults to ``"0.0"``.
+            Min AIC improvement to accept new component (the AIC already
+            counts 2 per free parameter; 5 asks for substantial support).
+            Defaults to ``"5.0"``.
         z_window_kms : str, optional
             Velocity window (km/s) to analyze. Defaults to ``"100.0"``.
         min_dv : str, optional
@@ -1595,8 +1600,8 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Failed fit_bayesian: {e}", exc_info=True); return 0
 
-    def refit_all(self, max_nfev: str = '100', z_window_kms: str = '100.0', 
-                  group_depth: str = '0', max_group_size: str = '20',
+    def refit_all(self, max_nfev: str = '200', z_window_kms: str = '100.0', 
+                  group_depth: str = '2', max_group_size: str = '20',
                   region_limit: str = "None",
                   selected_uuids: list = None,
                   max_b: str = '300.0') -> 'SessionV2':
@@ -1611,11 +1616,12 @@ class RecipeAbsorbersV2:
         Parameters
         ----------
         max_nfev : str, optional
-            Max iterations per group. Defaults to ``"100"``.
+            Max iterations per group. Defaults to ``"200"``.
         z_window_kms : str, optional
             Fit window around lines (km/s). Defaults to ``"100.0"``.
         group_depth : str, optional
-            Grouping depth (0=Iterative Single, 1=Neighbors). Defaults to ``"0"``.
+            Grouping depth (0=Iterative Single, 1=Neighbors, 2=FoF).
+            Defaults to ``"2"``, as the GUI dialog (#573, F11).
         max_group_size : str, optional
             Max components per fit group (chunking). Defaults to ``"20"``.
         region_limit : str, optional

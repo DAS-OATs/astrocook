@@ -43,7 +43,7 @@ FLUX_RECIPES_SCHEMAS = {
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
             
             # Use string "None"
-            {"name": "kappa", "type": str, "default": "None", "doc": "Sigma clipping threshold (None for off)"},
+            {"name": "kappa", "type": str, "default": "5.0", "doc": "Sigma clipping threshold (None for off)"},
             
             # 'norm' (V1: return the normalized spectrum) is not offered: it
             # was never applied in V2 (findings register F37, #560)

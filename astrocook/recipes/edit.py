@@ -388,7 +388,7 @@ class RecipeEditV2:
         except Exception as e:
             raise e
 
-    def x_convert(self, z_ref: str = '0.0', xunit: str = 'km/s') -> Optional['SessionV2']:
+    def x_convert(self, z_ref: str = '_current_', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
         Convert X axis.
 
@@ -398,8 +398,8 @@ class RecipeEditV2:
         Parameters
         ----------
         z_ref : str, optional
-            Reference redshift for velocity conversion. Defaults to ``'0.0'``
-            (can use ``'_current_'`` to use the session's z_em).
+            Reference redshift for velocity conversion; ``'_current_'`` uses
+            the session's z_em. Defaults to ``'_current_'``, as the GUI.
         xunit : str, optional
             Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).
             Defaults to ``'km/s'``.
@@ -708,7 +708,9 @@ class RecipeEditV2:
                 # Run refit_all
                 # You can tweak z_window_kms or max_nfev here if needed, 
                 # or expose them as advanced params in the schema.
-                refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1)
+                # max_nfev as before the defaults were aligned with the GUI (#573)
+                refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1,
+                                                     max_nfev='100')
                 
                 if refitted_session != 0:
                     return refitted_session
@@ -1277,7 +1279,7 @@ class RecipeEditV2:
         return new_session
         
     def coadd(self, session_names: str, xstart: str = 'None', xend: str = 'None', 
-              dx: str = '0.01', xunit: str = 'nm', kappa: str = '5.0', 
+              dx: str = '10.0', xunit: str = 'km/s', kappa: str = '5.0', 
               equalize_order: str = '0') -> Dict[str, Any]:
         """
         Co-add multiple sessions.
@@ -1295,9 +1297,11 @@ class RecipeEditV2:
         xend : str, optional
             End wavelength. ``'None'`` for auto. Defaults to ``'None'``.
         dx : str, optional
-            Step size for the final grid. Defaults to ``'0.01'``.
+            Step size for the final grid. Defaults to ``'10.0'`` (km/s), as
+            the GUI: choose the native pixel size for high-resolution data
+            (e.g. ~2.5 km/s for UVES, ~0.8 km/s for ESPRESSO).
         xunit : str, optional
-            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'nm'``.
+            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'km/s'``.
         kappa : str, optional
             Sigma clipping threshold. ``'None'`` for off. Defaults to ``'5.0'``.
         equalize_order : str, optional
