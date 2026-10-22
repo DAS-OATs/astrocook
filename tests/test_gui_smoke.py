@@ -258,6 +258,29 @@ def test_tool_windows_open(loaded):
     assert loaded.script_dialog.isVisible()
 
 
+def test_inspector_fit_window(loaded, monkeypatch):
+    # #518 (F4): the velocity window of the manual fits is visible and
+    # editable; empty keeps the default of each recipe
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    calls = []
+    monkeypatch.setattr(loaded, "_on_recipe_requested",
+                        lambda menu, name, params, extra: calls.append((name, params)))
+    assert inspector.fit_window_in.text() == ""
+    assert inspector.fit_window_in.placeholderText() == "def."
+    assert inspector.fit_window_params() == {}
+    comps = list(loaded.active_history.current_state.systs.components)[:2]
+    inspector._refit_list(comps)
+    inspector._refit_all()
+    assert "z_window_kms" not in calls[0][1] and calls[1][1] == {}
+    inspector.fit_window_in.setText("40")
+    inspector._refit_list(comps)
+    inspector._refit_all()
+    assert calls[2][1]["z_window_kms"] == "40.0"
+    assert calls[2][1]["group_depth"] == "2"
+    assert calls[3] == ("refit_all", {"z_window_kms": "40.0"})
+
+
 @pytest.mark.parametrize("installed", [True, False])
 def test_inspector_bayesian_entries(loaded, monkeypatch, installed):
     # emcee and corner are optional (extra "bayes"): without them the menu

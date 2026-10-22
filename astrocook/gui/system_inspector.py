@@ -1127,7 +1127,8 @@ class VelocityPlotWidget(QWidget):
                 act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                     "absorbers", "add_component", {
                         'series': trans_name, 'z': z_new,
-                        'logN': self.cursor_logN, 'b': self.cursor_b
+                        'logN': self.cursor_logN, 'b': self.cursor_b,
+                        **self.inspector.fit_window_params()
                     }, {}))
                 menu.addAction(act_add_single)
 
@@ -1148,7 +1149,8 @@ class VelocityPlotWidget(QWidget):
                         act_std.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                             "absorbers", "add_component", {
                                 'series': sp_name, 'z': z_new,
-                                'logN': self.cursor_logN, 'b': self.cursor_b
+                                'logN': self.cursor_logN, 'b': self.cursor_b,
+                                **self.inspector.fit_window_params()
                             }, {}))
                         menu.addAction(act_std)
                     
@@ -1169,7 +1171,8 @@ class VelocityPlotWidget(QWidget):
                                         'series': s, 
                                         'z': z,
                                         'logN': self.cursor_logN, 
-                                        'b': self.cursor_b
+                                        'b': self.cursor_b,
+                                        **self.inspector.fit_window_params()
                                     }, {}
                                 )
                             )
@@ -1193,7 +1196,8 @@ class VelocityPlotWidget(QWidget):
                             "absorbers", "add_linked_system",
                             {
                                 'series_list': sl, 'z': z,
-                                'logN': self.cursor_logN, 'b': self.cursor_b
+                                'logN': self.cursor_logN, 'b': self.cursor_b,
+                                **self.inspector.fit_window_params()
                             }, {}
                         )
                     )
@@ -1345,6 +1349,28 @@ class SystemInspector(QWidget):
         self.b_in.setValidator(validator)
         self.b_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.b_in)
+
+        # Velocity window of the manual fits (#518, F4), next to the
+        # starting values of a new component: empty keeps the default of
+        # each fit, so that nothing changes unless the user sets a value
+        fit_window_tip = (
+            "How far (±, km/s) the redshift of each component may move from\n"
+            "its starting value in the fits run from the System Inspector:\n"
+            "adding a component here, Refit Selected and Refit All (table menu).\n"
+            "Empty: the default of each fit, 20 km/s when adding a component,\n"
+            "100 km/s when refitting.")
+        fit_window_label = QLabel("Fit ±:")
+        fit_window_label.setToolTip(fit_window_tip)
+        c_layout.addWidget(fit_window_label)
+        self.fit_window_in = QLineEdit()
+        self.fit_window_in.setPlaceholderText("def.")
+        self.fit_window_in.setFixedWidth(40)  # as logN and b
+        positive = QDoubleValidator(0.0, 10000.0, 3)
+        positive.setLocale(QLocale.C)
+        positive.setNotation(QDoubleValidator.StandardNotation)
+        self.fit_window_in.setValidator(positive)
+        self.fit_window_in.setToolTip(fit_window_tip)
+        c_layout.addWidget(self.fit_window_in)
         
         self.resid_cb = QCheckBox("Resid.")
         self.resid_cb.toggled.connect(self._apply) 
@@ -1361,7 +1387,9 @@ class SystemInspector(QWidget):
                 border: 1px solid #296bff; /* Highlight color */
             }}
         """
-        for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in]: w.setStyleSheet(style)
+        for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in,
+                  self.fit_window_in]:
+            w.setStyleSheet(style)
         
         r_layout.addLayout(c_layout)
         
@@ -1828,6 +1856,15 @@ class SystemInspector(QWidget):
         for c in comps:
             self._toggle_constraint(c.uuid, param, is_free, None, None)
 
+    def fit_window_params(self) -> dict:
+        """``z_window_kms`` for the manual fits, if the user set one (#518);
+        empty, zero or not a number: nothing (the default of each fit)."""
+        try:
+            value = float(self.fit_window_in.text())
+        except ValueError:
+            return {}
+        return {"z_window_kms": str(value)} if value > 0 else {}
+
     def _refit_list(self, comps):
         """Batch refit: Treats the entire selection as one fitting problem."""
         if self.main_window and comps:
@@ -1838,7 +1875,8 @@ class SystemInspector(QWidget):
                 {
                     "selected_uuids": uuid_list,
                     "group_depth": "2",  # Standard FoF depth to catch blends
-                    "max_nfev": "200"
+                    "max_nfev": "200",
+                    **self.fit_window_params(),
                 }, 
                 {}
             )
@@ -2074,13 +2112,15 @@ class SystemInspector(QWidget):
         src = self.proxy_model.mapToSource(idx)
         comp = self.table_model.get_component_at(src.row())
         if comp and self.main_window:
-            self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
+            self.main_window._on_recipe_requested(
+                "absorbers", "fit_component",
+                {"uuid": comp.uuid, **self.fit_window_params()}, {})
     
     def _refit_all(self):
         if self.main_window:
             # Trigger the newly created recipe
             self.main_window._on_recipe_requested(
-                "absorbers", "refit_all", {}, {}
+                "absorbers", "refit_all", self.fit_window_params(), {}
             )
     
     def _update_group_definition(self, selected_comps: List[ComponentDataV2]):

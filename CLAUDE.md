@@ -127,7 +127,9 @@ with the chi2 of the final model). Sequence agreed with Guido (October
    measured on it, #573, #518, #568, F55/F49/F50, #465, #526, #517
    (plan agreed, `ROADMAP.md` "Plan of the phase");
 7. release 2.2.0;
-8. phase 5 – splitting large files;
+8. phase 5 – splitting large files, with the GUI performance (timing
+   benchmark of the GUI; the System Inspector opens in ~6 s on
+   J0103-1305);
 9. phase 6 – error handling;
 10. phase 6-bis – recipe API (typed parameters, structured results,
     exceptions), from the report of the MCP pilot;

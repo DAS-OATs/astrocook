@@ -445,3 +445,18 @@ def test_fit_bayesian_bad_input_returns_0(one_civ):
 
 def test_detect_anchor_without_sibling(one_civ):
     assert one_civ.absorbers.detect_anchor("missing", "CIV_1548", "CIV_1550") == 0.0
+
+
+def test_wider_z_window_reaches_a_distant_guess(data):
+    # #518 (F4): z is bounded to +-z_window_kms around the starting value,
+    # so a guess 30 km/s away cannot reach the true line with the default
+    # 20 km/s, and does with a wider window (now editable in the System
+    # Inspector)
+    z_guess = CIV_Z - 30.0 / C_KMS * (1 + CIV_Z)
+    narrow = _session(data).absorbers.add_component("CIV", str(z_guess), "13.5", "10.0")
+    wide = _session(data).absorbers.add_component("CIV", str(z_guess), "13.5", "10.0",
+                                                  z_window_kms="50.0")
+    (comp_narrow,) = narrow.systs.components
+    (comp_wide,) = wide.systs.components
+    assert _dv(comp_narrow.z, CIV_Z) > 8.0
+    assert _dv(comp_wide.z, CIV_Z) < 3.0
