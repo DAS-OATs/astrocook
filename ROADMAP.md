@@ -788,6 +788,26 @@ of phase 7.
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
 the same public API through delegation; same approach for the GUI.
 
+**GUI performance** (agreed with Guido, October 2026, after he found the
+System Inspector slow to open): splitting the GUI touches the same code,
+so it is measured here. First a timing benchmark of the GUI, like
+`benchmarks/bench_fitting.py` for the fit, on J0103-1305 (764
+components): opening the System Inspector, redrawing the main plot,
+a refit from the inspector; run before and after each change. Measured
+in phase 4 (offscreen, `cProfile`): the inspector opens in ~6 s the first
+time and ~3 s afterwards, with three causes, each a local change that
+does not touch the results:
+- the table (~3.7 s): its columns resize to their contents
+  (`ResizeToContents`), so Qt queries every row, not only the visible
+  ones, several times (138,000 calls of `SystemTableModel.data` for 764
+  rows);
+- the main plot (~1.2 s): opening the inspector highlights the selection
+  and redraws the whole spectrum, rebuilding the x axis as an astropy
+  quantity in a loop (970 times, 0.84 s);
+- matplotlib: text layout, the best position of the legends
+  (`loc="best"`) and the ticks, ~1-3 s between the main and the velocity
+  plot.
+
 ### Phase 6 – Error handling
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
@@ -1414,7 +1434,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518: fit window in the System Inspector (PR) |
-| 5 – Splitting large files | not started |
+| 5 – Splitting large files (and GUI performance) | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
