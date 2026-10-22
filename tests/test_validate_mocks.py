@@ -249,3 +249,32 @@ def test_system_column():
     assert c["fit_logN"] == pytest.approx(c["true_logN"])
     assert c["dlogN"] == pytest.approx(0.05)
     assert vm.system_column(system, fitted[1:])["fit_logN"] is None
+
+
+# --- Regression guard on the reduced grid (slow) ----------------------------
+
+@pytest.mark.slow
+def test_reduced_grid_does_not_regress():
+    """The chain on the reduced grid (16 mocks, ~2 min with 4 workers)
+    against loose thresholds set from the baseline of phase 4 (version
+    2.1.0; ROADMAP.md, "Baseline"): it catches regressions, not the
+    improvements the phase aims at. Values at the baseline in comments."""
+    import os
+    result = vm.run("reduced", workers=min(4, os.cpu_count() or 1))
+    s = result["summary"]["all"]
+    assert 0.99 < s["continuum_red"]["median_of_medians"] < 1.01      # 1.003
+    assert s["continuum_forest"]["median_of_medians"] > 0.85           # 0.929
+    for species in vm.METALS:
+        t = s["identification"][species]
+        assert t["purity"] > 0.9, species                              # 0.98-1.00
+        assert t["completeness"] > 0.6, species                        # 0.72-0.82
+        assert t["n_beyond_z_em"] == 0, species
+    f = s["fit"]
+    assert f["n_matched"] / f["n_true"] > 0.35                         # 0.46
+    assert f["n_spurious"] / f["n_fitted"] < 0.3                       # 0.15
+    for par in ("z", "logN", "b"):
+        assert abs(f[f"pull_{par}"]["median"]) < 0.5, par              # |0.14|
+    column = f["system_column"]
+    assert abs(column["diff"]["median"]) < 0.05                        # 0.000
+    assert column["diff"]["sigma"] < 0.4                               # 0.236
+    assert column["pull"]["sigma"] < 2.0                               # 1.21

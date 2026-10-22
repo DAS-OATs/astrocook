@@ -541,11 +541,53 @@ def print_summary(result):
                   f"|pull|>3 {p['frac_gt3']:.2f}")
 
 
+#: The baseline of phase 4 (version 2.1.0, before the fixes of the phase):
+#: the pooled summary of the full grid
+BASELINE = ROOT / "benchmarks" / "results" / "validate_mocks_baseline.json"
+
+
+def key_numbers(summary):
+    """The numbers of a pooled summary compared against the baseline."""
+    out = {}
+    for region in ("forest", "red"):
+        out[f"continuum_{region}"] = summary[f"continuum_{region}"]["median_of_medians"]
+    for species, t in summary["identification"].items():
+        out[f"{species}_purity"] = t["purity"]
+        out[f"{species}_completeness"] = t["completeness"]
+        out[f"{species}_duplicates"] = t["n_duplicates"]
+    f = summary["fit"]
+    out["fit_matched"] = f["n_matched"]
+    out["fit_spurious"] = f["n_spurious"]
+    out["fit_flagged"] = f["n_flagged"]
+    for par in ("z", "logN", "b"):
+        out[f"pull_{par}_sigma"] = f[f"pull_{par}"]["sigma"] if f[f"pull_{par}"] else None
+    sc = f["system_column"]
+    out["column_diff_sigma"] = sc["diff"]["sigma"] if sc["diff"] else None
+    out["column_pull_sigma"] = sc["pull"]["sigma"] if sc["pull"] else None
+    return out
+
+
+def compare(summary, baseline):
+    """Print the key numbers of a run next to those of the baseline."""
+    now, before = key_numbers(summary), key_numbers(baseline)
+    print(f"{'':28s}{'baseline':>12s}{'now':>12s}")
+    for key, value in now.items():
+        old = before.get(key)
+        fmt = (lambda v: "-" if v is None else
+               (f"{v:.3f}" if isinstance(v, float) else str(v)))
+        mark = "" if old == value else "  *"
+        print(f"{key:28s}{fmt(old):>12s}{fmt(value):>12s}{mark}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--grid", choices=sorted(GRIDS), default="full")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--json", help="write the records and the summary here")
+    parser.add_argument("--save-baseline", action="store_true",
+                        help="write the summary of a full run as the baseline")
+    parser.add_argument("--compare", action="store_true",
+                        help="compare the summary of a full run with the baseline")
     args = parser.parse_args()
     t0 = time.time()
     result = run(args.grid, args.workers)
@@ -555,6 +597,16 @@ def main():
     if args.json:
         with open(args.json, "w") as f:
             json.dump(result, f, indent=1)
+    if args.compare and args.grid == "full":
+        with open(BASELINE) as f:
+            compare(result["summary"]["all"], json.load(f)["summary"]["all"])
+    if args.save_baseline and args.grid == "full":
+        from astrocook import __version__
+        BASELINE.parent.mkdir(exist_ok=True)
+        with open(BASELINE, "w") as f:
+            json.dump(dict(astrocook_version=__version__, grid=args.grid,
+                           match_kms=MATCH_KMS, summary=result["summary"]),
+                      f, indent=1)
 
 
 if __name__ == "__main__":
