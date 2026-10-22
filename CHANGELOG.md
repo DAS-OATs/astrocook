@@ -3,6 +3,8 @@
 ### Added
 - MCP server for AI agents (pilot): Claude Code, the Claude desktop app or other MCP clients can open a spectrum, estimate the continuum, identify lines, fit the metal doublets and save the session, through the `astrocook-mcp` command (install with `pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"`). The tools return structured summaries and Astrocook's error messages, and record their recipes in the session log, so that the result can be reviewed in the GUI. See the new tutorial *Using Astrocook from an AI Agent*. No existing behaviour changes.
 
+- System Inspector: a **Fit window ±** box sets how far (km/s) the redshift of each component may move in the fits run from the inspector (adding a component in the velocity plot, Refit Selected, Refit All); `default` keeps the window of each fit (20 km/s when adding, 100 km/s when refitting), so nothing changes unless it is set (#518).
+
 ### Changed
 - The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. **Results change** where a default changes:
   - `refit_all` from a script and from the **Refit** button of the System Inspector: grouping depth 2 and 200 iterations per group (were 0 and 100), as the *Refit All* dialog; slower, and better on blends. The automatic pipelines (`metals_auto`, `forest_auto`, the refit after importing systems) keep the values they always used.

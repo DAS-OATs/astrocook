@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QSizePolicy, QMessageBox, QLabel, QLineEdit, QScrollBar, QCheckBox, QToolTip,
-    QStyledItemDelegate
+    QStyledItemDelegate, QDoubleSpinBox
 )
 from typing import List
 
@@ -1127,7 +1127,8 @@ class VelocityPlotWidget(QWidget):
                 act_add_single.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                     "absorbers", "add_component", {
                         'series': trans_name, 'z': z_new,
-                        'logN': self.cursor_logN, 'b': self.cursor_b
+                        'logN': self.cursor_logN, 'b': self.cursor_b,
+                        **self.inspector.fit_window_params()
                     }, {}))
                 menu.addAction(act_add_single)
 
@@ -1148,7 +1149,8 @@ class VelocityPlotWidget(QWidget):
                         act_std.triggered.connect(lambda: self.inspector.main_window._on_recipe_requested(
                             "absorbers", "add_component", {
                                 'series': sp_name, 'z': z_new,
-                                'logN': self.cursor_logN, 'b': self.cursor_b
+                                'logN': self.cursor_logN, 'b': self.cursor_b,
+                                **self.inspector.fit_window_params()
                             }, {}))
                         menu.addAction(act_std)
                     
@@ -1169,7 +1171,8 @@ class VelocityPlotWidget(QWidget):
                                         'series': s, 
                                         'z': z,
                                         'logN': self.cursor_logN, 
-                                        'b': self.cursor_b
+                                        'b': self.cursor_b,
+                                        **self.inspector.fit_window_params()
                                     }, {}
                                 )
                             )
@@ -1193,7 +1196,8 @@ class VelocityPlotWidget(QWidget):
                             "absorbers", "add_linked_system",
                             {
                                 'series_list': sl, 'z': z,
-                                'logN': self.cursor_logN, 'b': self.cursor_b
+                                'logN': self.cursor_logN, 'b': self.cursor_b,
+                                **self.inspector.fit_window_params()
                             }, {}
                         )
                     )
@@ -1283,10 +1287,31 @@ class SystemInspector(QWidget):
         self.group_cb = QCheckBox("Group View (Selected Component Only)")
         self.group_cb.toggled.connect(self._on_group_toggled)
         
+        # Velocity window of the manual fits (#518, F4): "default" keeps
+        # the default of each recipe, so that nothing changes unless the
+        # user sets a value
+        self.fit_window_in = QDoubleSpinBox()
+        self.fit_window_in.setRange(0.0, 2000.0)
+        self.fit_window_in.setDecimals(0)
+        self.fit_window_in.setSingleStep(10.0)
+        self.fit_window_in.setSuffix(" km/s")
+        self.fit_window_in.setSpecialValueText("default")
+        self.fit_window_in.setValue(0.0)
+        self.fit_window_in.setToolTip(
+            "How far (±, km/s) the redshift of each component may move from\n"
+            "its starting value in the fits run from here: Refit Selected,\n"
+            "Refit All, and adding a component in the velocity plot.\n"
+            "'default' keeps the default of each: 20 km/s when adding a\n"
+            "component, 100 km/s when refitting.")
+        fit_window_label = QLabel("Fit window ±")
+        fit_window_label.setToolTip(self.fit_window_in.toolTip())
+
         l_toolbar = QHBoxLayout()
         l_toolbar.setContentsMargins(5, 5, 15, 15) # Exact match to Right Toolbar
         l_toolbar.addWidget(self.group_cb)
         l_toolbar.addStretch() # Push checkbox to the left
+        l_toolbar.addWidget(fit_window_label)
+        l_toolbar.addWidget(self.fit_window_in)
         
         left_layout.addLayout(l_toolbar)
         left_layout.addWidget(self.table_view)
@@ -1828,6 +1853,11 @@ class SystemInspector(QWidget):
         for c in comps:
             self._toggle_constraint(c.uuid, param, is_free, None, None)
 
+    def fit_window_params(self) -> dict:
+        """``z_window_kms`` for the manual fits, if the user set one (#518)."""
+        value = self.fit_window_in.value()
+        return {"z_window_kms": str(value)} if value > 0 else {}
+
     def _refit_list(self, comps):
         """Batch refit: Treats the entire selection as one fitting problem."""
         if self.main_window and comps:
@@ -1838,7 +1868,8 @@ class SystemInspector(QWidget):
                 {
                     "selected_uuids": uuid_list,
                     "group_depth": "2",  # Standard FoF depth to catch blends
-                    "max_nfev": "200"
+                    "max_nfev": "200",
+                    **self.fit_window_params(),
                 }, 
                 {}
             )
@@ -2074,13 +2105,15 @@ class SystemInspector(QWidget):
         src = self.proxy_model.mapToSource(idx)
         comp = self.table_model.get_component_at(src.row())
         if comp and self.main_window:
-            self.main_window._on_recipe_requested("absorbers", "fit_component", {"uuid": comp.uuid}, {})
+            self.main_window._on_recipe_requested(
+                "absorbers", "fit_component",
+                {"uuid": comp.uuid, **self.fit_window_params()}, {})
     
     def _refit_all(self):
         if self.main_window:
             # Trigger the newly created recipe
             self.main_window._on_recipe_requested(
-                "absorbers", "refit_all", {}, {}
+                "absorbers", "refit_all", self.fit_window_params(), {}
             )
     
     def _update_group_definition(self, selected_comps: List[ComponentDataV2]):
