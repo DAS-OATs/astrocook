@@ -120,8 +120,10 @@ ATOM_DATA = {
     'OVI_1037': {'wave': 1037.6167, 'f': 0.0658, 'gamma': 4.076e8, 'mass': 15.9994},
 
     # --- Neon ---
-    'NeIII_3869': {'wave': 3868.760, 'f': 3.9e-10, 'gamma': 1.74e-1, 'mass': 19.992},
-    'NeV_3346': {'wave': 3345.821, 'f': 2.1e-10, 'gamma': 7.60e-2, 'mass': 19.992},
+    # [NeIII] and [NeV]: vacuum wavelengths, as the rest of the table (they
+    # were the air ones, 3868.760 and 3345.821; #568)
+    'NeIII_3869': {'wave': 3869.86, 'f': 3.9e-10, 'gamma': 1.74e-1, 'mass': 19.992},
+    'NeV_3346': {'wave': 3346.79, 'f': 2.1e-10, 'gamma': 7.60e-2, 'mass': 19.992},
 
     # --- Sodium ---
     'NaI_5891': {'wave': 5891.5833, 'f': 0.6408, 'gamma': 61570000.0, 'mass': 22.9898},
@@ -139,7 +141,7 @@ ATOM_DATA = {
     'MgII_2803': {'wave': 2803.5315, 'f': 0.3058, 'gamma': 2.595e8, 'mass': 24.305},
 
     # --- Aluminum ---
-    'AlII_1670': {'wave': 1670.7874, 'f': 1.74, 'gamma': 1.390e9, 'mass': 26.9815},
+    'AlII_1670': {'wave': 1670.7886, 'f': 1.74, 'gamma': 1.390e9, 'mass': 26.9815},
     'AlIII_1854': {'wave': 1854.7184, 'f': 0.559, 'gamma': 5.420e8, 'mass': 26.9815},
     'AlIII_1862': {'wave': 1862.7910, 'f': 0.278, 'gamma': 5.340e8, 'mass': 26.9815},
 
@@ -195,7 +197,12 @@ ATOM_DATA = {
     'CaII_8664': {'wave': 8664.52, 'f': 0.0, 'gamma': 0.0, 'mass': 40.078},
 
     # --- Titanium ---
-    'TiII_3066':  {'wave': 3066.362, 'f': 0.107, 'gamma': 2.10e8,  'mass': 47.867},
+    # No TiII line at 3066.36 A in Morton (2003) or in the atom.dat of VPFIT:
+    # the entry had f and gamma of unknown origin. Kept with f = 0, as in
+    # the V1 table, so that sessions naming it still open; the nearest
+    # real line is TiII_3067 (#568)
+    'TiII_3066':  {'wave': 3066.354, 'f': 0.0, 'gamma': 0.0,  'mass': 47.867},
+    'TiII_3067': {'wave': 3067.2379, 'f': 0.0489, 'gamma': 2.500e8, 'mass': 47.867},
     'TiII_3384': {'wave': 3384.7304, 'f': 0.358, 'gamma': 1.750e8, 'mass': 47.867},
     'TiIII_1298': {'wave': 1298.697, 'f': 0.0964, 'gamma': 6.350e8, 'mass': 47.867},
 
