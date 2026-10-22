@@ -552,7 +552,7 @@
 <div class="viewcode-block" id="RecipeContinuumV2.estimate_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">estimate_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5000.0'</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'400.0'</span><span class="p">,</span> 
-                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'1.0'</span><span class="p">,</span> 
+                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span> 
                       <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'800.0'</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'True'</span><span class="p">,</span>
                       <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -574,7 +574,8 @@
 <span class="sd">        fudge : str, optional</span>
 <span class="sd">            A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.</span>
 <span class="sd">            If ``'auto'``, the factor is calculated to center the continuum residuals.</span>
-<span class="sd">            Defaults to ``'1.0'``.</span>
+<span class="sd">            Defaults to ``'auto'``, as the GUI (the same result as ``'1.0'``,</span>
+<span class="sd">            see :meth:`fit_continuum`).</span>
 <span class="sd">        smooth_fwhm : str, optional</span>
 <span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.</span>
 <span class="sd">        smooth_std : str, optional</span>

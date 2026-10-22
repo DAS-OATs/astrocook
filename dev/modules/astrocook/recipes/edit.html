@@ -847,7 +847,7 @@
 
 <div class="viewcode-block" id="RecipeEditV2.x_convert">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.x_convert">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0.0'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert X axis.</span>
 
@@ -857,8 +857,8 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        z_ref : str, optional</span>
-<span class="sd">            Reference redshift for velocity conversion. Defaults to ``'0.0'``</span>
-<span class="sd">            (can use ``'_current_'`` to use the session's z_em).</span>
+<span class="sd">            Reference redshift for velocity conversion; ``'_current_'`` uses</span>
+<span class="sd">            the session's z_em. Defaults to ``'_current_'``, as the GUI.</span>
 <span class="sd">        xunit : str, optional</span>
 <span class="sd">            Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).</span>
 <span class="sd">            Defaults to ``'km/s'``.</span>
@@ -1183,7 +1183,9 @@
                 <span class="c1"># Run refit_all</span>
                 <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
                 <span class="c1"># or expose them as advanced params in the schema.</span>
-                <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
+                <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                     <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
                 
                 <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">refitted_session</span>
@@ -1775,7 +1777,7 @@
 <div class="viewcode-block" id="RecipeEditV2.coadd">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.coadd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">coadd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> 
-              <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0.01'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'nm'</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5.0'</span><span class="p">,</span> 
+              <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'10.0'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5.0'</span><span class="p">,</span> 
               <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Co-add multiple sessions.</span>
@@ -1793,9 +1795,11 @@
 <span class="sd">        xend : str, optional</span>
 <span class="sd">            End wavelength. ``'None'`` for auto. Defaults to ``'None'``.</span>
 <span class="sd">        dx : str, optional</span>
-<span class="sd">            Step size for the final grid. Defaults to ``'0.01'``.</span>
+<span class="sd">            Step size for the final grid. Defaults to ``'10.0'`` (km/s), as</span>
+<span class="sd">            the GUI: choose the native pixel size for high-resolution data</span>
+<span class="sd">            (e.g. ~2.5 km/s for UVES, ~0.8 km/s for ESPRESSO).</span>
 <span class="sd">        xunit : str, optional</span>
-<span class="sd">            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'nm'``.</span>
+<span class="sd">            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'km/s'``.</span>
 <span class="sd">        kappa : str, optional</span>
 <span class="sd">            Sigma clipping threshold. ``'None'`` for off. Defaults to ``'5.0'``.</span>
 <span class="sd">        equalize_order : str, optional</span>

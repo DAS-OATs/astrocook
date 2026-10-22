@@ -474,6 +474,22 @@
 <li><p>MCP server for AI agents (pilot): Claude Code, the Claude desktop app or other MCP clients can open a spectrum, estimate the continuum, identify lines, fit the metal doublets and save the session, through the <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code> command (install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;astrocook[mcp]</span> <span class="pre">&#64;</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git&quot;</span></code>). The tools return structured summaries and Astrocook’s error messages, and record their recipes in the session log, so that the result can be reviewed in the GUI. See the new tutorial <em>Using Astrocook from an AI Agent</em>. No existing behaviour changes.</p></li>
 </ul>
 </section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. <strong>Results change</strong> where a default changes:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">refit_all</span></code> from a script and from the <strong>Refit</strong> button of the System Inspector: grouping depth 2 and 200 iterations per group (were 0 and 100), as the <em>Refit All</em> dialog; slower, and better on blends. The automatic pipelines (<code class="docutils literal notranslate"><span class="pre">metals_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">forest_auto</span></code>, the refit after importing systems) keep the values they always used.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">optimize_system</span></code> from a script: an AIC improvement of at least 5 to accept a new component (was 0); the dialog now offers up to 5 extra components and a residual threshold of 2.5 sigma, the values of the API.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fit_component</span></code>: the dialog now offers 2000 iterations, the value the System Inspector and scripts always used.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rebin</span></code>: the dialog now clips upward outliers at 5 sigma by default (was off), as scripts did.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coadd</span></code> from a script: a grid of 10 km/s (was 0.01 nm), as the dialog; choose the native pixel size for high-resolution data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">x_convert</span></code> from a script: velocities relative to the emission redshift of the session (was z = 0), as the dialog.</p></li>
+<li><p>No change of results: <code class="docutils literal notranslate"><span class="pre">estimate_auto</span></code> takes <code class="docutils literal notranslate"><span class="pre">fudge='auto'</span></code> (the same as <code class="docutils literal notranslate"><span class="pre">'1.0'</span></code>), two parameter names of the dialogs follow the methods (<code class="docutils literal notranslate"><span class="pre">uuids</span></code> of <code class="docutils literal notranslate"><span class="pre">fit_bayesian</span></code>, <code class="docutils literal notranslate"><span class="pre">file_path</span></code> of <code class="docutils literal notranslate"><span class="pre">import_ascii</span></code>), and the maps of <code class="docutils literal notranslate"><span class="pre">populate_from_identification</span></code> default to an empty string, as before treated as missing.</p></li>
+</ul>
+</li>
+</ul>
+</section>
 </section>
 <section id="id1">
 <h2>[2.1.0] - 2026-10-21<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
@@ -495,8 +511,8 @@
 <li><p>Voigt fit: the uncertainty of the turbulent broadening (<code class="docutils literal notranslate"><span class="pre">dbtur</span></code>) was never updated and kept its value from before the fit. It is now set like the other errors: computed when <code class="docutils literal notranslate"><span class="pre">btur</span></code> is free, 0 when it is frozen (the default), unchanged for the components outside the fitted group. <strong>The <code class="docutils literal notranslate"><span class="pre">dbtur</span></code> column of the fitted components changes</strong> (usually from empty to 0); no other result changes.</p></li>
 </ul>
 </section>
-<section id="changed">
-<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
+<section id="id3">
+<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Scripts that use Astrocook show only warnings and errors unless they configure logging (<code class="docutils literal notranslate"><span class="pre">logging.basicConfig(level=logging.INFO)</span></code> shows the progress messages too, see the new tutorial <em>Using Astrocook from Python</em>): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.</p></li>
 <li><p>Using Astrocook from Python (scripts, notebooks) no longer imports the GUI toolkit (PySide6): the core requested its debug plots through the GUI.</p></li>
@@ -513,19 +529,19 @@
 </ul>
 </section>
 </section>
-<section id="id3">
-<h2>[2.0.3] - 2026-10-19<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
-<p>Packaging release. <strong>No numerical result changes</strong> with respect to 2.0.2.</p>
 <section id="id4">
-<h3>Added<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<h2>[2.0.3] - 2026-10-19<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
+<p>Packaging release. <strong>No numerical result changes</strong> with respect to 2.0.2.</p>
+<section id="id5">
+<h3>Added<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">[file</span> <span class="pre">...]</span></code> command to launch the GUI; <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">astrocook</span></code> now works from any directory (it needed the root of a source checkout).</p></li>
 <li><p>Installation with pip directly from GitHub: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git</span></code> (see the installation page; Astrocook is not on PyPI yet).</p></li>
 <li><p>Optional extras <code class="docutils literal notranslate"><span class="pre">[docs]</span></code> (to build the documentation) and <code class="docutils literal notranslate"><span class="pre">[build]</span></code> (to build the macOS app).</p></li>
 </ul>
 </section>
-<section id="id5">
-<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<section id="id6">
+<h3>Fixed<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Security</em>: opening a crafted <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> or <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive could write files outside the temporary folder; such archives are now refused.</p></li>
 <li><p>Installed with pip, the GUI started without its window icon and splash screen: the images now ship with the package.</p></li>
@@ -534,19 +550,19 @@
 <li><p>The documentation and build scripts stop at once with the command to run when Sphinx or PyInstaller is missing.</p></li>
 </ul>
 </section>
-<section id="id6">
-<h3>Removed<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<section id="id7">
+<h3>Removed<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Unused dependencies <code class="docutils literal notranslate"><span class="pre">statsmodels</span></code> and <code class="docutils literal notranslate"><span class="pre">specutils</span></code>; the minimum NumPy version is now 1.26.</p></li>
 <li><p>Backup data files that were shipped in every package (~54 MB), the old V1 launchers (<code class="docutils literal notranslate"><span class="pre">legacy_home/</span></code>), unused identification code, and the Gemfile of the V1 documentation (the source of all the Dependabot security alerts).</p></li>
 </ul>
 </section>
 </section>
-<section id="id7">
-<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id7" title="Link to this heading">#</a></h2>
-<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
 <section id="id8">
-<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id8" title="Link to this heading">#</a></h2>
+<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
+<section id="id9">
+<h3>Fixed<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Data loss</em>: Bayesian fit (MCMC) with 200 steps or fewer overwrote the component parameters with NaN; the burn-in now adapts to the number of steps.</p></li>
 <li><p><em>Data loss</em>: the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive did not keep the session log; it is now saved and restored (also in the GUI).</p></li>
@@ -563,8 +579,8 @@
 <li><p>ASCII export (#476, #481); warning when saving a session with a V2 log to the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p></li>
 </ul>
 </section>
-<section id="id9">
-<h3>Added<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<section id="id10">
+<h3>Added<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Edit &gt; Import Systems from ASCII</em>: read absorption components from a CSV or whitespace-separated table (columns <code class="docutils literal notranslate"><span class="pre">series</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, …) (#480).</p></li>
 <li><p>Stitching overlapping regions switches the plot to scatter style (#442).</p></li>
@@ -580,15 +596,15 @@
 </ul>
 </section>
 </section>
-<section id="id10">
-<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id10" title="Link to this heading">#</a></h2>
+<section id="id11">
+<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id11" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><em>Feature</em>: Added “Equalize and Stitch” to the GUI with dynamic parameters.</p></li>
 <li><p><em>Fix</em>: Prevented FITS save crashes from Ly-α identifications and ensured tooltips render safely upon reloading.</p></li>
 </ul>
 </section>
-<section id="id11">
-<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id11" title="Link to this heading">#</a></h2>
+<section id="id12">
+<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id12" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Added an experimental Bayesian fitting engine supporting MCMC (<code class="docutils literal notranslate"><span class="pre">emcee</span></code>).</p></li>
 <li><p>Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.</p></li>
@@ -675,29 +691,30 @@
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unreleased">[Unreleased]</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.1.0] - 2026-10-21</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Added</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Changed</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#removed">Removed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">[2.0.3] - 2026-10-19</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Removed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">[2.0.3] - 2026-10-19</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Removed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Added</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">Added</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-behaviour">Changed behaviour</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">[2.0.1] - 2026-04-21</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">[2.0.0] - 2026-04-07</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">[2.0.1] - 2026-04-21</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">[2.0.0] - 2026-04-07</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-3-2026-02-18">[2.0.0-beta.3] - 2026-02-18</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-2-2026-01-22">[2.0.0-beta.2] - 2026-01-22</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-1-2026-01-02">[2.0.0-beta.1] - 2026-01-02</a></li>
