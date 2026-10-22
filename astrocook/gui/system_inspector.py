@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QSizePolicy, QMessageBox, QLabel, QLineEdit, QScrollBar, QCheckBox, QToolTip,
-    QStyledItemDelegate, QDoubleSpinBox
+    QStyledItemDelegate
 )
 from typing import List
 
@@ -1287,31 +1287,10 @@ class SystemInspector(QWidget):
         self.group_cb = QCheckBox("Group View (Selected Component Only)")
         self.group_cb.toggled.connect(self._on_group_toggled)
         
-        # Velocity window of the manual fits (#518, F4): "default" keeps
-        # the default of each recipe, so that nothing changes unless the
-        # user sets a value
-        self.fit_window_in = QDoubleSpinBox()
-        self.fit_window_in.setRange(0.0, 2000.0)
-        self.fit_window_in.setDecimals(0)
-        self.fit_window_in.setSingleStep(10.0)
-        self.fit_window_in.setSuffix(" km/s")
-        self.fit_window_in.setSpecialValueText("default")
-        self.fit_window_in.setValue(0.0)
-        self.fit_window_in.setToolTip(
-            "How far (±, km/s) the redshift of each component may move from\n"
-            "its starting value in the fits run from here: Refit Selected,\n"
-            "Refit All, and adding a component in the velocity plot.\n"
-            "'default' keeps the default of each: 20 km/s when adding a\n"
-            "component, 100 km/s when refitting.")
-        fit_window_label = QLabel("Fit window ±")
-        fit_window_label.setToolTip(self.fit_window_in.toolTip())
-
         l_toolbar = QHBoxLayout()
         l_toolbar.setContentsMargins(5, 5, 15, 15) # Exact match to Right Toolbar
         l_toolbar.addWidget(self.group_cb)
         l_toolbar.addStretch() # Push checkbox to the left
-        l_toolbar.addWidget(fit_window_label)
-        l_toolbar.addWidget(self.fit_window_in)
         
         left_layout.addLayout(l_toolbar)
         left_layout.addWidget(self.table_view)
@@ -1370,6 +1349,28 @@ class SystemInspector(QWidget):
         self.b_in.setValidator(validator)
         self.b_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.b_in)
+
+        # Velocity window of the manual fits (#518, F4), next to the
+        # starting values of a new component: empty keeps the default of
+        # each fit, so that nothing changes unless the user sets a value
+        fit_window_tip = (
+            "How far (±, km/s) the redshift of each component may move from\n"
+            "its starting value in the fits run from the System Inspector:\n"
+            "adding a component here, Refit Selected and Refit All (table menu).\n"
+            "Empty: the default of each fit, 20 km/s when adding a component,\n"
+            "100 km/s when refitting.")
+        fit_window_label = QLabel("Fit ±:")
+        fit_window_label.setToolTip(fit_window_tip)
+        c_layout.addWidget(fit_window_label)
+        self.fit_window_in = QLineEdit()
+        self.fit_window_in.setPlaceholderText("def.")
+        self.fit_window_in.setFixedWidth(50)
+        positive = QDoubleValidator(0.0, 10000.0, 3)
+        positive.setLocale(QLocale.C)
+        positive.setNotation(QDoubleValidator.StandardNotation)
+        self.fit_window_in.setValidator(positive)
+        self.fit_window_in.setToolTip(fit_window_tip)
+        c_layout.addWidget(self.fit_window_in)
         
         self.resid_cb = QCheckBox("Resid.")
         self.resid_cb.toggled.connect(self._apply) 
@@ -1386,7 +1387,9 @@ class SystemInspector(QWidget):
                 border: 1px solid #296bff; /* Highlight color */
             }}
         """
-        for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in]: w.setStyleSheet(style)
+        for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in,
+                  self.fit_window_in]:
+            w.setStyleSheet(style)
         
         r_layout.addLayout(c_layout)
         
@@ -1854,8 +1857,12 @@ class SystemInspector(QWidget):
             self._toggle_constraint(c.uuid, param, is_free, None, None)
 
     def fit_window_params(self) -> dict:
-        """``z_window_kms`` for the manual fits, if the user set one (#518)."""
-        value = self.fit_window_in.value()
+        """``z_window_kms`` for the manual fits, if the user set one (#518);
+        empty, zero or not a number: nothing (the default of each fit)."""
+        try:
+            value = float(self.fit_window_in.text())
+        except ValueError:
+            return {}
         return {"z_window_kms": str(value)} if value > 0 else {}
 
     def _refit_list(self, comps):
