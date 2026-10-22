@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import os
 from PySide6.QtCore import (
-    Qt, QObject, Signal,
+    Qt, QEvent, QObject, Signal,
     QItemSelectionModel,
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
@@ -12,11 +12,13 @@ from PySide6.QtCore import (
     QSize, QStringListModel, QThreadPool, QTimer, QUrl,
     QSettings
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap, QDesktopServices
+from PySide6.QtGui import (
+    QAction, QColor, QDoubleValidator, QKeySequence, QIcon, QPainter, QPen, QPixmap, QDesktopServices
+)
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QGraphicsOpacityEffect, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
     QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
-    QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
+    QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit,
 )
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -60,6 +62,17 @@ RIGHT_SIDEBAR_WIDTH = 250
 ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 20
 BUTTON_HEIGHT = 30
+
+# --- Plot controls card (right panel) ---
+# The panel floats over the plot instead of shrinking it, so that the aspect
+# of the spectrum does not change (Guido's choice). To cover as little as
+# possible, it is only as tall as its contents and it fades out while the
+# mouse is on the plot, so the effect of a change can be seen through it.
+PLOT_CONTROLS_MARGIN = 8       # Gap between the menu bar and the card (px)
+PLOT_CONTROLS_FADED = 0.35     # Opacity of the card while the mouse is away
+PLOT_CONTROLS_FADE_DELAY = 500 # ms before fading out after the mouse leaves
+PLOT_CONTROLS_FADE_TIME = 200  # ms of the fade animation
+SWATCH_SIZE = QSize(24, 12)
 
 class MockV1GUIContext:
     """Provides the minimal methods expected by V1 loaders."""
@@ -229,14 +242,17 @@ class MainWindowV2(QMainWindow):
         # Sidebar still fills the full content height
         self.left_sidebar_widget.setGeometry(0, content_y_start, left_width, content_height)
 
-        # --- Right Sidebar & Button ---
+        # --- Right Sidebar (card) & Button ---
         right_width = self.right_sidebar_widget.width()
         sidebar_x = window_width - right_width
+        card_y = content_y_start + PLOT_CONTROLS_MARGIN
+        card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
+                          content_height - 2 * PLOT_CONTROLS_MARGIN)
         button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
-         # ** Use calculated button_y **
-        self.plot_controls_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
-        # Sidebar still fills the full content height
-        self.right_sidebar_widget.setGeometry(sidebar_x, content_y_start, right_width, content_height)
+        # The button sits halfway down the card, not the window
+        right_button_y = card_y + (card_height - BUTTON_HEIGHT) // 2
+        self.plot_controls_collapse_button.setGeometry(button_x, right_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        self.right_sidebar_widget.setGeometry(sidebar_x, card_y, right_width, card_height)
         
 
         self.central_stack.lower()
@@ -339,7 +355,7 @@ class MainWindowV2(QMainWindow):
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
         sidebar_layout.setContentsMargins(15, 10, 15, 10)
-        sidebar_layout.setSpacing(15)
+        sidebar_layout.setSpacing(10)
 
         # --- Helper: Expand Field ---
         def _expand_field(widget):
@@ -349,9 +365,22 @@ class MainWindowV2(QMainWindow):
         # --- Plot Element Toggles ---
         # (This section remains unchanged)
         plot_toggles_layout = QVBoxLayout()
-        plot_toggles_layout.setSpacing(8)
+        plot_toggles_layout.setSpacing(4)
         plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>"))
-        
+
+        # The spectrum is always drawn: a swatch with no checkbox, indented
+        # to line up with the swatches of the checkboxes below
+        spectrum_row = QHBoxLayout()
+        indicator_w = self.style().pixelMetric(QStyle.PixelMetric.PM_IndicatorWidth)
+        spectrum_row.setContentsMargins(15 + indicator_w + 5, 0, 0, 0)
+        spectrum_row.setSpacing(4)
+        self.spectrum_swatch = QLabel()
+        self.spectrum_swatch.setPixmap(self._blank_swatch())
+        spectrum_row.addWidget(self.spectrum_swatch)
+        spectrum_row.addWidget(QLabel("Spectrum"))
+        spectrum_row.addStretch(1)
+        plot_toggles_layout.addLayout(spectrum_row)
+
         self.error_checkbox = QCheckBox("1-sigma error"); self.error_checkbox.setChecked(True)
         self.error_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.error_checkbox)
@@ -411,7 +440,7 @@ class MainWindowV2(QMainWindow):
     
         # --- ** Axis & View Controls ** ---
         view_layout = QVBoxLayout()
-        view_layout.setSpacing(8)
+        view_layout.setSpacing(4)
         view_layout.addWidget(QLabel("<b>View Controls:</b>"))
 
         # X-Axis Unit
@@ -683,10 +712,11 @@ class MainWindowV2(QMainWindow):
         sidebar_layout.addWidget(continuum_group)
         apply_initial_collapse(continuum_group)
 
-        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        sidebar_layout.addItem(spacer)
-
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
+        self._setup_plot_controls_fading()
+        for checkbox in self._swatch_checkboxes():
+            checkbox.setIcon(QIcon(self._blank_swatch()))
+            checkbox.setIconSize(SWATCH_SIZE)
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.error_line_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
@@ -1276,9 +1306,17 @@ class MainWindowV2(QMainWindow):
 
         qss = f"""
             /* Sidebar Containers: Transparent background, NO side borders */
-            QWidget#SessionContainer, QWidget#PlotControlsContainer {{
+            QWidget#SessionContainer {{
                 background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
                 border: none; /* ** Remove all borders ** */
+            }}
+            /* Plot controls: a card as tall as its contents, flush right */
+            QWidget#PlotControlsContainer {{
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
+                border: 1px solid {border_color};
+                border-right: none;
+                border-top-left-radius: 8px;
+                border-bottom-left-radius: 8px;
             }}
             
             /* Make ListView background fully transparent */
@@ -1526,8 +1564,141 @@ class MainWindowV2(QMainWindow):
         self.right_animation_group.addAnimation(button_anim)
 
         if not target_visible: self.right_animation_group.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
+        else: self._set_plot_controls_faded(False, animate=False)
+        # Redraw once the card has moved, to move the panel entries out of
+        # (or back into) the legend
+        self.right_animation_group.finished.connect(self._replot_if_session)
         self.right_animation_group.start()
         self._update_sidebar_button_icon(self.plot_controls_collapse_button, target_visible, is_left=False)
+
+    def _replot_if_session(self):
+        if self.active_history:
+            self._trigger_replot()
+
+    # --- Plot controls card: fading and legend swatches ---
+
+    def _setup_plot_controls_fading(self):
+        """Fades the card out while the mouse is away from it."""
+        card = self.right_sidebar_widget
+        self._plot_controls_opacity = QGraphicsOpacityEffect(card)
+        self._plot_controls_opacity.setOpacity(1.0)
+        card.setGraphicsEffect(self._plot_controls_opacity)
+        self._plot_controls_fade_anim = QPropertyAnimation(self._plot_controls_opacity, b"opacity", self)
+        self._plot_controls_fade_anim.setDuration(PLOT_CONTROLS_FADE_TIME)
+        self._plot_controls_fade_timer = QTimer(self)
+        self._plot_controls_fade_timer.setSingleShot(True)
+        self._plot_controls_fade_timer.setInterval(PLOT_CONTROLS_FADE_DELAY)
+        self._plot_controls_fade_timer.timeout.connect(self._fade_plot_controls_if_left)
+        card.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if obj is getattr(self, 'right_sidebar_widget', None):
+            etype = event.type()
+            if etype == QEvent.Type.Enter:
+                self._plot_controls_fade_timer.stop()
+                self._set_plot_controls_faded(False)
+            elif etype == QEvent.Type.Leave:
+                self._plot_controls_fade_timer.start()
+            elif etype == QEvent.Type.LayoutRequest:
+                # A section was expanded or collapsed: resize the card
+                QTimer.singleShot(0, self._reposition_floating_widgets)
+        return super().eventFilter(obj, event)
+
+    def _fade_plot_controls_if_left(self):
+        card = self.right_sidebar_widget
+        # A combo box popup takes the mouse away from the card without the
+        # user leaving it: wait until it is closed
+        if QApplication.activePopupWidget() is not None or card.underMouse():
+            self._plot_controls_fade_timer.start()
+            return
+        self._set_plot_controls_faded(True)
+
+    def _set_plot_controls_faded(self, faded: bool, animate: bool = True):
+        target = PLOT_CONTROLS_FADED if faded else 1.0
+        anim = self._plot_controls_fade_anim
+        anim.stop()
+        if animate:
+            anim.setStartValue(self._plot_controls_opacity.opacity())
+            anim.setEndValue(target)
+            anim.start()
+        else:
+            self._plot_controls_opacity.setOpacity(target)
+
+    def _swatch_checkboxes(self):
+        return [self.error_checkbox, self.continuum_checkbox,
+                self.model_checkbox, self.systems_checkbox]
+
+    def _blank_swatch(self) -> QPixmap:
+        ratio = self.devicePixelRatioF()
+        pix = QPixmap(SWATCH_SIZE * ratio)
+        pix.setDevicePixelRatio(ratio)
+        pix.fill(Qt.transparent)
+        return pix
+
+    def _swatch(self, artists) -> QPixmap:
+        """Draws a legend swatch for one or more matplotlib artists."""
+        from matplotlib.colors import to_rgba
+        pix = self._blank_swatch()
+        painter = QPainter(pix)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = SWATCH_SIZE.width(), SWATCH_SIZE.height()
+        n = len(artists)
+        for i, artist in enumerate(artists):
+            if hasattr(artist, 'lines'):  # errorbar container
+                coll = artist.lines[2][0] if artist.lines[2] else None
+                rgba = coll.get_colors()[0] if coll is not None else (0.5, 0.5, 0.5, 1)
+                linestyle, marker, lw = '-', 'None', 1.0
+            else:
+                rgba = to_rgba(artist.get_color(), artist.get_alpha())
+                linestyle, marker = artist.get_linestyle(), artist.get_marker()
+                lw = artist.get_linewidth()
+            color = QColor.fromRgbF(*rgba)
+            if marker == '|':
+                # Ticks of the systems: one group per artist, side by side
+                pen = QPen(color, 1.5)
+                painter.setPen(pen)
+                x0, x1 = i * w / n, (i + 1) * w / n
+                for k in range(3):
+                    x = x0 + (x1 - x0) * (k + 0.5) / 3
+                    painter.drawLine(int(x), 1, int(x), h - 1)
+            elif linestyle not in ('None', '', ' '):
+                # Thicker than in the plot, to read as a colour at this size
+                pen = QPen(color, max(1.5, lw * 1.5))
+                if linestyle in ('--', 'dashed'):
+                    pen.setStyle(Qt.DashLine)
+                elif linestyle in (':', 'dotted'):
+                    pen.setStyle(Qt.DotLine)
+                painter.setPen(pen)
+                painter.drawLine(1, h // 2, w - 1, h // 2)
+            else:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(color)
+                painter.drawEllipse(w // 2 - 3, h // 2 - 3, 6, 6)
+        painter.end()
+        return pix
+
+    def update_plot_swatches(self, handles_by_label: dict):
+        """Shows the plotted styles next to the plot controls.
+
+        Called by the plot after each redraw. An element that is not drawn
+        although its box is checked (e.g. no continuum) gets a blank swatch;
+        an unchecked one keeps its last swatch, to show what it would add.
+        """
+        def pick(*labels):
+            return [handles_by_label[lab] for lab in labels if lab in handles_by_label]
+
+        spectrum = pick('Spectrum', 'Spectrum (decimated)')
+        self.spectrum_swatch.setPixmap(self._swatch(spectrum[:1]) if spectrum else self._blank_swatch())
+        for checkbox, labels in (
+                (self.error_checkbox, ('1-sigma error',)),
+                (self.continuum_checkbox, ('Normalization',)),
+                (self.model_checkbox, ('Absorption model',)),
+                (self.systems_checkbox, ('HI Systems', 'Metal Systems'))):
+            artists = pick(*labels)
+            if artists:
+                checkbox.setIcon(QIcon(self._swatch(artists)))
+            elif checkbox.isChecked():
+                checkbox.setIcon(QIcon(self._blank_swatch()))
 
     def _update_sidebar_button_icon(self, button, sidebar_is_visible, is_left):
         """Updates collapse button icon based on sidebar visibility."""
