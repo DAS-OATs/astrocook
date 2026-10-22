@@ -72,6 +72,11 @@ Current version: 2.1.0. Python ≥3.12.
   release, update the "preferred" entry of `switcher.json` on master (the
   release build checks it). `deploy_docs.sh stable|dev` does the same by
   hand.
+- Document everything found and used (sources, references, measurements,
+  decisions) when it happens, not afterwards: in `docs/` for users (e.g.
+  `docs/atomic_data.md`), in `ROADMAP.md` and the findings register for the
+  development. Material for a future paper on Astrocook is collected in
+  `ROADMAP.md`, section 7 (Guido, October 2026).
 - Heuristics (thresholds, penalties, bounds, magic numbers) often encode a
   purpose that no test records (e.g. the penalty on b > 50 km/s kept the
   forest fits fast, F32). Before removing or changing one, ask Guido what it
