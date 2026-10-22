@@ -221,13 +221,22 @@ def _voigt_v2(x, step, series, z, logN, b, resol=None, resol_col=None):
 VOIGT_X = np.arange(612.0, 620.0, 0.002)  # CIV at z = 2.97, Ly-alpha at z = 4.06
 
 
+@pytest.fixture
+def v1_civ_wavelengths(monkeypatch):
+    """The CIV wavelengths of V1 (Morton 2003) in the V2 table, to compare
+    the physics: V2 takes those of Petitjean & Aracil (2004) since #568."""
+    from astrocook.core.atomic_data import ATOM_DATA
+    for name, wave in (("CIV_1548", 1548.204), ("CIV_1550", 1550.781)):
+        monkeypatch.setitem(ATOM_DATA[name], "wave", wave)
+
+
 @pytest.mark.parametrize("resol", [None, 45000.0, 20000.0])
 @pytest.mark.parametrize("series, z, logN, b, ew_rtol", [
     ("CIV", 2.97, 13.6, 12.0, 1e-3),
     # V1 uses f = 0.416 for Ly-alpha, V2 0.4164: 0.1% more absorption in V2
     ("Ly_a", 4.059, 13.8, 25.0, 2e-3),
 ])
-def test_voigt_model(series, z, logN, b, ew_rtol, resol):
+def test_voigt_model(series, z, logN, b, ew_rtol, resol, v1_civ_wavelengths):
     # Same physics: the models agree within 5e-4 in normalised flux. A
     # constant 0.05% difference in equivalent width remains for CIV, with
     # identical atomic data; not traced further (2e-4 dex in logN).
@@ -237,7 +246,7 @@ def test_voigt_model(series, z, logN, b, ew_rtol, resol):
     assert np.sum(1 - v2) == pytest.approx(np.sum(1 - v1), rel=ew_rtol)
 
 
-def test_voigt_model_with_resolution_column():
+def test_voigt_model_with_resolution_column(v1_civ_wavelengths):
     # Regression test for F10 (V2 left the pixels with a non-round
     # resolution at 0); V1 takes the resolution at the system centre
     resol = 45050.0
