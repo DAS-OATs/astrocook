@@ -184,7 +184,9 @@ Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
 `benchmarks/results/validate_mocks_baseline.json` and in `ROADMAP.md`
 ("Baseline"); every fix of the phase is measured with
 `validate_mocks.py --compare` (full grid, ~26 min with 4 workers) and
-the PR states the changes. Next: #573. Work in
+the PR states the changes. Done: #573 (one default per recipe
+parameter, #605), #518 (fit window in the System Inspector, #606).
+In progress: #568 (atomic data). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

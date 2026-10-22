@@ -5,6 +5,9 @@
 
 - System Inspector: a **Fit ±** field, after logN and b above the velocity plot, sets how far (km/s) the redshift of each component may move in the fits run from the inspector (adding a component in the velocity plot, Refit Selected, Refit All); left empty, each fit keeps its window (20 km/s when adding, 100 km/s when refitting), so nothing changes unless it is set (#518).
 
+### Fixed
+- Atomic data: the wavelengths of OIII 832, PIII 913, PV 1117 and FeI 2501 were wrong by 0.2-0.7 A (mistyped in the conversion from nm to Angstrom, e.g. 913.397 instead of 913.968 A), and the damping constant of ArI 1066 was ten times too small; they now agree with Morton (2003) and with the table of V1 (#568). **Results change** for absorbers fitted or identified with these lines.
+
 ### Changed
 - The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. **Results change** where a default changes:
   - `refit_all` from a script and from the **Refit** button of the System Inspector: grouping depth 2 and 200 iterations per group (were 0 and 100), as the *Refit All* dialog; slower, and better on blends. The automatic pipelines (`metals_auto`, `forest_auto`, the refit after importing systems) keep the values they always used.
