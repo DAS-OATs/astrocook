@@ -24,7 +24,7 @@ FILE_RECIPES_SCHEMAS = {
         "brief": "Import session data from ASCII.",
         "details": "Imports session components (Flux, Continuum, System List) from CSV files.",
         "params": [
-            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Source folder"}
+            {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Source file"}
         ],
         "url": "file_cb.html#export"
     }

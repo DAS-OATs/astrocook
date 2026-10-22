@@ -96,7 +96,7 @@ class RecipeContinuumV2:
         self._tag = 'cont' # V1 tag for this menu
 
     def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
-                      kappa: str = '2.0', fudge: str = '1.0', 
+                      kappa: str = '2.0', fudge: str = 'auto', 
                       smooth_fwhm: str = '800.0', template: str = 'False', renorm_model: str = 'True',
                       smooth_std: str = None) -> 'SessionV2':
         """
@@ -118,7 +118,8 @@ class RecipeContinuumV2:
         fudge : str, optional
             A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.
             If ``'auto'``, the factor is calculated to center the continuum residuals.
-            Defaults to ``'1.0'``.
+            Defaults to ``'auto'``, as the GUI (the same result as ``'1.0'``,
+            see :meth:`fit_continuum`).
         smooth_fwhm : str, optional
             FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.
         smooth_std : str, optional

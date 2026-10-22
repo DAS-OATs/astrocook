@@ -3,6 +3,16 @@
 ### Added
 - MCP server for AI agents (pilot): Claude Code, the Claude desktop app or other MCP clients can open a spectrum, estimate the continuum, identify lines, fit the metal doublets and save the session, through the `astrocook-mcp` command (install with `pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"`). The tools return structured summaries and Astrocook's error messages, and record their recipes in the session log, so that the result can be reviewed in the GUI. See the new tutorial *Using Astrocook from an AI Agent*. No existing behaviour changes.
 
+### Changed
+- The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. **Results change** where a default changes:
+  - `refit_all` from a script and from the **Refit** button of the System Inspector: grouping depth 2 and 200 iterations per group (were 0 and 100), as the *Refit All* dialog; slower, and better on blends. The automatic pipelines (`metals_auto`, `forest_auto`, the refit after importing systems) keep the values they always used.
+  - `optimize_system` from a script: an AIC improvement of at least 5 to accept a new component (was 0); the dialog now offers up to 5 extra components and a residual threshold of 2.5 sigma, the values of the API.
+  - `fit_component`: the dialog now offers 2000 iterations, the value the System Inspector and scripts always used.
+  - `rebin`: the dialog now clips upward outliers at 5 sigma by default (was off), as scripts did.
+  - `coadd` from a script: a grid of 10 km/s (was 0.01 nm), as the dialog; choose the native pixel size for high-resolution data.
+  - `x_convert` from a script: velocities relative to the emission redshift of the session (was z = 0), as the dialog.
+  - No change of results: `estimate_auto` takes `fudge='auto'` (the same as `'1.0'`), two parameter names of the dialogs follow the methods (`uuids` of `fit_bayesian`, `file_path` of `import_ascii`), and the maps of `populate_from_identification` default to an empty string, as before treated as missing.
+
 ## [2.1.0] - 2026-10-21
 
 First consolidated release (phases 3 and 3-bis of the consolidation): Astrocook no longer depends on the V1 code, which is removed, and V1 `.acs` archives are read by a new native reader. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub). **Some results change**: refitting a V1 session with links between parameters (now kept as constraints), and the `dbtur` column of the fitted components (now updated; 0 when `btur` is frozen). Nothing else changes numerically with respect to 2.0.3.
