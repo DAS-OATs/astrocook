@@ -1364,7 +1364,7 @@ class SystemInspector(QWidget):
         c_layout.addWidget(fit_window_label)
         self.fit_window_in = QLineEdit()
         self.fit_window_in.setPlaceholderText("def.")
-        self.fit_window_in.setFixedWidth(50)
+        self.fit_window_in.setFixedWidth(40)  # as logN and b
         positive = QDoubleValidator(0.0, 10000.0, 3)
         positive.setLocale(QLocale.C)
         positive.setNotation(QDoubleValidator.StandardNotation)
