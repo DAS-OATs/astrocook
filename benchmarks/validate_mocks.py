@@ -249,10 +249,12 @@ def identification_metrics(truth, systems, spec):
     a duplicate (F49); candidates beyond z_em are counted apart (F55).
     """
     candidates = _candidates(spec)
-    out = {"n_lya": sum(1 for s, _ in candidates if s.startswith("Ly"))}
+    out = {"n_lya": sum(1 for s, _ in candidates if s.startswith("Ly")),
+           "systems": []}
     for species in METALS:
         true = [s for s in systems if s["species"] == species]
-        detectable = [is_detectable(s, truth)[0] for s in true]
+        detection = [is_detectable(s, truth) for s in true]
+        detectable = [d[0] for d in detection]
         cands = [z for s, z in candidates if s == species]
         found, duplicates, false, beyond = set(), 0, 0, 0
         for z in cands:
@@ -270,6 +272,11 @@ def identification_metrics(truth, systems, spec):
             n_candidates=len(cands), n_found=len(found),
             n_found_detectable=sum(1 for i in found if detectable[i]),
             n_duplicates=duplicates, n_false=false, n_beyond_z_em=beyond)
+        # Significance of the weaker line and outcome, per system, to
+        # check the detection limit
+        out["systems"] += [dict(species=species, significance=d[1] / d[2],
+                                found=i in found)
+                           for i, d in enumerate(detection)]
     return out
 
 
@@ -287,6 +294,21 @@ def _flags(c):
     return flags
 
 
+#: Categories of the matched components, for the pulls: "single" if the
+#: true system has one component, "multi" otherwise; "clean" if only one
+#: fitted component of the series is within CROWD_KMS of the true one,
+#: "crowded" otherwise (more components fitted than resolved, e.g. F49)
+PULL_CATEGORIES = ("single_clean", "single_crowded", "multi_clean", "multi_crowded")
+CROWD_KMS = 50.0
+
+
+def pull_category(true_comp, n_in_system, fitted):
+    near = sum(1 for f in fitted if f.series == true_comp.series
+               and _dv(f.z, true_comp.z) <= CROWD_KMS)
+    return (f"{'single' if n_in_system == 1 else 'multi'}_"
+            f"{'clean' if near <= 1 else 'crowded'}")
+
+
 def fit_metrics(truth, systems, systs):
     """Components of doublets_auto against the true metal components.
 
@@ -295,6 +317,7 @@ def fit_metrics(truth, systems, systs):
     """
     fitted = [c for c in (systs.components if systs else []) if c.series in METALS]
     true = [c for s in systems for c in s["components"]]
+    n_in_system = [len(s["components"]) for s in systems for _ in s["components"]]
     pairs = sorted(((_dv(f.z, t.z), i, j) for i, f in enumerate(fitted)
                     for j, t in enumerate(true) if f.series == t.series),
                    key=lambda p: p[0])
@@ -305,10 +328,12 @@ def fit_metrics(truth, systems, systs):
         if i not in used_f and j not in used_t:
             used_f.add(i)
             used_t.add(j)
-            matches.append((fitted[i], true[j]))
+            matches.append((fitted[i], true[j], j))
     pulls = {"z": [], "logN": [], "b": []}
     diffs = {"z": [], "logN": [], "b": []}
-    for f, t in matches:
+    by_category = {k: {"z": [], "logN": [], "b": []} for k in PULL_CATEGORIES}
+    for f, t, j in matches:
+        category = pull_category(t, n_in_system[j], fitted)
         for par, err in (("z", f.dz), ("logN", f.dlogN), ("b", f.db)):
             d = getattr(f, par) - getattr(t, par)
             if par == "z":
@@ -317,6 +342,7 @@ def fit_metrics(truth, systems, systs):
             diffs[par].append(d)
             if err is not None and np.isfinite(err) and err > 0:
                 pulls[par].append(d / err)
+                by_category[category][par].append(d / err)
     flags = [_flags(c) for c in fitted]
     return dict(
         n_true=len(true), n_fitted=len(fitted), n_matched=len(matches),
@@ -324,7 +350,7 @@ def fit_metrics(truth, systems, systs):
         n_flagged=sum(bool(f) for f in flags),
         flags={k: sum(k in f for f in flags)
                for k in ("nan_errors", "absurd_errors", "logN_at_bound", "b_at_bound")},
-        diffs=diffs, pulls=pulls,
+        diffs=diffs, pulls=pulls, pulls_by_category=by_category,
         chi2r=[float(c.chi2) for c in fitted if c.chi2 is not None])
 
 
@@ -397,9 +423,31 @@ def summarize(records, key=None):
         fit[f"diff_{par}"] = _stats([d for r in records for d in r["fit"]["diffs"][par]])
         fit[f"pull_{par}"] = _stats([p for r in records for p in r["fit"]["pulls"][par]])
     fit["chi2r"] = _stats([c for r in records for c in r["fit"]["chi2r"]])
+    fit["pulls_by_category"] = {
+        cat: {par: _stats([p for r in records
+                           for p in r["fit"]["pulls_by_category"][cat][par]])
+              for par in ("z", "logN", "b")}
+        for cat in PULL_CATEGORIES}
     out["fit"] = fit
+    out["completeness_by_significance"] = completeness_by_significance(records)
     out["seconds"] = {k: float(np.sum([r["times"][k] for r in records]))
                       for k in records[0]["times"]}
+    return out
+
+
+#: Bins of the significance of the weaker line (EW / sigma_EW)
+SIGNIFICANCE_BINS = (0.0, 1.0, 2.0, 3.0, 5.0, 10.0, np.inf)
+
+
+def completeness_by_significance(records):
+    """Fraction of the true systems found, in bins of the significance of
+    their weaker line: it should rise around DETECTION_SIGMA."""
+    systems = [s for r in records for s in r["identification"]["systems"]]
+    out = {}
+    for lo, hi in zip(SIGNIFICANCE_BINS[:-1], SIGNIFICANCE_BINS[1:]):
+        sel = [s["found"] for s in systems if lo <= s["significance"] < hi]
+        out[f"{lo:g}-{hi:g}"] = dict(n=len(sel),
+                                     found=float(np.mean(sel)) if sel else None)
     return out
 
 
@@ -436,6 +484,13 @@ def print_summary(result):
     f = s["fit"]
     print(f"fit: {f['n_matched']}/{f['n_true']} matched, {f['n_spurious']} spurious, "
           f"{f['n_flagged']} flagged {f['flags']}")
+    for cat, pars in f["pulls_by_category"].items():
+        text = ", ".join(f"{par} {p['sigma']:.2f}" for par, p in pars.items() if p)
+        n = pars["logN"]["n"] if pars["logN"] else 0
+        print(f"  pull sigma, {cat} ({n}): {text}")
+    print("completeness by significance: " + ", ".join(
+        f"{k}: {v['found']:.2f} ({v['n']})" for k, v in
+        s["completeness_by_significance"].items() if v["found"] is not None))
     for par in ("z", "logN", "b"):
         p = f[f"pull_{par}"]
         if p:

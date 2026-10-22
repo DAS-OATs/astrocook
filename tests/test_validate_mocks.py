@@ -201,3 +201,36 @@ def test_robust_stats():
     assert st["median"] == pytest.approx(0.0, abs=0.03)
     assert st["frac_gt3"] == pytest.approx(0.0027, abs=0.002)
     assert vm._stats([np.nan]) is None
+
+
+def test_pull_categories():
+    true = MockComponent("CIV", 2.0, 14.0, 10.0)
+    alone = [_comp("CIV", _z_offset(2.0, 2.0), 14.0, 10.0),
+             _comp("CIV", _z_offset(2.0, 80.0), 13.0, 10.0),  # beyond CROWD_KMS
+             _comp("SiIV", 2.0, 13.0, 10.0)]  # another series
+    crowded = alone + [_comp("CIV", _z_offset(2.0, -10.0), 12.5, 5.0)]
+    assert vm.pull_category(true, 1, alone) == "single_clean"
+    assert vm.pull_category(true, 1, crowded) == "single_crowded"
+    assert vm.pull_category(true, 3, alone) == "multi_clean"
+    assert vm.pull_category(true, 3, crowded) == "multi_crowded"
+
+
+def test_fit_metrics_pulls_by_category():
+    systems = [dict(species="CIV", z=2.0, components=[MockComponent("CIV", 2.0, 14.0, 10.0)])]
+    fitted = [_comp("CIV", 2.0, 14.1, 10.0, dlogN=0.1)]
+    m = vm.fit_metrics(None, systems, _Systs(fitted))
+    assert m["pulls_by_category"]["single_clean"]["logN"] == pytest.approx([1.0])
+    assert m["pulls_by_category"]["multi_crowded"]["logN"] == []
+
+
+def test_completeness_by_significance():
+    records = [{"identification": {"systems": [
+        dict(species="CIV", significance=0.5, found=False),
+        dict(species="CIV", significance=2.5, found=False),
+        dict(species="CIV", significance=2.7, found=True),
+        dict(species="SiIV", significance=20.0, found=True)]}}]
+    c = vm.completeness_by_significance(records)
+    assert c["0-1"] == dict(n=1, found=0.0)
+    assert c["2-3"] == dict(n=2, found=0.5)
+    assert c["10-inf"] == dict(n=1, found=1.0)
+    assert c["3-5"] == dict(n=0, found=None)
