@@ -234,3 +234,18 @@ def test_completeness_by_significance():
     assert c["2-3"] == dict(n=2, found=0.5)
     assert c["10-inf"] == dict(n=1, found=1.0)
     assert c["3-5"] == dict(n=0, found=None)
+
+
+def test_system_column():
+    system = dict(species="CIV", z=2.0, components=[
+        MockComponent("CIV", 2.0, 13.0, 10.0),
+        MockComponent("CIV", _z_offset(2.0, 30.0), 13.0, 10.0)])
+    # One fitted component carrying the whole column, within the range
+    fitted = [_comp("CIV", _z_offset(2.0, 15.0), np.log10(2e13), 15.0, dlogN=0.05),
+              _comp("CIV", _z_offset(2.0, 200.0), 12.0, 10.0),  # outside
+              _comp("SiIV", 2.0, 13.0, 10.0)]  # another species
+    c = vm.system_column(system, fitted)
+    assert c["n_true"] == 2 and c["n_fitted"] == 1
+    assert c["fit_logN"] == pytest.approx(c["true_logN"])
+    assert c["dlogN"] == pytest.approx(0.05)
+    assert vm.system_column(system, fitted[1:])["fit_logN"] is None

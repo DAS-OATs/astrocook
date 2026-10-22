@@ -309,6 +309,32 @@ def pull_category(true_comp, n_in_system, fitted):
             f"{'clean' if near <= 1 else 'crowded'}")
 
 
+def system_column(system, fitted):
+    """Total column density of a true system against the sum of the fitted
+    components of its species within MATCH_KMS of its velocity range: a
+    measure that does not depend on how the system is decomposed.
+
+    The error of the fitted total propagates the errors of the components
+    (as independent); ``None`` if any of them is not finite.
+    """
+    comps = system["components"]
+    zs = [c.z for c in comps]
+    lo = min(zs) - MATCH_KMS / C_KMS * (1 + min(zs))
+    hi = max(zs) + MATCH_KMS / C_KMS * (1 + max(zs))
+    inside = [f for f in fitted if f.series == system["species"] and lo <= f.z <= hi]
+    true_logN = float(np.log10(np.sum([10**c.logN for c in comps])))
+    out = dict(species=system["species"], n_true=len(comps), n_fitted=len(inside),
+               true_logN=true_logN, fit_logN=None, dlogN=None)
+    if inside:
+        n = np.array([10**f.logN for f in inside])
+        out["fit_logN"] = float(np.log10(n.sum()))
+        errs = [f.dlogN for f in inside]
+        if all(e is not None and np.isfinite(e) for e in errs):
+            sigma_n = np.sqrt(np.sum((n * np.log(10) * np.array(errs)) ** 2))
+            out["dlogN"] = float(sigma_n / (n.sum() * np.log(10)))
+    return out
+
+
 def fit_metrics(truth, systems, systs):
     """Components of doublets_auto against the true metal components.
 
@@ -345,6 +371,7 @@ def fit_metrics(truth, systems, systs):
                 by_category[category][par].append(d / err)
     flags = [_flags(c) for c in fitted]
     return dict(
+        systems=[system_column(s, fitted) for s in systems],
         n_true=len(true), n_fitted=len(fitted), n_matched=len(matches),
         n_spurious=len(fitted) - len(matches), n_missed=len(true) - len(matches),
         n_flagged=sum(bool(f) for f in flags),
@@ -423,6 +450,17 @@ def summarize(records, key=None):
         fit[f"diff_{par}"] = _stats([d for r in records for d in r["fit"]["diffs"][par]])
         fit[f"pull_{par}"] = _stats([p for r in records for p in r["fit"]["pulls"][par]])
     fit["chi2r"] = _stats([c for r in records for c in r["fit"]["chi2r"]])
+    columns = [c for r in records for c in r["fit"]["systems"] if c["fit_logN"] is not None]
+    fit["system_column"] = dict(
+        n_systems=sum(len(r["fit"]["systems"]) for r in records),
+        n_fitted=len(columns),
+        diff=_stats([c["fit_logN"] - c["true_logN"] for c in columns]),
+        pull=_stats([(c["fit_logN"] - c["true_logN"]) / c["dlogN"] for c in columns
+                     if c["dlogN"]]),
+        diff_multi=_stats([c["fit_logN"] - c["true_logN"] for c in columns
+                           if c["n_true"] > 1]),
+        pull_multi=_stats([(c["fit_logN"] - c["true_logN"]) / c["dlogN"]
+                           for c in columns if c["dlogN"] and c["n_true"] > 1]))
     fit["pulls_by_category"] = {
         cat: {par: _stats([p for r in records
                            for p in r["fit"]["pulls_by_category"][cat][par]])
@@ -484,6 +522,11 @@ def print_summary(result):
     f = s["fit"]
     print(f"fit: {f['n_matched']}/{f['n_true']} matched, {f['n_spurious']} spurious, "
           f"{f['n_flagged']} flagged {f['flags']}")
+    sc = f["system_column"]
+    if sc["diff"] and sc["pull"]:
+        print(f"system column ({sc['n_fitted']}/{sc['n_systems']}): diff median "
+              f"{sc['diff']['median']:.3f} sigma {sc['diff']['sigma']:.3f}; pull median "
+              f"{sc['pull']['median']:.2f} sigma {sc['pull']['sigma']:.2f}")
     for cat, pars in f["pulls_by_category"].items():
         text = ", ".join(f"{par} {p['sigma']:.2f}" for par, p in pars.items() if p)
         n = pars["logN"]["n"] if pars["logN"] else 0
