@@ -177,7 +177,12 @@ docs page "Using Astrocook from an AI Agent"; report from two trials with
 fresh agents and Guido's own trial; found F46-F55 (phases 4, 6-bis, 7).
 
 Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
-"Plan of the phase"); first the validation on mocks. Work in
+"Plan of the phase"). Validation on mocks done: extended mocks (#602),
+`benchmarks/validate_mocks.py` (#603), baseline of 2.1.0 in
+`benchmarks/results/validate_mocks_baseline.json` and in `ROADMAP.md`
+("Baseline"); every fix of the phase is measured with
+`validate_mocks.py --compare` (full grid, ~26 min with 4 workers) and
+the PR states the changes. Next: #573. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
