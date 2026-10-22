@@ -11,7 +11,7 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.atomic_data import _v1_series, trans_parse
+from astrocook.core.atomic_data import ATOM_DATA, _v1_series, trans_parse
 from astrocook.core.spectrum_operations import convert_axis_velocity
 from reference.v1 import vars as vars_v1
 from reference.v1.functions import trans_parse as trans_parse_v1
@@ -60,3 +60,40 @@ def test_convert_axis_velocity_matches_v1_x_convert(zem, xunit):
     old = x_convert_v1(x, zem=zem, xunit=xunit)
     assert new.unit == old.unit
     np.testing.assert_allclose(new.value, old.value, rtol=1e-12)
+
+
+# --- Values against a standard line list (#568, F38) -------------------------
+
+#: Morton (2003, ApJS 149, 205), vacuum wavelengths (Angstrom), oscillator
+#: strengths and damping constants (s^-1), as distributed with linetools
+#: (morton03_table2); gamma None where not checked. OIII 832 is below the
+#: range of Morton (912 A): its value is the one of the V1 table, which the
+#: V2 table had mistyped like the others.
+REFERENCE = {
+    "CIV_1548": (1548.204, 0.1899, 2.643e8),
+    "CIV_1550": (1550.781, 0.09475, 2.628e8),
+    "SiIV_1393": (1393.7602, 0.513, 8.80e8),
+    "SiIV_1402": (1402.7729, 0.254, 8.62e8),
+    "MgII_2796": (2796.3543, 0.6155, 2.625e8),
+    "MgII_2803": (2803.5315, 0.3058, 2.595e8),
+    "NV_1238": (1238.821, 0.156, 3.391e8),
+    "OVI_1031": (1031.9261, 0.1325, 4.149e8),
+    "AlII_1670": (1670.7886, 1.74, 1.39e9),
+    # The four wavelengths mistyped in the conversion from nm to Angstrom
+    # (91.39683 nm written 913.39683 A) and the damping constant off by ten
+    "PIII_913": (913.9683, 0.203, 4.79e9),
+    "PV_1117": (1117.9774, 0.472, 1.26e9),
+    "FeI_2501": (2501.8858, 0.0493, 3.85e8),
+    "ArI_1066": (1066.6598, 0.0675, 1.32e8),
+    "OIII_832": (832.927, 0.107, None),
+}
+
+
+@pytest.mark.parametrize("name", sorted(REFERENCE))
+def test_values_of_the_standard_line_list(name):
+    wave, f, gamma = REFERENCE[name]
+    atom = ATOM_DATA[name]
+    assert atom["wave"] == pytest.approx(wave, abs=2e-3)  # 0.4 km/s at 1500 A
+    assert atom["f"] == pytest.approx(f, rel=0.01)
+    if gamma is not None:
+        assert atom["gamma"] == pytest.approx(gamma, rel=0.02)
