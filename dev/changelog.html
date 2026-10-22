@@ -163,6 +163,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="atomic_data.html">
+    Atomic Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="reference.html">
     API Reference
   </a>
@@ -307,6 +314,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="atomic_data.html">
+    Atomic Data
   </a>
 </li>
 
@@ -473,6 +487,7 @@
 <ul class="simple">
 <li><p>MCP server for AI agents (pilot): Claude Code, the Claude desktop app or other MCP clients can open a spectrum, estimate the continuum, identify lines, fit the metal doublets and save the session, through the <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code> command (install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;astrocook[mcp]</span> <span class="pre">&#64;</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git&quot;</span></code>). The tools return structured summaries and Astrocook’s error messages, and record their recipes in the session log, so that the result can be reviewed in the GUI. See the new tutorial <em>Using Astrocook from an AI Agent</em>. No existing behaviour changes.</p></li>
 <li><p>System Inspector: a <strong>Fit ±</strong> field, after logN and b above the velocity plot, sets how far (km/s) the redshift of each component may move in the fits run from the inspector (adding a component in the velocity plot, Refit Selected, Refit All); left empty, each fit keeps its window (20 km/s when adding, 100 km/s when refitting), so nothing changes unless it is set (#518).</p></li>
+<li><p>Documentation: a new page, <em>Atomic Data</em>, describes the table of atomic data, the source of each value, the choices made and the series and multiplets that Astrocook knows (#568).</p></li>
 </ul>
 </section>
 <section id="fixed">
@@ -480,11 +495,13 @@
 <ul class="simple">
 <li><p>Atomic data: the wavelengths of OIII 832, PIII 913, PV 1117 and FeI 2501 were wrong by 0.2-0.7 A (mistyped in the conversion from nm to Angstrom, e.g. 913.397 instead of 913.968 A), and the damping constant of ArI 1066 was ten times too small; they now agree with Morton (2003) and with the table of V1 (#568). <strong>Results change</strong> for absorbers fitted or identified with these lines.</p></li>
 <li><p>Atomic data: AlII 1670 at 1670.7886 A (was 1670.7874, 0.2 km/s); the forbidden emission lines [NeIII] 3869 and [NeV] 3346 at their vacuum wavelengths, as the rest of the table (they were in air, 1.1 and 1.0 A shorter); <code class="docutils literal notranslate"><span class="pre">TiII_3066</span></code>, a line that no reference lists, has f = 0 as in V1, and the real <code class="docutils literal notranslate"><span class="pre">TiII_3067</span></code> (3067.2379 A) is added (#568).</p></li>
+<li><p>Redshift cursor and identification viewer (GUI): with a series of the V1 syntax such as <code class="docutils literal notranslate"><span class="pre">Ly</span></code>, <code class="docutils literal notranslate"><span class="pre">D</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> the redshift refers to the strongest line (Ly-a), not to the Lyman limit or to the weakest line, as the series followed the order of the V1 table; the aliases <code class="docutils literal notranslate"><span class="pre">Ly-ab</span></code> and <code class="docutils literal notranslate"><span class="pre">Ly-abg</span></code> also start from Ly-a (#568, F39).</p></li>
 </ul>
 </section>
 <section id="changed">
 <h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
 <ul class="simple">
+<li><p>Atomic data: a single table, <code class="docutils literal notranslate"><span class="pre">astrocook/data/atomic_data.ecsv</span></code>, replaces the table in the code and the V1 file <code class="docutils literal notranslate"><span class="pre">atom_par.dat</span></code>, and records the source of each wavelength, oscillator strength and damping constant (#568). Newer values replace those of Morton (2003), as in the atom.dat of VPFIT (decided by Guido): the oscillator strengths of ZnII 2026 and 2062 (Kisielius et al. 2015; 26% higher, <strong>logN(ZnII) 0.10 dex lower</strong>), of NiII 1317-1751 (Boissé &amp; Bergeron 2019; up to 32% lower, <strong>logN(NiII) up to 0.17 dex higher</strong>) and of SII 1250-1259 (Kisielius et al. 2014; 5% lower, logN 0.02 dex higher), and the wavelengths of CIV 1548 and 1550 (Petitjean &amp; Aracil 2004; 0.2 and 0.5 km/s). The damping constant of CI 1560 is the one of Morton (2003), 1.27e8 s^-1 (was 1.17e8). <strong>Results change</strong> for absorbers with these lines. The transitions of the V1 file that V2 never used (H2, CO, Paschen and Brackett series, …) are not in the table; the V1 series names made only of them (<code class="docutils literal notranslate"><span class="pre">H2</span></code>, <code class="docutils literal notranslate"><span class="pre">COJ0</span></code>, …) are no longer recognised.</p></li>
 <li><p>The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. <strong>Results change</strong> where a default changes:</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">refit_all</span></code> from a script and from the <strong>Refit</strong> button of the System Inspector: grouping depth 2 and 200 iterations per group (were 0 and 100), as the <em>Refit All</em> dialog; slower, and better on blends. The automatic pipelines (<code class="docutils literal notranslate"><span class="pre">metals_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">forest_auto</span></code>, the refit after importing systems) keep the values they always used.</p></li>
