@@ -712,9 +712,77 @@ spurious candidates), then the large changes of the continuum (#465,
 urgent, reported by XQR-30) and of the model (#526), and the bounds last,
 tuned on the final model.
 
-*Still to decide, when the item comes:* the detection limit of the
-recall (proposed above), the proximity margin of F55, and the decisions
-listed in each issue.
+*Still to decide, when the item comes:* the proximity margin of F55, and
+the decisions listed in each issue. The detection limit of the recall
+stays at 3 sigma (Guido, with the baseline below: the identification
+should improve down to it).
+
+**Baseline** (version 2.1.0, October 2026; PRs #602, #603 and the PR that
+added this paragraph). The full grid of `benchmarks/validate_mocks.py`
+(135 mocks, 26 minutes with 4 workers, deterministic: two runs gave the
+same numbers). Its summary is in
+`benchmarks/results/validate_mocks_baseline.json`; `--compare` prints
+the key numbers of a new run next to it, and a slow test runs the reduced
+grid (16 mocks) against loose thresholds, to catch regressions.
+
+*Continuum* (estimated / true, median over the mocks; in brackets the
+median 5th percentile):
+
+| | Forest (Ly-b to Ly-a) | Red side |
+|---|---|---|
+| all | 0.936 (0.820) | 1.002 (0.996) |
+| S/N 10 / 30 / 100 | 0.869 / 0.936 / 0.978 | 1.005 / 1.002 / 1.001 |
+| z_em 2.5 / 3.5 / 4.5 | 0.970 / 0.935 / 0.883 | 1.002 |
+| with a DLA (27 mocks) | 0.920 (lowest 0.657) | |
+
+Excellent on the red side; low in the forest, more at high z and low
+S/N (F56).
+
+*Identification of the metal doublets* (`identify_lines`; matched within
+20 km/s; completeness over the systems whose weaker line is detected at
+3 sigma):
+
+| | Purity | Completeness | Duplicates (F49) |
+|---|---|---|---|
+| CIV | 0.99 | 0.85 | 505 |
+| SiIV | 0.97 | 0.69 | 267 |
+| MgII | 0.98 | 0.91 | 345 |
+
+Completeness against the significance of the weaker line: 0 below 3
+sigma, 0.05 at 3-5, 0.30 at 5-10, 0.91 above 10 (F57). No candidate
+beyond z_em: the mocks have no absorption there, so F55 is not measured
+yet.
+
+*Fit* (`doublets_auto`): 1534 of the 2689 true components matched (many
+of the others are weak or unresolved, especially at R = 8900), 428
+spurious, 413 flagged (351 with absurd errors, F52; 112 with b at a
+bound). Bias: none (median pulls of z, logN and b between -0.14 and
+-0.07). Width of the pulls (half the 16-84% interval) by kind of
+component:
+
+| True component | n | z | logN | b |
+|---|---|---|---|---|
+| single, one fitted component near it | 53 | 1.05 | 1.27 | 1.04 |
+| single, more fitted components near it | 107 | 1.38 | 0.99 | 1.16 |
+| in a system of several, one fitted near it | 214 | 4.93 | 6.50 | 4.35 |
+| in a system of several, more fitted near it | 1160 | 1.63 | 1.99 | 1.77 |
+| all | 1534 | 1.78 | 2.29 | 2.07 |
+
+The errors of the fitter are right for isolated lines; the width comes
+from the decomposition of the systems with several components (F58).
+The total column of a system (sum of the fitted components within its
+velocity range, against the true sum) does not depend on it: fitted for
+828 of the 1080 systems, median difference -0.002 dex, spread 0.10 dex,
+pull width 1.24; 1.01 at R = 140000, 1.08 at R = 45000, but 2.46 at
+R = 8900, with a spread of 0.39 dex (F59). Median reduced chi2 1.07.
+
+*What should improve each number:* the duplicates and the spurious
+components, F49 (this phase); the forest continuum, #465 (this phase)
+and the emission model (phase 7); the components at the bounds and with
+absurd errors, #517 with F52 (this phase); R = 8900, to be checked with
+#526 (this phase); the completeness down to 3 sigma and the
+decomposition, the identification and the fit driven by the residuals
+of phase 7.
 
 ### Phase 5 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
@@ -914,6 +982,10 @@ Exception: anything that loses user data or crashes is reported at once.
 | F53 | continuum (forest at high z) | On an ESPRESSO spectrum of J0959+1312 (z_em ~ 4.06), `estimate_auto` flags 100% of the pixels between 525 and 600 nm as absorbed, so the continuum there is a straight interpolation between the edges of the interval (flat, above the 99th percentile of the flux, ignoring the wing of the Ly-a emission); with `template=True` it follows the template, still with no free pixel, and lies below the flux peaks at 565-590 nm (6% of the pixels above C + 2 sigma). Reported by the agent in Guido's MCP trial; not reproduced here (the spectrum is not in the repository) | numerical | — | open: phase 7 (emission model); with #465 |
 | F54 | identification (tellurics) | No telluric masking: the O2 A band (759-770 nm) gives spurious doublets with good scores, CIV at z = 3.927 in J0103-1305 (4 components at the bounds, F52) and CIV z = 3.928 with MgII z = 1.733 in J0959+1312 (fitted together, reduced chi2 12). Found in the MCP pilot (trials) | behaviour | — | open: phase 7 (identification); telluric data in the pre-release `data-telluric-2026` |
 | F55 | `identify_lines` (z range) | The doublet candidates are not limited to z <= z_em (plus a proximity margin): `z_em` is passed to `_find_kinematic_doublet_candidates` but not used. In Guido's MCP trial `doublets_auto` fitted a SiIV at z = 4.33 with z_em ~ 4.06 (16000 km/s beyond, in a telluric band). The schema of `doublets_auto` says "red side (z < z_em)". Found in the MCP pilot (Guido's trial) | behaviour | — | open: phase 4 |
+| F56 | continuum (forest) | Measured on the mock benchmark (phase 4 baseline, 135 mocks): `estimate_auto` gives a forest continuum (Ly-b to Ly-a) low by 6.4% in the median, 13% at S/N 10, 12% at z_em = 4.5, with 5% of the forest pixels more than 18% low (34% at z_em = 4.5); the red side is within 0.2%. Quantifies F17 and the known low forest continuum (F53 on real data) | numerical | `benchmarks/validate_mocks.py`, baseline | open: #465 (this phase), phase 7 |
+| F57 | identification (completeness) | On the mock benchmark the metal doublets are found only well above the detection limit: none of the systems whose weaker line is below 3 sigma, 5% of those at 3-5 sigma, 30% at 5-10 sigma, 91% above 10; completeness over the systems above 3 sigma 0.85 for CIV, 0.69 for SiIV, 0.91 for MgII. Purity is high (0.97-0.99) | behaviour | `benchmarks/validate_mocks.py`, baseline | open: phase 7 (identification); Guido: should improve down to 3 sigma |
+| F58 | `doublets_auto` (decomposition) | On the mock benchmark the systems with several components are decomposed differently from the truth: where one fitted component stands for several true ones the pulls of the matched component are 4-6.5 wide, and spurious components appear next to real ones (F49); the total column of each system is right (median difference -0.002 dex, pull width 1.0-1.1 at R >= 45000). The pipeline adds one component per candidate and never adds components from the residuals | behaviour | `benchmarks/validate_mocks.py`, baseline | open: F49 (this phase), phase 7 (fit driven by the residuals) |
+| F59 | fit at low resolution | At R = 8900 the total column of the metal systems is off by 0.39 dex (spread) with a pull width of 2.5, against 0.03-0.07 dex and ~1 at R = 45000-140000. Possible causes: unresolved saturated components (physics), and the convolution kernel computed at the median wavelength (rest of F10, up to +53%/-26% in width at the edges of a window) | numerical | `benchmarks/validate_mocks.py`, baseline | open: to be checked with #526 |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -1340,7 +1412,7 @@ review); each of its decisions goes into the log.
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
-| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (PR 2 of 3) |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (PR 3 of 3); found F56-F59 |
 | 5 – Splitting large files | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
