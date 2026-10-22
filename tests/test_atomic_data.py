@@ -86,7 +86,13 @@ REFERENCE = {
     "FeI_2501": (2501.8858, 0.0493, 3.85e8),
     "ArI_1066": (1066.6598, 0.0675, 1.32e8),
     "OIII_832": (832.927, 0.107, None),
+    # Also in the atom.dat of VPFIT (P. Noterdaeme), which has no line at
+    # 3066.36 A: TiII_3066 is kept with f = 0
+    "TiII_3067": (3067.2379, 0.0489, 2.50e8),
 }
+
+#: Forbidden emission lines, vacuum wavelengths (air: 3868.76, 3345.82)
+VACUUM_EMISSION = {"NeIII_3869": 3869.86, "NeV_3346": 3346.79}
 
 
 @pytest.mark.parametrize("name", sorted(REFERENCE))
@@ -97,3 +103,14 @@ def test_values_of_the_standard_line_list(name):
     assert atom["f"] == pytest.approx(f, rel=0.01)
     if gamma is not None:
         assert atom["gamma"] == pytest.approx(gamma, rel=0.02)
+
+
+@pytest.mark.parametrize("name", sorted(VACUUM_EMISSION))
+def test_emission_lines_are_in_vacuum(name):
+    assert ATOM_DATA[name]["wave"] == pytest.approx(VACUUM_EMISSION[name], abs=0.01)
+
+
+def test_no_invented_ti_ii_line():
+    # The TiII_3066 entry had f and gamma of unknown origin for a line
+    # that no reference lists
+    assert ATOM_DATA["TiII_3066"]["f"] == 0.0

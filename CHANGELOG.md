@@ -7,6 +7,7 @@
 
 ### Fixed
 - Atomic data: the wavelengths of OIII 832, PIII 913, PV 1117 and FeI 2501 were wrong by 0.2-0.7 A (mistyped in the conversion from nm to Angstrom, e.g. 913.397 instead of 913.968 A), and the damping constant of ArI 1066 was ten times too small; they now agree with Morton (2003) and with the table of V1 (#568). **Results change** for absorbers fitted or identified with these lines.
+- Atomic data: AlII 1670 at 1670.7886 A (was 1670.7874, 0.2 km/s); the forbidden emission lines [NeIII] 3869 and [NeV] 3346 at their vacuum wavelengths, as the rest of the table (they were in air, 1.1 and 1.0 A shorter); `TiII_3066`, a line that no reference lists, has f = 0 as in V1, and the real `TiII_3067` (3067.2379 A) is added (#568).
 
 ### Changed
 - The defaults of the recipes are now the same in the GUI dialogs and in scripts (#573): before, 15 parameters had a different default in each, so the same recipe gave different results from a dialog, from a script, or from the System Inspector (which passes only some parameters). The values of the dialogs are kept, with three exceptions decided by Guido. **Results change** where a default changes:
