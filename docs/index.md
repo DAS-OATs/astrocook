@@ -27,6 +27,7 @@ It is designed to make spectral analysis—such as continuum fitting, absorption
 
 installation
 tutorials/index
+atomic_data
 reference
 ```
 

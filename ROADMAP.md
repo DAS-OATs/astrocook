@@ -935,6 +935,8 @@ features after, except urgent features in stable areas.
 | After phase 5 | [#471](https://github.com/DAS-OATs/astrocook/issues/471) | combining order-separated spectra; touches `SpectrumV2` (coadd/stitch) |
 | After phase 5 | [#478](https://github.com/DAS-OATs/astrocook/issues/478), [#479](https://github.com/DAS-OATs/astrocook/issues/479) | GUI features; wait for the GUI split |
 | After phase 5 | [#446](https://github.com/DAS-OATs/astrocook/issues/446), [#437](https://github.com/DAS-OATs/astrocook/issues/437) | flux-calibration filters; independent, not urgent |
+| When needed (not scheduled; Guido, October 2026) | — | transitions of the V1 table not in the single table of #568 (H2 with non-unique names, CO, Paschen, Brackett, SiI, Balmer beyond H_e, stellar and blended emission markers): added when an analysis needs them, each with its source (the V1 file is in `tests/reference/v1/data/atom_par.dat`) |
+| To be decided (Guido) | [#455](https://github.com/DAS-OATs/astrocook/issues/455) (pending question) | standard multiplets (`STANDARD_MULTIPLETS`) for the 10 metal species with 3+ transitions in the table and no entry; unchanged by #568, which touched only the table of transitions; the choice of the multiplets used by the identification belongs to phase 7 |
 
 Each bug fix comes in a small PR with a test reproducing the bug.
 Only issues on GitHub are considered; requests received elsewhere should be
@@ -1438,3 +1440,40 @@ review); each of its decisions goes into the log.
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
+
+---
+
+## 7. Material for a paper
+
+Guido (October 2026): the consolidation is producing material for a
+comprehensive paper on Astrocook 2 (or 3). Scope, venue and timing are
+still to be decided; this section only collects the material, with
+pointers, so that nothing has to be reconstructed later. Everything found
+or used along the way (sources, measurements, decisions) is documented in
+the repository as it happens: in the docs for users, here and in the
+findings register for the development.
+
+- **Architecture and design** (section 1, phases 2-3): immutable data
+  structures and pure functions, recipes with structured parameters,
+  sessions with a replayable log, decoupling from the V1 code.
+- **Validation on mocks** (phase 4): the mock generator
+  (`astrocook/mocks/`, independent of the fitting code), the benchmark
+  `benchmarks/validate_mocks.py` (135 mocks; continuum, identification,
+  doublet fit: pulls, completeness by significance, purity), the baseline
+  of 2.1.0 (`benchmarks/results/validate_mocks_baseline.json`, "Baseline"
+  in phase 4) and the measured effect of each fix of the phase.
+- **Atomic data** (#568): one table with the source of each value, checked
+  against Morton (2003), the atom.dat of VPFIT and VoigtFit; newer values
+  adopted (Zn II, Ni II, S II, C IV) and their effect on column densities;
+  the errors found in the earlier tables. Documented in
+  `docs/atomic_data.md` and F38.
+- **Software quality** (phases 0-1-bis): characterization tests and
+  numerical snapshots, V1/V2 parity tests, mutation testing, the findings
+  register (section 3.2: what was found, how, what was fixed), CI.
+- **Agents** (section 4): the MCP pilot and its report (two trials with
+  fresh agents and Guido's own trial); the recipes as tools.
+- **Performance**: timing benchmark of the fitting
+  (`benchmarks/bench_fitting.py`), GUI performance (phase 5).
+- **Towards v3** (section 5, phase 7): robust emission model and
+  identification measured on the benchmark, the automatic loop with
+  alternative models and credibility.

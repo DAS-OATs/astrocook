@@ -5,6 +5,8 @@
 
 - System Inspector: a **Fit ±** field, after logN and b above the velocity plot, sets how far (km/s) the redshift of each component may move in the fits run from the inspector (adding a component in the velocity plot, Refit Selected, Refit All); left empty, each fit keeps its window (20 km/s when adding, 100 km/s when refitting), so nothing changes unless it is set (#518).
 
+- Documentation: a new page, *Atomic Data*, describes the table of atomic data, the source of each value, the choices made and the series and multiplets that Astrocook knows (#568).
+
 ### Fixed
 - Atomic data: the wavelengths of OIII 832, PIII 913, PV 1117 and FeI 2501 were wrong by 0.2-0.7 A (mistyped in the conversion from nm to Angstrom, e.g. 913.397 instead of 913.968 A), and the damping constant of ArI 1066 was ten times too small; they now agree with Morton (2003) and with the table of V1 (#568). **Results change** for absorbers fitted or identified with these lines.
 - Atomic data: AlII 1670 at 1670.7886 A (was 1670.7874, 0.2 km/s); the forbidden emission lines [NeIII] 3869 and [NeV] 3346 at their vacuum wavelengths, as the rest of the table (they were in air, 1.1 and 1.0 A shorter); `TiII_3066`, a line that no reference lists, has f = 0 as in V1, and the real `TiII_3067` (3067.2379 A) is added (#568).
