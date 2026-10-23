@@ -6,6 +6,8 @@ A robust continuum fit is the backbone of any absorption line analysis. Astrocoo
 
 For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.
 
+How it works: the flux is compared with its running mean over the smoothing length, and the pixels below it by more than kappa times their error are flagged as absorbed; the mean is then recomputed from the pixels left, until nothing changes. The pixels left ("continuum anchors") are interpolated and smoothed into the continuum. Some pixels are never used as anchors, and are flagged in `abs_mask` too: those in regions with no signal (median S/N below 1 over ~100 pixels), and single upward spikes (more than 5 sigma and 10% above the running mean), such as cosmic rays or bad pixels in NIR spectra. Measured on synthetic spectra with a known continuum, the result is within 0.6% of the true continuum on the red side at S/N 10 (0.2% at S/N 30), but low in the Lyman-alpha forest, by ~5% at S/N 30 and more at lower S/N or higher redshift: check it there, and correct it by hand if needed.
+
 :::{note}
 This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
 :::

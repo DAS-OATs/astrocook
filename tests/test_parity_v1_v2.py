@@ -294,8 +294,13 @@ def continua(j0103_window):
 
 def test_continuum_red_side(continua):
     c = continua
-    # Masks agree except a few pixels at the red edge of the window
-    assert np.mean(c.unabs2[c.red] == c.unabs1[c.red]) > 0.999
+    # Since #465 the running mean of V2 is taken over the whole smoothing
+    # length (400 km/s; V1 and V2 before used ~1/8 of it): V2 flags more
+    # weak absorption (78.4% of the pixels unabsorbed, V1 80.3%), so the
+    # masks agree on 97.3% of the pixels (99.98% before), and the
+    # continuum is lower by 0.17% (median)
+    assert np.mean(c.unabs2[c.red] == c.unabs1[c.red]) > 0.97
+    assert np.mean(c.unabs2[c.red]) < np.mean(c.unabs1[c.red])
     ratio = c.cont2[c.red] / c.cont1[c.red]
     assert np.nanmedian(ratio) == pytest.approx(1.0, abs=0.005)
 
@@ -325,8 +330,10 @@ def test_v2_auto_fudge_is_one(j0103_window):
 
 @pytest.mark.xfail(strict=True, reason=(
     "In the Lyman-alpha forest V2 marks more pixels as unabsorbed than V1 "
-    "(57.6% vs 54.8% of the window), and its continuum is ~1.2% lower "
-    "(median; up to 5%). Findings register F17."))
+    "(17.3% vs 13.5% of the forest, since #465; the masks agree on 91%), "
+    "and its continuum is ~1.1% lower (median; 5th percentile -14%). V2 is "
+    "now measured against the true continuum on mocks instead (#465). "
+    "Findings register F17."))
 def test_continuum_forest(continua):
     c = continua
     assert np.mean(c.unabs2[c.forest] == c.unabs1[c.forest]) > 0.99
