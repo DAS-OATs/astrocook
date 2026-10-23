@@ -336,9 +336,9 @@ def test_identify_lines(forest_archive):
                                       if x == "CIV")
 
 
-def test_identify_lines_doublets_counted_twice(forest_archive):
-    # Characterization (F49): a doublet gives one candidate system per
-    # line, at redshifts ~1 km/s apart
+def test_identify_lines_one_candidate_per_doublet(forest_archive):
+    # F49: a doublet gave one candidate system per line, at redshifts ~1
+    # km/s apart; now only the stronger line gives the candidates
     *_, result = calls(
         build_server(),
         ("session_open", {"path": str(forest_archive)}),
@@ -347,7 +347,7 @@ def test_identify_lines_doublets_counted_twice(forest_archive):
     civ = sorted(s["z"] for s in result.structured_content["identification"]
                  ["systems"] if s["series"] == "CIV")
     close = [b - a for a, b in zip(civ, civ[1:]) if (b - a) / (1 + b) * C_KMS < 2]
-    assert close
+    assert civ and not close
 
 
 def test_identify_lines_lists_at_most_max_listed(forest_archive):
