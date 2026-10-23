@@ -191,8 +191,9 @@ Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
 the PR states the changes. Done: #573 (one default per recipe
 parameter, #605), #518 (fit window in the System Inspector, #606),
 #568 (single table of atomic data with sources, #607-#609, docs page
-"Atomic Data"), F49 (one candidate per doublet, #611). In progress:
-F55 (candidates within 3000 km/s of z_em), then F50. Work in
+"Atomic Data"), F49 (one candidate per doublet, #611), F55
+(candidates within 3000 km/s of z_em, #612). In progress: F50 (the
+pipelines keep the mask of the user); next #465. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

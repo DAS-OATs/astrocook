@@ -1,6 +1,7 @@
 """MCP server (pilot, ROADMAP.md section 4.1): tools called through the SDK
 client, connected to the server in process."""
 import asyncio
+import dataclasses
 import logging
 import sys
 import threading
@@ -23,6 +24,7 @@ from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
 from astrocook.mcp_server import server as server_module  # noqa: E402
 from astrocook.mcp_server.server import SCHEMAS, build_server  # noqa: E402
+from astrocook.core.spectrum import SpectrumV2  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
 from conftest import J0103_SESSION, J0103_Z_EM  # noqa: E402
@@ -473,22 +475,36 @@ def test_doublets_auto_replaces_the_red_side_components(forest_archive):
     assert len(fit["components"]) == 1 and fit["truncated"]
 
 
-def test_doublets_auto_replaces_the_mask_of_the_continuum(forest_archive):
-    # Characterization (F50): components_auto makes a new absorbed mask
-    # with the default parameters of find_absorbed, so the mask of an
-    # estimate_auto with other parameters is lost, and clears the region
-    # left out by region_limit
+def test_doublets_auto_keeps_the_mask_of_the_continuum(forest_archive):
+    # F50: components_auto makes a new absorbed mask with the default
+    # parameters of find_absorbed and restricts it to region_limit, but uses
+    # it only inside the pipeline: the mask of an estimate_auto with other
+    # parameters is given back unchanged (it was replaced, and the forest,
+    # left out by region_limit, cleared)
     session = load_session_from_file(str(forest_archive), "f", None, "auto")
     cont = session.continuum.estimate_auto(kappa="3.0")
     fitted = cont.absorbers.doublets_auto()
     mask_cont = cont.spec.get_column("abs_mask").value
     mask_fit = fitted.spec.get_column("abs_mask").value
-    assert (mask_cont != mask_fit).any()
+    assert (mask_cont == mask_fit).all()
     assert fitted.spec.cont.value == pytest.approx(cont.spec.cont.value)
-    # The forest (left out by region_limit) is no longer flagged as absorbed
-    x = fitted.spec.x.value
-    forest = x < 121.567 * (1 + fitted.spec._data.z_em)
-    assert mask_cont[forest].any() and not mask_fit[forest].any()
+    assert fitted.systs.components
+
+
+def test_doublets_auto_without_a_mask_stores_the_whole_new_one(forest_archive):
+    # With no mask before, the session gets the new mask of the pipeline,
+    # whole: the forest left out by region_limit is still flagged (F50)
+    session = load_session_from_file(str(forest_archive), "f", None, "auto")
+    cont = session.continuum.estimate_auto()
+    spec = cont.spec
+    aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
+    no_mask = cont.with_new_spectrum(SpectrumV2(
+        data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
+    assert not no_mask.spec.has_aux_column("abs_mask")
+    fitted = no_mask.absorbers.doublets_auto()
+    mask = fitted.spec.get_column("abs_mask").value.astype(bool)
+    forest = fitted.spec.x.value < 121.567 * (1 + fitted.spec._data.z_em)
+    assert mask[forest].any() and mask[~forest].any()
 
 
 @pytest.mark.parametrize("kwargs, flags", [
