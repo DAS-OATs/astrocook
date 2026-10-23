@@ -7,6 +7,7 @@ import threading
 from importlib.metadata import entry_points
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 pytest.importorskip("mcp")
@@ -416,6 +417,11 @@ def doublets(archive, *more):
                  *more)
 
 
+#: The CIV system of the mock with two components 12.7 km/s apart, which
+#: give a single peak
+BLENDED_CIV_Z = 1.83
+
+
 def test_doublets_auto_recovers_the_mock_civ(forest_archive):
     result = doublets(forest_archive)[-1]
     assert not result.is_error
@@ -427,7 +433,9 @@ def test_doublets_auto_recovers_the_mock_civ(forest_archive):
     assert info["spectrum"]["n_components"] == fit["n_components"]
     zs = [c["z"] for c in fit["components"]]
     assert zs == sorted(zs)
-    for true in (c for c in mock_truth().components if c.series == "CIV"):
+    isolated = [c for c in mock_truth().components
+                if c.series == "CIV" and abs(c.z - BLENDED_CIV_Z) > 0.01]
+    for true in isolated:
         comp = min(fit["components"], key=lambda c: abs(c["z"] - true.z))
         assert comp["series"] == "CIV"
         assert abs(comp["z"] - true.z) / (1 + true.z) * C_KMS < 2, true
@@ -438,18 +446,19 @@ def test_doublets_auto_recovers_the_mock_civ(forest_archive):
         assert comp["chi2r"] == pytest.approx(1, abs=0.5)
 
 
-def test_doublets_auto_adds_spurious_components(forest_archive):
-    # Characterization (F49): the second candidate of a doublet adds weak
-    # components near the real ones (1 and 19 km/s here), with large
-    # errors (with kappa = 3 in the continuum one ends at the lower bound
-    # of b)
+def test_doublets_auto_fits_a_blend_with_one_component(forest_archive):
+    # One candidate per doublet (F49): no spurious components, but the two
+    # CIV components 12.7 km/s apart are fitted as one, with the total
+    # column. Before F49 the second candidate of the doublet, ~1 km/s from
+    # the first, sometimes ended on the other component; the pipeline adds
+    # no components from the residuals (F58)
     comps = doublets(forest_archive)[-1].structured_content["fit"]["components"]
-    true_z = [c.z for c in mock_truth().components if c.series == "CIV"]
-    matched = {min(comps, key=lambda c: abs(c["z"] - z))["uuid"] for z in true_z}
-    spurious = [c for c in comps if c["uuid"] not in matched]
-    assert len(comps) == 6 and len(matched) == 4  # 4 true components
-    for c in spurious:
-        assert c["dlogN"] > 0.5
+    assert len(comps) == 3 and all(not c["flags"] for c in comps)
+    blend = [c for c in mock_truth().components
+             if c.series == "CIV" and abs(c.z - BLENDED_CIV_Z) < 0.01]
+    comp = min(comps, key=lambda c: abs(c["z"] - BLENDED_CIV_Z))
+    total = np.log10(sum(10 ** c.logN for c in blend))
+    assert comp["logN"] == pytest.approx(total, abs=0.05)
 
 
 def test_doublets_auto_replaces_the_red_side_components(forest_archive):
