@@ -80,9 +80,18 @@ Current version: 2.1.0. Python ≥3.12.
   purpose that no test records (e.g. the penalty on b > 50 km/s kept the
   forest fits fast, F32). Before removing or changing one, ask Guido what it
   is for; when the purpose is known, write it as a comment next to the code.
-- For PRs that change fitting or the automatic pipelines, run the slow tests
-  (`pytest --run-slow -m slow`, here or from the Actions page on the branch)
-  before asking for the merge, and report the result in the PR.
+- Slow tests and benchmark (agreed with Guido, October 2026): before asking
+  for the merge, run the slow tests (`pytest --run-slow -m slow`, here or
+  from the Actions page on the branch) and, in phase 4, the full mock
+  benchmark (`validate_mocks.py --compare`) only for PRs that can change
+  the numerical results of fitting, identification or the automatic
+  pipelines; report the results in the PR. For changes that by
+  construction leave the results unchanged (e.g. what a pipeline stores
+  besides its results, refactoring covered by the snapshots, docs), the
+  fast suite is enough: say in the PR why the numbers cannot change, and
+  leave the slow tests to the CI job after the merge. When the benchmark
+  cannot measure a fix (e.g. F55: no absorption beyond z_em in the mocks),
+  a targeted test replaces it.
 
 ## Direction
 - v2: consolidation (tests and CI, cleanup, decoupling from legacy,
@@ -188,7 +197,8 @@ Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
 `benchmarks/results/validate_mocks_baseline.json` and in `ROADMAP.md`
 ("Baseline"); every fix of the phase is measured with
 `validate_mocks.py --compare` (full grid, ~26 min with 4 workers) and
-the PR states the changes. Done: #573 (one default per recipe
+the PR states the changes (only for PRs that can change the
+results, see "How to work"). Done: #573 (one default per recipe
 parameter, #605), #518 (fit window in the System Inspector, #606),
 #568 (single table of atomic data with sources, #607-#609, docs page
 "Atomic Data"), F49 (one candidate per doublet, #611), F55
