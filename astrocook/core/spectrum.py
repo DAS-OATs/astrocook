@@ -36,6 +36,13 @@ REGION_PRESETS = {
     'red_side': (121.567 * au.nm, 10000.0 * au.nm)     # Redward of Ly-alpha
 }
 
+#: Proximity margin of identify_lines (km/s): no candidate system beyond
+#: z_em by more than this. Absorbers associated with the quasar (outflows,
+#: infall) and the uncertainty of z_em from broad emission lines (up to
+#: ~1000 km/s) allow absorption slightly beyond z_em; anything farther is
+#: a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)
+Z_EM_MARGIN_KMS = 3000.0
+
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
     def __init__(self, data_dict):
@@ -2243,7 +2250,10 @@ class SpectrumV2:
         """
         Identify absorption lines by correlating regions with multiplet templates.
 
-        Uses a de-blending strategy to separate merged features.
+        Uses a de-blending strategy to separate merged features. A doublet
+        gives one candidate system per absorption component, from its
+        stronger line, and no candidate lies beyond ``z_em`` by more than
+        ``Z_EM_MARGIN_KMS`` (3000 km/s).
 
         Parameters
         ----------
@@ -2335,11 +2345,15 @@ class SpectrumV2:
             if m in STANDARD_MULTIPLETS and len(STANDARD_MULTIPLETS[m]) == 2 and m != 'Ly_ab'
         ]
         
+        # Candidate systems at most Z_EM_MARGIN_KMS beyond z_em (F55)
+        z_max = z_em + Z_EM_MARGIN_KMS / 299792.458 * (1.0 + z_em)
         for series_name in metal_doublets:
             candidates_red = _find_kinematic_doublet_candidates(
                 redward_map, spec.x, spec._data.z_em, series_name, z_em
             )
             for (rid_1, rid_2, z_test) in candidates_red:
+                if z_test > z_max:
+                    continue
                 all_candidates.append((rid_1, rid_2, z_test, series_name, score_threshold))
         
         if 'Ly_ab' in multiplet_list:
@@ -2491,6 +2505,8 @@ class SpectrumV2:
                         else: logN_guess = 13.5
                     else: logN_guess = 13.5
 
+                    if z_peak > z_max:
+                        continue  # a peak of a region that straddles z_max (F55)
                     z_round = round(z_peak, 5)
                     uniq_key = (system_name, z_round)
                     

@@ -53,3 +53,23 @@ def test_both_lines_of_a_doublet_are_labelled(identified):
     assert {"CIV_1548", "CIV_1550", "SiIV_1393", "SiIV_1402",
             "MgII_2796", "MgII_2803"} <= lines
     assert np.count_nonzero(identified.get_column("abs_ids").value) > 0
+
+
+# --- Candidates beyond the emission redshift (F55) --------------------------
+
+def _z_beyond(dv_kms):
+    return Z_EM + dv_kms / C_KMS * (1 + Z_EM)
+
+
+@pytest.mark.parametrize("dv_kms, kept", [
+    (1000.0, True),   # within the proximity margin (associated absorbers)
+    (6000.0, False),  # beyond it
+])
+def test_candidates_beyond_z_em(dv_kms, kept):
+    z = _z_beyond(dv_kms)
+    truth = MockTruth(components=[MockComponent("CIV", z, 14.0, 10.0)],
+                      lam_min_nm=490.0, lam_max_nm=700.0, dv_kms=2.5,
+                      resol=45000.0, snr=100.0, z_em=Z_EM, seed=1)
+    found = [zf for s, zf in _systems(generate(truth).identify_lines(["CIV"]))
+             if s == "CIV"]
+    assert (len(found) == 1) == kept, found
