@@ -499,6 +499,13 @@
     <span class="s1">'red_side'</span><span class="p">:</span> <span class="p">(</span><span class="mf">121.567</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">,</span> <span class="mf">10000.0</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>     <span class="c1"># Redward of Ly-alpha</span>
 <span class="p">}</span>
 
+<span class="c1">#: Proximity margin of identify_lines (km/s): no candidate system beyond</span>
+<span class="c1">#: z_em by more than this. Absorbers associated with the quasar (outflows,</span>
+<span class="c1">#: infall) and the uncertainty of z_em from broad emission lines (up to</span>
+<span class="c1">#: ~1000 km/s) allow absorption slightly beyond z_em; anything farther is</span>
+<span class="c1">#: a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)</span>
+<span class="n">Z_EM_MARGIN_KMS</span> <span class="o">=</span> <span class="mf">3000.0</span>
+
 <div class="viewcode-block" id="TableAdapterV2">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.TableAdapterV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TableAdapterV2</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -2806,7 +2813,10 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Identify absorption lines by correlating regions with multiplet templates.</span>
 
-<span class="sd">        Uses a de-blending strategy to separate merged features.</span>
+<span class="sd">        Uses a de-blending strategy to separate merged features. A doublet</span>
+<span class="sd">        gives one candidate system per absorption component, from its</span>
+<span class="sd">        stronger line, and no candidate lies beyond ``z_em`` by more than</span>
+<span class="sd">        ``Z_EM_MARGIN_KMS`` (3000 km/s).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -2898,11 +2908,15 @@
             <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">m</span><span class="p">])</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">!=</span> <span class="s1">'Ly_ab'</span>
         <span class="p">]</span>
         
+        <span class="c1"># Candidate systems at most Z_EM_MARGIN_KMS beyond z_em (F55)</span>
+        <span class="n">z_max</span> <span class="o">=</span> <span class="n">z_em</span> <span class="o">+</span> <span class="n">Z_EM_MARGIN_KMS</span> <span class="o">/</span> <span class="mf">299792.458</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">metal_doublets</span><span class="p">:</span>
             <span class="n">candidates_red</span> <span class="o">=</span> <span class="n">_find_kinematic_doublet_candidates</span><span class="p">(</span>
                 <span class="n">redward_map</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">z_em</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="p">(</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">)</span> <span class="ow">in</span> <span class="n">candidates_red</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">z_test</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                    <span class="k">continue</span>
                 <span class="n">all_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">))</span>
         
         <span class="k">if</span> <span class="s1">'Ly_ab'</span> <span class="ow">in</span> <span class="n">multiplet_list</span><span class="p">:</span>
@@ -3054,6 +3068,8 @@
                         <span class="k">else</span><span class="p">:</span> <span class="n">logN_guess</span> <span class="o">=</span> <span class="mf">13.5</span>
                     <span class="k">else</span><span class="p">:</span> <span class="n">logN_guess</span> <span class="o">=</span> <span class="mf">13.5</span>
 
+                    <span class="k">if</span> <span class="n">z_peak</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                        <span class="k">continue</span>  <span class="c1"># a peak of a region that straddles z_max (F55)</span>
                     <span class="n">z_round</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">z_peak</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
                     <span class="n">uniq_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">system_name</span><span class="p">,</span> <span class="n">z_round</span><span class="p">)</span>
                     
