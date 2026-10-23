@@ -2377,11 +2377,15 @@ class SpectrumV2:
                 rid_1_int = int(rid_1) 
                 rid_2_int = int(rid_2) 
                 
+                # Both regions are labelled, but only the region of the
+                # first (stronger) line gives the candidate systems: the
+                # other one would give the same systems again, ~1 km/s
+                # apart from the pixel sampling (F49)
                 if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []
-                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test))
+                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test, False))
 
                 if rid_2_int not in reliable_ids: reliable_ids[rid_2_int] = []
-                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test))
+                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test, True))
 
         # --- Forest Cleanup ---
         forest_rids = np.unique(forest_map)
@@ -2398,7 +2402,7 @@ class SpectrumV2:
                 if aod_peak_idx > 0:
                     x_peak_nm = x_nm[aod_peak_idx]
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
-                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test)]
+                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True)]
 
         logging.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
 
@@ -2459,7 +2463,9 @@ class SpectrumV2:
                 fwhm_kms = widths_pix[i] * local_dv
                 b_guess = max(5.0, min(100.0, fwhm_kms / 1.665))
 
-                for (component_name, score, z_test_orig) in candidates:
+                for (component_name, score, z_test_orig, gives_systems) in candidates:
+                    if not gives_systems:
+                        continue
                     system_name = component_name
                     if component_name not in STANDARD_MULTIPLETS:
                         for mult, members in STANDARD_MULTIPLETS.items():

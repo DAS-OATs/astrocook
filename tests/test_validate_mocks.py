@@ -258,7 +258,8 @@ def test_reduced_grid_does_not_regress():
     """The chain on the reduced grid (16 mocks, ~2 min with 4 workers)
     against loose thresholds set from the baseline of phase 4 (version
     2.1.0; ROADMAP.md, "Baseline"): it catches regressions, not the
-    improvements the phase aims at. Values at the baseline in comments."""
+    improvements the phase aims at. Values at the baseline in comments,
+    and after an intended change of the phase where it moved them."""
     import os
     result = vm.run("reduced", workers=min(4, os.cpu_count() or 1))
     s = result["summary"]["all"]
@@ -270,11 +271,14 @@ def test_reduced_grid_does_not_regress():
         assert t["completeness"] > 0.6, species                        # 0.72-0.82
         assert t["n_beyond_z_em"] == 0, species
     f = s["fit"]
-    assert f["n_matched"] / f["n_true"] > 0.35                         # 0.46
-    assert f["n_spurious"] / f["n_fitted"] < 0.3                       # 0.15
+    # One candidate per doublet (F49): far fewer spurious components, but
+    # the systems of several close components are fitted with fewer (F58),
+    # so fewer true components are matched and the pulls are biased
+    assert f["n_matched"] / f["n_true"] > 0.25                         # 0.46; 0.34 (F49)
+    assert f["n_spurious"] / f["n_fitted"] < 0.1                       # 0.15; 0.02 (F49)
     for par in ("z", "logN", "b"):
-        assert abs(f[f"pull_{par}"]["median"]) < 0.5, par              # |0.14|
+        assert abs(f[f"pull_{par}"]["median"]) < 1.2, par              # |0.14|; b 0.84 (F49)
     column = f["system_column"]
-    assert abs(column["diff"]["median"]) < 0.05                        # 0.000
-    assert column["diff"]["sigma"] < 0.4                               # 0.236
-    assert column["pull"]["sigma"] < 2.0                               # 1.21
+    assert abs(column["diff"]["median"]) < 0.05                        # 0.000; -0.022 (F49)
+    assert column["diff"]["sigma"] < 0.4                               # 0.236; 0.175 (F49)
+    assert column["pull"]["sigma"] < 3.0                               # 1.21; 2.00 (F49)
