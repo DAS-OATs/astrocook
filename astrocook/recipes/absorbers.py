@@ -354,6 +354,11 @@ class RecipeAbsorbersV2:
         # to ignore specific regions.
         
         session_current = self._session
+
+        # The mask of the user (e.g. from "Auto-estimate continuum" with other
+        # parameters) is given back with the result: the fresh mask below,
+        # restricted by region_limit, is used only inside the pipeline (F50)
+        user_mask = session_current.spec._data.aux_cols.get(mask_col)
         
         # --- 0. FORCE MASK REGENERATION ---
         # Always generate a fresh mask to ensure it matches current z_em/flux state.
@@ -371,6 +376,14 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Mask generation failed: {e}")
             return 0
+        kept_mask = (user_mask if user_mask is not None
+                     else session_current.spec._data.aux_cols[mask_col])
+
+        def with_kept_mask(session):
+            spec = session.spec.update_column(
+                mask_col, kept_mask.values, unit=kept_mask.unit,
+                description=kept_mask.description)
+            return session.with_new_spectrum(spec)
         
         # --- 0.5 SMART CLEAN (Refactored) ---
         if region_limit != "None" and session_current.systs:
@@ -482,14 +495,14 @@ class RecipeAbsorbersV2:
         # Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)
         if final_session == 0:
             logging.info("Refit skipped (no components to fit). Returning clean state.")
-            return session_step2
+            return with_kept_mask(session_step2)
 
         # Check for stop request on the valid final session
 
         if self._is_stop_requested(): return self._session
         
         logging.info("Component pipeline complete.")
-        return final_session
+        return with_kept_mask(final_session)
 
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
                       score_threshold: str = "0.5",
