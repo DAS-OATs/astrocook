@@ -824,6 +824,11 @@
         <span class="c1"># to ignore specific regions.</span>
         
         <span class="n">session_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># The mask of the user (e.g. from "Auto-estimate continuum" with other</span>
+        <span class="c1"># parameters) is given back with the result: the fresh mask below,</span>
+        <span class="c1"># restricted by region_limit, is used only inside the pipeline (F50)</span>
+        <span class="n">user_mask</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mask_col</span><span class="p">)</span>
         
         <span class="c1"># --- 0. FORCE MASK REGENERATION ---</span>
         <span class="c1"># Always generate a fresh mask to ensure it matches current z_em/flux state.</span>
@@ -841,6 +846,14 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">kept_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_mask</span> <span class="k">if</span> <span class="n">user_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                     <span class="k">else</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">with_kept_mask</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span>
+                <span class="n">mask_col</span><span class="p">,</span> <span class="n">kept_mask</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
         
         <span class="c1"># --- 0.5 SMART CLEAN (Refactored) ---</span>
         <span class="k">if</span> <span class="n">region_limit</span> <span class="o">!=</span> <span class="s2">"None"</span> <span class="ow">and</span> <span class="n">session_current</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
@@ -952,14 +965,14 @@
         <span class="c1"># Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)</span>
         <span class="k">if</span> <span class="n">final_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refit skipped (no components to fit). Returning clean state."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">session_step2</span>
+            <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
 
         <span class="c1"># Check for stop request on the valid final session</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Component pipeline complete."</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">final_session</span></div>
+        <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.doublets_auto">
