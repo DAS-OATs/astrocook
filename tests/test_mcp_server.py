@@ -134,11 +134,12 @@ def test_open_unreadable_file_reports_the_logged_error(tmp_path):
 
 def test_unphysical_properties_are_accepted(mock_archive):
     # Characterization (F46): edit.set_properties does not check the
-    # values, and the server passes them on as they are
+    # values, and the server passes them on as they are. A resolution
+    # that is not positive leaves the resolution unchanged (#526)
     result = call(build_server(), "session_open", path=str(mock_archive),
                   z_em=-5, resol=-1)
     spec = result.structured_content["spectrum"]
-    assert spec["z_em"] == -5 and spec["resol"] == -1
+    assert spec["z_em"] == -5 and spec["resol"] == pytest.approx(45000.0)
     assert result.structured_content["warnings"] == []
 
 
