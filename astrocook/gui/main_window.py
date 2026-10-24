@@ -28,6 +28,7 @@ from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
 from .script_dialog import ScriptDialog
 from astrocook.core.debug_hooks import set_debug_plot_handler
+from astrocook.core.resolution import resolution_summary
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
 from astrocook.core.structures import HistoryLogV2
@@ -2553,15 +2554,19 @@ class MainWindowV2(QMainWindow):
         self.info_zem_edit.setValidator(dbl_validator)
         form_layout.addRow("Emission Redshift (z_em):", self.info_zem_edit)
 
-        # Resolution
-        if spec._data.resol > 0:
-            current_resol_str = f"{spec._data.resol:.0f}"
-        else:
-            current_resol_str = "undefined"
+        # Resolution: median R of the resol column (#526)
+        median_r, variable_r = resolution_summary(spec)
+        current_resol_str = f"{median_r:.0f}" if median_r > 0 else "undefined"
+        self._info_resol_shown = current_resol_str
             
         self.info_resol_edit = _expand_field(QLineEdit(current_resol_str))
         self.info_resol_edit.setPlaceholderText("Resolving Power R")
-        form_layout.addRow("Resolution (R):", self.info_resol_edit)
+        if variable_r:
+            self.info_resol_edit.setToolTip(
+                "The resolution varies with wavelength: this is its median. "
+                "A new value replaces it only if you confirm.")
+        form_layout.addRow("Resolution (R, median):" if variable_r else "Resolution (R):",
+                           self.info_resol_edit)
         
         layout.addLayout(form_layout)
         
@@ -2703,7 +2708,9 @@ class MainWindowV2(QMainWindow):
         
         # Handle Resolution "undefined"
         raw_resol = self.info_resol_edit.text().strip()
-        if raw_resol.lower() == "undefined" or not raw_resol:
+        if raw_resol == getattr(self, '_info_resol_shown', None):
+            new_resol = '_current_'  # not edited: leave the resolution as it is
+        elif raw_resol.lower() == "undefined" or not raw_resol:
             new_resol = "0.0"
         else:
             new_resol = raw_resol
@@ -3055,19 +3062,8 @@ class MainWindowV2(QMainWindow):
 
         # 2. Check Resolution
         if name in self._RECIPES_REQUIRING_RESOL:
-            # Check Scalar R or Meta FWHM
-            has_resol = (spec._data.resol > 0) or (spec.meta.get('resol_fwhm', 0.0) > 0)
-            
-            # Check Column (must be non-empty and positive)
-            if not has_resol and spec.has_aux_column('resol'):
-                try:
-                    col = spec.get_column('resol')
-                    if col is not None:
-                        val = np.nanmedian(col.value)
-                        if np.isfinite(val) and val > 0:
-                            has_resol = True
-                except Exception:
-                    pass
+            # The resol column, the single source (#526)
+            has_resol = resolution_summary(spec)[0] > 0
             
             if not has_resol:
                 ret = self._show_custom_message(
@@ -3114,10 +3110,8 @@ class MainWindowV2(QMainWindow):
                 current_params['object'] = meta.get('OBJECT', '')
                 current_params['z_em'] = f"{spec._data.z_em:.5f}"
                 
-                if spec._data.resol > 0:
-                    current_params['resol'] = f"{spec._data.resol:.0f}"
-                else:
-                    current_params['resol'] = "0" # Or leave blank
+                median_r = resolution_summary(spec)[0]
+                current_params['resol'] = f"{median_r:.0f}" if median_r > 0 else "0"
             
             # Merge with any passed initial_params (which take precedence)
             if initial_params:
@@ -3305,8 +3299,10 @@ class MainWindowV2(QMainWindow):
             new_resol = str(params.get('resol', '_current_'))
             # If the user is actively changing the resolution
             if new_resol != '_current_':
-                # Check if the active session already has a 'resol' column
-                if self.active_history and self.active_history.current_state.spec.has_aux_column('resol'):
+                # Ask only if the resolution varies with wavelength: a flat
+                # or missing one is always replaced (#526)
+                if (self.active_history
+                        and resolution_summary(self.active_history.current_state.spec)[1]):
                     from PySide6.QtWidgets import QMessageBox, QApplication
                     
                     # Find the currently active floating window/dialog
@@ -3316,16 +3312,14 @@ class MainWindowV2(QMainWindow):
                         
                     reply = self._show_custom_message(
                         title="Overwrite Resolution Column?",
-                        header="Existing 'resol' column detected.",
-                        text="This spectrum already has a pixel-by-pixel 'resol' column.\n\nDo you want to overwrite it with a flat array based on this new global value?",
+                        header="The resolution varies with wavelength.",
+                        text="This spectrum has a resolution that varies with wavelength (the 'resol' column).\n\nDo you want to replace it with a single value?",
                         buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                         default_btn=QMessageBox.StandardButton.No,
                         parent=active_win  # <--- [FIX] Parent to the active floating window!
                     )
                     # Inject the user's choice into the params before sending to the worker
                     params['overwrite_resol_col'] = (reply == QMessageBox.StandardButton.Yes)
-                else:
-                    params['overwrite_resol_col'] = True
 
         if recipe_name == "coadd":
             names_str = params.get('session_names', '')
@@ -3342,11 +3336,7 @@ class MainWindowV2(QMainWindow):
                 if specs_to_coadd:
                     resol_count = 0
                     for s in specs_to_coadd:
-                        has_col = s.has_aux_column('resol')
-                        has_glob_attr = getattr(s._data, 'resol', 0.0) > 0
-                        has_glob_meta = float(s.meta.get('resol', 0.0)) > 0 if 'resol' in s.meta else False
-                        
-                        if has_col or has_glob_attr or has_glob_meta:
+                        if resolution_summary(s)[0] > 0:  # #526
                             resol_count += 1
                             
                     # Mismatch detected!

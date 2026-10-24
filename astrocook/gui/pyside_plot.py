@@ -1702,7 +1702,7 @@ class SpectrumPlotWidget(QWidget):
         
         if found_comp:
             c_chi2 = f"{found_comp.chi2:.2f}" if found_comp.chi2 is not None else "N/A"
-            c_resol = f"{found_comp.resol:.0f}" if found_comp.resol is not None else "N/A"
+            c_resol = f"{found_comp.resol:.0f}" if found_comp.resol is not None else "spectrum"
             
             self._tip_component_html = (
                 f"<div style='font-size: 13px'>"
