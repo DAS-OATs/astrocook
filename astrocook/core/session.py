@@ -151,6 +151,10 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             v2_metadata=v2_metadata
         )
 
+        # Component resolutions saved before #526: stamped values cleared,
+        # legacy FWHM converted to R
+        from astrocook.core.resolution import migrate_component_resolutions
+        system_list_v2 = migrate_component_resolutions(system_list_v2, spectrum_v2)
         session = SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
         if v2_metadata:
             # Not recorded before 2.1 (F45)

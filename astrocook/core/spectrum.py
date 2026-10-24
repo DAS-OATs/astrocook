@@ -20,6 +20,7 @@ from astrocook.core.spectrum_operations import (
 )
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.core.resolution import column_to_resolving_power, migrate_resolution
 
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,
@@ -123,8 +124,28 @@ class SpectrumV2:
     """
     
     def __init__(self, data: SpectrumDataV2, history: list = None):
-        self._data = data
+        # The resolution lives in the 'resol' column only: legacy sources
+        # (attribute, meta keys) are migrated into it here (#526)
+        self._data = migrate_resolution(data)
         self.history = history if history is not None else []
+
+    def resolution(self) -> np.ndarray:
+        """
+        Resolving power R of each pixel, from the ``resol`` column.
+
+        The single source of the resolution (#526). The unit of the column
+        decides how it is read: dimensionless for R, a velocity for the FWHM.
+
+        Returns
+        -------
+        np.ndarray
+            R for each pixel; NaN where it is not known (all NaN if the
+            spectrum has no resolution).
+        """
+        col = self._data.aux_cols.get('resol')
+        if col is None:
+            return np.full(len(self._data.x.values), np.nan)
+        return column_to_resolving_power(col.values, col.unit)
 
     # Accessors
     @property
@@ -356,7 +377,7 @@ class SpectrumV2:
 
     def with_properties(self, z_em: float, resol: float = 0.0, 
                         object_name: Optional[str] = None,
-                        overwrite_resol_col: bool = True) -> 'SpectrumV2':
+                        overwrite_resol_col: bool = False) -> 'SpectrumV2':
         """
         Return a NEW SpectrumV2 instance with updated properties.
 
@@ -365,11 +386,15 @@ class SpectrumV2:
         z_em : float
             The emission redshift.
         resol : float, optional
-            Resolution (R). Defaults to ``0.0``.
+            Resolving power R; ``0.0`` (the default) leaves the resolution
+            unchanged.
         object_name : str, optional
             The object name (header keyword).
         overwrite_resol_col : bool, optional
-            If ``True``, updates/creates the 'resol' auxiliary column with the new resolution value. Defaults to ``True``.
+            If ``True``, a ``resol`` column that varies with wavelength is
+            replaced by a flat one at ``resol``. If ``False`` (the default,
+            #526) it is kept, and ``resol`` only replaces a flat column or
+            creates a missing one.
 
         Returns
         -------
@@ -380,7 +405,8 @@ class SpectrumV2:
         
         history_entries = [f"z_em={z_em}"]
 
-        # Update Resolution
+        # Update Resolution (the meta keys are kept for older readers of
+        # the archives; the resolution is read from the column only, #526)
         if resol > 0:
             new_meta['resol'] = resol
             c_kms = 299792.458
@@ -396,21 +422,25 @@ class SpectrumV2:
             history_entries.append(f"Object='{object_name}'")
 
         # Update Core Data
-        new_data = dataclasses.replace(self._data, z_em=z_em, resol=resol, meta=new_meta)
+        new_resol = resol if resol > 0 else self._data.resol
+        new_data = dataclasses.replace(self._data, z_em=z_em, resol=new_resol, meta=new_meta)
         
         new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
-        # Create the preliminary SpectrumV2 object
         spec = SpectrumV2(data=new_data, history=new_history)
 
-        # --- Only populate the flat array if permitted ---
-        if resol > 0 and overwrite_resol_col:
-            import numpy as np
-            resol_arr = np.full(len(spec.x), resol)
-            spec = spec.update_column(
-                'resol', 
-                resol_arr, 
-                description="Global resolution baseline"
-            )
+        if resol > 0:
+            current = self.resolution()
+            finite = current[np.isfinite(current)]
+            variable = finite.size > 0 and not np.allclose(finite, finite[0], rtol=1e-6)
+            if variable and not overwrite_resol_col:
+                logging.warning("The spectrum has a resolution that varies with "
+                                "wavelength: kept (R=%g not applied; set "
+                                "overwrite_resol_col to replace it).", resol)
+            else:
+                spec = spec.update_column(
+                    'resol', np.full(len(spec.x), float(resol)),
+                    unit=au.dimensionless_unscaled,
+                    description="Resolving power (set by the user)")
 
         return spec
 
@@ -1427,7 +1457,9 @@ class SpectrumV2:
         for name, col_data in self._data.aux_cols.items():
             # --- Bypass interpolation if it's the carefully drizzled resolution ---
             if name == 'resol' and resol_new is not None:
-                new_aux_cols['resol'] = DataColumnV2(resol_new, col_data.unit)
+                # rebin_spectrum returns R (#526)
+                new_aux_cols['resol'] = DataColumnV2(resol_new, au.dimensionless_unscaled,
+                                                     description="Resolving power (rebinned)")
                 # --- Update Global Median ---
                 valid_r = resol_new[np.isfinite(resol_new) & (resol_new > 0)]
                 if len(valid_r) > 0:
@@ -1599,19 +1631,11 @@ class SpectrumV2:
             xmin_conv = convert_axis_velocity(spec.xmin, z_em, calc_unit).value
             xmax_conv = convert_axis_velocity(spec.xmax, z_em, calc_unit).value
             
-            # --- Capture Resolution ---
-            res_arr = np.zeros(len(spec.x))
-            has_res = False
-            
-            if spec.has_aux_column('resol'):
-                res_arr = spec.get_column('resol').value
-                has_res = True
-            elif getattr(spec._data, 'resol', 0.0) > 0:
-                res_arr = np.full(len(spec.x), spec._data.resol)
-                has_res = True
-            elif 'resol' in spec.meta and float(spec.meta['resol']) > 0:
-                res_arr = np.full(len(spec.x), float(spec.meta['resol']))
-                has_res = True
+            # --- Capture Resolution (as R, from the column only, #526; an
+            # all-NaN column no longer counts as a source) ---
+            res_arr = spec.resolution()
+            has_res = bool(np.isfinite(res_arr).any())
+            res_arr = np.where(np.isfinite(res_arr), res_arr, 0.0)
                 
             if has_res:
                 resol_sources_count += 1

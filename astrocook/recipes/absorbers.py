@@ -132,7 +132,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
             {"name": "btur", "type": float, "default": None, "doc": "btur (km/s)"},
             {"name": "series", "type": str, "default": None, "doc": "Series"},
-            {"name": "resol", "type": float, "default": None, "doc": "Resolution (R or FWHM)"}
+            {"name": "resol", "type": float, "default": None, "doc": "Resolving power R of this component (overrides the spectrum)"}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True

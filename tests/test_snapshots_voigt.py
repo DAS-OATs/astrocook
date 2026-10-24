@@ -113,13 +113,20 @@ def test_model_column_resolution_is_not_zero(label, resol_col):
 
 
 def test_model_column_resolution_is_rounded():
-    # The kernel uses the resolution rounded to 100: a flat column at
-    # R = 45050 gives the same model as one at 45000
+    # A column that varies uses the resolution rounded to 100 (until the
+    # exact convolution of #526); a flat column is used as it is, like a
+    # global value (#526: before, R = 45050 gave the model of 45000)
     n = _n(_synthetic_spectrum())
     systs = _system_list(TRUE_COMPONENTS)
+    flat = _model(_synthetic_spectrum(resol_col=np.full(n, 45050.0)), systs)
+    np.testing.assert_allclose(flat, _model(_synthetic_spectrum(resol=45050.0), systs),
+                               rtol=1e-12)
+    assert np.abs(flat - _model(_synthetic_spectrum(resol_col=np.full(n, 45000.0)), systs)).max() > 0
+    varying = np.full(n, 45050.0)
+    varying[0] = 45040.0
     np.testing.assert_allclose(
-        _model(_synthetic_spectrum(resol_col=np.full(n, 45050.0)), systs),
-        _model(_synthetic_spectrum(resol_col=np.full(n, 45000.0)), systs),
+        _model(_synthetic_spectrum(resol_col=varying), systs)[1:],
+        _model(_synthetic_spectrum(resol_col=np.full(n, 45000.0)), systs)[1:],
         rtol=1e-12)
 
 

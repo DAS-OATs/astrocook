@@ -1,5 +1,4 @@
 from copy import deepcopy
-import dataclasses
 import logging
 import numpy as np
 import os
@@ -3516,44 +3515,9 @@ class MainWindowV2(QMainWindow):
 
                 should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
 
-                if recipe_name == 'set_properties':
-
-                    if 'resol' in params:
-                        raw_val = str(params['resol'])
-
-                        if raw_val != '_current_':
-                            try:
-                                new_res = float(raw_val)
-
-                                if new_session_state.systs and new_session_state.systs.components:
-
-                                    # 1. Force Update All Components
-                                    updated_comps = []
-                                    for i, c in enumerate(new_session_state.systs.components):
-                                        # Create a fresh copy
-                                        new_c = dataclasses.replace(c, resol=new_res)
-                                        updated_comps.append(new_c)
-                                        # Log the first one to verify
-
-                                    # 2. Rebuild Session
-                                    if updated_comps:
-                                        # Replace data core
-                                        new_syst_data = dataclasses.replace(new_session_state.systs._data, components=updated_comps)
-
-                                        # Re-instantiate SystemListV2
-                                        # IMPORTANT: Ensure SystemListV2 is imported or accessible via class
-                                        SystemListClass = new_session_state.systs.__class__
-                                        new_systs = SystemListClass(new_syst_data)
-
-                                        # Restore constraints if present
-                                        if new_session_state.systs.constraint_model:
-                                            new_systs.constraint_model = new_session_state.systs.constraint_model
-
-                                        # Update Session
-                                        new_session_state = new_session_state.with_new_system_list(new_systs)
-                            except Exception as e:
-                                logging.error(f"Propagation crashed: {e}", exc_info=True)
-
+                # set_properties no longer writes the resolution into the
+                # components (#526, F47): they follow the spectrum unless the
+                # user set their own value
                 original_history_index = self.session_histories.index(original_parent_history)
                 
                 # --- 4. PREPARE PARENT FOR BRANCHING ---

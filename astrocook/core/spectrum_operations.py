@@ -301,7 +301,11 @@ def rebin_spectrum(
     # Extract resolution array if present
     resol_val = None
     if 'resol' in spec_data.aux_cols:
-        resol_val = spec_data.aux_cols['resol'].values
+        # As R, whatever the unit of the column (#526): the drizzle below
+        # averages 1/R^2
+        from astrocook.core.resolution import column_to_resolving_power
+        col = spec_data.aux_cols['resol']
+        resol_val = column_to_resolving_power(col.values, col.unit)
 
     # Initial Mask (NaNs and bad pixels)
     valid_mask = np.isfinite(y_val) & (xmax_in_val > xmin_in_val) & (dy_val > 0)

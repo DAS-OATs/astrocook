@@ -203,8 +203,8 @@ parameter, #605), #518 (fit window in the System Inspector, #606),
 #568 (single table of atomic data with sources, #607-#609, docs page
 "Atomic Data"), F49 (one candidate per doublet, #611), F55
 (candidates within 3000 km/s of z_em, #612), F50 (the pipelines keep
-the mask of the user, #613). In progress: #465 (robust automatic
-continuum); next #526. Work in
+the mask of the user, #613), #465 (robust automatic continuum, #614).
+In progress: #526 (resolution as a single column; PR 1 of 4). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

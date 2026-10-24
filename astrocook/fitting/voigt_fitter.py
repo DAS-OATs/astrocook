@@ -159,39 +159,26 @@ class VoigtFitterV2:
         
         self._valid_mask = np.isfinite(self._y_norm) & np.isfinite(self._dy_norm) & (self._dy_norm > 0)
         
-        # 2. Resolution Setup
+        # 2. Resolution Setup: the 'resol' column of the spectrum, as R
+        # (#526; before, five sources and a guess of the unit by value). A
+        # flat column takes the scalar path, as a global value did before
         self._resol_column = None
         self._use_variable_resolution = False
-        self._variable_resol_unit = 'R' # Default
-        
-        if self._spectrum.has_aux_column('resol'):
-            self._resol_column = self._spectrum.get_column('resol').value
-            # Check if column has valid data (not just NaNs/zeros)
-            if np.any(np.isfinite(self._resol_column) & (self._resol_column > 0)):
-                self._use_variable_resolution = True
-                
-                # Heuristic for unit
-                med_res = np.nanmedian(self._resol_column)
-                if med_res > 500.0:
-                    self._variable_resol_unit = 'R'
-                    logging.debug(f"VoigtFitter: Variable resolution detected. Median={med_res:.0f} -> Assuming 'R'.")
-                else:
-                    self._variable_resol_unit = 'km/s'
-                    logging.debug(f"VoigtFitter: Variable resolution detected. Median={med_res:.1f} -> Assuming 'km/s'.")
-
-        # Fallback to global metadata
-        self._global_resol_val, self._global_sigma_pix = self._determine_resolution()
-        
-        # Determine global unit based on value magnitude (heuristic)
+        self._variable_resol_unit = 'R'
+        self._global_resol_val, self._global_sigma_pix = 0.0, None
         self._global_resol_unit = 'R'
-        if self._global_resol_val and self._global_resol_val < 500.0:
-             self._global_resol_unit = 'km/s'
-
-        if not self._use_variable_resolution:
-            if self._global_sigma_pix:
-                logging.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f} ({self._global_resol_unit})")
-            else:
-                logging.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
+        r_pix = self._spectrum.resolution()
+        finite = r_pix[np.isfinite(r_pix)]
+        if finite.size == r_pix.size and finite.size and np.all(finite == finite[0]):
+            self._global_resol_val = float(finite[0])
+            self._global_sigma_pix = self._calc_sigma_pix_from_R(self._global_resol_val)
+            logging.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f}")
+        elif finite.size:
+            self._resol_column = r_pix
+            self._use_variable_resolution = True
+            logging.debug(f"VoigtFitter: Variable resolution, median R={np.median(finite):.0f}")
+        else:
+            logging.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
         # Placeholders
         self._fit_mask = None
@@ -209,41 +196,6 @@ class VoigtFitterV2:
         # Stores tuples: (index_in_system_list, component_object)
         self._active_fit_components: Optional[List[Tuple[int, ComponentDataV2]]] = None
 
-
-    def _determine_resolution(self) -> Tuple[float, Optional[float]]:
-        """
-        Robustly finds resolution from Columns, Attributes, or Metadata.
-        Returns: (R_value, sigma_pix)
-        """
-        # 1. Try Column ('resol') - Handled in __init__, but fallback logic here
-        # (We already checked column in init, so here we check global props)
-
-        # 2. Try Attribute (spec.resol)
-        val = getattr(self._spectrum, 'resol', 0.0)
-        if (not np.isfinite(val) or val <= 0) and hasattr(self._spectrum, '_data'):
-            val = getattr(self._spectrum._data, 'resol', 0.0)
-        
-        if np.isfinite(val) and val > 0:
-            return val, self._calc_sigma_pix_from_R(val)
-
-        # 3. Try Metadata ('resol' or 'resol_fwhm')
-        meta = self._spectrum.meta
-        
-        # 3a. 'resol' (R)
-        if 'resol' in meta:
-            val = float(meta['resol'])
-            if np.isfinite(val) and val > 0:
-                return val, self._calc_sigma_pix_from_R(val)
-        
-        # 3b. 'resol_fwhm' (Velocity km/s)
-        if 'resol_fwhm' in meta:
-            val_kms = float(meta['resol_fwhm'])
-            if np.isfinite(val_kms) and val_kms > 0:
-                c_kms = 299792.458
-                r_approx = c_kms / val_kms
-                return r_approx, self._calc_sigma_pix_from_fwhm_kms(val_kms)
-
-        return 0.0, None
 
     def _calc_sigma_pix_from_R(self, R: float) -> float:
         """Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""
@@ -329,11 +281,10 @@ class VoigtFitterV2:
         Determines the resolution (val, unit) for a specific component.
         Priority: Variable Column > Component Attribute > Global Default
         """
-        # 1. Component Attribute (Highest Priority: User manual override)
+        # 1. Component Attribute (Highest Priority: User manual override),
+        # always R (#526; legacy FWHM values are converted at load)
         if comp.resol is not None and comp.resol > 0:
-            # Heuristic for unit
-            unit = 'R' if comp.resol > 500.0 else 'km/s'
-            return float(comp.resol), unit
+            return float(comp.resol), 'R'
 
         # 2. Variable Column (Instrument baseline)
         if self._use_variable_resolution:
@@ -1013,14 +964,6 @@ class VoigtFitterV2:
         p_full_errors = np.zeros_like(p_fitted_full)
         p_full_errors[is_free_mask] = p_free_errors
         
-        # We try to pick the most representative resolution used in this fit.
-        fit_resol_val = 0.0
-        if self._use_variable_resolution and self._resol_calc is not None:
-             fit_resol_val = np.nanmedian(self._resol_calc)
-             if self._variable_resol_unit == 'km/s': fit_resol_val = 299792.458 / fit_resol_val # Store as R? Or keep native? Let's keep native value.
-        elif self._global_resol_val > 0:
-             fit_resol_val = self._global_resol_val
-
         new_components = []
         old_components = self._system_list.components
         active_uuids = None
@@ -1054,23 +997,15 @@ class VoigtFitterV2:
             # the user frees it, so its error is usually 0
             dbtur_new = resolve_error(idx+3, old_comp.dbtur)
             
-            # Metadata Update
+            # Metadata Update. The resolution of the component is left as it
+            # is: it is the user's override, None to follow the spectrum.
+            # Before #526 the fitter stamped the resolution it used, so the
+            # fitted components ignored later changes of the spectrum
             comp_chi2 = old_comp.chi2
             comp_resol = old_comp.resol
             
             if active_uuids is None or old_comp.uuid in active_uuids:
                 comp_chi2 = red_chi2
-                
-                # Logic: If we used the component's OWN resolution, preserve it.
-                # If we used the global/column resolution, update it to reflect the fit conditions.
-                used_res_val, used_res_unit = self._get_component_resolution(old_comp)
-                
-                if used_res_unit == 'column':
-                    # If variable, we usually store the median R of the fit
-                    comp_resol = fit_resol_val
-                elif used_res_val > 0:
-                    # If we used a specific scalar (Global or Attribute), store that.
-                    comp_resol = used_res_val
             
             new_comp = dataclasses.replace(old_comp,
                 z=p_fitted_full[idx], 
