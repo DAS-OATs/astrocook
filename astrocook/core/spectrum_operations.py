@@ -482,6 +482,45 @@ def running_std(y: np.ndarray, h: int) -> np.ndarray:
     
     return np.sqrt(running_var)
 
+#: find_absorbed_regions: a pixel above the running mean by more than
+#: SPIKE_KAPPA times its error and by more than SPIKE_MIN_FRACTION of the
+#: mean is not used as a continuum anchor (#465). Upward spikes (cosmic
+#: rays, bad pixels; frequent in NIR spectra) otherwise pulled the running
+#: mean up until only the spikes were left as anchors: with 1% of the
+#: pixels in spikes of 30 sigma the continuum came out 2-20 times too high.
+#: The minimum fraction keeps the peaks of the emission lines, which the
+#: running mean does not follow exactly, as anchors at high S/N: with 2%
+#: the 5th percentile of the forest continuum dropped to 0.89 at S/N 100
+#: and 0.56 at S/N 300 on the mocks; with 10% it stays at 0.95-0.98, as
+#: without spike rejection. Spikes below 10% of the continuum are kept.
+SPIKE_KAPPA = 5.0
+SPIKE_MIN_FRACTION = 0.10
+#: find_absorbed_regions: pixels where the median S/N over
+#: LOCAL_SNR_WINDOW pixels is below LOCAL_SNR_MIN are not used as continuum
+#: anchors (regions with no signal). Testing the S/N of each pixel instead
+#: (y < 3 dy, as before #465) dropped the lower half of the noise at S/N
+#: ~3, and the continuum came out 26% too high.
+LOCAL_SNR_MIN = 1.0
+LOCAL_SNR_WINDOW = 101
+
+
+def _masked_window_mean(values: np.ndarray, valid: np.ndarray, h: int) -> np.ndarray:
+    """Mean of the valid ``values`` in a window of 2h+1 pixels around each
+    pixel (NaN where the window holds no valid pixel). Exact at the edges,
+    where the window holds fewer pixels."""
+    w = valid.astype(float)
+    v = np.where(valid, values, 0.0)
+    cs_v = np.concatenate(([0.0], np.cumsum(v)))
+    cs_w = np.concatenate(([0.0], np.cumsum(w)))
+    n = len(values)
+    lo = np.clip(np.arange(n) - h, 0, n)
+    hi = np.clip(np.arange(n) + h + 1, 0, n)
+    num = cs_v[hi] - cs_v[lo]
+    den = cs_w[hi] - cs_w[lo]
+    with np.errstate(invalid='ignore', divide='ignore'):
+        return np.where(den > 0, num / den, np.nan)
+
+
 def find_absorbed_regions(
     x: au.Quantity,
     y: np.ndarray, 
@@ -494,10 +533,22 @@ def find_absorbed_regions(
     maxiter: int = 100
 ) -> np.ndarray:
     """
-    Finds absorbed regions using iterative clipping with robust V1 parity logic.
-    Fixes:
-      1. Window size calculated from min(dv) instead of mean(dv) to preserve narrow features.
-      2. Interpolation performed in wavelength space, not index space.
+    Finds absorbed regions by iterative clipping against a running mean.
+
+    The running mean is taken over windows of ``smooth_len_lya`` (in the
+    Lyman-alpha forest) or ``smooth_len_out`` (elsewhere), in km/s on the
+    pixel grid, of the pixels not clipped yet; pixels below it by more
+    than ``kappa`` times their error are clipped as absorbed. Pixels with
+    no signal (median S/N below ``LOCAL_SNR_MIN``) and upward spikes
+    (``SPIKE_KAPPA``, ``SPIKE_MIN_FRACTION``) are not used as continuum
+    anchors either. Revised in #465 (spikes, F30, measured on the mock
+    benchmark of phase 4).
+
+    Returns
+    -------
+    np.ndarray
+        Boolean mask, True for the pixels that are not continuum anchors
+        (absorbed, without signal, or spikes).
     """
     
     # --- 1. Initial Masking ---
@@ -505,17 +556,18 @@ def find_absorbed_regions(
     valid_data = ~np.isnan(y) & ~np.isnan(dy) & (dy > 0)
     mask_unabs[~valid_data] = False
     
-    # Exclude low S/N regions from being 'continuum anchors'
-    with np.errstate(invalid='ignore'):
-        mask_unabs[y <= 3.0 * dy] = False 
+    # Exclude the regions with no signal from being 'continuum anchors'
+    from scipy.ndimage import median_filter
+    with np.errstate(invalid='ignore', divide='ignore'):
+        snr_pix = np.where(valid_data, y / dy, 0.0)
+    local_snr = median_filter(snr_pix, size=LOCAL_SNR_WINDOW, mode='nearest')
+    mask_unabs[local_snr <= LOCAL_SNR_MIN] = False
     
     # Define Ly-alpha proximity
     if z_em == 0.0:
         logging.warning("z_em is 0.0. Using 'smooth_len_out' for all regions.")
         lya_prox_nm = -np.inf * au.nm
     else:
-        # We need the global XEM_LYA constant here. 
-        # Ensure it is imported or defined as 121.567 * au.nm
         lya_obs = (121.567 * au.nm) * (1 + z_em) 
         prox_kms = 5000 * au.km/au.s
         c_kms = 299792.458 * au.km/au.s
@@ -527,13 +579,11 @@ def find_absorbed_regions(
         pass # Template logic would go here
 
     # --- 3. Calculate pixel size (dv) & Setup X ---
-    # We need dv in km/s for window size calculation
     x_kms = convert_axis_velocity(x, z_ref=0.0, target_unit=au.km/au.s).value
     dv = np.gradient(x_kms)
     x_val = x.value # Work with raw values for speed
 
     # --- 4. Define Regions ---
-    # Convert mask to arrays for boolean indexing
     in_lya_forest = (x < lya_prox_nm)
     out_of_forest = (x >= lya_prox_nm)
     
@@ -543,6 +593,7 @@ def find_absorbed_regions(
     ]
     
     mask_clipped = np.zeros_like(y, dtype=bool) 
+    mask_spike = np.zeros_like(y, dtype=bool)
 
     # --- 5. Iterative Clipping Loop ---
     for i in range(maxiter):
@@ -550,62 +601,49 @@ def find_absorbed_regions(
         y_rm_full = np.full_like(y, np.nan)
         
         for region_bool, smooth_len in intervals:
-            # Combine geometric region with the current unabsorbed mask
             mask_interval = region_bool & mask_unabs
             
-            # Points belonging to this interval AND not yet clipped locally
-            current_mask = mask_interval & ~mask_clipped
+            # Points of this interval not clipped and not spikes
+            current_mask = mask_interval & ~mask_clipped & ~mask_spike
             
             if np.sum(current_mask) < 10: 
                 continue
                 
-            # V1 FIX: Use np.min(dv) for a conservative (smaller pixels -> larger window)
-            # Use abs() because dv can be negative if spectrum is flipped
+            # Window of smooth_len (km/s) on the pixel grid, from the
+            # smallest pixel (#465: before, a window of smooth_len / 8 in
+            # pixels of the clipped array, which grew as pixels were
+            # clipped and was biased towards 0 at its edges, F30)
             dv_segment = np.abs(dv[current_mask])
             min_dv = np.min(dv_segment) if len(dv_segment) > 0 else 1.0
             if min_dv == 0: min_dv = 1.0 
-            
-            # V1 Logic: window = length / min_dv / 8
-            # (The '/8' is a V1 heuristic for 'local' smoothing)
             smooth_val = smooth_len.to_value(au.km/au.s)
-            hwindow = int(smooth_val / min_dv / 8)
-            hwindow = max(3, hwindow) # Safety floor
+            hwindow = max(3, int(smooth_val / min_dv / 2))
             
-            y_interval = y_proc[current_mask]
+            y_rm = _masked_window_mean(y_proc, current_mask, hwindow)
             
-            if len(y_interval) < hwindow * 2 + 1:
-                y_rm_interval = np.full_like(y_interval, np.mean(y_interval))
-            else:
-                y_rm_interval = running_mean(y_interval, h=hwindow)
-            
-            # V1 FIX: Interpolate using X coordinates, not indices
-            # We interpolate the running mean (defined on 'current_mask') 
-            # onto the full unabsorbed set ('mask_interval')
-            x_target = x_val[mask_interval]      
-            x_source = x_val[current_mask]       
-            
-            # np.interp requires sorted x. 
-            if x_source[0] < x_source[-1]:
-                y_rm_interp = np.interp(x_target, x_source, y_rm_interval)
-            else:
-                # Handle descending x-axis
-                sort_idx = np.argsort(x_source)
-                y_rm_interp = np.interp(x_target, x_source[sort_idx], y_rm_interval[sort_idx])
-            
-            y_rm_full[mask_interval] = y_rm_interp
+            # Interpolate (in x) where the window held no anchor
+            ok = np.isfinite(y_rm) & mask_interval
+            if np.sum(ok) < 2:
+                continue
+            order = np.argsort(x_val[ok])
+            y_rm_full[mask_interval] = np.interp(
+                x_val[mask_interval], x_val[ok][order], y_rm[ok][order])
 
-        # 6. Find new outliers
-        # Compare raw data against the smoothed model
-        # V1 Logic: outlier if y < model - kappa * sigma
-        # (We rely on NaNs in y_rm_full to skip invalid regions)
+        # 6. Find new outliers: absorbed if below the mean by kappa sigma
         with np.errstate(invalid='ignore'):
             is_outlier = (y_proc - y_rm_full) < (-kappa * dy)
+            # Spikes, recomputed at each iteration (not cumulative): pixels
+            # next to an absorber can be above a mean still pulled down by
+            # it, and come back when the mean settles
+            spike_thr = np.maximum(SPIKE_KAPPA * dy,
+                                   SPIKE_MIN_FRACTION * np.abs(y_rm_full))
+            new_spike = ((y_proc - y_rm_full) > spike_thr) & mask_unabs
         
-        # Only mark as outlier if it was previously considered valid/unabsorbed
         is_outlier[~mask_unabs] = False 
+        spikes_changed = bool((new_spike != mask_spike).any())
+        mask_spike = new_spike
         
-        # Check convergence
-        if np.sum(is_outlier) == 0:
+        if np.sum(is_outlier) == 0 and not spikes_changed:
             logging.info(f"Clipping converged after {i+1} iterations.")
             break
         
@@ -615,7 +653,7 @@ def find_absorbed_regions(
         if i == maxiter - 1:
             logging.warning(f"Clipping did not converge after {maxiter} iterations.")
 
-    return ~mask_unabs
+    return ~mask_unabs | mask_spike
 
 def compute_auto_fudge(
     y: np.ndarray,
