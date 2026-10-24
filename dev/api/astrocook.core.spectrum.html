@@ -427,6 +427,7 @@
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
@@ -578,6 +579,23 @@ the primary data structure passed between Recipes and the GUI.</p>
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.resolution">
+<span class="sig-name descname"><span class="pre">resolution</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.resolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.resolution" title="Link to this definition">#</a></dt>
+<dd><p>Resolving power R of each pixel, from the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column.</p>
+<p>The single source of the resolution (#526). The unit of the column
+decides how it is read: dimensionless for R, a velocity for the FWHM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>R for each pixel; NaN where it is not known (all NaN if the
+spectrum has no resolution).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.x">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">x</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span></span><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.x" title="Link to this definition">#</a></dt>
@@ -692,15 +710,19 @@ for compatibility with GUI/V1 logic (like gui_table.py).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.with_properties">
-<span class="sig-name descname"><span class="pre">with_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_resol_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.with_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.with_properties" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">with_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_resol_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.with_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.with_properties" title="Link to this definition">#</a></dt>
 <dd><p>Return a NEW SpectrumV2 instance with updated properties.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>z_em</strong> (<em>float</em>) – The emission redshift.</p></li>
-<li><p><strong>resol</strong> (<em>float</em><em>, </em><em>optional</em>) – Resolution (R). Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
+<li><p><strong>resol</strong> (<em>float</em><em>, </em><em>optional</em>) – Resolving power R; <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (the default) leaves the resolution
+unchanged.</p></li>
 <li><p><strong>object_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The object name (header keyword).</p></li>
-<li><p><strong>overwrite_resol_col</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, updates/creates the ‘resol’ auxiliary column with the new resolution value. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>overwrite_resol_col</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a <code class="docutils literal notranslate"><span class="pre">resol</span></code> column that varies with wavelength is
+replaced by a flat one at <code class="docutils literal notranslate"><span class="pre">resol</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (the default,
+#526) it is kept, and <code class="docutils literal notranslate"><span class="pre">resol</span></code> only replaces a flat column or
+creates a missing one.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1494,6 +1516,7 @@ two spectra covering different lines of a doublet.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2"><code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.__init__"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.resolution"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resolution()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.x"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.x</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.xmin"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.xmin</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.xmax"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.xmax</span></code></a></li>

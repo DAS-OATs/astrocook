@@ -616,6 +616,10 @@
             <span class="n">v2_metadata</span><span class="o">=</span><span class="n">v2_metadata</span>
         <span class="p">)</span>
 
+        <span class="c1"># Component resolutions saved before #526: stamped values cleared,</span>
+        <span class="c1"># legacy FWHM converted to R</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_component_resolutions</span>
+        <span class="n">system_list_v2</span> <span class="o">=</span> <span class="n">migrate_component_resolutions</span><span class="p">(</span><span class="n">system_list_v2</span><span class="p">,</span> <span class="n">spectrum_v2</span><span class="p">)</span>
         <span class="n">session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span><span class="p">:</span>
             <span class="c1"># Not recorded before 2.1 (F45)</span>

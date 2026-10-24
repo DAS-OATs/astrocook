@@ -629,39 +629,26 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         
-        <span class="c1"># 2. Resolution Setup</span>
+        <span class="c1"># 2. Resolution Setup: the 'resol' column of the spectrum, as R</span>
+        <span class="c1"># (#526; before, five sources and a guess of the unit by value). A</span>
+        <span class="c1"># flat column takes the scalar path, as a global value did before</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span> <span class="c1"># Default</span>
-        
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="c1"># Check if column has valid data (not just NaNs/zeros)</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">True</span>
-                
-                <span class="c1"># Heuristic for unit</span>
-                <span class="n">med_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">med_res</span> <span class="o">&gt;</span> <span class="mf">500.0</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution detected. Median=</span><span class="si">{</span><span class="n">med_res</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> -&gt; Assuming 'R'."</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'km/s'</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution detected. Median=</span><span class="si">{</span><span class="n">med_res</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; Assuming 'km/s'."</span><span class="p">)</span>
-
-        <span class="c1"># Fallback to global metadata</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_resolution</span><span class="p">()</span>
-        
-        <span class="c1"># Determine global unit based on value magnitude (heuristic)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&lt;</span> <span class="mf">500.0</span><span class="p">:</span>
-             <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'km/s'</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
+        <span class="n">r_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">r_pix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_pix</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_pix</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">finite</span> <span class="o">==</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="n">r_pix</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution, median R=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
 
         <span class="c1"># Placeholders</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="kc">None</span>
@@ -680,41 +667,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ComponentDataV2</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_determine_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Robustly finds resolution from Columns, Attributes, or Metadata.</span>
-<span class="sd">        Returns: (R_value, sigma_pix)</span>
-<span class="sd">        """</span>
-        <span class="c1"># 1. Try Column ('resol') - Handled in __init__, but fallback logic here</span>
-        <span class="c1"># (We already checked column in init, so here we check global props)</span>
-
-        <span class="c1"># 2. Try Attribute (spec.resol)</span>
-        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="p">,</span> <span class="s1">'resol'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="p">,</span> <span class="s1">'_data'</span><span class="p">):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">'resol'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-
-        <span class="c1"># 3. Try Metadata ('resol' or 'resol_fwhm')</span>
-        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">meta</span>
-        
-        <span class="c1"># 3a. 'resol' (R)</span>
-        <span class="k">if</span> <span class="s1">'resol'</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        
-        <span class="c1"># 3b. 'resol_fwhm' (Velocity km/s)</span>
-        <span class="k">if</span> <span class="s1">'resol_fwhm'</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
-            <span class="n">val_kms</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">'resol_fwhm'</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val_kms</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val_kms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-                <span class="n">r_approx</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">/</span> <span class="n">val_kms</span>
-                <span class="k">return</span> <span class="n">r_approx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_fwhm_kms</span><span class="p">(</span><span class="n">val_kms</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""</span>
@@ -800,11 +752,10 @@
 <span class="sd">        Determines the resolution (val, unit) for a specific component.</span>
 <span class="sd">        Priority: Variable Column &gt; Component Attribute &gt; Global Default</span>
 <span class="sd">        """</span>
-        <span class="c1"># 1. Component Attribute (Highest Priority: User manual override)</span>
+        <span class="c1"># 1. Component Attribute (Highest Priority: User manual override),</span>
+        <span class="c1"># always R (#526; legacy FWHM values are converted at load)</span>
         <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Heuristic for unit</span>
-            <span class="n">unit</span> <span class="o">=</span> <span class="s1">'R'</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mf">500.0</span> <span class="k">else</span> <span class="s1">'km/s'</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="p">),</span> <span class="n">unit</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="p">),</span> <span class="s1">'R'</span>
 
         <span class="c1"># 2. Variable Column (Instrument baseline)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span><span class="p">:</span>
@@ -1495,14 +1446,6 @@
         <span class="n">p_full_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p_fitted_full</span><span class="p">)</span>
         <span class="n">p_full_errors</span><span class="p">[</span><span class="n">is_free_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_free_errors</span>
         
-        <span class="c1"># We try to pick the most representative resolution used in this fit.</span>
-        <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-             <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">)</span>
-             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">==</span> <span class="s1">'km/s'</span><span class="p">:</span> <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="mf">299792.458</span> <span class="o">/</span> <span class="n">fit_resol_val</span> <span class="c1"># Store as R? Or keep native? Let's keep native value.</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-             <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span>
-
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">old_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span>
         <span class="n">active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1536,23 +1479,15 @@
             <span class="c1"># the user frees it, so its error is usually 0</span>
             <span class="n">dbtur_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dbtur</span><span class="p">)</span>
             
-            <span class="c1"># Metadata Update</span>
+            <span class="c1"># Metadata Update. The resolution of the component is left as it</span>
+            <span class="c1"># is: it is the user's override, None to follow the spectrum.</span>
+            <span class="c1"># Before #526 the fitter stamped the resolution it used, so the</span>
+            <span class="c1"># fitted components ignored later changes of the spectrum</span>
             <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">chi2</span>
             <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">resol</span>
             
             <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
                 <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">red_chi2</span>
-                
-                <span class="c1"># Logic: If we used the component's OWN resolution, preserve it.</span>
-                <span class="c1"># If we used the global/column resolution, update it to reflect the fit conditions.</span>
-                <span class="n">used_res_val</span><span class="p">,</span> <span class="n">used_res_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">old_comp</span><span class="p">)</span>
-                
-                <span class="k">if</span> <span class="n">used_res_unit</span> <span class="o">==</span> <span class="s1">'column'</span><span class="p">:</span>
-                    <span class="c1"># If variable, we usually store the median R of the fit</span>
-                    <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">fit_resol_val</span>
-                <span class="k">elif</span> <span class="n">used_res_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="c1"># If we used a specific scalar (Global or Attribute), store that.</span>
-                    <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">used_res_val</span>
             
             <span class="n">new_comp</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">old_comp</span><span class="p">,</span>
                 <span class="n">z</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> 

@@ -483,7 +483,9 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"object"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Object Name (header)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Emission Redshift (z_em)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"resol"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"</span><span class="p">},</span> 
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"overwrite_resol_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="c1"># &lt;--- [NEW] Add this hidden flag</span>
+            <span class="c1"># Replace a resolution column that varies with wavelength by a</span>
+            <span class="c1"># flat one; False (#526) keeps it. The GUI asks the user</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"overwrite_resol_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#set_properties"</span>
     <span class="p">},</span>
@@ -789,7 +791,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.set_properties">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> <span class="nb">object</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> 
                        <span class="n">z_em</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span>
-                       <span class="n">overwrite_resol_col</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
+                       <span class="n">overwrite_resol_col</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set session properties.</span>
 
@@ -808,7 +810,11 @@
 <span class="sd">            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``).</span>
 <span class="sd">            Defaults to ``'_current_'`` (no change).</span>
 <span class="sd">        overwrite_resol_col : bool, optional</span>
-<span class="sd">            If ``True``, updates the 'resol' column in the spectrum data with the new resolution value. Defaults to ``True``.</span>
+<span class="sd">            If ``True``, a ``resol`` column that varies with wavelength is</span>
+<span class="sd">            replaced by a flat one at the new resolution; if ``False`` it is</span>
+<span class="sd">            kept (a flat or missing column is always set). Defaults to</span>
+<span class="sd">            ``False`` (#526: before, a variable column was flattened even</span>
+<span class="sd">            with ``resol='_current_'``).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -824,8 +830,7 @@
                 <span class="n">z_em_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span>
                 
             <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
-                <span class="c1"># Use stored resolution (R) directly</span>
-                <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">resol</span>
+                <span class="n">resol_f</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># leave the resolution as it is (#526)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_resolution_string</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
