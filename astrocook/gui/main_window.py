@@ -63,15 +63,15 @@ ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 20
 BUTTON_HEIGHT = 30
 
-# --- Plot controls card (right panel) ---
-# The panel floats over the plot instead of shrinking it, so that the aspect
+# --- Floating cards (session list on the left, plot controls on the right) ---
+# The panels float over the plot instead of shrinking it, so that the aspect
 # of the spectrum does not change (Guido's choice). To cover as little as
-# possible, it is only as tall as its contents and it fades out while the
-# mouse is on the plot, so the effect of a change can be seen through it.
-PLOT_CONTROLS_MARGIN = 8       # Gap between the menu bar and the card (px)
-PLOT_CONTROLS_FADED = 0.35     # Opacity of the card while the mouse is away
-PLOT_CONTROLS_FADE_DELAY = 500 # ms before fading out after the mouse leaves
-PLOT_CONTROLS_FADE_TIME = 200  # ms of the fade animation
+# possible, they are only as tall as their contents and they fade out while
+# the mouse is on the plot, so the effect of a change can be seen through.
+CARD_MARGIN = 8        # Gap between the menu bar and the cards (px)
+CARD_FADED = 0.35      # Opacity of a card while the mouse is away
+CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
+CARD_FADE_TIME = 200   # ms of the fade animation
 SWATCH_SIZE = QSize(24, 12)
 
 class MockV1GUIContext:
@@ -85,6 +85,59 @@ class MockV1GUIContext:
     def _flags_extr(self, flag):
         # V2 GUI doesn't use these flags, so return None
         return None
+class CardFader(QObject):
+    """Fades a floating card out while the mouse is away from it.
+
+    The card comes back to full opacity when the mouse enters it. It also
+    calls ``on_layout`` when the card's contents change size (a section
+    expanded or collapsed), so that the window can resize the card.
+    """
+
+    def __init__(self, card: QWidget, on_layout=None):
+        super().__init__(card)
+        self.card = card
+        self.on_layout = on_layout
+        self.effect = QGraphicsOpacityEffect(card)
+        self.effect.setOpacity(1.0)
+        card.setGraphicsEffect(self.effect)
+        self.anim = QPropertyAnimation(self.effect, b"opacity", self)
+        self.anim.setDuration(CARD_FADE_TIME)
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(CARD_FADE_DELAY)
+        self.timer.timeout.connect(self._fade_if_left)
+        card.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        etype = event.type()
+        if etype == QEvent.Type.Enter:
+            self.timer.stop()
+            self.set_faded(False)
+        elif etype == QEvent.Type.Leave:
+            self.timer.start()
+        elif etype == QEvent.Type.LayoutRequest and self.on_layout is not None:
+            QTimer.singleShot(0, self.on_layout)
+        return super().eventFilter(obj, event)
+
+    def _fade_if_left(self):
+        # A combo box popup or a context menu takes the mouse away from the
+        # card without the user leaving it: wait until it is closed
+        if QApplication.activePopupWidget() is not None or self.card.underMouse():
+            self.timer.start()
+            return
+        self.set_faded(True)
+
+    def set_faded(self, faded: bool, animate: bool = True):
+        target = CARD_FADED if faded else 1.0
+        self.anim.stop()
+        if animate:
+            self.anim.setStartValue(self.effect.opacity())
+            self.anim.setEndValue(target)
+            self.anim.start()
+        else:
+            self.effect.setOpacity(target)
+
+
 class MainWindowV2(QMainWindow):
     def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
@@ -223,6 +276,15 @@ class MainWindowV2(QMainWindow):
         super().resizeEvent(event)
         self._reposition_floating_widgets()
 
+    def _session_list_height(self) -> int:
+        """Height of the session card: all the rows, at least one."""
+        view = self.session_list_view
+        rows = max(1, self.session_model.rowCount())
+        row_height = view.sizeHintForRow(0) if self.session_model.rowCount() else 0
+        if row_height <= 0:
+            row_height = view.fontMetrics().height() + 32  # item padding 16 + 16
+        return rows * row_height + 2 * view.frameWidth() + 8 + 8  # + layout margins
+
     def _reposition_floating_widgets(self):
         """Positions sidebars and buttons based on current window size and visibility."""
         window_height = self.height()
@@ -231,23 +293,21 @@ class MainWindowV2(QMainWindow):
         content_y_start = menubar_height
         content_height = window_height - content_y_start
 
-        # ** Calculate centered Y position for buttons **
-        button_y = content_y_start + (content_height - BUTTON_HEIGHT) // 2
-
-        # --- Left Sidebar & Button ---
+        # --- Left Sidebar (card) & Button ---
         left_width = self.left_sidebar_widget.width()
         button_x = left_width - BUTTON_WIDTH if left_width > 0 else left_width
-        # ** Use calculated button_y **
-        self.session_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
-        # Sidebar still fills the full content height
-        self.left_sidebar_widget.setGeometry(0, content_y_start, left_width, content_height)
+        card_y = content_y_start + CARD_MARGIN
+        left_height = min(self._session_list_height(), content_height - 2 * CARD_MARGIN)
+        left_button_y = card_y + (left_height - BUTTON_HEIGHT) // 2
+        self.session_collapse_button.setGeometry(button_x, left_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        self.left_sidebar_widget.setGeometry(0, card_y, left_width, left_height)
 
         # --- Right Sidebar (card) & Button ---
         right_width = self.right_sidebar_widget.width()
         sidebar_x = window_width - right_width
-        card_y = content_y_start + PLOT_CONTROLS_MARGIN
+        card_y = content_y_start + CARD_MARGIN
         card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
-                          content_height - 2 * PLOT_CONTROLS_MARGIN)
+                          content_height - 2 * CARD_MARGIN)
         button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
         # The button sits halfway down the card, not the window
         right_button_y = card_y + (card_height - BUTTON_HEIGHT) // 2
@@ -315,7 +375,9 @@ class MainWindowV2(QMainWindow):
         """Creates the left sidebar widget as a child of the main window."""
         self.left_sidebar_widget = QWidget(self) # ** Parent is main window **
         sidebar_layout = QVBoxLayout(self.left_sidebar_widget)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0); sidebar_layout.setSpacing(0)
+        # Inset the list, so that the selected row keeps clear of the
+        # rounded corners of the card and of the collapse button
+        sidebar_layout.setContentsMargins(4, 4, BUTTON_WIDTH, 4); sidebar_layout.setSpacing(0)
 
         self.session_list_view = QListView()
         # ... (setup model, font, connection) ...
@@ -342,9 +404,23 @@ class MainWindowV2(QMainWindow):
         # 3b. Connect the signal that fires *after* editing is done
         self.session_model.dataChanged.connect(self._on_session_name_changed)
 
+        # Long names: keep the end, which tells sessions apart (e.g. _2,
+        # _3), and show the full name on hover
+        self.session_list_view.setTextElideMode(Qt.TextElideMode.ElideMiddle)
+        self.session_list_view.setMouseTracking(True)
+        self.session_list_view.entered.connect(
+            lambda index: self.session_list_view.setToolTip(index.data()))
+        self.session_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.session_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # The card is as tall as the list: resize it when sessions come and go
+        self.session_model.rowsInserted.connect(self._reposition_floating_widgets)
+        self.session_model.rowsRemoved.connect(self._reposition_floating_widgets)
+        self.session_model.modelReset.connect(self._reposition_floating_widgets)
+
         sidebar_layout.addWidget(self.session_list_view)
         self.left_sidebar_widget.setObjectName("SessionContainer")
         self.session_list_view.setObjectName("SessionListView")
+        self._sessions_fader = CardFader(self.left_sidebar_widget)
 
         # Initial geometry set later, start hidden/collapsed
         self.left_sidebar_widget.resize(0, self.height())
@@ -713,7 +789,8 @@ class MainWindowV2(QMainWindow):
         apply_initial_collapse(continuum_group)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
-        self._setup_plot_controls_fading()
+        self._plot_controls_fader = CardFader(self.right_sidebar_widget,
+                                              on_layout=self._reposition_floating_widgets)
         for checkbox in self._swatch_checkboxes():
             checkbox.setIcon(QIcon(self._blank_swatch()))
             checkbox.setIconSize(SWATCH_SIZE)
@@ -1306,15 +1383,17 @@ class MainWindowV2(QMainWindow):
 
         qss = f"""
             /* Sidebar Containers: Transparent background, NO side borders */
+            /* Floating cards, as tall as their contents and flush with the
+               window edge: rounded on the inner side, no border */
             QWidget#SessionContainer {{
-                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
-                border: none; /* ** Remove all borders ** */
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
+                border: none;
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
             }}
-            /* Plot controls: a card as tall as its contents, flush right */
             QWidget#PlotControlsContainer {{
                 background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
-                border: 1px solid {border_color};
-                border-right: none;
+                border: none;
                 border-top-left-radius: 8px;
                 border-bottom-left-radius: 8px;
             }}
@@ -1328,7 +1407,7 @@ class MainWindowV2(QMainWindow):
                 color: {button_fg}; /* Use button text color for readability */
              }}
             /* Selected/Hover items should be opaque */
-            QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
+            QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; border-radius: 6px; }}
 
             /* Right Sidebar Checkboxes & Labels */
             QWidget#PlotControlsContainer QLabel {{ /* Style section labels */
@@ -1532,6 +1611,8 @@ class MainWindowV2(QMainWindow):
         if not target_visible:
             # Ensure lambda captures the correct widget state if needed
             self.left_animation_group.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
+        else:
+            self._set_sessions_faded(False, animate=False)
 
         self.left_animation_group.start()
         self._update_sidebar_button_icon(self.session_collapse_button, target_visible, is_left=True)
@@ -1575,54 +1656,13 @@ class MainWindowV2(QMainWindow):
         if self.active_history:
             self._trigger_replot()
 
-    # --- Plot controls card: fading and legend swatches ---
-
-    def _setup_plot_controls_fading(self):
-        """Fades the card out while the mouse is away from it."""
-        card = self.right_sidebar_widget
-        self._plot_controls_opacity = QGraphicsOpacityEffect(card)
-        self._plot_controls_opacity.setOpacity(1.0)
-        card.setGraphicsEffect(self._plot_controls_opacity)
-        self._plot_controls_fade_anim = QPropertyAnimation(self._plot_controls_opacity, b"opacity", self)
-        self._plot_controls_fade_anim.setDuration(PLOT_CONTROLS_FADE_TIME)
-        self._plot_controls_fade_timer = QTimer(self)
-        self._plot_controls_fade_timer.setSingleShot(True)
-        self._plot_controls_fade_timer.setInterval(PLOT_CONTROLS_FADE_DELAY)
-        self._plot_controls_fade_timer.timeout.connect(self._fade_plot_controls_if_left)
-        card.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        if obj is getattr(self, 'right_sidebar_widget', None):
-            etype = event.type()
-            if etype == QEvent.Type.Enter:
-                self._plot_controls_fade_timer.stop()
-                self._set_plot_controls_faded(False)
-            elif etype == QEvent.Type.Leave:
-                self._plot_controls_fade_timer.start()
-            elif etype == QEvent.Type.LayoutRequest:
-                # A section was expanded or collapsed: resize the card
-                QTimer.singleShot(0, self._reposition_floating_widgets)
-        return super().eventFilter(obj, event)
-
-    def _fade_plot_controls_if_left(self):
-        card = self.right_sidebar_widget
-        # A combo box popup takes the mouse away from the card without the
-        # user leaving it: wait until it is closed
-        if QApplication.activePopupWidget() is not None or card.underMouse():
-            self._plot_controls_fade_timer.start()
-            return
-        self._set_plot_controls_faded(True)
+    # --- Floating cards: fading and legend swatches ---
 
     def _set_plot_controls_faded(self, faded: bool, animate: bool = True):
-        target = PLOT_CONTROLS_FADED if faded else 1.0
-        anim = self._plot_controls_fade_anim
-        anim.stop()
-        if animate:
-            anim.setStartValue(self._plot_controls_opacity.opacity())
-            anim.setEndValue(target)
-            anim.start()
-        else:
-            self._plot_controls_opacity.setOpacity(target)
+        self._plot_controls_fader.set_faded(faded, animate)
+
+    def _set_sessions_faded(self, faded: bool, animate: bool = True):
+        self._sessions_fader.set_faded(faded, animate)
 
     def _swatch_checkboxes(self):
         return [self.error_checkbox, self.continuum_checkbox,
