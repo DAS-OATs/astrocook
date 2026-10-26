@@ -169,6 +169,21 @@ def disclosure_icon(direction: str) -> QIcon:
     return qta.icon(f'mdi.menu-{direction}', color=color, scale_factor=1.8)
 
 
+class WrappedLabel(QLabel):
+    """A label that wraps and asks for the height its text needs.
+
+    Layouts give a wrapped QLabel its height for some other width, so the
+    last line can be cut; the card of the plot controls, as tall as its
+    contents, would then cut it off.
+    """
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        needed = self.heightForWidth(self.width())
+        if needed > 0 and needed != self.minimumHeight():
+            self.setMinimumHeight(needed)
+
+
 class CollapsibleSection(QWidget):
     """A section of a floating card, shown or hidden by its header."""
 
@@ -392,8 +407,12 @@ class MainWindowV2(QMainWindow):
         right_width = self.right_sidebar_widget.width()
         sidebar_x = window_width - right_width
         card_y = content_y_start + CARD_MARGIN
-        card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
-                          content_height - 2 * CARD_MARGIN)
+        layout = self.right_sidebar_widget.layout()
+        # Labels that wrap (the hints of the continuum editor) need their
+        # height at the width of the card, which sizeHint() does not give
+        natural = (layout.heightForWidth(RIGHT_SIDEBAR_WIDTH) if layout.hasHeightForWidth()
+                   else layout.sizeHint().height())
+        card_height = min(natural, content_height - 2 * CARD_MARGIN)
         button_x = sidebar_x - BUTTON_WIDTH
         right_button_y = card_y + CARD_TAB_OFFSET
         self.plot_controls_collapse_button.setGeometry(button_x, right_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
@@ -781,7 +800,7 @@ class MainWindowV2(QMainWindow):
         hints_layout.setContentsMargins(0, 0, 0, 0)
         
         # 2. Create the label itself
-        self.edit_hints_label = QLabel(
+        self.edit_hints_label = WrappedLabel(
             "<div style='font-size: 11pt;'>"
             "<p style='margin: 0px 0px 6px 0px;'><b>Controls:</b></p>"
             "<p style='margin: 0px 0px 2px 0px;'>• <b>Shift + Click:</b> Add knot</p>"
@@ -1431,7 +1450,10 @@ class MainWindowV2(QMainWindow):
             }}
             QCheckBox#PlotControlCheckbox {{
                 color: {text_color}; spacing: 5px; padding: 2px 0px; /* Reduced padding */
-                background-color: transparent; padding-left: 15px; /* Indentation */
+                padding-left: 15px; /* Indentation */
+                /* No background-color here: with the non-native styles
+                   (Fusion: Linux, Windows) it also clears the frame of the
+                   indicator, and unchecked boxes become invisible */
             }}
             /* Style LineEdits for Cursor */
             QWidget#PlotControlsContainer QLineEdit {{

@@ -72,6 +72,10 @@ Current version: 2.1.0. Python ≥3.12.
   release, update the "preferred" entry of `switcher.json` on master (the
   release build checks it). `deploy_docs.sh stable|dev` does the same by
   hand.
+- Screenshots of the tutorials: `docs/screenshots/make_screenshots.py`
+  rebuilds them from the GUI (README in the same folder); rerun the scenes
+  touched by a change of the GUI, look at every image, commit those that
+  changed.
 - Document everything found and used (sources, references, measurements,
   decisions) when it happens, not afterwards: in `docs/` for users (e.g.
   `docs/atomic_data.md`), in `ROADMAP.md` and the findings register for the

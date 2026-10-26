@@ -65,3 +65,6 @@ astrocook.egg-info/
 # V1 archives used by the tests (tests/test_v1_archive.py); after the
 # tests/data/*.acs rule above, which it overrides
 !tests/data/v1_*.acs
+
+# Spectra for the screenshots of the tutorials (docs/screenshots/README.md)
+docs/screenshots/data/

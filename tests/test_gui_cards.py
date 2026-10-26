@@ -214,3 +214,35 @@ def test_closed_card_leaves_its_tab_opaque(qtbot, window):
     QApplication.sendEvent(tab, QEvent(QEvent.Type.Leave))
     qtbot.wait(800)
     assert tab.graphicsEffect().opacity() == 1.0
+
+
+def test_unchecked_boxes_of_the_plot_controls_are_visible(qtbot, window):
+    # With the Fusion style (Linux, Windows) a background colour in the
+    # stylesheet of the checkboxes cleared the frame of their indicator
+    from PySide6.QtWidgets import QStyleFactory
+    _open(qtbot, window, "right")
+    box = window.isomag_checkbox
+    box.setStyle(QStyleFactory.create("Fusion"))
+    box.setText("")  # only the indicator is left to draw
+    assert not box.isChecked()
+    image = box.grab().toImage()
+    # The frame: opaque pixels darker than the background of the card
+    frame = [c for c in (image.pixelColor(x, y) for x in range(image.width())
+                         for y in range(image.height()))
+             if c.alpha() == 255 and c.lightness() < 220]
+    assert frame, "no frame drawn around the unchecked box"
+
+
+def test_card_shows_the_wrapped_hints_of_the_continuum_editor(qtbot, window):
+    # The card is as tall as its contents: a wrapped label used to get the
+    # height of fewer lines, and its last line was cut
+    card = _open(qtbot, window, "right")
+    _sections(window)["Plot Elements"].setExpanded(False)
+    _sections(window)["Edit Continuum"].setExpanded(True)
+    hints = window.edit_hints_label
+    hints.setVisible(True)
+    qtbot.waitUntil(lambda: hints.height() >= hints.heightForWidth(hints.width()),
+                    timeout=ANIMATION_TIMEOUT)
+    qtbot.wait(100)
+    bottom = hints.mapTo(card, hints.rect().bottomLeft()).y()
+    assert bottom <= card.height()
