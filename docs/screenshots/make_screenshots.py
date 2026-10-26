@@ -214,6 +214,8 @@ class Studio:
         # The default style of the offscreen platform draws no frame around
         # unchecked boxes; Fusion does, and is the same on every machine
         self.app.setStyle("Fusion")
+        # A blinking text cursor would make the images differ between runs
+        self.app.setCursorFlashTime(0)
         self.window = None
         self._analysed = None
 
