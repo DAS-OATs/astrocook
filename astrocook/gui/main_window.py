@@ -92,9 +92,11 @@ class MockV1GUIContext:
 class CardFader(QObject):
     """Fades a floating card out while the mouse is away from it.
 
-    The card comes back to full opacity when the mouse enters it. It also
-    calls ``on_layout`` when the card's contents change size (a section
-    expanded or collapsed), so that the window can resize the card.
+    The card comes back to full opacity when the mouse enters it. Its tab
+    (``add_handle``) fades with it and counts as part of it. A closed card
+    does not fade, so its tab stays opaque. It also calls ``on_layout`` when
+    the card's contents change size (a section expanded or collapsed), so
+    that the window can resize the card.
     """
 
     def __init__(self, card: QWidget, on_layout=None):
@@ -110,7 +112,17 @@ class CardFader(QObject):
         self.timer.setSingleShot(True)
         self.timer.setInterval(CARD_FADE_DELAY)
         self.timer.timeout.connect(self._fade_if_left)
+        self.handles = []
         card.installEventFilter(self)
+
+    def add_handle(self, widget: QWidget):
+        """A widget (the card's tab) that fades with the card."""
+        effect = QGraphicsOpacityEffect(widget)
+        effect.setOpacity(self.effect.opacity())
+        widget.setGraphicsEffect(effect)
+        self.effect.opacityChanged.connect(effect.setOpacity)
+        widget.installEventFilter(self)
+        self.handles.append(widget)
 
     def eventFilter(self, obj, event):
         etype = event.type()
@@ -119,14 +131,18 @@ class CardFader(QObject):
             self.set_faded(False)
         elif etype == QEvent.Type.Leave:
             self.timer.start()
-        elif etype == QEvent.Type.LayoutRequest and self.on_layout is not None:
+        elif (etype == QEvent.Type.LayoutRequest and obj is self.card
+              and self.on_layout is not None):
             QTimer.singleShot(0, self.on_layout)
         return super().eventFilter(obj, event)
 
     def _fade_if_left(self):
         # A combo box popup or a context menu takes the mouse away from the
         # card without the user leaving it: wait until it is closed
-        if QApplication.activePopupWidget() is not None or self.card.underMouse():
+        if not self.card.isVisible():
+            return
+        if (QApplication.activePopupWidget() is not None or self.card.underMouse()
+                or any(h.underMouse() for h in self.handles)):
             self.timer.start()
             return
         self.set_faded(True)
@@ -262,6 +278,8 @@ class MainWindowV2(QMainWindow):
         self._setup_left_sidebar()  # Creates self.left_sidebar_widget
         self._setup_right_sidebar() # Creates self.right_sidebar_widget
         self._setup_collapse_buttons()
+        self._sessions_fader.add_handle(self.session_collapse_button)
+        self._plot_controls_fader.add_handle(self.plot_controls_collapse_button)
 
         # --- ** Central Stack Views ** ---
         initial_session = initial_sessions[0] if isinstance(initial_sessions, List) and len(initial_sessions) > 0 else initial_sessions
@@ -1615,8 +1633,9 @@ class MainWindowV2(QMainWindow):
         if not target_visible:
             # Ensure lambda captures the correct widget state if needed
             self.left_animation_group.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
-        else:
-            self._set_sessions_faded(False, animate=False)
+        # Opaque when it opens, and its tab opaque when it closes
+        self._sessions_fader.timer.stop()
+        self._set_sessions_faded(False, animate=False)
 
         self.left_animation_group.start()
         self._update_sidebar_button_icon(self.session_collapse_button, target_visible, is_left=True)
@@ -1649,7 +1668,9 @@ class MainWindowV2(QMainWindow):
         self.right_animation_group.addAnimation(button_anim)
 
         if not target_visible: self.right_animation_group.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
-        else: self._set_plot_controls_faded(False, animate=False)
+        # Opaque when it opens, and its tab opaque when it closes
+        self._plot_controls_fader.timer.stop()
+        self._set_plot_controls_faded(False, animate=False)
         # Redraw once the card has moved, to move the panel entries out of
         # (or back into) the legend
         self.right_animation_group.finished.connect(self._replot_if_session)

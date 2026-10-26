@@ -186,3 +186,31 @@ def test_opening_a_card_shows_it_opaque(qtbot, window):
     window._set_sessions_faded(True, animate=False)
     _open(qtbot, window, "left")
     assert window._sessions_fader.effect.opacity() == 1.0
+
+
+def test_tab_fades_with_its_card(qtbot, window):
+    from astrocook.gui.main_window import CARD_FADED
+    card = _open(qtbot, window, "right")
+    tab = window.plot_controls_collapse_button
+    QApplication.sendEvent(card, QEvent(QEvent.Type.Leave))
+    qtbot.waitUntil(lambda: np.isclose(tab.graphicsEffect().opacity(), CARD_FADED),
+                    timeout=ANIMATION_TIMEOUT)
+
+    # Entering the tab counts as entering the card
+    QApplication.sendEvent(tab, QEvent(QEvent.Type.Enter))
+    qtbot.waitUntil(lambda: np.isclose(window._plot_controls_fader.effect.opacity(), 1.0),
+                    timeout=ANIMATION_TIMEOUT)
+    assert np.isclose(tab.graphicsEffect().opacity(), 1.0)
+
+
+def test_closed_card_leaves_its_tab_opaque(qtbot, window):
+    card = _open(qtbot, window, "right")
+    window._set_plot_controls_faded(True, animate=False)
+    window._toggle_right_sidebar()
+    qtbot.waitUntil(lambda: not card.isVisible(), timeout=ANIMATION_TIMEOUT)
+    tab = window.plot_controls_collapse_button
+    assert tab.graphicsEffect().opacity() == 1.0
+    # With the card closed, leaving the tab does not fade it
+    QApplication.sendEvent(tab, QEvent(QEvent.Type.Leave))
+    qtbot.wait(800)
+    assert tab.graphicsEffect().opacity() == 1.0
