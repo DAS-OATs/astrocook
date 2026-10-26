@@ -256,19 +256,22 @@ def build_server() -> MCPServer:
             "absorbers", "doublets_auto", "z_window_kms"))] = default("absorbers", "doublets_auto", "z_window_kms"),
         max_b: Annotated[float, Field(description=doc(
             "absorbers", "doublets_auto", "max_b"))] = default("absorbers", "doublets_auto", "max_b"),
+        max_logN: Annotated[float, Field(description=doc(
+            "absorbers", "doublets_auto", "max_logN"))] = default("absorbers", "doublets_auto", "max_logN"),
         max_listed: Annotated[int, Field(ge=0, description=(
             "Maximum number of components listed in the output; the "
             "counts are always complete."))] = 50,
     ) -> FitInfo:
         params = {"multiplets": multiplets,
                   "score_threshold": str(score_threshold),
-                  "z_window_kms": str(z_window_kms), "max_b": str(max_b)}
+                  "z_window_kms": str(z_window_kms), "max_b": str(max_b),
+                  "max_logN": str(max_logN)}
         with store.lock:
             before = store.get(session_id).current_state
             state, warnings = run(session_id, "absorbers", "doublets_auto",
                                   params)
             return FitInfo(**info(session_id, warnings).model_dump(),
-                           fit=fit_summary(before, state, max_b, max_listed))
+                           fit=fit_summary(before, state, max_b, max_listed, max_logN))
 
     return server
 

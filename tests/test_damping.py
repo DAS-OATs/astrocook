@@ -24,3 +24,25 @@ def test_fit_recovers_the_column_of_a_damped_lya(z):
         series="Ly_a")]))
     fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=500, z_window_kms=50.0)
     assert fitted.components[0].logN == pytest.approx(20.3, abs=0.02)
+
+
+def _dla_session(z=3.0):
+    from astrocook.core.session import SessionV2
+    lam = 121.567 * (1 + z)
+    spec = generate(MockTruth(
+        components=[MockComponent("Ly_a", z, 20.3, 20.0)], lam_min_nm=lam - 6.0,
+        lam_max_nm=lam + 6.0, dv_kms=5.0, resol=45000.0, snr=30.0, z_em=z + 0.5,
+        seed=3))
+    systs = SystemListV2(SystemListDataV2(components=[ComponentDataV2(
+        id=1, z=z + 1e-5, dz=None, logN=19.8, dlogN=None, b=30.0, db=None,
+        series="Ly_a")]))
+    return SessionV2("dla", None, spec=spec, systs=systs)
+
+
+@pytest.mark.parametrize("max_logN, expected", [("23.0", 20.3), ("19.0", 19.0)])
+def test_refit_all_bound_on_logN(max_logN, expected):
+    # The automatic pipelines pass max_logN = 19 (F62); a refit by hand
+    # keeps the physical limit (23) and recovers the damped system
+    out = _dla_session().absorbers.refit_all(max_logN=max_logN, max_nfev="500",
+                                             z_window_kms="50.0")
+    assert out.systs.components[0].logN == pytest.approx(expected, abs=0.02)

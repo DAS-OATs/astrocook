@@ -58,6 +58,8 @@ This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** t
 **Upper bound on b in the pipelines.** The automated pipelines (Ly-alpha forest, doublets, general component detection, Lyman series, associated metals) fit with an upper bound on the Doppler parameter, **Max b** (default `50` km/s). Without it, components in crowded regions such as the forest tend to broaden into their neighbours: the fits become several times slower and produce spurious broad lines.
 
 A component that ends exactly at the bound (e.g. `b = 50` km/s) may be broader in reality. Select it in the System Inspector and use **Refit Selected**: manual fits use only the physical limit (`300` km/s), so the line can reach its true width. **Refit All** also takes a **Max b** parameter (default `300` km/s).
+
+**Upper bound on logN in the pipelines.** The same pipelines also fit with an upper bound on the column density, **Max logN** (default `19`). In a saturated trough that the detected lines do not fill, a single component can otherwise fill it with its damping wings and grow to logN 20-23, blacking out the model for hundreds of km/s around it. With `19` the Lyman-limit systems are still within reach; damped Ly-alpha systems and sub-DLAs are to be fitted by hand, where the physical limit (`23`) applies: add the component in the System Inspector and use **Refit Selected**, or **Refit All**, whose **Max logN** defaults to `23`. A component that ends at the bound (logN = 19) may be stronger in reality, or may stand for several weaker lines that the pipeline did not detect.
 :::
 
 (system-inspector)=
