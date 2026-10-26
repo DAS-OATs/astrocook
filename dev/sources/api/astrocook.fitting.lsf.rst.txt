@@ -1,0 +1,7 @@
+astrocook.fitting.lsf module
+============================
+
+.. automodule:: astrocook.fitting.lsf
+   :members:
+   :show-inheritance:
+   :undoc-members:

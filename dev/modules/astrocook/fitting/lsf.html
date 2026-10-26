@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.fitting.lsf &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/lsf';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../atomic_data.html">
+    Atomic Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../atomic_data.html">
+    Atomic Data
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.lsf</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.fitting.lsf</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Exact convolution of a model with the line spread function (#526).</span>
+
+<span class="sd">The model flux F is computed on a fine grid, uniform in velocity, and each</span>
+<span class="sd">pixel i of the spectrum gets the mean over its own edges [v_lo_i, v_hi_i]</span>
+<span class="sd">of F convolved with a Gaussian of the resolution *of that pixel*:</span>
+
+<span class="sd">    model_i = (1 / (v_hi_i - v_lo_i)) * integral over [v_lo_i, v_hi_i] of (F * G_i)(v) dv</span>
+<span class="sd">            = integral of F(v) K_i(v) dv / integral of K_i(v) dv,</span>
+<span class="sd">    K_i(v) = Phi((v_hi_i - v) / sigma_i) - Phi((v_lo_i - v) / sigma_i),</span>
+
+<span class="sd">with Phi the Gaussian cumulative distribution and</span>
+<span class="sd">sigma_i = c / R_i / (2 sqrt(2 ln 2)). On the fine samples F_j (step 2h)</span>
+<span class="sd">the integral is a sum with weights w_ij, normalised over j:</span>
+
+<span class="sd">- when the kernel is resolved (sigma_i at least one step), w_ij = K_i(v_j):</span>
+<span class="sd">  sampling a smooth kernel converges very fast (1e-8 of the continuum</span>
+<span class="sd">  against the analytic result for Gaussian lines);</span>
+<span class="sd">- without a resolution, or with sigma_i below one step, the kernel has</span>
+<span class="sd">  sharp edges and its samples would shift each pixel by up to h, depending</span>
+<span class="sd">  on how they fall within it (3e-3 of the continuum on a line with</span>
+<span class="sd">  b = 12 km/s). The flux is then taken constant over each cell</span>
+<span class="sd">  [v_j - h, v_j + h] and the weight is the exact integral of K_i over it,</span>
+
+<span class="sd">      w_ij = r(v_hi_i - v_j + h) - r(v_hi_i - v_j - h)</span>
+<span class="sd">             - r(v_lo_i - v_j + h) + r(v_lo_i - v_j - h),</span>
+
+<span class="sd">  with r(t) = sigma_i G(t / sigma_i), G(u) = u Phi(u) + phi(u); without a</span>
+<span class="sd">  resolution, the overlap of the cell with the pixel. The error is then</span>
+<span class="sd">  that of a midpoint rule, ~h^2/24 F'' (up to 3e-3 on a line with</span>
+<span class="sd">  b = 1 km/s).</span>
+
+<span class="sd">This replaces the convolution on the pixel grid with one kernel width for</span>
+<span class="sd">the whole window (taken at its median wavelength) and no integration over</span>
+<span class="sd">the pixel (findings register F10, F9).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndtr</span>
+
+<span class="n">C_KMS</span> <span class="o">=</span> <span class="mf">299792.458</span>
+<span class="n">FWHM_TO_SIGMA</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)))</span>
+
+<span class="c1">#: Fine step (#526, F9): half the instrumental sigma, so that the kernel</span>
+<span class="c1">#: is resolved, and a third of the b of the narrowest line in the pixels</span>
+<span class="c1">#: (within 1e-5 of the continuum against a mock with 60 sub-pixels, also</span>
+<span class="c1">#: on saturated lines; with b / 2, up to 4e-4), never below half the</span>
+<span class="c1">#: smallest b the fitter allows (1 km/s, ``voigt_model``; 2e-4 there) nor</span>
+<span class="c1">#: above the smallest pixel. Without a resolution, also OVERSAMPLE samples</span>
+<span class="c1">#: per pixel. Sampling at the pixels alone (before #526) was off by up to</span>
+<span class="c1">#: 6e-3 at R 45000 and 6e-2 at R 8900</span>
+<span class="n">SIGMA_SAMPLES</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">B_SAMPLES</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="n">MIN_STEP_KMS</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">OVERSAMPLE</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="c1">#: Pixels per block when the weights are not cached (whole spectra): the</span>
+<span class="c1">#: weights take n x K values, with K up to a few hundred samples per pixel</span>
+<span class="c1">#: (low resolution, narrow lines), ~10 MB per array with 2000 pixels</span>
+<span class="n">CHUNK</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="c1">#: The kernel is cut at this many sigma</span>
+<span class="n">KERNEL_SIGMAS</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ramp</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Integral of the Gaussian cumulative distribution:</span>
+<span class="sd">    sigma * G(t / sigma), G(u) = u Phi(u) + phi(u); max(t, 0) for</span>
+<span class="sd">    sigma = 0. The weight of a fine cell [v - h, v + h] for a pixel</span>
+<span class="sd">    [v_lo, v_hi] is a combination of four of these (see ``_weights``)."""</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="n">sigma</span>
+        <span class="n">smooth</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span> <span class="o">*</span> <span class="n">ndtr</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">u</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sigma</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">smooth</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="PixelLSF">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PixelLSF</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Fine grid and exact LSF convolution for a set of pixels.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xmin_ang, xmax_ang : np.ndarray</span>
+<span class="sd">        Edges of the pixels (Angstrom), increasing.</span>
+<span class="sd">    r_min, r_max : float, optional</span>
+<span class="sd">        Smallest and largest resolving power to be used: the fine grid</span>
+<span class="sd">        extends beyond the outer pixels by ``KERNEL_SIGMAS`` sigma of</span>
+<span class="sd">        ``r_min``, and its step follows the sigma of ``r_max``.</span>
+<span class="sd">    b_min : float, optional</span>
+<span class="sd">        Doppler parameter (km/s) of the narrowest line in the pixels.</span>
+<span class="sd">    cache : bool</span>
+<span class="sd">        Keep the weights of each resolution, for the many calls of a fit.</span>
+<span class="sd">        Without, the weights are computed at each call only for the pixels</span>
+<span class="sd">        that have absorption within the reach of their kernel (the others</span>
+<span class="sd">        are 1), for a model of the whole spectrum computed once.</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="PixelLSF.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmin_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">xmax_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">r_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">b_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">xmin_ang</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">xmax_ang</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lam_ref</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xmin</span> <span class="o">*</span> <span class="n">xmax</span><span class="p">)))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span> <span class="o">=</span> <span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">xmin</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lam_ref</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span> <span class="o">=</span> <span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">xmax</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lam_ref</span><span class="p">)</span>
+        <span class="n">widths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="n">widths</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">widths</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+        <span class="n">min_width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">good</span><span class="p">))</span> <span class="k">if</span> <span class="n">good</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_width</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">r_max</span> <span class="ow">and</span> <span class="n">r_max</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">C_KMS</span> <span class="o">/</span> <span class="n">r_max</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span> <span class="o">/</span> <span class="n">SIGMA_SAMPLES</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_width</span> <span class="o">/</span> <span class="n">OVERSAMPLE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">b_min</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">b_min</span> <span class="o">/</span> <span class="n">B_SAMPLES</span><span class="p">,</span> <span class="n">MIN_STEP_KMS</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dv</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+        <span class="n">sigma_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">C_KMS</span> <span class="o">/</span> <span class="n">r_min</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">r_min</span> <span class="ow">and</span> <span class="n">r_min</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">sigma_max</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">:</span>
+            <span class="n">v_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span><span class="p">)</span> <span class="o">-</span> <span class="n">margin</span>
+            <span class="n">v_end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span><span class="p">)</span> <span class="o">+</span> <span class="n">margin</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v_start</span> <span class="o">=</span> <span class="n">v_end</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">n_fine</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">v_end</span> <span class="o">-</span> <span class="n">v_start</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span> <span class="o">=</span> <span class="n">v_start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_fine</span><span class="p">)</span>
+        <span class="c1">#: Fine grid in Angstrom, on which the optical depth is computed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_fine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lam_ref</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span> <span class="o">/</span> <span class="n">C_KMS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_cache</span> <span class="o">=</span> <span class="n">cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sl</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Indices (n, K) into the fine grid and normalised weights, for</span>
+<span class="sd">        the pixels ``sl`` (slice or indices)."""</span>
+        <span class="n">v_lo</span><span class="p">,</span> <span class="n">v_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span>
+        <span class="n">reach</span> <span class="o">=</span> <span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">+</span> <span class="n">h</span>
+        <span class="n">j_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">,</span> <span class="n">v_lo</span> <span class="o">-</span> <span class="n">reach</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+        <span class="n">j_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">,</span> <span class="n">v_hi</span> <span class="o">+</span> <span class="n">reach</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">j_hi</span> <span class="o">-</span> <span class="n">j_lo</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_lo</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">j_lo</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">inside</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="n">j_hi</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="n">sigma</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">resolved</span> <span class="o">=</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">resolved</span><span class="p">):</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">resolved</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="n">resolved</span><span class="p">]</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ndtr</span><span class="p">((</span><span class="n">v_hi</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="n">r</span><span class="p">])</span> <span class="o">/</span> <span class="n">sr</span><span class="p">)</span> <span class="o">-</span> <span class="n">ndtr</span><span class="p">((</span><span class="n">v_lo</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="n">r</span><span class="p">])</span> <span class="o">/</span> <span class="n">sr</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">resolved</span><span class="p">):</span>
+            <span class="n">c</span><span class="p">,</span> <span class="n">sc</span> <span class="o">=</span> <span class="o">~</span><span class="n">resolved</span><span class="p">,</span> <span class="n">s</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">]</span>
+            <span class="n">vc</span><span class="p">,</span> <span class="n">lo_c</span><span class="p">,</span> <span class="n">hi_c</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">v_lo</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">v_hi</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_ramp</span><span class="p">(</span><span class="n">hi_c</span> <span class="o">-</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">sc</span><span class="p">)</span> <span class="o">-</span> <span class="n">_ramp</span><span class="p">(</span><span class="n">hi_c</span> <span class="o">-</span> <span class="n">vc</span> <span class="o">-</span> <span class="n">h</span><span class="p">,</span> <span class="n">sc</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="n">_ramp</span><span class="p">(</span><span class="n">lo_c</span> <span class="o">-</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">sc</span><span class="p">)</span> <span class="o">+</span> <span class="n">_ramp</span><span class="p">(</span><span class="n">lo_c</span> <span class="o">-</span> <span class="n">vc</span> <span class="o">-</span> <span class="n">h</span><span class="p">,</span> <span class="n">sc</span><span class="p">))</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">inside</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># A pixel outside the fine grid (it should not happen) takes the</span>
+        <span class="c1"># nearest sample</span>
+        <span class="n">empty</span> <span class="o">=</span> <span class="n">norm</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">empty</span><span class="p">):</span>
+            <span class="n">centre</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">v_lo</span><span class="p">[</span><span class="n">empty</span><span class="p">]</span> <span class="o">+</span> <span class="n">v_hi</span><span class="p">[</span><span class="n">empty</span><span class="p">])</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">,</span> <span class="n">centre</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">idx</span><span class="p">[</span><span class="n">empty</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">empty</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">empty</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">norm</span><span class="p">[</span><span class="n">empty</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">w</span> <span class="o">/</span> <span class="n">norm</span>
+
+<div class="viewcode-block" id="PixelLSF.apply">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flux_fine</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+              <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Flux of each pixel: the fine flux convolved with the LSF of the</span>
+<span class="sd">        pixel (resolving power ``resol``, scalar or one per pixel; None or</span>
+<span class="sd">        NaN for no LSF) and averaged over the pixel. The weights are cached</span>
+<span class="sd">        under ``key`` (the resolution itself if scalar or None), unless the</span>
+<span class="sd">        pixels are more than ``CHUNK``."""</span>
+        <span class="k">if</span> <span class="n">resol</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">'none'</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">key</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">key</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="n">C_KMS</span> <span class="o">/</span> <span class="n">r</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_absorbed</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span> <span class="o">&gt;</span> <span class="n">CHUNK</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">,</span> <span class="n">CHUNK</span><span class="p">):</span>
+                <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">CHUNK</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">))</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">(</span><span class="n">sigma</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">sl</span><span class="p">)</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">out</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="n">idx</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_absorbed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flux_fine</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""As ``apply``, without cache: only the pixels with absorption</span>
+<span class="sd">        (fine flux below 1) within the reach of their kernel are computed;</span>
+<span class="sd">        the others are exactly 1."""</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">)</span>
+        <span class="n">absorbed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">flux_fine</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">absorbed</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">out</span>
+        <span class="n">reach</span> <span class="o">=</span> <span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span>
+        <span class="n">j_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span> <span class="o">-</span> <span class="n">reach</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+        <span class="n">j_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_fine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span> <span class="o">+</span> <span class="n">reach</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
+        <span class="n">pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">absorbed</span><span class="p">[</span><span class="n">j_hi</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">absorbed</span><span class="p">[</span><span class="n">j_lo</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pix</span><span class="p">),</span> <span class="n">CHUNK</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">pix</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">CHUNK</span><span class="p">]</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">(</span><span class="n">sigma</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

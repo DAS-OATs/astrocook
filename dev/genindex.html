@@ -447,6 +447,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -496,6 +497,8 @@
 </li>
         <li><a href="api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.__init__">(astrocook.fitting.bayesian_fitter.BayesianVoigtFitter method)</a>
 </li>
+        <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF.__init__">(astrocook.fitting.lsf.PixelLSF method)</a>
+</li>
         <li><a href="api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__">(astrocook.fitting.voigt_fitter.VoigtFitterV2 method)</a>
 </li>
         <li><a href="api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2.__init__">(astrocook.fitting.voigt_model.VoigtModelConstraintV2 method)</a>
@@ -538,6 +541,8 @@
       <li><a href="api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.add_linked_system">add_linked_system() (astrocook.recipes.absorbers.RecipeAbsorbersV2 method)</a>
 </li>
       <li><a href="api/astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.amplitude">amplitude (astrocook.mocks.truth.EmissionLine attribute)</a>
+</li>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF.apply">apply() (astrocook.fitting.lsf.PixelLSF method)</a>
 </li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.apply_expression">apply_expression() (astrocook.core.spectrum.SpectrumV2 method)</a>
 
@@ -621,6 +626,13 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    astrocook.fitting.lsf
+
+      <ul>
+        <li><a href="api/astrocook.fitting.lsf.html#module-astrocook.fitting.lsf">module</a>
+</li>
+      </ul></li>
       <li>
     astrocook.fitting.voigt_fitter
 
@@ -764,6 +776,8 @@
       <li><a href="api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">calibrate_from_magnitudes() (astrocook.recipes.flux.RecipeFluxV2 method)</a>
 </li>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2.chi2">chi2 (astrocook.core.structures.ComponentDataV2 attribute)</a>
+</li>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.CHUNK">CHUNK (in module astrocook.fitting.lsf)</a>
 </li>
       <li><a href="api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.clean_negligible">clean_negligible() (astrocook.recipes.absorbers.RecipeAbsorbersV2 method)</a>
 </li>
@@ -1034,6 +1048,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.KERNEL_SIGMAS">KERNEL_SIGMAS (in module astrocook.fitting.lsf)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1153,6 +1175,8 @@
 </li>
         <li><a href="api/astrocook.fitting.bayesian_fitter.html#module-astrocook.fitting.bayesian_fitter">astrocook.fitting.bayesian_fitter</a>
 </li>
+        <li><a href="api/astrocook.fitting.lsf.html#module-astrocook.fitting.lsf">astrocook.fitting.lsf</a>
+</li>
         <li><a href="api/astrocook.fitting.voigt_fitter.html#module-astrocook.fitting.voigt_fitter">astrocook.fitting.voigt_fitter</a>
 </li>
         <li><a href="api/astrocook.fitting.voigt_model.html#module-astrocook.fitting.voigt_model">astrocook.fitting.voigt_model</a>
@@ -1238,14 +1262,16 @@
 </li>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.LogEntryV2.params">params (astrocook.core.structures.LogEntryV2 attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.SystemListDataV2.parsed_constraints">parsed_constraints (astrocook.core.structures.SystemListDataV2 attribute)</a>
 
       <ul>
         <li><a href="api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.parsed_constraints">(astrocook.core.system_list.SystemListV2 property)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF">PixelLSF (class in astrocook.fitting.lsf)</a>
+</li>
       <li><a href="api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification">populate_from_identification() (astrocook.recipes.absorbers.RecipeAbsorbersV2 method)</a>
 </li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.prepare_expression_context">prepare_expression_context() (astrocook.core.spectrum.SpectrumV2 method)</a>
@@ -1366,6 +1392,8 @@
 </li>
       <li><a href="api/astrocook.mocks.physics.html#astrocook.mocks.physics.SIGMA_LYMAN_LIMIT">SIGMA_LYMAN_LIMIT (in module astrocook.mocks.physics)</a>
 </li>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.SIGMA_SAMPLES">SIGMA_SAMPLES (in module astrocook.fitting.lsf)</a>
+</li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth">smooth() (astrocook.core.spectrum.SpectrumV2 method)</a>
 
       <ul>
@@ -1429,6 +1457,8 @@
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.TableAdapterV2">TableAdapterV2 (class in astrocook.core.spectrum)</a>
 </li>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2.target_uuid">target_uuid (astrocook.core.structures.ParameterConstraintV2 attribute)</a>
+</li>
+      <li><a href="api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.TAU_CUT">TAU_CUT (in module astrocook.fitting.voigt_fitter)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1562,6 +1592,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/astrocook.fitting.lsf.html#astrocook.fitting.lsf.PixelLSF.x_fine">x_fine (astrocook.fitting.lsf.PixelLSF attribute)</a>
+</li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.xmax">xmax (astrocook.core.spectrum.SpectrumV2 property)</a>
 
       <ul>

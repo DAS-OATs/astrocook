@@ -57,7 +57,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="astrocook.fitting.voigt_model module" href="astrocook.fitting.voigt_model.html" />
-    <link rel="prev" title="astrocook.fitting.bayesian_fitter module" href="astrocook.fitting.bayesian_fitter.html" />
+    <link rel="prev" title="astrocook.fitting.lsf module" href="astrocook.fitting.lsf.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
@@ -454,6 +454,7 @@
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.fitting.html">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.bayesian_fitter.html">astrocook.fitting.bayesian_fitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.lsf.html">astrocook.fitting.lsf module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.fitting.voigt_fitter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
 </ul>
@@ -533,6 +534,12 @@
                   
   <section id="module-astrocook.fitting.voigt_fitter">
 <span id="astrocook-fitting-voigt-fitter-module"></span><h1>astrocook.fitting.voigt_fitter module<a class="headerlink" href="#module-astrocook.fitting.voigt_fitter" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.TAU_CUT">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">TAU_CUT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-06</span></span><a class="headerlink" href="#astrocook.fitting.voigt_fitter.TAU_CUT" title="Link to this definition">#</a></dt>
+<dd><p>A line is evaluated only where its optical depth exceeds this (#526)</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.convolve_flux">
 <span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">convolve_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'R'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/voigt_fitter.html#convolve_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.convolve_flux" title="Link to this definition">#</a></dt>
@@ -718,12 +725,12 @@ system list, without performing any fitting/optimization.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="astrocook.fitting.bayesian_fitter.html"
+       href="astrocook.fitting.lsf.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">astrocook.fitting.bayesian_fitter module</p>
+        <p class="prev-next-title">astrocook.fitting.lsf module</p>
       </div>
     </a>
     <a class="right-next"
@@ -754,6 +761,7 @@ system list, without performing any fitting/optimization.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.TAU_CUT"><code class="docutils literal notranslate"><span class="pre">TAU_CUT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.convolve_flux"><code class="docutils literal notranslate"><span class="pre">convolve_flux()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.__init__()</span></code></a></li>
