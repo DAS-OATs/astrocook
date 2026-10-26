@@ -243,6 +243,9 @@ def v1_civ_wavelengths(monkeypatch):
     ("CIV", 2.97, 13.6, 12.0, 1e-3),
     # V1 uses f = 0.416 for Ly-alpha, V2 0.4164: 0.1% more absorption in V2
     ("Ly_a", 4.059, 13.8, 25.0, 2e-3),
+    # A damped Ly-alpha: before F61 the damping parameter of V2 was (1 + z)
+    # too large and the equivalent width 1.6 times that of V1
+    ("Ly_a", 4.059, 20.3, 20.0, 2e-3),
 ])
 def test_voigt_model(series, z, logN, b, ew_rtol, resol, v1_civ_wavelengths):
     # Same physics: the models agree within 5e-4 in normalised flux. A

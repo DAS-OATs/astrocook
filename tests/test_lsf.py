@@ -104,9 +104,8 @@ def _model(spec):
 
 
 # Before #526 the model of these mocks was off by up to 5.9e-3 (R 45000)
-# and 5.7e-2 (R 8900, flat or varying). What is left (1.3e-3 to 1.8e-3) is
-# the damping parameter of the fitter, (1 + z) too large (F61): with the
-# rest wavelength the model is within 3e-5
+# and 5.7e-2 (R 8900, flat or varying); with #526 but before F61 (damping
+# parameter (1 + z) too large), by 1.3e-3 to 1.8e-3. Now within 3e-5
 @pytest.mark.parametrize("resol_at", [
     lambda x: np.full(len(x), 45000.0),
     lambda x: np.full(len(x), 8900.0),
@@ -115,4 +114,4 @@ def _model(spec):
 def test_fitter_model_matches_the_exact_flux(resol_at):
     r_mid = resol_at(np.array([620.0]))[0]
     spec, truth = _mock(resol_at, C_KMS / r_mid / 2.5)
-    np.testing.assert_allclose(_model(spec), truth, atol=3e-3)
+    np.testing.assert_allclose(_model(spec), truth, atol=1e-4)
