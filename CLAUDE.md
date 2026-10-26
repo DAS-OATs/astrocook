@@ -203,16 +203,13 @@ parameter, #605), #518 (fit window in the System Inspector, #606),
 #568 (single table of atomic data with sources, #607-#609, docs page
 "Atomic Data"), F49 (one candidate per doublet, #611), F55
 (candidates within 3000 km/s of z_em, #612), F50 (the pipelines keep
-the mask of the user, #613), #465 (robust automatic continuum, #614).
-In progress: #526 (resolution as a single column; PRs 1-2 merged, #615-#616; PR 3, exact convolution, in review; found F61, the damping parameter (1 + z) too large, to be fixed in its own PR after #526 PR 3). Work in
+the mask of the user, #613), #465 (robust automatic continuum, #614),
+F14 (blend threshold of the grouping from the instrumental FWHM, k = 1,
+#618; developed in parallel with #526 PR 3, a one-off exception agreed
+with Guido).
+In progress: #526 (resolution as a single column; PRs 1-3 merged, #615-#617; PR 4, cleanup, to do; found F61, the damping parameter (1 + z) too large, to be fixed in its own PR after #526 PR 3). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
-Temporary exception (agreed with Guido, October 2026): F14 (blend
-threshold of the grouping from the instrumental FWHM) is developed in
-parallel with PR 3 of #526, on its own branch; the conflicts between the
-two (status in `CLAUDE.md` and `ROADMAP.md`, benchmark to be measured
-again on the merged code) are resolved when both are finished. The rule
-of one PR at a time applies again after them.
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;
