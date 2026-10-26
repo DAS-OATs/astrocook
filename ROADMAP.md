@@ -808,6 +808,37 @@ does not touch the results:
   (`loc="best"`) and the ticks, ~1-3 s between the main and the velocity
   plot.
 
+**GUI look and ergonomics** (review asked by Guido, October 2026, on
+screenshots taken offscreen). Done, ahead of the phase (GUI only, no
+numerical change): the session list and the plot controls are floating
+cards, as tall as their contents and anchored below the menu bar, that
+fade out while the mouse is on the plot; their tabs (a list icon and a
+cog) sit just outside the cards' edges. The panels keep floating over the
+plot instead of shrinking it, because a narrower plot changes the aspect
+of the spectrum (Guido's decision); a card as tall as its contents, the
+fading, and the anchoring at the top (the controls do not move under the
+mouse when a section opens) reduce what they cover. The sections of the
+plot controls are collapsible, with their state remembered; while Plot
+Elements is open its checkboxes show the plotted styles and those entries
+leave the matplotlib legend, which used to show through the panel. Two
+columns were considered and rejected: a wider card covers more of the
+plot. Proposals of the review still open, to be agreed with Guido:
+- a status bar (cursor position, outcome of the last recipe) and
+  keyboard navigation in the System Inspector;
+- the System Inspector shows empty panels without saying why when the
+  session has no continuum;
+- typed widgets in the recipe dialogs (spin boxes, column combos, a
+  selector of transitions) and short labels with the long text in the
+  tooltip: with phase 6-bis;
+- one theme module instead of colours written in a dozen stylesheets
+  (dark mode on macOS);
+- the menus: *Smooth Column* (Edit) and *Smooth Spectrum* (Flux),
+  *Import Systems* in Edit instead of Absorbers, the View toggles as
+  checkable entries; recent files and the window geometry not saved;
+- the main plot: the 1-sigma error is drawn as a line by default although
+  a comment in the code says band (to be decided), the HI ticks are a
+  saturated red block, the title repeats the window title.
+
 ### Phase 6 – Error handling
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.

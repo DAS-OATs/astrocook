@@ -26,6 +26,14 @@ from astrocook.core.spectrum_operations import convert_axis_velocity
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2 
 
+# Legend entries shown as swatches in the plot controls of the main window:
+# while those are open they are left out of the legend, which would
+# otherwise show through them
+PANEL_LEGEND_LABELS = {
+    'Spectrum', 'Spectrum (decimated)', '1-sigma error', 'bin size',
+    'Normalization', 'Absorption model', 'HI Systems', 'Metal Systems',
+}
+
 # Keys must match exactly what is in xem_d (core/atomic_data.py)
 STRONG_EMISSION_LINES = {
     'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 
@@ -1234,7 +1242,23 @@ class SpectrumPlotWidget(QWidget):
 
             # 4. Final Touches
             if ax.has_data(): # Only add legend if something was plotted
-                ax.legend(loc=legend_loc, markerscale=0.2) # Smaller legend font
+                handles, labels = ax.get_legend_handles_labels()
+                panel_open = False
+                try:
+                    self.main_window.update_plot_swatches(dict(zip(labels, handles)))
+                    panel_open = (self.main_window.right_sidebar_widget.width() > 1
+                                  and self.main_window.plot_elements_section.isExpanded())
+                except AttributeError:
+                    pass  # No main window controls (e.g. in tests)
+                if panel_open:
+                    # The plot controls show these entries as swatches
+                    # (when their Plot Elements section is open)
+                    kept = [(h, lab) for h, lab in zip(handles, labels)
+                            if lab not in PANEL_LEGEND_LABELS]
+                    handles = [h for h, _ in kept]
+                    labels = [lab for _, lab in kept]
+                if handles:
+                    ax.legend(handles, labels, loc=legend_loc, markerscale=0.2) # Smaller legend font
             ax.set_title(f"Spectrum: {session_state.name}")
             
             # 1. Scales (Log/Linear)
