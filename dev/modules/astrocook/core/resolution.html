@@ -677,6 +677,19 @@
                      <span class="n">n_cleared</span><span class="p">,</span> <span class="n">n_converted</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">systs</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">components</span><span class="p">))</span></div>
 
+
+
+<div class="viewcode-block" id="resolution_summary">
+<a class="viewcode-back" href="../../../api/astrocook.core.resolution.html#astrocook.core.resolution.resolution_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolution_summary</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Median resolving power of a spectrum (0.0 if unknown) and whether it</span>
+<span class="sd">    varies with wavelength, for displays and checks."""</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">r</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">r</span><span class="p">)),</span> <span class="nb">bool</span><span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">))</span></div>
+
 </pre></div>
 
                 </article>
