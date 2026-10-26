@@ -664,6 +664,13 @@ wrong by 0.2-0.7 Å, from a slip in the conversion from nm to Å.</p></li>
 <li><p>The wavelength of Al II 1670 was 0.2 km/s off.</p></li>
 <li><p>The damping constant of C I 1560 was 1.17e8 s⁻¹ instead of 1.27e8.</p></li>
 <li><p>[Ne III] 3869 and [Ne V] 3346 were given in air instead of vacuum.</p></li>
+<li><p>Not in the table, but in its use: the Voigt fit and the System Inspector
+computed the damping parameter of the profile with the observed
+wavelength of the line, a = γ λ (1 + z) / (4π b), instead of the rest
+one, a = γ λ / (4π b). The damping wings were (1 + z) times too strong,
+and a column density measured from them (damped Ly-α systems, Lyman-limit
+systems) came out too low by up to log(1 + z), 0.6 dex at z = 3. Astrocook
+1 and the mock spectra used the rest wavelength.</p></li>
 <li><p>The table listed a Ti II line at 3066.35 Å that no reference lists. It is
 kept with <code class="docutils literal notranslate"><span class="pre">f</span> <span class="pre">=</span> <span class="pre">0</span></code>, so that sessions naming it still open, and the real
 Ti II 3067.24 Å line is added.</p></li>
