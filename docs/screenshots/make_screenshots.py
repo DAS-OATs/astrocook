@@ -10,9 +10,11 @@ so the images can be rebuilt after every change of the interface:
     python docs/screenshots/make_screenshots.py --only continuum_auto
     python docs/screenshots/make_screenshots.py --list
 
-The spectra ("My QSO" and "My other QSO") are read from ``--data``
-(default ``docs/screenshots/data``, not in the repository; ``--download``
-fetches them); see ``docs/screenshots/README.md``. Windows get a neutral frame (title bar,
+The spectra ("My QSO" and "My other QSO") are private: they live in the
+private repository DAS-OATs/astrocook-data, folder ``screenshots``. The
+script reads them from ``--data``, or from ``$ASTROCOOK_DATA/screenshots``
+(the clone of that repository), or from ``docs/screenshots/data`` (ignored
+by git); see ``docs/screenshots/README.md``. Windows get a neutral frame (title bar,
 rounded corners, shadow) and the mouse pointer is drawn where a scene
 puts it: the offscreen platform has neither.
 
@@ -27,7 +29,6 @@ import shutil
 import sys
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 
 # The platform, the scale and the settings must be fixed before Qt starts.
@@ -55,12 +56,12 @@ TITLE_BAR = 28                  # logical height of the drawn title bar
 RADIUS = 10                     # logical radius of the window corners
 SHADOW = 24                     # logical margin left for the shadow
 HERE = Path(__file__).resolve().parent
-DEFAULT_DATA = HERE / "data"
+# Where the private spectra are looked for when --data is not given
+DATA_ENV = "ASTROCOOK_DATA"
+LOCAL_DATA = HERE / "data"
 DEFAULT_OUT = HERE.parent / "_static"
 SESSIONS = ("My QSO", "My other QSO")
-# The spectra are assets of a pre-release, downloaded on the first run.
 # The session takes the name of the file: underscores become spaces.
-DATA_RELEASE = "https://github.com/DAS-OATs/astrocook/releases/download/data-docs-2026"
 # Properties of "My QSO", as set in the tutorial on session properties
 Z_EM = 2.730
 RESOL = 135000
@@ -196,15 +197,10 @@ def data_file(name):
     return name.replace(" ", "_") + ".acs2"
 
 
-def download(data_dir: Path):
-    """Fetch the spectra that are not in the data folder yet."""
-    data_dir.mkdir(parents=True, exist_ok=True)
-    for name in SESSIONS:
-        path = data_dir / data_file(name)
-        if not path.exists():
-            url = f"{DATA_RELEASE}/{data_file(name)}"
-            print(f"Downloading {url}")
-            urllib.request.urlretrieve(url, path)
+def default_data_dir() -> Path:
+    """The clone of the private data repository, else the local folder."""
+    root = os.environ.get(DATA_ENV)
+    return Path(root) / "screenshots" if root else LOCAL_DATA
 
 
 # --- The GUI ----------------------------------------------------------------
@@ -264,7 +260,7 @@ class Studio:
         if not target.exists():
             source = self.data_dir / data_file(name)
             if not source.exists():
-                raise FileNotFoundError(f"{source}: run with --download, "
+                raise FileNotFoundError(f"{source}: the spectra are private, "
                                         "see docs/screenshots/README.md")
             shutil.copyfile(source, target)
         return target
@@ -723,13 +719,12 @@ def absorbers_linking(s: Studio):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--data", type=Path, default=DEFAULT_DATA,
-                        help="folder with 'My QSO.acs2' and 'My other QSO.acs2'")
+    parser.add_argument("--data", type=Path, default=None,
+                        help="folder with My_QSO.acs2 and My_other_QSO.acs2 "
+                             f"(default: ${DATA_ENV}/screenshots, else {LOCAL_DATA})")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output folder")
     parser.add_argument("--only", nargs="+", metavar="SCENE", help="scenes to make")
     parser.add_argument("--list", action="store_true", help="list the scenes")
-    parser.add_argument("--download", action="store_true",
-                        help="download the spectra missing from --data")
     args = parser.parse_args(argv)
     if args.list:
         print("\n".join(SCENES))
@@ -738,9 +733,7 @@ def main(argv=None):
     unknown = [n for n in names if n not in SCENES]
     if unknown:
         parser.error(f"unknown scenes: {', '.join(unknown)}")
-    if args.download:
-        download(args.data)
-    studio = Studio(args.data)
+    studio = Studio(args.data or default_data_dir())
     args.out.mkdir(parents=True, exist_ok=True)
     for name in names:
         start = time.time()

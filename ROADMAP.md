@@ -813,7 +813,8 @@ images of the tutorials are rebuilt by a script,
 `docs/screenshots/make_screenshots.py`, which runs the real GUI offscreen at
 twice the logical resolution, one *scene* per image (spectra, recipes, view,
 menus and dialogs, crop), on two spectra provided by Guido ("My QSO", "My
-other QSO", assets of the pre-release `data-docs-2026`). The images no
+other QSO", kept private in the repository `DAS-OATs/astrocook-data`,
+which can also hold the other data that cannot be published). The images no
 longer need to be taken by hand on the Mac after each change of the GUI;
 `tests/test_screenshots.py` runs two scenes in CI, so a change of the GUI
 that breaks the script shows up in its pull request. Writing the scenes

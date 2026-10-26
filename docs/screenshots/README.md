@@ -6,7 +6,7 @@ Rebuild them after a change of the interface, look at every image, and
 commit the ones that changed.
 
 ```bash
-python docs/screenshots/make_screenshots.py --download   # all scenes, ~4 min
+python docs/screenshots/make_screenshots.py              # all scenes, ~4 min
 python docs/screenshots/make_screenshots.py --only continuum_auto flux_smooth
 python docs/screenshots/make_screenshots.py --list
 ```
@@ -16,11 +16,18 @@ python docs/screenshots/make_screenshots.py --list
 Two spectra, anonymised as "My QSO" and "My other QSO" (provided by Guido,
 October 2026; rebuilt with only the spectrum columns, x to resol, and a
 minimal header: no coordinates, dates, archive identifiers or earlier
-analysis), are kept out of the repository as assets of the GitHub
-pre-release `data-docs-2026`: `My_QSO.acs2` and `My_other_QSO.acs2`.
-`--download` fetches the missing ones into `docs/screenshots/data/`
-(ignored by git); `--data` reads them from another folder. The session takes
-the name of the file, with spaces for the underscores.
+analysis). They are **private**: they are kept in the private repository
+`DAS-OATs/astrocook-data`, folder `screenshots/` (`My_QSO.acs2`,
+`My_other_QSO.acs2`), not in this one. The script looks for them in
+
+1. the folder given with `--data`;
+2. `$ASTROCOOK_DATA/screenshots`, where `ASTROCOOK_DATA` is the clone of
+   `astrocook-data`;
+3. `docs/screenshots/data/` (ignored by git).
+
+The session takes the name of the file, with spaces for the underscores.
+Only the images are public; the CI does not need the spectra (its smoke test
+runs on a test archive of this repository).
 
 They are raw spectra: the scenes set the properties of "My QSO"
 (z_em = 2.730, R = 135000), estimate the continuum and run the pipelines
