@@ -21,10 +21,12 @@ If you are analyzing a high-redshift quasar ($z > 2$):
 1.  Ensure your [Emission Redshift is set](#editing-properties) correctly.
 2.  Go to **Absorbers > Auto-fit Ly-alpha Forest...**.
 3.  **Threshold:** The default score (`0.1`) is usually fine.
-4.  **Min b:** The minimum Doppler parameter (e.g., `10` km/s) helps filter out noise spikes or unphysically narrow lines (interlopers).
+4.  **Min b:** The minimum Doppler parameter (e.g., `10` km/s) helps filter out noise spikes or unphysically narrow lines (interlopers). The Ly-alpha lines narrower than this are removed after the fit and the rest is fitted again; the lines that the last fit leaves below **Min b** are removed too, so none is left in the result.
 5.  Click **Run**.
 
 This pipeline focuses on the region between the Ly$\beta$ and Ly$\alpha$ emission lines.
+
+All the automatic pipelines remove the components that end at the lower bound of the column density (logN = 10): they absorb nothing measurable. The components that end at another bound of the fit are kept, with a warning (see the flags of the components).
 
 ### Metal Doublets
 For finding distinct metal systems (CIV, SiIV, MgII) redward of the Ly$\alpha$ emission:

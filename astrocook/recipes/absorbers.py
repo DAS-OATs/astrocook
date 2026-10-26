@@ -273,6 +273,41 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
 }
 
+#: Rounds of "remove the Ly-a narrower than min_b, refit the rest" in
+#: lya_auto (#517, F21, agreed with Guido): the refit can narrow other
+#: lines below min_b, so the filter runs again after it, with one more
+#: refit; what is still below min_b after the last refit is removed
+#: without a refit. Before, the filter ran once, before the last refit,
+#: and 39 Ly-a with b < 10 km/s were left on J0103-1305
+MIN_B_ROUNDS = 2
+
+
+def _without_components(session, uuids):
+    """The session without the components ``uuids`` (and the constraints
+    on them), with the model recomputed from the remaining ones."""
+    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    systs = session.systs.delete_component(uuids=list(uuids))
+    session = session.with_new_system_list(systs)
+    if systs.components:
+        _, model_flux = VoigtFitterV2(session.spec, systs).compute_model_flux()
+        session = session.with_new_spectrum(session.spec.update_model(model_flux))
+    return session
+
+
+def _drop_negligible(session):
+    """The automatic pipelines remove the components that end at the lower
+    bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb
+    nothing measurable, and were 12 of the forest of J0103-1305 (F21)."""
+    if not session or not session.systs:
+        return session
+    uuids = [c.uuid for c in session.systs.components if 'logN_at_lower_bound' in c.flags]
+    if not uuids:
+        return session
+    logging.info(f"Removed {len(uuids)} component{'s' if len(uuids) > 1 else ''} "
+                 "at the lower bound of logN (negligible).")
+    return _without_components(session, uuids)
+
+
 def _log_flags(components) -> None:
     """Log how many of the fitted ``components`` have flags (#517): a
     parameter at a bound of the fit, or uncertainties not computed."""
@@ -530,6 +565,7 @@ class RecipeAbsorbersV2:
 
         if self._is_stop_requested(): return self._session
         
+        final_session = _drop_negligible(final_session)
         logging.info("Component pipeline complete.")
         return with_kept_mask(final_session)
 
@@ -617,39 +653,43 @@ class RecipeAbsorbersV2:
         )
         if self._is_stop_requested(): return self._session
         
-        # 2. Cleanup Phase (Interlopers)
+        # 2. Cleanup Phase (Interlopers): the Ly-a narrower than min_b are
+        # removed and the rest refitted, MIN_B_ROUNDS times; those still
+        # narrower after the last refit are removed without a refit (#517)
         logging.info(">> PROGRESS: 0")
         logging.info("Analysing line shapes to remove interlopers...")
         
         try:
             min_b_val = float(min_b)
-            
-            # Use new Core method
-            # Logic: Keep if (NOT Ly_a) OR (Ly_a AND b >= min_b)
-            condition = lambda c: (c.series != 'Ly_a') or (c.b >= min_b_val)
-            
-            if final_session.systs:
-                new_systs = final_session.systs.filter_by_criteria(condition)
-                
-                # Check if components were actually removed
-                if len(new_systs.components) < len(final_session.systs.components):
-                     logging.info("Refining fit after removing narrow lines...")
-                     
-                     # Update session with filtered list
-                     final_session = final_session.with_new_system_list(new_systs)
-                     
-                     # Refit
-                     rec_polish = RecipeAbsorbersV2(final_session)
-                     final_session = rec_polish.refit_all(
-                        max_nfev='200',
-                        z_window_kms=z_window_kms,
-                        group_depth='1',
-                        max_group_size='25',
-                        max_b=max_b,
-                        max_logN=max_logN
-                     )
-                else:
-                     logging.info("No interlopers found. Clean.")
+
+            def narrow(session):
+                return [c.uuid for c in session.systs.components
+                        if c.series == 'Ly_a' and c.b < min_b_val] if session.systs else []
+
+            for _ in range(MIN_B_ROUNDS):
+                uuids = narrow(final_session)
+                if not uuids:
+                    break
+                logging.info(f"Refining fit after removing {len(uuids)} narrow lines...")
+                trimmed = final_session.with_new_system_list(
+                    final_session.systs.delete_component(uuids=uuids))
+                refitted = RecipeAbsorbersV2(trimmed).refit_all(
+                    max_nfev='200',
+                    z_window_kms=z_window_kms,
+                    group_depth='1',
+                    max_group_size='25',
+                    max_b=max_b,
+                    max_logN=max_logN
+                )
+                if refitted == 0:
+                    final_session = _without_components(final_session, uuids)
+                    break
+                final_session = refitted
+            uuids = narrow(final_session)
+            if uuids:
+                logging.info(f"Removed {len(uuids)} narrow lines left by the last refit.")
+                final_session = _without_components(final_session, uuids)
+            final_session = _drop_negligible(final_session)
 
         except Exception as e:
             logging.warning(f"lya_auto cleanup failed: {e}", exc_info=True)
@@ -725,9 +765,10 @@ class RecipeAbsorbersV2:
         # 4. Refit All
         rec_step3 = RecipeAbsorbersV2(session_step2)
         # max_nfev as before the defaults were aligned with the GUI (#573)
-        return rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1',
-                                   max_nfev='100', max_b=max_b,
-                                   max_logN=max_logN)
+        fitted = rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1',
+                                     max_nfev='100', max_b=max_b,
+                                     max_logN=max_logN)
+        return _drop_negligible(fitted) if fitted != 0 else fitted
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0",
