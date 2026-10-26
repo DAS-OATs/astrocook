@@ -209,7 +209,8 @@ F14 (blend threshold of the grouping from the instrumental FWHM, k = 1,
 with Guido), F61 (damping parameter (1 + z) too large, found in #617,
 #619), F62 (runaway logN in the automatic forest fits: `max_logN` = 19 in the pipelines, Guido's decision, #624).
 #526 (resolution as a single column and exact convolution, #615-#617, #625).
-In progress: #623 (refit of old sessions with pixel edges without a unit, a regression of #617), then #517. Work in
+#623 (refit of old sessions with pixel edges without a unit, a regression of #617, #626).
+In progress: #517 in three PRs (agreed with Guido): flags on the components (PR 1), cleanup of the pipeline output (PR 2: `min_b` after the last refit, components at logN 10 removed, those at b 1 km/s only flagged), GUI cues and "Select flagged" (PR 3: amber for the bounds, red for the NaN errors). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

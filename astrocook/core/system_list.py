@@ -143,6 +143,20 @@ def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: d
     return False
 
 # --- 3. System List API Layer (The orchestrator) ---
+#: Parameters whose change clears the flags of the last fit (#517)
+_FITTED_PARAMETERS = {'z', 'logN', 'b', 'btur'}
+
+
+def _valid_changes(comp, changes: dict) -> dict:
+    """The changes that apply to a component; editing a fitted parameter
+    clears the flags left by the last fit (#517), unless they are set too."""
+    valid_fields = {f.name for f in dataclasses.fields(comp)}
+    out = {k: v for k, v in changes.items() if k in valid_fields}
+    if _FITTED_PARAMETERS & out.keys() and 'flags' not in out:
+        out['flags'] = ()
+    return out
+
+
 class SystemListV2:
     """
     API layer for managing component lists, constraints, and fitting.
@@ -561,9 +575,7 @@ class SystemListV2:
         found = False
         for c in self.components:
             if c.uuid == uuid:
-                valid_fields = {f.name for f in dataclasses.fields(c)}
-                filtered_changes = {k: v for k, v in changes.items() if k in valid_fields}
-                new_c = dataclasses.replace(c, **filtered_changes)
+                new_c = dataclasses.replace(c, **_valid_changes(c, changes))
                 new_components.append(new_c)
                 found = True
             else:
@@ -606,9 +618,7 @@ class SystemListV2:
         for c in self.components:
             if c.uuid in target_uuids:
                 # Apply changes only to valid fields
-                valid_fields = {f.name for f in dataclasses.fields(c)}
-                filtered_changes = {k: v for k, v in changes.items() if k in valid_fields}
-                new_c = dataclasses.replace(c, **filtered_changes)
+                new_c = dataclasses.replace(c, **_valid_changes(c, changes))
                 new_components.append(new_c)
             else:
                 new_components.append(c)

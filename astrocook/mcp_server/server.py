@@ -271,7 +271,7 @@ def build_server() -> MCPServer:
             state, warnings = run(session_id, "absorbers", "doublets_auto",
                                   params)
             return FitInfo(**info(session_id, warnings).model_dump(),
-                           fit=fit_summary(before, state, max_b, max_listed, max_logN))
+                           fit=fit_summary(before, state, max_listed))
 
     return server
 

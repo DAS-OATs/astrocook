@@ -255,6 +255,11 @@ class ComponentDataV2:
     """ Reduced Chi-Squared of the fit group this component belongs to. """
     resol: Optional[float] = None # Resolution used for the fit
     """ Resolution used for the fit. """
+    flags: Tuple[str, ...] = ()
+    """ Warnings left by the last fit of the component (#517), see
+    :data:`astrocook.fitting.voigt_fitter.COMPONENT_FLAGS`: a parameter
+    ended at a bound of the fit, or the uncertainties could not be
+    computed. Cleared when a parameter is edited. """
 
     # V2 IDENTIFIER: Stable, Global, Immutable
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()))
