@@ -9,9 +9,28 @@ import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+from astrocook.fitting.lsf import PixelLSF
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import ComponentDataV2
 from astrocook.core.system_list import SystemListV2
+
+#: A line is evaluated only where its optical depth exceeds this (#526)
+TAU_CUT = 1e-6
+
+
+def _transitions(series: str) -> List[str]:
+    """Transitions of a series in the atomic data (multiplet, single line
+    or comma-separated list)."""
+    if series in STANDARD_MULTIPLETS:
+        names = STANDARD_MULTIPLETS[series]
+    elif series in ATOM_DATA:
+        names = [series]
+    elif ',' in series:
+        names = series.split(',')
+    else:
+        names = []
+    return [n.strip() for n in names if ATOM_DATA.get(n.strip())]
+
 
 def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
     r"""
@@ -138,6 +157,11 @@ class VoigtFitterV2:
         # 1. Prepare Data Arrays
         # Convert to Angstroms for internal Voigt calc
         self._x_ang = self._spectrum.x.to(au.Angstrom).value
+        # Pixel edges, for the exact convolution with the LSF (#526)
+        self._xmin_ang = self._spectrum.xmin.to(au.Angstrom).value
+        self._xmax_ang = self._spectrum.xmax.to(au.Angstrom).value
+        self._x_tau = None
+        self._lsf = None
         
         norm_q = self._spectrum.norm
         
@@ -228,54 +252,17 @@ class VoigtFitterV2:
             
         return sigma_ang / dx
 
-    def _voigt_optical_depth(self, wave_grid_ang: np.ndarray, 
-                             lambda_0: float, f_val: float, gamma: float,
-                             z: float, N_col: float, b_kms: float) -> np.ndarray:
-        """Computes the optical depth tau(lambda) for a single Voigt line."""
-        lambda_c = lambda_0 * (1.0 + z)
-        c_kms = 2.99792458e5
-        b_safe = np.maximum(b_kms, 0.1) 
-        dop_width_ang = (b_safe / c_kms) * lambda_c
-        dop_width_ang = np.maximum(dop_width_ang, 1e-10)
-
-        x = (wave_grid_ang - lambda_c) / dop_width_ang
-        c_ang_s = 2.99792458e18
-        a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
-        z_complex = x + 1j * a
-        H_ax = wofz(z_complex).real
-        
-        prefactor = 1.4974e-15
-        tau = prefactor * N_col * f_val * lambda_0 / b_safe * H_ax
-        return tau
-
     def _compute_tau_component(self, comp: ComponentDataV2, z: float, logN: float, b: float, btur: float) -> np.ndarray:
-        tau_comp = np.zeros_like(self._x_calc)
-        b_eff = np.sqrt(b**2 + btur**2)
-        N_col = 10**logN
-        
-        if comp.series in STANDARD_MULTIPLETS: trans_list = STANDARD_MULTIPLETS[comp.series]
-        elif comp.series in ATOM_DATA: trans_list = [comp.series]
-        elif ',' in comp.series: trans_list = comp.series.split(',')
-        else: return tau_comp
+        atoms = [ATOM_DATA[t] for t in _transitions(comp.series)]
+        if not atoms:
+            return np.zeros_like(self._x_tau)
+        n = len(atoms)
+        return self._voigt_optical_depth_vectorized(
+            self._x_tau,
+            np.array([at['wave'] for at in atoms]), np.array([at['f'] for at in atoms]),
+            np.array([at['gamma'] for at in atoms]), np.full(n, float(z)),
+            np.full(n, 10**logN), np.full(n, np.sqrt(b**2 + btur**2)))
 
-        for trans_name in trans_list:
-            trans_name = trans_name.strip()
-            atom = ATOM_DATA.get(trans_name)
-            if not atom: continue
-            
-            # --- CRITICAL OPTIMIZATION Check ---
-            # Even with pre-filtering, keep this for safety in the inner loop
-            # Check if line center is vaguely in window
-            obs_cent = atom['wave'] * (1 + z)
-            if obs_cent < self._x_calc[0] - 100 or obs_cent > self._x_calc[-1] + 100:
-                continue
-
-            tau_comp += self._voigt_optical_depth(
-                self._x_calc, atom['wave'], atom['f'], atom['gamma'],
-                z, N_col, b_eff
-            )
-        return tau_comp
-    
     def _get_component_resolution(self, comp: ComponentDataV2) -> Tuple[float, str]:
         """
         Determines the resolution (val, unit) for a specific component.
@@ -295,6 +282,36 @@ class VoigtFitterV2:
             return self._global_resol_val, self._global_resol_unit
             
         return 0.0, 'none'
+
+    def _set_lsf(self, sl: slice, cache: bool = True) -> None:
+        """Fine grid and LSF for the pixels ``sl`` (#526): the optical
+        depth is computed on ``self._x_tau``, the model on the pixels.
+        Without ``cache``, for a model computed once (see ``PixelLSF``)."""
+        r_values = []
+        if self._use_variable_resolution and self._resol_column is not None:
+            r_values.extend(self._resol_column[sl][np.isfinite(self._resol_column[sl])])
+        if self._global_resol_val > 0:
+            r_values.append(self._global_resol_val)
+        r_values.extend(c.resol for c in self._system_list.components
+                        if c.resol is not None and c.resol > 0)
+        r_min = float(np.min(r_values)) if r_values else None
+        r_max = float(np.max(r_values)) if r_values else None
+        # The narrowest line in the pixels sets the fine step, at the
+        # current b: a fit that narrows a line below it loses some accuracy
+        # (~4e-4 at half the b), recovered by the final model, which is
+        # computed again with the fitted values
+        xmin, xmax = self._xmin_ang[sl], self._xmax_ang[sl]
+        lo, hi = (xmin[0], xmax[-1]) if len(xmin) else (np.inf, -np.inf)
+        b_values = []
+        for comp in self._system_list.components:
+            for t in _transitions(comp.series):
+                if lo <= ATOM_DATA[t]['wave'] * (1 + comp.z) <= hi:
+                    b_values.append(np.hypot(comp.b, comp.btur or 0.0))
+                    break
+        b_min = float(np.min(b_values)) if b_values else None
+        self._lsf = PixelLSF(self._xmin_ang[sl], self._xmax_ang[sl], r_min=r_min, r_max=r_max,
+                             b_min=b_min, cache=cache)
+        self._x_tau = self._lsf.x_fine
 
     def _compute_model(self, p_free: np.ndarray) -> np.ndarray:
         """
@@ -323,7 +340,7 @@ class VoigtFitterV2:
                 
                 # C. Compute Tau Vectorized
                 tau_active = self._voigt_optical_depth_vectorized(
-                    self._x_calc, 
+                    self._x_tau, 
                     data['lambda'], data['f'], data['gamma'],
                     z_arr, N_arr, b_eff_arr
                 )
@@ -350,7 +367,7 @@ class VoigtFitterV2:
                 # Identify Resolution Group
                 res_key = self._get_component_resolution(comp)
                 if res_key not in tau_total_dict:
-                    tau_total_dict[res_key] = np.zeros_like(self._x_calc)
+                    tau_total_dict[res_key] = np.zeros_like(self._x_tau)
                 
                 # Compute parameters
                 idx = i * num_params_per_comp
@@ -362,18 +379,20 @@ class VoigtFitterV2:
                 # Add to group Tau
                 tau_total_dict[res_key] += self._compute_tau_component(comp, z, logN, b_val, btur)
 
-        # 3. Convolve and Combine
+        # 3. Convolve and Combine: each pixel gets the fine flux convolved
+        # with its own LSF and averaged over the pixel (#526)
         final_model = np.ones_like(self._x_calc)
         
         for (res_val, res_unit), tau_arr in tau_total_dict.items():
-            flux_group = np.exp(-tau_arr)
+            flux_fine = np.exp(-tau_arr)
             
             if res_unit == 'column' and self._resol_calc is not None:
-                 flux_group = convolve_flux(flux_group, self._x_calc, self._resol_calc, resol_unit=self._variable_resol_unit)
+                r, key = self._resol_calc, 'column'
             elif res_val > 0:
-                 flux_group = convolve_flux(flux_group, self._x_calc, res_val, resol_unit=res_unit)
-            
-            final_model *= flux_group
+                r, key = res_val, res_val
+            else:
+                r, key = None, 'none'
+            final_model *= self._lsf.apply(flux_fine, r, key=key)
             
         return final_model
 
@@ -642,50 +661,43 @@ class VoigtFitterV2:
                                       N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
         """
         Vectorized Voigt profile calculation.
-        Computes profiles for M lines on N pixels simultaneously.
+        Computes profiles for M lines on N samples simultaneously.
         
         Input arrays (lambda_0, z, etc.) must be shape (M,).
         wave_grid_ang must be shape (N,).
         Returns summed tau array of shape (N,).
         """
-        # Broadcast dimensions: (Lines, Pixels)
-        # lambda_0: (M, 1)
-        # wave_grid: (1, N)
-        
-        lambda_0 = lambda_0[:, np.newaxis]
-        f_val = f_val[:, np.newaxis]
-        gamma = gamma[:, np.newaxis]
-        z = z[:, np.newaxis]
-        N_col = N_col[:, np.newaxis]
-        b_safe = np.maximum(b_kms, 0.1)[:, np.newaxis]
-        
-        wave_grid = wave_grid_ang[np.newaxis, :]
-        
-        # 1. Physics
-        lambda_c = lambda_0 * (1.0 + z)
+        # Each line only where its optical depth exceeds TAU_CUT (#526: the
+        # grid is finer than the pixels): the samples of all lines are
+        # gathered in one flat array, and summed back onto the grid
         c_kms = 2.99792458e5
-        dop_width_ang = (b_safe / c_kms) * lambda_c
-        dop_width_ang = np.maximum(dop_width_ang, 1e-10)
-
-        # 2. Coordinate Transformation
-        # x shape: (M, N)
-        x = (wave_grid - lambda_c) / dop_width_ang
-        
         c_ang_s = 2.99792458e18
-        a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
-        
-        # 3. Faddeeva (Voigt) - Expensive Step
-        # Computes entire matrix in C-speed
-        z_complex = x + 1j * a
-        H_ax = wofz(z_complex).real
-        
-        # 4. Optical Depth
         prefactor = 1.4974e-15
-        tau_matrix = prefactor * N_col * f_val * lambda_0 / b_safe * H_ax
-        
-        # 5. Collapse lines (Sum over axis 0)
-        return np.sum(tau_matrix, axis=0)
-    
+        b_safe = np.maximum(b_kms, 0.1)
+        lambda_c = lambda_0 * (1.0 + z)
+        dop_width_ang = np.maximum((b_safe / c_kms) * lambda_c, 1e-10)
+        a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
+        tau0 = prefactor * N_col * f_val * lambda_0 / b_safe
+
+        # Gaussian core and Lorentzian wings, in Doppler widths
+        with np.errstate(divide='ignore', invalid='ignore'):
+            x_cut = np.maximum(np.sqrt(np.log(np.maximum(tau0 / TAU_CUT, np.e))),
+                               np.sqrt(tau0 * a / (np.sqrt(np.pi) * TAU_CUT))) + 3.0
+        x_cut = np.nan_to_num(x_cut, nan=0.0, posinf=0.0)
+        lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
+        hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
+        lens = np.maximum(hi - lo, 0)
+        total = int(lens.sum())
+        if total == 0:
+            return np.zeros_like(wave_grid_ang)
+        line = np.repeat(np.arange(len(lens)), lens)
+        idx = lo[line] + np.arange(total) - np.repeat(np.cumsum(lens) - lens, lens)
+
+        # Faddeeva (Voigt): the expensive step
+        x = (wave_grid_ang[idx] - lambda_c[line]) / dop_width_ang[line]
+        H_ax = wofz(x + 1j * a[line]).real
+        return np.bincount(idx, weights=tau0[line] * H_ax, minlength=len(wave_grid_ang))
+
     def prepare_fit_context(self, z_window_kms: float = 20.0) -> Tuple[np.ndarray, np.ndarray]:
         """
         Prepares the internal state for fitting (masks, background, vectorized data).
@@ -758,6 +770,7 @@ class VoigtFitterV2:
             self._resol_calc = self._resol_column[self._sl]
         else:
             self._resol_calc = None
+        self._set_lsf(self._sl)
 
         # Background
         self._cached_tau_groups = {}
@@ -783,7 +796,7 @@ class VoigtFitterV2:
         for comp in relevant_static_comps:
             res_key = self._get_component_resolution(comp)
             if res_key not in self._cached_tau_groups:
-                self._cached_tau_groups[res_key] = np.zeros_like(self._x_calc)
+                self._cached_tau_groups[res_key] = np.zeros_like(self._x_tau)
             self._cached_tau_groups[res_key] += self._compute_tau_component(comp, comp.z, comp.logN, comp.b, comp.btur)
 
         # Active Data
@@ -1049,21 +1062,20 @@ class VoigtFitterV2:
         self._active_lines_data = None # Ensure we iterate everything
         
         # Restore full arrays
-        temp_x = self._x_calc
-        temp_resol = self._resol_calc
+        saved = (self._x_calc, self._resol_calc, self._x_tau, self._lsf)
         self._x_calc = self._x_ang
         if self._use_variable_resolution:
              self._resol_calc = self._resol_column
         else:
              self._resol_calc = None
+        self._set_lsf(slice(None), cache=False)
              
         # This will now loop over ALL components because active_uuids is None
         final_model_norm = self._compute_model(res.x)
         
         # Restore state (good practice)
         self._constraints._active_uuids = stored_active_uuids
-        self._x_calc = temp_x
-        self._resol_calc = temp_resol
+        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         final_model_flux = final_model_norm * self._norm
 
@@ -1085,8 +1097,7 @@ class VoigtFitterV2:
             2. **model_flux** (*np.ndarray*): The computed model flux (physical units).
         """
         p_current_free = self._constraints.p_free_vector
-        temp_x = self._x_calc
-        temp_resol = self._resol_calc
+        saved = (self._x_calc, self._resol_calc, self._x_tau, self._lsf)
         
         # Switch to full spectrum context
         self._x_calc = self._x_ang
@@ -1094,6 +1105,7 @@ class VoigtFitterV2:
              self._resol_calc = self._resol_column
         else:
              self._resol_calc = None
+        self._set_lsf(slice(None), cache=False)
 
         # Reset caches to force Case B (Standard Loop) in _compute_model
         self._cached_tau_groups = {}
@@ -1102,8 +1114,7 @@ class VoigtFitterV2:
         y_model_norm = self._compute_model(p_current_free)
         
         # Restore context
-        self._x_calc = temp_x 
-        self._resol_calc = temp_resol
+        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         y_model_phys = y_model_norm * self._norm
         return self._x_ang, y_model_phys
