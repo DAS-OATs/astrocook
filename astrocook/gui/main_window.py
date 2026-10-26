@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import os
 from PySide6.QtCore import (
-    Qt, QObject, Signal,
+    Qt, QEvent, QObject, Signal,
     QItemSelectionModel,
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
@@ -11,12 +11,15 @@ from PySide6.QtCore import (
     QSize, QStringListModel, QThreadPool, QTimer, QUrl,
     QSettings
 )
-from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QIcon, QPixmap, QDesktopServices
-from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
-    QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
-    QPushButton, QProgressDialog, QSizePolicy, QSpacerItem, QStackedWidget, QStyle, QTextEdit,
+from PySide6.QtGui import (
+    QAction, QColor, QDoubleValidator, QKeySequence, QIcon, QPainter, QPen, QPixmap, QDesktopServices
 )
+from PySide6.QtWidgets import (
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QGraphicsOpacityEffect, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QMenu, QMessageBox, QSlider, QProgressBar,
+    QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit, QToolButton,
+)
+import qtawesome as qta
 import re
 from typing import Any, Dict, List, Optional, Union
 
@@ -58,8 +61,22 @@ for name in FLUX_RECIPES_SCHEMAS:
 LEFT_SIDEBAR_WIDTH = 250
 RIGHT_SIDEBAR_WIDTH = 250
 ANIMATION_DURATION = 150 # ** Speed up animation **
-BUTTON_WIDTH = 20
-BUTTON_HEIGHT = 30
+BUTTON_WIDTH = 28
+BUTTON_HEIGHT = 28
+
+# --- Floating cards (session list on the left, plot controls on the right) ---
+# The panels float over the plot instead of shrinking it, so that the aspect
+# of the spectrum does not change (Guido's choice). To cover as little as
+# possible, they are only as tall as their contents and they fade out while
+# the mouse is on the plot, so the effect of a change can be seen through.
+# Cards and tabs start right below the menu bar, so that a closed tab sits in
+# the corner of the window, above the axes, and does not cover the plot
+CARD_MARGIN = 2        # Gap between the menu bar and the cards (px)
+CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
+CARD_FADED = 0.35      # Opacity of a card while the mouse is away
+CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
+CARD_FADE_TIME = 200   # ms of the fade animation
+SWATCH_SIZE = QSize(24, 12)
 
 class MockV1GUIContext:
     """Provides the minimal methods expected by V1 loaders."""
@@ -72,6 +89,127 @@ class MockV1GUIContext:
     def _flags_extr(self, flag):
         # V2 GUI doesn't use these flags, so return None
         return None
+class CardFader(QObject):
+    """Fades a floating card out while the mouse is away from it.
+
+    The card comes back to full opacity when the mouse enters it. Its tab
+    (``add_handle``) fades with it and counts as part of it. A closed card
+    does not fade, so its tab stays opaque. It also calls ``on_layout`` when
+    the card's contents change size (a section expanded or collapsed), so
+    that the window can resize the card.
+    """
+
+    def __init__(self, card: QWidget, on_layout=None):
+        super().__init__(card)
+        self.card = card
+        self.on_layout = on_layout
+        self.effect = QGraphicsOpacityEffect(card)
+        self.effect.setOpacity(1.0)
+        card.setGraphicsEffect(self.effect)
+        self.anim = QPropertyAnimation(self.effect, b"opacity", self)
+        self.anim.setDuration(CARD_FADE_TIME)
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(CARD_FADE_DELAY)
+        self.timer.timeout.connect(self._fade_if_left)
+        self.handles = []
+        card.installEventFilter(self)
+
+    def add_handle(self, widget: QWidget):
+        """A widget (the card's tab) that fades with the card."""
+        effect = QGraphicsOpacityEffect(widget)
+        effect.setOpacity(self.effect.opacity())
+        widget.setGraphicsEffect(effect)
+        self.effect.opacityChanged.connect(effect.setOpacity)
+        widget.installEventFilter(self)
+        self.handles.append(widget)
+
+    def eventFilter(self, obj, event):
+        etype = event.type()
+        if etype == QEvent.Type.Enter:
+            self.timer.stop()
+            self.set_faded(False)
+        elif etype == QEvent.Type.Leave:
+            self.timer.start()
+        elif (etype == QEvent.Type.LayoutRequest and obj is self.card
+              and self.on_layout is not None):
+            QTimer.singleShot(0, self.on_layout)
+        return super().eventFilter(obj, event)
+
+    def _fade_if_left(self):
+        # A combo box popup or a context menu takes the mouse away from the
+        # card without the user leaving it: wait until it is closed
+        if not self.card.isVisible():
+            return
+        if (QApplication.activePopupWidget() is not None or self.card.underMouse()
+                or any(h.underMouse() for h in self.handles)):
+            self.timer.start()
+            return
+        self.set_faded(True)
+
+    def set_faded(self, faded: bool, animate: bool = True):
+        target = CARD_FADED if faded else 1.0
+        self.anim.stop()
+        if animate:
+            self.anim.setStartValue(self.effect.opacity())
+            self.anim.setEndValue(target)
+            self.anim.start()
+        else:
+            self.effect.setOpacity(target)
+
+
+def disclosure_icon(direction: str) -> QIcon:
+    """The triangle of the headers of the card sections.
+
+    ``direction`` is 'right' or 'down'. A qtawesome glyph rather than the
+    style's arrows, so that it looks the same on every platform.
+    """
+    color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
+    # The glyph fills only the middle of its box: scaled to read at 16 px
+    return qta.icon(f'mdi.menu-{direction}', color=color, scale_factor=1.8)
+
+
+class CollapsibleSection(QWidget):
+    """A section of a floating card, shown or hidden by its header."""
+
+    toggled = Signal(bool)
+
+    def __init__(self, title: str, expanded: bool = True, parent=None):
+        super().__init__(parent)
+        self.header = QToolButton()
+        self.header.setText(title)
+        self.header.setCheckable(True)
+        self.header.setChecked(expanded)
+        self.header.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
+        self.header.setIconSize(QSize(16, 16))
+        self.header.setAutoRaise(True)
+        self.header.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 0px; }")
+        self.content = QWidget()
+        self.content.setVisible(expanded)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.header)
+        layout.addWidget(self.content)
+        self.header.toggled.connect(self._on_toggled)
+
+    def setContentLayout(self, layout):
+        layout.setContentsMargins(4, 0, 0, 0)
+        self.content.setLayout(layout)
+
+    def isExpanded(self) -> bool:
+        return self.header.isChecked()
+
+    def setExpanded(self, expanded: bool):
+        self.header.setChecked(expanded)
+
+    def _on_toggled(self, expanded: bool):
+        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
+        self.content.setVisible(expanded)
+        self.toggled.emit(expanded)
+
+
 class MainWindowV2(QMainWindow):
     def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
@@ -140,6 +278,8 @@ class MainWindowV2(QMainWindow):
         self._setup_left_sidebar()  # Creates self.left_sidebar_widget
         self._setup_right_sidebar() # Creates self.right_sidebar_widget
         self._setup_collapse_buttons()
+        self._sessions_fader.add_handle(self.session_collapse_button)
+        self._plot_controls_fader.add_handle(self.plot_controls_collapse_button)
 
         # --- ** Central Stack Views ** ---
         initial_session = initial_sessions[0] if isinstance(initial_sessions, List) and len(initial_sessions) > 0 else initial_sessions
@@ -210,6 +350,24 @@ class MainWindowV2(QMainWindow):
         super().resizeEvent(event)
         self._reposition_floating_widgets()
 
+    def _make_card_section(self, title: str, expanded: bool) -> CollapsibleSection:
+        """A collapsible section of the plot controls; its state is remembered."""
+        key = f"plot_controls/expanded/{title}"
+        settings = QSettings("Astrocook", "AstrocookV2")
+        section = CollapsibleSection(title, settings.value(key, expanded, type=bool))
+        section.toggled.connect(
+            lambda state: QSettings("Astrocook", "AstrocookV2").setValue(key, state))
+        return section
+
+    def _session_list_height(self) -> int:
+        """Height of the session card: all the rows, at least one."""
+        view = self.session_list_view
+        rows = max(1, self.session_model.rowCount())
+        row_height = view.sizeHintForRow(0) if self.session_model.rowCount() else 0
+        if row_height <= 0:
+            row_height = view.fontMetrics().height() + 20  # item padding 10 + 10
+        return rows * row_height + 2 * view.frameWidth() + 8 + 8  # + layout margins
+
     def _reposition_floating_widgets(self):
         """Positions sidebars and buttons based on current window size and visibility."""
         window_height = self.height()
@@ -218,25 +376,28 @@ class MainWindowV2(QMainWindow):
         content_y_start = menubar_height
         content_height = window_height - content_y_start
 
-        # ** Calculate centered Y position for buttons **
-        button_y = content_y_start + (content_height - BUTTON_HEIGHT) // 2
-
-        # --- Left Sidebar & Button ---
+        # --- Left Sidebar (card) & Button ---
         left_width = self.left_sidebar_widget.width()
-        button_x = left_width - BUTTON_WIDTH if left_width > 0 else left_width
-        # ** Use calculated button_y **
-        self.session_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
-        # Sidebar still fills the full content height
-        self.left_sidebar_widget.setGeometry(0, content_y_start, left_width, content_height)
+        # The tab is a handle just outside the card's edge (on the plot)
+        button_x = left_width
+        card_y = content_y_start + CARD_MARGIN
+        left_height = min(self._session_list_height(), content_height - 2 * CARD_MARGIN)
+        # The tab stays at the top of the card: it does not move when the
+        # card grows or shrinks
+        left_button_y = card_y + CARD_TAB_OFFSET
+        self.session_collapse_button.setGeometry(button_x, left_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        self.left_sidebar_widget.setGeometry(0, card_y, left_width, left_height)
 
-        # --- Right Sidebar & Button ---
+        # --- Right Sidebar (card) & Button ---
         right_width = self.right_sidebar_widget.width()
         sidebar_x = window_width - right_width
-        button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
-         # ** Use calculated button_y **
-        self.plot_controls_collapse_button.setGeometry(button_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
-        # Sidebar still fills the full content height
-        self.right_sidebar_widget.setGeometry(sidebar_x, content_y_start, right_width, content_height)
+        card_y = content_y_start + CARD_MARGIN
+        card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
+                          content_height - 2 * CARD_MARGIN)
+        button_x = sidebar_x - BUTTON_WIDTH
+        right_button_y = card_y + CARD_TAB_OFFSET
+        self.plot_controls_collapse_button.setGeometry(button_x, right_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
+        self.right_sidebar_widget.setGeometry(sidebar_x, card_y, right_width, card_height)
         
 
         self.central_stack.lower()
@@ -299,12 +460,14 @@ class MainWindowV2(QMainWindow):
         """Creates the left sidebar widget as a child of the main window."""
         self.left_sidebar_widget = QWidget(self) # ** Parent is main window **
         sidebar_layout = QVBoxLayout(self.left_sidebar_widget)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0); sidebar_layout.setSpacing(0)
+        # Inset the list, so that the selected row keeps clear of the
+        # rounded corners of the card
+        sidebar_layout.setContentsMargins(4, 4, 4, 4); sidebar_layout.setSpacing(0)
 
         self.session_list_view = QListView()
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
-        font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
+        font = self.session_list_view.font(); font.setPointSize(12); self.session_list_view.setFont(font)
         
         # ENABLE MULTI-SELECTION
         self.session_list_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -326,9 +489,23 @@ class MainWindowV2(QMainWindow):
         # 3b. Connect the signal that fires *after* editing is done
         self.session_model.dataChanged.connect(self._on_session_name_changed)
 
+        # Long names: keep the end, which tells sessions apart (e.g. _2,
+        # _3), and show the full name on hover
+        self.session_list_view.setTextElideMode(Qt.TextElideMode.ElideMiddle)
+        self.session_list_view.setMouseTracking(True)
+        self.session_list_view.entered.connect(
+            lambda index: self.session_list_view.setToolTip(index.data()))
+        self.session_list_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.session_list_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # The card is as tall as the list: resize it when sessions come and go
+        self.session_model.rowsInserted.connect(self._reposition_floating_widgets)
+        self.session_model.rowsRemoved.connect(self._reposition_floating_widgets)
+        self.session_model.modelReset.connect(self._reposition_floating_widgets)
+
         sidebar_layout.addWidget(self.session_list_view)
         self.left_sidebar_widget.setObjectName("SessionContainer")
         self.session_list_view.setObjectName("SessionListView")
+        self._sessions_fader = CardFader(self.left_sidebar_widget)
 
         # Initial geometry set later, start hidden/collapsed
         self.left_sidebar_widget.resize(0, self.height())
@@ -339,7 +516,7 @@ class MainWindowV2(QMainWindow):
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
         sidebar_layout.setContentsMargins(15, 10, 15, 10)
-        sidebar_layout.setSpacing(15)
+        sidebar_layout.setSpacing(10)
 
         # --- Helper: Expand Field ---
         def _expand_field(widget):
@@ -349,9 +526,21 @@ class MainWindowV2(QMainWindow):
         # --- Plot Element Toggles ---
         # (This section remains unchanged)
         plot_toggles_layout = QVBoxLayout()
-        plot_toggles_layout.setSpacing(8)
-        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>"))
-        
+        plot_toggles_layout.setSpacing(4)
+
+        # The spectrum is always drawn: a swatch with no checkbox, indented
+        # to line up with the swatches of the checkboxes below
+        spectrum_row = QHBoxLayout()
+        indicator_w = self.style().pixelMetric(QStyle.PixelMetric.PM_IndicatorWidth)
+        spectrum_row.setContentsMargins(15 + indicator_w + 5, 0, 0, 0)
+        spectrum_row.setSpacing(4)
+        self.spectrum_swatch = QLabel()
+        self.spectrum_swatch.setPixmap(self._blank_swatch())
+        spectrum_row.addWidget(self.spectrum_swatch)
+        spectrum_row.addWidget(QLabel("Spectrum"))
+        spectrum_row.addStretch(1)
+        plot_toggles_layout.addLayout(spectrum_row)
+
         self.error_checkbox = QCheckBox("1-sigma error"); self.error_checkbox.setChecked(True)
         self.error_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.error_checkbox)
@@ -401,7 +590,11 @@ class MainWindowV2(QMainWindow):
         self.strong_lines_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.strong_lines_checkbox)
 
-        sidebar_layout.addLayout(plot_toggles_layout)
+        # While this section is open its swatches replace the legend
+        self.plot_elements_section = self._make_card_section("Plot Elements", expanded=True)
+        self.plot_elements_section.setContentLayout(plot_toggles_layout)
+        self.plot_elements_section.toggled.connect(self._replot_if_session)
+        sidebar_layout.addWidget(self.plot_elements_section)
 
         self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
         self.isomag_checkbox.setToolTip("Show lines of constant AB magnitude")
@@ -411,8 +604,7 @@ class MainWindowV2(QMainWindow):
     
         # --- ** Axis & View Controls ** ---
         view_layout = QVBoxLayout()
-        view_layout.setSpacing(8)
-        view_layout.addWidget(QLabel("<b>View Controls:</b>"))
+        view_layout.setSpacing(4)
 
         # X-Axis Unit
         form_layout_x = QFormLayout()
@@ -446,90 +638,17 @@ class MainWindowV2(QMainWindow):
         view_layout.addWidget(self.log_x_checkbox)
         self.log_y_checkbox = QCheckBox("Logarithmic F")
         
-        sidebar_layout.addLayout(view_layout)
+        view_section = self._make_card_section("View Controls", expanded=True)
+        view_section.setContentLayout(view_layout)
+        sidebar_layout.addWidget(view_section)
 
         self.x_unit_combo.currentTextChanged.connect(self._trigger_replot)
         self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
 
-        # --- *** UNIFIED GRID FOR CONTROLS *** ---
-        # [CHANGE] Use a SINGLE grid for both sections to guarantee alignment
-        unified_grid = QGridLayout()
-        unified_grid.setContentsMargins(0, 0, 0, 0)
-        unified_grid.setVerticalSpacing(5)
-        unified_grid.setHorizontalSpacing(10) # A bit more space between label and box
-        
-        # Column 0: Labels (Fixed min width)
-        unified_grid.setColumnMinimumWidth(0, 80)
-        # Column 1: Boxes (Stretch)
-        unified_grid.setColumnStretch(1, 1)
-
-                # Helper function to create collapsible group boxes
-        def create_collapsible_group(title, is_collapsed=False):
-            group = QGroupBox(title)
-            group.setCheckable(True)
-            group.setChecked(not is_collapsed)
-            group.setStyleSheet("""
-                QGroupBox {
-                    font-weight: bold;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    margin-top: 8px;
-                    padding-top: 8px;
-                }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 8px;
-                    padding: 0 3px;
-                }
-            """)
-            
-            def toggle_content(checked):
-                if group.layout():
-                    for i in range(group.layout().count()):
-                        item = group.layout().itemAt(i)
-                        w = item.widget()
-                        if w: w.setVisible(checked)
-                        l = item.layout()
-                        if l:
-                            # Recursively hide sub-layouts
-                            for j in range(l.count()):
-                                sub_item = l.itemAt(j)
-                                sub_w = sub_item.widget()
-                                if sub_w: sub_w.setVisible(checked)
-                
-                # Adjust fixed height to collapse/expand
-                if not checked:
-                    # Keep just enough for the title (roughly 25-30px)
-                    group.setMinimumHeight(30)
-                    group.setMaximumHeight(30)
-                else:
-                    group.setMinimumHeight(0)
-                    group.setMaximumHeight(16777215) # Default QWIDGETSIZE_MAX
-            
-            group.toggled.connect(toggle_content)
-            return group
-
-        # Helper to apply the initial collapse state after layout is set
-        def apply_initial_collapse(group):
-            # Call the internal toggle_content logic by triggering the signal
-            # or calling the logic directly if we can access it.
-            # Easiest way: force a toggle event
-            checked = group.isChecked()
-            # We need to manually trigger the logic because the signal might not fire 
-            # if we set the same value, or it might have fired before layout was set.
-            # Let's find the slot
-            group.toggled.emit(checked)
-
         # -- SECTION 1: Axis Limits --
-        # Use a simple layout without a GroupBox border to keep it clean
-        limits_header = QLabel("<b>Axis Limits</b>")
-        limits_header.setStyleSheet("margin-top: 10px; margin-bottom: 2px;")
-        sidebar_layout.addWidget(limits_header)
-        
         limits_layout = QGridLayout()
         limits_layout.setSpacing(5)
-        limits_layout.setContentsMargins(10, 0, 10, 0) # Indent slightly
 
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
@@ -563,11 +682,13 @@ class MainWindowV2(QMainWindow):
         
         limits_layout.addWidget(self.lbl_flux, 1, 0)
         limits_layout.addLayout(flux_layout, 1, 1)
-        
-        sidebar_layout.addLayout(limits_layout)
+
+        limits_section = self._make_card_section("Axis Limits", expanded=True)
+        limits_section.setContentLayout(limits_layout)
+        sidebar_layout.addWidget(limits_section)
 
         # -- SECTION 2: Redshift Cursor --
-        cursor_group = create_collapsible_group("Redshift Cursor", is_collapsed=True)
+        cursor_group = self._make_card_section("Redshift Cursor", expanded=False)
         cursor_layout = QGridLayout()
         cursor_layout.setSpacing(5)
 
@@ -592,12 +713,11 @@ class MainWindowV2(QMainWindow):
         self.cursor_show_checkbox.stateChanged.connect(self._on_cursor_checkbox_toggled)
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        cursor_group.setLayout(cursor_layout)
+        cursor_group.setContentLayout(cursor_layout)
         sidebar_layout.addWidget(cursor_group)
-        apply_initial_collapse(cursor_group)
 
         # -- SECTION 4: Edit Continuum (Collapsible, hidden by default) --
-        continuum_group = create_collapsible_group("Edit Continuum", is_collapsed=True)
+        continuum_group = self._make_card_section("Edit Continuum", expanded=False)
         continuum_layout = QGridLayout()
         continuum_layout.setSpacing(5)
 
@@ -655,7 +775,7 @@ class MainWindowV2(QMainWindow):
         continuum_layout.addWidget(self.stride_entry, 2, 1)
 
         # --- Edit Hints Label (Row 3, spanning 2 columns) ---
-        # 1. Create a transparent container to shield the label from the collapse script
+        # 1. Create a transparent container for the label
         self.edit_hints_container = QWidget()
         hints_layout = QVBoxLayout(self.edit_hints_container)
         hints_layout.setContentsMargins(0, 0, 0, 0)
@@ -679,14 +799,15 @@ class MainWindowV2(QMainWindow):
         # 4. Add the CONTAINER to the main layout
         continuum_layout.addWidget(self.edit_hints_container, 3, 0, 1, 2)
 
-        continuum_group.setLayout(continuum_layout)
+        continuum_group.setContentLayout(continuum_layout)
         sidebar_layout.addWidget(continuum_group)
-        apply_initial_collapse(continuum_group)
-
-        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        sidebar_layout.addItem(spacer)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
+        self._plot_controls_fader = CardFader(self.right_sidebar_widget,
+                                              on_layout=self._reposition_floating_widgets)
+        for checkbox in self._swatch_checkboxes():
+            checkbox.setIcon(QIcon(self._blank_swatch()))
+            checkbox.setIconSize(SWATCH_SIZE)
         self.error_checkbox.setObjectName("PlotControlCheckbox")
         self.error_line_checkbox.setObjectName("PlotControlCheckbox")
         self.continuum_checkbox.setObjectName("PlotControlCheckbox")
@@ -716,6 +837,7 @@ class MainWindowV2(QMainWindow):
         self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.session_collapse_button.clicked.connect(self._toggle_left_sidebar)
         self.session_collapse_button.setObjectName("CollapseButton")
+        self.session_collapse_button.setProperty("side", "left")
         self.session_collapse_button.setVisible(False) # Start hidden
 
         # Right Button
@@ -725,6 +847,7 @@ class MainWindowV2(QMainWindow):
         self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.plot_controls_collapse_button.clicked.connect(self._toggle_right_sidebar)
         self.plot_controls_collapse_button.setObjectName("CollapseButton")
+        self.plot_controls_collapse_button.setProperty("side", "right")
         self.plot_controls_collapse_button.setVisible(False) # Start hidden
 
     def _trigger_replot(self):
@@ -1276,21 +1399,31 @@ class MainWindowV2(QMainWindow):
 
         qss = f"""
             /* Sidebar Containers: Transparent background, NO side borders */
-            QWidget#SessionContainer, QWidget#PlotControlsContainer {{
-                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, {sidebar_a});
-                border: none; /* ** Remove all borders ** */
+            /* Floating cards, as tall as their contents and flush with the
+               window edge: rounded on the inner side, no border */
+            QWidget#SessionContainer {{
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
+                border: none;
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
+            }}
+            QWidget#PlotControlsContainer {{
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
+                border: none;
+                border-top-left-radius: 8px;
+                border-bottom-left-radius: 8px;
             }}
             
             /* Make ListView background fully transparent */
             QListView#SessionListView {{ background-color: transparent; border: none; }}
             /* Ensure list items are NOT transparent */
             QListView#SessionListView::item {{
-                padding: 16px 10px; border: none;
+                padding: 10px 10px; border: none;
                 background-color: transparent; /* Inherit sidebar bg initially */
                 color: {button_fg}; /* Use button text color for readability */
              }}
             /* Selected/Hover items should be opaque */
-            QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; }}
+            QListView#SessionListView::item:selected {{ background-color: {item_selected_bg}; color: {item_selected_text}; border-radius: 6px; }}
 
             /* Right Sidebar Checkboxes & Labels */
             QWidget#PlotControlsContainer QLabel {{ /* Style section labels */
@@ -1321,14 +1454,20 @@ class MainWindowV2(QMainWindow):
             }}
 
             /* Collapse Buttons: Blend, NO borders */
+            /* Collapse tabs: handles with the background of the cards,
+               rounded on the side away from their card */
             QPushButton#CollapseButton {{
-                background-color: none;
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
                 color: {button_fg}; /* Icon color */
-                border: none; /* ** Remove all borders ** */
+                border: none;
                 margin: 0px; padding: 0px;
-                icon-size: 16px;
-                /* Maybe add slight rounding */
-                border-radius: 3px;
+                icon-size: 18px;
+            }}
+            QPushButton#CollapseButton[side="left"] {{
+                border-top-right-radius: 6px; border-bottom-right-radius: 6px;
+            }}
+            QPushButton#CollapseButton[side="right"] {{
+                border-top-left-radius: 6px; border-bottom-left-radius: 6px;
             }}
         """
         self.setStyleSheet(qss)
@@ -1463,7 +1602,7 @@ class MainWindowV2(QMainWindow):
             # Start geom should reflect the hidden state (width 0)
             start_sidebar_geom.setWidth(0)
             end_sidebar_geom.setWidth(LEFT_SIDEBAR_WIDTH) # Animate width open
-            end_button_x = LEFT_SIDEBAR_WIDTH - BUTTON_WIDTH # Button X moves out
+            end_button_x = LEFT_SIDEBAR_WIDTH # Button moves out with the card's edge
             target_visible = True
             self.left_sidebar_widget.setVisible(True) # Show before animating
 
@@ -1494,6 +1633,9 @@ class MainWindowV2(QMainWindow):
         if not target_visible:
             # Ensure lambda captures the correct widget state if needed
             self.left_animation_group.finished.connect(lambda: self.left_sidebar_widget.setVisible(False))
+        # Opaque when it opens, and its tab opaque when it closes
+        self._sessions_fader.timer.stop()
+        self._set_sessions_faded(False, animate=False)
 
         self.left_animation_group.start()
         self._update_sidebar_button_icon(self.session_collapse_button, target_visible, is_left=True)
@@ -1504,7 +1646,7 @@ class MainWindowV2(QMainWindow):
         start_width = self.right_sidebar_widget.width(); end_width = 0 if start_width > 0 else RIGHT_SIDEBAR_WIDTH
         window_width = self.width()
         start_sidebar_x = self.right_sidebar_widget.x(); end_sidebar_x = window_width if end_width == 0 else window_width - end_width
-        start_button_x = self.plot_controls_collapse_button.x(); end_button_x = window_width - BUTTON_WIDTH if end_width == 0 else window_width - end_width
+        start_button_x = self.plot_controls_collapse_button.x(); end_button_x = window_width - end_width - BUTTON_WIDTH
         target_visible = end_width > 0
 
         # ** Calculate the constant button Y **
@@ -1526,21 +1668,117 @@ class MainWindowV2(QMainWindow):
         self.right_animation_group.addAnimation(button_anim)
 
         if not target_visible: self.right_animation_group.finished.connect(lambda: self.right_sidebar_widget.setVisible(False))
+        # Opaque when it opens, and its tab opaque when it closes
+        self._plot_controls_fader.timer.stop()
+        self._set_plot_controls_faded(False, animate=False)
+        # Redraw once the card has moved, to move the panel entries out of
+        # (or back into) the legend
+        self.right_animation_group.finished.connect(self._replot_if_session)
         self.right_animation_group.start()
         self._update_sidebar_button_icon(self.plot_controls_collapse_button, target_visible, is_left=False)
+
+    def _replot_if_session(self):
+        if self.active_history:
+            self._trigger_replot()
+
+    # --- Floating cards: fading and legend swatches ---
+
+    def _set_plot_controls_faded(self, faded: bool, animate: bool = True):
+        self._plot_controls_fader.set_faded(faded, animate)
+
+    def _set_sessions_faded(self, faded: bool, animate: bool = True):
+        self._sessions_fader.set_faded(faded, animate)
+
+    def _swatch_checkboxes(self):
+        return [self.error_checkbox, self.continuum_checkbox,
+                self.model_checkbox, self.systems_checkbox]
+
+    def _blank_swatch(self) -> QPixmap:
+        ratio = self.devicePixelRatioF()
+        pix = QPixmap(SWATCH_SIZE * ratio)
+        pix.setDevicePixelRatio(ratio)
+        pix.fill(Qt.transparent)
+        return pix
+
+    def _swatch(self, artists) -> QPixmap:
+        """Draws a legend swatch for one or more matplotlib artists."""
+        from matplotlib.colors import to_rgba
+        pix = self._blank_swatch()
+        painter = QPainter(pix)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = SWATCH_SIZE.width(), SWATCH_SIZE.height()
+        n = len(artists)
+        for i, artist in enumerate(artists):
+            if hasattr(artist, 'lines'):  # errorbar container
+                coll = artist.lines[2][0] if artist.lines[2] else None
+                rgba = coll.get_colors()[0] if coll is not None else (0.5, 0.5, 0.5, 1)
+                linestyle, marker, lw = '-', 'None', 1.0
+            else:
+                rgba = to_rgba(artist.get_color(), artist.get_alpha())
+                linestyle, marker = artist.get_linestyle(), artist.get_marker()
+                lw = artist.get_linewidth()
+            color = QColor.fromRgbF(*rgba)
+            if marker == '|':
+                # Ticks of the systems: one group per artist, side by side
+                pen = QPen(color, 1.5)
+                painter.setPen(pen)
+                x0, x1 = i * w / n, (i + 1) * w / n
+                for k in range(3):
+                    x = x0 + (x1 - x0) * (k + 0.5) / 3
+                    painter.drawLine(int(x), 1, int(x), h - 1)
+            elif linestyle not in ('None', '', ' '):
+                # Thicker than in the plot, to read as a colour at this size
+                pen = QPen(color, max(1.5, lw * 1.5))
+                if linestyle in ('--', 'dashed'):
+                    pen.setStyle(Qt.DashLine)
+                elif linestyle in (':', 'dotted'):
+                    pen.setStyle(Qt.DotLine)
+                painter.setPen(pen)
+                painter.drawLine(1, h // 2, w - 1, h // 2)
+            else:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(color)
+                painter.drawEllipse(w // 2 - 3, h // 2 - 3, 6, 6)
+        painter.end()
+        return pix
+
+    def update_plot_swatches(self, handles_by_label: dict):
+        """Shows the plotted styles next to the plot controls.
+
+        Called by the plot after each redraw. An element that is not drawn
+        although its box is checked (e.g. no continuum) gets a blank swatch;
+        an unchecked one keeps its last swatch, to show what it would add.
+        """
+        def pick(*labels):
+            return [handles_by_label[lab] for lab in labels if lab in handles_by_label]
+
+        spectrum = pick('Spectrum', 'Spectrum (decimated)')
+        self.spectrum_swatch.setPixmap(self._swatch(spectrum[:1]) if spectrum else self._blank_swatch())
+        for checkbox, labels in (
+                (self.error_checkbox, ('1-sigma error',)),
+                (self.continuum_checkbox, ('Normalization',)),
+                (self.model_checkbox, ('Absorption model',)),
+                (self.systems_checkbox, ('HI Systems', 'Metal Systems'))):
+            artists = pick(*labels)
+            if artists:
+                checkbox.setIcon(QIcon(self._swatch(artists)))
+            elif checkbox.isChecked():
+                checkbox.setIcon(QIcon(self._blank_swatch()))
 
     def _update_sidebar_button_icon(self, button, sidebar_is_visible, is_left):
         """Updates collapse button icon based on sidebar visibility."""
         # Icon logic adjusted: Left button shows '>' when sidebar is hidden (points right to expand)
         # Right button shows '<' when sidebar is hidden (points left to expand)
+        # The tabs show what they open (a list of sessions, the settings of
+        # the plot), not a direction: the triangles are left to the sections
+        color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
         if is_left:
-            icon_name = QStyle.SP_ArrowLeft if sidebar_is_visible else QStyle.SP_ArrowRight
+            icon = qta.icon('mdi.menu', color=color)
             tooltip = "Collapse Session Panel" if sidebar_is_visible else "Expand Session Panel"
         else: # Right sidebar button
-            icon_name = QStyle.SP_ArrowRight if sidebar_is_visible else QStyle.SP_ArrowLeft
+            icon = qta.icon('mdi.cog', color=color)
             tooltip = "Collapse Plot Controls" if sidebar_is_visible else "Expand Plot Controls"
 
-        icon = self.style().standardIcon(icon_name)
         button.setIcon(icon); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed

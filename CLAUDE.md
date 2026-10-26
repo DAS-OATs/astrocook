@@ -207,7 +207,7 @@ the mask of the user, #613), #465 (robust automatic continuum, #614),
 F14 (blend threshold of the grouping from the instrumental FWHM, k = 1,
 #618; developed in parallel with #526 PR 3, a one-off exception agreed
 with Guido).
-In progress: #526 (resolution as a single column; PRs 1-3 merged, #615-#617; PR 4, cleanup, to do; found F61, the damping parameter (1 + z) too large, to be fixed in its own PR after #526 PR 3). Work in
+In progress: #526 (resolution as a single column; PRs 1-3 merged, #615-#617, exact convolution in PR 3; PR 4, cleanup, next); F61 (damping parameter (1 + z) too large, found in #617) fixed in its own PR, then F62 (runaway logN in the automatic forest fits, wings outside the fit window) before #517. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

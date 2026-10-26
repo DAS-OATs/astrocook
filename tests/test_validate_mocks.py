@@ -276,8 +276,12 @@ def test_reduced_grid_does_not_regress():
     # so fewer true components are matched and the pulls are biased
     assert f["n_matched"] / f["n_true"] > 0.25                         # 0.46; 0.34 (F49)
     assert f["n_spurious"] / f["n_fitted"] < 0.1                       # 0.15; 0.02 (F49)
+    # b: 1.26 after F61. The damping wings, (1 + z) too strong, broadened
+    # the profiles and offset the positive bias of the systems fitted with
+    # fewer components (F49, F58); single components are less biased now
+    # (full grid: -0.25 -> -0.13)
     for par in ("z", "logN", "b"):
-        assert abs(f[f"pull_{par}"]["median"]) < 1.2, par              # |0.14|; b 0.84 (F49)
+        assert abs(f[f"pull_{par}"]["median"]) < 1.5, par              # |0.14|; b 0.84 (F49); b 1.26 (F61)
     column = f["system_column"]
     assert abs(column["diff"]["median"]) < 0.05                        # 0.000; -0.022 (F49)
     assert column["diff"]["sigma"] < 0.4                               # 0.236; 0.175 (F49)
