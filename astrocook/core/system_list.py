@@ -42,9 +42,63 @@ def get_all_w_rest(series_name: str) -> List[float]:
 
     return []
 
-def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: dict) -> bool:
+#: Blend threshold in units of the instrumental FWHM (findings register F14):
+#: two lines are grouped when their centres are closer than
+#: ``FWHM_BLEND_FACTOR`` times the FWHM, i.e. when their instrumental
+#: profiles overlap above half maximum (Guido's choice, October 2026). The
+#: thresholds ``4 b`` and 30 km/s are kept as floors (they were the whole
+#: rule before F14, and the only one when the resolution is unknown).
+FWHM_BLEND_FACTOR = 1.0
+
+
+def instrumental_fwhm(spec: Optional['SpectrumV2']):
+    """Instrumental FWHM (km/s) of a spectrum as a function of the observed
+    wavelength in Angstrom, from its ``resol`` column (#526).
+
+    Returns ``None`` if there is no spectrum or it has no resolution; the
+    returned function gives NaN outside the range of the spectrum.
+    """
+    if spec is None:
+        return None
+    from astrocook.core.resolution import C_KMS
+
+    r = spec.resolution()
+    ok = np.isfinite(r)
+    if not ok.any():
+        return None
+    try:
+        x_ang = (spec.x.value[ok] * spec.x.unit).to_value(au.Angstrom)
+    except au.UnitConversionError:
+        return None
+    order = np.argsort(x_ang)
+    x_ang, fwhm = x_ang[order], C_KMS / r[ok][order]
+
+    def fwhm_at(w_ang):
+        return np.interp(w_ang, x_ang, fwhm, left=np.nan, right=np.nan)
+    return fwhm_at
+
+
+def _component_fwhm(comp: ComponentDataV2, w_obs_ang: float, fwhm_at) -> float:
+    """FWHM (km/s) for a line of a component: its own resolution if set
+    (an override, always R; the same priority as the fitter), otherwise the
+    spectrum's at the line; NaN if unknown."""
+    if comp.resol is not None and comp.resol > 0:
+        return 299792.458 / comp.resol
+    if fwhm_at is None:
+        return np.nan
+    return float(fwhm_at(w_obs_ang))
+
+
+def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: dict,
+                    fwhm_at=None) -> bool:
     """
     Checks if two components should be grouped together for fitting.
+
+    ``fwhm_at`` (from :func:`instrumental_fwhm`) gives the instrumental FWHM
+    at a wavelength: two lines are blended when their centres are closer
+    than ``max(4 b, 30 km/s, FWHM_BLEND_FACTOR * FWHM)`` (F14), with the
+    larger FWHM of the two lines. Without it (or where the resolution is
+    unknown) the threshold is ``max(4 b, 30 km/s)``.
     """
     c_kms = 299792.458
     
@@ -58,23 +112,31 @@ def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: d
 
     # 2. SPECTRAL OVERLAP (The "Blend" Logic)
     # Check if ANY transition from system 1 is near ANY transition from system 2.
-    # We use a threshold based on the thermal width (b-parameter) or a 30 km/s floor.
-    threshold_kms = max(4.0 * max(c1.b, c2.b), 30.0)
-    
+    # We use a threshold based on the thermal width (b-parameter) or a 30 km/s
+    # floor, raised to the instrumental FWHM where it is larger (F14).
+    base_kms = max(4.0 * max(c1.b, c2.b), 30.0)
+
+    def threshold(w1, w2):
+        fwhm = np.nanmax([_component_fwhm(c1, w1, fwhm_at),
+                          _component_fwhm(c2, w2, fwhm_at), -np.inf])
+        return max(base_kms, FWHM_BLEND_FACTOR * fwhm) if np.isfinite(fwhm) else base_kms
+
     obs1 = [w * (1 + c1.z) for w in get_all_w_rest(c1.series)]
     obs2 = [w * (1 + c2.z) for w in get_all_w_rest(c2.series)]
     
     for w1 in obs1:
         for w2 in obs2:
             dv = c_kms * abs(w1 - w2) / ((w1 + w2) / 2.0)
-            if dv < threshold_kms:
+            if dv < threshold(w1, w2):
                 return True
 
     # 3. KINEMATIC PROXIMITY (Same Species)
-    # If they are the same species and close in velocity, group them.
+    # If they are the same species and close in velocity, group them
+    # (threshold at their first transition).
     if c1.series == c2.series:
         dz = abs(c1.z - c2.z)
         dv_kin = c_kms * dz / (1 + c1.z)
+        threshold_kms = (threshold(obs1[0], obs2[0]) if obs1 and obs2 else base_kms)
         if dv_kin < threshold_kms:
             return True
             
@@ -315,7 +377,8 @@ class SystemListV2:
     
     # --- Context Manager for Safe Fitting ---
     @contextlib.contextmanager
-    def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2):
+    def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2,
+                        spec: Optional['SpectrumV2'] = None):
         """
         Context manager for safe fitting.
 
@@ -328,6 +391,9 @@ class SystemListV2:
             List of UUIDs to set as active.
         group_depth : int, optional
             Grouping depth for finding connected components. Defaults to ``2``.
+        spec : SpectrumV2, optional
+            The spectrum to be fitted: its resolution sets the blend
+            threshold of the grouping (see :meth:`get_connected_group`).
         """
         if not self.constraint_model:
             yield
@@ -340,7 +406,8 @@ class SystemListV2:
             original_active = set(self.constraint_model._active_uuids)
 
         try:
-            self.constraint_model.set_active_components(active_uuids, group_depth=group_depth)
+            self.constraint_model.set_active_components(active_uuids, group_depth=group_depth,
+                                                        spec=spec)
             yield
         finally:
             # Robust cleanup
@@ -701,7 +768,8 @@ class SystemListV2:
                                        v2_constraints_map=current_v2_map)
         return SystemListV2(new_data)
 
-    def get_connected_group(self, seed_uuids: List[str], max_depth: int = 2) -> Set[str]:
+    def get_connected_group(self, seed_uuids: List[str], max_depth: int = 2,
+                            spec: Optional['SpectrumV2'] = None) -> Set[str]:
         """
         Find a set of components that must be fitted together.
 
@@ -714,6 +782,10 @@ class SystemListV2:
             The UUIDs of the components initially selected for fitting.
         max_depth : int, optional
             How many degrees of separation to traverse. Defaults to ``2``.
+        spec : SpectrumV2, optional
+            The spectrum the components are fitted to. Lines closer than its
+            instrumental FWHM are blended (findings register F14, see
+            :func:`are_overlapping`); without it, only ``max(4 b, 30 km/s)``.
 
         Returns
         -------
@@ -727,6 +799,7 @@ class SystemListV2:
         comp_map = {c.uuid: c for c in self.components}
         constraints_map = self._data.v2_constraints_map
         group_uuids = set(seed_uuids)
+        fwhm_at = instrumental_fwhm(spec)
 
         # --- STEP 1: Build a Spatial Wavelength Index ---
         # We map every individual line of every component to its observed wavelength
@@ -784,7 +857,7 @@ class SystemListV2:
                 # Check proximity and constraints using the updated signature
                 is_connected = False
                 for member in current_members:
-                    if are_overlapping(member, other, constraints_map):
+                    if are_overlapping(member, other, constraints_map, fwhm_at):
                         is_connected = True
                         break
                     
@@ -954,7 +1027,7 @@ class SystemListV2:
 
         # 2. Local Fit Orchestrator
         def fit_and_evaluate(systs_obj, target_uuids):
-            with systs_obj.fitting_context(target_uuids, group_depth=group_depth):
+            with systs_obj.fitting_context(target_uuids, group_depth=group_depth, spec=spec):
                 fitter = VoigtFitterV2(spec, systs_obj)
                 new_systs, _, res = fitter.fit(max_nfev=1000, z_window_kms=z_window_kms, verbose=0)
                 

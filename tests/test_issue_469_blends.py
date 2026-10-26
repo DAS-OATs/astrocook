@@ -113,12 +113,84 @@ def _pair_at(dv_kms):
     return SystemListV2(SystemListDataV2(components=comps))
 
 
-def test_blend_threshold_ignores_resolution():
-    # Characterization (findings register F14): lines are grouped when their
-    # centres are closer than max(4 b, 30 km/s), whatever the instrumental
-    # resolution and the line strength. At X-Shooter resolution (R ~ 8900)
-    # the two profiles still overlap at 60 km/s, but are not grouped.
-    for dv, grouped in [(30.0, True), (60.0, False)]:
+def _flat_spectrum(resol, unit=au.dimensionless_unscaled):
+    """Flat spectrum over both CIV lines, with a flat resol column."""
+    x = np.arange(4990.0, 5025.0, 0.04) / 10.0  # nm
+    one = np.ones_like(x)
+    return SpectrumV2(SpectrumDataV2(
+        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.002, au.nm),
+        xmax=DataColumnV2(x + 0.002, au.nm),
+        y=DataColumnV2(one, au.dimensionless_unscaled),
+        dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
+        aux_cols={"resol": DataColumnV2(np.full_like(x, resol), unit)}))
+
+
+def test_blend_threshold_without_resolution():
+    # No spectrum (or no resolution): the threshold is max(4 b, 30 km/s)
+    # (here 4 b = 40 km/s),
+    # as before F14
+    for dv, grouped in [(39.0, True), (41.0, False), (60.0, False)]:
         systs = _pair_at(dv)
         alii, civ = systs.components
         assert (civ.uuid in systs.get_connected_group([alii.uuid])) is grouped
+        no_resol = _flat_spectrum(np.nan)
+        assert (civ.uuid in systs.get_connected_group(
+            [alii.uuid], spec=no_resol)) is grouped
+
+
+def test_blend_threshold_follows_resolution():
+    # F14: lines closer than the instrumental FWHM are blended. At R = 5000
+    # (FWHM 60 km/s) the pair is grouped at 50 km/s, not at 70 km/s
+    spec = _flat_spectrum(5000.0)
+    for dv, grouped in [(50.0, True), (70.0, False)]:
+        systs = _pair_at(dv)
+        alii, civ = systs.components
+        assert (civ.uuid in systs.get_connected_group(
+            [alii.uuid], spec=spec)) is grouped
+        with systs.fitting_context([alii.uuid], spec=spec):
+            active = set(systs.constraint_model._active_uuids)
+        assert (civ.uuid in active) is grouped
+
+
+def test_blend_threshold_fwhm_column_and_floor():
+    # A resol column in km/s is a FWHM; a FWHM below 30 km/s (high
+    # resolution) leaves the floor max(4 b, 30 km/s) = 40 km/s in place
+    systs = _pair_at(50.0)
+    alii, civ = systs.components
+    assert civ.uuid in systs.get_connected_group(
+        [alii.uuid], spec=_flat_spectrum(60.0, au.km / au.s))
+    for dv, grouped in [(39.0, True), (41.0, False)]:
+        systs = _pair_at(dv)
+        alii, civ = systs.components
+        assert (civ.uuid in systs.get_connected_group(
+            [alii.uuid], spec=_flat_spectrum(45000.0))) is grouped
+
+
+def test_blend_threshold_component_resolution_override():
+    # A component resolution (an override, R) wins over the column, as in
+    # the fitter; the larger FWHM of the two lines is used
+    spec = _flat_spectrum(45000.0)
+    systs = _pair_at(50.0)
+    alii, civ = systs.components
+    assert civ.uuid not in systs.get_connected_group([alii.uuid], spec=spec)
+    systs = systs.update_component(civ.uuid, resol=5000.0)
+    assert civ.uuid in systs.get_connected_group([alii.uuid], spec=spec)
+
+
+def test_blend_threshold_same_series_follows_resolution():
+    # Kinematic proximity of the same species uses the same threshold
+    comps = [ComponentDataV2(id=i, z=2.0 + dz, dz=None, logN=13.0, dlogN=None,
+                             b=8.0, db=None, series="Ly_a")
+             for i, dz in [(1, 0.0), (2, 3.0 * 50.0 / C_KMS)]]
+    systs = SystemListV2(SystemListDataV2(components=comps))
+    a, b = systs.components
+    x = np.linspace(3600.0, 3660.0, 2000) / 10.0
+    one = np.ones_like(x)
+    spec = SpectrumV2(SpectrumDataV2(
+        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x, au.nm),
+        xmax=DataColumnV2(x, au.nm), y=DataColumnV2(one, au.dimensionless_unscaled),
+        dy=DataColumnV2(one, au.dimensionless_unscaled),
+        aux_cols={"resol": DataColumnV2(np.full_like(x, 5000.0),
+                                        au.dimensionless_unscaled)}))
+    assert b.uuid not in systs.get_connected_group([a.uuid])
+    assert b.uuid in systs.get_connected_group([a.uuid], spec=spec)

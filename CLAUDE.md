@@ -207,6 +207,12 @@ the mask of the user, #613), #465 (robust automatic continuum, #614).
 In progress: #526 (resolution as a single column; PR 1 of 4). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
+Temporary exception (agreed with Guido, October 2026): F14 (blend
+threshold of the grouping from the instrumental FWHM) is developed in
+parallel with PR 3 of #526, on its own branch; the conflicts between the
+two (status in `CLAUDE.md` and `ROADMAP.md`, benchmark to be measured
+again on the merged code) are resolved when both are finished. The rule
+of one PR at a time applies again after them.
 
 Questionable behaviour found along the way goes in the findings register
 (`ROADMAP.md`, section 3.2), reviewed with Guido;
