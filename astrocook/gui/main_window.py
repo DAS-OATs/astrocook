@@ -69,8 +69,10 @@ BUTTON_HEIGHT = 28
 # of the spectrum does not change (Guido's choice). To cover as little as
 # possible, they are only as tall as their contents and they fade out while
 # the mouse is on the plot, so the effect of a change can be seen through.
-CARD_MARGIN = 8        # Gap between the menu bar and the cards (px)
-CARD_TAB_OFFSET = 6    # Collapse tab, from the top of its card (px)
+# Cards and tabs start right below the menu bar, so that a closed tab sits in
+# the corner of the window, above the axes, and does not cover the plot
+CARD_MARGIN = 2        # Gap between the menu bar and the cards (px)
+CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
 CARD_FADED = 0.35      # Opacity of a card while the mouse is away
 CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
 CARD_FADE_TIME = 200   # ms of the fade animation

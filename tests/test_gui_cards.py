@@ -100,7 +100,19 @@ def test_tabs_are_just_outside_the_cards(qtbot, window):
     left_tab = window.session_collapse_button
     assert right_tab.x() + right_tab.width() == right.x()
     assert left_tab.x() == left.x() + left.width()
-    assert right_tab.y() > right.y() and left_tab.y() > left.y()
+    assert right_tab.y() == right.y() and left_tab.y() == left.y()
+
+
+def test_closed_tabs_stay_above_the_axes(qtbot, window):
+    # A closed tab sits in the corner of the window and does not cover the
+    # corner of the plot
+    canvas = window.plot_viewer.canvas
+    window._trigger_replot()
+    qtbot.wait(200)
+    axes_top = canvas.height() - canvas.axes.get_window_extent().y1 / canvas.devicePixelRatioF()
+    for tab in (window.plot_controls_collapse_button, window.session_collapse_button):
+        tab_bottom = canvas.mapFrom(window, tab.geometry().bottomLeft()).y()
+        assert tab_bottom < axes_top
 
 
 # --- Sections --------------------------------------------------------------
