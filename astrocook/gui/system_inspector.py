@@ -17,6 +17,7 @@ from typing import List
 
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
 from .pyside_plot import AstrocookToolbar, get_color_cycle, get_style_color
 
@@ -239,7 +240,7 @@ class SystemTableModel(QAbstractTableModel):
         # 2. Tooltip (Keep existing logic)
         if role == Qt.ToolTipRole:
              c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-             c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+             c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "spectrum"
              tooltip_html = (
                 f"<div style='font-size: 13px'>"
                 f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
@@ -646,39 +647,18 @@ class VelocityPlotWidget(QWidget):
 
     def _get_resolution_at(self, target_wavelength_nm: float) -> tuple[float, str]:
         """
-        Robustly determines resolution for a specific wavelength.
-        Returns: (Value, Unit) -> (float, 'R' or 'km/s')
+        Resolving power of the spectrum at a wavelength (nm), from its
+        ``resol`` column (#526; before, the column was always read as km/s
+        and the legacy sources as R). Returns (R, 'R'), or (0.0, 'R').
         """
         sess = self._current_session
         if not sess or not sess.spec: return 0.0, 'R'
-
-        # 1. Check for 'resol' Column (Variable Resolution)
-        # This contains FWHM in km/s
-        if sess.spec.has_aux_column('resol'):
-            try:
-                resol_col = sess.spec.get_column('resol').value
-                x_arr = sess.spec.x.value # Assumed sorted
-                
-                # Find nearest pixel
-                idx = np.searchsorted(x_arr, target_wavelength_nm)
-                idx = np.clip(idx, 0, len(x_arr)-1)
-                
-                val = resol_col[idx]
-                if np.isfinite(val) and val > 0:
-                    return val, 'km/s'
-            except Exception:
-                pass
-
-        # 2. Fallback to Global Metadata (Usually 'R')
-        if hasattr(sess.spec, '_data'):
-            r = getattr(sess.spec._data, 'resol', 0.0)
-            if r > 0: return r, 'R'
-            
-        meta = sess.spec.meta
-        if 'resol' in meta: return float(meta['resol']), 'R'
-        if 'RESOL' in meta: return float(meta['RESOL']), 'R'
-        
-        return 0.0, 'R'
+        try:
+            x_target = (target_wavelength_nm * au.nm).to_value(sess.spec.x.unit)
+        except au.UnitConversionError:
+            return 0.0, 'R'
+        r = resolution_at(sess.spec, np.array([x_target]))[0]
+        return (float(r), 'R') if np.isfinite(r) else (0.0, 'R')
 
     def _update_plot(self):
         self.fig.clear()
@@ -714,9 +694,10 @@ class VelocityPlotWidget(QWidget):
         c_kms = 299792.458
         z_sys = self._plot_center_z
 
-        resol_col = None
-        if session.spec.has_aux_column('resol'):
-            resol_col = session.spec.get_column('resol').value
+        # Resolving power per pixel (#526), None if unknown
+        resol_col = session.spec.resolution()
+        if not np.isfinite(resol_col).any():
+            resol_col = None
 
         has_norm = session.spec.norm is not None
         y = session.spec.y.value
@@ -785,8 +766,6 @@ class VelocityPlotWidget(QWidget):
                 if np.any(np.isfinite(temp_res)):
                     panel_res_arg = temp_res
                     found_valid_col_data = True
-                    if np.nanmedian(panel_res_arg) > 500.0: panel_res_unit = 'R'
-                    else: panel_res_unit = 'km/s'
 
             if not found_valid_col_data:
                 # Fallback to Global (Metadata)
@@ -834,8 +813,7 @@ class VelocityPlotWidget(QWidget):
                             c_res = getattr(sel_c, 'resol', None)
                             if c_res is not None and c_res > 0:
                                 comp_res_arg = c_res
-                                # Heuristic for unit
-                                comp_res_unit = 'R' if c_res > 500 else 'km/s'
+                                comp_res_unit = 'R'  # always R (#526)
 
                             b_eff = np.sqrt(sel_c.b**2 + sel_c.btur**2)
 
@@ -909,7 +887,7 @@ class VelocityPlotWidget(QWidget):
         for ax, v_pos, comp in self._tick_map_visuals:
             if event.inaxes == ax and abs(event.xdata - v_pos) < tol_v:
                 c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-                c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "N/A"
+                c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "spectrum"
                 tooltip_text = (
                     f"<div style='font-size: 13px'>"
                     f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
@@ -941,9 +919,10 @@ class VelocityPlotWidget(QWidget):
         
         session = self._current_session
         x_full = session.spec.x.value
-        resol_col = None
-        if session.spec.has_aux_column('resol'):
-            resol_col = session.spec.get_column('resol').value
+        # Resolving power per pixel (#526), None if unknown
+        resol_col = session.spec.resolution()
+        if not np.isfinite(resol_col).any():
+            resol_col = None
 
         for ax in self._panel_map:
             trans_name, line_main, line_resid = self._panel_map[ax]
@@ -978,13 +957,6 @@ class VelocityPlotWidget(QWidget):
                 if np.any(np.isfinite(res_temp)):
                     res_arg = res_temp
                     found_valid_res = True
-                    
-                    # Smart Unit Detection
-                    median_res = np.nanmedian(res_arg)
-                    if median_res > 500.0:
-                        res_unit = 'R'
-                    else:
-                        res_unit = 'km/s'
 
             if not found_valid_res:
                  # Fallback to scalar global resolution
@@ -1978,19 +1950,24 @@ class SystemInspector(QWidget):
         
         if first_comp and first_comp.resol is not None and first_comp.resol > 0:
             initial_val = first_comp.resol
-        else:
-            # 2. Fallback to Global Session Resolution
-            if self.current_session:
-                # Try scalar attribute
-                if hasattr(self.current_session.spec._data, 'resol'):
-                    r = self.current_session.spec._data.resol
-                    if r > 0: initial_val = r
-                
-                # Try Metadata if still 0
-                if initial_val == 0 and 'resol' in self.current_session.spec.meta:
+        elif self.current_session:
+            # 2. The resolution of the spectrum at the component (#526)
+            r = self.current_session.spec.resolution()
+            r = r[np.isfinite(r)]
+            if r.size:
+                initial_val = float(np.median(r))
+                first_line = (STANDARD_MULTIPLETS.get(first_comp.series, [first_comp.series.split(',')[0].strip()])[0]
+                              if first_comp else None)
+                atom = ATOM_DATA.get(first_line) if first_line else None
+                if atom is not None:
                     try:
-                        initial_val = float(self.current_session.spec.meta['resol'])
-                    except: pass
+                        x_obs = (atom['wave'] * (1 + first_comp.z) * au.Angstrom).to_value(
+                            self.current_session.spec.x.unit)
+                        r_at = resolution_at(self.current_session.spec, np.array([x_obs]))[0]
+                        if np.isfinite(r_at):
+                            initial_val = float(r_at)
+                    except au.UnitConversionError:
+                        pass
 
         # 1. Create Custom Dialog
         dialog = QDialog(self)

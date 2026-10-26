@@ -199,3 +199,13 @@ def migrate_component_resolutions(systs, spec):
                      "(they follow the spectrum now), %d converted from km/s to R.",
                      n_cleared, n_converted)
     return systs.__class__(dataclasses.replace(systs._data, components=components))
+
+
+def resolution_summary(spec) -> Tuple[float, bool]:
+    """Median resolving power of a spectrum (0.0 if unknown) and whether it
+    varies with wavelength, for displays and checks."""
+    r = spec.resolution()
+    r = r[np.isfinite(r)]
+    if not r.size:
+        return 0.0, False
+    return float(np.median(r)), bool(not np.allclose(r, r[0], rtol=1e-6))

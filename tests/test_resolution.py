@@ -180,3 +180,28 @@ def test_dataclass_replace_keeps_the_column():
     spec = _spectrum(resol=45000.0)
     data = dataclasses.replace(spec._data, resol=0.0)
     assert SpectrumV2(data).resolution() == pytest.approx(np.full(N, 45000.0))
+
+
+# --- GUI on the same resolver (PR 2) ------------------------------------------------
+
+def test_resolution_summary():
+    from astrocook.core.resolution import resolution_summary
+    assert resolution_summary(_spectrum()) == (0.0, False)
+    assert resolution_summary(_spectrum(resol=45000.0)) == (45000.0, False)
+    median, variable = resolution_summary(_spectrum(resol_col=np.linspace(40000.0, 50000.0, N)))
+    assert median == pytest.approx(45000.0, rel=1e-3) and variable
+
+
+@pytest.mark.parametrize("col, unit, expected", [
+    (np.full(N, 45000.0), au.dimensionless_unscaled, 45000.0),
+    (np.full(N, 6.0), au.km / au.s, C_KMS / 6.0),
+])
+def test_system_inspector_reads_the_column_by_its_unit(qtbot, col, unit, expected):
+    # Before #526 the inspector always read the column as km/s
+    from types import SimpleNamespace
+    from astrocook.core.session import SessionV2
+    from astrocook.gui.system_inspector import VelocityPlotWidget
+    holder = SimpleNamespace(_current_session=SessionV2(
+        "s", None, spec=_spectrum(resol_col=col, resol_unit=unit)))
+    r, unit_out = VelocityPlotWidget._get_resolution_at(holder, 616.0)
+    assert unit_out == 'R' and r == pytest.approx(expected)
