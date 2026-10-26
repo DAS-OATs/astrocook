@@ -14,7 +14,9 @@ python docs/screenshots/make_screenshots.py --list
 ## Data
 
 Two spectra, anonymised as "My QSO" and "My other QSO" (provided by Guido,
-October 2026), are kept out of the repository as assets of the GitHub
+October 2026; rebuilt with only the spectrum columns, x to resol, and a
+minimal header: no coordinates, dates, archive identifiers or earlier
+analysis), are kept out of the repository as assets of the GitHub
 pre-release `data-docs-2026`: `My_QSO.acs2` and `My_other_QSO.acs2`.
 `--download` fetches the missing ones into `docs/screenshots/data/`
 (ignored by git); `--data` reads them from another folder. The session takes

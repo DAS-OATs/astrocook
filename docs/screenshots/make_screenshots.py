@@ -571,7 +571,7 @@ def editing_set_properties(s: Studio):
     w = s.new_window("My QSO")
     s.limits(x=(440, 560))
     dialog = s.recipe_dialog("edit", "set_properties",
-                             {"name": "My QSO", "object": "Q0142-100A", "z_em": "2.730",
+                             {"name": "My QSO", "object": "My QSO", "z_em": "2.730",
                               "resol": str(RESOL)},
                              focus="resol")
     field = dialog.input_widgets["resol"]
