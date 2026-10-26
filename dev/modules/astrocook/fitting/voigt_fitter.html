@@ -495,105 +495,53 @@
     <span class="k">return</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span> <span class="k">if</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">())]</span>
 
 
-<div class="viewcode-block" id="convolve_flux">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.convolve_flux">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convolve_flux</span><span class="p">(</span><span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">x_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">resol_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'R'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
-<span class="sd">    Convolves a flux array with a Gaussian kernel defined by resolution.</span>
+<div class="viewcode-block" id="voigt_optical_depth">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.voigt_optical_depth">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">voigt_optical_depth</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Optical depth of M Voigt lines on N samples, summed: the physics of</span>
+<span class="sd">    the fitter, used also by the profiles of the System Inspector.</span>
 
-<span class="sd">    Handles both constant resolution (scalar) and variable resolution (array)</span>
-<span class="sd">    across the wavelength grid.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    flux : np.ndarray</span>
-<span class="sd">        The input flux array (either normalized 0-1 or physical units).</span>
-<span class="sd">    x_ang : np.ndarray</span>
-<span class="sd">        The wavelength grid in Angstroms. Must match ``flux`` length.</span>
-<span class="sd">    resol : float or np.ndarray</span>
-<span class="sd">        Resolution value(s).</span>
-<span class="sd">        - If float: Constant resolution across the spectrum.</span>
-<span class="sd">        - If array: Pixel-by-pixel resolution (must match ``flux`` length).</span>
-<span class="sd">    resol_unit : str, optional</span>
-<span class="sd">        Unit of the resolution value:</span>
-<span class="sd">        - ``'R'``: Resolving Power (:math:`R = \lambda / \Delta\lambda`).</span>
-<span class="sd">        - ``'km/s'``: FWHM velocity.</span>
-<span class="sd">        Defaults to ``'R'``.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    np.ndarray</span>
-<span class="sd">        The convolved flux array with the same shape as input.</span>
+<span class="sd">    Input arrays (lambda_0, z, etc.) must be shape (M,).</span>
+<span class="sd">    wave_grid_ang must be shape (N,).</span>
+<span class="sd">    Returns summed tau array of shape (N,).</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">flux</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shape mismatch: flux </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span><span class="si">}</span><span class="s2"> vs wave </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="c1"># Each line only where its optical depth exceeds TAU_CUT (#526: the</span>
+    <span class="c1"># grid is finer than the pixels): the samples of all lines are</span>
+    <span class="c1"># gathered in one flat array, and summed back onto the grid</span>
+    <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
+    <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
+    <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
+    <span class="n">b_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">lambda_c</span> <span class="o">=</span> <span class="n">lambda_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
+    <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">((</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
+    <span class="c1"># Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it</span>
+    <span class="c1"># was computed with the observed wavelength, (1 + z) too large (F61)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">))</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">N_col</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span>
 
-    <span class="c1"># Estimate sampling (dx)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">x_ang</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="mf">1.0</span>
-    
-    <span class="k">if</span> <span class="n">dx</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">flux</span>
+    <span class="c1"># Gaussian core and Lorentzian wings, in Doppler widths</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+        <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">tau0</span> <span class="o">/</span> <span class="n">TAU_CUT</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">))),</span>
+                           <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">TAU_CUT</span><span class="p">)))</span> <span class="o">+</span> <span class="mf">3.0</span>
+    <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">x_cut</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">-</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">+</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
+    <span class="n">lens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lens</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lens</span><span class="p">)),</span> <span class="n">lens</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span> <span class="o">-</span> <span class="n">lens</span><span class="p">,</span> <span class="n">lens</span><span class="p">)</span>
 
-    <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+    <span class="c1"># Faddeeva (Voigt): the expensive step</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">[</span><span class="n">line</span><span class="p">])</span> <span class="o">/</span> <span class="n">dop_width_ang</span><span class="p">[</span><span class="n">line</span><span class="p">]</span>
+    <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">[</span><span class="n">line</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">tau0</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">*</span> <span class="n">H_ax</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">))</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_pix</span><span class="p">(</span><span class="n">res_val</span><span class="p">,</span> <span class="n">wav</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">resol_unit</span> <span class="o">==</span> <span class="s1">'km/s'</span><span class="p">:</span>
-            <span class="c1"># FWHM_lambda = (v / c) * lambda</span>
-            <span class="c1"># Sigma = FWHM / 2.355</span>
-            <span class="n">sigma_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">res_val</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">wav</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># FWHM_lambda = lambda / R</span>
-            <span class="n">sigma_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">wav</span> <span class="o">/</span> <span class="n">res_val</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx</span>
-
-    <span class="c1"># 1. Variable Resolution (Array)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">):</span>
-        <span class="n">resol_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span>
-        <span class="n">final_convolved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span>
-        
-        <span class="k">if</span> <span class="n">resol_unit</span> <span class="o">==</span> <span class="s1">'R'</span><span class="p">:</span>
-            <span class="n">rounded_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">resol_arr</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">rounded_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">resol_arr</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
-            
-        <span class="n">unique_resols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">rounded_resol</span><span class="p">)</span>
-        
-        <span class="k">for</span> <span class="n">r_val</span> <span class="ow">in</span> <span class="n">unique_resols</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">r_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>  <span class="c1"># also skips NaN</span>
-            
-            <span class="c1"># Select by the ROUNDED value: selecting by the raw value left the</span>
-            <span class="c1"># pixels with a non-round resolution at 0 (findings register F10)</span>
-            <span class="n">mask_r</span> <span class="o">=</span> <span class="n">rounded_resol</span> <span class="o">==</span> <span class="n">r_val</span>
-            
-            <span class="c1"># Use median wavelength of the masked region for kernel width approximation</span>
-            <span class="n">local_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x_ang</span><span class="p">[</span><span class="n">mask_r</span><span class="p">])</span>
-            <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">get_sigma_pix</span><span class="p">(</span><span class="n">r_val</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">sigma_pix</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
-                <span class="c1"># Convolve full array to handle edges, then apply mask</span>
-                <span class="n">temp_conv</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
-                <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_conv</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span>
-
-        <span class="c1"># Fill gaps (where resol &lt;= 0 or NaN)</span>
-        <span class="n">mask_no_res</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">rounded_resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask_no_res</span><span class="p">):</span>
-            <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_no_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span><span class="p">[</span><span class="n">mask_no_res</span><span class="p">]</span>
-            
-        <span class="k">return</span> <span class="n">final_convolved</span>
-
-    <span class="c1"># 2. Constant Resolution (Scalar)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">local_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span>
-        <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">get_sigma_pix</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">sigma_pix</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
-            
-    <span class="k">return</span> <span class="n">flux</span></div>
 
 
 <div class="viewcode-block" id="VoigtFitterV2">
@@ -658,14 +606,12 @@
         <span class="c1"># flat column takes the scalar path, as a global value did before</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
         <span class="n">r_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
         <span class="n">finite</span> <span class="o">=</span> <span class="n">r_pix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_pix</span><span class="p">)]</span>
         <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_pix</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">finite</span> <span class="o">==</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="n">r_pix</span>
@@ -691,37 +637,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ComponentDataV2</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""</span>
-        <span class="n">mid_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span>
-        <span class="n">fwhm_ang</span> <span class="o">=</span> <span class="n">mid_wave</span> <span class="o">/</span> <span class="n">R</span>
-        <span class="n">sigma_ang</span> <span class="o">=</span> <span class="n">fwhm_ang</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="n">dx_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx_avg</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_calc_sigma_pix_from_fwhm_kms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Convert FWHM (km/s) to Gaussian Sigma in pixels.</span>
-<span class="sd">        If local_wave is provided, calculates for that specific wavelength.</span>
-<span class="sd">        """</span>
-        <span class="n">wave</span> <span class="o">=</span> <span class="n">local_wave</span> <span class="k">if</span> <span class="n">local_wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span>
-        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-        <span class="n">fwhm_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwhm_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">wave</span>
-        <span class="n">sigma_ang</span> <span class="o">=</span> <span class="n">fwhm_ang</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        
-        <span class="c1"># Estimate local sampling (dx)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">local_wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
-                <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dx</span> <span class="o">=</span> <span class="mf">1.0</span>
-            
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_tau_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">)]</span>
@@ -1135,50 +1050,12 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart Guess: z=</span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">p_refined</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Vectorized Voigt profile calculation.</span>
-<span class="sd">        Computes profiles for M lines on N samples simultaneously.</span>
-<span class="sd">        </span>
-<span class="sd">        Input arrays (lambda_0, z, etc.) must be shape (M,).</span>
-<span class="sd">        wave_grid_ang must be shape (N,).</span>
-<span class="sd">        Returns summed tau array of shape (N,).</span>
-<span class="sd">        """</span>
-        <span class="c1"># Each line only where its optical depth exceeds TAU_CUT (#526: the</span>
-        <span class="c1"># grid is finer than the pixels): the samples of all lines are</span>
-        <span class="c1"># gathered in one flat array, and summed back onto the grid</span>
-        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
-        <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
-        <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
-        <span class="n">b_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-        <span class="n">lambda_c</span> <span class="o">=</span> <span class="n">lambda_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
-        <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">((</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
-        <span class="c1"># Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it</span>
-        <span class="c1"># was computed with the observed wavelength, (1 + z) too large (F61)</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">))</span>
-        <span class="n">tau0</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">N_col</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span>
-
-        <span class="c1"># Gaussian core and Lorentzian wings, in Doppler widths</span>
-        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
-            <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">tau0</span> <span class="o">/</span> <span class="n">TAU_CUT</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">))),</span>
-                               <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">TAU_CUT</span><span class="p">)))</span> <span class="o">+</span> <span class="mf">3.0</span>
-        <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">x_cut</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-        <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">-</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
-        <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">+</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
-        <span class="n">lens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">total</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lens</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">)</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lens</span><span class="p">)),</span> <span class="n">lens</span><span class="p">)</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span> <span class="o">-</span> <span class="n">lens</span><span class="p">,</span> <span class="n">lens</span><span class="p">)</span>
-
-        <span class="c1"># Faddeeva (Voigt): the expensive step</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">[</span><span class="n">line</span><span class="p">])</span> <span class="o">/</span> <span class="n">dop_width_ang</span><span class="p">[</span><span class="n">line</span><span class="p">]</span>
-        <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">[</span><span class="n">line</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">tau0</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">*</span> <span class="n">H_ax</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">))</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""See :func:`voigt_optical_depth`."""</span>
+        <span class="k">return</span> <span class="n">voigt_optical_depth</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_0</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">N_col</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VoigtFitterV2.prepare_fit_context">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context">[docs]</a>

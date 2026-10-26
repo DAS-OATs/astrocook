@@ -543,7 +543,9 @@ and <code class="docutils literal notranslate"><span class="pre">resol_fwhm</spa
 500: FWHM in km/s). These legacy sources are migrated into the column when
 a spectrum is built (<a class="reference internal" href="#astrocook.core.resolution.migrate_resolution" title="astrocook.core.resolution.migrate_resolution"><code class="xref py py-func docutils literal notranslate"><span class="pre">migrate_resolution()</span></code></a>), and no longer read
 anywhere else; the guess of the unit survives only there, for data saved
-before #526.</p>
+before #526. Since #526 (PR 4) nothing writes them: the attribute is
+cleared by the migration, the meta keys are left as they came (they may be
+keywords of the original file).</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.core.resolution.LEGACY_KMS_THRESHOLD">
 <span class="sig-prename descclassname"><span class="pre">astrocook.core.resolution.</span></span><span class="sig-name descname"><span class="pre">LEGACY_KMS_THRESHOLD</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">500.0</span></span><a class="headerlink" href="#astrocook.core.resolution.LEGACY_KMS_THRESHOLD" title="Link to this definition">#</a></dt>
@@ -600,7 +602,9 @@ the fitter read them before #526: attribute, meta <code class="docutils literal 
 <p>A column with at least one valid value is kept (a dimensionless column
 with median below <code class="docutils literal notranslate"><span class="pre">LEGACY_KMS_THRESHOLD</span></code> was a FWHM in km/s before
 #526, and gets that unit). Otherwise the column is created, flat, from
-the legacy sources (<a class="reference internal" href="#astrocook.core.resolution.legacy_resolution" title="astrocook.core.resolution.legacy_resolution"><code class="xref py py-func docutils literal notranslate"><span class="pre">legacy_resolution()</span></code></a>), if any.</p>
+the legacy sources (<a class="reference internal" href="#astrocook.core.resolution.legacy_resolution" title="astrocook.core.resolution.legacy_resolution"><code class="xref py py-func docutils literal notranslate"><span class="pre">legacy_resolution()</span></code></a>), if any. The attribute
+is cleared either way, so that it cannot come back later (e.g. after
+the column is deleted).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The same object if nothing changes, a new one otherwise.</p>

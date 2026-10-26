@@ -43,8 +43,6 @@
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.fitting.voigt_fitter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
@@ -541,32 +539,13 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.convolve_flux">
-<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">convolve_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'R'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/voigt_fitter.html#convolve_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.convolve_flux" title="Link to this definition">#</a></dt>
-<dd><p>Convolves a flux array with a Gaussian kernel defined by resolution.</p>
-<p>Handles both constant resolution (scalar) and variable resolution (array)
-across the wavelength grid.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>flux</strong> (<em>np.ndarray</em>) – The input flux array (either normalized 0-1 or physical units).</p></li>
-<li><p><strong>x_ang</strong> (<em>np.ndarray</em>) – The wavelength grid in Angstroms. Must match <code class="docutils literal notranslate"><span class="pre">flux</span></code> length.</p></li>
-<li><p><strong>resol</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Resolution value(s).
-- If float: Constant resolution across the spectrum.
-- If array: Pixel-by-pixel resolution (must match <code class="docutils literal notranslate"><span class="pre">flux</span></code> length).</p></li>
-<li><p><strong>resol_unit</strong> (<em>str</em><em>, </em><em>optional</em>) – Unit of the resolution value:
-- <code class="docutils literal notranslate"><span class="pre">'R'</span></code>: Resolving Power (<span class="math notranslate nohighlight">\(R = \lambda / \Delta\lambda\)</span>).
-- <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>: FWHM velocity.
-Defaults to <code class="docutils literal notranslate"><span class="pre">'R'</span></code>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The convolved flux array with the same shape as input.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.voigt_optical_depth">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">voigt_optical_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wave_grid_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/voigt_fitter.html#voigt_optical_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.voigt_optical_depth" title="Link to this definition">#</a></dt>
+<dd><p>Optical depth of M Voigt lines on N samples, summed: the physics of
+the fitter, used also by the profiles of the System Inspector.</p>
+<p>Input arrays (lambda_0, z, etc.) must be shape (M,).
+wave_grid_ang must be shape (N,).
+Returns summed tau array of shape (N,).</p>
 </dd></dl>
 
 <dl class="py class">
@@ -768,7 +747,7 @@ system list, without performing any fitting/optimization.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.TAU_CUT"><code class="docutils literal notranslate"><span class="pre">TAU_CUT</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.convolve_flux"><code class="docutils literal notranslate"><span class="pre">convolve_flux()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.voigt_optical_depth"><code class="docutils literal notranslate"><span class="pre">voigt_optical_depth()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.evaluate_uncertainties()</span></code></a></li>

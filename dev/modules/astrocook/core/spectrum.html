@@ -890,12 +890,8 @@
         
         <span class="n">history_entries</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"z_em=</span><span class="si">{</span><span class="n">z_em</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
 
-        <span class="c1"># Update Resolution (the meta keys are kept for older readers of</span>
-        <span class="c1"># the archives; the resolution is read from the column only, #526)</span>
+        <span class="c1"># The resolution goes into the column only (below; #526)</span>
         <span class="k">if</span> <span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">new_meta</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">resol</span>
-            <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-            <span class="n">new_meta</span><span class="p">[</span><span class="s1">'resol_fwhm'</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">/</span> <span class="n">resol</span>
             <span class="n">history_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"R=</span><span class="si">{</span><span class="n">resol</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Update Object Name</span>
@@ -907,8 +903,7 @@
             <span class="n">history_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Object='</span><span class="si">{</span><span class="n">object_name</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
         <span class="c1"># Update Core Data</span>
-        <span class="n">new_resol</span> <span class="o">=</span> <span class="n">resol</span> <span class="k">if</span> <span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">resol</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="n">new_resol</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">)</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">)</span>
         
         <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Set properties (</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">history_entries</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">]</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span>
@@ -1584,8 +1579,7 @@
             <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy_final</span><span class="p">,</span> <span class="n">y_u</span><span class="p">),</span>
             <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux</span><span class="p">,</span>
             <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span>
-            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span>
-            <span class="n">resol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">resol</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
         <span class="p">)</span>
         
         <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
@@ -1984,20 +1978,12 @@
         <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">x_final_nm</span> <span class="o">=</span> <span class="n">x_final</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="c1"># Get the new grid in nm for interpolation</span>
         
-        <span class="n">new_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">median_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">resol</span>
-
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">col_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># --- Bypass interpolation if it's the carefully drizzled resolution ---</span>
             <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'resol'</span> <span class="ow">and</span> <span class="n">resol_new</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># rebin_spectrum returns R (#526)</span>
                 <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">resol_new</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span>
                                                      <span class="n">description</span><span class="o">=</span><span class="s2">"Resolving power (rebinned)"</span><span class="p">)</span>
-                <span class="c1"># --- Update Global Median ---</span>
-                <span class="n">valid_r</span> <span class="o">=</span> <span class="n">resol_new</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resol_new</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">resol_new</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_r</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">median_r</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">valid_r</span><span class="p">))</span>
-                    <span class="n">new_meta</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">median_r</span>
                 <span class="k">continue</span>
 
             <span class="c1"># --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---</span>
@@ -2042,7 +2028,6 @@
             <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dy_new</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
             <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">,</span> 
             <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span> 
-            <span class="n">resol</span><span class="o">=</span><span class="n">median_r</span><span class="p">,</span>
             <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>   <span class="c1"># Propagate</span>
         <span class="p">)</span>
         
@@ -2265,19 +2250,8 @@
         <span class="c1"># --- Restore the co-added resolution array ---</span>
         <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
         
-        <span class="c1"># --- Safely force the metadata resolution to be a float ---</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">median_r</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-            <span class="n">median_r</span> <span class="o">=</span> <span class="mf">0.0</span>
-
         <span class="k">if</span> <span class="n">reb_resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">reb_resol</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"Co-added IVW resolution"</span><span class="p">)</span>
-            <span class="c1"># --- Update Global Median ---</span>
-            <span class="n">valid_r</span> <span class="o">=</span> <span class="n">reb_resol</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reb_resol</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">reb_resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_r</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">median_r</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">valid_r</span><span class="p">))</span>
-                <span class="n">new_meta</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">median_r</span>
 
         <span class="c1"># 8. Wrap in Logic Class</span>
         <span class="n">final_spec_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
@@ -2288,8 +2262,7 @@
             <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">reb_dy</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">reb_dy</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
             <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">,</span>
             <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span> 
-            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span>
-            <span class="n">resol</span><span class="o">=</span><span class="n">median_r</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
         <span class="p">)</span>
         
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">final_spec_data</span><span class="p">)</span></div>
