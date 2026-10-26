@@ -1246,11 +1246,13 @@ class SpectrumPlotWidget(QWidget):
                 panel_open = False
                 try:
                     self.main_window.update_plot_swatches(dict(zip(labels, handles)))
-                    panel_open = self.main_window.right_sidebar_widget.width() > 1
+                    panel_open = (self.main_window.right_sidebar_widget.width() > 1
+                                  and self.main_window.plot_elements_section.isExpanded())
                 except AttributeError:
                     pass  # No main window controls (e.g. in tests)
                 if panel_open:
                     # The plot controls show these entries as swatches
+                    # (when their Plot Elements section is open)
                     kept = [(h, lab) for h, lab in zip(handles, labels)
                             if lab not in PANEL_LEGEND_LABELS]
                     handles = [h for h, _ in kept]

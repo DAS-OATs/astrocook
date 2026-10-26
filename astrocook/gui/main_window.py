@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QMenu, QMessageBox, QSlider, QProgressBar,
     QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit, QToolButton,
 )
+import qtawesome as qta
 import re
 from typing import Any, Dict, List, Optional, Union
 
@@ -139,6 +140,17 @@ class CardFader(QObject):
             self.effect.setOpacity(target)
 
 
+def disclosure_icon(direction: str) -> QIcon:
+    """The triangle used by the collapse tabs and by the card sections.
+
+    ``direction`` is 'left', 'right' or 'down'. One glyph for both, so that
+    they look the same on every platform (the style's own arrows differ).
+    """
+    color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
+    # The glyph fills only the middle of its box: scaled to read at 16 px
+    return qta.icon(f'mdi.menu-{direction}', color=color, scale_factor=1.8)
+
+
 class CollapsibleSection(QWidget):
     """A section of a floating card, shown or hidden by its header."""
 
@@ -151,7 +163,8 @@ class CollapsibleSection(QWidget):
         self.header.setCheckable(True)
         self.header.setChecked(expanded)
         self.header.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.header.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
+        self.header.setIconSize(QSize(16, 16))
         self.header.setAutoRaise(True)
         self.header.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 0px; }")
         self.content = QWidget()
@@ -174,7 +187,7 @@ class CollapsibleSection(QWidget):
         self.header.setChecked(expanded)
 
     def _on_toggled(self, expanded: bool):
-        self.header.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
         self.content.setVisible(expanded)
         self.toggled.emit(expanded)
 
@@ -332,7 +345,7 @@ class MainWindowV2(QMainWindow):
         rows = max(1, self.session_model.rowCount())
         row_height = view.sizeHintForRow(0) if self.session_model.rowCount() else 0
         if row_height <= 0:
-            row_height = view.fontMetrics().height() + 32  # item padding 16 + 16
+            row_height = view.fontMetrics().height() + 20  # item padding 10 + 10
         return rows * row_height + 2 * view.frameWidth() + 8 + 8  # + layout margins
 
     def _reposition_floating_widgets(self):
@@ -433,7 +446,7 @@ class MainWindowV2(QMainWindow):
         self.session_list_view = QListView()
         # ... (setup model, font, connection) ...
         self.session_list_view.setModel(self.session_model)
-        font = self.session_list_view.font(); font.setPointSize(14); self.session_list_view.setFont(font)
+        font = self.session_list_view.font(); font.setPointSize(12); self.session_list_view.setFont(font)
         
         # ENABLE MULTI-SELECTION
         self.session_list_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -494,7 +507,6 @@ class MainWindowV2(QMainWindow):
         # (This section remains unchanged)
         plot_toggles_layout = QVBoxLayout()
         plot_toggles_layout.setSpacing(4)
-        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements</b>"))
 
         # The spectrum is always drawn: a swatch with no checkbox, indented
         # to line up with the swatches of the checkboxes below
@@ -558,7 +570,11 @@ class MainWindowV2(QMainWindow):
         self.strong_lines_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.strong_lines_checkbox)
 
-        sidebar_layout.addLayout(plot_toggles_layout)
+        # While this section is open its swatches replace the legend
+        self.plot_elements_section = self._make_card_section("Plot Elements", expanded=True)
+        self.plot_elements_section.setContentLayout(plot_toggles_layout)
+        self.plot_elements_section.toggled.connect(self._replot_if_session)
+        sidebar_layout.addWidget(self.plot_elements_section)
 
         self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
         self.isomag_checkbox.setToolTip("Show lines of constant AB magnitude")
@@ -1380,7 +1396,7 @@ class MainWindowV2(QMainWindow):
             QListView#SessionListView {{ background-color: transparent; border: none; }}
             /* Ensure list items are NOT transparent */
             QListView#SessionListView::item {{
-                padding: 16px 10px; border: none;
+                padding: 10px 10px; border: none;
                 background-color: transparent; /* Inherit sidebar bg initially */
                 color: {button_fg}; /* Use button text color for readability */
              }}
@@ -1723,14 +1739,13 @@ class MainWindowV2(QMainWindow):
         # Icon logic adjusted: Left button shows '>' when sidebar is hidden (points right to expand)
         # Right button shows '<' when sidebar is hidden (points left to expand)
         if is_left:
-            icon_name = QStyle.SP_ArrowLeft if sidebar_is_visible else QStyle.SP_ArrowRight
+            direction = 'left' if sidebar_is_visible else 'right'
             tooltip = "Collapse Session Panel" if sidebar_is_visible else "Expand Session Panel"
         else: # Right sidebar button
-            icon_name = QStyle.SP_ArrowRight if sidebar_is_visible else QStyle.SP_ArrowLeft
+            direction = 'right' if sidebar_is_visible else 'left'
             tooltip = "Collapse Plot Controls" if sidebar_is_visible else "Expand Plot Controls"
 
-        icon = self.style().standardIcon(icon_name)
-        button.setIcon(icon); button.setToolTip(tooltip)
+        button.setIcon(disclosure_icon(direction)); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
                                  is_branching: bool, auto_show_aux: Optional[str] = None,
