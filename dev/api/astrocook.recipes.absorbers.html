@@ -532,6 +532,17 @@
                   
   <section id="module-astrocook.recipes.absorbers">
 <span id="astrocook-recipes-absorbers-module"></span><h1>astrocook.recipes.absorbers module<a class="headerlink" href="#module-astrocook.recipes.absorbers" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.MIN_B_ROUNDS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">MIN_B_ROUNDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.MIN_B_ROUNDS" title="Link to this definition">#</a></dt>
+<dd><p>Rounds of “remove the Ly-a narrower than min_b, refit the rest” in
+lya_auto (#517, F21, agreed with Guido): the refit can narrow other
+lines below min_b, so the filter runs again after it, with one more
+refit; what is still below min_b after the last refit is removed
+without a refit. Before, the filter ran once, before the last refit,
+and 39 Ly-a with b &lt; 10 km/s were left on J0103-1305</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.RecipeAbsorbersV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">RecipeAbsorbersV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/absorbers.html#RecipeAbsorbersV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="Link to this definition">#</a></dt>
@@ -1164,6 +1175,7 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;T
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.MIN_B_ROUNDS"><code class="docutils literal notranslate"><span class="pre">MIN_B_ROUNDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.components_auto()</span></code></a></li>

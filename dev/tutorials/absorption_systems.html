@@ -518,10 +518,11 @@
 <li><p>Ensure your <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Emission Redshift is set</span></a> correctly.</p></li>
 <li><p>Go to <strong>Absorbers &gt; Auto-fit Ly-alpha Forest…</strong>.</p></li>
 <li><p><strong>Threshold:</strong> The default score (<code class="docutils literal notranslate"><span class="pre">0.1</span></code>) is usually fine.</p></li>
-<li><p><strong>Min b:</strong> The minimum Doppler parameter (e.g., <code class="docutils literal notranslate"><span class="pre">10</span></code> km/s) helps filter out noise spikes or unphysically narrow lines (interlopers).</p></li>
+<li><p><strong>Min b:</strong> The minimum Doppler parameter (e.g., <code class="docutils literal notranslate"><span class="pre">10</span></code> km/s) helps filter out noise spikes or unphysically narrow lines (interlopers). The Ly-alpha lines narrower than this are removed after the fit and the rest is fitted again; the lines that the last fit leaves below <strong>Min b</strong> are removed too, so none is left in the result.</p></li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
 <p>This pipeline focuses on the region between the Ly<span class="math notranslate nohighlight">\(\beta\)</span> and Ly<span class="math notranslate nohighlight">\(\alpha\)</span> emission lines.</p>
+<p>All the automatic pipelines remove the components that end at the lower bound of the column density (logN = 10): they absorb nothing measurable. The components that end at another bound of the fit are kept, with a warning (see the flags of the components).</p>
 </section>
 <section id="metal-doublets">
 <h3>Metal Doublets<a class="headerlink" href="#metal-doublets" title="Link to this heading">#</a></h3>

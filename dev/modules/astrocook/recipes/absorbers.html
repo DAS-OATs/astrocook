@@ -736,6 +736,41 @@
     <span class="p">},</span>
 <span class="p">}</span>
 
+<span class="c1">#: Rounds of "remove the Ly-a narrower than min_b, refit the rest" in</span>
+<span class="c1">#: lya_auto (#517, F21, agreed with Guido): the refit can narrow other</span>
+<span class="c1">#: lines below min_b, so the filter runs again after it, with one more</span>
+<span class="c1">#: refit; what is still below min_b after the last refit is removed</span>
+<span class="c1">#: without a refit. Before, the filter ran once, before the last refit,</span>
+<span class="c1">#: and 39 Ly-a with b &lt; 10 km/s were left on J0103-1305</span>
+<span class="n">MIN_B_ROUNDS</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The session without the components ``uuids`` (and the constraints</span>
+<span class="sd">    on them), with the model recomputed from the remaining ones."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">uuids</span><span class="p">))</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">systs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">systs</span><span class="p">)</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">session</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_drop_negligible</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The automatic pipelines remove the components that end at the lower</span>
+<span class="sd">    bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb</span>
+<span class="sd">    nothing measurable, and were 12 of the forest of J0103-1305 (F21)."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="s1">'logN_at_lower_bound'</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> "</span>
+                 <span class="s2">"at the lower bound of logN (negligible)."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_log_flags</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Log how many of the fitted ``components`` have flags (#517): a</span>
 <span class="sd">    parameter at a bound of the fit, or uncertainties not computed."""</span>
@@ -1000,6 +1035,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
+        <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Component pipeline complete."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span></div>
 
@@ -1093,39 +1129,43 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
-        <span class="c1"># 2. Cleanup Phase (Interlopers)</span>
+        <span class="c1"># 2. Cleanup Phase (Interlopers): the Ly-a narrower than min_b are</span>
+        <span class="c1"># removed and the rest refitted, MIN_B_ROUNDS times; those still</span>
+        <span class="c1"># narrower after the last refit are removed without a refit (#517)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Analysing line shapes to remove interlopers..."</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">min_b_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
-            
-            <span class="c1"># Use new Core method</span>
-            <span class="c1"># Logic: Keep if (NOT Ly_a) OR (Ly_a AND b &gt;= min_b)</span>
-            <span class="n">condition</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">!=</span> <span class="s1">'Ly_a'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&gt;=</span> <span class="n">min_b_val</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
-                <span class="n">new_systs</span> <span class="o">=</span> <span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">filter_by_criteria</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
-                
-                <span class="c1"># Check if components were actually removed</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">):</span>
-                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refining fit after removing narrow lines..."</span><span class="p">)</span>
-                     
-                     <span class="c1"># Update session with filtered list</span>
-                     <span class="n">final_session</span> <span class="o">=</span> <span class="n">final_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
-                     
-                     <span class="c1"># Refit</span>
-                     <span class="n">rec_polish</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
-                     <span class="n">final_session</span> <span class="o">=</span> <span class="n">rec_polish</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span>
-                        <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span>
-                        <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
-                        <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                        <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
-                        <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
-                        <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
-                     <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No interlopers found. Clean."</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">narrow</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span>
+                        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="s1">'Ly_a'</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="n">min_b_val</span><span class="p">]</span> <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span> <span class="k">else</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MIN_B_ROUNDS</span><span class="p">):</span>
+                <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refining fit after removing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines..."</span><span class="p">)</span>
+                <span class="n">trimmed</span> <span class="o">=</span> <span class="n">final_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span>
+                    <span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="n">uuids</span><span class="p">))</span>
+                <span class="n">refitted</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span>
+                    <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span>
+                    <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
+                    <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
+                    <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
+                    <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+                    <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">refitted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">final_session</span> <span class="o">=</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="n">final_session</span> <span class="o">=</span> <span class="n">refitted</span>
+            <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">uuids</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines left by the last refit."</span><span class="p">)</span>
+                <span class="n">final_session</span> <span class="o">=</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+            <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lya_auto cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1204,9 +1244,10 @@
         <span class="c1"># 4. Refit All</span>
         <span class="n">rec_step3</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
         <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
-        <span class="k">return</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                                   <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
-                                   <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">)</span></div>
+        <span class="n">fitted</span> <span class="o">=</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
+                                     <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+                                     <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">fitted</span><span class="p">)</span> <span class="k">if</span> <span class="n">fitted</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">fitted</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.metals_auto">
