@@ -528,7 +528,8 @@
 
 <div class="viewcode-block" id="VoigtModelConstraintV2.set_active_components">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_active_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_active_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                              <span class="n">spec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Define the set of components to be fit (the "Fluid Group").</span>
 
@@ -550,6 +551,9 @@
 <span class="sd">            - ``1``: Direct neighbors/links only.</span>
 <span class="sd">            - ``2``: Neighbors of neighbors (Friends of Friends).</span>
 <span class="sd">            Defaults to ``2``.</span>
+<span class="sd">        spec : SpectrumV2, optional</span>
+<span class="sd">            The spectrum to be fitted: lines closer than its instrumental</span>
+<span class="sd">            FWHM are blended (findings register F14).</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">target_uuids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
@@ -562,7 +566,7 @@
             <span class="c1"># J0103-1305 full chain, depth 0 in refit_all raised chi2 by 14%</span>
             <span class="c1"># in the forest)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span>
-                <span class="n">target_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">)</span>
+                <span class="n">target_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fluid Group: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> targets -&gt; </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_active_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> active components."</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_refresh_state</span><span class="p">()</span></div>
