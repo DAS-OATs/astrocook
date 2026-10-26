@@ -676,7 +676,9 @@ class VoigtFitterV2:
         b_safe = np.maximum(b_kms, 0.1)
         lambda_c = lambda_0 * (1.0 + z)
         dop_width_ang = np.maximum((b_safe / c_kms) * lambda_c, 1e-10)
-        a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
+        # Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it
+        # was computed with the observed wavelength, (1 + z) too large (F61)
+        a = (gamma * lambda_0) / (4.0 * np.pi * c_ang_s * (b_safe / c_kms))
         tau0 = prefactor * N_col * f_val * lambda_0 / b_safe
 
         # Gaussian core and Lorentzian wings, in Doppler widths

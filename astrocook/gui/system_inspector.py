@@ -413,7 +413,9 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol
         
     x = (wave_grid_ang - lambda_c) / dop_width_ang
     c_ang_s = 2.99792458e18
-    a = (gamma * lambda_c**2) / (4.0 * np.pi * c_ang_s * dop_width_ang)
+    # Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it
+    # was computed with the observed wavelength, (1 + z) too large (F61)
+    a = (gamma * lambda_0) / (4.0 * np.pi * c_ang_s * (b_safe / c_kms))
     
     H_ax = wofz(x + 1j * a).real
     tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
