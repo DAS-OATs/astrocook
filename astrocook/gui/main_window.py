@@ -17,8 +17,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QGraphicsOpacityEffect, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
-    QMenu, QMessageBox, QSlider, QGroupBox, QProgressBar,
-    QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit,
+    QMenu, QMessageBox, QSlider, QProgressBar,
+    QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit, QToolButton,
 )
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -69,6 +69,7 @@ BUTTON_HEIGHT = 30
 # possible, they are only as tall as their contents and they fade out while
 # the mouse is on the plot, so the effect of a change can be seen through.
 CARD_MARGIN = 8        # Gap between the menu bar and the cards (px)
+CARD_TAB_OFFSET = 6    # Collapse tab, from the top of its card (px)
 CARD_FADED = 0.35      # Opacity of a card while the mouse is away
 CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
 CARD_FADE_TIME = 200   # ms of the fade animation
@@ -136,6 +137,46 @@ class CardFader(QObject):
             self.anim.start()
         else:
             self.effect.setOpacity(target)
+
+
+class CollapsibleSection(QWidget):
+    """A section of a floating card, shown or hidden by its header."""
+
+    toggled = Signal(bool)
+
+    def __init__(self, title: str, expanded: bool = True, parent=None):
+        super().__init__(parent)
+        self.header = QToolButton()
+        self.header.setText(title)
+        self.header.setCheckable(True)
+        self.header.setChecked(expanded)
+        self.header.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.header.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        self.header.setAutoRaise(True)
+        self.header.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 0px; }")
+        self.content = QWidget()
+        self.content.setVisible(expanded)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.header)
+        layout.addWidget(self.content)
+        self.header.toggled.connect(self._on_toggled)
+
+    def setContentLayout(self, layout):
+        layout.setContentsMargins(4, 0, 0, 0)
+        self.content.setLayout(layout)
+
+    def isExpanded(self) -> bool:
+        return self.header.isChecked()
+
+    def setExpanded(self, expanded: bool):
+        self.header.setChecked(expanded)
+
+    def _on_toggled(self, expanded: bool):
+        self.header.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        self.content.setVisible(expanded)
+        self.toggled.emit(expanded)
 
 
 class MainWindowV2(QMainWindow):
@@ -276,6 +317,15 @@ class MainWindowV2(QMainWindow):
         super().resizeEvent(event)
         self._reposition_floating_widgets()
 
+    def _make_card_section(self, title: str, expanded: bool) -> CollapsibleSection:
+        """A collapsible section of the plot controls; its state is remembered."""
+        key = f"plot_controls/expanded/{title}"
+        settings = QSettings("Astrocook", "AstrocookV2")
+        section = CollapsibleSection(title, settings.value(key, expanded, type=bool))
+        section.toggled.connect(
+            lambda state: QSettings("Astrocook", "AstrocookV2").setValue(key, state))
+        return section
+
     def _session_list_height(self) -> int:
         """Height of the session card: all the rows, at least one."""
         view = self.session_list_view
@@ -298,7 +348,9 @@ class MainWindowV2(QMainWindow):
         button_x = left_width - BUTTON_WIDTH if left_width > 0 else left_width
         card_y = content_y_start + CARD_MARGIN
         left_height = min(self._session_list_height(), content_height - 2 * CARD_MARGIN)
-        left_button_y = card_y + (left_height - BUTTON_HEIGHT) // 2
+        # The tab stays at the top of the card: it does not move when the
+        # card grows or shrinks
+        left_button_y = card_y + CARD_TAB_OFFSET
         self.session_collapse_button.setGeometry(button_x, left_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
         self.left_sidebar_widget.setGeometry(0, card_y, left_width, left_height)
 
@@ -309,8 +361,7 @@ class MainWindowV2(QMainWindow):
         card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
                           content_height - 2 * CARD_MARGIN)
         button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
-        # The button sits halfway down the card, not the window
-        right_button_y = card_y + (card_height - BUTTON_HEIGHT) // 2
+        right_button_y = card_y + CARD_TAB_OFFSET
         self.plot_controls_collapse_button.setGeometry(button_x, right_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
         self.right_sidebar_widget.setGeometry(sidebar_x, card_y, right_width, card_height)
         
@@ -430,7 +481,8 @@ class MainWindowV2(QMainWindow):
         """Creates the right sidebar widget with plot toggles and cursor controls."""
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        sidebar_layout.setContentsMargins(15, 10, 15, 10)
+        # Room on the left for the collapse tab
+        sidebar_layout.setContentsMargins(BUTTON_WIDTH + 4, 10, 15, 10)
         sidebar_layout.setSpacing(10)
 
         # --- Helper: Expand Field ---
@@ -442,7 +494,7 @@ class MainWindowV2(QMainWindow):
         # (This section remains unchanged)
         plot_toggles_layout = QVBoxLayout()
         plot_toggles_layout.setSpacing(4)
-        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements:</b>"))
+        plot_toggles_layout.addWidget(QLabel("<b>Plot Elements</b>"))
 
         # The spectrum is always drawn: a swatch with no checkbox, indented
         # to line up with the swatches of the checkboxes below
@@ -517,7 +569,6 @@ class MainWindowV2(QMainWindow):
         # --- ** Axis & View Controls ** ---
         view_layout = QVBoxLayout()
         view_layout.setSpacing(4)
-        view_layout.addWidget(QLabel("<b>View Controls:</b>"))
 
         # X-Axis Unit
         form_layout_x = QFormLayout()
@@ -551,90 +602,17 @@ class MainWindowV2(QMainWindow):
         view_layout.addWidget(self.log_x_checkbox)
         self.log_y_checkbox = QCheckBox("Logarithmic F")
         
-        sidebar_layout.addLayout(view_layout)
+        view_section = self._make_card_section("View Controls", expanded=True)
+        view_section.setContentLayout(view_layout)
+        sidebar_layout.addWidget(view_section)
 
         self.x_unit_combo.currentTextChanged.connect(self._trigger_replot)
         self.log_x_checkbox.stateChanged.connect(self._trigger_replot)
         self.log_y_checkbox.stateChanged.connect(self._trigger_replot)
 
-        # --- *** UNIFIED GRID FOR CONTROLS *** ---
-        # [CHANGE] Use a SINGLE grid for both sections to guarantee alignment
-        unified_grid = QGridLayout()
-        unified_grid.setContentsMargins(0, 0, 0, 0)
-        unified_grid.setVerticalSpacing(5)
-        unified_grid.setHorizontalSpacing(10) # A bit more space between label and box
-        
-        # Column 0: Labels (Fixed min width)
-        unified_grid.setColumnMinimumWidth(0, 80)
-        # Column 1: Boxes (Stretch)
-        unified_grid.setColumnStretch(1, 1)
-
-                # Helper function to create collapsible group boxes
-        def create_collapsible_group(title, is_collapsed=False):
-            group = QGroupBox(title)
-            group.setCheckable(True)
-            group.setChecked(not is_collapsed)
-            group.setStyleSheet("""
-                QGroupBox {
-                    font-weight: bold;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    margin-top: 8px;
-                    padding-top: 8px;
-                }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 8px;
-                    padding: 0 3px;
-                }
-            """)
-            
-            def toggle_content(checked):
-                if group.layout():
-                    for i in range(group.layout().count()):
-                        item = group.layout().itemAt(i)
-                        w = item.widget()
-                        if w: w.setVisible(checked)
-                        l = item.layout()
-                        if l:
-                            # Recursively hide sub-layouts
-                            for j in range(l.count()):
-                                sub_item = l.itemAt(j)
-                                sub_w = sub_item.widget()
-                                if sub_w: sub_w.setVisible(checked)
-                
-                # Adjust fixed height to collapse/expand
-                if not checked:
-                    # Keep just enough for the title (roughly 25-30px)
-                    group.setMinimumHeight(30)
-                    group.setMaximumHeight(30)
-                else:
-                    group.setMinimumHeight(0)
-                    group.setMaximumHeight(16777215) # Default QWIDGETSIZE_MAX
-            
-            group.toggled.connect(toggle_content)
-            return group
-
-        # Helper to apply the initial collapse state after layout is set
-        def apply_initial_collapse(group):
-            # Call the internal toggle_content logic by triggering the signal
-            # or calling the logic directly if we can access it.
-            # Easiest way: force a toggle event
-            checked = group.isChecked()
-            # We need to manually trigger the logic because the signal might not fire 
-            # if we set the same value, or it might have fired before layout was set.
-            # Let's find the slot
-            group.toggled.emit(checked)
-
         # -- SECTION 1: Axis Limits --
-        # Use a simple layout without a GroupBox border to keep it clean
-        limits_header = QLabel("<b>Axis Limits</b>")
-        limits_header.setStyleSheet("margin-top: 10px; margin-bottom: 2px;")
-        sidebar_layout.addWidget(limits_header)
-        
         limits_layout = QGridLayout()
         limits_layout.setSpacing(5)
-        limits_layout.setContentsMargins(10, 0, 10, 0) # Indent slightly
 
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C)
@@ -668,11 +646,13 @@ class MainWindowV2(QMainWindow):
         
         limits_layout.addWidget(self.lbl_flux, 1, 0)
         limits_layout.addLayout(flux_layout, 1, 1)
-        
-        sidebar_layout.addLayout(limits_layout)
+
+        limits_section = self._make_card_section("Axis Limits", expanded=True)
+        limits_section.setContentLayout(limits_layout)
+        sidebar_layout.addWidget(limits_section)
 
         # -- SECTION 2: Redshift Cursor --
-        cursor_group = create_collapsible_group("Redshift Cursor", is_collapsed=True)
+        cursor_group = self._make_card_section("Redshift Cursor", expanded=False)
         cursor_layout = QGridLayout()
         cursor_layout.setSpacing(5)
 
@@ -697,12 +677,11 @@ class MainWindowV2(QMainWindow):
         self.cursor_show_checkbox.stateChanged.connect(self._on_cursor_checkbox_toggled)
         self.cursor_series_input.returnPressed.connect(lambda: self.cursor_show_checkbox.setChecked(True))
 
-        cursor_group.setLayout(cursor_layout)
+        cursor_group.setContentLayout(cursor_layout)
         sidebar_layout.addWidget(cursor_group)
-        apply_initial_collapse(cursor_group)
 
         # -- SECTION 4: Edit Continuum (Collapsible, hidden by default) --
-        continuum_group = create_collapsible_group("Edit Continuum", is_collapsed=True)
+        continuum_group = self._make_card_section("Edit Continuum", expanded=False)
         continuum_layout = QGridLayout()
         continuum_layout.setSpacing(5)
 
@@ -760,7 +739,7 @@ class MainWindowV2(QMainWindow):
         continuum_layout.addWidget(self.stride_entry, 2, 1)
 
         # --- Edit Hints Label (Row 3, spanning 2 columns) ---
-        # 1. Create a transparent container to shield the label from the collapse script
+        # 1. Create a transparent container for the label
         self.edit_hints_container = QWidget()
         hints_layout = QVBoxLayout(self.edit_hints_container)
         hints_layout.setContentsMargins(0, 0, 0, 0)
@@ -784,9 +763,8 @@ class MainWindowV2(QMainWindow):
         # 4. Add the CONTAINER to the main layout
         continuum_layout.addWidget(self.edit_hints_container, 3, 0, 1, 2)
 
-        continuum_group.setLayout(continuum_layout)
+        continuum_group.setContentLayout(continuum_layout)
         sidebar_layout.addWidget(continuum_group)
-        apply_initial_collapse(continuum_group)
 
         self.right_sidebar_widget.setObjectName("PlotControlsContainer")
         self._plot_controls_fader = CardFader(self.right_sidebar_widget,
