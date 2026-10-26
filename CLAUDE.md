@@ -204,7 +204,7 @@ parameter, #605), #518 (fit window in the System Inspector, #606),
 "Atomic Data"), F49 (one candidate per doublet, #611), F55
 (candidates within 3000 km/s of z_em, #612), F50 (the pipelines keep
 the mask of the user, #613), #465 (robust automatic continuum, #614).
-In progress: #526 (resolution as a single column; PR 1 of 4). Work in
+In progress: #526 (resolution as a single column; PRs 1-2 merged, #615-#616; PR 3, exact convolution, in review; found F61, the damping parameter (1 + z) too large, to be fixed in its own PR after #526 PR 3). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
