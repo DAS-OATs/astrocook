@@ -2111,7 +2111,8 @@ class SystemInspector(QWidget):
         primary_uuids = {c.uuid for c in selected_comps}
         
         # 2. Identify Full Group
-        group_list = self.current_session.systs.get_connected_group(list(primary_uuids))
+        group_list = self.current_session.systs.get_connected_group(
+            list(primary_uuids), spec=getattr(self.current_session, 'spec', None))
         all_group_uuids = set(group_list)
         
         # 3. Identify Secondary UUIDs (Group members NOT selected)

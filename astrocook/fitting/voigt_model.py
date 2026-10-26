@@ -58,7 +58,8 @@ class VoigtModelConstraintV2:
         
         logging.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
-    def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2):
+    def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2,
+                              spec=None):
         """
         Define the set of components to be fit (the "Fluid Group").
 
@@ -80,6 +81,9 @@ class VoigtModelConstraintV2:
             - ``1``: Direct neighbors/links only.
             - ``2``: Neighbors of neighbors (Friends of Friends).
             Defaults to ``2``.
+        spec : SpectrumV2, optional
+            The spectrum to be fitted: lines closer than its instrumental
+            FWHM are blended (findings register F14).
         """
         if target_uuids is None:
             self._active_uuids = None
@@ -92,7 +96,7 @@ class VoigtModelConstraintV2:
             # J0103-1305 full chain, depth 0 in refit_all raised chi2 by 14%
             # in the forest)
             self._active_uuids = self._system_list.get_connected_group(
-                target_uuids, max_depth=group_depth)
+                target_uuids, max_depth=group_depth, spec=spec)
             logging.debug(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
