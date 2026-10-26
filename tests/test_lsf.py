@@ -1,6 +1,8 @@
 """Exact convolution with the line spread function (#526, F9, F10):
 ``PixelLSF`` against the analytic result, and the model of the fitter
 against the exact flux of mocks, with a flat and a varying resolution."""
+import dataclasses
+
 import astropy.units as au
 import numpy as np
 import pytest
@@ -115,3 +117,29 @@ def test_fitter_model_matches_the_exact_flux(resol_at):
     r_mid = resol_at(np.array([620.0]))[0]
     spec, truth = _mock(resol_at, C_KMS / r_mid / 2.5)
     np.testing.assert_allclose(_model(spec), truth, atol=1e-4)
+
+
+@pytest.mark.parametrize("resol", [45000.0, None])
+def test_system_inspector_profile_is_the_fitter_model(resol):
+    # The profiles drawn by the System Inspector use the physics and the
+    # convolution of the fitter (#526 PR 4; before, a kernel at the median
+    # wavelength on the pixels, and their own copy of the Voigt function)
+    from astrocook.core.atomic_data import ATOM_DATA
+    from astrocook.gui.system_inspector import calc_voigt_profile
+    comp = MockComponent("CIV", 2.97, 13.6, 4.0)
+    spec, _ = _mock(lambda x: np.full(len(x), 45000.0), C_KMS / 45000.0 / 2.5,
+                    lam_min=613.0, lam_max=616.0)
+    if resol is None:
+        aux = {k: v for k, v in spec._data.aux_cols.items() if k != "resol"}
+        spec = SpectrumV2(dataclasses.replace(spec._data, aux_cols=aux))
+    systs = SystemListV2(SystemListDataV2(components=[ComponentDataV2(
+        id=1, z=comp.z, dz=None, logN=comp.logN, dlogN=None, b=comp.b, db=None,
+        series="CIV_1548")]))
+    model = VoigtFitterV2(spec, systs).compute_model_flux()[1]
+    atom = ATOM_DATA["CIV_1548"]
+    x = spec.x.to(au.Angstrom).value
+    profile = calc_voigt_profile(
+        x, atom["wave"], atom["f"], atom["gamma"], comp.z, 10**comp.logN, comp.b,
+        resol=resol, edges_ang=(spec.xmin.to(au.Angstrom).value,
+                                spec.xmax.to(au.Angstrom).value))
+    np.testing.assert_allclose(profile, model, atol=1e-6)

@@ -134,17 +134,12 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
             
     z_em = float(meta.pop('Z_EM', 0.0))
     
-    resol_val = 0.0
-    if 'resol_fwhm' in meta:
-        fwhm = float(meta['resol_fwhm'])
-        if fwhm > 0: resol_val = 299792.458 / fwhm
-    elif 'RESOL' in meta:
-        resol_val = float(meta['RESOL'])
-
+    # The resolution in the meta keys (resol_fwhm, RESOL) is moved into the
+    # resol column when the spectrum is built (core/resolution.py, #526)
     return SpectrumDataV2(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
         y=y_col, dy=dy_col, 
-        aux_cols=aux_cols, meta=meta, z_em=z_em, resol=resol_val
+        aux_cols=aux_cols, meta=meta, z_em=z_em
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':

@@ -103,10 +103,12 @@ def test_rich_session_round_trip(rich_session, tmp_path):
     before, after = rich_session.spec.meta, reloaded.spec.meta
     assert after["OBJECT"] == "QSO J0000-0000"
     assert after["series_map_json"] == before["series_map_json"]
-    assert after["resol_fwhm"] == before["resol_fwhm"]
-    # The resolution comes back from resol_fwhm; the key 'resol' comes back
-    # upper case (short FITS keyword), see F8
-    assert "resol" not in after and after["RESOL"] == before["resol"]
+    # The resolution comes back from the column only (#526); before, also
+    # from the meta keys resol_fwhm and resol (back as RESOL, F8)
+    for key in ("resol", "RESOL", "resol_fwhm"):
+        assert key not in after
+    np.testing.assert_array_equal(reloaded.spec.resolution(),
+                                  rich_session.spec.resolution())
     # F27: the identifications come back as a dict with integer keys
     assert after["region_identifications"] == {1: [["CIV", 0.9]]}
 
