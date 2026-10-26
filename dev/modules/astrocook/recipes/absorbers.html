@@ -497,6 +497,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"abs_mask"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask column."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Window for fitting (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
             <span class="c1"># New generic region limiter</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Limit search to 'red_side', 'lya_forest', or 'None'."</span><span class="p">}</span>
         <span class="p">],</span>
@@ -510,7 +511,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Min score."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#doublets_auto"</span>
     <span class="p">},</span>
@@ -521,7 +523,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lower threshold for single lines."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum b parameter (km/s) to keep."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#lya_auto"</span>
     <span class="p">},</span>
@@ -532,7 +535,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold for detection."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum b parameter (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#forest_auto"</span>
     <span class="p">},</span>
@@ -543,7 +547,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"ions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated list of ions to check."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"aic_penalty"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"AIC improvement required to keep a new ion."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#metals_auto"</span>
     <span class="p">},</span>
@@ -712,6 +717,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Grouping depth (1=Neighbors, 2=FoF)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_group_size"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max components per fit group (chunking)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">300.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">23.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Limit fitting to 'red_side' or 'lya_forest'."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"selected_uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
         <span class="p">],</span>
@@ -777,7 +783,7 @@
                       <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"abs_mask"</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
                       <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"None"</span><span class="p">,</span>
-                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-detect and fit components.</span>
 
@@ -809,6 +815,14 @@
 <span class="sd">            forest slow and gives spurious broad lines; components that end</span>
 <span class="sd">            at the bound may be broader and can be refitted with</span>
 <span class="sd">            :meth:`refit_all` or :meth:`fit_component`. Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits. In a saturated trough that the</span>
+<span class="sd">            candidates do not fill, a component can otherwise fill it with</span>
+<span class="sd">            its damping wings and run away to logN 20-23, blacking out the</span>
+<span class="sd">            model around it (findings register F62). With 19, the Lyman-limit</span>
+<span class="sd">            systems stay within reach; damped systems are to be fitted by</span>
+<span class="sd">            hand. Components that end at the bound can be refitted with</span>
+<span class="sd">            :meth:`refit_all`. Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -958,7 +972,8 @@
             <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
             <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="n">region_limit</span><span class="p">,</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span>
         
         <span class="c1"># Handle the case where refit_all returns 0 (Empty/Clean)</span>
@@ -980,7 +995,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">doublets_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multiplets</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span>
                       <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.5"</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
-                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit metal doublets (Red Side).</span>
 
@@ -998,6 +1013,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1009,14 +1027,16 @@
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
             <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s2">"red_side"</span><span class="p">,</span>  <span class="c1"># &lt;--- FORCE RED SIDE</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.lya_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.lya_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">lya_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.1"</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"10.0"</span><span class="p">,</span>
-                 <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"100.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                 <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"100.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span>
+                 <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit Ly-alpha forest.</span>
 
@@ -1035,6 +1055,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1051,7 +1074,8 @@
             <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
             <span class="n">mask_col</span><span class="o">=</span><span class="s1">'abs_mask'</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s1">'lya_forest'</span><span class="p">,</span> <span class="c1"># &lt;--- FORCE FOREST</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
@@ -1083,7 +1107,8 @@
                         <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
                         <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
                         <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
-                        <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+                        <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+                        <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
                      <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No interlopers found. Clean."</span><span class="p">)</span>
@@ -1097,7 +1122,8 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.forest_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.forest_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forest_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.1"</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"10.0"</span><span class="p">,</span>
-                    <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                    <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span>
+                    <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit full Lyman series.</span>
 
@@ -1115,6 +1141,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1162,14 +1191,15 @@
         <span class="n">rec_step3</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
         <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
         <span class="k">return</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                                   <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">)</span></div>
+                                   <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+                                   <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.metals_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.metals_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">metals_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> 
                     <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"5.0"</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
-                    <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                    <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check for associated metals.</span>
 
@@ -1189,6 +1219,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1201,6 +1234,7 @@
             <span class="nb">float</span><span class="p">(</span><span class="n">aic_penalty</span><span class="p">)</span>  <span class="c1"># validated only, not used (see the docstring)</span>
             <span class="n">z_win</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
             <span class="n">b_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="n">logN_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_logN</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
@@ -1242,7 +1276,7 @@
                                                      <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                         <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">trial_systs</span><span class="p">)</span>
                         <span class="n">fitted_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                   <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+                                                                   <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">,</span> <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max</span><span class="p">)</span>
                         
                         <span class="c1"># C. Evaluate</span>
                         <span class="n">fitted_comp</span> <span class="o">=</span> <span class="n">fitted_systs</span><span class="o">.</span><span class="n">get_component_by_uuid</span><span class="p">(</span><span class="n">new_uuid</span><span class="p">)</span>
@@ -1265,7 +1299,7 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"metals_auto: Added </span><span class="si">{</span><span class="n">count_added</span><span class="si">}</span><span class="s2"> new systems."</span><span class="p">)</span>
             <span class="c1"># The values the pipeline always used, before the defaults of</span>
             <span class="c1"># refit_all were aligned with the GUI (#573)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'0'</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'0'</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"metals_auto: No new metals found."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">current_session</span></div>
@@ -2144,7 +2178,7 @@
                   <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2'</span><span class="p">,</span> <span class="n">max_group_size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'20'</span><span class="p">,</span>
                   <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"None"</span><span class="p">,</span>
                   <span class="n">selected_uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                  <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'300.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                  <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'300.0'</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'23.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Refit all systems.</span>
 
@@ -2170,6 +2204,10 @@
 <span class="sd">            Upper bound on b (km/s). Defaults to ``"300.0"``, the physical</span>
 <span class="sd">            limit of the constraint model; the automatic pipelines pass</span>
 <span class="sd">            ``"50.0"`` (see :meth:`components_auto`).</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN. Defaults to ``"23.0"``, the physical limit</span>
+<span class="sd">            of the constraint model; the automatic pipelines pass ``"19.0"``</span>
+<span class="sd">            (see :meth:`components_auto`).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2183,6 +2221,7 @@
             <span class="n">depth_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group_depth</span><span class="p">)</span>
             <span class="n">max_size_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_group_size</span><span class="p">)</span>
             <span class="n">b_max_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="n">logN_max_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_logN</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"refit_all: No components to fit."</span><span class="p">)</span>
@@ -2211,7 +2250,8 @@
                         <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span> 
                                               <span class="n">check_stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">)</span>
                         <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                            <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span>
+                            <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">,</span>
+                            <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max_f</span>
                         <span class="p">)</span>
                     
                     <span class="c1"># Update model and return immediately</span>
@@ -2376,7 +2416,7 @@
                     <span class="k">with</span> <span class="n">local_systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">,</span>
                                                      <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                         <span class="n">new_local_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                     <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">)</span>
+                                                                     <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">,</span> <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max_f</span><span class="p">)</span>
                     
                     <span class="k">for</span> <span class="n">fitted_comp</span> <span class="ow">in</span> <span class="n">new_local_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">fitted_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
