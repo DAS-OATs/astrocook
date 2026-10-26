@@ -1,12 +1,14 @@
 """MCP server (pilot, ROADMAP.md section 4.1): tools called through the SDK
 client, connected to the server in process."""
 import asyncio
+import dataclasses
 import logging
 import sys
 import threading
 from importlib.metadata import entry_points
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 pytest.importorskip("mcp")
@@ -22,6 +24,7 @@ from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
 from astrocook.mcp_server import server as server_module  # noqa: E402
 from astrocook.mcp_server.server import SCHEMAS, build_server  # noqa: E402
+from astrocook.core.spectrum import SpectrumV2  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
 from conftest import J0103_SESSION, J0103_Z_EM  # noqa: E402
@@ -131,11 +134,12 @@ def test_open_unreadable_file_reports_the_logged_error(tmp_path):
 
 def test_unphysical_properties_are_accepted(mock_archive):
     # Characterization (F46): edit.set_properties does not check the
-    # values, and the server passes them on as they are
+    # values, and the server passes them on as they are. A resolution
+    # that is not positive leaves the resolution unchanged (#526)
     result = call(build_server(), "session_open", path=str(mock_archive),
                   z_em=-5, resol=-1)
     spec = result.structured_content["spectrum"]
-    assert spec["z_em"] == -5 and spec["resol"] == -1
+    assert spec["z_em"] == -5 and spec["resol"] == pytest.approx(45000.0)
     assert result.structured_content["warnings"] == []
 
 
@@ -336,9 +340,9 @@ def test_identify_lines(forest_archive):
                                       if x == "CIV")
 
 
-def test_identify_lines_doublets_counted_twice(forest_archive):
-    # Characterization (F49): a doublet gives one candidate system per
-    # line, at redshifts ~1 km/s apart
+def test_identify_lines_one_candidate_per_doublet(forest_archive):
+    # F49: a doublet gave one candidate system per line, at redshifts ~1
+    # km/s apart; now only the stronger line gives the candidates
     *_, result = calls(
         build_server(),
         ("session_open", {"path": str(forest_archive)}),
@@ -347,7 +351,7 @@ def test_identify_lines_doublets_counted_twice(forest_archive):
     civ = sorted(s["z"] for s in result.structured_content["identification"]
                  ["systems"] if s["series"] == "CIV")
     close = [b - a for a, b in zip(civ, civ[1:]) if (b - a) / (1 + b) * C_KMS < 2]
-    assert close
+    assert civ and not close
 
 
 def test_identify_lines_lists_at_most_max_listed(forest_archive):
@@ -416,6 +420,11 @@ def doublets(archive, *more):
                  *more)
 
 
+#: The CIV system of the mock with two components 12.7 km/s apart, which
+#: give a single peak
+BLENDED_CIV_Z = 1.83
+
+
 def test_doublets_auto_recovers_the_mock_civ(forest_archive):
     result = doublets(forest_archive)[-1]
     assert not result.is_error
@@ -427,7 +436,9 @@ def test_doublets_auto_recovers_the_mock_civ(forest_archive):
     assert info["spectrum"]["n_components"] == fit["n_components"]
     zs = [c["z"] for c in fit["components"]]
     assert zs == sorted(zs)
-    for true in (c for c in mock_truth().components if c.series == "CIV"):
+    isolated = [c for c in mock_truth().components
+                if c.series == "CIV" and abs(c.z - BLENDED_CIV_Z) > 0.01]
+    for true in isolated:
         comp = min(fit["components"], key=lambda c: abs(c["z"] - true.z))
         assert comp["series"] == "CIV"
         assert abs(comp["z"] - true.z) / (1 + true.z) * C_KMS < 2, true
@@ -438,18 +449,19 @@ def test_doublets_auto_recovers_the_mock_civ(forest_archive):
         assert comp["chi2r"] == pytest.approx(1, abs=0.5)
 
 
-def test_doublets_auto_adds_spurious_components(forest_archive):
-    # Characterization (F49): the second candidate of a doublet adds weak
-    # components near the real ones (1 and 19 km/s here), with large
-    # errors (with kappa = 3 in the continuum one ends at the lower bound
-    # of b)
+def test_doublets_auto_fits_a_blend_with_one_component(forest_archive):
+    # One candidate per doublet (F49): no spurious components, but the two
+    # CIV components 12.7 km/s apart are fitted as one, with the total
+    # column. Before F49 the second candidate of the doublet, ~1 km/s from
+    # the first, sometimes ended on the other component; the pipeline adds
+    # no components from the residuals (F58)
     comps = doublets(forest_archive)[-1].structured_content["fit"]["components"]
-    true_z = [c.z for c in mock_truth().components if c.series == "CIV"]
-    matched = {min(comps, key=lambda c: abs(c["z"] - z))["uuid"] for z in true_z}
-    spurious = [c for c in comps if c["uuid"] not in matched]
-    assert len(comps) == 6 and len(matched) == 4  # 4 true components
-    for c in spurious:
-        assert c["dlogN"] > 0.5
+    assert len(comps) == 3 and all(not c["flags"] for c in comps)
+    blend = [c for c in mock_truth().components
+             if c.series == "CIV" and abs(c.z - BLENDED_CIV_Z) < 0.01]
+    comp = min(comps, key=lambda c: abs(c["z"] - BLENDED_CIV_Z))
+    total = np.log10(sum(10 ** c.logN for c in blend))
+    assert comp["logN"] == pytest.approx(total, abs=0.05)
 
 
 def test_doublets_auto_replaces_the_red_side_components(forest_archive):
@@ -464,22 +476,36 @@ def test_doublets_auto_replaces_the_red_side_components(forest_archive):
     assert len(fit["components"]) == 1 and fit["truncated"]
 
 
-def test_doublets_auto_replaces_the_mask_of_the_continuum(forest_archive):
-    # Characterization (F50): components_auto makes a new absorbed mask
-    # with the default parameters of find_absorbed, so the mask of an
-    # estimate_auto with other parameters is lost, and clears the region
-    # left out by region_limit
+def test_doublets_auto_keeps_the_mask_of_the_continuum(forest_archive):
+    # F50: components_auto makes a new absorbed mask with the default
+    # parameters of find_absorbed and restricts it to region_limit, but uses
+    # it only inside the pipeline: the mask of an estimate_auto with other
+    # parameters is given back unchanged (it was replaced, and the forest,
+    # left out by region_limit, cleared)
     session = load_session_from_file(str(forest_archive), "f", None, "auto")
     cont = session.continuum.estimate_auto(kappa="3.0")
     fitted = cont.absorbers.doublets_auto()
     mask_cont = cont.spec.get_column("abs_mask").value
     mask_fit = fitted.spec.get_column("abs_mask").value
-    assert (mask_cont != mask_fit).any()
+    assert (mask_cont == mask_fit).all()
     assert fitted.spec.cont.value == pytest.approx(cont.spec.cont.value)
-    # The forest (left out by region_limit) is no longer flagged as absorbed
-    x = fitted.spec.x.value
-    forest = x < 121.567 * (1 + fitted.spec._data.z_em)
-    assert mask_cont[forest].any() and not mask_fit[forest].any()
+    assert fitted.systs.components
+
+
+def test_doublets_auto_without_a_mask_stores_the_whole_new_one(forest_archive):
+    # With no mask before, the session gets the new mask of the pipeline,
+    # whole: the forest left out by region_limit is still flagged (F50)
+    session = load_session_from_file(str(forest_archive), "f", None, "auto")
+    cont = session.continuum.estimate_auto()
+    spec = cont.spec
+    aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
+    no_mask = cont.with_new_spectrum(SpectrumV2(
+        data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
+    assert not no_mask.spec.has_aux_column("abs_mask")
+    fitted = no_mask.absorbers.doublets_auto()
+    mask = fitted.spec.get_column("abs_mask").value.astype(bool)
+    forest = fitted.spec.x.value < 121.567 * (1 + fitted.spec._data.z_em)
+    assert mask[forest].any() and mask[~forest].any()
 
 
 @pytest.mark.parametrize("kwargs, flags", [

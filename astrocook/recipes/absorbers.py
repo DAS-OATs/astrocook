@@ -132,7 +132,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
             {"name": "btur", "type": float, "default": None, "doc": "btur (km/s)"},
             {"name": "series", "type": str, "default": None, "doc": "Series"},
-            {"name": "resol", "type": float, "default": None, "doc": "Resolution (R or FWHM)"}
+            {"name": "resol", "type": float, "default": None, "doc": "Resolving power R of this component (overrides the spectrum)"}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
@@ -354,6 +354,11 @@ class RecipeAbsorbersV2:
         # to ignore specific regions.
         
         session_current = self._session
+
+        # The mask of the user (e.g. from "Auto-estimate continuum" with other
+        # parameters) is given back with the result: the fresh mask below,
+        # restricted by region_limit, is used only inside the pipeline (F50)
+        user_mask = session_current.spec._data.aux_cols.get(mask_col)
         
         # --- 0. FORCE MASK REGENERATION ---
         # Always generate a fresh mask to ensure it matches current z_em/flux state.
@@ -371,6 +376,14 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logging.error(f"Mask generation failed: {e}")
             return 0
+        kept_mask = (user_mask if user_mask is not None
+                     else session_current.spec._data.aux_cols[mask_col])
+
+        def with_kept_mask(session):
+            spec = session.spec.update_column(
+                mask_col, kept_mask.values, unit=kept_mask.unit,
+                description=kept_mask.description)
+            return session.with_new_spectrum(spec)
         
         # --- 0.5 SMART CLEAN (Refactored) ---
         if region_limit != "None" and session_current.systs:
@@ -482,14 +495,14 @@ class RecipeAbsorbersV2:
         # Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)
         if final_session == 0:
             logging.info("Refit skipped (no components to fit). Returning clean state.")
-            return session_step2
+            return with_kept_mask(session_step2)
 
         # Check for stop request on the valid final session
 
         if self._is_stop_requested(): return self._session
         
         logging.info("Component pipeline complete.")
-        return final_session
+        return with_kept_mask(final_session)
 
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
                       score_threshold: str = "0.5",
@@ -740,10 +753,11 @@ class RecipeAbsorbersV2:
                 new_uuid = trial_systs.components[-1].uuid
                 
                 # B. Fit (Local Island)
-                group = trial_systs.get_connected_group([new_uuid])
+                group = trial_systs.get_connected_group([new_uuid], spec=current_session.spec)
                 
                 try:
-                    with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH):
+                    with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH,
+                                                     spec=current_session.spec):
                         fitter = VoigtFitterV2(current_session.spec, trial_systs)
                         fitted_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win, verbose=0,
                                                                    b_max=b_max)
@@ -1221,7 +1235,8 @@ class RecipeAbsorbersV2:
                     cont_rec = RecipeContinuumV2(current_session)
                     current_session = cont_rec.estimate_auto()
 
-                with current_session.systs.fitting_context([uuid], group_depth=depth_i):
+                with current_session.systs.fitting_context([uuid], group_depth=depth_i,
+                                                           spec=current_session.spec):
                     fitter = VoigtFitterV2(current_session.spec, current_session.systs, check_stop=check_stop)
                     new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
             
@@ -1547,7 +1562,8 @@ class RecipeAbsorbersV2:
             if not self._session.systs: return 0
             current_session = self._session
 
-            with current_session.systs.fitting_context(uuids, group_depth=depth_i):
+            with current_session.systs.fitting_context(uuids, group_depth=depth_i,
+                                                       spec=current_session.spec):
                 b_fitter = BayesianVoigtFitter(current_session.spec, current_session.systs)
                 
                 if engine.lower() == 'nested':
@@ -1661,12 +1677,13 @@ class RecipeAbsorbersV2:
                 
                 # Use our new spatial-index-powered grouping logic
                 combined_active_set = current_session.systs.get_connected_group(
-                    selected_uuids, max_depth=depth_i
+                    selected_uuids, max_depth=depth_i, spec=current_session.spec
                 )
 
                 try:
                     # Execute a single fit pass for the entire 'Super-Group'
-                    with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH):
+                    with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH,
+                                                               spec=current_session.spec):
                         fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
                                               check_stop=self._is_stop_requested)
                         new_systs, model_flux, res = fitter.fit(
@@ -1758,7 +1775,8 @@ class RecipeAbsorbersV2:
                     if seed not in todo_uuids: continue
                     
                     # Find group (physics-based)
-                    group = current_session.systs.get_connected_group([seed], max_depth=depth_i)
+                    group = current_session.systs.get_connected_group([seed], max_depth=depth_i,
+                                                                      spec=current_session.spec)
                     
                     if not group: 
                         todo_uuids.remove(seed); continue
@@ -1831,7 +1849,8 @@ class RecipeAbsorbersV2:
                 try:
                     fitter = VoigtFitterV2(current_session.spec, local_systs)
                     
-                    with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH):
+                    with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
+                                                     spec=current_session.spec):
                         new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0,
                                                                      b_max=b_max_f)
                     
@@ -1896,7 +1915,8 @@ class RecipeAbsorbersV2:
             local = SystemListV2(dataclasses.replace(
                 systs._data, components=[c for c in systs.components if z_lo <= c.z <= z_hi]))
             try:
-                with local.fitting_context(list(target_uuids), group_depth=FIT_EXPANSION_DEPTH):
+                with local.fitting_context(list(target_uuids), group_depth=FIT_EXPANSION_DEPTH,
+                                           spec=spec):
                     evaluated = VoigtFitterV2(spec, local).evaluate_uncertainties(z_window_kms)
                 for c in evaluated.components:
                     if c.uuid in target_uuids:

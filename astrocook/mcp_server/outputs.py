@@ -25,7 +25,8 @@ class SpectrumSummary(BaseModel):
     y_unit: str = Field(description="Unit of the flux.")
     z_em: float = Field(description="Emission redshift; 0 if not set.")
     resol: float = Field(description=(
-        "Resolving power R stored with the spectrum; 0 if not set."))
+        "Resolving power R of the spectrum (median over the pixels, from "
+        "its resol column); 0 if not set."))
     has_continuum: bool = Field(description="Whether a continuum is present.")
     n_components: int = Field(description="Number of absorption components.")
 
@@ -56,6 +57,14 @@ class SaveResult(BaseModel):
         "Warnings logged by Astrocook during the call."))
 
 
+
+def _median_resolution(spec) -> float:
+    """Median resolving power of the pixels (#526), 0 if unknown."""
+    r = spec.resolution()
+    r = r[np.isfinite(r)]
+    return float(np.median(r)) if r.size else 0.0
+
+
 def spectrum_summary(session: SessionV2) -> SpectrumSummary:
     """Summarize the spectrum and the components of a session."""
     spec = session.spec
@@ -67,7 +76,7 @@ def spectrum_summary(session: SessionV2) -> SpectrumSummary:
         x_unit=x.unit.to_string(),
         y_unit=spec.y.unit.to_string(),
         z_em=float(spec._data.z_em),
-        resol=float(spec._data.resol),
+        resol=_median_resolution(spec),
         has_continuum=spec.cont is not None,
         n_components=len(session.systs.components) if session.systs else 0,
     )

@@ -20,7 +20,9 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "object", "type": str, "default": "_current_", "doc": "Object Name (header)"},
             {"name": "z_em", "type": str, "default": "_current_", "doc": "Emission Redshift (z_em)"},
             {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"}, 
-            {"name": "overwrite_resol_col", "type": bool, "default": True, "gui_hidden": True} # <--- [NEW] Add this hidden flag
+            # Replace a resolution column that varies with wavelength by a
+            # flat one; False (#526) keeps it. The GUI asks the user
+            {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True}
         ],
         "url": "edit_cb.html#set_properties"
     },
@@ -319,7 +321,7 @@ class RecipeEditV2:
 
     def set_properties(self, name: str = '_current_', object: str = '_current_', 
                        z_em: str = '_current_', resol: str = '_current_',
-                       overwrite_resol_col: bool = True) -> Optional['SessionV2']:
+                       overwrite_resol_col: bool = False) -> Optional['SessionV2']:
         """
         Set session properties.
 
@@ -338,7 +340,11 @@ class RecipeEditV2:
             Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``).
             Defaults to ``'_current_'`` (no change).
         overwrite_resol_col : bool, optional
-            If ``True``, updates the 'resol' column in the spectrum data with the new resolution value. Defaults to ``True``.
+            If ``True``, a ``resol`` column that varies with wavelength is
+            replaced by a flat one at the new resolution; if ``False`` it is
+            kept (a flat or missing column is always set). Defaults to
+            ``False`` (#526: before, a variable column was flattened even
+            with ``resol='_current_'``).
 
         Returns
         -------
@@ -354,8 +360,7 @@ class RecipeEditV2:
                 z_em_f = float(z_em)
                 
             if str(resol) == '_current_':
-                # Use stored resolution (R) directly
-                resol_f = self._session.spec._data.resol
+                resol_f = 0.0  # leave the resolution as it is (#526)
             else:
                 resol_f = self._parse_resolution_string(str(resol))
         except ValueError:

@@ -1,5 +1,4 @@
 from copy import deepcopy
-import dataclasses
 import logging
 import numpy as np
 import os
@@ -32,6 +31,7 @@ from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
 from .script_dialog import ScriptDialog
 from astrocook.core.debug_hooks import set_debug_plot_handler
+from astrocook.core.resolution import resolution_summary
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, load_session_from_file, LogManager
 from astrocook.core.structures import HistoryLogV2
@@ -2758,15 +2758,19 @@ class MainWindowV2(QMainWindow):
         self.info_zem_edit.setValidator(dbl_validator)
         form_layout.addRow("Emission Redshift (z_em):", self.info_zem_edit)
 
-        # Resolution
-        if spec._data.resol > 0:
-            current_resol_str = f"{spec._data.resol:.0f}"
-        else:
-            current_resol_str = "undefined"
+        # Resolution: median R of the resol column (#526)
+        median_r, variable_r = resolution_summary(spec)
+        current_resol_str = f"{median_r:.0f}" if median_r > 0 else "undefined"
+        self._info_resol_shown = current_resol_str
             
         self.info_resol_edit = _expand_field(QLineEdit(current_resol_str))
         self.info_resol_edit.setPlaceholderText("Resolving Power R")
-        form_layout.addRow("Resolution (R):", self.info_resol_edit)
+        if variable_r:
+            self.info_resol_edit.setToolTip(
+                "The resolution varies with wavelength: this is its median. "
+                "A new value replaces it only if you confirm.")
+        form_layout.addRow("Resolution (R, median):" if variable_r else "Resolution (R):",
+                           self.info_resol_edit)
         
         layout.addLayout(form_layout)
         
@@ -2908,7 +2912,9 @@ class MainWindowV2(QMainWindow):
         
         # Handle Resolution "undefined"
         raw_resol = self.info_resol_edit.text().strip()
-        if raw_resol.lower() == "undefined" or not raw_resol:
+        if raw_resol == getattr(self, '_info_resol_shown', None):
+            new_resol = '_current_'  # not edited: leave the resolution as it is
+        elif raw_resol.lower() == "undefined" or not raw_resol:
             new_resol = "0.0"
         else:
             new_resol = raw_resol
@@ -3260,19 +3266,8 @@ class MainWindowV2(QMainWindow):
 
         # 2. Check Resolution
         if name in self._RECIPES_REQUIRING_RESOL:
-            # Check Scalar R or Meta FWHM
-            has_resol = (spec._data.resol > 0) or (spec.meta.get('resol_fwhm', 0.0) > 0)
-            
-            # Check Column (must be non-empty and positive)
-            if not has_resol and spec.has_aux_column('resol'):
-                try:
-                    col = spec.get_column('resol')
-                    if col is not None:
-                        val = np.nanmedian(col.value)
-                        if np.isfinite(val) and val > 0:
-                            has_resol = True
-                except Exception:
-                    pass
+            # The resol column, the single source (#526)
+            has_resol = resolution_summary(spec)[0] > 0
             
             if not has_resol:
                 ret = self._show_custom_message(
@@ -3319,10 +3314,8 @@ class MainWindowV2(QMainWindow):
                 current_params['object'] = meta.get('OBJECT', '')
                 current_params['z_em'] = f"{spec._data.z_em:.5f}"
                 
-                if spec._data.resol > 0:
-                    current_params['resol'] = f"{spec._data.resol:.0f}"
-                else:
-                    current_params['resol'] = "0" # Or leave blank
+                median_r = resolution_summary(spec)[0]
+                current_params['resol'] = f"{median_r:.0f}" if median_r > 0 else "0"
             
             # Merge with any passed initial_params (which take precedence)
             if initial_params:
@@ -3510,8 +3503,10 @@ class MainWindowV2(QMainWindow):
             new_resol = str(params.get('resol', '_current_'))
             # If the user is actively changing the resolution
             if new_resol != '_current_':
-                # Check if the active session already has a 'resol' column
-                if self.active_history and self.active_history.current_state.spec.has_aux_column('resol'):
+                # Ask only if the resolution varies with wavelength: a flat
+                # or missing one is always replaced (#526)
+                if (self.active_history
+                        and resolution_summary(self.active_history.current_state.spec)[1]):
                     from PySide6.QtWidgets import QMessageBox, QApplication
                     
                     # Find the currently active floating window/dialog
@@ -3521,16 +3516,14 @@ class MainWindowV2(QMainWindow):
                         
                     reply = self._show_custom_message(
                         title="Overwrite Resolution Column?",
-                        header="Existing 'resol' column detected.",
-                        text="This spectrum already has a pixel-by-pixel 'resol' column.\n\nDo you want to overwrite it with a flat array based on this new global value?",
+                        header="The resolution varies with wavelength.",
+                        text="This spectrum has a resolution that varies with wavelength (the 'resol' column).\n\nDo you want to replace it with a single value?",
                         buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                         default_btn=QMessageBox.StandardButton.No,
                         parent=active_win  # <--- [FIX] Parent to the active floating window!
                     )
                     # Inject the user's choice into the params before sending to the worker
                     params['overwrite_resol_col'] = (reply == QMessageBox.StandardButton.Yes)
-                else:
-                    params['overwrite_resol_col'] = True
 
         if recipe_name == "coadd":
             names_str = params.get('session_names', '')
@@ -3547,11 +3540,7 @@ class MainWindowV2(QMainWindow):
                 if specs_to_coadd:
                     resol_count = 0
                     for s in specs_to_coadd:
-                        has_col = s.has_aux_column('resol')
-                        has_glob_attr = getattr(s._data, 'resol', 0.0) > 0
-                        has_glob_meta = float(s.meta.get('resol', 0.0)) > 0 if 'resol' in s.meta else False
-                        
-                        if has_col or has_glob_attr or has_glob_meta:
+                        if resolution_summary(s)[0] > 0:  # #526
                             resol_count += 1
                             
                     # Mismatch detected!
@@ -3720,44 +3709,9 @@ class MainWindowV2(QMainWindow):
 
                 should_autoscale = recipe_name in {'calibrate_from_magnitudes'}
 
-                if recipe_name == 'set_properties':
-
-                    if 'resol' in params:
-                        raw_val = str(params['resol'])
-
-                        if raw_val != '_current_':
-                            try:
-                                new_res = float(raw_val)
-
-                                if new_session_state.systs and new_session_state.systs.components:
-
-                                    # 1. Force Update All Components
-                                    updated_comps = []
-                                    for i, c in enumerate(new_session_state.systs.components):
-                                        # Create a fresh copy
-                                        new_c = dataclasses.replace(c, resol=new_res)
-                                        updated_comps.append(new_c)
-                                        # Log the first one to verify
-
-                                    # 2. Rebuild Session
-                                    if updated_comps:
-                                        # Replace data core
-                                        new_syst_data = dataclasses.replace(new_session_state.systs._data, components=updated_comps)
-
-                                        # Re-instantiate SystemListV2
-                                        # IMPORTANT: Ensure SystemListV2 is imported or accessible via class
-                                        SystemListClass = new_session_state.systs.__class__
-                                        new_systs = SystemListClass(new_syst_data)
-
-                                        # Restore constraints if present
-                                        if new_session_state.systs.constraint_model:
-                                            new_systs.constraint_model = new_session_state.systs.constraint_model
-
-                                        # Update Session
-                                        new_session_state = new_session_state.with_new_system_list(new_systs)
-                            except Exception as e:
-                                logging.error(f"Propagation crashed: {e}", exc_info=True)
-
+                # set_properties no longer writes the resolution into the
+                # components (#526, F47): they follow the spectrum unless the
+                # user set their own value
                 original_history_index = self.session_histories.index(original_parent_history)
                 
                 # --- 4. PREPARE PARENT FOR BRANCHING ---

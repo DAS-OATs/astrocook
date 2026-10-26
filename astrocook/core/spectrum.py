@@ -20,6 +20,7 @@ from astrocook.core.spectrum_operations import (
 )
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.core.resolution import column_to_resolving_power, migrate_resolution
 
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,
@@ -35,6 +36,13 @@ REGION_PRESETS = {
     'all_ly_forest': (91.18 * au.nm, 121.567 * au.nm), # Ly-limit to Ly-alpha
     'red_side': (121.567 * au.nm, 10000.0 * au.nm)     # Redward of Ly-alpha
 }
+
+#: Proximity margin of identify_lines (km/s): no candidate system beyond
+#: z_em by more than this. Absorbers associated with the quasar (outflows,
+#: infall) and the uncertainty of z_em from broad emission lines (up to
+#: ~1000 km/s) allow absorption slightly beyond z_em; anything farther is
+#: a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)
+Z_EM_MARGIN_KMS = 3000.0
 
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
@@ -116,8 +124,28 @@ class SpectrumV2:
     """
     
     def __init__(self, data: SpectrumDataV2, history: list = None):
-        self._data = data
+        # The resolution lives in the 'resol' column only: legacy sources
+        # (attribute, meta keys) are migrated into it here (#526)
+        self._data = migrate_resolution(data)
         self.history = history if history is not None else []
+
+    def resolution(self) -> np.ndarray:
+        """
+        Resolving power R of each pixel, from the ``resol`` column.
+
+        The single source of the resolution (#526). The unit of the column
+        decides how it is read: dimensionless for R, a velocity for the FWHM.
+
+        Returns
+        -------
+        np.ndarray
+            R for each pixel; NaN where it is not known (all NaN if the
+            spectrum has no resolution).
+        """
+        col = self._data.aux_cols.get('resol')
+        if col is None:
+            return np.full(len(self._data.x.values), np.nan)
+        return column_to_resolving_power(col.values, col.unit)
 
     # Accessors
     @property
@@ -349,7 +377,7 @@ class SpectrumV2:
 
     def with_properties(self, z_em: float, resol: float = 0.0, 
                         object_name: Optional[str] = None,
-                        overwrite_resol_col: bool = True) -> 'SpectrumV2':
+                        overwrite_resol_col: bool = False) -> 'SpectrumV2':
         """
         Return a NEW SpectrumV2 instance with updated properties.
 
@@ -358,11 +386,15 @@ class SpectrumV2:
         z_em : float
             The emission redshift.
         resol : float, optional
-            Resolution (R). Defaults to ``0.0``.
+            Resolving power R; ``0.0`` (the default) leaves the resolution
+            unchanged.
         object_name : str, optional
             The object name (header keyword).
         overwrite_resol_col : bool, optional
-            If ``True``, updates/creates the 'resol' auxiliary column with the new resolution value. Defaults to ``True``.
+            If ``True``, a ``resol`` column that varies with wavelength is
+            replaced by a flat one at ``resol``. If ``False`` (the default,
+            #526) it is kept, and ``resol`` only replaces a flat column or
+            creates a missing one.
 
         Returns
         -------
@@ -373,7 +405,8 @@ class SpectrumV2:
         
         history_entries = [f"z_em={z_em}"]
 
-        # Update Resolution
+        # Update Resolution (the meta keys are kept for older readers of
+        # the archives; the resolution is read from the column only, #526)
         if resol > 0:
             new_meta['resol'] = resol
             c_kms = 299792.458
@@ -389,21 +422,25 @@ class SpectrumV2:
             history_entries.append(f"Object='{object_name}'")
 
         # Update Core Data
-        new_data = dataclasses.replace(self._data, z_em=z_em, resol=resol, meta=new_meta)
+        new_resol = resol if resol > 0 else self._data.resol
+        new_data = dataclasses.replace(self._data, z_em=z_em, resol=new_resol, meta=new_meta)
         
         new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
-        # Create the preliminary SpectrumV2 object
         spec = SpectrumV2(data=new_data, history=new_history)
 
-        # --- Only populate the flat array if permitted ---
-        if resol > 0 and overwrite_resol_col:
-            import numpy as np
-            resol_arr = np.full(len(spec.x), resol)
-            spec = spec.update_column(
-                'resol', 
-                resol_arr, 
-                description="Global resolution baseline"
-            )
+        if resol > 0:
+            current = self.resolution()
+            finite = current[np.isfinite(current)]
+            variable = finite.size > 0 and not np.allclose(finite, finite[0], rtol=1e-6)
+            if variable and not overwrite_resol_col:
+                logging.warning("The spectrum has a resolution that varies with "
+                                "wavelength: kept (R=%g not applied; set "
+                                "overwrite_resol_col to replace it).", resol)
+            else:
+                spec = spec.update_column(
+                    'resol', np.full(len(spec.x), float(resol)),
+                    unit=au.dimensionless_unscaled,
+                    description="Resolving power (set by the user)")
 
         return spec
 
@@ -1420,7 +1457,9 @@ class SpectrumV2:
         for name, col_data in self._data.aux_cols.items():
             # --- Bypass interpolation if it's the carefully drizzled resolution ---
             if name == 'resol' and resol_new is not None:
-                new_aux_cols['resol'] = DataColumnV2(resol_new, col_data.unit)
+                # rebin_spectrum returns R (#526)
+                new_aux_cols['resol'] = DataColumnV2(resol_new, au.dimensionless_unscaled,
+                                                     description="Resolving power (rebinned)")
                 # --- Update Global Median ---
                 valid_r = resol_new[np.isfinite(resol_new) & (resol_new > 0)]
                 if len(valid_r) > 0:
@@ -1592,19 +1631,11 @@ class SpectrumV2:
             xmin_conv = convert_axis_velocity(spec.xmin, z_em, calc_unit).value
             xmax_conv = convert_axis_velocity(spec.xmax, z_em, calc_unit).value
             
-            # --- Capture Resolution ---
-            res_arr = np.zeros(len(spec.x))
-            has_res = False
-            
-            if spec.has_aux_column('resol'):
-                res_arr = spec.get_column('resol').value
-                has_res = True
-            elif getattr(spec._data, 'resol', 0.0) > 0:
-                res_arr = np.full(len(spec.x), spec._data.resol)
-                has_res = True
-            elif 'resol' in spec.meta and float(spec.meta['resol']) > 0:
-                res_arr = np.full(len(spec.x), float(spec.meta['resol']))
-                has_res = True
+            # --- Capture Resolution (as R, from the column only, #526; an
+            # all-NaN column no longer counts as a source) ---
+            res_arr = spec.resolution()
+            has_res = bool(np.isfinite(res_arr).any())
+            res_arr = np.where(np.isfinite(res_arr), res_arr, 0.0)
                 
             if has_res:
                 resol_sources_count += 1
@@ -2243,7 +2274,10 @@ class SpectrumV2:
         """
         Identify absorption lines by correlating regions with multiplet templates.
 
-        Uses a de-blending strategy to separate merged features.
+        Uses a de-blending strategy to separate merged features. A doublet
+        gives one candidate system per absorption component, from its
+        stronger line, and no candidate lies beyond ``z_em`` by more than
+        ``Z_EM_MARGIN_KMS`` (3000 km/s).
 
         Parameters
         ----------
@@ -2335,11 +2369,15 @@ class SpectrumV2:
             if m in STANDARD_MULTIPLETS and len(STANDARD_MULTIPLETS[m]) == 2 and m != 'Ly_ab'
         ]
         
+        # Candidate systems at most Z_EM_MARGIN_KMS beyond z_em (F55)
+        z_max = z_em + Z_EM_MARGIN_KMS / 299792.458 * (1.0 + z_em)
         for series_name in metal_doublets:
             candidates_red = _find_kinematic_doublet_candidates(
                 redward_map, spec.x, spec._data.z_em, series_name, z_em
             )
             for (rid_1, rid_2, z_test) in candidates_red:
+                if z_test > z_max:
+                    continue
                 all_candidates.append((rid_1, rid_2, z_test, series_name, score_threshold))
         
         if 'Ly_ab' in multiplet_list:
@@ -2377,11 +2415,15 @@ class SpectrumV2:
                 rid_1_int = int(rid_1) 
                 rid_2_int = int(rid_2) 
                 
+                # Both regions are labelled, but only the region of the
+                # first (stronger) line gives the candidate systems: the
+                # other one would give the same systems again, ~1 km/s
+                # apart from the pixel sampling (F49)
                 if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []
-                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test))
+                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test, False))
 
                 if rid_2_int not in reliable_ids: reliable_ids[rid_2_int] = []
-                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test))
+                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test, True))
 
         # --- Forest Cleanup ---
         forest_rids = np.unique(forest_map)
@@ -2398,7 +2440,7 @@ class SpectrumV2:
                 if aod_peak_idx > 0:
                     x_peak_nm = x_nm[aod_peak_idx]
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
-                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test)]
+                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True)]
 
         logging.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
 
@@ -2459,7 +2501,9 @@ class SpectrumV2:
                 fwhm_kms = widths_pix[i] * local_dv
                 b_guess = max(5.0, min(100.0, fwhm_kms / 1.665))
 
-                for (component_name, score, z_test_orig) in candidates:
+                for (component_name, score, z_test_orig, gives_systems) in candidates:
+                    if not gives_systems:
+                        continue
                     system_name = component_name
                     if component_name not in STANDARD_MULTIPLETS:
                         for mult, members in STANDARD_MULTIPLETS.items():
@@ -2485,6 +2529,8 @@ class SpectrumV2:
                         else: logN_guess = 13.5
                     else: logN_guess = 13.5
 
+                    if z_peak > z_max:
+                        continue  # a peak of a region that straddles z_max (F55)
                     z_round = round(z_peak, 5)
                     uniq_key = (system_name, z_round)
                     
