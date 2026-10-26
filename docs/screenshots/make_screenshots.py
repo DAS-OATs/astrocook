@@ -48,7 +48,7 @@ os.environ["XDG_CONFIG_HOME"] = _settings
 from PIL import Image, ImageChops, ImageDraw, ImageFilter  # noqa: E402
 from PySide6.QtCore import QBuffer, QIODevice, QPoint, QRect, Qt, QTimer  # noqa: E402
 from PySide6.QtGui import QColor, QFont, QImage, QPainter  # noqa: E402
-from PySide6.QtWidgets import QApplication, QMenu, QPushButton, QToolTip  # noqa: E402
+from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QPushButton, QToolTip  # noqa: E402
 
 SCALE = 2                       # physical pixels per logical pixel
 WINDOW_SIZE = (1000, 640)       # logical size of the main window
@@ -244,11 +244,19 @@ class Studio:
         from PySide6.QtCore import QSettings
         QSettings("Astrocook", "AstrocookV2").remove("plot_controls")
         self.window = MainWindowV2(None, None)
+        # Message boxes are modal and would wait for a click: record them
+        # (e.g. the warnings of the fits after a pipeline) and go on
+        self.window._show_custom_message = self._record_message
         self.window.resize(*size)
         self.window.show()
         for name in sessions:
             self.open(name)
         return self.window
+
+    def _record_message(self, *args, **kwargs):
+        title = kwargs.get("header") or kwargs.get("title") or ""
+        print(f"  (message: {title})")
+        return QMessageBox.StandardButton.Ok
 
     def open(self, name):
         self.window.open_session_from_path(str(self.staged(name)))
