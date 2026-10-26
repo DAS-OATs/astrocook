@@ -538,6 +538,18 @@
 <dd><p>A line is evaluated only where its optical depth exceeds this (#526)</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.COMPONENT_FLAGS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">COMPONENT_FLAGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('z_at_window',</span> <span class="pre">'logN_at_lower_bound',</span> <span class="pre">'logN_at_upper_bound',</span> <span class="pre">'b_at_lower_bound',</span> <span class="pre">'b_at_upper_bound',</span> <span class="pre">'nan_errors')</span></span><a class="headerlink" href="#astrocook.fitting.voigt_fitter.COMPONENT_FLAGS" title="Link to this definition">#</a></dt>
+<dd><p>Flags that a fit leaves on the components it fits (#517), in
+ComponentDataV2.flags: a free parameter ended at a bound of the fit
+(within AT_BOUND_RTOL of the width of its range), or the uncertainties
+could not be computed. The upper bounds of the fit are those of the
+constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b
+of the automatic pipelines (19, 50 km/s); the z bound is the window of
+the fit. A parameter at a bound has an unreliable value and error.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_fitter.voigt_optical_depth">
 <span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_fitter.</span></span><span class="sig-name descname"><span class="pre">voigt_optical_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wave_grid_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/voigt_fitter.html#voigt_optical_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_fitter.voigt_optical_depth" title="Link to this definition">#</a></dt>
@@ -747,6 +759,7 @@ system list, without performing any fitting/optimization.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.TAU_CUT"><code class="docutils literal notranslate"><span class="pre">TAU_CUT</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.COMPONENT_FLAGS"><code class="docutils literal notranslate"><span class="pre">COMPONENT_FLAGS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.voigt_optical_depth"><code class="docutils literal notranslate"><span class="pre">voigt_optical_depth()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.__init__()</span></code></a></li>

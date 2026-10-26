@@ -732,6 +732,11 @@
 <span class="w">    </span><span class="sd">""" Reduced Chi-Squared of the fit group this component belongs to. """</span>
     <span class="n">resol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Resolution used for the fit</span>
 <span class="w">    </span><span class="sd">""" Resolution used for the fit. """</span>
+    <span class="n">flags</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">""" Warnings left by the last fit of the component (#517), see</span>
+<span class="sd">    :data:`astrocook.fitting.voigt_fitter.COMPONENT_FLAGS`: a parameter</span>
+<span class="sd">    ended at a bound of the fit, or the uncertainties could not be</span>
+<span class="sd">    computed. Cleared when a parameter is edited. """</span>
 
     <span class="c1"># V2 IDENTIFIER: Stable, Global, Immutable</span>
     <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>

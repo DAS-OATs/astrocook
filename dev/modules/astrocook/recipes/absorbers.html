@@ -736,6 +736,20 @@
     <span class="p">},</span>
 <span class="p">}</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_flags</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Log how many of the fitted ``components`` have flags (#517): a</span>
+<span class="sd">    parameter at a bound of the fit, or uncertainties not computed."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">listed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">flag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_'</span><span class="p">,</span><span class="w"> </span><span class="s1">' '</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">flag</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> with fit warnings (</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">). "</span>
+                    <span class="s2">"A parameter at a bound has an unreliable value and error: refit "</span>
+                    <span class="s2">"with wider bounds (e.g. Refit Selected) or check the component."</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="RecipeAbsorbersV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeAbsorbersV2</span><span class="p">:</span>
@@ -2256,6 +2270,8 @@
                     
                     <span class="c1"># Update model and return immediately</span>
                     <span class="n">new_spec</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">)</span>
+                    <span class="n">_log_flags</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span>
+                                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">combined_active_set</span><span class="p">])</span>
                     <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Consolidated fit failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -2455,6 +2471,7 @@
 
             <span class="c1"># Delegate to SpectrumV2</span>
             <span class="n">new_spec</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">)</span>
+            <span class="n">_log_flags</span><span class="p">(</span><span class="n">final_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
             
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">final_systs</span><span class="p">)</span>
 

@@ -480,6 +480,17 @@
 <span class="c1">#: A line is evaluated only where its optical depth exceeds this (#526)</span>
 <span class="n">TAU_CUT</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
+<span class="c1">#: Flags that a fit leaves on the components it fits (#517), in</span>
+<span class="c1">#: ComponentDataV2.flags: a free parameter ended at a bound of the fit</span>
+<span class="c1">#: (within AT_BOUND_RTOL of the width of its range), or the uncertainties</span>
+<span class="c1">#: could not be computed. The upper bounds of the fit are those of the</span>
+<span class="c1">#: constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b</span>
+<span class="c1">#: of the automatic pipelines (19, 50 km/s); the z bound is the window of</span>
+<span class="c1">#: the fit. A parameter at a bound has an unreliable value and error.</span>
+<span class="n">COMPONENT_FLAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'z_at_window'</span><span class="p">,</span> <span class="s1">'logN_at_lower_bound'</span><span class="p">,</span> <span class="s1">'logN_at_upper_bound'</span><span class="p">,</span>
+                   <span class="s1">'b_at_lower_bound'</span><span class="p">,</span> <span class="s1">'b_at_upper_bound'</span><span class="p">,</span> <span class="s1">'nan_errors'</span><span class="p">)</span>
+<span class="n">AT_BOUND_RTOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_transitions</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Transitions of a series in the atomic data (multiplet, single line</span>
@@ -870,6 +881,29 @@
                 <span class="n">j</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
                 <span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">),</span> <span class="n">lower</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_bound_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                     <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Flags of the component whose parameters start at ``idx`` (in</span>
+<span class="sd">        the full vector): its free z, logN and b at a bound (#517)."""</span>
+        <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
+        <span class="n">free_idx_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(((</span><span class="s1">'z_at_window'</span><span class="p">,</span> <span class="s1">'z_at_window'</span><span class="p">),</span>
+                                         <span class="p">(</span><span class="s1">'logN_at_lower_bound'</span><span class="p">,</span> <span class="s1">'logN_at_upper_bound'</span><span class="p">),</span>
+                                         <span class="p">(</span><span class="s1">'b_at_lower_bound'</span><span class="p">,</span> <span class="s1">'b_at_upper_bound'</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="n">k</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">p_free</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lo</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">hi</span><span class="p">))</span> <span class="ow">or</span> <span class="n">hi</span> <span class="o">&lt;=</span> <span class="n">lo</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">tol</span> <span class="o">=</span> <span class="n">AT_BOUND_RTOL</span> <span class="o">*</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">low</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">high</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cap_b</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
                <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -1397,6 +1431,13 @@
             <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
                 <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">red_chi2</span>
             
+            <span class="n">comp_flags</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">flags</span>
+            <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
+                <span class="n">comp_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bound_flags</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                       <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">dz_new</span><span class="p">,</span> <span class="n">dlogN_new</span><span class="p">,</span> <span class="n">db_new</span><span class="p">,</span> <span class="n">dbtur_new</span><span class="p">)):</span>
+                    <span class="n">comp_flags</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">'nan_errors'</span><span class="p">,)</span>
+
             <span class="n">new_comp</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">old_comp</span><span class="p">,</span>
                 <span class="n">z</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> 
                 <span class="n">logN</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> 
@@ -1407,7 +1448,8 @@
                 <span class="n">db</span><span class="o">=</span><span class="n">db_new</span><span class="p">,</span>
                 <span class="n">dbtur</span><span class="o">=</span><span class="n">dbtur_new</span><span class="p">,</span>
                 <span class="n">chi2</span><span class="o">=</span><span class="n">comp_chi2</span><span class="p">,</span>
-                <span class="n">resol</span><span class="o">=</span><span class="n">comp_resol</span>
+                <span class="n">resol</span><span class="o">=</span><span class="n">comp_resol</span><span class="p">,</span>
+                <span class="n">flags</span><span class="o">=</span><span class="n">comp_flags</span>
             <span class="p">)</span>
             <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_comp</span><span class="p">)</span>
             
