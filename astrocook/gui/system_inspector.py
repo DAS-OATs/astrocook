@@ -4,13 +4,14 @@ import numpy as np
 import astropy.units as au
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
+from PySide6.QtCore import (Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel,
+                            QLocale, QItemSelection, QItemSelectionModel)
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QSizePolicy, QMessageBox, QLabel, QLineEdit, QScrollBar, QCheckBox, QToolTip,
-    QStyledItemDelegate
+    QStyledItemDelegate, QPushButton
 )
 from typing import List
 
@@ -34,6 +35,46 @@ COL_MAP = {
 }
 COLUMNS = list(COL_MAP.keys())
 EDITABLE_COLS = {"z", "logN", "b", "btur"}
+
+# --- Flags of the fit (#517) ---
+#: Colours of the cues: amber for a parameter at a bound of the fit, red for
+#: uncertainties that could not be computed (agreed with Guido)
+FLAG_BOUND_COLOR = "#f5a100"
+FLAG_NAN_COLOR = "#d62728"
+#: Parameter of each bound flag, and what it means for the user
+_BOUND_FLAGS = {
+    'z_at_window': ('z', "z at the edge of the fit window: the line may lie outside it; "
+                         "refit with a wider window (Fit \u00b1)."),
+    'logN_at_lower_bound': ('logN', "logN at the lower bound of the fit: the line is negligible."),
+    'logN_at_upper_bound': ('logN', "logN at the upper bound of the fit (19 in the automatic "
+                                    "pipelines): the line may be stronger, or stand for several "
+                                    "lines; refit with Refit Selected (bound 23)."),
+    'b_at_lower_bound': ('b', "b at the lower bound of the fit (1 km/s): the line is probably "
+                              "unresolved or saturated."),
+    'b_at_upper_bound': ('b', "b at the upper bound of the fit (50 km/s in the automatic "
+                              "pipelines): the line may be broader; refit with Refit Selected "
+                              "(bound 300 km/s)."),
+}
+_NAN_MESSAGE = "The uncertainties could not be computed: the value is not constrained."
+
+
+def flag_cue(comp, attr: str = None):
+    """Colour and message of the flags of ``comp`` (#517): for a parameter
+    ``attr``, its bound flag; without, all its flags. ``(None, [])`` if
+    there is none."""
+    flags = getattr(comp, 'flags', ()) or ()
+    messages, color = [], None
+    for flag in flags:
+        if flag in _BOUND_FLAGS:
+            param, text = _BOUND_FLAGS[flag]
+            if attr is None or attr == param:
+                messages.append(text)
+                color = FLAG_BOUND_COLOR
+        elif flag == 'nan_errors' and attr is None:
+            messages.append(_NAN_MESSAGE)
+            color = color or FLAG_NAN_COLOR
+    return color, messages
+
 
 # Mapping to find the error attribute for a given value attribute
 ERR_MAP = {
@@ -134,8 +175,18 @@ class SystemTableModel(QAbstractTableModel):
         col_name = COLUMNS[index.column()]
         attr = COL_MAP[col_name]
         
-        # 1. Background (Group Highlighting)
+        # 1. Background: the parameter at a bound of the fit (amber), the
+        # ID of a component without uncertainties (red), #517; then the
+        # group highlighting
         if role == Qt.BackgroundRole:
+            if attr in ('z', 'logN', 'b'):
+                color, _ = flag_cue(comp, attr)
+                if color:
+                    c = QColor(color); c.setAlpha(110)
+                    return c
+            elif attr == 'id' and 'nan_errors' in (comp.flags or ()):
+                c = QColor(FLAG_NAN_COLOR); c.setAlpha(90)
+                return c
             if comp.uuid in self._secondary_uuids:
                 return QColor(245, 161, 0, 50) 
             return None
@@ -218,6 +269,10 @@ class SystemTableModel(QAbstractTableModel):
                     tooltip_html += "<b>Status:</b> Frozen (Fixed)"
                 else:
                     tooltip_html += "<b>Status:</b> Free"
+             _, messages = flag_cue(comp, attr if is_constrained_col else None)
+             if messages:
+                 tooltip_html += "<hr style='margin: 4px 0;'>" + "<br>".join(
+                     f"\u26a0 {m}" for m in messages)
              tooltip_html += "</div>"
              return tooltip_html
 
@@ -246,6 +301,8 @@ class SystemTableModel(QAbstractTableModel):
             # --- DISPLAY ROLE: Value ± Error ---
             if role == Qt.DisplayRole:
                 if val is None: return ""
+                if attr == 'id' and comp.flags:
+                    return f"\u26a0 {val}"
                 
                 if isinstance(val, (int, float)):
                     val_str = val_fmt.format(val)
@@ -298,6 +355,14 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__(parent)
         self.group_filtering_enabled = False
         self.allowed_uuids = set()
+        self.flagged_only = False
+
+    def set_flagged_only(self, enabled: bool):
+        """Show only the components with flags of the fit (#517)."""
+        self.flagged_only = enabled
+        # invalidate(), not invalidateFilter(): with PySide6 6.12 the latter
+        # left rows of the sorted table out after the flags had changed
+        self.invalidate()
 
     def set_group_filter_enabled(self, enabled: bool):
         self.group_filtering_enabled = enabled
@@ -314,14 +379,12 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
             self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
-        # If filtering is off, show everything
-        if not self.group_filtering_enabled: return True
-        
-        # If filtering is on, only show components in the Fluid Group
-        model = self.sourceModel()
-        comp = model.get_component_at(source_row)
+        comp = self.sourceModel().get_component_at(source_row)
         if not comp: return False
-        
+        if self.flagged_only and not comp.flags:
+            return False
+        # If group filtering is on, only show components in the Fluid Group
+        if not self.group_filtering_enabled: return True
         return comp.uuid in self.allowed_uuids
 
     def lessThan(self, left, right):
@@ -796,8 +859,12 @@ class VelocityPlotWidget(QWidget):
                         self._tick_map_visuals.append((ax_main, v_shift, other_c))
                         is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
                         col = 'red' if is_h else 'gray'
-                        ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax], 
-                                transform=trans_axis, color=col, lw=1.5 if is_h else 1.0, alpha=0.8)
+                        # Flags of the fit (#517): dashed, in the colour of the cue
+                        flag_col, _ = flag_cue(other_c)
+                        ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax],
+                                transform=trans_axis, color=flag_col or col,
+                                ls='--' if flag_col else '-',
+                                lw=1.5 if (is_h or flag_col) else 1.0, alpha=0.9 if flag_col else 0.8)
             
             ax_main.axvline(0, color='gray', ls=':', lw=0.8)
             ax_main.axhline(1.0, color='gray', ls=':', lw=0.8)
@@ -838,8 +905,12 @@ class VelocityPlotWidget(QWidget):
                     f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
                     f"<b>z:</b> {comp.z:.5f}<br>"
                     f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
-                    f"</div>"
                 )
+                _, messages = flag_cue(comp)
+                if messages:
+                    tooltip_text += "<hr style='margin: 4px 0;'>" + "<br>".join(
+                        f"\u26a0 {m}" for m in messages)
+                tooltip_text += "</div>"
                 break
         
         if tooltip_text: QToolTip.showText(QCursor.pos(), tooltip_text, self.canvas)
@@ -1204,9 +1275,22 @@ class SystemInspector(QWidget):
         self.group_cb = QCheckBox("Group View (Selected Component Only)")
         self.group_cb.toggled.connect(self._on_group_toggled)
         
+        # Flags of the fit (#517): show only, or select, the components
+        # with a parameter at a bound or without uncertainties
+        self.flagged_cb = QCheckBox("Only flagged")
+        self.flagged_cb.setToolTip("Show only the components with warnings of the fit "
+                                   "(\u26a0: a parameter at a bound, or no uncertainties)")
+        self.flagged_cb.toggled.connect(self.proxy_model.set_flagged_only)
+        self.select_flagged_btn = QPushButton("Select flagged")
+        self.select_flagged_btn.setToolTip("Select the components with warnings of the fit, "
+                                           "e.g. to refit them (table menu > Refit Selected)")
+        self.select_flagged_btn.clicked.connect(self.select_flagged)
+
         l_toolbar = QHBoxLayout()
         l_toolbar.setContentsMargins(5, 5, 15, 15) # Exact match to Right Toolbar
         l_toolbar.addWidget(self.group_cb)
+        l_toolbar.addWidget(self.flagged_cb)
+        l_toolbar.addWidget(self.select_flagged_btn)
         l_toolbar.addStretch() # Push checkbox to the left
         
         left_layout.addLayout(l_toolbar)
@@ -1533,6 +1617,22 @@ class SystemInspector(QWidget):
 
     def _forward(self, name, params):
         if self.main_window: self.main_window._on_recipe_requested("absorbers", name, params, {})
+
+    def select_flagged(self):
+        """Select the rows of the components with flags of the fit (#517),
+        among those shown, e.g. to refit them with Refit Selected."""
+        selection = QItemSelection()
+        n = 0
+        for row in range(self.proxy_model.rowCount()):
+            src = self.proxy_model.mapToSource(self.proxy_model.index(row, 0))
+            comp = self.table_model.get_component_at(src.row())
+            if comp and comp.flags:
+                selection.select(self.proxy_model.index(row, 0),
+                                 self.proxy_model.index(row, self.proxy_model.columnCount() - 1))
+                n += 1
+        self.table_view.selectionModel().select(
+            selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+        return n
 
     def focus_on_component(self, uuid: str, force_group_view: bool = False): # <--- Added Arg
         """

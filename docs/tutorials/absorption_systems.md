@@ -104,6 +104,19 @@ A zoomed-in view of the selected system in velocity space.
 :align: center
 ```
 
+### Components with warnings of the fit
+Each fit leaves a warning on the components whose result is not reliable:
+
+* **A parameter at a bound of the fit:** z at the edge of the fit window, logN or b at their lower or upper bound. The automatic pipelines fit with tighter upper bounds (**Max b** = 50 km/s, **Max logN** = 19) than the manual fits (300 km/s, 23), so a component at one of those bounds may be broader or stronger in reality. The cell of the parameter is highlighted.
+* **No uncertainties:** the fit could not compute the errors of the component (the value is not constrained). Its **ID** is highlighted in red.
+
+A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check **Only flagged** to list only these components, and click **Select flagged** to select them all, e.g. to refit them with **Refit Selected** (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.
+
+```{image} ../_static/absorbers_flags.png
+:alt: The System Inspector with Only flagged checked and the tooltip of a component at the upper bound of b
+:align: center
+```
+
 ## 3. Interactive Fitting & Editing
 
 The System Inspector allows you to modify the model dynamically.
