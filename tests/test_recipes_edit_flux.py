@@ -80,10 +80,11 @@ def test_set_properties_numeric():
     spec = out.spec
     assert out.name == "new"
     assert spec._data.z_em == 3.5
-    assert spec._data.resol == 45000.0
     assert spec.meta["OBJECT"] == "QSO"
-    assert spec.meta["resol"] == 45000.0
-    assert spec.meta["resol_fwhm"] == pytest.approx(C_KMS / 45000.0)
+    # The resolution goes into the column only (#526): no attribute, no
+    # meta keys
+    assert spec._data.resol == 0.0
+    assert "resol" not in spec.meta and "resol_fwhm" not in spec.meta
     # The resolution column is overwritten with the new value
     np.testing.assert_array_equal(spec.get_column("resol").value, 45000.0)
     # The input session is unchanged
@@ -95,7 +96,7 @@ def test_set_properties_current_keeps_values():
     out = session.edit.set_properties()
     assert out.name == "main"
     assert out.spec._data.z_em == Z_EM
-    assert out.spec._data.resol == 20000.0
+    np.testing.assert_array_equal(out.spec.resolution(), 20000.0)
 
 
 def test_set_properties_pixel_fwhm():
@@ -104,7 +105,7 @@ def test_set_properties_pixel_fwhm():
     out = session.edit.set_properties(resol="3px")
     x = session.spec.x.value
     expected = np.median(x) / (3 * np.median(np.diff(x)))
-    assert out.spec._data.resol == pytest.approx(expected)
+    np.testing.assert_allclose(out.spec.resolution(), expected)
 
 
 def test_set_properties_keeps_column_if_asked():
@@ -113,7 +114,6 @@ def test_set_properties_keeps_column_if_asked():
         column, au.dimensionless_unscaled)}))
     out = session.edit.set_properties(resol="45000", overwrite_resol_col=False)
     np.testing.assert_array_equal(out.spec.get_column("resol").value, column)
-    assert out.spec._data.resol == 45000.0
 
 
 @pytest.mark.parametrize("kwargs", [dict(z_em="abc"), dict(resol="abc"),
@@ -170,12 +170,13 @@ def test_mask_expression_bad_input_returns_0(target, expression):
     lambda s: s.edit.smooth_column("dF", "10.0"),
     lambda s: s.edit.split("λ > 0"),
 ])
-def test_some_operations_drop_the_resolution_attribute(operation):
-    # Characterization of F22: these operations rebuild SpectrumDataV2
-    # without the resol attribute (reset to 0). The Voigt model changes
-    # only when the resolution is in the attribute alone: set_properties
-    # and the loaders also store it in the metadata, which is kept.
+def test_some_operations_keep_the_resolution(operation):
+    # F22: these operations rebuilt SpectrumDataV2 without the resol
+    # attribute (reset to 0), and the resolution was lost when it lived in
+    # the attribute alone. Since #526 it is moved into the column, which
+    # they keep
     out = operation(_session(_spec(resol=45000.0)))
+    np.testing.assert_array_equal(out.spec.resolution(), 45000.0)
     assert out.spec._data.resol == 0.0
 
 

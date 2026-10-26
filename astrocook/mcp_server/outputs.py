@@ -245,8 +245,8 @@ def identification_summary(session: SessionV2, max_listed: int
 # --- Fit ---------------------------------------------------------------
 
 # Bounds of the fits: logN and the lower bound on b from the constraint
-# model (VoigtModelConstraintV2.DEFAULT_BOUNDS), the upper bound on b from
-# the max_b of the recipe
+# model (VoigtModelConstraintV2.DEFAULT_BOUNDS), the upper bounds on b and
+# logN from the max_b and max_logN of the recipe
 LOGN_BOUNDS = VoigtModelConstraintV2.DEFAULT_BOUNDS["logN"]
 B_MIN = VoigtModelConstraintV2.DEFAULT_BOUNDS["b"][0]
 #: Relative tolerance to call a parameter "at a bound"
@@ -266,7 +266,8 @@ class Component(BaseModel):
         "Reduced chi2 of the fit group of the component."))
     flags: list[str] = Field(description=(
         "Warnings on the fit: 'nan_errors'; 'logN_at_lower_bound', "
-        "'logN_at_upper_bound', 'b_at_lower_bound', 'b_at_max_b' (the "
+        "'logN_at_upper_bound', 'logN_at_max_logN', 'b_at_lower_bound', "
+        "'b_at_max_b' (the "
         "parameter ended at a bound of the fit, so its value and error "
         "are not reliable)."))
 
@@ -294,7 +295,7 @@ def _close(value: float, bound: float) -> bool:
     return abs(value - bound) <= AT_BOUND_RTOL * max(1.0, abs(bound))
 
 
-def component_flags(c, max_b: float) -> list[str]:
+def component_flags(c, max_b: float, max_logN: Optional[float] = None) -> list[str]:
     """Flags of a fitted component (see :class:`Component`)."""
     flags = []
     errors = (c.dz, c.dlogN, c.db)
@@ -304,6 +305,8 @@ def component_flags(c, max_b: float) -> list[str]:
         flags.append("logN_at_lower_bound")
     if _close(c.logN, LOGN_BOUNDS[1]):
         flags.append("logN_at_upper_bound")
+    elif max_logN is not None and _close(c.logN, max_logN):
+        flags.append("logN_at_max_logN")
     if _close(c.b, B_MIN):
         flags.append("b_at_lower_bound")
     if _close(c.b, max_b):
@@ -316,7 +319,7 @@ def _optional(value) -> Optional[float]:
 
 
 def fit_summary(before: SessionV2, after: SessionV2, max_b: float,
-                max_listed: int) -> FitSummary:
+                max_listed: int, max_logN: Optional[float] = None) -> FitSummary:
     """Compare the components before and after a fitting recipe."""
     old = {c.uuid for c in before.systs.components} if before.systs else set()
     comps = after.systs.components if after.systs else []
@@ -327,7 +330,7 @@ def fit_summary(before: SessionV2, after: SessionV2, max_b: float,
         listed.append(Component(
             uuid=c.uuid, series=c.series, z=c.z, dz=_optional(c.dz),
             logN=c.logN, dlogN=_optional(c.dlogN), b=c.b, db=_optional(c.db),
-            chi2r=_optional(c.chi2), flags=component_flags(c, max_b)))
+            chi2r=_optional(c.chi2), flags=component_flags(c, max_b, max_logN)))
     return FitSummary(
         n_components=len(comps), n_added=len(added),
         n_removed=len(old - new_uuids),

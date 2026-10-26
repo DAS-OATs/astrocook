@@ -69,6 +69,14 @@ def test_legacy_sources_migrate_into_the_column(kwargs, expected):
     assert col.unit == au.dimensionless_unscaled
 
 
+def test_the_attribute_is_cleared_by_the_migration():
+    # PR 4: once in the column, the attribute is cleared, so that deleting
+    # the column removes the resolution for good
+    spec = _spectrum(resol=45000.0)
+    assert spec._data.resol == 0.0
+    assert np.isnan(spec.remove_columns(["resol"]).resolution()).all()
+
+
 def test_a_valid_column_wins_over_the_legacy_sources():
     variable = np.linspace(40000.0, 50000.0, N)
     spec = _spectrum(resol=10000.0, meta={"resol": 20000.0}, resol_col=variable)

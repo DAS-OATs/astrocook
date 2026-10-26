@@ -114,20 +114,17 @@ def generate(truth: MockTruth, truth_columns: bool = True) -> SpectrumV2:
         y[spikes] += truth.spike_amplitude * (dy[spikes] if truth.snr else cont[spikes])
 
     unit = au.dimensionless_unscaled
-    meta = {"MOCK": True}
-    resol = 0.0
+    aux = {
+        "cont": DataColumnV2(cont, unit, description="True continuum"),
+        "mock_flux": DataColumnV2(true_flux, unit, description="Noiseless flux"),
+    } if truth_columns else {}
     if truth.resol is not None:
-        resol = float(truth.resol)
-        meta["resol"] = resol
-        meta["resol_fwhm"] = C_KMS / resol
+        # The resolution goes into the resol column only (#526)
+        aux["resol"] = DataColumnV2(np.full(len(x), float(truth.resol)), unit,
+                                    description="Resolving power")
     data = SpectrumDataV2(
         x=DataColumnV2(x, au.nm), xmin=DataColumnV2(xmin, au.nm),
         xmax=DataColumnV2(xmax, au.nm),
         y=DataColumnV2(y, unit), dy=DataColumnV2(dy, unit),
-        aux_cols={
-            "cont": DataColumnV2(cont, unit, description="True continuum"),
-            "mock_flux": DataColumnV2(true_flux, unit,
-                                      description="Noiseless flux"),
-        } if truth_columns else {},
-        meta=meta, z_em=truth.z_em, resol=resol)
+        aux_cols=aux, meta={"MOCK": True}, z_em=truth.z_em)
     return SpectrumV2(data)

@@ -34,6 +34,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Window for fitting (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             # New generic region limiter
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit search to 'red_side', 'lya_forest', or 'None'."}
         ],
@@ -47,7 +48,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
             {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min score."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."}
+            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#doublets_auto"
     },
@@ -58,7 +60,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s) to keep."},
             {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."}
+            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#lya_auto"
     },
@@ -69,7 +72,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Threshold for detection."},
             {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s)."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."}
+            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#forest_auto"
     },
@@ -80,7 +84,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated list of ions to check."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "AIC improvement required to keep a new ion."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."}
+            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#metals_auto"
     },
@@ -249,6 +254,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
             {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"},
             {"name": "max_b", "type": float, "default": 300.0, "doc": "Upper bound on b (km/s)"},
+            {"name": "max_logN", "type": float, "default": 23.0, "doc": "Upper bound on logN"},
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."},
             {"name": "selected_uuids", "type": list, "default": None, "gui_hidden": True}
         ],
@@ -307,7 +313,7 @@ class RecipeAbsorbersV2:
                       mask_col: str = "abs_mask",
                       z_window_kms: str = "20.0",
                       region_limit: str = "None",
-                      max_b: str = "50.0") -> 'SessionV2':
+                      max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
         """
         Auto-detect and fit components.
 
@@ -339,6 +345,14 @@ class RecipeAbsorbersV2:
             forest slow and gives spurious broad lines; components that end
             at the bound may be broader and can be refitted with
             :meth:`refit_all` or :meth:`fit_component`. Defaults to ``"50.0"``.
+        max_logN : str, optional
+            Upper bound on logN in the fits. In a saturated trough that the
+            candidates do not fill, a component can otherwise fill it with
+            its damping wings and run away to logN 20-23, blacking out the
+            model around it (findings register F62). With 19, the Lyman-limit
+            systems stay within reach; damped systems are to be fitted by
+            hand. Components that end at the bound can be refitted with
+            :meth:`refit_all`. Defaults to ``"19.0"``.
 
         Returns
         -------
@@ -488,7 +502,8 @@ class RecipeAbsorbersV2:
             group_depth='1',
             max_group_size='25',
             region_limit=region_limit,
-            max_b=max_b
+            max_b=max_b,
+            max_logN=max_logN
         )
         
         # Handle the case where refit_all returns 0 (Empty/Clean)
@@ -507,7 +522,7 @@ class RecipeAbsorbersV2:
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
                       score_threshold: str = "0.5",
                       z_window_kms: str = "20.0",
-                      max_b: str = "50.0") -> 'SessionV2':
+                      max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
         """
         Auto-fit metal doublets (Red Side).
 
@@ -525,6 +540,9 @@ class RecipeAbsorbersV2:
         max_b : str, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
             Defaults to ``"50.0"``.
+        max_logN : str, optional
+            Upper bound on logN in the fits, see :meth:`components_auto`.
+            Defaults to ``"19.0"``.
 
         Returns
         -------
@@ -536,11 +554,13 @@ class RecipeAbsorbersV2:
             score_threshold=score_threshold,
             z_window_kms=z_window_kms,
             region_limit="red_side",  # <--- FORCE RED SIDE
-            max_b=max_b
+            max_b=max_b,
+            max_logN=max_logN
         )
 
     def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                 z_window_kms: str = "100.0", max_b: str = "50.0") -> 'SessionV2':
+                 z_window_kms: str = "100.0", max_b: str = "50.0",
+                 max_logN: str = "19.0") -> 'SessionV2':
         """
         Auto-fit Ly-alpha forest.
 
@@ -559,6 +579,9 @@ class RecipeAbsorbersV2:
         max_b : str, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
             Defaults to ``"50.0"``.
+        max_logN : str, optional
+            Upper bound on logN in the fits, see :meth:`components_auto`.
+            Defaults to ``"19.0"``.
 
         Returns
         -------
@@ -575,7 +598,8 @@ class RecipeAbsorbersV2:
             z_window_kms=z_window_kms,
             mask_col='abs_mask',
             region_limit='lya_forest', # <--- FORCE FOREST
-            max_b=max_b
+            max_b=max_b,
+            max_logN=max_logN
         )
         if self._is_stop_requested(): return self._session
         
@@ -607,7 +631,8 @@ class RecipeAbsorbersV2:
                         z_window_kms=z_window_kms,
                         group_depth='1',
                         max_group_size='25',
-                        max_b=max_b
+                        max_b=max_b,
+                        max_logN=max_logN
                      )
                 else:
                      logging.info("No interlopers found. Clean.")
@@ -618,7 +643,8 @@ class RecipeAbsorbersV2:
         return final_session
 
     def forest_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                    z_window_kms: str = "20.0", max_b: str = "50.0") -> 'SessionV2':
+                    z_window_kms: str = "20.0", max_b: str = "50.0",
+                    max_logN: str = "19.0") -> 'SessionV2':
         """
         Auto-fit full Lyman series.
 
@@ -636,6 +662,9 @@ class RecipeAbsorbersV2:
         max_b : str, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
             Defaults to ``"50.0"``.
+        max_logN : str, optional
+            Upper bound on logN in the fits, see :meth:`components_auto`.
+            Defaults to ``"19.0"``.
 
         Returns
         -------
@@ -683,11 +712,12 @@ class RecipeAbsorbersV2:
         rec_step3 = RecipeAbsorbersV2(session_step2)
         # max_nfev as before the defaults were aligned with the GUI (#573)
         return rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1',
-                                   max_nfev='100', max_b=max_b)
+                                   max_nfev='100', max_b=max_b,
+                                   max_logN=max_logN)
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0",
-                    max_b: str = "50.0") -> 'SessionV2':
+                    max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
         """
         Check for associated metals.
 
@@ -707,6 +737,9 @@ class RecipeAbsorbersV2:
         max_b : str, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
             Defaults to ``"50.0"``.
+        max_logN : str, optional
+            Upper bound on logN in the fits, see :meth:`components_auto`.
+            Defaults to ``"19.0"``.
 
         Returns
         -------
@@ -719,6 +752,7 @@ class RecipeAbsorbersV2:
             float(aic_penalty)  # validated only, not used (see the docstring)
             z_win = float(z_window_kms)
             b_max = float(max_b)
+            logN_max = float(max_logN)
         except ValueError: return 0
         
         if not self._session.systs or not self._session.systs.components:
@@ -760,7 +794,7 @@ class RecipeAbsorbersV2:
                                                      spec=current_session.spec):
                         fitter = VoigtFitterV2(current_session.spec, trial_systs)
                         fitted_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win, verbose=0,
-                                                                   b_max=b_max)
+                                                                   b_max=b_max, logN_max=logN_max)
                         
                         # C. Evaluate
                         fitted_comp = fitted_systs.get_component_by_uuid(new_uuid)
@@ -783,7 +817,7 @@ class RecipeAbsorbersV2:
             logging.info(f"metals_auto: Added {count_added} new systems.")
             # The values the pipeline always used, before the defaults of
             # refit_all were aligned with the GUI (#573)
-            return self.refit_all(max_b=max_b, group_depth='0', max_nfev='100')
+            return self.refit_all(max_b=max_b, max_logN=max_logN, group_depth='0', max_nfev='100')
         else:
             logging.info("metals_auto: No new metals found.")
             return current_session
@@ -1620,7 +1654,7 @@ class RecipeAbsorbersV2:
                   group_depth: str = '2', max_group_size: str = '20',
                   region_limit: str = "None",
                   selected_uuids: list = None,
-                  max_b: str = '300.0') -> 'SessionV2':
+                  max_b: str = '300.0', max_logN: str = '23.0') -> 'SessionV2':
         """
         Refit all systems.
 
@@ -1646,6 +1680,10 @@ class RecipeAbsorbersV2:
             Upper bound on b (km/s). Defaults to ``"300.0"``, the physical
             limit of the constraint model; the automatic pipelines pass
             ``"50.0"`` (see :meth:`components_auto`).
+        max_logN : str, optional
+            Upper bound on logN. Defaults to ``"23.0"``, the physical limit
+            of the constraint model; the automatic pipelines pass ``"19.0"``
+            (see :meth:`components_auto`).
 
         Returns
         -------
@@ -1659,6 +1697,7 @@ class RecipeAbsorbersV2:
             depth_i = int(group_depth)
             max_size_i = int(max_group_size)
             b_max_f = float(max_b)
+            logN_max_f = float(max_logN)
 
             if not self._session.systs or not self._session.systs.components:
                 logging.warning("refit_all: No components to fit.")
@@ -1687,7 +1726,8 @@ class RecipeAbsorbersV2:
                         fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
                                               check_stop=self._is_stop_requested)
                         new_systs, model_flux, res = fitter.fit(
-                            max_nfev=max_nfev_i, z_window_kms=z_win_f, b_max=b_max_f
+                            max_nfev=max_nfev_i, z_window_kms=z_win_f, b_max=b_max_f,
+                            logN_max=logN_max_f
                         )
                     
                     # Update model and return immediately
@@ -1852,7 +1892,7 @@ class RecipeAbsorbersV2:
                     with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
                                                      spec=current_session.spec):
                         new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0,
-                                                                     b_max=b_max_f)
+                                                                     b_max=b_max_f, logN_max=logN_max_f)
                     
                     for fitted_comp in new_local_systs.components:
                         if fitted_comp.uuid in target_uuids:

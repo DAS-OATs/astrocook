@@ -243,6 +243,6 @@ def test_card_shows_the_wrapped_hints_of_the_continuum_editor(qtbot, window):
     hints.setVisible(True)
     qtbot.waitUntil(lambda: hints.height() >= hints.heightForWidth(hints.width()),
                     timeout=ANIMATION_TIMEOUT)
-    qtbot.wait(100)
-    bottom = hints.mapTo(card, hints.rect().bottomLeft()).y()
-    assert bottom <= card.height()
+    # The card is resized after the layout settles (a queued event)
+    qtbot.waitUntil(lambda: hints.mapTo(card, hints.rect().bottomLeft()).y() <= card.height(),
+                    timeout=ANIMATION_TIMEOUT)

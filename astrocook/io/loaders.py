@@ -684,12 +684,10 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
             # Use the median if multiple RESVELs found (e.g. multiple sources stitched in file)
             final_resol = np.median(resol_values)
             c_kms = 299792.458
-            meta['resol_fwhm'] = final_resol
-            meta['resol'] = c_kms / final_resol
-            
+            # The column only, in km/s (#526)
             resol_arr = np.full_like(x, final_resol)
             aux_cols['resol'] = DataColumnV2(resol_arr, au.km/au.s, "Resolution (FWHM km/s)")
-            logging.info(f"Loaded {len(x)} points. Resolution FWHM: {final_resol} km/s (R~{meta['resol']:.0f})")
+            logging.info(f"Loaded {len(x)} points. Resolution FWHM: {final_resol} km/s (R~{c_kms / final_resol:.0f})")
 
         return SpectrumDataV2(
             x=x_col, xmin=xmin_col, xmax=xmax_col,

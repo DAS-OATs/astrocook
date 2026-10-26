@@ -11,7 +11,9 @@ and ``resol_fwhm`` (km/s), and its unit was guessed from its value (below
 500: FWHM in km/s). These legacy sources are migrated into the column when
 a spectrum is built (:func:`migrate_resolution`), and no longer read
 anywhere else; the guess of the unit survives only there, for data saved
-before #526.
+before #526. Since #526 (PR 4) nothing writes them: the attribute is
+cleared by the migration, the meta keys are left as they came (they may be
+keywords of the original file).
 """
 import dataclasses
 import logging
@@ -95,7 +97,9 @@ def migrate_resolution(data):
     A column with at least one valid value is kept (a dimensionless column
     with median below ``LEGACY_KMS_THRESHOLD`` was a FWHM in km/s before
     #526, and gets that unit). Otherwise the column is created, flat, from
-    the legacy sources (:func:`legacy_resolution`), if any.
+    the legacy sources (:func:`legacy_resolution`), if any. The attribute
+    is cleared either way, so that it cannot come back later (e.g. after
+    the column is deleted).
 
     Returns
     -------
@@ -104,6 +108,11 @@ def migrate_resolution(data):
     """
     from astrocook.core.structures import DataColumnV2
 
+    if getattr(data, 'resol', 0.0):
+        r_legacy, source = legacy_resolution(data)
+        data = dataclasses.replace(data, resol=0.0)
+        if r_legacy is not None and not _valid_column(data):
+            return _with_flat_column(data, r_legacy, source)
     col = data.aux_cols.get('resol')
     if col is not None:
         values = np.asarray(col.values, dtype=float)
@@ -124,6 +133,19 @@ def migrate_resolution(data):
     r, source = legacy_resolution(data)
     if r is None:
         return data
+    return _with_flat_column(data, r, source)
+
+
+def _valid_column(data) -> bool:
+    col = data.aux_cols.get('resol')
+    if col is None:
+        return False
+    values = np.asarray(col.values, dtype=float)
+    return bool((np.isfinite(values) & (values > 0)).any())
+
+
+def _with_flat_column(data, r: float, source: str):
+    from astrocook.core.structures import DataColumnV2
     aux = dict(data.aux_cols)
     aux['resol'] = DataColumnV2(np.full(len(data.x.values), r),
                                 au.dimensionless_unscaled,

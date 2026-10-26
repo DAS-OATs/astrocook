@@ -107,6 +107,45 @@ class TableAdapterV2(object):
         else:
             raise KeyError(f"Invalid key type: {type(key)}. Expected string or slice.")
 
+def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
+    """Pixel edges (``xmin``, ``xmax``) without a unit, from sessions saved
+    by earlier versions, take the unit of ``x`` (#623: the fit converts the
+    edges to Angstrom since #526, and failed with "'' (dimensionless) and
+    'Angstrom' (length) are not convertible"). If their values do not
+    bracket ``x`` (at least 90% of the pixels), they are not edges in the
+    unit of ``x`` and are recomputed halfway between the pixels."""
+    x_unit = au.Unit(data.x.unit) if data.x.unit is not None else au.dimensionless_unscaled
+    if x_unit == au.dimensionless_unscaled:
+        return data
+
+    def no_unit(col):
+        return col.unit is None or au.Unit(col.unit) == au.dimensionless_unscaled
+
+    if not (no_unit(data.xmin) or no_unit(data.xmax)):
+        return data
+    x = np.asarray(data.x.values, dtype=float)
+    xmin = np.asarray(data.xmin.values, dtype=float)
+    xmax = np.asarray(data.xmax.values, dtype=float)
+    with np.errstate(invalid='ignore'):
+        inside = (xmin <= x) & (x <= xmax)
+    finite = np.isfinite(x) & np.isfinite(xmin) & np.isfinite(xmax)
+    if finite.any() and np.mean(inside[finite]) >= 0.9:
+        logging.info("Pixel edges without a unit: read in the unit of x (%s).", x_unit)
+    else:
+        logging.warning("Pixel edges without a unit and not around x: recomputed "
+                        "halfway between the pixels.")
+        if len(x) > 1:
+            mid = 0.5 * (x[1:] + x[:-1])
+            xmin = np.concatenate([[x[0] - (mid[0] - x[0])], mid])
+            xmax = np.concatenate([mid, [x[-1] + (x[-1] - mid[-1])]])
+        else:
+            xmin, xmax = x.copy(), x.copy()
+    return dataclasses.replace(
+        data,
+        xmin=DataColumnV2(xmin, x_unit, getattr(data.xmin, 'description', None)),
+        xmax=DataColumnV2(xmax, x_unit, getattr(data.xmax, 'description', None)))
+
+
 class SpectrumV2:
     """
     Composite container for spectral data and operations.
@@ -126,7 +165,7 @@ class SpectrumV2:
     def __init__(self, data: SpectrumDataV2, history: list = None):
         # The resolution lives in the 'resol' column only: legacy sources
         # (attribute, meta keys) are migrated into it here (#526)
-        self._data = migrate_resolution(data)
+        self._data = migrate_resolution(_edges_with_unit(data))
         self.history = history if history is not None else []
 
     def resolution(self) -> np.ndarray:
@@ -405,12 +444,8 @@ class SpectrumV2:
         
         history_entries = [f"z_em={z_em}"]
 
-        # Update Resolution (the meta keys are kept for older readers of
-        # the archives; the resolution is read from the column only, #526)
+        # The resolution goes into the column only (below; #526)
         if resol > 0:
-            new_meta['resol'] = resol
-            c_kms = 299792.458
-            new_meta['resol_fwhm'] = c_kms / resol
             history_entries.append(f"R={resol}")
 
         # Update Object Name
@@ -422,8 +457,7 @@ class SpectrumV2:
             history_entries.append(f"Object='{object_name}'")
 
         # Update Core Data
-        new_resol = resol if resol > 0 else self._data.resol
-        new_data = dataclasses.replace(self._data, z_em=z_em, resol=new_resol, meta=new_meta)
+        new_data = dataclasses.replace(self._data, z_em=z_em, meta=new_meta)
         
         new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
         spec = SpectrumV2(data=new_data, history=new_history)
@@ -1069,8 +1103,7 @@ class SpectrumV2:
             dy=DataColumnV2(dy_final, y_u),
             aux_cols=new_aux,
             meta=new_meta,
-            z_em=self._data.z_em,
-            resol=self._data.resol
+            z_em=self._data.z_em
         )
         
         return SpectrumV2(new_data)
@@ -1451,20 +1484,12 @@ class SpectrumV2:
         new_aux_cols = {}
         x_final_nm = x_final.to_value(au.nm) # Get the new grid in nm for interpolation
         
-        new_meta = self._data.meta.copy()
-        median_r = self._data.resol
-
         for name, col_data in self._data.aux_cols.items():
             # --- Bypass interpolation if it's the carefully drizzled resolution ---
             if name == 'resol' and resol_new is not None:
                 # rebin_spectrum returns R (#526)
                 new_aux_cols['resol'] = DataColumnV2(resol_new, au.dimensionless_unscaled,
                                                      description="Resolving power (rebinned)")
-                # --- Update Global Median ---
-                valid_r = resol_new[np.isfinite(resol_new) & (resol_new > 0)]
-                if len(valid_r) > 0:
-                    median_r = float(np.nanmedian(valid_r))
-                    new_meta['resol'] = median_r
                 continue
 
             # --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---
@@ -1509,7 +1534,6 @@ class SpectrumV2:
             dy=DataColumnV2(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=new_meta, 
-            resol=median_r,
             z_em=self._data.z_em   # Propagate
         )
         
@@ -1726,19 +1750,8 @@ class SpectrumV2:
         # --- Restore the co-added resolution array ---
         new_aux_cols = {}
         
-        # --- Safely force the metadata resolution to be a float ---
-        try:
-            median_r = float(self.meta.get('resol', 0.0))
-        except (ValueError, TypeError):
-            median_r = 0.0
-
         if reb_resol is not None:
             new_aux_cols['resol'] = DataColumnV2(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
-            # --- Update Global Median ---
-            valid_r = reb_resol[np.isfinite(reb_resol) & (reb_resol > 0)]
-            if len(valid_r) > 0:
-                median_r = float(np.nanmedian(valid_r))
-                new_meta['resol'] = median_r
 
         # 8. Wrap in Logic Class
         final_spec_data = SpectrumDataV2(
@@ -1749,8 +1762,7 @@ class SpectrumV2:
             dy=DataColumnV2(reb_dy.value, reb_dy.unit),
             aux_cols=new_aux_cols,
             meta=new_meta, 
-            z_em=self._data.z_em,
-            resol=median_r
+            z_em=self._data.z_em
         )
         
         return self.__class__(final_spec_data)

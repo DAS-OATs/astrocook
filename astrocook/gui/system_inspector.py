@@ -2,7 +2,6 @@ import importlib.util
 import logging
 import numpy as np
 import astropy.units as au
-from scipy.special import wofz
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel, QLocale
@@ -19,62 +18,9 @@ from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
 from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
+from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
+from ..fitting.voigt_fitter import voigt_optical_depth
 from .pyside_plot import AstrocookToolbar, get_color_cycle, get_style_color
-
-# --- [CHANGE] Robust Convolution Import with Local Fallback ---
-try:
-    from ..fitting.voigt_fitter import convolve_flux
-except ImportError:
-    logging.warning("SystemInspector: Could not import convolve_flux. Using local fallback.")
-    convolve_flux = None
-
-# Local Fallback Function (Guaranteed to exist)
-def _local_convolve_flux(flux, x, resol, resol_unit='R'):
-    """
-    Robust fallback convolution using Astropy Gaussian1DKernel.
-    """
-    try:
-        from astropy.convolution import convolve, Gaussian1DKernel
-        
-        # 1. Determine effective Resolution (Scalar)
-        r_eff = resol
-        if np.ndim(resol) > 0:
-            r_eff = np.nanmedian(resol)
-        
-        if r_eff is None or r_eff <= 0: 
-            return flux
-
-        # 2. Determine Sigma in Angstroms
-        # FWHM = lambda / R   (if R)
-        # FWHM = lambda * (km/s / c) (if km/s)
-        lam_center = np.nanmedian(x)
-        
-        if resol_unit == 'R':
-            fwhm_ang = lam_center / r_eff
-        else: # 'km/s'
-            fwhm_ang = (r_eff / 299792.458) * lam_center
-        
-        # Sigma = FWHM / 2.355
-        sigma_ang = fwhm_ang / 2.35482 
-        
-        # 3. Determine Sigma in Pixels
-        dx = np.nanmedian(np.diff(x))
-        if dx == 0: return flux
-        
-        sigma_pix = sigma_ang / dx
-        
-        # 4. Convolve (if kernel is at least somewhat significant)
-        if sigma_pix < 0.01: return flux # Relaxed threshold
-
-        kernel = Gaussian1DKernel(stddev=sigma_pix)
-        return convolve(flux, kernel, boundary='extend')
-        
-    except ImportError:
-        logging.error("SystemInspector: Astropy not found for convolution.")
-        return flux
-    except Exception as e:
-        logging.error(f"SystemInspector: Convolution failed: {e}")
-        return flux
 
 # --- 1. Table Configuration (UPDATED) ---
 # We removed the separate error columns (dz, dlogN, db)
@@ -396,57 +342,52 @@ def _corner_installed() -> bool:
     return importlib.util.find_spec("corner") is not None
 
 
-def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None, resol_unit='R', context="Unknown"):
-    if wave_grid_ang is None or len(wave_grid_ang) == 0: return np.array([])
-    
-    # [FIX] Clean inputs to avoid Unit errors
-    if hasattr(lambda_0, 'value'): lambda_0 = lambda_0.value
-    if hasattr(wave_grid_ang, 'value'): wave_grid_ang = wave_grid_ang.value
-    if hasattr(b_kms, 'value'): b_kms = b_kms.value
+def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None,
+                       resol_unit='R', context="Unknown", edges_ang=None):
+    """Normalised profile of one line on ``wave_grid_ang`` (Angstrom), with
+    the physics and the convolution of the fitter (#526): the optical depth
+    on a fine grid, each point convolved with its own resolution (``resol``,
+    scalar or one per point, R or FWHM in km/s by ``resol_unit``; None for
+    none) and averaged over its pixel. ``edges_ang`` gives the edges of the
+    pixels (xmin, xmax); by default they are halfway between the points."""
+    if wave_grid_ang is None or len(wave_grid_ang) == 0:
+        return np.array([])
+    if hasattr(lambda_0, 'value'):
+        lambda_0 = lambda_0.value
+    if hasattr(wave_grid_ang, 'value'):
+        wave_grid_ang = wave_grid_ang.value
+    if hasattr(b_kms, 'value'):
+        b_kms = b_kms.value
+    x = np.asarray(wave_grid_ang, dtype=float)
 
-    # 1. Physics
-    lambda_c = lambda_0 * (1.0 + z)
-    c_kms = 2.99792458e5
-    b_safe = max(b_kms, 0.1)
-    dop_width_ang = (b_safe / c_kms) * lambda_c
-    if dop_width_ang <= 0: dop_width_ang = 1e-5
-        
-    x = (wave_grid_ang - lambda_c) / dop_width_ang
-    c_ang_s = 2.99792458e18
-    # Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it
-    # was computed with the observed wavelength, (1 + z) too large (F61)
-    a = (gamma * lambda_0) / (4.0 * np.pi * c_ang_s * (b_safe / c_kms))
-    
-    H_ax = wofz(x + 1j * a).real
-    tau = 1.4974e-15 * N * f_val * lambda_0 / b_safe * H_ax
-    flux = np.exp(-tau)
-
-    # 2. Convolution (SSOT)
-    should_convolve = False
-    if resol is not None:
-        if np.ndim(resol) == 0: # Scalar
-            if resol > 0: should_convolve = True
-        else: # Array
-            if np.any(np.nan_to_num(resol) > 0):
-                should_convolve = True
-    
-    if should_convolve:
-        try:
-            # Try importing main function if defined
-            if convolve_flux is not None:
-                try:
-                    return convolve_flux(flux, wave_grid_ang, resol, resol_unit=resol_unit)
-                except TypeError:
-                    return convolve_flux(flux, wave_grid_ang, resol)
-            else:
-                raise ImportError("Main convolve_flux not available")
-                
-        except Exception as e:
-            # Force logging here to see if the main convolution is crashing
-            logging.warning(f"DEBUG: Main convolution failed ({e}). Falling back to local.")
-            return _local_convolve_flux(flux, wave_grid_ang, resol, resol_unit)
+    if edges_ang is not None:
+        xmin, xmax = (np.asarray(e, dtype=float) for e in edges_ang)
+    elif len(x) > 1:
+        mid = 0.5 * (x[1:] + x[:-1])
+        xmin = np.concatenate([[x[0] - (mid[0] - x[0])], mid])
+        xmax = np.concatenate([mid, [x[-1] + (x[-1] - mid[-1])]])
     else:
-        return flux
+        xmin, xmax = x * (1 - 1e-6), x * (1 + 1e-6)
+
+    r = None
+    if resol is not None:
+        values = np.asarray(resol, dtype=float)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            r = C_KMS_INSPECTOR / values if resol_unit != 'R' else values
+        r = np.where(np.isfinite(r) & (r > 0), r, np.nan)
+        if not np.any(np.isfinite(r)):
+            r = None
+        elif r.ndim == 0:
+            r = float(r)
+    r_fin = None if r is None else np.atleast_1d(r)[np.isfinite(np.atleast_1d(r))]
+    lsf = PixelLSF(xmin, xmax,
+                   r_min=None if r is None else float(np.min(r_fin)),
+                   r_max=None if r is None else float(np.max(r_fin)),
+                   b_min=float(b_kms), cache=False)
+    tau = voigt_optical_depth(lsf.x_fine, np.array([lambda_0]), np.array([f_val]),
+                              np.array([gamma]), np.array([z]), np.array([N]),
+                              np.array([b_kms]))
+    return lsf.apply(np.exp(-tau), r)
 
 # --- 2. The Paged Plot Widget ---
 
@@ -798,6 +739,8 @@ class VelocityPlotWidget(QWidget):
                 atom_info = ATOM_DATA.get(trans_name)
                 if atom_info:
                     x_ang_p = session.spec.x.to(au.Angstrom).value[mask]
+                    edges_p = (session.spec.xmin.to(au.Angstrom).value[mask],
+                               session.spec.xmax.to(au.Angstrom).value[mask])
                     for sel_c in self._selected_components:
                         is_match = (sel_c.series == trans_name) or \
                                    (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
@@ -823,7 +766,7 @@ class VelocityPlotWidget(QWidget):
                                 x_ang_p, atom_info['wave'], atom_info['f'], atom_info['gamma'],
                                 sel_c.z, 10**sel_c.logN, b_eff, 
                                 resol=comp_res_arg, resol_unit=comp_res_unit,
-                                context="STATIC_PLOT" 
+                                context="STATIC_PLOT", edges_ang=edges_p
                             )
                             ax_main.plot(v_p, prof, color='#f5a100', ls='--', lw=1.2, alpha=0.9)
 
