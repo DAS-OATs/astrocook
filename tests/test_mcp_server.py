@@ -514,12 +514,13 @@ def test_doublets_auto_without_a_mask_stores_the_whole_new_one(forest_archive):
     ({"logN": 23.0}, ["logN_at_upper_bound"]),
     ({"b": 1.0}, ["b_at_lower_bound"]),
     ({"b": 50.0}, ["b_at_max_b"]),
+    ({"logN": 19.0}, ["logN_at_max_logN"]),
     ({"dlogN": float("nan")}, ["nan_errors"]),
 ])
 def test_component_flags(kwargs, flags):
     values = dict(id=1, z=2.0, dz=1e-5, logN=13.5, dlogN=0.1, b=10.0, db=1.0)
     values.update(kwargs)
-    assert component_flags(ComponentDataV2(**values), max_b=50.0) == flags
+    assert component_flags(ComponentDataV2(**values), max_b=50.0, max_logN=19.0) == flags
 
 
 @pytest.mark.slow

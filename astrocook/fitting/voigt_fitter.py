@@ -469,17 +469,23 @@ class VoigtFitterV2:
             comps.append(dataclasses.replace(c, **new))
         return SystemListV2(dataclasses.replace(self._system_list._data, components=comps))
 
-    def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
-               b_max: float) -> Tuple[np.ndarray, np.ndarray]:
-        """Lower the upper bound of the free b parameters to ``b_max``."""
+    def _cap_upper(self, bounds: Tuple[np.ndarray, np.ndarray], offset: int,
+                   cap: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Lower the upper bound of a free parameter of every component
+        (``offset`` in z, logN, b, btur) to ``cap``."""
         lower, upper = bounds[0].copy(), bounds[1].copy()
         is_free_mask = self._constraints._param_map['is_free']
         free_idx_map = np.cumsum(is_free_mask) - 1
-        for idx_b in range(2, len(is_free_mask), 4):
-            if is_free_mask[idx_b]:
-                j = free_idx_map[idx_b]
-                upper[j] = max(min(upper[j], b_max), lower[j] + 1e-6)
+        for idx in range(offset, len(is_free_mask), 4):
+            if is_free_mask[idx]:
+                j = free_idx_map[idx]
+                upper[j] = max(min(upper[j], cap), lower[j] + 1e-6)
         return lower, upper
+
+    def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
+               b_max: float) -> Tuple[np.ndarray, np.ndarray]:
+        """Lower the upper bound of the free b parameters to ``b_max``."""
+        return self._cap_upper(bounds, 2, b_max)
 
     def _residual_function(self, p_free: np.ndarray) -> np.ndarray:
         # Check for stop request
@@ -888,7 +894,8 @@ class VoigtFitterV2:
 
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 0,
-            b_max: Optional[float] = None) -> Tuple[SystemListV2, np.ndarray, Any]:
+            b_max: Optional[float] = None,
+            logN_max: Optional[float] = None) -> Tuple[SystemListV2, np.ndarray, Any]:
         """
         Execute the Voigt profile optimization.
 
@@ -914,6 +921,13 @@ class VoigtFitterV2:
             their neighbours; components that end at this bound may be broader
             and can be refitted without it. Defaults to ``None`` (no extra
             bound).
+        logN_max : float, optional
+            Upper bound on the free logN parameters, tighter than the
+            physical limit of the constraint model (23). Used by the
+            automatic pipelines (19): in saturated troughs a single
+            component can otherwise fill the trough with its damping wings
+            and run away to logN 20-23 (findings register F62). Defaults to
+            ``None`` (no extra bound).
 
         Returns
         -------
@@ -949,6 +963,8 @@ class VoigtFitterV2:
         bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
         if b_max is not None:
             bounds = self._cap_b(bounds, b_max)
+        if logN_max is not None:
+            bounds = self._cap_upper(bounds, 1, logN_max)
 
         # Clamp p0 to bounds
         p0 = np.clip(p0, bounds[0], bounds[1])

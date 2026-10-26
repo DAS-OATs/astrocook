@@ -173,7 +173,7 @@ def test_continuum_metrics_of_the_true_continuum():
 def test_schema_params_are_the_gui_defaults():
     params = vm.schema_params("absorbers", "doublets_auto")
     assert params == {"multiplets": "CIV,SiIV,MgII", "score_threshold": "0.5",
-                      "z_window_kms": "20.0", "max_b": "50.0"}
+                      "z_window_kms": "20.0", "max_b": "50.0", "max_logN": "19.0"}
     assert "debug_rating" not in vm.schema_params("absorbers", "identify_lines")
     assert vm.schema_params("continuum", "estimate_auto")["fudge"] == "auto"
 

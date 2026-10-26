@@ -81,8 +81,9 @@ DETECTION_SIGMA = 3.0
 METAL_SYSTEMS = {"CIV": 4, "SiIV": 2, "MgII": 2}
 METALS = tuple(METAL_SYSTEMS)
 #: Bounds of the fits, for the flags (VoigtModelConstraintV2.DEFAULT_BOUNDS
-#: and the max_b of doublets_auto)
-LOGN_BOUNDS = (10.0, 23.0)
+#: and the max_b and max_logN of doublets_auto; the upper bound on logN was
+#: 23 before F62)
+LOGN_BOUNDS = (10.0, 19.0)
 B_BOUNDS = (1.0, 50.0)
 LYA_NM, LYB_NM = 121.567, 102.572
 
