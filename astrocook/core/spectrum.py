@@ -107,6 +107,45 @@ class TableAdapterV2(object):
         else:
             raise KeyError(f"Invalid key type: {type(key)}. Expected string or slice.")
 
+def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
+    """Pixel edges (``xmin``, ``xmax``) without a unit, from sessions saved
+    by earlier versions, take the unit of ``x`` (#623: the fit converts the
+    edges to Angstrom since #526, and failed with "'' (dimensionless) and
+    'Angstrom' (length) are not convertible"). If their values do not
+    bracket ``x`` (at least 90% of the pixels), they are not edges in the
+    unit of ``x`` and are recomputed halfway between the pixels."""
+    x_unit = au.Unit(data.x.unit) if data.x.unit is not None else au.dimensionless_unscaled
+    if x_unit == au.dimensionless_unscaled:
+        return data
+
+    def no_unit(col):
+        return col.unit is None or au.Unit(col.unit) == au.dimensionless_unscaled
+
+    if not (no_unit(data.xmin) or no_unit(data.xmax)):
+        return data
+    x = np.asarray(data.x.values, dtype=float)
+    xmin = np.asarray(data.xmin.values, dtype=float)
+    xmax = np.asarray(data.xmax.values, dtype=float)
+    with np.errstate(invalid='ignore'):
+        inside = (xmin <= x) & (x <= xmax)
+    finite = np.isfinite(x) & np.isfinite(xmin) & np.isfinite(xmax)
+    if finite.any() and np.mean(inside[finite]) >= 0.9:
+        logging.info("Pixel edges without a unit: read in the unit of x (%s).", x_unit)
+    else:
+        logging.warning("Pixel edges without a unit and not around x: recomputed "
+                        "halfway between the pixels.")
+        if len(x) > 1:
+            mid = 0.5 * (x[1:] + x[:-1])
+            xmin = np.concatenate([[x[0] - (mid[0] - x[0])], mid])
+            xmax = np.concatenate([mid, [x[-1] + (x[-1] - mid[-1])]])
+        else:
+            xmin, xmax = x.copy(), x.copy()
+    return dataclasses.replace(
+        data,
+        xmin=DataColumnV2(xmin, x_unit, getattr(data.xmin, 'description', None)),
+        xmax=DataColumnV2(xmax, x_unit, getattr(data.xmax, 'description', None)))
+
+
 class SpectrumV2:
     """
     Composite container for spectral data and operations.
@@ -126,7 +165,7 @@ class SpectrumV2:
     def __init__(self, data: SpectrumDataV2, history: list = None):
         # The resolution lives in the 'resol' column only: legacy sources
         # (attribute, meta keys) are migrated into it here (#526)
-        self._data = migrate_resolution(data)
+        self._data = migrate_resolution(_edges_with_unit(data))
         self.history = history if history is not None else []
 
     def resolution(self) -> np.ndarray:
