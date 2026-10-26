@@ -808,6 +808,37 @@ does not touch the results:
   (`loc="best"`) and the ticks, ~1-3 s between the main and the velocity
   plot.
 
+**GUI look and ergonomics** (review asked by Guido, October 2026, on
+screenshots taken offscreen). Done, ahead of the phase (GUI only, no
+numerical change): the session list and the plot controls are floating
+cards, as tall as their contents and anchored below the menu bar, that
+fade out while the mouse is on the plot; their tabs (a list icon and a
+cog) sit just outside the cards' edges. The panels keep floating over the
+plot instead of shrinking it, because a narrower plot changes the aspect
+of the spectrum (Guido's decision); a card as tall as its contents, the
+fading, and the anchoring at the top (the controls do not move under the
+mouse when a section opens) reduce what they cover. The sections of the
+plot controls are collapsible, with their state remembered; while Plot
+Elements is open its checkboxes show the plotted styles and those entries
+leave the matplotlib legend, which used to show through the panel. Two
+columns were considered and rejected: a wider card covers more of the
+plot. Proposals of the review still open, to be agreed with Guido:
+- a status bar (cursor position, outcome of the last recipe) and
+  keyboard navigation in the System Inspector;
+- the System Inspector shows empty panels without saying why when the
+  session has no continuum;
+- typed widgets in the recipe dialogs (spin boxes, column combos, a
+  selector of transitions) and short labels with the long text in the
+  tooltip: with phase 6-bis;
+- one theme module instead of colours written in a dozen stylesheets
+  (dark mode on macOS);
+- the menus: *Smooth Column* (Edit) and *Smooth Spectrum* (Flux),
+  *Import Systems* in Edit instead of Absorbers, the View toggles as
+  checkable entries; recent files and the window geometry not saved;
+- the main plot: the 1-sigma error is drawn as a line by default although
+  a comment in the code says band (to be decided), the HI ticks are a
+  saturated red block, the title repeats the window title.
+
 ### Phase 6 – Error handling
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
@@ -963,7 +994,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | `test_set_active_components_honours_group_depth`, `test_fit_component_group_depth_0_freezes_neighbours` (regression) | fixed (phase 1-bis, decided with Guido): `group_depth` honoured, default 2 everywhere; the internal fits of `refit_all`/`metals_auto` keep the depth-2 expansion they always had (`FIT_EXPANSION_DEPTH`), since depth 0 there was 2.75x faster but fitted blends worse (J0103-1305: chi2 +14% in the forest); the user can reduce the depth in "Fit component" and in the Bayesian fit |
 | F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
 | F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured`, `test_link_removed_with_group_selected_is_not_coloured`, `test_link_keeps_its_colour_when_another_is_added` (regression) | fixed (phase 3-bis): the colours are recomputed in `update_data`; a link keeps its colour when others are added or removed |
-| F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_*` in `tests/test_issue_469_blends.py` | fixed in phase 4, after PR 1 of [#526](https://github.com/DAS-OATs/astrocook/issues/526) (the single per-pixel resolution), in parallel with its PR 3: the threshold is max(4 b, 30 km/s, k FWHM), with the instrumental FWHM at the lines from the `resol` column (or the resolution of the component, if set, as in the fitter; the larger of the two lines), k = 1 (Guido: the FWHM is the useful check; 4 b and 30 km/s were heuristics, kept as floors and as the fallback without resolution). The spectrum is passed to the grouping by every fit (recipes, `optimize_hierarchy`, Bayesian fit) and by the System Inspector. Only R < ~10000 (FWHM > 30 km/s) changes anything. With k = 1 the example above (60 km/s at R 8900, FWHM 34 km/s) is still not grouped: it would need k ~ 2. Mock benchmark: identical results on all 135 mocks (only the timings differ; the benchmark fits only the sparse metal doublets, and on two mocks at R 8900 no pair changed grouping), so a fit-level test replaces it (`test_fit_includes_component_blended_at_low_resolution`) |
+| F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_*` in `tests/test_issue_469_blends.py` | fixed in phase 4, after PR 1 of [#526](https://github.com/DAS-OATs/astrocook/issues/526) (the single per-pixel resolution), in parallel with its PR 3: the threshold is max(4 b, 30 km/s, k FWHM), with the instrumental FWHM at the lines from the `resol` column (or the resolution of the component, if set, as in the fitter; the larger of the two lines), k = 1 (Guido: the FWHM is the useful check; 4 b and 30 km/s were heuristics, kept as floors and as the fallback without resolution). The spectrum is passed to the grouping by every fit (recipes, `optimize_hierarchy`, Bayesian fit) and by the System Inspector. Only R < ~10000 (FWHM > 30 km/s) changes anything. With k = 1 the example above (60 km/s at R 8900, FWHM 34 km/s) is still not grouped: it would need k ~ 2; Guido kept k = 1 (#618). Mock benchmark: identical results on all 135 mocks (only the timings differ; the benchmark fits only the sparse metal doublets, and on two mocks at R 8900 no pair changed grouping), so a fit-level test replaces it (`test_fit_includes_component_blended_at_low_resolution`). Measured again on the merged code (master after #617 and #618, 3c4089c, against #617 alone, a7b02ce; both before F61, #619, not measured again after it): identical records on all 135 mocks |
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
 | F16 | smoothing | For the same "std" parameter, V1 `_gauss_convolve` uses the kernel exp(-(dv/std)^2), i.e. sigma = std/sqrt(2), while V2 `smooth_spectrum` uses sigma = std: V2 smooths sqrt(2) wider. Affects the continuum smoothing (default 500 km/s: effective sigma 354 km/s in V1, 500 km/s in V2) and any other use of the parameter. Which convention to keep is Guido's decision | numerical | `test_smoothing_width_differs_by_sqrt2` (characterization); `test_estimate_auto_smoothing_is_a_fwhm` | fixed (phase 1-bis, decided with Guido): the continuum smoothing is given as a FWHM (`smooth_fwhm`, default 800 km/s, within 0.5% of the V1 continuum on J0103-1305; FWHM 500 would change it by up to 10% in the forest); `smooth_std` (sigma) kept as a deprecated alias |
 | F17 | continuum (forest) | On the J0103-1305 window, with the same parameters and matched smoothing, V1 `clip_flux` and V2 `find_absorbed` + `fit_continuum` agree on the red side (masks 99.98%, continuum within 0.4%), but in the Lyman-alpha forest V2 marks more pixels as unabsorbed (57.6% vs 54.8% of the window, masks agree on 92.7% of the forest pixels) and its continuum is lower by 1.2% (median; 5th percentile -4.6%). Not explained by the fudge (F3). Relevant to #465 and to the known low forest continuum | numerical | `test_continuum_forest` (strict xfail) | partly addressed by #465 (measured on the mock benchmark (2.1.0 + F49/F50 → #465): forest continuum 0.936 → 0.943 (5th percentile 0.820 → 0.830), red side unchanged (1.002)); V1 parity no longer sought for the continuum (V2 is measured against the truth on mocks instead) |
