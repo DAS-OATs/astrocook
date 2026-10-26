@@ -100,8 +100,9 @@ def test_noise_statistics_and_reproducibility():
 def test_spectrum_properties():
     spec = generate(_truth([MockComponent("CIV", Z, 13.5, 10.0)], snr=50.0))
     assert spec._data.z_em == 3.1
-    assert spec._data.resol == 45000.0
-    assert spec.meta["resol"] == 45000.0
+    # The resolution in the resol column only (#526)
+    np.testing.assert_array_equal(spec.resolution(), 45000.0)
+    assert spec._data.resol == 0.0 and "resol" not in spec.meta
     np.testing.assert_allclose(spec.get_column("mock_flux").value,
                                spec.get_column("cont").value * normalized_flux(
                                    _truth([MockComponent("CIV", Z, 13.5, 10.0)]))[1])

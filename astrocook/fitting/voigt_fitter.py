@@ -32,103 +32,51 @@ def _transitions(series: str) -> List[str]:
     return [n.strip() for n in names if ATOM_DATA.get(n.strip())]
 
 
-def convolve_flux(flux: np.ndarray, x_ang: np.ndarray, resol: Any, resol_unit: str = 'R') -> np.ndarray:
-    r"""
-    Convolves a flux array with a Gaussian kernel defined by resolution.
-
-    Handles both constant resolution (scalar) and variable resolution (array)
-    across the wavelength grid.
-
-    Parameters
-    ----------
-    flux : np.ndarray
-        The input flux array (either normalized 0-1 or physical units).
-    x_ang : np.ndarray
-        The wavelength grid in Angstroms. Must match ``flux`` length.
-    resol : float or np.ndarray
-        Resolution value(s).
-        - If float: Constant resolution across the spectrum.
-        - If array: Pixel-by-pixel resolution (must match ``flux`` length).
-    resol_unit : str, optional
-        Unit of the resolution value:
-        - ``'R'``: Resolving Power (:math:`R = \lambda / \Delta\lambda`).
-        - ``'km/s'``: FWHM velocity.
-        Defaults to ``'R'``.
-
-    Returns
-    -------
-    np.ndarray
-        The convolved flux array with the same shape as input.
+def voigt_optical_depth(wave_grid_ang: np.ndarray,
+                        lambda_0: np.ndarray, f_val: np.ndarray,
+                        gamma: np.ndarray, z: np.ndarray,
+                        N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
     """
-    if len(flux) == 0: return flux
-    if len(flux) != len(x_ang):
-        raise ValueError(f"Shape mismatch: flux {len(flux)} vs wave {len(x_ang)}")
+    Optical depth of M Voigt lines on N samples, summed: the physics of
+    the fitter, used also by the profiles of the System Inspector.
 
-    # Estimate sampling (dx)
-    if len(x_ang) > 1:
-        dx = np.nanmedian(np.diff(x_ang))
-    else:
-        dx = 1.0
-    
-    if dx <= 0: return flux
+    Input arrays (lambda_0, z, etc.) must be shape (M,).
+    wave_grid_ang must be shape (N,).
+    Returns summed tau array of shape (N,).
+    """
+    # Each line only where its optical depth exceeds TAU_CUT (#526: the
+    # grid is finer than the pixels): the samples of all lines are
+    # gathered in one flat array, and summed back onto the grid
+    c_kms = 2.99792458e5
+    c_ang_s = 2.99792458e18
+    prefactor = 1.4974e-15
+    b_safe = np.maximum(b_kms, 0.1)
+    lambda_c = lambda_0 * (1.0 + z)
+    dop_width_ang = np.maximum((b_safe / c_kms) * lambda_c, 1e-10)
+    # Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it
+    # was computed with the observed wavelength, (1 + z) too large (F61)
+    a = (gamma * lambda_0) / (4.0 * np.pi * c_ang_s * (b_safe / c_kms))
+    tau0 = prefactor * N_col * f_val * lambda_0 / b_safe
 
-    c_kms = 299792.458
+    # Gaussian core and Lorentzian wings, in Doppler widths
+    with np.errstate(divide='ignore', invalid='ignore'):
+        x_cut = np.maximum(np.sqrt(np.log(np.maximum(tau0 / TAU_CUT, np.e))),
+                           np.sqrt(tau0 * a / (np.sqrt(np.pi) * TAU_CUT))) + 3.0
+    x_cut = np.nan_to_num(x_cut, nan=0.0, posinf=0.0)
+    lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
+    hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
+    lens = np.maximum(hi - lo, 0)
+    total = int(lens.sum())
+    if total == 0:
+        return np.zeros_like(wave_grid_ang)
+    line = np.repeat(np.arange(len(lens)), lens)
+    idx = lo[line] + np.arange(total) - np.repeat(np.cumsum(lens) - lens, lens)
 
-    def get_sigma_pix(res_val, wav):
-        if resol_unit == 'km/s':
-            # FWHM_lambda = (v / c) * lambda
-            # Sigma = FWHM / 2.355
-            sigma_ang = (res_val / c_kms) * wav / 2.35482
-        else:
-            # FWHM_lambda = lambda / R
-            sigma_ang = (wav / res_val) / 2.35482
-        return sigma_ang / dx
+    # Faddeeva (Voigt): the expensive step
+    x = (wave_grid_ang[idx] - lambda_c[line]) / dop_width_ang[line]
+    H_ax = wofz(x + 1j * a[line]).real
+    return np.bincount(idx, weights=tau0[line] * H_ax, minlength=len(wave_grid_ang))
 
-    # 1. Variable Resolution (Array)
-    if isinstance(resol, (np.ndarray, list)) and len(resol) == len(flux):
-        resol_arr = np.asarray(resol)
-        final_convolved = np.zeros_like(flux)
-        
-        if resol_unit == 'R':
-            rounded_resol = np.round(resol_arr / 100.0) * 100.0
-        else:
-            rounded_resol = np.round(resol_arr * 2.0) / 2.0
-            
-        unique_resols = np.unique(rounded_resol)
-        
-        for r_val in unique_resols:
-            if not r_val > 0: continue  # also skips NaN
-            
-            # Select by the ROUNDED value: selecting by the raw value left the
-            # pixels with a non-round resolution at 0 (findings register F10)
-            mask_r = rounded_resol == r_val
-            
-            # Use median wavelength of the masked region for kernel width approximation
-            local_wave = np.median(x_ang[mask_r])
-            sigma_pix = get_sigma_pix(r_val, local_wave)
-            
-            if sigma_pix > 0.1:
-                # Convolve full array to handle edges, then apply mask
-                temp_conv = gaussian_filter1d(flux, sigma_pix)
-                final_convolved[mask_r] = temp_conv[mask_r]
-            else:
-                final_convolved[mask_r] = flux[mask_r]
-
-        # Fill gaps (where resol <= 0 or NaN)
-        mask_no_res = ~(rounded_resol > 0)
-        if np.any(mask_no_res):
-            final_convolved[mask_no_res] = flux[mask_no_res]
-            
-        return final_convolved
-
-    # 2. Constant Resolution (Scalar)
-    elif isinstance(resol, (int, float)) and resol > 0:
-        local_wave = np.median(x_ang)
-        sigma_pix = get_sigma_pix(resol, local_wave)
-        if sigma_pix > 0.1:
-            return gaussian_filter1d(flux, sigma_pix)
-            
-    return flux
 
 class VoigtFitterV2:
     """
@@ -188,14 +136,12 @@ class VoigtFitterV2:
         # flat column takes the scalar path, as a global value did before
         self._resol_column = None
         self._use_variable_resolution = False
-        self._variable_resol_unit = 'R'
-        self._global_resol_val, self._global_sigma_pix = 0.0, None
+        self._global_resol_val = 0.0
         self._global_resol_unit = 'R'
         r_pix = self._spectrum.resolution()
         finite = r_pix[np.isfinite(r_pix)]
         if finite.size == r_pix.size and finite.size and np.all(finite == finite[0]):
             self._global_resol_val = float(finite[0])
-            self._global_sigma_pix = self._calc_sigma_pix_from_R(self._global_resol_val)
             logging.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f}")
         elif finite.size:
             self._resol_column = r_pix
@@ -220,37 +166,6 @@ class VoigtFitterV2:
         # Stores tuples: (index_in_system_list, component_object)
         self._active_fit_components: Optional[List[Tuple[int, ComponentDataV2]]] = None
 
-
-    def _calc_sigma_pix_from_R(self, R: float) -> float:
-        """Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""
-        mid_wave = np.median(self._x_ang)
-        fwhm_ang = mid_wave / R
-        sigma_ang = fwhm_ang / 2.35482
-        dx_avg = np.mean(np.diff(self._x_ang))
-        return sigma_ang / dx_avg
-
-    def _calc_sigma_pix_from_fwhm_kms(self, fwhm_kms: float, local_wave: float = None) -> float:
-        """
-        Convert FWHM (km/s) to Gaussian Sigma in pixels.
-        If local_wave is provided, calculates for that specific wavelength.
-        """
-        wave = local_wave if local_wave is not None else np.median(self._x_ang)
-        c_kms = 299792.458
-        fwhm_ang = (fwhm_kms / c_kms) * wave
-        sigma_ang = fwhm_ang / 2.35482
-        
-        # Estimate local sampling (dx)
-        if len(self._x_ang) > 1:
-            if local_wave is not None:
-                idx = np.searchsorted(self._x_ang, local_wave)
-                idx = np.clip(idx, 0, len(self._x_ang)-2)
-                dx = self._x_ang[idx+1] - self._x_ang[idx]
-            else:
-                dx = np.mean(np.diff(self._x_ang))
-        else:
-            dx = 1.0
-            
-        return sigma_ang / dx
 
     def _compute_tau_component(self, comp: ComponentDataV2, z: float, logN: float, b: float, btur: float) -> np.ndarray:
         atoms = [ATOM_DATA[t] for t in _transitions(comp.series)]
@@ -661,50 +576,12 @@ class VoigtFitterV2:
             logging.info(f"Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
         return p_refined
 
-    def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray, 
-                                      lambda_0: np.ndarray, f_val: np.ndarray, 
-                                      gamma: np.ndarray, z: np.ndarray, 
-                                      N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
-        """
-        Vectorized Voigt profile calculation.
-        Computes profiles for M lines on N samples simultaneously.
-        
-        Input arrays (lambda_0, z, etc.) must be shape (M,).
-        wave_grid_ang must be shape (N,).
-        Returns summed tau array of shape (N,).
-        """
-        # Each line only where its optical depth exceeds TAU_CUT (#526: the
-        # grid is finer than the pixels): the samples of all lines are
-        # gathered in one flat array, and summed back onto the grid
-        c_kms = 2.99792458e5
-        c_ang_s = 2.99792458e18
-        prefactor = 1.4974e-15
-        b_safe = np.maximum(b_kms, 0.1)
-        lambda_c = lambda_0 * (1.0 + z)
-        dop_width_ang = np.maximum((b_safe / c_kms) * lambda_c, 1e-10)
-        # Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it
-        # was computed with the observed wavelength, (1 + z) too large (F61)
-        a = (gamma * lambda_0) / (4.0 * np.pi * c_ang_s * (b_safe / c_kms))
-        tau0 = prefactor * N_col * f_val * lambda_0 / b_safe
-
-        # Gaussian core and Lorentzian wings, in Doppler widths
-        with np.errstate(divide='ignore', invalid='ignore'):
-            x_cut = np.maximum(np.sqrt(np.log(np.maximum(tau0 / TAU_CUT, np.e))),
-                               np.sqrt(tau0 * a / (np.sqrt(np.pi) * TAU_CUT))) + 3.0
-        x_cut = np.nan_to_num(x_cut, nan=0.0, posinf=0.0)
-        lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
-        hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
-        lens = np.maximum(hi - lo, 0)
-        total = int(lens.sum())
-        if total == 0:
-            return np.zeros_like(wave_grid_ang)
-        line = np.repeat(np.arange(len(lens)), lens)
-        idx = lo[line] + np.arange(total) - np.repeat(np.cumsum(lens) - lens, lens)
-
-        # Faddeeva (Voigt): the expensive step
-        x = (wave_grid_ang[idx] - lambda_c[line]) / dop_width_ang[line]
-        H_ax = wofz(x + 1j * a[line]).real
-        return np.bincount(idx, weights=tau0[line] * H_ax, minlength=len(wave_grid_ang))
+    def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray,
+                                        lambda_0: np.ndarray, f_val: np.ndarray,
+                                        gamma: np.ndarray, z: np.ndarray,
+                                        N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
+        """See :func:`voigt_optical_depth`."""
+        return voigt_optical_depth(wave_grid_ang, lambda_0, f_val, gamma, z, N_col, b_kms)
 
     def prepare_fit_context(self, z_window_kms: float = 20.0) -> Tuple[np.ndarray, np.ndarray]:
         """
