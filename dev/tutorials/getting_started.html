@@ -539,10 +539,11 @@
 </section>
 <section id="customizing-the-view-right-sidebar">
 <span id="getting-started-customizing"></span><h2>3. Customizing the View (Right Sidebar)<a class="headerlink" href="#customizing-the-view-right-sidebar" title="Link to this heading">#</a></h2>
-<p>Look to the right side of the window. This is the <strong>Plot Controls</strong> panel. Here you can tweak how the data is displayed without altering the data itself.</p>
-<section id="toggles">
-<h3>Toggles<a class="headerlink" href="#toggles" title="Link to this heading">#</a></h3>
-<p>You can show or hide specific layers of the plot:</p>
+<p>Click the cog icon at the top right of the plot to open the <strong>Plot Controls</strong> panel (click it again to close it). Here you can tweak how the data is displayed without altering the data itself.</p>
+<p>The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (<strong>Plot Elements</strong>, <strong>View Controls</strong>, <strong>Axis Limits</strong>, <strong>Redshift Cursor</strong>, <strong>Edit Continuum</strong>) open and close with a click on their title, and Astrocook remembers which ones you left open.</p>
+<section id="plot-elements">
+<h3>Plot Elements<a class="headerlink" href="#plot-elements" title="Link to this heading">#</a></h3>
+<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: while this section is open it replaces the legend of the plot, and the legend shows only what is not listed here (e.g. other sessions or an auxiliary column).</p>
 <ul>
 <li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
 <li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
@@ -603,7 +604,7 @@
 </section>
 <section id="session-management-left-sidebar">
 <h2>4. Session Management (Left Sidebar)<a class="headerlink" href="#session-management-left-sidebar" title="Link to this heading">#</a></h2>
-<p>The panel on the left is your <strong>Session List</strong>. Each file you load becomes a “Session”.</p>
+<p>Click the list icon at the top left of the plot to open the <strong>Session List</strong>. Each file you load becomes a “Session”. Like the Plot Controls, the list floats over the plot, is as tall as the sessions it holds and fades out while the mouse is on the plot. Long names are shortened in the middle; hover over a name to read it in full.</p>
 <section id="switching-sessions">
 <h3>Switching Sessions<a class="headerlink" href="#switching-sessions" title="Link to this heading">#</a></h3>
 <p>If you loaded multiple spectra, click on their names in this list to switch the main view instantly.</p>
@@ -753,7 +754,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customizing-the-view-right-sidebar">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#toggles">Toggles</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-elements">Plot Elements</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-limits">Axis Limits</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-redshift-cursor">The Redshift Cursor</a></li>
