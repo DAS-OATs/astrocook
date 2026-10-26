@@ -17,6 +17,17 @@ from astrocook.core.system_list import SystemListV2
 #: A line is evaluated only where its optical depth exceeds this (#526)
 TAU_CUT = 1e-6
 
+#: Flags that a fit leaves on the components it fits (#517), in
+#: ComponentDataV2.flags: a free parameter ended at a bound of the fit
+#: (within AT_BOUND_RTOL of the width of its range), or the uncertainties
+#: could not be computed. The upper bounds of the fit are those of the
+#: constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b
+#: of the automatic pipelines (19, 50 km/s); the z bound is the window of
+#: the fit. A parameter at a bound has an unreliable value and error.
+COMPONENT_FLAGS = ('z_at_window', 'logN_at_lower_bound', 'logN_at_upper_bound',
+                   'b_at_lower_bound', 'b_at_upper_bound', 'nan_errors')
+AT_BOUND_RTOL = 1e-3
+
 
 def _transitions(series: str) -> List[str]:
     """Transitions of a series in the atomic data (multiplet, single line
@@ -396,6 +407,29 @@ class VoigtFitterV2:
                 j = free_idx_map[idx]
                 upper[j] = max(min(upper[j], cap), lower[j] + 1e-6)
         return lower, upper
+
+    def _bound_flags(self, idx: int, p_free: np.ndarray,
+                     bounds: Tuple[np.ndarray, np.ndarray]) -> Tuple[str, ...]:
+        """Flags of the component whose parameters start at ``idx`` (in
+        the full vector): its free z, logN and b at a bound (#517)."""
+        is_free_mask = self._constraints._param_map['is_free']
+        free_idx_map = np.cumsum(is_free_mask) - 1
+        flags = []
+        for k, (low, high) in enumerate((('z_at_window', 'z_at_window'),
+                                         ('logN_at_lower_bound', 'logN_at_upper_bound'),
+                                         ('b_at_lower_bound', 'b_at_upper_bound'))):
+            if not is_free_mask[idx + k]:
+                continue
+            j = free_idx_map[idx + k]
+            lo, hi, value = bounds[0][j], bounds[1][j], p_free[j]
+            if not (np.isfinite(lo) and np.isfinite(hi)) or hi <= lo:
+                continue
+            tol = AT_BOUND_RTOL * (hi - lo)
+            if value - lo <= tol:
+                flags.append(low)
+            elif hi - value <= tol:
+                flags.append(high)
+        return tuple(dict.fromkeys(flags))
 
     def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
                b_max: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -915,6 +949,13 @@ class VoigtFitterV2:
             if active_uuids is None or old_comp.uuid in active_uuids:
                 comp_chi2 = red_chi2
             
+            comp_flags = old_comp.flags
+            if active_uuids is None or old_comp.uuid in active_uuids:
+                comp_flags = self._bound_flags(idx, res.x, bounds)
+                if any(e is not None and np.isnan(e)
+                       for e in (dz_new, dlogN_new, db_new, dbtur_new)):
+                    comp_flags += ('nan_errors',)
+
             new_comp = dataclasses.replace(old_comp,
                 z=p_fitted_full[idx], 
                 logN=p_fitted_full[idx+1], 
@@ -925,7 +966,8 @@ class VoigtFitterV2:
                 db=db_new,
                 dbtur=dbtur_new,
                 chi2=comp_chi2,
-                resol=comp_resol
+                resol=comp_resol,
+                flags=comp_flags
             )
             new_components.append(new_comp)
             

@@ -160,6 +160,7 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
     
     has_chi2 = 'chi2' in systs_table.colnames
     has_resol = 'resol' in systs_table.colnames
+    has_flags = 'flags' in systs_table.colnames  # since #517
 
     for row in systs_table:
         # [FIX] Robust value extractor for Astropy Rows
@@ -190,6 +191,8 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
             # [FIX] Read metadata using safe extractor
             chi2=safe_float('chi2') if has_chi2 else None,
             resol=safe_float('resol') if has_resol else None,
+            flags=(tuple(f for f in str(row['flags']).split(',') if f.strip())
+                   if has_flags and not np.ma.is_masked(row['flags']) else ()),
 
             func=str(row['func']),
             series=str(row['series'])
@@ -292,7 +295,7 @@ def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
     data_dict = {
         'uuid': [], 'id': [], 'z': [], 'dz': [], 'logN': [], 'dlogN': [], 
         'b': [], 'db': [], 'btur': [], 'dbtur': [], 'func': [], 'series': [],
-        'chi2': [], 'resol': []
+        'chi2': [], 'resol': [], 'flags': []
     }
     
     for c in systs_data.components:
@@ -312,6 +315,8 @@ def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
         # [FIX] Write Metadata
         data_dict['chi2'].append(c.chi2 if c.chi2 is not None else np.nan)
         data_dict['resol'].append(c.resol if c.resol is not None else np.nan)
+        # Comma-separated (#517); a string column of FITS cannot be empty
+        data_dict['flags'].append(','.join(c.flags) or ' ')
 
     t = Table(data_dict)
     

@@ -273,6 +273,20 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
 }
 
+def _log_flags(components) -> None:
+    """Log how many of the fitted ``components`` have flags (#517): a
+    parameter at a bound of the fit, or uncertainties not computed."""
+    from collections import Counter
+    counts = Counter(f for c in components for f in c.flags)
+    n = sum(1 for c in components if c.flags)
+    if not n:
+        return
+    listed = ", ".join(f"{flag.replace('_', ' ')}: {k}" for flag, k in sorted(counts.items()))
+    logging.warning(f"{n} component{'s' if n > 1 else ''} with fit warnings ({listed}). "
+                    "A parameter at a bound has an unreliable value and error: refit "
+                    "with wider bounds (e.g. Refit Selected) or check the component.")
+
+
 class RecipeAbsorbersV2:
     """
     Recipes for identification, fitting, and management of absorption lines.
@@ -1732,6 +1746,8 @@ class RecipeAbsorbersV2:
                     
                     # Update model and return immediately
                     new_spec = current_session.spec.update_model(model_flux)
+                    _log_flags([c for c in new_systs.components
+                                if c.uuid in combined_active_set])
                     return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
                 except Exception as e:
                     logging.error(f"Consolidated fit failed: {e}")
@@ -1931,6 +1947,7 @@ class RecipeAbsorbersV2:
 
             # Delegate to SpectrumV2
             new_spec = current_session.spec.update_model(model_flux)
+            _log_flags(final_systs.components)
             
             return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
 
