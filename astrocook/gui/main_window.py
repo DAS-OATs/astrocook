@@ -61,8 +61,8 @@ for name in FLUX_RECIPES_SCHEMAS:
 LEFT_SIDEBAR_WIDTH = 250
 RIGHT_SIDEBAR_WIDTH = 250
 ANIMATION_DURATION = 150 # ** Speed up animation **
-BUTTON_WIDTH = 20
-BUTTON_HEIGHT = 30
+BUTTON_WIDTH = 28
+BUTTON_HEIGHT = 28
 
 # --- Floating cards (session list on the left, plot controls on the right) ---
 # The panels float over the plot instead of shrinking it, so that the aspect
@@ -141,10 +141,10 @@ class CardFader(QObject):
 
 
 def disclosure_icon(direction: str) -> QIcon:
-    """The triangle used by the collapse tabs and by the card sections.
+    """The triangle of the headers of the card sections.
 
-    ``direction`` is 'left', 'right' or 'down'. One glyph for both, so that
-    they look the same on every platform (the style's own arrows differ).
+    ``direction`` is 'right' or 'down'. A qtawesome glyph rather than the
+    style's arrows, so that it looks the same on every platform.
     """
     color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
     # The glyph fills only the middle of its box: scaled to read at 16 px
@@ -358,7 +358,8 @@ class MainWindowV2(QMainWindow):
 
         # --- Left Sidebar (card) & Button ---
         left_width = self.left_sidebar_widget.width()
-        button_x = left_width - BUTTON_WIDTH if left_width > 0 else left_width
+        # The tab is a handle just outside the card's edge (on the plot)
+        button_x = left_width
         card_y = content_y_start + CARD_MARGIN
         left_height = min(self._session_list_height(), content_height - 2 * CARD_MARGIN)
         # The tab stays at the top of the card: it does not move when the
@@ -373,7 +374,7 @@ class MainWindowV2(QMainWindow):
         card_y = content_y_start + CARD_MARGIN
         card_height = min(self.right_sidebar_widget.layout().sizeHint().height(),
                           content_height - 2 * CARD_MARGIN)
-        button_x = sidebar_x if right_width > 0 else sidebar_x - BUTTON_WIDTH
+        button_x = sidebar_x - BUTTON_WIDTH
         right_button_y = card_y + CARD_TAB_OFFSET
         self.plot_controls_collapse_button.setGeometry(button_x, right_button_y, BUTTON_WIDTH, BUTTON_HEIGHT)
         self.right_sidebar_widget.setGeometry(sidebar_x, card_y, right_width, card_height)
@@ -440,8 +441,8 @@ class MainWindowV2(QMainWindow):
         self.left_sidebar_widget = QWidget(self) # ** Parent is main window **
         sidebar_layout = QVBoxLayout(self.left_sidebar_widget)
         # Inset the list, so that the selected row keeps clear of the
-        # rounded corners of the card and of the collapse button
-        sidebar_layout.setContentsMargins(4, 4, BUTTON_WIDTH, 4); sidebar_layout.setSpacing(0)
+        # rounded corners of the card
+        sidebar_layout.setContentsMargins(4, 4, 4, 4); sidebar_layout.setSpacing(0)
 
         self.session_list_view = QListView()
         # ... (setup model, font, connection) ...
@@ -494,8 +495,7 @@ class MainWindowV2(QMainWindow):
         """Creates the right sidebar widget with plot toggles and cursor controls."""
         self.right_sidebar_widget = QWidget(self)
         sidebar_layout = QVBoxLayout(self.right_sidebar_widget)
-        # Room on the left for the collapse tab
-        sidebar_layout.setContentsMargins(BUTTON_WIDTH + 4, 10, 15, 10)
+        sidebar_layout.setContentsMargins(15, 10, 15, 10)
         sidebar_layout.setSpacing(10)
 
         # --- Helper: Expand Field ---
@@ -817,6 +817,7 @@ class MainWindowV2(QMainWindow):
         self.session_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.session_collapse_button.clicked.connect(self._toggle_left_sidebar)
         self.session_collapse_button.setObjectName("CollapseButton")
+        self.session_collapse_button.setProperty("side", "left")
         self.session_collapse_button.setVisible(False) # Start hidden
 
         # Right Button
@@ -826,6 +827,7 @@ class MainWindowV2(QMainWindow):
         self.plot_controls_collapse_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # Fill height
         self.plot_controls_collapse_button.clicked.connect(self._toggle_right_sidebar)
         self.plot_controls_collapse_button.setObjectName("CollapseButton")
+        self.plot_controls_collapse_button.setProperty("side", "right")
         self.plot_controls_collapse_button.setVisible(False) # Start hidden
 
     def _trigger_replot(self):
@@ -1432,14 +1434,20 @@ class MainWindowV2(QMainWindow):
             }}
 
             /* Collapse Buttons: Blend, NO borders */
+            /* Collapse tabs: handles with the background of the cards,
+               rounded on the side away from their card */
             QPushButton#CollapseButton {{
-                background-color: none;
+                background-color: rgba({sidebar_r}, {sidebar_g}, {sidebar_b}, 0.95);
                 color: {button_fg}; /* Icon color */
-                border: none; /* ** Remove all borders ** */
+                border: none;
                 margin: 0px; padding: 0px;
-                icon-size: 16px;
-                /* Maybe add slight rounding */
-                border-radius: 3px;
+                icon-size: 18px;
+            }}
+            QPushButton#CollapseButton[side="left"] {{
+                border-top-right-radius: 6px; border-bottom-right-radius: 6px;
+            }}
+            QPushButton#CollapseButton[side="right"] {{
+                border-top-left-radius: 6px; border-bottom-left-radius: 6px;
             }}
         """
         self.setStyleSheet(qss)
@@ -1574,7 +1582,7 @@ class MainWindowV2(QMainWindow):
             # Start geom should reflect the hidden state (width 0)
             start_sidebar_geom.setWidth(0)
             end_sidebar_geom.setWidth(LEFT_SIDEBAR_WIDTH) # Animate width open
-            end_button_x = LEFT_SIDEBAR_WIDTH - BUTTON_WIDTH # Button X moves out
+            end_button_x = LEFT_SIDEBAR_WIDTH # Button moves out with the card's edge
             target_visible = True
             self.left_sidebar_widget.setVisible(True) # Show before animating
 
@@ -1617,7 +1625,7 @@ class MainWindowV2(QMainWindow):
         start_width = self.right_sidebar_widget.width(); end_width = 0 if start_width > 0 else RIGHT_SIDEBAR_WIDTH
         window_width = self.width()
         start_sidebar_x = self.right_sidebar_widget.x(); end_sidebar_x = window_width if end_width == 0 else window_width - end_width
-        start_button_x = self.plot_controls_collapse_button.x(); end_button_x = window_width - BUTTON_WIDTH if end_width == 0 else window_width - end_width
+        start_button_x = self.plot_controls_collapse_button.x(); end_button_x = window_width - end_width - BUTTON_WIDTH
         target_visible = end_width > 0
 
         # ** Calculate the constant button Y **
@@ -1738,14 +1746,17 @@ class MainWindowV2(QMainWindow):
         """Updates collapse button icon based on sidebar visibility."""
         # Icon logic adjusted: Left button shows '>' when sidebar is hidden (points right to expand)
         # Right button shows '<' when sidebar is hidden (points left to expand)
+        # The tabs show what they open (a list of sessions, the settings of
+        # the plot), not a direction: the triangles are left to the sections
+        color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
         if is_left:
-            direction = 'left' if sidebar_is_visible else 'right'
+            icon = qta.icon('mdi.menu', color=color)
             tooltip = "Collapse Session Panel" if sidebar_is_visible else "Expand Session Panel"
         else: # Right sidebar button
-            direction = 'right' if sidebar_is_visible else 'left'
+            icon = qta.icon('mdi.cog', color=color)
             tooltip = "Collapse Plot Controls" if sidebar_is_visible else "Expand Plot Controls"
 
-        button.setIcon(disclosure_icon(direction)); button.setToolTip(tooltip)
+        button.setIcon(icon); button.setToolTip(tooltip)
 
     def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
                                  is_branching: bool, auto_show_aux: Optional[str] = None,
