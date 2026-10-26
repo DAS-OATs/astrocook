@@ -194,3 +194,36 @@ def test_blend_threshold_same_series_follows_resolution():
                                         au.dimensionless_unscaled)}))
     assert b.uuid not in systs.get_connected_group([a.uuid])
     assert b.uuid in systs.get_connected_group([a.uuid], spec=spec)
+
+
+def test_fit_includes_component_blended_at_low_resolution():
+    # F14 at fit level (the mock benchmark cannot see it: it fits only the
+    # sparse metal doublets): at R = 5000 (FWHM 60 km/s) CIV 1550 lies
+    # 50 km/s from AlII 1670, beyond max(4 b, 30 km/s) = 40 km/s but within
+    # the FWHM. Fitting AlII with the spectrum passed to the grouping also
+    # fits CIV (its wrong starting logN moves to the true value)
+    x = np.arange(4990.0, 5025.0, 0.04) / 10.0  # nm
+    one = np.ones_like(x)
+
+    def spectrum(y):
+        return SpectrumV2(SpectrumDataV2(
+            x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.002, au.nm),
+            xmax=DataColumnV2(x + 0.002, au.nm),
+            y=DataColumnV2(y, au.dimensionless_unscaled),
+            dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
+            aux_cols={"cont": DataColumnV2(one, au.dimensionless_unscaled),
+                      "resol": DataColumnV2(np.full_like(x, 5000.0),
+                                            au.dimensionless_unscaled)},
+            z_em=4.0))
+
+    _, true_model = VoigtFitterV2(spectrum(one), _pair_at(50.0)).compute_model_flux()
+    data = spectrum(true_model + np.random.default_rng(1).normal(0, 0.01, len(x)))
+
+    for spec, civ_fitted in [(None, False), (data, True)]:
+        systs = _pair_at(50.0)
+        alii, civ = systs.components
+        systs = systs.update_component(civ.uuid, logN=13.5)  # true value 14.0
+        with systs.fitting_context([alii.uuid], spec=spec):
+            fitted, _, result = VoigtFitterV2(data, systs).fit(max_nfev=2000)
+        assert result.success
+        assert bool(abs(fitted.components[1].logN - 13.5) > 0.1) is civ_fitted
