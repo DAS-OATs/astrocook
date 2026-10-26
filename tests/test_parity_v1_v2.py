@@ -189,12 +189,20 @@ def test_equalization_factor():
 # --- Voigt model ---------------------------------------------------------
 
 def _voigt_v1(x, step, series, z, logN, b, resol):
-    """V1 model as in SystModel: lines_voigt convolved with spec.psf_gauss."""
+    """V1 model as in SystModel: lines_voigt convolved with spec.psf_gauss.
+
+    Without a resolution V1 samples the model at the pixel centres, V2
+    averages it over the pixel (#526): the V1 model is averaged here over
+    20 sub-pixels, to compare the physics."""
     from reference.v1.functions import convolve_simple, lines_voigt
+    if resol is None:
+        k = 20
+        sub = x[:, None] + step * ((np.arange(k) + 0.5) / k - 0.5)
+        return lines_voigt(sub.ravel(), z, logN, b, 0.0, series).reshape(len(x), k).mean(axis=1)
     one = np.ones_like(x)
     spec = _v1(x, step, one, 0.02 * one)
     model = lines_voigt(x, z, logN, b, 0.0, series)
-    return model if resol is None else convolve_simple(model, spec.psf_gauss(x, resol))
+    return convolve_simple(model, spec.psf_gauss(x, resol))
 
 
 def _voigt_v2(x, step, series, z, logN, b, resol=None, resol_col=None):
