@@ -462,3 +462,31 @@ def test_inspector_velocity_plot_is_drawn_up_to_date(qtbot, loaded):
     shown = np.array(canvas.buffer_rgba()).copy()
     canvas.draw()
     assert np.array_equal(shown, np.array(canvas.buffer_rgba()))
+
+
+@pytest.mark.parametrize("group_view", [False, True])
+def test_main_plot_highlights_follow_the_selection(qtbot, loaded, group_view):
+    """After each selection of a sequence of rows of the inspector, the main
+    plot shows the same pixels as a full rebuild of the plot for that
+    selection (characterization, before the highlights were drawn without
+    a full redraw in phase 5)."""
+    import numpy as np
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    inspector.group_cb.setChecked(group_view)
+    viewer = loaded.plot_viewer
+    canvas = viewer.canvas
+    qtbot.wait(100)
+    rows = (3, 40, 41, 0, 2)
+    shown = {}
+    for row in rows:  # one selection after the other, as a user does
+        inspector.table_view.selectRow(row)
+        qtbot.wait(100)
+        shown[row] = np.array(canvas.buffer_rgba()).copy()
+    for row in rows:
+        inspector.table_view.selectRow(row)
+        qtbot.wait(100)
+        viewer.plot_spectrum(loaded.active_history.current_state)
+        canvas.draw()
+        qtbot.wait(100)
+        assert np.array_equal(shown[row], np.array(canvas.buffer_rgba())), row

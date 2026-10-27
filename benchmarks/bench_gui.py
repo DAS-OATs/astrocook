@@ -4,7 +4,7 @@ Not a test (not collected by pytest, not run in CI): run it by hand on the
 same machine before and after a change that touches the GUI, and compare the
 numbers. The GUI runs offscreen on the small J0103-1305 archive of the tests
 (``tests/data/J0103-1305_metallines_lya_new_3.acs2``: 2156 pixels, 764
-components, no continuum). Four cases:
+components, no continuum). Five cases:
 
 - ``inspector_first``: the first opening of the System Inspector in a new
   main window (the inspector is built, the table filled, the first row
@@ -19,7 +19,13 @@ components, no continuum). Four cases:
   ``--repeat``). The archive has no continuum: a first refit, not timed,
   estimates it, so that the timed ones do not. Split into ``refit_recipe``
   (the recipe in the worker thread) and ``refit_gui`` (the rest: the
-  difference of the medians).
+  difference of the medians);
+- ``select_row``: selecting another row of the inspector table (the main
+  plot highlights the new selection, the velocity plot shows it; median of
+  ``--repeat``, a different row each time). Run last, with the main window
+  at 1440 x 860 and the inspector at 1000 x 700 (a laptop screen; the cost
+  of a draw grows with the size of the plots), after the refits (the
+  session has a continuum and a model).
 
 Every case ends after the pending Qt events are processed, so that the
 draws deferred with ``draw_idle`` are included.
@@ -34,7 +40,7 @@ Usage::
 slows the run down, so the times of a profiled run are not comparable with
 the others.
 
-A run takes about 2 minutes with the default ``--repeat`` (5). The times
+A run takes about 2.5 minutes with the default ``--repeat`` (5). The times
 depend on the machine: only compare runs made on the same one.
 """
 import argparse
@@ -152,6 +158,15 @@ class Bench:
         comp = next(c for c in systs.components if c.series == "CIV")
         self.window.system_inspector.focus_on_component(comp.uuid)
 
+    def laptop_size(self):
+        self.window.resize(1440, 860)
+        self.window.system_inspector.resize(1000, 700)
+        self._row = 10
+
+    def select_next_row(self):
+        self._row += 7
+        self.window.system_inspector.table_view.selectRow(self._row)
+
     def refit_selected(self):
         inspector = self.window.system_inspector
         comps = inspector._get_selected_components()
@@ -195,6 +210,10 @@ def main():
                                     args.repeat)
     results["refit_recipe_s"] = float(np.median(bench.worker_times))
     results["refit_gui_s"] = results["refit_s"] - results["refit_recipe_s"]
+    bench.laptop_size()
+    _flush(app)
+    results["select_row_s"] = bench.time("select_row", bench.select_next_row,
+                                         args.repeat)
     for key, value in results.items():
         print(f"{key:20s} {value:10.3f}")
     if args.json:

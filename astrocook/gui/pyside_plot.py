@@ -488,6 +488,15 @@ class SpectrumPlotWidget(QWidget):
 
         # --- Highlight State ---
         self._highlighted_uuids = set()
+        # The highlighted systems of the last plot, (marker line, guide
+        # lines) or None, and the pixels of the axes without them and the
+        # legend: a new selection is drawn over these (_blit_highlights)
+        self._highlight_artists = None
+        self._highlight_base = None
+        self._drawing_highlight_base = False
+        self._plotted_state = None
+        # Any full draw may change what is under the highlights
+        self.canvas.mpl_connect('draw_event', self._on_full_draw)
 
         # Draw initial plot (will read checkbox state from main window)
         self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
@@ -624,6 +633,8 @@ class SpectrumPlotWidget(QWidget):
         self.canvas.cursor_artists = []
         
         self._tick_visuals = []
+        self._highlight_artists = None
+        self._plotted_state = session_state
 
         plot_occurred = False
         if spec and len(spec.x) > 0:
@@ -1220,15 +1231,15 @@ class SpectrumPlotWidget(QWidget):
 
                 if highlight_lines_x:
                     # 1. Bold Markers at top
-                    ax.plot(highlight_lines_x, [marker_y_axis_coord] * len(highlight_lines_x),
+                    marker, = ax.plot(highlight_lines_x, [marker_y_axis_coord] * len(highlight_lines_x),
                             marker='|', markersize=20, markeredgewidth=2.0, linestyle='None',
                             color='#f5a100', alpha=1.0, label="Selected", zorder=5,
                             transform=trans)
                     
                     # 2. Faint Vertical Guide Lines (Gold)
                     # These help trace the line down to the spectrum
-                    for hx in highlight_lines_x:
-                        ax.axvline(hx, color='#f5a100', alpha=0.6, lw=1.0, linestyle=':', zorder=4)
+                    guides = [self._highlight_guide(ax, hx) for hx in highlight_lines_x]
+                    self._highlight_artists = (marker, guides)
                         
             # 6. Plot Redshift Cursor
             if self.main_window.cursor_show_checkbox.isChecked():
@@ -2518,8 +2529,78 @@ class SpectrumPlotWidget(QWidget):
             session_state = None
             if self.main_window and self.main_window.active_history:
                 session_state = self.main_window.active_history.current_state
-            
+
+            # Only the highlights changed: drawn without rebuilding the plot
+            if (session_state is not None and session_state is self._plotted_state
+                    and self._blit_highlights()):
+                return
             self.plot_spectrum(session_state, force_autoscale=False)
+
+    @staticmethod
+    def _highlight_guide(ax, x):
+        """Faint vertical guide line of a highlighted system."""
+        return ax.axvline(x, color='#f5a100', alpha=0.6, lw=1.0, linestyle=':', zorder=4)
+
+    def _on_full_draw(self, event):
+        if not self._drawing_highlight_base:
+            self._highlight_base = None
+
+    def _blit_highlights(self) -> bool:
+        """Draw the highlights of ``self._highlighted_uuids`` over the plot,
+        without rebuilding it and without a full draw (phase 5: a full draw
+        of the main plot took ~0.15 s on a laptop screen, at each selection
+        in the System Inspector).
+
+        The pixels of the axes without the highlights and the legend are
+        kept from a full draw (``_highlight_base``, made at the first
+        selection after each full draw); a new selection restores them and
+        draws the guide lines, the markers and the legend over them, in the
+        order of a full draw (zorder 4, 5, then the legend): the same
+        pixels as a full draw. Returns False when a full redraw is needed:
+        the "Selected" entry of the legend appears or disappears, or the
+        continuum is being edited.
+        """
+        if getattr(self, '_edit_mode_active', False):
+            return False
+        new_x = [x for _, x, comp in self._tick_visuals if comp.uuid in self._highlighted_uuids]
+        if bool(new_x) != (self._highlight_artists is not None):
+            return False
+        if not new_x:
+            return True  # nothing highlighted, before and after
+
+        canvas = self.canvas
+        ax = canvas.axes
+        marker, guides = self._highlight_artists
+        marker.set_data(new_x, [marker.get_ydata()[0]] * len(new_x))
+        for guide in guides:
+            guide.remove()
+        guides = [self._highlight_guide(ax, x) for x in new_x]
+        self._highlight_artists = (marker, guides)
+        overlay = guides + [marker]
+        if ax.get_legend() is not None:
+            overlay.append(ax.get_legend())
+
+        if self._highlight_base is None:
+            for artist in overlay:
+                artist.set_visible(False)
+            self._drawing_highlight_base = True
+            try:
+                canvas.draw()
+            finally:
+                self._drawing_highlight_base = False
+                for artist in overlay:
+                    artist.set_visible(True)
+            self._highlight_base = canvas.copy_from_bbox(ax.bbox)
+        else:
+            canvas.restore_region(self._highlight_base)
+        for artist in overlay:
+            ax.draw_artist(artist)
+        # The background of the blitted cursor, which is drawn over it
+        canvas.background = canvas.copy_from_bbox(ax.bbox)
+        for artist in canvas.cursor_artists:
+            ax.draw_artist(artist)
+        canvas.blit(ax.bbox)
+        return True
 
     def _open_data_inspector(self, session, center_idx):
         """Launches the Data Inspector Dialog (Non-blocking)."""
