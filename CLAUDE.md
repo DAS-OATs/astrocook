@@ -214,7 +214,8 @@ with Guido), F61 (damping parameter (1 + z) too large, found in #617,
 #619), F62 (runaway logN in the automatic forest fits: `max_logN` = 19 in the pipelines, Guido's decision, #624).
 #526 (resolution as a single column and exact convolution, #615-#617, #625).
 #623 (refit of old sessions with pixel edges without a unit, a regression of #617, #626).
-In progress: #517 in three PRs (agreed with Guido): flags on the components (PR 1), cleanup of the pipeline output (PR 2: `min_b` after the last refit, components at logN 10 removed, those at b 1 km/s only flagged), GUI cues and "Select flagged" (PR 3: amber for the bounds, red for the NaN errors). Work in
+#517 (components at the bounds, F21, with F52 partly): flags on the components (#627), cleanup of the pipeline output (#628), GUI cues, "Only flagged" and "Select flagged", and F65 (`min_b` of `forest_auto`) in PR 3.
+Next: closing of phase 4 (final comparison with the baseline, ROADMAP table), then release 2.2.0. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

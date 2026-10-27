@@ -70,7 +70,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Threshold for detection."},
-            {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s)."},
+            {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s): narrower Lyman systems are removed."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
@@ -291,6 +291,31 @@ def _without_components(session, uuids):
     if systs.components:
         _, model_flux = VoigtFitterV2(session.spec, systs).compute_model_flux()
         session = session.with_new_spectrum(session.spec.update_model(model_flux))
+    return session
+
+
+def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
+    """Remove the components of ``series`` narrower than ``min_b`` and refit
+    the rest, MIN_B_ROUNDS times; remove without a refit those still
+    narrower after the last refit (#517, F21; F65 for ``forest_auto``)."""
+    def narrow(s):
+        return [c.uuid for c in s.systs.components
+                if c.series == series and c.b < min_b] if s.systs else []
+
+    for _ in range(MIN_B_ROUNDS):
+        uuids = narrow(session)
+        if not uuids:
+            break
+        logging.info(f"Refining fit after removing {len(uuids)} narrow lines...")
+        trimmed = session.with_new_system_list(session.systs.delete_component(uuids=uuids))
+        refitted = RecipeAbsorbersV2(trimmed).refit_all(**refit_kwargs)
+        if refitted == 0:
+            return _without_components(session, uuids)
+        session = refitted
+    uuids = narrow(session)
+    if uuids:
+        logging.info(f"Removed {len(uuids)} narrow lines left by the last refit.")
+        session = _without_components(session, uuids)
     return session
 
 
@@ -662,33 +687,9 @@ class RecipeAbsorbersV2:
         try:
             min_b_val = float(min_b)
 
-            def narrow(session):
-                return [c.uuid for c in session.systs.components
-                        if c.series == 'Ly_a' and c.b < min_b_val] if session.systs else []
-
-            for _ in range(MIN_B_ROUNDS):
-                uuids = narrow(final_session)
-                if not uuids:
-                    break
-                logging.info(f"Refining fit after removing {len(uuids)} narrow lines...")
-                trimmed = final_session.with_new_system_list(
-                    final_session.systs.delete_component(uuids=uuids))
-                refitted = RecipeAbsorbersV2(trimmed).refit_all(
-                    max_nfev='200',
-                    z_window_kms=z_window_kms,
-                    group_depth='1',
-                    max_group_size='25',
-                    max_b=max_b,
-                    max_logN=max_logN
-                )
-                if refitted == 0:
-                    final_session = _without_components(final_session, uuids)
-                    break
-                final_session = refitted
-            uuids = narrow(final_session)
-            if uuids:
-                logging.info(f"Removed {len(uuids)} narrow lines left by the last refit.")
-                final_session = _without_components(final_session, uuids)
+            final_session = _remove_narrow(final_session, 'Ly_a', min_b_val, dict(
+                max_nfev='200', z_window_kms=z_window_kms, group_depth='1',
+                max_group_size='25', max_b=max_b, max_logN=max_logN))
             final_session = _drop_negligible(final_session)
 
         except Exception as e:
@@ -765,10 +766,18 @@ class RecipeAbsorbersV2:
         # 4. Refit All
         rec_step3 = RecipeAbsorbersV2(session_step2)
         # max_nfev as before the defaults were aligned with the GUI (#573)
-        fitted = rec_step3.refit_all(z_window_kms=z_window_kms, group_depth='1',
-                                     max_nfev='100', max_b=max_b,
-                                     max_logN=max_logN)
-        return _drop_negligible(fitted) if fitted != 0 else fitted
+        refit_kwargs = dict(z_window_kms=z_window_kms, group_depth='1',
+                            max_nfev='100', max_b=max_b, max_logN=max_logN)
+        fitted = rec_step3.refit_all(**refit_kwargs)
+        if fitted == 0:
+            return fitted
+        # The Lyman systems narrower than min_b are removed as in lya_auto
+        # (F65: before, min_b was taken and not used)
+        try:
+            fitted = _remove_narrow(fitted, 'Lyman', float(min_b), refit_kwargs)
+        except Exception as e:
+            logging.warning(f"forest_auto cleanup failed: {e}", exc_info=True)
+        return _drop_negligible(fitted)
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
                     aic_penalty: str = "5.0", z_window_kms: str = "20.0",

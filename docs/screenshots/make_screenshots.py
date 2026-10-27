@@ -725,6 +725,35 @@ def absorbers_linking(s: Studio):
     return _inspector_scene(s, pair=True, menu_on="b", active="Link b to SiIV (Thermal)")
 
 
+@scene
+def absorbers_flags(s: Studio):
+    """The components with warnings of the fit (#517): "Only flagged", a
+    component at the upper bound of b selected, the tooltip of its b."""
+    w = s.analysed()
+    comps = w.active_history.current_state.systs.components
+    flagged = [c for c in comps if "b_at_upper_bound" in c.flags] or [c for c in comps if c.flags]
+    comp = min(flagged, key=lambda c: c.z)
+    inspector = s.inspector()
+    inspector.group_cb.setChecked(False)
+    inspector.flagged_cb.setChecked(True)
+    s.pump(0.5)
+    rows = s.select_components(inspector, comp)
+    s.pump(1.0)
+    insp = grab(inspector)
+    view = inspector.table_view
+    col = [i for i in range(view.model().columnCount())
+           if view.model().headerData(i, Qt.Orientation.Horizontal) == "b"][0]
+    index = rows[0].siblingAtColumn(col)
+    rect = view.visualRect(index)
+    tip = s.tooltip(view.model().data(index, Qt.ItemDataRole.ToolTipRole), view.viewport())
+    x, y = s.at(view.viewport(), rect.center())
+    paste(insp, popup(tip), (x + 8, y + 12), shadow_margin=8)
+    pointer(insp, (x, y))
+    inspector.flagged_cb.setChecked(False)
+    inspector.hide()
+    return framed(insp, inspector.windowTitle())
+
+
 # --- Main -------------------------------------------------------------------
 
 def main(argv=None):
