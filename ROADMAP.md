@@ -936,10 +936,28 @@ after on the same machine:
    cases unchanged within the noise. What is left of an opening is mostly
    the table: its column fit (~0.7 s on the first opening, ~0.8 s of a
    second one, which refills the table).
-4. *The column fit of the table* (fourth fix, agreed with Guido): to be
-   measured and decided with the numbers (only the visible rows, which
-   can change the widths while scrolling, or the widths computed from the
-   text, a few pixels from those of Qt).
+4. *The column fit of the table* (fourth fix, agreed with Guido). The
+   cause was not the fit itself but the cost of each call of
+   `SystemTableModel.data`, ~29 us: with PySide6 every access to a Qt
+   enum through its namespace (`Qt.DisplayRole`, `Qt.AlignCenter`...)
+   costs ~4 us, and the model made several per call. The enums of the
+   table (model, delegate, proxy) are now read once, at module level:
+   ~2 us per call, and the column fit of Qt 0.52 → 0.16 s. A fit of our
+   own (the text widths with the font metrics, Qt's measure only for the
+   widest cells: the same widths, 0.06 s) was tried and left out: 0.1 s
+   for ~40 lines of code, and slower than Qt's above 1000 rows, where Qt
+   measures a sample. The two other ways considered (only the visible
+   rows; widths from the text alone) were not needed. Same values of the
+   model (characterization tests), same images of the tutorials. Before
+   → after: `inspector_first` 1.22 → 0.54 s, `inspector_again` 0.93 →
+   0.37 s, `refit_gui` 1.20 → 0.64 s. The same cost of the Qt enums may
+   be found in other code called per pixel or per cell (to check with
+   the split of the GUI).
+
+Result of the four fixes on the benchmark (same machine, against the
+numbers before the phase): `inspector_first` 3.96 → 0.54 s,
+`inspector_again` 2.25 → 0.37 s, `main_plot` 0.21 → 0.14 s, `refit_gui`
+1.78 → 0.64 s.
 
 F66 (ticks in velocity) is taken up at the end of the phase (agreed with
 Guido).
@@ -1647,7 +1665,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s) |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase) |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
