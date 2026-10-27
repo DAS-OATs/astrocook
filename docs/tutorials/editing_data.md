@@ -16,11 +16,13 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 
 1.  Select your session in the **Session List** (left sidebar).
 2.  Go to **Edit > Set Properties...**.
-3.  A dialog will appear. Here you can update:
+3.  A dialog will appear, showing the current values. Here you can update:
     * **Name:** The label used in the list.
     * **Object:** The target name (often from the FITS header).
     * **Emission Redshift ($z_\mathrm{em}$):** Set this carefully!
-    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`).
+    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
+
+    A field left empty keeps the current value.
 
 ```{image} ../_static/editing_set_properties.png
 :alt: The Set Properties dialog

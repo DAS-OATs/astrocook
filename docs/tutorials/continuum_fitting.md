@@ -27,7 +27,7 @@ You can use the **Data Inspector** (Right-click on the plot) to examine the exac
 :::
 
 ```{image} ../_static/continuum_auto.png
-:alt: Applying a mathematical expression to a column
+:alt: The continuum estimated by Auto-estimate Continuum
 :align: center
 ```
 
@@ -80,7 +80,7 @@ If you want to discard all your manual edits and generate a completely fresh con
 :::
 
 ```{image} ../_static/continuum_manual_edit.png
-:alt: Applying a mathematical expression to a column
+:alt: The continuum editor, with the draft continuum and its knots
 :align: center
 ```
 

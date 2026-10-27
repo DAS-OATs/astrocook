@@ -106,7 +106,7 @@ Current version: 2.1.0. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3 and 3-bis done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis and 4 done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -142,7 +142,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 6. phase 4 – scientific correctness: first a validation on mocks
    (baseline of continuum, identification, doublet fit), then, each
    measured on it, #573, #518, #568, F55/F49/F50, #465, #526, #517
-   (plan agreed, `ROADMAP.md` "Plan of the phase");
+   (plan agreed, `ROADMAP.md` "Plan of the phase") (done);
 7. release 2.2.0;
 8. phase 5 – splitting large files, with the GUI performance (timing
    benchmark of the GUI; the System Inspector opens in ~6 s on
@@ -195,7 +195,7 @@ tools, a thin layer over the recipes, defaults from the recipe schemas),
 docs page "Using Astrocook from an AI Agent"; report from two trials with
 fresh agents and Guido's own trial; found F46-F55 (phases 4, 6-bis, 7).
 
-Phase 4 started (October 2026): plan agreed (`ROADMAP.md`, phase 4,
+Phase 4 done (October 2026): plan agreed (`ROADMAP.md`, phase 4,
 "Plan of the phase"). Validation on mocks done: extended mocks (#602),
 `benchmarks/validate_mocks.py` (#603), baseline of 2.1.0 in
 `benchmarks/results/validate_mocks_baseline.json` and in `ROADMAP.md`
@@ -215,8 +215,8 @@ with Guido), F61 (damping parameter (1 + z) too large, found in #617,
 #526 (resolution as a single column and exact convolution, #615-#617, #625).
 #623 (refit of old sessions with pixel edges without a unit, a regression of #617, #626).
 #517 (components at the bounds, F21, with F52 partly): flags on the components (#627), cleanup of the pipeline output (#628), GUI cues, "Only flagged" and "Select flagged", and F65 (`min_b` of `forest_auto`) in PR 3 (#629).
-F63 (the dialogs showed "0.0" for the parameters at their current value: data loss in *Set session properties*), fixed before the release.
-Next: closing of phase 4 (final comparison with the baseline, review of the user documentation, ROADMAP table), then release 2.2.0. Work in
+F63 (the dialogs showed "0.0" for the parameters at their current value: data loss in *Set session properties*), fixed before the release (#631).
+Closing of the phase: result against the baseline in `ROADMAP.md` ("Result of the phase": duplicates /3, spurious components 428 → 11, system column at R = 8900 0.39 → 0.095 dex; component pulls wider because the systems are fitted with fewer components, F58, phase 7), review of the user documentation. Next: release 2.2.0. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
