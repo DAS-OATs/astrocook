@@ -86,20 +86,30 @@ ERR_MAP = {
     "btur": "dbtur"
 }
 
+# The Qt enums used by the table, read once: through the Qt namespace each
+# access costs ~4 us with PySide6, and the model is called tens of thousands
+# of times when the table is drawn, sorted or its columns fitted
+_DISPLAY, _EDIT, _TOOLTIP, _FONT = (Qt.DisplayRole, Qt.EditRole, Qt.ToolTipRole,
+                                    Qt.FontRole)
+_FOREGROUND, _BACKGROUND, _ALIGNMENT, _USER = (Qt.ForegroundRole, Qt.BackgroundRole,
+                                               Qt.TextAlignmentRole, Qt.UserRole)
+_ALIGN_CENTER, _HORIZONTAL = Qt.AlignCenter, Qt.Horizontal
+_ITEM_IS_EDITABLE, _NO_ITEM_FLAGS = Qt.ItemIsEditable, Qt.NoItemFlags
+_HIGHLIGHTED_TEXT = QPalette.HighlightedText
+
 #: The roles for which the table model has data; Qt asks for many others for
 #: each cell (decoration, check state, size hint...), answered at once
-_TABLE_ROLES = frozenset({Qt.DisplayRole, Qt.EditRole, Qt.ToolTipRole,
-                          Qt.FontRole, Qt.ForegroundRole, Qt.BackgroundRole,
-                          Qt.TextAlignmentRole, Qt.UserRole})
+_TABLE_ROLES = frozenset({_DISPLAY, _EDIT, _TOOLTIP, _FONT, _FOREGROUND,
+                          _BACKGROUND, _ALIGNMENT, _USER})
 
 class LinkColorDelegate(QStyledItemDelegate):
     def initStyleOption(self, option, index):
         super().initStyleOption(option, index)
         # Fetch the custom text color we defined in the Model
-        fg_brush = index.data(Qt.ForegroundRole)
+        fg_brush = index.data(_FOREGROUND)
         if fg_brush:
             # Force Qt to use our color even when the row is natively selected!
-            option.palette.setBrush(QPalette.HighlightedText, fg_brush)
+            option.palette.setBrush(_HIGHLIGHTED_TEXT, fg_brush)
 
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
@@ -138,7 +148,7 @@ class SystemTableModel(QAbstractTableModel):
         if self._components:
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
-            self.dataChanged.emit(top_left, bottom_right, [Qt.BackgroundRole])
+            self.dataChanged.emit(top_left, bottom_right, [_BACKGROUND])
 
     def _update_link_colors(self):
         """Map a colour to each link of the selected group.
@@ -174,20 +184,20 @@ class SystemTableModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
     
     def flags(self, index):
-        if not index.isValid(): return Qt.NoItemFlags
-        return super().flags(index) | Qt.ItemIsEditable if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
+        if not index.isValid(): return _NO_ITEM_FLAGS
+        return super().flags(index) | _ITEM_IS_EDITABLE if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
 
     def data(self, index, role=Qt.DisplayRole):
         # Called for every cell and role when the table is drawn or sorted:
         # the cheap answers first
         if role not in _TABLE_ROLES or not index.isValid(): return None
-        if role == Qt.TextAlignmentRole: return Qt.AlignCenter
+        if role == _ALIGNMENT: return _ALIGN_CENTER
         comp = self._components[index.row()]
         col_name = COLUMNS[index.column()]
         attr = COL_MAP[col_name]
 
         # Sorting (raw float)
-        if role == Qt.UserRole:
+        if role == _USER:
             val = getattr(comp, attr, 0)
             if val is None: return -np.inf
             try: return float(val)
@@ -196,7 +206,7 @@ class SystemTableModel(QAbstractTableModel):
         # 1. Background: the parameter at a bound of the fit (amber), the
         # ID of a component without uncertainties (red), #517; then the
         # group highlighting
-        if role == Qt.BackgroundRole:
+        if role == _BACKGROUND:
             if attr in ('z', 'logN', 'b'):
                 color, _ = flag_cue(comp, attr)
                 if color:
@@ -222,7 +232,7 @@ class SystemTableModel(QAbstractTableModel):
                 is_free = c_data.is_free
                 is_linked = (c_data.expression is not None) or (c_data.target_uuid is not None)
 
-        if role == Qt.FontRole and is_constrained_col:
+        if role == _FONT and is_constrained_col:
             font = QFont()
             if is_linked:
                 font.setBold(True); return font
@@ -231,7 +241,7 @@ class SystemTableModel(QAbstractTableModel):
             return None
 
         # --- Foreground (Text Color) ---
-        if role == Qt.ForegroundRole and is_constrained_col:
+        if role == _FOREGROUND and is_constrained_col:
             # 1. Global Behavior: Frozen parameters are always gray
             if not is_free and not is_linked:
                 return QBrush(QColor("#888888"))
@@ -253,7 +263,7 @@ class SystemTableModel(QAbstractTableModel):
             return None
         
         # 2. Tooltip (Keep existing logic)
-        if role == Qt.ToolTipRole:
+        if role == _TOOLTIP:
              c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
              c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "spectrum"
              tooltip_html = (
@@ -295,7 +305,7 @@ class SystemTableModel(QAbstractTableModel):
              return tooltip_html
 
         # 3. DISPLAY & EDIT LOGIC (Refined)
-        if role == Qt.DisplayRole or role == Qt.EditRole:
+        if role == _DISPLAY or role == _EDIT:
             val = getattr(comp, attr, None)
             
             val_fmt = "{}"
@@ -311,13 +321,13 @@ class SystemTableModel(QAbstractTableModel):
                 val_fmt = "{:.2f}"; err_fmt = "{:.2f}"
 
             # --- EDIT ROLE: Clean Value Only ---
-            if role == Qt.EditRole:
+            if role == _EDIT:
                 if isinstance(val, (int, float)):
                     return val_fmt.format(val)
                 return str(val) if val is not None else ""
             
             # --- DISPLAY ROLE: Value ± Error ---
-            if role == Qt.DisplayRole:
+            if role == _DISPLAY:
                 if val is None: return ""
                 if attr == 'id' and comp.flags:
                     return f"\u26a0 {val}"
@@ -345,7 +355,7 @@ class SystemTableModel(QAbstractTableModel):
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
-        if not index.isValid() or role != Qt.EditRole: return False
+        if not index.isValid() or role != _EDIT: return False
         attr = COL_MAP[COLUMNS[index.column()]]
         try:
             val = float(value) if attr in ['z', 'logN', 'b', 'btur'] else str(value)
@@ -354,7 +364,7 @@ class SystemTableModel(QAbstractTableModel):
         except ValueError: return False
 
     def headerData(self, section, orientation, role):
-        return COLUMNS[section] if role == Qt.DisplayRole and orientation == Qt.Horizontal else None
+        return COLUMNS[section] if role == _DISPLAY and orientation == _HORIZONTAL else None
 
     def get_component_at(self, row: int): 
         return self._components[row] if 0 <= row < len(self._components) else None
@@ -398,8 +408,8 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         return comp.uuid in self.allowed_uuids
 
     def lessThan(self, left, right):
-        l_data = self.sourceModel().data(left, Qt.UserRole)
-        r_data = self.sourceModel().data(right, Qt.UserRole)
+        l_data = self.sourceModel().data(left, _USER)
+        r_data = self.sourceModel().data(right, _USER)
         
         # Handle Nones/Types safely
         if l_data is None: l_data = -np.inf
