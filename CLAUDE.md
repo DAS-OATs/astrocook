@@ -20,7 +20,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.1.0. Python ≥3.12.
+Current version: 2.2.0. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -143,7 +143,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
    (baseline of continuum, identification, doublet fit), then, each
    measured on it, #573, #518, #568, F55/F49/F50, #465, #526, #517
    (plan agreed, `ROADMAP.md` "Plan of the phase") (done);
-7. release 2.2.0;
+7. release 2.2.0 (done);
 8. phase 5 – splitting large files, with the GUI performance (timing
    benchmark of the GUI; the System Inspector opens in ~6 s on
    J0103-1305);
@@ -198,7 +198,7 @@ fresh agents and Guido's own trial; found F46-F55 (phases 4, 6-bis, 7).
 Phase 4 done (October 2026): plan agreed (`ROADMAP.md`, phase 4,
 "Plan of the phase"). Validation on mocks done: extended mocks (#602),
 `benchmarks/validate_mocks.py` (#603), baseline of 2.1.0 in
-`benchmarks/results/validate_mocks_baseline.json` and in `ROADMAP.md`
+`benchmarks/results/validate_mocks_baseline_2.1.0.json` and in `ROADMAP.md`
 ("Baseline"); every fix of the phase is measured with
 `validate_mocks.py --compare` (full grid, ~26 min with 4 workers) and
 the PR states the changes (only for PRs that can change the
@@ -216,7 +216,16 @@ with Guido), F61 (damping parameter (1 + z) too large, found in #617,
 #623 (refit of old sessions with pixel edges without a unit, a regression of #617, #626).
 #517 (components at the bounds, F21, with F52 partly): flags on the components (#627), cleanup of the pipeline output (#628), GUI cues, "Only flagged" and "Select flagged", and F65 (`min_b` of `forest_auto`) in PR 3 (#629).
 F63 (the dialogs showed "0.0" for the parameters at their current value: data loss in *Set session properties*), fixed before the release (#631).
-Closing of the phase: result against the baseline in `ROADMAP.md` ("Result of the phase": duplicates /3, spurious components 428 → 11, system column at R = 8900 0.39 → 0.095 dex; component pulls wider because the systems are fitted with fewer components, F58, phase 7), review of the user documentation. Next: release 2.2.0. Work in
+Closing of the phase: result against the baseline in `ROADMAP.md` ("Result of the phase": duplicates /3, spurious components 428 → 11, system column at R = 8900 0.39 → 0.095 dex; component pulls wider because the systems are fitted with fewer components, F58, phase 7), review of the user documentation.
+
+Release 2.2.0 (October 2026): phase 4, on GitHub with the macOS app, not
+on PyPI (INAF has not answered, #549). New docs pages *Science* (with
+*Atomic Data*) and *Accuracy* (the results on the mock benchmark, to be
+updated when a phase changes them). The baseline of the benchmark is now
+that of 2.2.0 (`benchmarks/results/validate_mocks_baseline.json`):
+phases 5, 6 and 6-bis must leave it unchanged.
+
+Next: phase 5 (`ROADMAP.md`). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

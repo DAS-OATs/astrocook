@@ -721,7 +721,9 @@ should improve down to it).
 added this paragraph). The full grid of `benchmarks/validate_mocks.py`
 (135 mocks, 26 minutes with 4 workers, deterministic: two runs gave the
 same numbers). Its summary is in
-`benchmarks/results/validate_mocks_baseline.json`; `--compare` prints
+`benchmarks/results/validate_mocks_baseline_2.1.0.json` (until 2.2.0
+in `validate_mocks_baseline.json`, now the baseline of 2.2.0, see
+"Result of the phase"); `--compare` prints
 the key numbers of a new run next to it, and a slow test runs the reduced
 grid (16 mocks) against loose thresholds, to catch regressions.
 
@@ -831,9 +833,10 @@ chi2 grows from 1.07 to 1.25 for the same reason.
 covered by the flags), F56 (forest continuum at high z and low S/N:
 the emission model of phase 7), F57 (completeness down to 3 sigma), F58
 (decomposition), F59 residual (+0.05 dex at R = 8900), the components
-that reach `max_logN` = 19 in the forest fits (phase 7). The baseline
-file is still that of 2.1.0, until Guido decides whether to replace it
-with that of 2.2.0.
+that reach `max_logN` = 19 in the forest fits (phase 7). With the release the
+baseline file became that of 2.2.0 (this run; Guido's decision): the
+later phases are measured against it. That of 2.1.0 is kept in
+`benchmarks/results/validate_mocks_baseline_2.1.0.json`.
 
 ### Phase 5 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
@@ -999,10 +1002,12 @@ publishes the docs of the tag at the root of the website.
   #549).
 - **2.1.1 (only if INAF answers before phase 4):** LICENSE and first
   publication on PyPI, no other changes.
-- **2.2.0, after phase 4:** the scientific-correctness fixes (#526, #517,
-  #465, #518, #568, #573); release
-  notes state which numerical results change. Also LICENSE and PyPI, if
-  not already in 2.1.1 and INAF has answered.
+- **2.2.0, after phase 4 (October 2026):** the scientific-correctness
+  fixes (#526, #517, #465, #518, #568, #573, F14, F49, F50, F55, F61-F63,
+  F65); release notes state which numerical results change; new docs
+  pages *Science* and *Accuracy* (the results on the mock benchmark);
+  baseline of the benchmark moved to 2.2.0. Published on GitHub with the
+  macOS app; not on PyPI (INAF has not answered yet, #549).
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
