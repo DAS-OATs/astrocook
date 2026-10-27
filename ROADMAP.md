@@ -784,6 +784,57 @@ absurd errors, #517 with F52 (this phase); R = 8900, to be checked with
 decomposition, the identification and the fit driven by the residuals
 of phase 7.
 
+**Result of the phase** (master after #631, October 2026; same grid,
+24 minutes with 4 workers), against the baseline above:
+
+| | 2.1.0 | End of phase 4 |
+|---|---|---|
+| Continuum, forest (5th percentile) | 0.936 (0.820) | 0.943 (0.830) |
+| Continuum, red side | 1.002 | 1.002 |
+| CIV purity / completeness / duplicates | 0.986 / 0.849 / 505 | 0.993 / 0.874 / 168 |
+| SiIV purity / completeness / duplicates | 0.967 / 0.686 / 267 | 0.989 / 0.690 / 69 |
+| MgII purity / completeness / duplicates | 0.980 / 0.906 / 345 | 0.988 / 0.902 / 96 |
+| Fit: matched / spurious / flagged | 1534 / 428 / 413 | 1170 / 11 / 22 |
+| Pull width z / logN / b | 1.78 / 2.29 / 2.07 | 4.14 / 5.38 / 4.34 |
+| Pull width, single components (one fitted near) | 1.05 / 1.27 / 1.04 | 1.10 / 1.03 / 1.15 |
+| System column: fitted / spread / pull width | 828 / 0.10 dex / 1.24 | 840 / 0.077 dex / 2.27 |
+| System column spread at R = 8900 | 0.39 dex | 0.095 dex |
+| Median reduced chi2 | 1.07 | 1.25 |
+
+Completeness against the significance of the weaker line: 0.10 at 3-5
+sigma (was 0.05), 0.44 at 5-10 (0.30), 0.91 above 10 (0.91).
+
+Where the changes come from: the duplicates, F49 (#611); purity, F49
+and F55 (#612); the spurious and flagged components, F49, the cleanup
+of the pipelines (#628) and the bounds of #517 (#627-#629); the system
+column at R = 8900, the exact convolution of #526 (#617) with F61
+(#619), which were the cause of F59 (the residual median at R = 8900
+is +0.05 dex, reduced chi2 1.6); the forest continuum, #465 (#614).
+The 14 components with absurd errors left (F52) are flagged by the
+fitter only when their errors are NaN; the others are recognised only
+by the benchmark.
+
+*The pulls of the components are wider, and this is not a
+regression of the fitter*: for isolated components they are still ~1.1
+(the errors are right), but after F49 the multi-component systems are
+fitted with fewer components (one candidate per doublet instead of
+several duplicates, which by chance added components), so each fitted
+component absorbs several true ones, and its pulls against the nearest
+true component grow (F58; the total column of the systems is better,
+spread 0.077 dex against 0.10). The decomposition of the systems is the
+task of the fit driven by the residuals of phase 7; the system pull
+width of 2.27 comes from the same cause (the errors of a fitted
+component do not include the components it misses). The median reduced
+chi2 grows from 1.07 to 1.25 for the same reason.
+
+*Left for the next phases*: F52 (absurd errors without NaN, partly
+covered by the flags), F56 (forest continuum at high z and low S/N:
+the emission model of phase 7), F57 (completeness down to 3 sigma), F58
+(decomposition), F59 residual (+0.05 dex at R = 8900), the components
+that reach `max_logN` = 19 in the forest fits (phase 7). The baseline
+file is still that of 2.1.0, until Guido decides whether to replace it
+with that of 2.2.0.
+
 ### Phase 5 – Splitting large files
 `SpectrumV2` into thematic modules (continuum, lines, flux) while keeping
 the same public API through delegation; same approach for the GUI.
@@ -1485,7 +1536,7 @@ review); each of its decisions goes into the log.
 | 3 – Decoupling from legacy | done (October 2026): `legacy/` removed, native reader of the V1 archives, `.acs` saving removed; F42, F43, F44 fixed; found F38-F41 (#568, #573, #575); docs published per version |
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
-| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | started (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617) |
+| 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
