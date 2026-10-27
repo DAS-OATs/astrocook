@@ -898,6 +898,20 @@ and `SystemTableModel.data`). The recipe itself (~11 s for one CIV
 component, `refit_all` with `group_depth` 2 and `max_nfev` 200) is the
 fit, not the GUI: outside this phase.
 
+Fixes of the System Inspector, each measured with the benchmark before and
+after on the same machine:
+1. *The table* (first fix): the model answered every role Qt asks for,
+   and the columns were fitted with `ResizeToContents`, so Qt measured
+   every cell (nine roles each) three times while the inspector opened
+   (138,000 calls of `SystemTableModel.data`). Now the roles the model
+   does not use are answered at once, and the columns are fitted once
+   (`resizeColumnsToContents`) when the rows shown change (new session,
+   group view, sorting, filters): 55,700 calls, of which 13,500 are the
+   sorting. Same widths (characterization test) and the same images of the
+   tutorials; the columns can now also be resized by hand. Before → after:
+   `inspector_first` 3.74 → 1.34 s, `inspector_again` 2.42 → 0.89 s,
+   `refit_gui` 1.73 → 1.33 s; `main_plot` and `refit_recipe` unchanged.
+
 **Screenshots of the tutorials** (agreed with Guido, October 2026): the
 images of the tutorials are rebuilt by a script,
 `docs/screenshots/make_screenshots.py`, which runs the real GUI offscreen at
@@ -1600,7 +1614,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`) |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s) |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |

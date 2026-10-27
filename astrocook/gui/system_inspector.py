@@ -5,7 +5,7 @@ import astropy.units as au
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PySide6.QtCore import (Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel,
-                            QLocale, QItemSelection, QItemSelectionModel)
+                            QLocale, QItemSelection, QItemSelectionModel, QTimer)
 from PySide6.QtGui import QAction, QCursor, QDoubleValidator, QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
@@ -85,6 +85,12 @@ ERR_MAP = {
     "b": "db",
     "btur": "dbtur"
 }
+
+#: The roles for which the table model has data; Qt asks for many others for
+#: each cell (decoration, check state, size hint...), answered at once
+_TABLE_ROLES = frozenset({Qt.DisplayRole, Qt.EditRole, Qt.ToolTipRole,
+                          Qt.FontRole, Qt.ForegroundRole, Qt.BackgroundRole,
+                          Qt.TextAlignmentRole, Qt.UserRole})
 
 class LinkColorDelegate(QStyledItemDelegate):
     def initStyleOption(self, option, index):
@@ -172,11 +178,21 @@ class SystemTableModel(QAbstractTableModel):
         return super().flags(index) | Qt.ItemIsEditable if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
 
     def data(self, index, role=Qt.DisplayRole):
-        if not index.isValid(): return None
+        # Called for every cell and role when the table is drawn or sorted:
+        # the cheap answers first
+        if role not in _TABLE_ROLES or not index.isValid(): return None
+        if role == Qt.TextAlignmentRole: return Qt.AlignCenter
         comp = self._components[index.row()]
         col_name = COLUMNS[index.column()]
         attr = COL_MAP[col_name]
-        
+
+        # Sorting (raw float)
+        if role == Qt.UserRole:
+            val = getattr(comp, attr, 0)
+            if val is None: return -np.inf
+            try: return float(val)
+            except: return str(val)
+
         # 1. Background: the parameter at a bound of the fit (amber), the
         # ID of a component without uncertainties (red), #517; then the
         # group highlighting
@@ -326,14 +342,6 @@ class SystemTableModel(QAbstractTableModel):
                 
                 return val_str
 
-        # 4. Sorting (Raw Float)
-        if role == Qt.UserRole:
-            val = getattr(comp, attr, 0)
-            if val is None: return -np.inf
-            try: return float(val)
-            except: return str(val)
-
-        if role == Qt.TextAlignmentRole: return Qt.AlignCenter
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -1263,7 +1271,14 @@ class SystemInspector(QWidget):
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.setAlternatingRowColors(True)
         self.table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # The columns fit their contents, refitted once when the rows shown
+        # change. Not ResizeToContents: Qt then measured every row (all the
+        # roles of every cell) at each layout pass, ~3 s on 764 components
+        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self._column_fit_pending = False
+        for signal in (self.proxy_model.modelReset, self.proxy_model.layoutChanged,
+                       self.proxy_model.rowsInserted, self.proxy_model.rowsRemoved):
+            signal.connect(self._schedule_column_fit)
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
         self.table_model.data_changed_request.connect(self._forward)
@@ -1406,6 +1421,17 @@ class SystemInspector(QWidget):
         # Add helper to set style based on state
         self._update_trans_box_visuals()
     
+    def _schedule_column_fit(self, *args):
+        """Fit the columns to their contents once the pending changes of the
+        rows are done (they come as several signals)."""
+        if not self._column_fit_pending:
+            self._column_fit_pending = True
+            QTimer.singleShot(0, self._fit_columns)
+
+    def _fit_columns(self):
+        self._column_fit_pending = False
+        self.table_view.resizeColumnsToContents()
+
     def _on_manual_edit(self, text):
         """
         Called ONLY when the user types in the box. 
