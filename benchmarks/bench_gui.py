@@ -40,6 +40,10 @@ Usage::
 slows the run down, so the times of a profiled run are not comparable with
 the others.
 
+The GUI runs offscreen unless ``QT_QPA_PLATFORM`` is set: e.g.
+``QT_QPA_PLATFORM=cocoa`` on macOS shows the windows, and the times then
+include the drawing on the real screen.
+
 A run takes about 2.5 minutes with the default ``--repeat`` (5). The times
 depend on the machine: only compare runs made on the same one.
 """

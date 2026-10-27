@@ -976,6 +976,17 @@ after on the same machine:
    within the noise. What is left of a selection is the velocity plot
    (rebuilt for the new component, ~0.15 s). Seen along the way: after a
    refit the main plot is drawn twice (already before this fix).
+   Guido's benchmark on his MacBook Air with this fix: `select_row`
+   0.135 s offscreen, 0.148 s with the real screen (`QT_QPA_PLATFORM=cocoa`:
+   the windows are shown and the times include the drawing on the screen;
+   `inspector_first` 0.67 s, `inspector_again` 0.41 s, `refit_gui`
+   0.60 s). What is left (agreed with Guido, not urgent: with the split of
+   the GUI): the draw of the velocity plot (~half of a selection: its
+   constrained layout measures the ticks and the text several times per
+   draw; a layout computed once per number of panels may move the margins
+   by a few pixels), its rebuild (the panels updated instead of recreated
+   when their number does not change), and the updates of the plots only
+   for the last row reached while an arrow key is held.
 
 Result of the four fixes on the benchmark (same machine, against the
 numbers before the phase): `inspector_first` 3.96 → 0.54 s,

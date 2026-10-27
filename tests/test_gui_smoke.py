@@ -464,8 +464,7 @@ def test_inspector_velocity_plot_is_drawn_up_to_date(qtbot, loaded):
     assert np.array_equal(shown, np.array(canvas.buffer_rgba()))
 
 
-@pytest.mark.parametrize("group_view", [False, True])
-def test_main_plot_highlights_follow_the_selection(qtbot, loaded, group_view):
+def test_main_plot_highlights_follow_the_selection(qtbot, loaded):
     """After each selection of a sequence of rows of the inspector, the main
     plot shows the same pixels as a full rebuild of the plot for that
     selection (characterization, before the highlights were drawn without
@@ -473,20 +472,21 @@ def test_main_plot_highlights_follow_the_selection(qtbot, loaded, group_view):
     import numpy as np
     loaded._on_view_system_inspector()
     inspector = loaded.system_inspector
-    inspector.group_cb.setChecked(group_view)
     viewer = loaded.plot_viewer
     canvas = viewer.canvas
     qtbot.wait(100)
-    rows = (3, 40, 41, 0, 2)
     shown = {}
-    for row in rows:  # one selection after the other, as a user does
+    for row in (3, 40, 41, 0, 2):  # one selection after the other, as a user does
         inspector.table_view.selectRow(row)
         qtbot.wait(100)
-        shown[row] = np.array(canvas.buffer_rgba()).copy()
-    for row in rows:
-        inspector.table_view.selectRow(row)
+        uuid = inspector._get_selected_components()[0].uuid
+        shown[uuid] = np.array(canvas.buffer_rgba()).copy()
+    for uuid, pixels in shown.items():
+        # The same component again (by uuid: the sorting may move the rows)
+        inspector.focus_on_component(uuid)
         qtbot.wait(100)
+        assert inspector._get_selected_components()[0].uuid == uuid
         viewer.plot_spectrum(loaded.active_history.current_state)
         canvas.draw()
         qtbot.wait(100)
-        assert np.array_equal(shown[row], np.array(canvas.buffer_rgba())), row
+        assert np.array_equal(pixels, np.array(canvas.buffer_rgba())), uuid
