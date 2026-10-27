@@ -258,6 +258,33 @@ def test_tool_windows_open(loaded):
     assert loaded.script_dialog.isVisible()
 
 
+def _columns_fit_their_contents(inspector):
+    view = inspector.table_view
+    header = view.horizontalHeader()
+    return all(
+        header.sectionSize(col) == max(view.sizeHintForColumn(col),
+                                       header.sectionSizeHint(col))
+        for col in range(inspector.proxy_model.columnCount()))
+
+
+def test_inspector_columns_fit_their_contents(qtbot, loaded):
+    """The columns of the inspector table fit the rows shown: all of them,
+    then only those of the group (characterization, before the table was
+    made faster in phase 5)."""
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    header = inspector.table_view.horizontalHeader()
+    qtbot.waitUntil(lambda: _columns_fit_their_contents(inspector))
+    wide = header.sectionSize(1)
+    inspector.group_cb.setChecked(True)
+    # The group has shorter series than the longest of the session
+    qtbot.waitUntil(lambda: _columns_fit_their_contents(inspector)
+                    and header.sectionSize(1) < wide)
+    inspector.group_cb.setChecked(False)
+    qtbot.waitUntil(lambda: _columns_fit_their_contents(inspector)
+                    and header.sectionSize(1) == wide)
+
+
 def test_inspector_fit_window(loaded, monkeypatch):
     # #518 (F4): the velocity window of the manual fits is visible and
     # editable; empty keeps the default of each recipe
