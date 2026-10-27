@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.continuum &#8212; Astrocook 2.1.0 documentation</title>
+    <title>astrocook.recipes.continuum &#8212; Astrocook 2.2.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../../static/documentation_options.js?v=20623aea"></script>
+    <script src="../../../static/documentation_options.js?v=b21de401"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.2.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.1.0" />
+  <meta name="docsearch:version" content="2.2.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -161,25 +161,42 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../reference.html">
     API Reference
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../credits.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
     Credits
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../changelog.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
     Changelog
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -303,6 +320,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
   </a>
 </li>
 
@@ -552,7 +576,7 @@
 <div class="viewcode-block" id="RecipeContinuumV2.estimate_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2.estimate_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">estimate_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5000.0'</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'400.0'</span><span class="p">,</span> 
-                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'1.0'</span><span class="p">,</span> 
+                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.0'</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'auto'</span><span class="p">,</span> 
                       <span class="n">smooth_fwhm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'800.0'</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'True'</span><span class="p">,</span>
                       <span class="n">smooth_std</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -574,7 +598,8 @@
 <span class="sd">        fudge : str, optional</span>
 <span class="sd">            A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.</span>
 <span class="sd">            If ``'auto'``, the factor is calculated to center the continuum residuals.</span>
-<span class="sd">            Defaults to ``'1.0'``.</span>
+<span class="sd">            Defaults to ``'auto'``, as the GUI (the same result as ``'1.0'``,</span>
+<span class="sd">            see :meth:`fit_continuum`).</span>
 <span class="sd">        smooth_fwhm : str, optional</span>
 <span class="sd">            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.</span>
 <span class="sd">        smooth_std : str, optional</span>

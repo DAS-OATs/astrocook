@@ -1,0 +1,7 @@
+astrocook.core.resolution module
+================================
+
+.. automodule:: astrocook.core.resolution
+   :members:
+   :show-inheritance:
+   :undoc-members:

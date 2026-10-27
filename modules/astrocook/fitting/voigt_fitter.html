@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.1.0 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.2.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../../static/documentation_options.js?v=20623aea"></script>
+    <script src="../../../static/documentation_options.js?v=b21de401"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.2.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.1.0" />
+  <meta name="docsearch:version" content="2.2.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -161,25 +161,42 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../reference.html">
     API Reference
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../credits.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
     Credits
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../changelog.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
     Changelog
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -303,6 +320,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
   </a>
 </li>
 
@@ -458,109 +482,87 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.lsf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PixelLSF</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 
-<div class="viewcode-block" id="convolve_flux">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.convolve_flux">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convolve_flux</span><span class="p">(</span><span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">x_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">resol_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'R'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
-<span class="sd">    Convolves a flux array with a Gaussian kernel defined by resolution.</span>
+<span class="c1">#: A line is evaluated only where its optical depth exceeds this (#526)</span>
+<span class="n">TAU_CUT</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
-<span class="sd">    Handles both constant resolution (scalar) and variable resolution (array)</span>
-<span class="sd">    across the wavelength grid.</span>
+<span class="c1">#: Flags that a fit leaves on the components it fits (#517), in</span>
+<span class="c1">#: ComponentDataV2.flags: a free parameter ended at a bound of the fit</span>
+<span class="c1">#: (within AT_BOUND_RTOL of the width of its range), or the uncertainties</span>
+<span class="c1">#: could not be computed. The upper bounds of the fit are those of the</span>
+<span class="c1">#: constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b</span>
+<span class="c1">#: of the automatic pipelines (19, 50 km/s); the z bound is the window of</span>
+<span class="c1">#: the fit. A parameter at a bound has an unreliable value and error.</span>
+<span class="n">COMPONENT_FLAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'z_at_window'</span><span class="p">,</span> <span class="s1">'logN_at_lower_bound'</span><span class="p">,</span> <span class="s1">'logN_at_upper_bound'</span><span class="p">,</span>
+                   <span class="s1">'b_at_lower_bound'</span><span class="p">,</span> <span class="s1">'b_at_upper_bound'</span><span class="p">,</span> <span class="s1">'nan_errors'</span><span class="p">)</span>
+<span class="n">AT_BOUND_RTOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    flux : np.ndarray</span>
-<span class="sd">        The input flux array (either normalized 0-1 or physical units).</span>
-<span class="sd">    x_ang : np.ndarray</span>
-<span class="sd">        The wavelength grid in Angstroms. Must match ``flux`` length.</span>
-<span class="sd">    resol : float or np.ndarray</span>
-<span class="sd">        Resolution value(s).</span>
-<span class="sd">        - If float: Constant resolution across the spectrum.</span>
-<span class="sd">        - If array: Pixel-by-pixel resolution (must match ``flux`` length).</span>
-<span class="sd">    resol_unit : str, optional</span>
-<span class="sd">        Unit of the resolution value:</span>
-<span class="sd">        - ``'R'``: Resolving Power (:math:`R = \lambda / \Delta\lambda`).</span>
-<span class="sd">        - ``'km/s'``: FWHM velocity.</span>
-<span class="sd">        Defaults to ``'R'``.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    np.ndarray</span>
-<span class="sd">        The convolved flux array with the same shape as input.</span>
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">flux</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shape mismatch: flux </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span><span class="si">}</span><span class="s2"> vs wave </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-    <span class="c1"># Estimate sampling (dx)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">x_ang</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_transitions</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Transitions of a series in the atomic data (multiplet, single line</span>
+<span class="sd">    or comma-separated list)."""</span>
+    <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">series</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="s1">','</span> <span class="ow">in</span> <span class="n">series</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">dx</span> <span class="o">=</span> <span class="mf">1.0</span>
-    
-    <span class="k">if</span> <span class="n">dx</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">flux</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span> <span class="k">if</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">())]</span>
 
-    <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_sigma_pix</span><span class="p">(</span><span class="n">res_val</span><span class="p">,</span> <span class="n">wav</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">resol_unit</span> <span class="o">==</span> <span class="s1">'km/s'</span><span class="p">:</span>
-            <span class="c1"># FWHM_lambda = (v / c) * lambda</span>
-            <span class="c1"># Sigma = FWHM / 2.355</span>
-            <span class="n">sigma_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">res_val</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">wav</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># FWHM_lambda = lambda / R</span>
-            <span class="n">sigma_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">wav</span> <span class="o">/</span> <span class="n">res_val</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx</span>
+<div class="viewcode-block" id="voigt_optical_depth">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.voigt_optical_depth">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">voigt_optical_depth</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Optical depth of M Voigt lines on N samples, summed: the physics of</span>
+<span class="sd">    the fitter, used also by the profiles of the System Inspector.</span>
 
-    <span class="c1"># 1. Variable Resolution (Array)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux</span><span class="p">):</span>
-        <span class="n">resol_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span>
-        <span class="n">final_convolved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span>
-        
-        <span class="k">if</span> <span class="n">resol_unit</span> <span class="o">==</span> <span class="s1">'R'</span><span class="p">:</span>
-            <span class="n">rounded_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">resol_arr</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">rounded_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">resol_arr</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
-            
-        <span class="n">unique_resols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">rounded_resol</span><span class="p">)</span>
-        
-        <span class="k">for</span> <span class="n">r_val</span> <span class="ow">in</span> <span class="n">unique_resols</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">r_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>  <span class="c1"># also skips NaN</span>
-            
-            <span class="c1"># Select by the ROUNDED value: selecting by the raw value left the</span>
-            <span class="c1"># pixels with a non-round resolution at 0 (findings register F10)</span>
-            <span class="n">mask_r</span> <span class="o">=</span> <span class="n">rounded_resol</span> <span class="o">==</span> <span class="n">r_val</span>
-            
-            <span class="c1"># Use median wavelength of the masked region for kernel width approximation</span>
-            <span class="n">local_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x_ang</span><span class="p">[</span><span class="n">mask_r</span><span class="p">])</span>
-            <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">get_sigma_pix</span><span class="p">(</span><span class="n">r_val</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">sigma_pix</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
-                <span class="c1"># Convolve full array to handle edges, then apply mask</span>
-                <span class="n">temp_conv</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
-                <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_conv</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span><span class="p">[</span><span class="n">mask_r</span><span class="p">]</span>
+<span class="sd">    Input arrays (lambda_0, z, etc.) must be shape (M,).</span>
+<span class="sd">    wave_grid_ang must be shape (N,).</span>
+<span class="sd">    Returns summed tau array of shape (N,).</span>
+<span class="sd">    """</span>
+    <span class="c1"># Each line only where its optical depth exceeds TAU_CUT (#526: the</span>
+    <span class="c1"># grid is finer than the pixels): the samples of all lines are</span>
+    <span class="c1"># gathered in one flat array, and summed back onto the grid</span>
+    <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
+    <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
+    <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
+    <span class="n">b_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">lambda_c</span> <span class="o">=</span> <span class="n">lambda_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
+    <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">((</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
+    <span class="c1"># Damping parameter in the rest frame, a = Gamma lambda_0 / (4 pi b): it</span>
+    <span class="c1"># was computed with the observed wavelength, (1 + z) too large (F61)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">))</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">N_col</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span>
 
-        <span class="c1"># Fill gaps (where resol &lt;= 0 or NaN)</span>
-        <span class="n">mask_no_res</span> <span class="o">=</span> <span class="o">~</span><span class="p">(</span><span class="n">rounded_resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask_no_res</span><span class="p">):</span>
-            <span class="n">final_convolved</span><span class="p">[</span><span class="n">mask_no_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span><span class="p">[</span><span class="n">mask_no_res</span><span class="p">]</span>
-            
-        <span class="k">return</span> <span class="n">final_convolved</span>
+    <span class="c1"># Gaussian core and Lorentzian wings, in Doppler widths</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+        <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">tau0</span> <span class="o">/</span> <span class="n">TAU_CUT</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">))),</span>
+                           <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">TAU_CUT</span><span class="p">)))</span> <span class="o">+</span> <span class="mf">3.0</span>
+    <span class="n">x_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">x_cut</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">-</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_c</span> <span class="o">+</span> <span class="n">x_cut</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
+    <span class="n">lens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lens</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lens</span><span class="p">)),</span> <span class="n">lens</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">lo</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span> <span class="o">-</span> <span class="n">lens</span><span class="p">,</span> <span class="n">lens</span><span class="p">)</span>
 
-    <span class="c1"># 2. Constant Resolution (Scalar)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">local_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span>
-        <span class="n">sigma_pix</span> <span class="o">=</span> <span class="n">get_sigma_pix</span><span class="p">(</span><span class="n">resol</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">sigma_pix</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">sigma_pix</span><span class="p">)</span>
-            
-    <span class="k">return</span> <span class="n">flux</span></div>
+    <span class="c1"># Faddeeva (Voigt): the expensive step</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">[</span><span class="n">line</span><span class="p">])</span> <span class="o">/</span> <span class="n">dop_width_ang</span><span class="p">[</span><span class="n">line</span><span class="p">]</span>
+    <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">[</span><span class="n">line</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">tau0</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">*</span> <span class="n">H_ax</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">))</span></div>
+
 
 
 <div class="viewcode-block" id="VoigtFitterV2">
@@ -594,6 +596,11 @@
         <span class="c1"># 1. Prepare Data Arrays</span>
         <span class="c1"># Convert to Angstroms for internal Voigt calc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># Pixel edges, for the exact convolution with the LSF (#526)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xmin_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xmax_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="n">norm_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">norm</span>
         
@@ -615,39 +622,24 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         
-        <span class="c1"># 2. Resolution Setup</span>
+        <span class="c1"># 2. Resolution Setup: the 'resol' column of the spectrum, as R</span>
+        <span class="c1"># (#526; before, five sources and a guess of the unit by value). A</span>
+        <span class="c1"># flat column takes the scalar path, as a global value did before</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span> <span class="c1"># Default</span>
-        
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="c1"># Check if column has valid data (not just NaNs/zeros)</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">True</span>
-                
-                <span class="c1"># Heuristic for unit</span>
-                <span class="n">med_res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">med_res</span> <span class="o">&gt;</span> <span class="mf">500.0</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution detected. Median=</span><span class="si">{</span><span class="n">med_res</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> -&gt; Assuming 'R'."</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">=</span> <span class="s1">'km/s'</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution detected. Median=</span><span class="si">{</span><span class="n">med_res</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; Assuming 'km/s'."</span><span class="p">)</span>
-
-        <span class="c1"># Fallback to global metadata</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_resolution</span><span class="p">()</span>
-        
-        <span class="c1"># Determine global unit based on value magnitude (heuristic)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&lt;</span> <span class="mf">500.0</span><span class="p">:</span>
-             <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'km/s'</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_sigma_pix</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
+        <span class="n">r_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">r_pix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_pix</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_pix</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">finite</span> <span class="o">==</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="n">r_pix</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution, median R=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
 
         <span class="c1"># Placeholders</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="kc">None</span>
@@ -667,130 +659,26 @@
 
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_determine_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Robustly finds resolution from Columns, Attributes, or Metadata.</span>
-<span class="sd">        Returns: (R_value, sigma_pix)</span>
-<span class="sd">        """</span>
-        <span class="c1"># 1. Try Column ('resol') - Handled in __init__, but fallback logic here</span>
-        <span class="c1"># (We already checked column in init, so here we check global props)</span>
-
-        <span class="c1"># 2. Try Attribute (spec.resol)</span>
-        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="p">,</span> <span class="s1">'resol'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="p">,</span> <span class="s1">'_data'</span><span class="p">):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="s1">'resol'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-
-        <span class="c1"># 3. Try Metadata ('resol' or 'resol_fwhm')</span>
-        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">meta</span>
-        
-        <span class="c1"># 3a. 'resol' (R)</span>
-        <span class="k">if</span> <span class="s1">'resol'</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        
-        <span class="c1"># 3b. 'resol_fwhm' (Velocity km/s)</span>
-        <span class="k">if</span> <span class="s1">'resol_fwhm'</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
-            <span class="n">val_kms</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s1">'resol_fwhm'</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val_kms</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val_kms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-                <span class="n">r_approx</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">/</span> <span class="n">val_kms</span>
-                <span class="k">return</span> <span class="n">r_approx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_sigma_pix_from_fwhm_kms</span><span class="p">(</span><span class="n">val_kms</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_calc_sigma_pix_from_R</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Helper: Convert R (lambda/d_lambda) to Gaussian Sigma in pixels."""</span>
-        <span class="n">mid_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span>
-        <span class="n">fwhm_ang</span> <span class="o">=</span> <span class="n">mid_wave</span> <span class="o">/</span> <span class="n">R</span>
-        <span class="n">sigma_ang</span> <span class="o">=</span> <span class="n">fwhm_ang</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        <span class="n">dx_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx_avg</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_calc_sigma_pix_from_fwhm_kms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Convert FWHM (km/s) to Gaussian Sigma in pixels.</span>
-<span class="sd">        If local_wave is provided, calculates for that specific wavelength.</span>
-<span class="sd">        """</span>
-        <span class="n">wave</span> <span class="o">=</span> <span class="n">local_wave</span> <span class="k">if</span> <span class="n">local_wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span>
-        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
-        <span class="n">fwhm_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">fwhm_kms</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">wave</span>
-        <span class="n">sigma_ang</span> <span class="o">=</span> <span class="n">fwhm_ang</span> <span class="o">/</span> <span class="mf">2.35482</span>
-        
-        <span class="c1"># Estimate local sampling (dx)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">local_wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">local_wave</span><span class="p">)</span>
-                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
-                <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dx</span> <span class="o">=</span> <span class="mf">1.0</span>
-            
-        <span class="k">return</span> <span class="n">sigma_ang</span> <span class="o">/</span> <span class="n">dx</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                             <span class="n">lambda_0</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                             <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">N_col</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Computes the optical depth tau(lambda) for a single Voigt line."""</span>
-        <span class="n">lambda_c</span> <span class="o">=</span> <span class="n">lambda_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
-        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
-        <span class="n">b_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span> 
-        <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span>
-        <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">dop_width_ang</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
-
-        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">)</span> <span class="o">/</span> <span class="n">dop_width_ang</span>
-        <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">)</span>
-        <span class="n">z_complex</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span>
-        <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">z_complex</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
-        
-        <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">N_col</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span> <span class="o">*</span> <span class="n">H_ax</span>
-        <span class="k">return</span> <span class="n">tau</span>
-
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_tau_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-        <span class="n">tau_comp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">)</span>
-        <span class="n">b_eff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">btur</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">N_col</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="n">logN</span>
-        
-        <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">trans_list</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">trans_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s1">','</span> <span class="ow">in</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">:</span> <span class="n">trans_list</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="n">tau_comp</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">atoms</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_voigt_optical_depth_vectorized</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">at</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">]),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">at</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">]</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="n">logN</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">btur</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
 
-        <span class="k">for</span> <span class="n">trans_name</span> <span class="ow">in</span> <span class="n">trans_list</span><span class="p">:</span>
-            <span class="n">trans_name</span> <span class="o">=</span> <span class="n">trans_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">trans_name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">atom</span><span class="p">:</span> <span class="k">continue</span>
-            
-            <span class="c1"># --- CRITICAL OPTIMIZATION Check ---</span>
-            <span class="c1"># Even with pre-filtering, keep this for safety in the inner loop</span>
-            <span class="c1"># Check if line center is vaguely in window</span>
-            <span class="n">obs_cent</span> <span class="o">=</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">obs_cent</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">100</span> <span class="ow">or</span> <span class="n">obs_cent</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">100</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="n">tau_comp</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_voigt_optical_depth</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">],</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'f'</span><span class="p">],</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">],</span>
-                <span class="n">z</span><span class="p">,</span> <span class="n">N_col</span><span class="p">,</span> <span class="n">b_eff</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">tau_comp</span>
-    
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Determines the resolution (val, unit) for a specific component.</span>
 <span class="sd">        Priority: Variable Column &gt; Component Attribute &gt; Global Default</span>
 <span class="sd">        """</span>
-        <span class="c1"># 1. Component Attribute (Highest Priority: User manual override)</span>
+        <span class="c1"># 1. Component Attribute (Highest Priority: User manual override),</span>
+        <span class="c1"># always R (#526; legacy FWHM values are converted at load)</span>
         <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Heuristic for unit</span>
-            <span class="n">unit</span> <span class="o">=</span> <span class="s1">'R'</span> <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mf">500.0</span> <span class="k">else</span> <span class="s1">'km/s'</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="p">),</span> <span class="n">unit</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="p">),</span> <span class="s1">'R'</span>
 
         <span class="c1"># 2. Variable Column (Instrument baseline)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span><span class="p">:</span>
@@ -801,6 +689,36 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span>
             
         <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s1">'none'</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_lsf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sl</span><span class="p">:</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Fine grid and LSF for the pixels ``sl`` (#526): the optical</span>
+<span class="sd">        depth is computed on ``self._x_tau``, the model on the pixels.</span>
+<span class="sd">        Without ``cache``, for a model computed once (see ``PixelLSF``)."""</span>
+        <span class="n">r_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">r_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">])])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="p">)</span>
+        <span class="n">r_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span>
+                        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">r_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">r_values</span><span class="p">))</span> <span class="k">if</span> <span class="n">r_values</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">r_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">r_values</span><span class="p">))</span> <span class="k">if</span> <span class="n">r_values</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># The narrowest line in the pixels sets the fine step, at the</span>
+        <span class="c1"># current b: a fit that narrows a line below it loses some accuracy</span>
+        <span class="c1"># (~4e-4 at half the b), recovered by the final model, which is</span>
+        <span class="c1"># computed again with the fitted values</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xmin_ang</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xmax_ang</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xmax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">b_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">lo</span> <span class="o">&lt;=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">hi</span><span class="p">:</span>
+                    <span class="n">b_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">))</span>
+                    <span class="k">break</span>
+        <span class="n">b_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">b_values</span><span class="p">))</span> <span class="k">if</span> <span class="n">b_values</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="n">PixelLSF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xmin_ang</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xmax_ang</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">r_min</span><span class="o">=</span><span class="n">r_min</span><span class="p">,</span> <span class="n">r_max</span><span class="o">=</span><span class="n">r_max</span><span class="p">,</span>
+                             <span class="n">b_min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="o">.</span><span class="n">x_fine</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -829,7 +747,7 @@
                 
                 <span class="c1"># C. Compute Tau Vectorized</span>
                 <span class="n">tau_active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_voigt_optical_depth_vectorized</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> 
                     <span class="n">data</span><span class="p">[</span><span class="s1">'lambda'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'f'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">],</span>
                     <span class="n">z_arr</span><span class="p">,</span> <span class="n">N_arr</span><span class="p">,</span> <span class="n">b_eff_arr</span>
                 <span class="p">)</span>
@@ -856,7 +774,7 @@
                 <span class="c1"># Identify Resolution Group</span>
                 <span class="n">res_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">res_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tau_total_dict</span><span class="p">:</span>
-                    <span class="n">tau_total_dict</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">)</span>
+                    <span class="n">tau_total_dict</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">)</span>
                 
                 <span class="c1"># Compute parameters</span>
                 <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">num_params_per_comp</span>
@@ -868,18 +786,20 @@
                 <span class="c1"># Add to group Tau</span>
                 <span class="n">tau_total_dict</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_tau_component</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">logN</span><span class="p">,</span> <span class="n">b_val</span><span class="p">,</span> <span class="n">btur</span><span class="p">)</span>
 
-        <span class="c1"># 3. Convolve and Combine</span>
+        <span class="c1"># 3. Convolve and Combine: each pixel gets the fine flux convolved</span>
+        <span class="c1"># with its own LSF and averaged over the pixel (#526)</span>
         <span class="n">final_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">)</span>
         
         <span class="k">for</span> <span class="p">(</span><span class="n">res_val</span><span class="p">,</span> <span class="n">res_unit</span><span class="p">),</span> <span class="n">tau_arr</span> <span class="ow">in</span> <span class="n">tau_total_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">flux_group</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_arr</span><span class="p">)</span>
+            <span class="n">flux_fine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_arr</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">res_unit</span> <span class="o">==</span> <span class="s1">'column'</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                 <span class="n">flux_group</span> <span class="o">=</span> <span class="n">convolve_flux</span><span class="p">(</span><span class="n">flux_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="n">resol_unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="s1">'column'</span>
             <span class="k">elif</span> <span class="n">res_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                 <span class="n">flux_group</span> <span class="o">=</span> <span class="n">convolve_flux</span><span class="p">(</span><span class="n">flux_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="n">res_val</span><span class="p">,</span> <span class="n">resol_unit</span><span class="o">=</span><span class="n">res_unit</span><span class="p">)</span>
-            
-            <span class="n">final_model</span> <span class="o">*=</span> <span class="n">flux_group</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">res_val</span><span class="p">,</span> <span class="n">res_val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'none'</span>
+            <span class="n">final_model</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
             
         <span class="k">return</span> <span class="n">final_model</span>
 
@@ -959,17 +879,46 @@
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_cap_b</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-               <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">"""Lower the upper bound of the free b parameters to ``b_max``."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cap_upper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                   <span class="n">cap</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Lower the upper bound of a free parameter of every component</span>
+<span class="sd">        (``offset`` in z, logN, b, btur) to ``cap``."""</span>
         <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
         <span class="n">free_idx_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="k">for</span> <span class="n">idx_b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">),</span> <span class="mi">4</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx_b</span><span class="p">]:</span>
-                <span class="n">j</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">idx_b</span><span class="p">]</span>
-                <span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">b_max</span><span class="p">),</span> <span class="n">lower</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">),</span> <span class="mi">4</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span><span class="p">]:</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">upper</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">cap</span><span class="p">),</span> <span class="n">lower</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_bound_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                     <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Flags of the component whose parameters start at ``idx`` (in</span>
+<span class="sd">        the full vector): its free z, logN and b at a bound (#517)."""</span>
+        <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
+        <span class="n">free_idx_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(((</span><span class="s1">'z_at_window'</span><span class="p">,</span> <span class="s1">'z_at_window'</span><span class="p">),</span>
+                                         <span class="p">(</span><span class="s1">'logN_at_lower_bound'</span><span class="p">,</span> <span class="s1">'logN_at_upper_bound'</span><span class="p">),</span>
+                                         <span class="p">(</span><span class="s1">'b_at_lower_bound'</span><span class="p">,</span> <span class="s1">'b_at_upper_bound'</span><span class="p">))):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="n">k</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="n">k</span><span class="p">]</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">p_free</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lo</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">hi</span><span class="p">))</span> <span class="ow">or</span> <span class="n">hi</span> <span class="o">&lt;=</span> <span class="n">lo</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">tol</span> <span class="o">=</span> <span class="n">AT_BOUND_RTOL</span> <span class="o">*</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">-</span> <span class="n">lo</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">low</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">high</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cap_b</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+               <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Lower the upper bound of the free b parameters to ``b_max``."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cap_upper</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">b_max</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_residual_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="c1"># Check for stop request</span>
@@ -1145,56 +1094,13 @@
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart Guess: z=</span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">p_refined</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
-                                      <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Vectorized Voigt profile calculation.</span>
-<span class="sd">        Computes profiles for M lines on N pixels simultaneously.</span>
-<span class="sd">        </span>
-<span class="sd">        Input arrays (lambda_0, z, etc.) must be shape (M,).</span>
-<span class="sd">        wave_grid_ang must be shape (N,).</span>
-<span class="sd">        Returns summed tau array of shape (N,).</span>
-<span class="sd">        """</span>
-        <span class="c1"># Broadcast dimensions: (Lines, Pixels)</span>
-        <span class="c1"># lambda_0: (M, 1)</span>
-        <span class="c1"># wave_grid: (1, N)</span>
-        
-        <span class="n">lambda_0</span> <span class="o">=</span> <span class="n">lambda_0</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">f_val</span> <span class="o">=</span> <span class="n">f_val</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">N_col</span> <span class="o">=</span> <span class="n">N_col</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">b_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">b_kms</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        
-        <span class="n">wave_grid</span> <span class="o">=</span> <span class="n">wave_grid_ang</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
-        
-        <span class="c1"># 1. Physics</span>
-        <span class="n">lambda_c</span> <span class="o">=</span> <span class="n">lambda_0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
-        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">2.99792458e5</span>
-        <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_safe</span> <span class="o">/</span> <span class="n">c_kms</span><span class="p">)</span> <span class="o">*</span> <span class="n">lambda_c</span>
-        <span class="n">dop_width_ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">dop_width_ang</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">lambda_0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">f_val</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">gamma</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                                        <span class="n">N_col</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""See :func:`voigt_optical_depth`."""</span>
+        <span class="k">return</span> <span class="n">voigt_optical_depth</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_0</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">N_col</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">)</span>
 
-        <span class="c1"># 2. Coordinate Transformation</span>
-        <span class="c1"># x shape: (M, N)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">)</span> <span class="o">/</span> <span class="n">dop_width_ang</span>
-        
-        <span class="n">c_ang_s</span> <span class="o">=</span> <span class="mf">2.99792458e18</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">lambda_c</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">c_ang_s</span> <span class="o">*</span> <span class="n">dop_width_ang</span><span class="p">)</span>
-        
-        <span class="c1"># 3. Faddeeva (Voigt) - Expensive Step</span>
-        <span class="c1"># Computes entire matrix in C-speed</span>
-        <span class="n">z_complex</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span>
-        <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">z_complex</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
-        
-        <span class="c1"># 4. Optical Depth</span>
-        <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
-        <span class="n">tau_matrix</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">N_col</span> <span class="o">*</span> <span class="n">f_val</span> <span class="o">*</span> <span class="n">lambda_0</span> <span class="o">/</span> <span class="n">b_safe</span> <span class="o">*</span> <span class="n">H_ax</span>
-        
-        <span class="c1"># 5. Collapse lines (Sum over axis 0)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">tau_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    
 <div class="viewcode-block" id="VoigtFitterV2.prepare_fit_context">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepare_fit_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -1269,6 +1175,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_lsf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">)</span>
 
         <span class="c1"># Background</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1294,7 +1201,7 @@
         <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">relevantstatic_comps</span><span class="p">:</span>
             <span class="n">res_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">res_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">[</span><span class="n">res_key</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_tau_component</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span><span class="p">)</span>
 
         <span class="c1"># Active Data</span>
@@ -1390,7 +1297,8 @@
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'trf'</span><span class="p">,</span> 
             <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="n">b_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemListV2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+            <span class="n">b_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">logN_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemListV2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Execute the Voigt profile optimization.</span>
 
@@ -1416,6 +1324,13 @@
 <span class="sd">            their neighbours; components that end at this bound may be broader</span>
 <span class="sd">            and can be refitted without it. Defaults to ``None`` (no extra</span>
 <span class="sd">            bound).</span>
+<span class="sd">        logN_max : float, optional</span>
+<span class="sd">            Upper bound on the free logN parameters, tighter than the</span>
+<span class="sd">            physical limit of the constraint model (23). Used by the</span>
+<span class="sd">            automatic pipelines (19): in saturated troughs a single</span>
+<span class="sd">            component can otherwise fill the trough with its damping wings</span>
+<span class="sd">            and run away to logN 20-23 (findings register F62). Defaults to</span>
+<span class="sd">            ``None`` (no extra bound).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1451,6 +1366,8 @@
         <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_fit_context</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cap_b</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">b_max</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">logN_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cap_upper</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">logN_max</span><span class="p">)</span>
 
         <span class="c1"># Clamp p0 to bounds</span>
         <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -1481,14 +1398,6 @@
         <span class="n">p_full_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p_fitted_full</span><span class="p">)</span>
         <span class="n">p_full_errors</span><span class="p">[</span><span class="n">is_free_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_free_errors</span>
         
-        <span class="c1"># We try to pick the most representative resolution used in this fit.</span>
-        <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-             <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">)</span>
-             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_resol_unit</span> <span class="o">==</span> <span class="s1">'km/s'</span><span class="p">:</span> <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="mf">299792.458</span> <span class="o">/</span> <span class="n">fit_resol_val</span> <span class="c1"># Store as R? Or keep native? Let's keep native value.</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-             <span class="n">fit_resol_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span>
-
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">old_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span>
         <span class="n">active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1522,24 +1431,23 @@
             <span class="c1"># the user frees it, so its error is usually 0</span>
             <span class="n">dbtur_new</span> <span class="o">=</span> <span class="n">resolve_error</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">,</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">dbtur</span><span class="p">)</span>
             
-            <span class="c1"># Metadata Update</span>
+            <span class="c1"># Metadata Update. The resolution of the component is left as it</span>
+            <span class="c1"># is: it is the user's override, None to follow the spectrum.</span>
+            <span class="c1"># Before #526 the fitter stamped the resolution it used, so the</span>
+            <span class="c1"># fitted components ignored later changes of the spectrum</span>
             <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">chi2</span>
             <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">resol</span>
             
             <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
                 <span class="n">comp_chi2</span> <span class="o">=</span> <span class="n">red_chi2</span>
-                
-                <span class="c1"># Logic: If we used the component's OWN resolution, preserve it.</span>
-                <span class="c1"># If we used the global/column resolution, update it to reflect the fit conditions.</span>
-                <span class="n">used_res_val</span><span class="p">,</span> <span class="n">used_res_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">old_comp</span><span class="p">)</span>
-                
-                <span class="k">if</span> <span class="n">used_res_unit</span> <span class="o">==</span> <span class="s1">'column'</span><span class="p">:</span>
-                    <span class="c1"># If variable, we usually store the median R of the fit</span>
-                    <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">fit_resol_val</span>
-                <span class="k">elif</span> <span class="n">used_res_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="c1"># If we used a specific scalar (Global or Attribute), store that.</span>
-                    <span class="n">comp_resol</span> <span class="o">=</span> <span class="n">used_res_val</span>
             
+            <span class="n">comp_flags</span> <span class="o">=</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">flags</span>
+            <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
+                <span class="n">comp_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bound_flags</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">bounds</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                       <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">dz_new</span><span class="p">,</span> <span class="n">dlogN_new</span><span class="p">,</span> <span class="n">db_new</span><span class="p">,</span> <span class="n">dbtur_new</span><span class="p">)):</span>
+                    <span class="n">comp_flags</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">'nan_errors'</span><span class="p">,)</span>
+
             <span class="n">new_comp</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">old_comp</span><span class="p">,</span>
                 <span class="n">z</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> 
                 <span class="n">logN</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> 
@@ -1550,7 +1458,8 @@
                 <span class="n">db</span><span class="o">=</span><span class="n">db_new</span><span class="p">,</span>
                 <span class="n">dbtur</span><span class="o">=</span><span class="n">dbtur_new</span><span class="p">,</span>
                 <span class="n">chi2</span><span class="o">=</span><span class="n">comp_chi2</span><span class="p">,</span>
-                <span class="n">resol</span><span class="o">=</span><span class="n">comp_resol</span>
+                <span class="n">resol</span><span class="o">=</span><span class="n">comp_resol</span><span class="p">,</span>
+                <span class="n">flags</span><span class="o">=</span><span class="n">comp_flags</span>
             <span class="p">)</span>
             <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_comp</span><span class="p">)</span>
             
@@ -1582,21 +1491,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Ensure we iterate everything</span>
         
         <span class="c1"># Restore full arrays</span>
-        <span class="n">temp_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span>
-        <span class="n">temp_resol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span><span class="p">:</span>
              <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span>
         <span class="k">else</span><span class="p">:</span>
              <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_lsf</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
              
         <span class="c1"># This will now loop over ALL components because active_uuids is None</span>
         <span class="n">final_model_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_model</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         
         <span class="c1"># Restore state (good practice)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="n">stored_active_uuids</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="n">temp_x</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="n">temp_resol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="n">saved</span>
         
         <span class="n">final_model_flux</span> <span class="o">=</span> <span class="n">final_model_norm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span>
 
@@ -1621,8 +1529,7 @@
 <span class="sd">            2. **model_flux** (*np.ndarray*): The computed model flux (physical units).</span>
 <span class="sd">        """</span>
         <span class="n">p_current_free</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">p_free_vector</span>
-        <span class="n">temp_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span>
-        <span class="n">temp_resol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="p">)</span>
         
         <span class="c1"># Switch to full spectrum context</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span>
@@ -1630,6 +1537,7 @@
              <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span>
         <span class="k">else</span><span class="p">:</span>
              <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_lsf</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="c1"># Reset caches to force Case B (Standard Loop) in _compute_model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1638,8 +1546,7 @@
         <span class="n">y_model_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_model</span><span class="p">(</span><span class="n">p_current_free</span><span class="p">)</span>
         
         <span class="c1"># Restore context</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="n">temp_x</span> 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="n">temp_resol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="n">saved</span>
         
         <span class="n">y_model_phys</span> <span class="o">=</span> <span class="n">y_model_norm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">y_model_phys</span></div>

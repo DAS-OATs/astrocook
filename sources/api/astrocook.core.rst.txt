@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    astrocook.core.debug_hooks
+   astrocook.core.resolution
    astrocook.core.session
    astrocook.core.spectrum
    astrocook.core.structures

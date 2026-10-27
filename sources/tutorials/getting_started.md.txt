@@ -49,11 +49,13 @@ The table supports infinite scrolling, automatically loading more data as you mo
 (getting-started-customizing)=
 ## 3. Customizing the View (Right Sidebar)
 
-Look to the right side of the window. This is the **Plot Controls** panel. Here you can tweak how the data is displayed without altering the data itself.
+Click the cog icon at the top right of the plot to open the **Plot Controls** panel (click it again to close it). Here you can tweak how the data is displayed without altering the data itself.
 
-### Toggles
+The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (**Plot Elements**, **View Controls**, **Axis Limits**, **Redshift Cursor**, **Edit Continuum**) open and close with a click on their title, and Astrocook remembers which ones you left open.
 
-You can show or hide specific layers of the plot:
+### Plot Elements
+
+You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: while this section is open it replaces the legend of the plot, and the legend shows only what is not listed here (e.g. other sessions or an auxiliary column).
 
 - **1-sigma error**: Hides the grey error shading.
 - **Show error as line**: Instead of a shaded band, plots the error array ($dy$) as a separate line. Useful for inspecting noise structure in high-resolution spectra.
@@ -107,7 +109,7 @@ Located at the bottom of the sidebar, this panel allows you to interactively ref
 
 ## 4. Session Management (Left Sidebar)
 
-The panel on the left is your **Session List**. Each file you load becomes a "Session".
+Click the list icon at the top left of the plot to open the **Session List**. Each file you load becomes a "Session". Like the Plot Controls, the list floats over the plot, is as tall as the sessions it holds and fades out while the mouse is on the plot. Long names are shortened in the middle; hover over a name to read it in full.
 
 ### Switching Sessions
 

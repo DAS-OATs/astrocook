@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.1.0 documentation</title>
+    <title>astrocook.recipes.absorbers &#8212; Astrocook 2.2.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../../static/documentation_options.js?v=20623aea"></script>
+    <script src="../../../static/documentation_options.js?v=b21de401"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.1.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.2.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.1.0" />
+  <meta name="docsearch:version" content="2.2.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -161,25 +161,42 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../reference.html">
     API Reference
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../credits.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
     Credits
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../changelog.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
     Changelog
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -303,6 +320,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
   </a>
 </li>
 
@@ -483,6 +507,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"abs_mask"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask column."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Window for fitting (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
             <span class="c1"># New generic region limiter</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Limit search to 'red_side', 'lya_forest', or 'None'."</span><span class="p">}</span>
         <span class="p">],</span>
@@ -496,7 +521,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Min score."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#doublets_auto"</span>
     <span class="p">},</span>
@@ -507,7 +533,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lower threshold for single lines."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum b parameter (km/s) to keep."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#lya_auto"</span>
     <span class="p">},</span>
@@ -516,9 +543,10 @@
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold for detection."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum b parameter (km/s)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum b parameter (km/s): narrower Lyman systems are removed."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#forest_auto"</span>
     <span class="p">},</span>
@@ -529,7 +557,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"ions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated list of ions to check."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"aic_penalty"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"AIC improvement required to keep a new ion."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Fit window (km/s)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#metals_auto"</span>
     <span class="p">},</span>
@@ -581,7 +610,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"b (km/s)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"btur"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"btur (km/s)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"series"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Series"</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"resol"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Resolution (R or FWHM)"</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"resol"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Resolving power R of this component (overrides the spectrum)"</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#update_component"</span><span class="p">,</span>
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
@@ -619,7 +648,7 @@
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits the selected component (and its neighbors) using the Voigt engine."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Target Component UUID"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_nfev"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max iterations"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_nfev"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2000</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max iterations"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max velocity shift allowed (km/s)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Grouping depth (1=Neighbors, 2=FoF)"</span><span class="p">}</span> 
         <span class="p">],</span>
@@ -667,8 +696,8 @@
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Target Component UUID (seed)"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_components"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Maximum number of extra components to try adding."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"threshold_sigma"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Residual threshold (sigma) required to trigger a new component."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_components"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Maximum number of extra components to try adding."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"threshold_sigma"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Residual threshold (sigma) required to trigger a new component."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"aic_penalty"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum AIC improvement required to accept a new component."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Velocity window (km/s) around the system to analyze."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_dv"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Min separation (km/s). Lower for de-blending."</span><span class="p">},</span>
@@ -681,7 +710,7 @@
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit Bayesian."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Runs Bayesian sampling (MCMC or Nested) for the selected group."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"engine"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"mcmc"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sampling engine: 'mcmc' or 'nested'."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nsteps"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of steps (MCMC)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nlive"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of live points (Nested)."</span><span class="p">},</span>
@@ -698,6 +727,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Grouping depth (1=Neighbors, 2=FoF)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_group_size"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max components per fit group (chunking)"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">300.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b (km/s)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">23.0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Limit fitting to 'red_side' or 'lya_forest'."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"selected_uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
         <span class="p">],</span>
@@ -715,6 +745,80 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#clean_negligible"</span>
     <span class="p">},</span>
 <span class="p">}</span>
+
+<span class="c1">#: Rounds of "remove the Ly-a narrower than min_b, refit the rest" in</span>
+<span class="c1">#: lya_auto (#517, F21, agreed with Guido): the refit can narrow other</span>
+<span class="c1">#: lines below min_b, so the filter runs again after it, with one more</span>
+<span class="c1">#: refit; what is still below min_b after the last refit is removed</span>
+<span class="c1">#: without a refit. Before, the filter ran once, before the last refit,</span>
+<span class="c1">#: and 39 Ly-a with b &lt; 10 km/s were left on J0103-1305</span>
+<span class="n">MIN_B_ROUNDS</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The session without the components ``uuids`` (and the constraints</span>
+<span class="sd">    on them), with the model recomputed from the remaining ones."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">uuids</span><span class="p">))</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">systs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">model_flux</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">systs</span><span class="p">)</span><span class="o">.</span><span class="n">compute_model_flux</span><span class="p">()</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">session</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_remove_narrow</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">refit_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Remove the components of ``series`` narrower than ``min_b`` and refit</span>
+<span class="sd">    the rest, MIN_B_ROUNDS times; remove without a refit those still</span>
+<span class="sd">    narrower after the last refit (#517, F21; F65 for ``forest_auto``)."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">narrow</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="n">series</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="n">min_b</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">systs</span> <span class="k">else</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MIN_B_ROUNDS</span><span class="p">):</span>
+        <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refining fit after removing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines..."</span><span class="p">)</span>
+        <span class="n">trimmed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="n">uuids</span><span class="p">))</span>
+        <span class="n">refitted</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="o">**</span><span class="n">refit_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">refitted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">refitted</span>
+    <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">uuids</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines left by the last refit."</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">session</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_drop_negligible</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The automatic pipelines remove the components that end at the lower</span>
+<span class="sd">    bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb</span>
+<span class="sd">    nothing measurable, and were 12 of the forest of J0103-1305 (F21)."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="s1">'logN_at_lower_bound'</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> "</span>
+                 <span class="s2">"at the lower bound of logN (negligible)."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_flags</span><span class="p">(</span><span class="n">components</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Log how many of the fitted ``components`` have flags (#517): a</span>
+<span class="sd">    parameter at a bound of the fit, or uncertainties not computed."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">listed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">flag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_'</span><span class="p">,</span><span class="w"> </span><span class="s1">' '</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">flag</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> with fit warnings (</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">). "</span>
+                    <span class="s2">"A parameter at a bound has an unreliable value and error: refit "</span>
+                    <span class="s2">"with wider bounds (e.g. Refit Selected) or check the component."</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="RecipeAbsorbersV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2">[docs]</a>
@@ -763,7 +867,7 @@
                       <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"abs_mask"</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
                       <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"None"</span><span class="p">,</span>
-                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-detect and fit components.</span>
 
@@ -795,6 +899,14 @@
 <span class="sd">            forest slow and gives spurious broad lines; components that end</span>
 <span class="sd">            at the bound may be broader and can be refitted with</span>
 <span class="sd">            :meth:`refit_all` or :meth:`fit_component`. Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits. In a saturated trough that the</span>
+<span class="sd">            candidates do not fill, a component can otherwise fill it with</span>
+<span class="sd">            its damping wings and run away to logN 20-23, blacking out the</span>
+<span class="sd">            model around it (findings register F62). With 19, the Lyman-limit</span>
+<span class="sd">            systems stay within reach; damped systems are to be fitted by</span>
+<span class="sd">            hand. Components that end at the bound can be refitted with</span>
+<span class="sd">            :meth:`refit_all`. Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -810,6 +922,11 @@
         <span class="c1"># to ignore specific regions.</span>
         
         <span class="n">session_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+
+        <span class="c1"># The mask of the user (e.g. from "Auto-estimate continuum" with other</span>
+        <span class="c1"># parameters) is given back with the result: the fresh mask below,</span>
+        <span class="c1"># restricted by region_limit, is used only inside the pipeline (F50)</span>
+        <span class="n">user_mask</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mask_col</span><span class="p">)</span>
         
         <span class="c1"># --- 0. FORCE MASK REGENERATION ---</span>
         <span class="c1"># Always generate a fresh mask to ensure it matches current z_em/flux state.</span>
@@ -827,6 +944,14 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">kept_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_mask</span> <span class="k">if</span> <span class="n">user_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                     <span class="k">else</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">])</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">with_kept_mask</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span>
+                <span class="n">mask_col</span><span class="p">,</span> <span class="n">kept_mask</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
         
         <span class="c1"># --- 0.5 SMART CLEAN (Refactored) ---</span>
         <span class="k">if</span> <span class="n">region_limit</span> <span class="o">!=</span> <span class="s2">"None"</span> <span class="ow">and</span> <span class="n">session_current</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
@@ -931,21 +1056,23 @@
             <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
             <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="n">region_limit</span><span class="p">,</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span>
         
         <span class="c1"># Handle the case where refit_all returns 0 (Empty/Clean)</span>
         <span class="c1"># Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)</span>
         <span class="k">if</span> <span class="n">final_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refit skipped (no components to fit). Returning clean state."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">session_step2</span>
+            <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
 
         <span class="c1"># Check for stop request on the valid final session</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
+        <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Component pipeline complete."</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">final_session</span></div>
+        <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.doublets_auto">
@@ -953,7 +1080,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">doublets_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multiplets</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span>
                       <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.5"</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
-                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit metal doublets (Red Side).</span>
 
@@ -971,6 +1098,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -982,14 +1112,16 @@
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
             <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s2">"red_side"</span><span class="p">,</span>  <span class="c1"># &lt;--- FORCE RED SIDE</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.lya_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.lya_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">lya_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.1"</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"10.0"</span><span class="p">,</span>
-                 <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"100.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                 <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"100.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span>
+                 <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit Ly-alpha forest.</span>
 
@@ -1008,6 +1140,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1024,42 +1159,24 @@
             <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
             <span class="n">mask_col</span><span class="o">=</span><span class="s1">'abs_mask'</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s1">'lya_forest'</span><span class="p">,</span> <span class="c1"># &lt;--- FORCE FOREST</span>
-            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
+            <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
-        <span class="c1"># 2. Cleanup Phase (Interlopers)</span>
+        <span class="c1"># 2. Cleanup Phase (Interlopers): the Ly-a narrower than min_b are</span>
+        <span class="c1"># removed and the rest refitted, MIN_B_ROUNDS times; those still</span>
+        <span class="c1"># narrower after the last refit are removed without a refit (#517)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Analysing line shapes to remove interlopers..."</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">min_b_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
-            
-            <span class="c1"># Use new Core method</span>
-            <span class="c1"># Logic: Keep if (NOT Ly_a) OR (Ly_a AND b &gt;= min_b)</span>
-            <span class="n">condition</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">!=</span> <span class="s1">'Ly_a'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&gt;=</span> <span class="n">min_b_val</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
-                <span class="n">new_systs</span> <span class="o">=</span> <span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">filter_by_criteria</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
-                
-                <span class="c1"># Check if components were actually removed</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">):</span>
-                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refining fit after removing narrow lines..."</span><span class="p">)</span>
-                     
-                     <span class="c1"># Update session with filtered list</span>
-                     <span class="n">final_session</span> <span class="o">=</span> <span class="n">final_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
-                     
-                     <span class="c1"># Refit</span>
-                     <span class="n">rec_polish</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
-                     <span class="n">final_session</span> <span class="o">=</span> <span class="n">rec_polish</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span>
-                        <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span>
-                        <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
-                        <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                        <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span>
-                        <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span>
-                     <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No interlopers found. Clean."</span><span class="p">)</span>
+
+            <span class="n">final_session</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="s1">'Ly_a'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
+                <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">))</span>
+            <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lya_auto cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1070,7 +1187,8 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.forest_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.forest_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forest_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"0.1"</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"10.0"</span><span class="p">,</span>
-                    <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                    <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span>
+                    <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit full Lyman series.</span>
 
@@ -1088,6 +1206,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1133,15 +1254,26 @@
         
         <span class="c1"># 4. Refit All</span>
         <span class="n">rec_step3</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                                   <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">)</span></div>
+        <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
+        <span class="n">refit_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
+                            <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">)</span>
+        <span class="n">fitted</span> <span class="o">=</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="o">**</span><span class="n">refit_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fitted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fitted</span>
+        <span class="c1"># The Lyman systems narrower than min_b are removed as in lya_auto</span>
+        <span class="c1"># (F65: before, min_b was taken and not used)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fitted</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="s1">'Lyman'</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">),</span> <span class="n">refit_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"forest_auto cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">fitted</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.metals_auto">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.metals_auto">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">metals_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> 
                     <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"5.0"</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"20.0"</span><span class="p">,</span>
-                    <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                    <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"50.0"</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"19.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check for associated metals.</span>
 
@@ -1161,6 +1293,9 @@
 <span class="sd">        max_b : str, optional</span>
 <span class="sd">            Upper bound on b (km/s) in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``"50.0"``.</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
+<span class="sd">            Defaults to ``"19.0"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1173,6 +1308,7 @@
             <span class="nb">float</span><span class="p">(</span><span class="n">aic_penalty</span><span class="p">)</span>  <span class="c1"># validated only, not used (see the docstring)</span>
             <span class="n">z_win</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
             <span class="n">b_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="n">logN_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_logN</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
@@ -1207,13 +1343,14 @@
                 <span class="n">new_uuid</span> <span class="o">=</span> <span class="n">trial_systs</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">uuid</span>
                 
                 <span class="c1"># B. Fit (Local Island)</span>
-                <span class="n">group</span> <span class="o">=</span> <span class="n">trial_systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">([</span><span class="n">new_uuid</span><span class="p">])</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="n">trial_systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">([</span><span class="n">new_uuid</span><span class="p">],</span> <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
                 
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="k">with</span> <span class="n">trial_systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="n">trial_systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">,</span>
+                                                     <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                         <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">trial_systs</span><span class="p">)</span>
                         <span class="n">fitted_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                   <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+                                                                   <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">,</span> <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max</span><span class="p">)</span>
                         
                         <span class="c1"># C. Evaluate</span>
                         <span class="n">fitted_comp</span> <span class="o">=</span> <span class="n">fitted_systs</span><span class="o">.</span><span class="n">get_component_by_uuid</span><span class="p">(</span><span class="n">new_uuid</span><span class="p">)</span>
@@ -1234,7 +1371,9 @@
 
         <span class="k">if</span> <span class="n">count_added</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"metals_auto: Added </span><span class="si">{</span><span class="n">count_added</span><span class="si">}</span><span class="s2"> new systems."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="c1"># The values the pipeline always used, before the defaults of</span>
+            <span class="c1"># refit_all were aligned with the GUI (#573)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'0'</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"metals_auto: No new metals found."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">current_session</span></div>
@@ -1312,7 +1451,7 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.populate_from_identification">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.populate_from_identification">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">populate_from_identification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_id_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'abs_ids'</span><span class="p">,</span>
-                       <span class="n">series_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">z_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                       <span class="n">series_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">''</span><span class="p">,</span> <span class="n">z_map_json</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">''</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Populate components from identification.</span>
 
@@ -1710,7 +1849,8 @@
                     <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
                     <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
 
-                <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
+                                                           <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                     <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span> <span class="n">check_stop</span><span class="o">=</span><span class="n">check_stop</span><span class="p">)</span>
                     <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">)</span>
             
@@ -1927,7 +2067,7 @@
 <div class="viewcode-block" id="RecipeAbsorbersV2.optimize_system">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.optimize_system">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">optimize_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_components</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5'</span><span class="p">,</span> 
-                        <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.5'</span><span class="p">,</span> <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0.0'</span><span class="p">,</span>
+                        <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2.5'</span><span class="p">,</span> <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5.0'</span><span class="p">,</span>
                         <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100.0'</span><span class="p">,</span> <span class="n">min_dv</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'10.0'</span><span class="p">,</span>
                         <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2'</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -1946,7 +2086,9 @@
 <span class="sd">        threshold_sigma : str, optional</span>
 <span class="sd">            Residual threshold (sigma) to trigger new component. Defaults to ``"2.5"``.</span>
 <span class="sd">        aic_penalty : str, optional</span>
-<span class="sd">            Min AIC improvement to accept new component. Defaults to ``"0.0"``.</span>
+<span class="sd">            Min AIC improvement to accept new component (the AIC already</span>
+<span class="sd">            counts 2 per free parameter; 5 asks for substantial support).</span>
+<span class="sd">            Defaults to ``"5.0"``.</span>
 <span class="sd">        z_window_kms : str, optional</span>
 <span class="sd">            Velocity window (km/s) to analyze. Defaults to ``"100.0"``.</span>
 <span class="sd">        min_dv : str, optional</span>
@@ -2049,7 +2191,8 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-            <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
+                                                       <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                 <span class="n">b_fitter</span> <span class="o">=</span> <span class="n">BayesianVoigtFitter</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
                 
                 <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span><span class="p">:</span>
@@ -2105,11 +2248,11 @@
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.refit_all">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.refit_all">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">refit_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100'</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100.0'</span><span class="p">,</span> 
-                  <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0'</span><span class="p">,</span> <span class="n">max_group_size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'20'</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refit_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'200'</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100.0'</span><span class="p">,</span> 
+                  <span class="n">group_depth</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2'</span><span class="p">,</span> <span class="n">max_group_size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'20'</span><span class="p">,</span>
                   <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"None"</span><span class="p">,</span>
                   <span class="n">selected_uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                  <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'300.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                  <span class="n">max_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'300.0'</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'23.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Refit all systems.</span>
 
@@ -2121,11 +2264,12 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        max_nfev : str, optional</span>
-<span class="sd">            Max iterations per group. Defaults to ``"100"``.</span>
+<span class="sd">            Max iterations per group. Defaults to ``"200"``.</span>
 <span class="sd">        z_window_kms : str, optional</span>
 <span class="sd">            Fit window around lines (km/s). Defaults to ``"100.0"``.</span>
 <span class="sd">        group_depth : str, optional</span>
-<span class="sd">            Grouping depth (0=Iterative Single, 1=Neighbors). Defaults to ``"0"``.</span>
+<span class="sd">            Grouping depth (0=Iterative Single, 1=Neighbors, 2=FoF).</span>
+<span class="sd">            Defaults to ``"2"``, as the GUI dialog (#573, F11).</span>
 <span class="sd">        max_group_size : str, optional</span>
 <span class="sd">            Max components per fit group (chunking). Defaults to ``"20"``.</span>
 <span class="sd">        region_limit : str, optional</span>
@@ -2134,6 +2278,10 @@
 <span class="sd">            Upper bound on b (km/s). Defaults to ``"300.0"``, the physical</span>
 <span class="sd">            limit of the constraint model; the automatic pipelines pass</span>
 <span class="sd">            ``"50.0"`` (see :meth:`components_auto`).</span>
+<span class="sd">        max_logN : str, optional</span>
+<span class="sd">            Upper bound on logN. Defaults to ``"23.0"``, the physical limit</span>
+<span class="sd">            of the constraint model; the automatic pipelines pass ``"19.0"``</span>
+<span class="sd">            (see :meth:`components_auto`).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2147,6 +2295,7 @@
             <span class="n">depth_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">group_depth</span><span class="p">)</span>
             <span class="n">max_size_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_group_size</span><span class="p">)</span>
             <span class="n">b_max_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_b</span><span class="p">)</span>
+            <span class="n">logN_max_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_logN</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"refit_all: No components to fit."</span><span class="p">)</span>
@@ -2165,20 +2314,24 @@
                 
                 <span class="c1"># Use our new spatial-index-powered grouping logic</span>
                 <span class="n">combined_active_set</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span>
-                    <span class="n">selected_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">depth_i</span>
+                    <span class="n">selected_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span>
                 <span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="c1"># Execute a single fit pass for the entire 'Super-Group'</span>
-                    <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combined_active_set</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">combined_active_set</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">,</span>
+                                                               <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                         <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span> 
                                               <span class="n">check_stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">)</span>
                         <span class="n">new_systs</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                            <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span>
+                            <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">,</span>
+                            <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max_f</span>
                         <span class="p">)</span>
                     
                     <span class="c1"># Update model and return immediately</span>
                     <span class="n">new_spec</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">)</span>
+                    <span class="n">_log_flags</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span>
+                                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">combined_active_set</span><span class="p">])</span>
                     <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Consolidated fit failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -2262,7 +2415,8 @@
                     <span class="k">if</span> <span class="n">seed</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">todo_uuids</span><span class="p">:</span> <span class="k">continue</span>
                     
                     <span class="c1"># Find group (physics-based)</span>
-                    <span class="n">group</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">([</span><span class="n">seed</span><span class="p">],</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">)</span>
+                    <span class="n">group</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">([</span><span class="n">seed</span><span class="p">],</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
+                                                                      <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
                     
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="p">:</span> 
                         <span class="n">todo_uuids</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">seed</span><span class="p">);</span> <span class="k">continue</span>
@@ -2335,9 +2489,10 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">local_systs</span><span class="p">)</span>
                     
-                    <span class="k">with</span> <span class="n">local_systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">):</span>
+                    <span class="k">with</span> <span class="n">local_systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">,</span>
+                                                     <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
                         <span class="n">new_local_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev_i</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_win_f</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                     <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">)</span>
+                                                                     <span class="n">b_max</span><span class="o">=</span><span class="n">b_max_f</span><span class="p">,</span> <span class="n">logN_max</span><span class="o">=</span><span class="n">logN_max_f</span><span class="p">)</span>
                     
                     <span class="k">for</span> <span class="n">fitted_comp</span> <span class="ow">in</span> <span class="n">new_local_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">fitted_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
@@ -2376,6 +2531,7 @@
 
             <span class="c1"># Delegate to SpectrumV2</span>
             <span class="n">new_spec</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="n">model_flux</span><span class="p">)</span>
+            <span class="n">_log_flags</span><span class="p">(</span><span class="n">final_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
             
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">final_systs</span><span class="p">)</span>
 
@@ -2401,7 +2557,8 @@
             <span class="n">local</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
                 <span class="n">systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">z_lo</span> <span class="o">&lt;=</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="o">&lt;=</span> <span class="n">z_hi</span><span class="p">]))</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">with</span> <span class="n">local</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">local</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">),</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">FIT_EXPANSION_DEPTH</span><span class="p">,</span>
+                                           <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">):</span>
                     <span class="n">evaluated</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate_uncertainties</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">evaluated</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
