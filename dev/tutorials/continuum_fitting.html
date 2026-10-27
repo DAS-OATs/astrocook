@@ -166,8 +166,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../atomic_data.html">
-    Atomic Data
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
   </a>
 </li>
 
@@ -178,20 +178,30 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../credits.html">
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../credits.html">
     Credits
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../changelog.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
     Changelog
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -322,8 +332,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../atomic_data.html">
-    Atomic Data
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
   </a>
 </li>
 
@@ -499,7 +509,7 @@
 <section id="automatic-estimation">
 <h2>1. Automatic Estimation<a class="headerlink" href="#automatic-estimation" title="Link to this heading">#</a></h2>
 <p>For most quasar spectra, the automated pipeline provides an excellent starting point. It uses an iterative kappa-sigma clipping algorithm to distinguish absorption lines from the continuum.</p>
-<p>How it works: the flux is compared with its running mean over the smoothing length, and the pixels below it by more than kappa times their error are flagged as absorbed; the mean is then recomputed from the pixels left, until nothing changes. The pixels left (“continuum anchors”) are interpolated and smoothed into the continuum. Some pixels are never used as anchors, and are flagged in <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> too: those in regions with no signal (median S/N below 1 over ~100 pixels), and single upward spikes (more than 5 sigma and 10% above the running mean), such as cosmic rays or bad pixels in NIR spectra. Measured on synthetic spectra with a known continuum, the result is within 0.6% of the true continuum on the red side at S/N 10 (0.2% at S/N 30), but low in the Lyman-alpha forest, by ~5% at S/N 30 and more at lower S/N or higher redshift: check it there, and correct it by hand if needed.</p>
+<p>How it works: the flux is compared with its running mean over the smoothing length, and the pixels below it by more than kappa times their error are flagged as absorbed; the mean is then recomputed from the pixels left, until nothing changes. The pixels left (“continuum anchors”) are interpolated and smoothed into the continuum. Some pixels are never used as anchors, and are flagged in <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> too: those in regions with no signal (median S/N below 1 over ~100 pixels), and single upward spikes (more than 5 sigma and 10% above the running mean), such as cosmic rays or bad pixels in NIR spectra. Measured on synthetic spectra with a known continuum, the result is within 0.6% of the true continuum on the red side at S/N 10 (0.2% at S/N 30), but low in the Lyman-alpha forest, by ~6% at S/N 30 and more at lower S/N or higher redshift: check it there, and correct it by hand if needed (see <a class="reference internal" href="../accuracy.html"><span class="std std-doc">Accuracy</span></a>).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This recipe requires <strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_{em}\)</span>)</strong> to be defined. If missing, Astrocook will automatically prompt you to set them via the <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Set Properties</span></a> dialog before proceeding.</p>
