@@ -682,15 +682,18 @@ class VelocityPlotWidget(QWidget):
         self._panel_map = {} 
         self._tick_map_visuals = [] 
 
+        # The canvas is drawn with draw_idle: opening the inspector or
+        # changing its size updates the plot more than once in a row, and the
+        # draws (~0.1 s each on J0103-1305) are coalesced into one
         if not self._all_transitions or not self._current_session:
-            self.canvas.draw(); return
+            self.canvas.draw_idle(); return
 
         start = self.scrollbar.value() if self.scrollbar.isEnabled() else 0
         end = min(start + self.PAGE_SIZE, len(self._all_transitions))
         visible_trans = self._all_transitions[start:end]
         
         num_trans = len(visible_trans)
-        if num_trans == 0: self.canvas.draw(); return
+        if num_trans == 0: self.canvas.draw_idle(); return
         
         show_resid = self.inspector.resid_cb.isChecked()
         
@@ -897,7 +900,7 @@ class VelocityPlotWidget(QWidget):
         self.fig.supxlabel("Relative velocity (Δv, km/s)")
         if not show_resid:
             self.fig.supylabel("Normalized Flux")
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return

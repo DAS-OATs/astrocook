@@ -447,3 +447,18 @@ def test_open_v1_archive(window, messages):
     window._on_view_system_inspector()
     assert window.system_inspector.isVisible()
     assert messages == []
+
+
+def test_inspector_velocity_plot_is_drawn_up_to_date(qtbot, loaded):
+    """Once the events are processed, the velocity plot shows its final
+    state: the same pixels as a synchronous draw (characterization, before
+    its draws were deferred in phase 5)."""
+    import numpy as np
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    qtbot.wait(100)
+    canvas = inspector.vel_plot.canvas
+    assert inspector.vel_plot.axes  # the panels of the selected component
+    shown = np.array(canvas.buffer_rgba()).copy()
+    canvas.draw()
+    assert np.array_equal(shown, np.array(canvas.buffer_rgba()))
