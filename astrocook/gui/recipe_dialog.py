@@ -25,7 +25,8 @@ class RecipeDialog(QDialog):
         self.session = session
         self.parent_window = parent 
 
-        self.input_widgets = {} 
+        self.input_widgets = {}
+        self._current_params = set()  # parameters whose default is "_current_"
         self._last_focused_widget = None
                 
         # 1. Operators 
@@ -159,12 +160,10 @@ class RecipeDialog(QDialog):
                 param_doc = param.get('doc', param_name) 
                 param_default = str(param.get('default', '')) 
 
-                if param_default == "_current_":
-                    try:
-                        current_val = getattr(self.session.spec._data, param_name)
-                        param_default = str(current_val)
-                    except AttributeError:
-                        param_default = "0.0" 
+                is_current = param_default == "_current_"
+                current_hint = ""
+                if is_current:
+                    param_default, current_hint = self._current_value(param_name)
 
                 label = QLabel(f"{param_doc.rstrip('.')}:")
                 label.setToolTip(param_doc) 
@@ -185,6 +184,10 @@ class RecipeDialog(QDialog):
                     widget = QLineEdit(param_default)
 
                 widget.setToolTip(param_doc)
+                if is_current and isinstance(widget, QLineEdit):
+                    # Left empty, the parameter keeps its current value (F63)
+                    widget.setPlaceholderText(current_hint or "current value")
+                    self._current_params.add(param_name)
 
                 if widget:
                     self.input_widgets[param_name] = widget
@@ -546,6 +549,33 @@ class RecipeDialog(QDialog):
         except Exception:
             self.oversample_warning_label.setVisible(False)
 
+    def _current_value(self, param_name: str):
+        """Text and placeholder of a parameter whose default is
+        ``'_current_'``: its current value in the session (F63: before, the
+        attribute of the same name of the spectrum data, and "0.0" when
+        there was none, so that Run renamed the session "0.0", wrote "0.0"
+        into OBJECT, and converted velocities relative to z = 0)."""
+        spec = self.session.spec if self.session else None
+        if spec is None:
+            return "", ""
+        if param_name == 'name':
+            return str(self.session.name or ""), ""
+        if param_name == 'object':
+            return str(spec.meta.get('OBJECT', '') or ""), "no object name"
+        if param_name in ('z_em', 'z_ref', 'z_target'):
+            return f"{spec._data.z_em:g}", ""
+        if param_name == 'resol':
+            from astrocook.core.resolution import resolution_summary
+            median, variable = resolution_summary(spec)
+            if median <= 0:
+                return "", "not set"
+            if variable:
+                # A single value would replace a resolution that varies
+                return "", f"varies with wavelength (median R {median:.0f}): leave empty to keep"
+            return f"{median:.0f}", ""
+        value = getattr(spec._data, param_name, None)
+        return ("" if value is None else str(value)), ""
+
     def accept(self):
         if not self.schema:
             super().reject(); return
@@ -554,7 +584,10 @@ class RecipeDialog(QDialog):
         try:
             for param_name, widget in self.input_widgets.items():
                 if isinstance(widget, QLineEdit):
-                    params_to_pass[param_name] = widget.text()
+                    text = widget.text()
+                    if param_name in self._current_params and not text.strip():
+                        text = "_current_"   # empty: keep the current value (F63)
+                    params_to_pass[param_name] = text
                 elif isinstance(widget, QCheckBox):
                     params_to_pass[param_name] = str(widget.isChecked())
                 elif isinstance(widget, QComboBox):

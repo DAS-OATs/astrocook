@@ -13,6 +13,7 @@
 - Documentation: a new page, *Atomic Data*, describes the table of atomic data, the source of each value, the choices made and the series and multiplets that Astrocook knows (#568).
 
 ### Fixed
+- *Data loss* (GUI): the dialogs showed "0.0" in the parameters that keep their current value by default, when the spectrum had no attribute with their name (F63). Pressing Run without editing them renamed the session "0.0" and wrote "0.0" into the OBJECT keyword (*Set session properties*), and computed the velocities relative to z = 0 instead of the emission redshift (*Convert x axis*, *Trim to common coverage*). The dialogs now show the current name, object, emission redshift and resolution; a resolution that varies with wavelength is left empty (with the median as a hint), and an empty field keeps the current value.
 - GUI (Linux, Windows): the unchecked boxes of the plot controls were invisible, and the checked ones showed only the tick; macOS was not affected (F64).
 - GUI: the card of the plot controls could cut the last line of the hints of the continuum editor.
 - Voigt fit: sessions saved by earlier versions with pixel edges (`xmin`, `xmax`) without a unit could no longer be refitted, with the error "'' (dimensionless) and 'Angstrom' (length) are not convertible" (#623, a regression of the exact convolution of #526, which uses the edges). Edges without a unit now take the unit of the wavelengths when a session is opened; if their values are not around the wavelengths, they are recomputed halfway between the pixels. No change of results for other sessions.
@@ -42,7 +43,7 @@
   - `fit_component`: the dialog now offers 2000 iterations, the value the System Inspector and scripts always used.
   - `rebin`: the dialog now clips upward outliers at 5 sigma by default (was off), as scripts did.
   - `coadd` from a script: a grid of 10 km/s (was 0.01 nm), as the dialog; choose the native pixel size for high-resolution data.
-  - `x_convert` from a script: velocities relative to the emission redshift of the session (was z = 0), as the dialog.
+  - `x_convert` from a script: velocities relative to the emission redshift of the session (was z = 0). The dialog meant to do the same, but showed z = 0 because of F63, fixed in this release.
   - No change of results: `estimate_auto` takes `fudge='auto'` (the same as `'1.0'`), two parameter names of the dialogs follow the methods (`uuids` of `fit_bayesian`, `file_path` of `import_ascii`), and the maps of `populate_from_identification` default to an empty string, as before treated as missing.
 
 ## [2.1.0] - 2026-10-21
