@@ -633,8 +633,9 @@ replay the log as a script.</p>
 forest fit, no export.</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> removes the components already on the red
-side before fitting, and replaces the absorbed mask with one made with
-the default parameters. A call can take minutes on a large spectrum.</p></li>
+side before fitting. It uses the absorbed mask of the session, if any
+(e.g. from <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>), and makes one with the default
+parameters otherwise. A call can take minutes on a large spectrum.</p></li>
 <li><p>The recipes are the same as in the GUI, with the same strengths and
 weaknesses: check the results.</p></li>
 </ul>

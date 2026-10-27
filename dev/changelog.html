@@ -482,6 +482,7 @@
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
 <section id="unreleased">
 <h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading">#</a></h2>
+<p>Phase 4 of the consolidation (scientific correctness), measured on a benchmark of 135 synthetic spectra with known parameters (<code class="docutils literal notranslate"><span class="pre">benchmarks/validate_mocks.py</span></code>). <strong>Results change</strong>: the fits use the exact resolution of each pixel and a correct damping parameter, the identification gives one candidate per doublet and none beyond the emission redshift, the automatic continuum is more robust, and the automatic pipelines remove spurious components and flag those at a bound. On the benchmark, against 2.1.0: duplicate doublet candidates reduced by about three times, spurious fitted components from 428 to 11, flagged components from 413 to 22, the spread of the total column of the systems at R = 8900 from 0.39 to 0.095 dex. The pulls of single components are unchanged (~1.1); those of components in systems with several components are wider, because these systems are now fitted with fewer components (see <em>Result of the phase</em> in <code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>).</p>
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
 <ul class="simple">

@@ -129,7 +129,8 @@ replay the log as a script.
   forest fit, no export.
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` removes the components already on the red
-  side before fitting, and replaces the absorbed mask with one made with
-  the default parameters. A call can take minutes on a large spectrum.
+  side before fitting. It uses the absorbed mask of the session, if any
+  (e.g. from `continuum_estimate_auto`), and makes one with the default
+  parameters otherwise. A call can take minutes on a large spectrum.
 - The recipes are the same as in the GUI, with the same strengths and
   weaknesses: check the results.

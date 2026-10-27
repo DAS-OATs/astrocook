@@ -507,16 +507,17 @@
 <section id="setting-session-properties">
 <span id="editing-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
 <p>Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis) rely on the emission redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>) to determine rest-frame wavelengths.</p>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p>Select your session in the <strong>Session List</strong> (left sidebar).</p></li>
 <li><p>Go to <strong>Edit &gt; Set Properties…</strong>.</p></li>
-<li><p>A dialog will appear. Here you can update:</p>
+<li><p>A dialog will appear, showing the current values. Here you can update:</p>
 <ul class="simple">
 <li><p><strong>Name:</strong> The label used in the list.</p></li>
 <li><p><strong>Object:</strong> The target name (often from the FITS header).</p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>):</strong> Set this carefully!</p></li>
-<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>).</p></li>
+<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
 </ul>
+<p>A field left empty keeps the current value.</p>
 </li>
 </ol>
 <img alt="The Set Properties dialog" class="align-center" src="../images/editing_set_properties.png" />
