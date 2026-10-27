@@ -1144,6 +1144,12 @@ class SpectrumPlotWidget(QWidget):
                 highlight_lines_x = []
                 zem = getattr(spec, '_zem', 0.0) # Get zem once
 
+                # The observed wavelengths of all the transitions first, then
+                # converted to the x unit at once: one conversion per
+                # transition took most of the redraw (~950 on J0103-1305)
+                ticks = []  # (comp, transition, is_highlighted)
+                obs_nm = []
+                rest_nm = {}
                 for comp in systs.components:
                     z = comp.z
                     
@@ -1171,26 +1177,34 @@ class SpectrumPlotWidget(QWidget):
 
                     for t in transitions:
                         if t in xem_d:
-                            try:
-                                x_plot = convert_axis_velocity((1 + z) * xem_d[t].to_value(au.nm) * au.nm, zem, spec.x.unit).value
-                            except Exception: continue
-
-                            # Check xlim *before* appending to keep lists small
-                            if xlim[0] <= x_plot <= xlim[1]:
-                                # If highlighted, add to special list
-                                if is_highlighted:
-                                    highlight_lines_x.append(x_plot)
-                                    # Optional: Skip adding to standard lists if you don't want double drawing
-                                    # continue
-
-                                if t.startswith('Ly_'):
-                                    hi_lines_x.append(x_plot)
-                                else:
-                                    metal_lines_x.append(x_plot)
-
-                                self._tick_visuals.append((ax, x_plot, comp))
+                            if t not in rest_nm:
+                                rest_nm[t] = xem_d[t].to_value(au.nm)
+                            ticks.append((comp, t, is_highlighted))
+                            obs_nm.append((1 + z) * rest_nm[t])
                         else:
                             logging.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
+
+                try:
+                    x_ticks = convert_axis_velocity(np.array(obs_nm, dtype=float) * au.nm,
+                                                    zem, spec.x.unit).value
+                except Exception:
+                    ticks, x_ticks = [], []
+
+                for (comp, t, is_highlighted), x_plot in zip(ticks, x_ticks):
+                    # Check xlim *before* appending to keep lists small
+                    if xlim[0] <= x_plot <= xlim[1]:
+                        # If highlighted, add to special list
+                        if is_highlighted:
+                            highlight_lines_x.append(x_plot)
+                            # Optional: Skip adding to standard lists if you don't want double drawing
+                            # continue
+
+                        if t.startswith('Ly_'):
+                            hi_lines_x.append(x_plot)
+                        else:
+                            metal_lines_x.append(x_plot)
+
+                        self._tick_visuals.append((ax, x_plot, comp))
 
                 # ** Make only TWO plot calls, outside the loop **
                 if hi_lines_x:
