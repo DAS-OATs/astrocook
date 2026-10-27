@@ -862,6 +862,42 @@ does not touch the results:
   (`loc="best"`) and the ticks, ~1-3 s between the main and the velocity
   plot.
 
+Order of the phase (agreed with Guido, October 2026): the GUI benchmark
+first; then the three local fixes of the System Inspector above, one PR
+each, measured before and after; then the split of `SpectrumV2`, covered
+by the snapshots; then the split of the GUI (`main_window.py`,
+`pyside_plot.py`, `system_inspector.py`), with F7. The phase is pure
+refactoring and performance: the snapshots and the mock benchmark stay
+unchanged; the visible changes of the GUI go to phase 5-bis. F12 (global
+state modified at run time) is moved to phase 6-bis, where the recipe
+registry is redesigned.
+
+**GUI benchmark** (`benchmarks/bench_gui.py`, run by hand like
+`bench_fitting.py`): the GUI offscreen on the small J0103-1305 archive of
+the tests (2156 pixels, 764 components), four cases, each ended after the
+pending Qt events (deferred draws, the result processed with a `QTimer`)
+and the median of 5 runs: the first opening of the System Inspector in a
+new main window, a second opening, a full redraw of the main plot, and
+*Refit Selected* on the first CIV component (z = 3.0085), split into the
+recipe in the worker thread and the rest (GUI). `--profile DIR` writes a
+`cProfile` file per case. Before the phase (2.2.0, cloud container,
+Python 3.13):
+
+| Case | Time (s) |
+|---|---|
+| `inspector_first` | 3.96 |
+| `inspector_again` | 2.25 |
+| `main_plot` | 0.21 |
+| `refit` | 12.96 |
+| `refit_recipe` | 11.19 |
+| `refit_gui` | 1.78 |
+
+Runs on the same machine differ by ~10%. In the profile of `refit`, the
+table is again the largest part of the GUI time (the link-colour delegate
+and `SystemTableModel.data`). The recipe itself (~11 s for one CIV
+component, `refit_all` with `group_depth` 2 and `max_nfev` 200) is the
+fit, not the GUI: outside this phase.
+
 **Screenshots of the tutorials** (agreed with Guido, October 2026): the
 images of the tutorials are rebuilt by a script,
 `docs/screenshots/make_screenshots.py`, which runs the real GUI offscreen at
@@ -889,7 +925,14 @@ plot controls are collapsible, with their state remembered; while Plot
 Elements is open its checkboxes show the plotted styles and those entries
 leave the matplotlib legend, which used to show through the panel. Two
 columns were considered and rejected: a wider card covers more of the
-plot. Proposals of the review still open, to be agreed with Guido:
+plot. The proposals of the review still open are in phase 5-bis.
+
+### Phase 5-bis – GUI look and ergonomics
+Agreed with Guido (October 2026): the visible changes of the GUI proposed
+by the review of phase 5 ("GUI look and ergonomics"), after the split of
+the GUI, so that they land in the new modules and phase 5 stays pure
+refactoring; each proposal agreed with Guido one by one, with the
+screenshots of the tutorials rebuilt before and after. Proposals:
 - a status bar (cursor position, outcome of the last recipe) and
   keyboard navigation in the System Inspector;
 - the System Inspector shows empty panels without saying why when the
@@ -905,6 +948,8 @@ plot. Proposals of the review still open, to be agreed with Guido:
 - the main plot: the 1-sigma error is drawn as a line by default although
   a comment in the code says band (to be decided), the HI ticks are a
   saturated red block, the title repeats the window title.
+
+Then release 2.3.0 (see "Releases").
 
 ### Phase 6 – Error handling
 Broad `except` clauses, case by case: specific exception, explicit log, or
@@ -932,6 +977,11 @@ the agents together, starting from the report of the MCP pilot (section
   uncertainty of the continuum, the credibility of an identification and
   its alternatives, section 5), so that phase 7 changes the algorithms
   without changing the interface.
+- F12 (moved from phase 5, agreed with Guido, October 2026): the
+  module-level dictionaries modified at run time (the parameter docs of
+  `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]` rewritten by the GUI, the
+  custom series of `add_component` in `STANDARD_MULTIPLETS`), with the
+  redesign of the registry.
 The full MCP server (section 4) is generated from this API.
 
 ### Phase 7 – Robust components: emission model and identification
@@ -967,6 +1017,8 @@ published on GitHub (with the macOS app) without waiting for PyPI.
 Revised at the start of the MCP pilot (validation on mocks in phase 4,
 phases 6-bis and 7 agreed): phase 4 (validation first) →
 2.2.0 → phase 5 → phase 6 → phase 6-bis → full MCP server → phase 7.
+Revised at the start of phase 5 (October 2026): phase 5 → phase 5-bis →
+2.3.0 → phase 6 → phase 6-bis → full MCP server → phase 7.
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
 PyPI go into the first release after INAF answers: 2.1.1 if the answer
@@ -1008,6 +1060,12 @@ publishes the docs of the tag at the root of the website.
   pages *Science* and *Accuracy* (the results on the mock benchmark);
   baseline of the benchmark moved to 2.2.0. Published on GitHub with the
   macOS app; not on PyPI (INAF has not answered yet, #549).
+- **2.3.0, after phases 5 and 5-bis (planned, agreed with Guido, October
+  2026):** the faster System Inspector, the split of the large files, the
+  GUI review of phase 5-bis, F7; no numerical result changes (the
+  *Accuracy* page stays as for 2.2.0). A stable point before phases 6 and
+  6-bis, which change the interface of the recipes. With the LICENSE and
+  PyPI if INAF has answered by then (#549).
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
@@ -1061,7 +1119,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F9 | Voigt model | Components narrower than a pixel (e.g. Ly-alpha with b = 0.5 km/s, logN = 17.8 in J0103-1305) make the model depend on the sampling; with R = 45000, 1% of the 570-700 nm window still differs from the model saved in the session. Related to the oversampling check (item 9): the V2 model, sampled at pixel centres, overestimates the equivalent width of CIV by 4% at b = 1 km/s and 0.3% at 3 km/s (2.5 km/s pixels, R = 45000) | numerical | — | fixed in phase 4 (#526, PR 3): the model is computed on a fine grid (step a third of the narrowest b in the window, at least 0.5 km/s, and half the instrumental sigma) and averaged over each pixel; against the exact flux of mocks, 1.5e-5 to 3e-5 with F61 corrected (`test_lsf.py`). Timing (`bench_fitting.py`): single fit 0.008 → 0.010 s, group 1.44 → 1.65 s, chain on a mock 19.2 → 14.3 s, on J0103-1305 373 → 262 s (each line evaluated only where tau > 1e-6) |
 | F10 | `convolve_flux` | With a per-pixel resolution column, pixels are grouped by resolution rounded to 100 (R) or 0.5 km/s, but selected by the raw value: pixels whose resolution is not already rounded are never convolved and the model is 0 there (a flat column at R = 45050 gives a zero model everywhere). Affects rebinned and coadded spectra (coadding three synthetic exposures at R = 42000-47500 gives a non-round column on 90% of the pixels and a zero Voigt model on 90% of them, `test_voigt_model_on_coadded_spectrum_is_not_zero`), RESVEL input, non-round "Set properties" values. In addition, even for a constant R the kernel width is computed at the median wavelength and with the median pixel size, so it is wrong far from the centre of the range (+53% / -26% at the ends of 380-780 nm). Proposed: a single exact convolution in velocity space, after the safety net is complete | numerical, wrong results | `test_model_column_resolution_is_not_zero`, `test_voigt_model_on_coadded_spectrum_is_not_zero`, `test_voigt_model_with_resolution_column` (regression) | selection bug fixed (phase 1-bis): pixels selected by the rounded resolution, NaN filled with the unconvolved flux. Kernel width far from the median wavelength and exact convolution: fixed in phase 4 (#526, PR 3, `astrocook/fitting/lsf.py`): each pixel takes the model convolved with a Gaussian of its own resolution and averaged over its edges, with `test_lsf.py` against the analytic result (1e-8) and against mocks with a flat and a varying resolution (5.9e-3 at R 45000 and 5.7e-2 at R 8900 before) |
 | F11 | grouping | `VoigtModelConstraintV2.set_active_components` ignores `group_depth`: it always calls `get_connected_group` with the default depth 2, so the recipe option (1 = neighbours only) and the `group_depth=0` used by the refit have no effect | behaviour | `test_set_active_components_honours_group_depth`, `test_fit_component_group_depth_0_freezes_neighbours` (regression) | fixed (phase 1-bis, decided with Guido): `group_depth` honoured, default 2 everywhere; the internal fits of `refit_all`/`metals_auto` keep the depth-2 expansion they always had (`FIT_EXPANSION_DEPTH`), since depth 0 there was 2.75x faster but fitted blends worse (J0103-1305: chi2 +14% in the forest); the user can reduce the depth in "Fit component" and in the Bayesian fit |
-| F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open |
+| F12 | global state | Module-level dictionaries are modified at run time: the GUI rewrites the parameter docs of `EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]`, and `add_component` registers custom series in `STANDARD_MULTIPLETS`. The changes persist for the whole process (and leak between tests) | architecture | `restore_multiplets` fixture in `test_issue_455_multiplet_subset.py` | open; phase 6-bis (moved from phase 5, agreed with Guido) |
 | F13 | inspector | `SystemTableModel.set_highlighted_uuids` returns early when the selection is unchanged, so link colours are not recomputed when a link is created with the group still selected (model-level reproduction; full GUI not driven) | GUI | `test_link_created_with_group_selected_is_coloured`, `test_link_removed_with_group_selected_is_not_coloured`, `test_link_keeps_its_colour_when_another_is_added` (regression) | fixed (phase 3-bis): the colours are recomputed in `update_data`; a link keeps its colour when others are added or removed |
 | F14 | grouping | Two components are considered blended when their line centres are closer than max(4 b, 30 km/s), independently of the instrumental resolution and of the line strength. At X-Shooter resolution (R ~ 8900) AlII 1670 and CIV 1550 still overlap at 60 km/s but are not grouped; worse in the NIR or for saturated lines. Possibly why #469 is still seen on X-Shooter data | behaviour | `test_blend_threshold_*` in `tests/test_issue_469_blends.py` | fixed in phase 4, after PR 1 of [#526](https://github.com/DAS-OATs/astrocook/issues/526) (the single per-pixel resolution), in parallel with its PR 3: the threshold is max(4 b, 30 km/s, k FWHM), with the instrumental FWHM at the lines from the `resol` column (or the resolution of the component, if set, as in the fitter; the larger of the two lines), k = 1 (Guido: the FWHM is the useful check; 4 b and 30 km/s were heuristics, kept as floors and as the fallback without resolution). The spectrum is passed to the grouping by every fit (recipes, `optimize_hierarchy`, Bayesian fit) and by the System Inspector. Only R < ~10000 (FWHM > 30 km/s) changes anything. With k = 1 the example above (60 km/s at R 8900, FWHM 34 km/s) is still not grouped: it would need k ~ 2; Guido kept k = 1 (#618). Mock benchmark: identical results on all 135 mocks (only the timings differ; the benchmark fits only the sparse metal doublets, and on two mocks at R 8900 no pair changed grouping), so a fit-level test replaces it (`test_fit_includes_component_blended_at_low_resolution`). Measured again on the merged code (master after #617 and #618, 3c4089c, against #617 alone, a7b02ce; both before F61, #619, not measured again after it): identical records on all 135 mocks |
 | F15 | `equalize_and_stitch` | The scale factor is a median of the ratio of the two arms in the overlap: with narrow absorption (e.g. tellurics) seen at two different resolutions, it is biased by ~1-1.5% in a mock with equivalent-width-conserving tellurics around 1000 nm (no bias without tellurics). Possibly related to #477; to be checked on real X-Shooter VIS/NIR data | numerical | — (mock in the PR that added this row) | open |
@@ -1542,7 +1600,8 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | not started |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`) |
+| 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
