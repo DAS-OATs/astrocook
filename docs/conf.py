@@ -82,6 +82,10 @@ html_theme_options = {
     
     # --- Add these lines ---
     "navbar_align": "content", # Align navbar items to the content
+    # At most four links in the header, the others under "More": with
+    # more, the header wrapped onto two rows on a laptop screen (one row
+    # from ~1280 px with four, ~1400 px with five, none with six)
+    "header_links_before_dropdown": 4,
     "switcher": {
         # One list for all the versions, at the root of the site; its
         # "preferred" entry is the latest release (switcher.json)

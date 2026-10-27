@@ -542,8 +542,9 @@ def print_summary(result):
                   f"|pull|>3 {p['frac_gt3']:.2f}")
 
 
-#: The baseline of phase 4 (version 2.1.0, before the fixes of the phase):
-#: the pooled summary of the full grid
+#: The baseline (version 2.2.0, after phase 4): the pooled summary of the
+#: full grid. That of 2.1.0, before the fixes of phase 4, is kept in
+#: validate_mocks_baseline_2.1.0.json
 BASELINE = ROOT / "benchmarks" / "results" / "validate_mocks_baseline.json"
 
 
