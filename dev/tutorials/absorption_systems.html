@@ -600,6 +600,16 @@
 </ul>
 <img alt="The System Inspector showing a metal doublet" class="align-center" src="../images/absorbers_system_inspector.png" />
 </section>
+<section id="components-with-warnings-of-the-fit">
+<h3>Components with warnings of the fit<a class="headerlink" href="#components-with-warnings-of-the-fit" title="Link to this heading">#</a></h3>
+<p>Each fit leaves a warning on the components whose result is not reliable:</p>
+<ul class="simple">
+<li><p><strong>A parameter at a bound of the fit:</strong> z at the edge of the fit window, logN or b at their lower or upper bound. The automatic pipelines fit with tighter upper bounds (<strong>Max b</strong> = 50 km/s, <strong>Max logN</strong> = 19) than the manual fits (300 km/s, 23), so a component at one of those bounds may be broader or stronger in reality. The cell of the parameter is highlighted.</p></li>
+<li><p><strong>No uncertainties:</strong> the fit could not compute the errors of the component (the value is not constrained). Its <strong>ID</strong> is highlighted in red.</p></li>
+</ul>
+<p>A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check <strong>Only flagged</strong> to list only these components, and click <strong>Select flagged</strong> to select them all, e.g. to refit them with <strong>Refit Selected</strong> (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.</p>
+<img alt="The System Inspector with Only flagged checked and the tooltip of a component at the upper bound of b" class="align-center" src="../images/absorbers_flags.png" />
+</section>
 </section>
 <section id="interactive-fitting-editing">
 <h2>3. Interactive Fitting &amp; Editing<a class="headerlink" href="#interactive-fitting-editing" title="Link to this heading">#</a></h2>
@@ -775,6 +785,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#right-panel-velocity-plot">Right Panel: Velocity Plot</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#components-with-warnings-of-the-fit">Components with warnings of the fit</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interactive-fitting-editing">3. Interactive Fitting &amp; Editing</a><ul class="nav section-nav flex-column">
