@@ -112,10 +112,10 @@ identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
 generator, recipe-level and GUI smoke tests, `.acs2` round trips,
 error-scaling check, mutation testing (`mutmut`, config in
-`pyproject.toml`, run by hand), timing benchmark
-(`benchmarks/bench_fitting.py`, run by hand). Slow tests
-(`pytest --run-slow`) run in a separate CI job. Still waiting for data from
-Guido: sessions for log replay, sample files for the loaders, X-Shooter
+`pyproject.toml`, run by hand), timing benchmarks of the fit
+(`benchmarks/bench_fitting.py`) and of the GUI (`benchmarks/bench_gui.py`),
+run by hand. Slow tests (`pytest --run-slow`) run in a separate CI job.
+Still waiting for data from Guido: sessions for log replay, sample files for the loaders, X-Shooter
 VIS/NIR data (F15). V1 `.acs` archives: received in phase 3 (two sessions,
 cut down and anonymised in `tests/data/v1_*.acs`).
 
@@ -145,14 +145,18 @@ with the chi2 of the final model). Sequence agreed with Guido (October
    (plan agreed, `ROADMAP.md` "Plan of the phase") (done);
 7. release 2.2.0 (done);
 8. phase 5 – splitting large files, with the GUI performance (timing
-   benchmark of the GUI; the System Inspector opens in ~6 s on
-   J0103-1305);
-9. phase 6 – error handling;
-10. phase 6-bis – recipe API (typed parameters, structured results,
-    exceptions), from the report of the MCP pilot;
-11. full MCP server, with a headless Docker image, its tools generated
+   benchmark of the GUI; the System Inspector opens in ~4-6 s on
+   J0103-1305); pure refactoring and performance, no visible change;
+9. phase 5-bis – GUI look and ergonomics (the open proposals of the GUI
+   review, agreed one by one);
+10. release 2.3.0;
+11. phase 6 – error handling;
+12. phase 6-bis – recipe API (typed parameters, structured results,
+    exceptions), from the report of the MCP pilot; with F12 (moved from
+    phase 5);
+13. full MCP server, with a headless Docker image, its tools generated
     from the recipe registry;
-12. phase 7 – robust components: emission model and
+14. phase 7 – robust components: emission model and
     absorption identification, algorithmic choices by Guido, measured
     on the benchmark of phase 4.
 
@@ -224,6 +228,13 @@ on PyPI (INAF has not answered, #549). New docs pages *Science* (with
 updated when a phase changes them). The baseline of the benchmark is now
 that of 2.2.0 (`benchmarks/results/validate_mocks_baseline.json`):
 phases 5, 6 and 6-bis must leave it unchanged.
+
+Phase 5 started (October 2026): order of the phase agreed (`ROADMAP.md`,
+phase 5): the GUI benchmark (`benchmarks/bench_gui.py`, run by hand like
+`bench_fitting.py`, before and after each change of the GUI), the three
+local fixes of the System Inspector, the split of `SpectrumV2`, the split
+of the GUI with F7. The private data of `DAS-OATs/astrocook-data` (spectra
+of the screenshots) are cloned next to the repository when needed.
 
 Next: phase 5 (`ROADMAP.md`). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
