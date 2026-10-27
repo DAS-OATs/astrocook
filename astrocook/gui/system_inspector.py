@@ -37,9 +37,11 @@ COLUMNS = list(COL_MAP.keys())
 EDITABLE_COLS = {"z", "logN", "b", "btur"}
 
 # --- Flags of the fit (#517) ---
-#: Colours of the cues: amber for a parameter at a bound of the fit, red for
-#: uncertainties that could not be computed (agreed with Guido)
-FLAG_BOUND_COLOR = "#f5a100"
+#: Colours of the cues: violet for a parameter at a bound of the fit, red for
+#: uncertainties that could not be computed (Guido's choice; amber, proposed
+#: first, is the colour of the highlighted group, #f5a100, and was confused
+#: with it in the screenshots)
+FLAG_BOUND_COLOR = "#9467bd"
 FLAG_NAN_COLOR = "#d62728"
 #: Parameter of each bound flag, and what it means for the user
 _BOUND_FLAGS = {
