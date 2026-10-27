@@ -911,6 +911,18 @@ after on the same machine:
    tutorials; the columns can now also be resized by hand. Before → after:
    `inspector_first` 3.74 → 1.34 s, `inspector_again` 2.42 → 0.89 s,
    `refit_gui` 1.73 → 1.33 s; `main_plot` and `refit_recipe` unchanged.
+2. *The main plot* (second fix): the ticks of the systems were converted
+   to the x unit one transition at a time (an astropy quantity each, 954
+   conversions on J0103-1305, ~65% of a redraw); now the observed
+   wavelengths are collected and converted at once. Same positions, bit for
+   bit (snapshots `main_plot_system_ticks_nm`, `_kms`). Before → after:
+   `main_plot` 0.19 → 0.13 s; `inspector_first` 1.42 → 1.33 s (within the
+   noise). The 1.2 s measured in phase 4 for this redraw is not seen on
+   this machine (0.24 s inside the opening of the inspector, before the
+   fix). Found F66 (ticks in velocity always at z_ref = 0). What is left
+   of a redraw is matplotlib (ticks, text layout): the third fix. In the
+   opening of the inspector the largest part is now the column fit of the
+   table (~0.7 s, every row measured once).
 
 **Screenshots of the tutorials** (agreed with Guido, October 2026): the
 images of the tutorials are rebuilt by a script,
@@ -1187,6 +1199,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F63 | GUI (Set session properties) | The dialog fills each parameter whose default is `_current_` with the attribute of the same name of the spectrum data (`recipe_dialog.py`), and with "0.0" when there is none: the session name and the object have no such attribute (and the resolution no longer has one after #526), so the dialog shows "0.0" in them. Pressing Run without editing renames the session "0.0" and writes "0.0" into the OBJECT keyword of the header; the resolution is kept (a value of 0 is ignored), z_em is shown correctly. Found while scripting the screenshots of the tutorials (October 2026) | data loss (name, object) | — | fixed in phase 4 (Guido's agreement): the dialog shows the current value of the session (`RecipeDialog._current_value`: name, OBJECT, z_em, the resolution, left empty with the median as a hint when it varies), and an empty field keeps it (`'_current_'`). The same "0.0" was in z_ref of *Convert x axis* (velocities relative to z = 0 instead of z_em; the note of #573 that the dialog used z_em was wrong) and z_target of *Trim to common coverage*. `test_recipe_dialog_current.py` |
 | F64 | GUI (plot controls) | The stylesheet of the checkboxes of the plot controls set `background-color: transparent`, which with the non-native Qt styles (Fusion: Linux, Windows) also clears the frame of the indicator: unchecked boxes were invisible, checked ones showed only the tick. macOS (native style) was not affected. Found while scripting the screenshots | GUI | `test_unchecked_boxes_of_the_plot_controls_are_visible` (regression) | fixed: the background colour is no longer set |
 | F65 | `forest_auto` | The recipe takes `min_b` (schema and docstring: "Minimum b parameter (km/s)") but never uses it: no filter of narrow lines, unlike `lya_auto`. Found in #517 (PR 2) | behaviour | — | fixed in phase 4 (#517, PR 3, Guido's decision): the filter of `lya_auto` (`_remove_narrow`) applied to the series `Lyman`; `test_pipeline_cleanup.py` |
+| F66 | main plot (velocity) | The ticks of the absorption systems are converted to the x unit with `getattr(spec, '_zem', 0.0)`, but `SpectrumV2` has `_z_em`, not `_zem`: the reference redshift of the ticks is always 0. After *Convert X axis* to km/s with z_ref ≠ 0 (the default is z_em) the ticks fall outside the plot and are not drawn; and a correct fix needs the z_ref of the conversion, which the spectrum does not keep (only its history line). Found in phase 5 while writing the snapshot of the ticks | GUI | snapshot `main_plot_system_ticks_kms` (z_ref = 0, the only case drawn today) | open |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -1614,7 +1627,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s) |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s), found F66 |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
