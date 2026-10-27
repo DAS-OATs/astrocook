@@ -34,7 +34,7 @@ For finding distinct metal systems (CIV, SiIV, MgII) redward of the Ly$\alpha$ e
 2.  **Multiplets:** You can customize the list (e.g., `CIV, SiIV, MgII`).
 3.  Click **Run**.
 
-This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios.
+This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios. Each doublet gives one candidate system, from its stronger line; candidates beyond the emission redshift by more than 3000 km/s (a margin for absorbers associated with the quasar) are not considered.
 
 :::{note}
 This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
@@ -185,7 +185,7 @@ After manual edits, you often need to re-optimize the fit:
 
 **Fit window.** In every fit the redshift of a component can move only within a window around its starting value: by default ±20 km/s when a component is added, ±100 km/s in **Refit Selected** and **Refit All**. A starting value farther from the true one cannot reach it. The **Fit ±** field of the System Inspector, after **logN** and **b** above the velocity plot, sets the window (in km/s) of the fits run from the inspector: adding a component in the velocity plot, **Refit Selected** and **Refit All** from the table menu. Left empty (`def.`), it keeps the values above. Widen it when a component was placed by eye far from its line.
 
-Manual fits (fit after adding a component, **Refit Selected**, **Refit All** with its defaults) bound `b` only at the physical limit of `300` km/s, while the automated pipelines use a tighter bound ([see above](#absorbers-b-bound)). Components that end at the pipeline bound are good candidates for a manual refit.
+Manual fits (fit after adding a component, **Refit Selected**, **Refit All** with its defaults) bound `b` and logN only at their physical limits (`300` km/s, `23`), while the automated pipelines use tighter bounds ([see above](#absorbers-b-bound)). Components that end at a pipeline bound are marked with a warning, and are good candidates for a manual refit.
 
 ```{image} ../_static/absorbers_linking.png
 :alt: Linking parameters via the context menu
@@ -220,5 +220,5 @@ Astrocook provides a dedicated tool to filter these out:
 
 1.  Go to **Absorbers > Clean Negligible Components...**.
 2.  **Min logN:** Components weaker than this threshold (default `11.5`) are removed.
-3.  **Min/Max b:** Components narrower than `min_b` (default `3.0` km/s) or broader than `max_b` (default `80.0` km/s) are flagged.
+3.  **Min/Max b:** Components narrower than `min_b` (default `3.0` km/s) are removed; those broader than `max_b` (default `80.0` km/s) are removed too if they are also weak (logN < 13), unless the combined check is turned off, which removes them all.
 4.  **Combined Check:** By default (`True`), broad lines are only removed if they are *also* very weak (`logN < 13.0`). This protects genuine broad features like DLA wings or OVI absorbers from being deleted.

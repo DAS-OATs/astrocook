@@ -14,7 +14,7 @@ Sometimes you need to estimate the noise level directly from the data itself (e.
 This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.
 
 ```{image} ../_static/flux_running_std.png
-:alt: Applying a mathematical expression to a column
+:alt: The running standard deviation of the flux
 :align: center
 ```
 
@@ -31,7 +31,7 @@ Smoothing is the simplest way to visualize faint features by reducing high-frequ
 The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency.
 
 ```{image} ../_static/flux_smooth.png
-:alt: Applying a mathematical expression to a column
+:alt: A smoothed spectrum
 :align: center
 ```
 
