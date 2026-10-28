@@ -3,8 +3,7 @@ import logging
 import numpy as np
 import os
 from PySide6.QtCore import (
-    Qt, QEvent, QObject, Signal,
-    QItemSelectionModel,
+    Qt, QItemSelectionModel,
     QLocale,
     QPropertyAnimation, QEasingCurve, QRect, QPoint,
     QParallelAnimationGroup,
@@ -15,20 +14,23 @@ from PySide6.QtGui import (
     QAction, QColor, QDoubleValidator, QKeySequence, QIcon, QPainter, QPen, QPixmap, QDesktopServices
 )
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QGraphicsOpacityEffect, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
-    QMenu, QMessageBox, QSlider, QProgressBar,
-    QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit, QToolButton,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit, QListView, 
+    QMenu, QMessageBox, QSlider, QPushButton, QProgressDialog, QSizePolicy, QStackedWidget, QStyle, QTextEdit,
 )
 import qtawesome as qta
 import re
 from typing import Any, Dict, List, Optional, Union
 
+from .about_dialog import AboutDialog
 from .debug_utils import GLOBAL_PLOTTER
+from .floating_cards import CardFader, CollapsibleSection, WrappedLabel
 from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
 from .pyside_plot import SpectrumPlotWidget
 from .qt_workers import RecipeWorker, ScriptWorker
 from .recipe_dialog import RecipeDialog
+from .recipe_progress import (LogSignalBridge, QtLogHandler, RecipeProgressDialog,
+                              WarningCaptureHandler)
 from .script_dialog import ScriptDialog
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.resolution import resolution_summary
@@ -73,9 +75,6 @@ BUTTON_HEIGHT = 28
 # the corner of the window, above the axes, and does not cover the plot
 CARD_MARGIN = 2        # Gap between the menu bar and the cards (px)
 CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
-CARD_FADED = 0.35      # Opacity of a card while the mouse is away
-CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
-CARD_FADE_TIME = 200   # ms of the fade animation
 SWATCH_SIZE = QSize(24, 12)
 
 class MockV1GUIContext:
@@ -89,140 +88,6 @@ class MockV1GUIContext:
     def _flags_extr(self, flag):
         # V2 GUI doesn't use these flags, so return None
         return None
-class CardFader(QObject):
-    """Fades a floating card out while the mouse is away from it.
-
-    The card comes back to full opacity when the mouse enters it. Its tab
-    (``add_handle``) fades with it and counts as part of it. A closed card
-    does not fade, so its tab stays opaque. It also calls ``on_layout`` when
-    the card's contents change size (a section expanded or collapsed), so
-    that the window can resize the card.
-    """
-
-    def __init__(self, card: QWidget, on_layout=None):
-        super().__init__(card)
-        self.card = card
-        self.on_layout = on_layout
-        self.effect = QGraphicsOpacityEffect(card)
-        self.effect.setOpacity(1.0)
-        card.setGraphicsEffect(self.effect)
-        self.anim = QPropertyAnimation(self.effect, b"opacity", self)
-        self.anim.setDuration(CARD_FADE_TIME)
-        self.timer = QTimer(self)
-        self.timer.setSingleShot(True)
-        self.timer.setInterval(CARD_FADE_DELAY)
-        self.timer.timeout.connect(self._fade_if_left)
-        self.handles = []
-        card.installEventFilter(self)
-
-    def add_handle(self, widget: QWidget):
-        """A widget (the card's tab) that fades with the card."""
-        effect = QGraphicsOpacityEffect(widget)
-        effect.setOpacity(self.effect.opacity())
-        widget.setGraphicsEffect(effect)
-        self.effect.opacityChanged.connect(effect.setOpacity)
-        widget.installEventFilter(self)
-        self.handles.append(widget)
-
-    def eventFilter(self, obj, event):
-        etype = event.type()
-        if etype == QEvent.Type.Enter:
-            self.timer.stop()
-            self.set_faded(False)
-        elif etype == QEvent.Type.Leave:
-            self.timer.start()
-        elif (etype == QEvent.Type.LayoutRequest and obj is self.card
-              and self.on_layout is not None):
-            QTimer.singleShot(0, self.on_layout)
-        return super().eventFilter(obj, event)
-
-    def _fade_if_left(self):
-        # A combo box popup or a context menu takes the mouse away from the
-        # card without the user leaving it: wait until it is closed
-        if not self.card.isVisible():
-            return
-        if (QApplication.activePopupWidget() is not None or self.card.underMouse()
-                or any(h.underMouse() for h in self.handles)):
-            self.timer.start()
-            return
-        self.set_faded(True)
-
-    def set_faded(self, faded: bool, animate: bool = True):
-        target = CARD_FADED if faded else 1.0
-        self.anim.stop()
-        if animate:
-            self.anim.setStartValue(self.effect.opacity())
-            self.anim.setEndValue(target)
-            self.anim.start()
-        else:
-            self.effect.setOpacity(target)
-
-
-def disclosure_icon(direction: str) -> QIcon:
-    """The triangle of the headers of the card sections.
-
-    ``direction`` is 'right' or 'down'. A qtawesome glyph rather than the
-    style's arrows, so that it looks the same on every platform.
-    """
-    color = QApplication.palette().color(QApplication.palette().ColorRole.ButtonText)
-    # The glyph fills only the middle of its box: scaled to read at 16 px
-    return qta.icon(f'mdi.menu-{direction}', color=color, scale_factor=1.8)
-
-
-class WrappedLabel(QLabel):
-    """A label that wraps and asks for the height its text needs.
-
-    Layouts give a wrapped QLabel its height for some other width, so the
-    last line can be cut; the card of the plot controls, as tall as its
-    contents, would then cut it off.
-    """
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        needed = self.heightForWidth(self.width())
-        if needed > 0 and needed != self.minimumHeight():
-            self.setMinimumHeight(needed)
-
-
-class CollapsibleSection(QWidget):
-    """A section of a floating card, shown or hidden by its header."""
-
-    toggled = Signal(bool)
-
-    def __init__(self, title: str, expanded: bool = True, parent=None):
-        super().__init__(parent)
-        self.header = QToolButton()
-        self.header.setText(title)
-        self.header.setCheckable(True)
-        self.header.setChecked(expanded)
-        self.header.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
-        self.header.setIconSize(QSize(16, 16))
-        self.header.setAutoRaise(True)
-        self.header.setStyleSheet("QToolButton { border: none; font-weight: bold; padding: 0px; }")
-        self.content = QWidget()
-        self.content.setVisible(expanded)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addWidget(self.header)
-        layout.addWidget(self.content)
-        self.header.toggled.connect(self._on_toggled)
-
-    def setContentLayout(self, layout):
-        layout.setContentsMargins(4, 0, 0, 0)
-        self.content.setLayout(layout)
-
-    def isExpanded(self) -> bool:
-        return self.header.isChecked()
-
-    def setExpanded(self, expanded: bool):
-        self.header.setChecked(expanded)
-
-    def _on_toggled(self, expanded: bool):
-        self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
-        self.content.setVisible(expanded)
-        self.toggled.emit(expanded)
 
 
 class MainWindowV2(QMainWindow):
@@ -4603,230 +4468,3 @@ class MainWindowV2(QMainWindow):
             QApplication.restoreOverrideCursor()
         
         event.acceptProposedAction()
-
-class LogSignalBridge(QObject):
-    """Thread-safe bridge to emit log messages as Qt signals."""
-    new_log_message = Signal(str)
-
-class QtLogHandler(logging.Handler):
-    """Python Logging Handler that pipes messages to a Qt Signal."""
-    def __init__(self, bridge):
-        super().__init__()
-        self.bridge = bridge
-    
-    def emit(self, record):
-        # Format the message
-        msg = self.format(record)
-        # Emit signal (thread-safe way to talk to GUI)
-        self.bridge.new_log_message.emit(msg)
-
-class RecipeProgressDialog(QDialog):
-    """
-    A minimal progress dialog for long-running recipes.
-    Shows a determinate bar and the last status message.
-    """
-    stop_requested = Signal()
-
-    def __init__(self, title, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(f"Running {title}")
-        self.setModal(True)
-        # Resize to be compact but wide enough for text
-        self.resize(400, 120)
-        
-        # Remove [X] to prevent unsafe closing
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
-
-        layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
-        
-        # Header
-        self.header_label = QLabel("Recipe Running...")
-        self.header_label.setStyleSheet("font-size: 14px;")
-        layout.addWidget(self.header_label)
-
-        # Progress Bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(True)
-        # Optional: Make it look a bit thicker/modern
-        self.progress_bar.setStyleSheet("QProgressBar { min-height: 20px; }")
-        layout.addWidget(self.progress_bar)
-
-        # Status Label (Last log line)
-        self.status_label = QLabel("Initializing...")
-        self.status_label.setStyleSheet("font-size: 11px;")
-        self.status_label.setWordWrap(True)
-        layout.addWidget(self.status_label)
-
-        # Add a stretch to keep things tight at the top
-        layout.addStretch()
-
-        # Use a horizontal layout to manage alignment
-        btn_layout = QHBoxLayout()
-        btn_layout.setContentsMargins(0, 0, 0, 0)
-
-        # 1. Add a "spring" to push the button to the right
-        btn_layout.addStretch()
-
-        # [NEW] Stop Button
-        self.stop_btn = QPushButton("Stop")
-        self.stop_btn.setMaximumWidth(100)
-        self.stop_btn.setToolTip("Stop execution gracefully")
-        self.stop_btn.clicked.connect(self._on_stop_clicked)
-        
-        # 3. Add button to the horizontal row
-        btn_layout.addWidget(self.stop_btn)
-
-        # 4. Add the row to the main vertical layout
-        layout.addLayout(btn_layout)
-
-    def update_log(self, message):
-        """
-        Parses logs. 
-        - '>> PROGRESS: 50' -> Updates bar.
-        - Other text -> Updates status label.
-        """
-        if ">> PROGRESS:" in message:
-            try:
-                parts = message.split(">> PROGRESS:")
-                val = int(parts[1].strip())
-                self.progress_bar.setValue(val)
-            except ValueError:
-                pass
-            return
-
-        clean_msg = message.strip()
-        if clean_msg:
-            # Update the text label
-            self.status_label.setText(clean_msg)
-            # Force UI update immediately so text doesn't lag behind heavy calculations
-            QApplication.processEvents()
-    
-    def _on_stop_clicked(self):
-        self.stop_btn.setEnabled(False)
-        self.stop_btn.setText("Stopping...")
-        self.status_label.setText("Attempting to stop gracefully...")
-        # Emit signal to parent
-        self.stop_requested.emit()
-        
-class WarningCaptureHandler(logging.Handler):
-    """Captures warning messages to a list for GUI display."""
-    def __init__(self):
-        super().__init__()
-        self.warnings = []
-        
-    def emit(self, record):
-        # Only capture meaningful warnings (skip debug/info)
-        if record.levelno >= logging.WARNING:
-            self.warnings.append(self.format(record))
-
-class AboutDialog(QDialog):
-    """
-    Dialog to display application information, credits, and citation.
-    """
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("About Astrocook")
-        self.setFixedWidth(400)
-        
-        layout = QVBoxLayout(self)
-        layout.setSpacing(5)
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        layout.addSpacing(20)
-
-        # --- Logo ---
-        try:
-            # Reusing the resource path logic from MainWindow
-            icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
-            if os.path.exists(icon_path):
-                logo_lbl = QLabel()
-                pixmap = QPixmap(icon_path).scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                logo_lbl.setPixmap(pixmap)
-                logo_lbl.setAlignment(Qt.AlignCenter)
-                layout.addWidget(logo_lbl)
-        except Exception: 
-            pass
-
-        # --- Title & Version ---
-        title_lbl = QLabel("Astrocook V2")
-        title_lbl.setStyleSheet("font-size: 20pt; font-weight: bold; color: #296bff;")
-        title_lbl.setAlignment(Qt.AlignCenter)
-        #layout.addWidget(title_lbl)
-
-        copy_lbl = QLabel("© 2017-2026 Guido Cupani")
-        copy_lbl.setStyleSheet("font-size: 14pt; color: #296bff;")
-        copy_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(copy_lbl)
-
-        # Try to import version, else fallback
-        try:
-            from astrocook import __version__ as ver
-        except ImportError:
-            ver = "unknown"
-
-        ver_lbl = QLabel(f"Version: {ver}")
-        ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
-        ver_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(ver_lbl)
-
-        layout.addSpacing(20)
-
-        tagline_lbl = QLabel("A thousand recipes to cook a spectrum")
-        tagline_lbl.setStyleSheet("font-size: 16pt; font-weight: bold;")
-        tagline_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(tagline_lbl)
-
-        layout.addSpacing(20)
-
-        # --- Description / Credits ---
-        credits_html = (
-            "<p align='center'>Developed by <b>Guido Cupani</b><br>at INAF–Osservatorio Astronomico di Trieste.</p>"
-            "<p align='center'><b>Many thanks</b> to (in alphabetical order):<br>Giorgio Calderone, Stefano Cristiani, Simona Di Stefano,<br>Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo,<br> Christian Piscitelli, Stefano Alberto Russo, Andrea Trost.</p>"
-            "<p align='center'>Logo and icon by <a href='https://claudiacupani.com'><b>Claudia Cupani</b></a>.</p>"
-            "<p align='center'>Partly funded by the PRIN PNRR project<br>“Next generation computing & data technologies<br>to probe the cosmic metal content”.</p>"
-        )
-        credits_lbl = QLabel(credits_html)
-        credits_lbl.setWordWrap(True)
-        credits_lbl.setAlignment(Qt.AlignCenter)
-        credits_lbl.setOpenExternalLinks(True)
-        layout.addWidget(credits_lbl)
-
-        layout.addSpacing(30)
-
-        # --- Buttons ---
-        # Create the standard Dialog Button Box
-        btn_box = QDialogButtonBox(QDialogButtonBox.Ok)
-        btn_box.accepted.connect(self.accept)
-
-        # 1. Report Issue Button (GitHub)
-        issue_btn = QPushButton("Report Issue")
-        issue_btn.setToolTip("Open the GitHub Issues page to report bugs or request features")
-        issue_btn.clicked.connect(self._open_github_issues)
-        btn_box.addButton(issue_btn, QDialogButtonBox.ActionRole)
-        
-        # 2. Cite Button (ADS)
-        cite_btn = QPushButton("Cite on ADS")
-        cite_btn.setToolTip("Open the NASA ADS citation export page for Astrocook")
-        cite_btn.clicked.connect(self._open_ads_citation)
-        
-        # Add "Cite" to the button box with ActionRole 
-        # (This usually places it to the left of the OK button)
-        btn_box.addButton(cite_btn, QDialogButtonBox.ActionRole)
-
-        layout.addWidget(btn_box)
-
-    def _open_ads_citation(self):
-        """Opens the ADS export citation page in the default browser."""
-        # URL for the 2020 Astronomy and Computing paper
-        url = "https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/exportcitation"
-        QDesktopServices.openUrl(QUrl(url))
-
-    def _open_github_issues(self):
-        """Opens the GitHub Issues page in the default browser."""
-        # Update this URL if the repo is under a different organization
-        url = "https://github.com/DAS-OATs/astrocook/issues"
-        QDesktopServices.openUrl(QUrl(url))

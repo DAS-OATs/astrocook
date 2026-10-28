@@ -324,7 +324,7 @@ class Studio:
 
     def sections(self, **expanded):
         """Open or close sections of the plot controls (by title, _ for spaces)."""
-        from astrocook.gui.main_window import CollapsibleSection
+        from astrocook.gui.floating_cards import CollapsibleSection
         found = {s.header.text(): s for s in
                  self.window.right_sidebar_widget.findChildren(CollapsibleSection)}
         for key, state in expanded.items():
