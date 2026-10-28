@@ -23,7 +23,8 @@ from ..core.resolution import resolution_at
 from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
 from ..fitting.voigt_fitter import voigt_optical_depth
 from .inspector_table import flag_cue
-from .pyside_plot import AstrocookToolbar, get_color_cycle, get_style_color
+from .plot_style import get_color_cycle, get_style_color
+from .plot_toolbar import AstrocookToolbar
 
 
 def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol=None,
