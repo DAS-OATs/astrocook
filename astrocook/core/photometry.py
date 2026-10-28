@@ -3,6 +3,7 @@
 import numpy as np
 import astropy.units as au
 import logging
+from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
 
 # --- Approximate Standard Filter Definitions ---
@@ -73,8 +74,10 @@ def calculate_synthetic_ab_mag(x: au.Quantity, y: au.Quantity, filter_name: str)
     nu = wave_aa.to(au.Hz, equivalencies=au.spectral())
     
     # Integrate: \int f_nu * T / nu dnu  /  \int T / nu dnu
-    numerator = np.trapz(flux_fnu.value * T / nu.value, x=nu.value)
-    denominator = np.trapz(T / nu.value, x=nu.value)
+    # (scipy's trapezoid: np.trapz is gone from recent NumPy, and
+    # np.trapezoid does not exist in NumPy 1.26, which Astrocook supports)
+    numerator = trapezoid(flux_fnu.value * T / nu.value, x=nu.value)
+    denominator = trapezoid(T / nu.value, x=nu.value)
     
     avg_fnu_jy = np.abs(numerator / denominator)
     
