@@ -51,7 +51,7 @@ def _open(qtbot, win, side):
 
 
 def _sections(win):
-    from astrocook.gui.main_window import CollapsibleSection
+    from astrocook.gui.floating_cards import CollapsibleSection
     return {s.header.text(): s
             for s in win.right_sidebar_widget.findChildren(CollapsibleSection)}
 
@@ -170,7 +170,7 @@ def test_swatch_takes_the_colour_of_the_line(window):
 # --- Fading ----------------------------------------------------------------
 
 def test_card_fades_out_and_back(qtbot, window):
-    from astrocook.gui.main_window import CARD_FADED
+    from astrocook.gui.floating_cards import CARD_FADED
     card = _open(qtbot, window, "right")
     fader = window._plot_controls_fader
     assert fader.effect.opacity() == 1.0
@@ -189,7 +189,7 @@ def test_opening_a_card_shows_it_opaque(qtbot, window):
 
 
 def test_tab_fades_with_its_card(qtbot, window):
-    from astrocook.gui.main_window import CARD_FADED
+    from astrocook.gui.floating_cards import CARD_FADED
     card = _open(qtbot, window, "right")
     tab = window.plot_controls_collapse_button
     QApplication.sendEvent(card, QEvent(QEvent.Type.Leave))
