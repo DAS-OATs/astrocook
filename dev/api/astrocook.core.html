@@ -442,6 +442,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_combine.html">astrocook.core.spectrum_combine module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_continuum.html">astrocook.core.spectrum_continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_expressions.html">astrocook.core.spectrum_expressions module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_flux.html">astrocook.core.spectrum_flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_lines.html">astrocook.core.spectrum_lines module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
@@ -607,16 +608,9 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_column()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.with_properties"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.with_properties()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.sanitize_legacy_tellurics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.get_region_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_region_bounds()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_column()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_meta_keys"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.remove_meta_keys()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.remove_columns"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.remove_columns()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.prepare_expression_context"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.prepare_expression_context()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.apply_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.apply_expression()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.mask_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_expression()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calc_intersection_expression"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calc_intersection_expression()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.split"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.split()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.mask_region"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_region()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.merge_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.merge_column()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_model"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_model()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.x_convert"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.x_convert()</span></code></a></li>
@@ -643,6 +637,19 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.fit_continuum"><code class="docutils literal notranslate"><span class="pre">ContinuumMixin.fit_continuum()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.fit_powerlaw"><code class="docutils literal notranslate"><span class="pre">ContinuumMixin.fit_powerlaw()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">ContinuumMixin.update_continuum_from_knots()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.core.spectrum_expressions.html">astrocook.core.spectrum_expressions module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.get_region_bounds"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.get_region_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.prepare_expression_context"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.prepare_expression_context()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.apply_expression"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.apply_expression()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.mask_expression"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.mask_expression()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.calc_intersection_expression"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.calc_intersection_expression()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.split"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.split()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.spectrum_expressions.html#astrocook.core.spectrum_expressions.ExpressionsMixin.mask_region"><code class="docutils literal notranslate"><span class="pre">ExpressionsMixin.mask_region()</span></code></a></li>
 </ul>
 </li>
 </ul>
