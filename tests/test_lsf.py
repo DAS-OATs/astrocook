@@ -125,7 +125,7 @@ def test_system_inspector_profile_is_the_fitter_model(resol):
     # convolution of the fitter (#526 PR 4; before, a kernel at the median
     # wavelength on the pixels, and their own copy of the Voigt function)
     from astrocook.core.atomic_data import ATOM_DATA
-    from astrocook.gui.system_inspector import calc_voigt_profile
+    from astrocook.gui.velocity_plot import calc_voigt_profile
     comp = MockComponent("CIV", 2.97, 13.6, 4.0)
     spec, _ = _mock(lambda x: np.full(len(x), 45000.0), C_KMS / 45000.0 / 2.5,
                     lam_min=613.0, lam_max=616.0)
