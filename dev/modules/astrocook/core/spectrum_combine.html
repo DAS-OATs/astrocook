@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.core.spectrum_combine &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/spectrum_combine';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.spectrum_combine</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.core.spectrum_combine</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Methods of :class:`~astrocook.core.spectrum.SpectrumV2` that combine or</span>
+<span class="sd">regrid spectra: stitch, rebin, equalization, co-addition, resampling.</span>
+
+<span class="sd">Part of the split of ``spectrum.py`` into thematic modules (phase 5): the</span>
+<span class="sd">methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and</span>
+<span class="sd">are used as before (``spec.rebin(...)``).</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_axis_velocity</span><span class="p">,</span> <span class="n">rebin_spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span><span class="p">,</span> <span class="n">SpectrumDataV2</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
+
+
+<div class="viewcode-block" id="CombineMixin">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CombineMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Stitching, rebinning, equalization, co-addition and resampling of</span>
+<span class="sd">    spectra.</span>
+
+<span class="sd">    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,</span>
+<span class="sd">    ``history``, ``meta``, ``x``, ``y``, ``dy``, ``t``, ``resolution``,</span>
+<span class="sd">    ``get_column`` and ``scale_flux`` (of ``FluxMixin``). The results are</span>
+<span class="sd">    new instances of the class (``self.__class__``).</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="CombineMixin.stitch">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.stitch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_specs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">'SpectrumV2'</span><span class="p">],</span> <span class="n">sort</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Merge this spectrum with a list of other spectra.</span>
+
+<span class="sd">        Concatenates x, y, dy, and all auxiliary columns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_specs : list of SpectrumV2</span>
+<span class="sd">            List of other spectrum objects to stitch.</span>
+<span class="sd">        sort : bool, optional</span>
+<span class="sd">            If True, sorts the final arrays by wavelength. Defaults to ``True``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new merged spectrum.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+        
+        <span class="n">all_specs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">other_specs</span>
+        
+        <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">dys</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">aux_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+        
+        <span class="c1"># Target Units</span>
+        <span class="n">x_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">y_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">all_specs</span><span class="p">:</span>
+            <span class="c1"># Core Units</span>
+            <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">x_u</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">y_u</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">dys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">y_u</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            
+            <span class="c1"># Aux Columns</span>
+            <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">aux_map</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
+                    <span class="n">t_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">t_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                    <span class="n">aux_map</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Pad missing columns with NaN</span>
+                    <span class="n">aux_map</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+
+        <span class="c1"># Concatenate</span>
+        <span class="n">x_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+        <span class="n">y_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span>
+        <span class="n">dy_final</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">dys</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">sort</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">x_final</span><span class="p">)</span>
+            <span class="n">x_final</span> <span class="o">=</span> <span class="n">x_final</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">y_final</span> <span class="o">=</span> <span class="n">y_final</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">dy_final</span> <span class="o">=</span> <span class="n">dy_final</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_final</span><span class="p">))</span>
+
+        <span class="c1"># Build Aux Columns</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+        <span class="n">new_aux</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">arrays</span> <span class="ow">in</span> <span class="n">aux_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sort</span><span class="p">:</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="c1"># Copy metadata from self</span>
+            <span class="n">orig_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span>
+            <span class="n">new_aux</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">orig_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="n">orig_col</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+
+        <span class="c1"># Build New Object</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..io.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">_auto_limits</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">_auto_limits</span><span class="p">(</span><span class="n">x_final</span><span class="p">,</span> <span class="n">x_u</span><span class="p">)</span>
+        <span class="n">new_meta</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'stitched'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Overlapping inputs give interleaved pixels, which a step plot draws</span>
+        <span class="c1"># as a zigzag: ask the GUI for a scatter plot (issue #442). Rebin and</span>
+        <span class="c1"># coadd remove the tag again.</span>
+        <span class="n">ranges</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">lo</span> <span class="o">&lt;</span> <span class="n">prev_hi</span> <span class="k">for</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">prev_hi</span><span class="p">),</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ranges</span><span class="p">,</span> <span class="n">ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+            <span class="n">new_meta</span><span class="p">[</span><span class="s1">'plot_style'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'scatter'</span>
+        
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x_final</span><span class="p">,</span> <span class="n">x_u</span><span class="p">),</span>
+            <span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y_final</span><span class="p">,</span> <span class="n">y_u</span><span class="p">),</span>
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy_final</span><span class="p">,</span> <span class="n">y_u</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombineMixin.rebin">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.rebin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> 
+              <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> 
+              <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Rebin the spectrum to a new uniform grid.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xstart : Quantity, optional</span>
+<span class="sd">            Start wavelength. If None, uses data minimum.</span>
+<span class="sd">        xend : Quantity, optional</span>
+<span class="sd">            End wavelength. If None, uses data maximum.</span>
+<span class="sd">        dx : Quantity</span>
+<span class="sd">            Step size (bin width). Can be wavelength or velocity.</span>
+<span class="sd">        kappa : float, optional</span>
+<span class="sd">            Sigma clipping threshold for rejecting outliers in bins.</span>
+<span class="sd">        filling : float</span>
+<span class="sd">            Value to fill gaps (default: NaN).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the rebinned data.</span>
+<span class="sd">        """</span>
+        
+        <span class="n">original_x_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span> 
+        <span class="n">z_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span> 
+
+        <span class="k">if</span> <span class="n">dx</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">):</span>
+            <span class="n">target_calc_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target_calc_unit</span> <span class="o">=</span> <span class="n">original_x_unit</span>
+
+        <span class="n">x_calc</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">target_calc_unit</span><span class="p">)</span>
+        <span class="n">xmin_calc</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">target_calc_unit</span><span class="p">)</span>
+        <span class="n">xmax_calc</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">target_calc_unit</span><span class="p">)</span>
+
+        <span class="c1"># 1. Rebin the flux-like columns</span>
+        <span class="n">x_new</span><span class="p">,</span> <span class="n">xmin_new</span><span class="p">,</span> <span class="n">xmax_new</span><span class="p">,</span> <span class="n">y_new</span><span class="p">,</span> <span class="n">dy_new</span><span class="p">,</span> <span class="n">resol_new</span> <span class="o">=</span> <span class="n">rebin_spectrum</span><span class="p">(</span>
+            <span class="n">x_calc</span><span class="p">,</span> <span class="n">xmin_calc</span><span class="p">,</span> <span class="n">xmax_calc</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> 
+            <span class="n">xstart</span><span class="p">,</span> <span class="n">xend</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">target_calc_unit</span><span class="p">,</span>
+            <span class="n">kappa</span><span class="p">,</span> <span class="n">filling</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># 2. Convert new grid back to original units (e.g., nm)</span>
+        <span class="n">x_final</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">x_new</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+        <span class="n">xmin_final</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmin_new</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+        <span class="n">xmax_final</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xmax_new</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+        
+        <span class="c1"># --- *** 3. THIS IS THE FIX: Interpolate Aux Columns *** ---</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">x_final_nm</span> <span class="o">=</span> <span class="n">x_final</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="c1"># Get the new grid in nm for interpolation</span>
+        
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">col_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># --- Bypass interpolation if it's the carefully drizzled resolution ---</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'resol'</span> <span class="ow">and</span> <span class="n">resol_new</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># rebin_spectrum returns R (#526)</span>
+                <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">resol_new</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span>
+                                                     <span class="n">description</span><span class="o">=</span><span class="s2">"Resolving power (rebinned)"</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---</span>
+            <span class="k">if</span> <span class="n">col_data</span><span class="o">.</span><span class="n">values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping aux col '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' as its data is None."</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="c1"># --- *** END FIX 1 *** ---</span>
+
+            <span class="k">if</span> <span class="n">col_data</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'fiub'</span><span class="p">:</span> <span class="c1"># Check for float, int, unsigned, or bool</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Rebin: Interpolating aux column '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'..."</span><span class="p">)</span>
+                    <span class="n">interp_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_resampled_column</span><span class="p">(</span>
+                        <span class="n">name</span><span class="p">,</span> 
+                        <span class="n">x_final_nm</span> 
+                    <span class="p">)</span>
+                    
+                    <span class="c1"># --- *** FIX 2: Check if interpolation returned None (e.g., for string) *** ---</span>
+                    <span class="k">if</span> <span class="n">interp_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">interp_values</span><span class="p">,</span> <span class="n">col_data</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                    <span class="c1"># (If it is None, get_resampled_column already warned us, so we just drop it)</span>
+                    <span class="c1"># --- *** END FIX 2 *** ---</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to interpolate aux col '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' during rebin: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Dropping."</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot rebin non-numerical aux col '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'. Dropping."</span><span class="p">)</span>
+        <span class="c1"># --- *** END FIX *** ---</span>
+
+        <span class="c1"># Create a copy of the metadata to avoid modifying the original session</span>
+        <span class="n">new_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Remove the 'plot_style' tag so the GUI reverts to the default (Line)</span>
+        <span class="k">if</span> <span class="s1">'plot_style'</span> <span class="ow">in</span> <span class="n">new_meta</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">new_meta</span><span class="p">[</span><span class="s1">'plot_style'</span><span class="p">]</span>
+
+        <span class="c1"># 4. Build new SpectrumDataV2</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x_final</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">x_final</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">xmin</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmin_final</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">xmin_final</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">xmax</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmax_final</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">xmax_final</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">y_new</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dy_new</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">,</span> 
+            <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span> 
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>   <span class="c1"># Propagate</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># 5. Return a NEW SpectrumV2 instance</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Rebinned spectrum (dx=</span><span class="si">{</span><span class="n">dx</span><span class="si">}</span><span class="s2">)"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="CombineMixin.equalize_to_reference">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.equalize_to_reference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize_to_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Scale this spectrum's flux to match a reference spectrum.</span>
+
+<span class="sd">        Computes a scaling polynomial by comparing the flux of this spectrum</span>
+<span class="sd">        to a reference spectrum, and applies this scaling to all flux-like</span>
+<span class="sd">        columns (y, dy, cont, model).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reference_spec : SpectrumV2</span>
+<span class="sd">            The reference spectrum object to match.</span>
+<span class="sd">        order : int, optional</span>
+<span class="sd">            Polynomial order for the scaling model. ``0`` applies a constant</span>
+<span class="sd">            scalar factor, ``-1`` applies a spline interpolation, ``&gt;0`` applies a</span>
+<span class="sd">            polynomial of the given order. Defaults to ``0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with scaled flux.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_flux_scaling</span>
+        
+        <span class="c1"># Compute the scaling model (array) based on the reference</span>
+        <span class="n">scale_model</span> <span class="o">=</span> <span class="n">compute_flux_scaling</span><span class="p">(</span>
+            <span class="n">reference_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">reference_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+            <span class="n">order</span><span class="o">=</span><span class="n">order</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Use the existing scale_flux method to apply it</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">scale_model</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="CombineMixin.coadd">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.coadd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">coadd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">others</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">'SpectrumV2'</span><span class="p">],</span> 
+              <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> 
+              <span class="n">dx</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span> 
+              <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Co-add this spectrum with a list of other spectra onto a new common grid.</span>
+
+<span class="sd">        Handles scaling, unit conversion, "drizzle" rebinning, and</span>
+<span class="sd">        converts the result back to the original wavelength unit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        others : list of SpectrumV2</span>
+<span class="sd">            List of spectra to add.</span>
+<span class="sd">        xstart, xend : Quantity, optional</span>
+<span class="sd">            Bounds of the new grid.</span>
+<span class="sd">        dx : Quantity</span>
+<span class="sd">            Step size of the new grid.</span>
+<span class="sd">        kappa : float, optional</span>
+<span class="sd">            Sigma clipping threshold. Defaults to ``5.0``.</span>
+<span class="sd">        equalize_order : int, optional</span>
+<span class="sd">            Polynomial order for flux scaling (-1=Off, 0=Scalar). Defaults to ``0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            The resulting co-added spectrum.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">compute_flux_scaling</span><span class="p">,</span> 
+            <span class="n">rebin_spectrum</span><span class="p">,</span> 
+            <span class="n">convert_axis_velocity</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">DataColumnV2</span>
+
+        <span class="c1"># 1. Setup Reference and List</span>
+        <span class="n">all_specs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">others</span>
+        
+        <span class="c1"># Use self as the reference for units, metadata, and scaling baseline</span>
+        <span class="n">ref_spec</span> <span class="o">=</span> <span class="bp">self</span> 
+        <span class="n">ref_x</span> <span class="o">=</span> <span class="n">ref_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">ref_y</span> <span class="o">=</span> <span class="n">ref_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">original_x_unit</span> <span class="o">=</span> <span class="n">ref_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
+        
+        <span class="c1"># Calculation Unit (Target) comes from dx (usually km/s)</span>
+        <span class="n">calc_unit</span> <span class="o">=</span> <span class="n">dx</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">z_em</span> <span class="o">=</span> <span class="n">ref_spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'z_em'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="c1"># 2. Accumulators</span>
+        <span class="n">big_x_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">big_xmin_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">big_xmax_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">big_y_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">big_dy_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">big_resol_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">resolsources_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_specs</span><span class="p">):</span>
+            <span class="c1"># A. Flux Scaling (Skip for self/index 0)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">equalize_order</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Scaling spectrum </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> to reference..."</span><span class="p">)</span>
+                <span class="c1"># Compute scaling in original frame</span>
+                <span class="n">scale_model</span> <span class="o">=</span> <span class="n">compute_flux_scaling</span><span class="p">(</span>
+                    <span class="n">ref_x</span><span class="p">,</span> <span class="n">ref_y</span><span class="p">,</span> 
+                    <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+                    <span class="n">order</span><span class="o">=</span><span class="n">equalize_order</span>
+                <span class="p">)</span>
+                <span class="n">y_val</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">scale_model</span>
+                <span class="n">dy_val</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">scale_model</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">y_val</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">dy_val</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span>
+
+            <span class="c1"># B. Pre-Convert to Calculation Unit (e.g. km/s)</span>
+            <span class="c1"># This handles the "negative pixel" issue for overlapping orders</span>
+            <span class="c1"># by converting safely before stitching.</span>
+            <span class="n">x_conv</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">xmin_conv</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">xmin</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">xmax_conv</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">xmax</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            
+            <span class="c1"># --- Capture Resolution (as R, from the column only, #526; an</span>
+            <span class="c1"># all-NaN column no longer counts as a source) ---</span>
+            <span class="n">res_arr</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+            <span class="n">has_res</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">res_arr</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">())</span>
+            <span class="n">res_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">res_arr</span><span class="p">),</span> <span class="n">res_arr</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                
+            <span class="k">if</span> <span class="n">has_res</span><span class="p">:</span>
+                <span class="n">resolsources_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+            <span class="n">big_resol_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_arr</span><span class="p">)</span>
+
+            <span class="c1"># C. Append</span>
+            <span class="n">big_x_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_conv</span><span class="p">)</span>
+            <span class="n">big_xmin_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xmin_conv</span><span class="p">)</span>
+            <span class="n">big_xmax_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xmax_conv</span><span class="p">)</span>
+            <span class="n">big_y_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_val</span><span class="p">)</span>
+            <span class="n">big_dy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dy_val</span><span class="p">)</span>
+
+        <span class="c1"># --- All-or-Nothing Resolution Decision ---</span>
+        <span class="n">track_resolution</span> <span class="o">=</span> <span class="p">(</span><span class="n">resolsources_count</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_specs</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">resolsources_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">track_resolution</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Coadd: Resolution mismatch! Some input spectra are missing resolution data. "</span>
+                            <span class="s2">"Resolution tracking has been disabled for this co-add."</span><span class="p">)</span>
+
+        <span class="c1"># 3. Concatenate (The "Manual Stitch")</span>
+        <span class="n">flat_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_x_list</span><span class="p">)</span>
+        <span class="n">flat_xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_xmin_list</span><span class="p">)</span>
+        <span class="n">flat_xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_xmax_list</span><span class="p">)</span>
+        <span class="n">flat_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_y_list</span><span class="p">)</span>
+        <span class="n">flat_dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_dy_list</span><span class="p">)</span>
+        <span class="n">flat_resol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">big_resol_list</span><span class="p">)</span>
+
+        <span class="c1"># 4. Convert Bounds to Calculation Unit</span>
+        <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xstart_conv</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xstart</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xstart_conv</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">xend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">xend_conv</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">xend</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">xend_conv</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># 5. Create Temp Data Container (in Calculation Units)</span>
+        <span class="c1"># --- Pack the resolution column for the drizzler ---</span>
+        <span class="n">temp_aux</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">track_resolution</span><span class="p">:</span>
+            <span class="n">temp_aux</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_resol</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">)</span>
+
+        <span class="n">temp_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_x</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">),</span>
+            <span class="n">xmin</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_xmin</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">),</span>
+            <span class="n">xmax</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_xmax</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">),</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">flat_dy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">temp_aux</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 6. Rebin (Vectorized Drizzle)</span>
+        <span class="c1"># Returns new arrays in `calc_unit` (km/s)</span>
+        <span class="n">reb_x</span><span class="p">,</span> <span class="n">reb_xmin</span><span class="p">,</span> <span class="n">reb_xmax</span><span class="p">,</span> <span class="n">reb_y</span><span class="p">,</span> <span class="n">reb_dy</span><span class="p">,</span> <span class="n">reb_resol</span> <span class="o">=</span> <span class="n">rebin_spectrum</span><span class="p">(</span>
+            <span class="n">temp_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span> <span class="n">temp_data</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span> <span class="n">temp_data</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
+            <span class="n">temp_data</span><span class="p">,</span>
+            <span class="n">xstart_conv</span><span class="p">,</span> <span class="n">xend_conv</span><span class="p">,</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">calc_unit</span><span class="p">,</span>
+            <span class="n">kappa</span><span class="p">,</span> <span class="n">filling</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 7. Convert Back to Original Unit (e.g. nm)</span>
+        <span class="c1"># We transform the result back to the domain of the input data</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">reb_x</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">original_x_unit</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Converting result back to </span><span class="si">{</span><span class="n">original_x_unit</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+            <span class="n">final_x</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">reb_x</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+            <span class="n">final_xmin</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">reb_xmin</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+            <span class="n">final_xmax</span> <span class="o">=</span> <span class="n">convert_axis_velocity</span><span class="p">(</span><span class="n">reb_xmax</span><span class="p">,</span> <span class="n">z_em</span><span class="p">,</span> <span class="n">original_x_unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">final_x</span> <span class="o">=</span> <span class="n">reb_x</span>
+            <span class="n">final_xmin</span> <span class="o">=</span> <span class="n">reb_xmin</span>
+            <span class="n">final_xmax</span> <span class="o">=</span> <span class="n">reb_xmax</span>
+
+        <span class="c1"># Create a copy of the metadata to avoid modifying the original session</span>
+        <span class="n">new_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="c1"># Remove the 'plot_style' tag so the GUI reverts to the default (Line)</span>
+        <span class="k">if</span> <span class="s1">'plot_style'</span> <span class="ow">in</span> <span class="n">new_meta</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">new_meta</span><span class="p">[</span><span class="s1">'plot_style'</span><span class="p">]</span>
+            
+        <span class="c1"># Optional: Add a note about the co-add origin</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'ORIGIN'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'coadd'</span>
+
+        <span class="c1"># --- Restore the co-added resolution array ---</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">if</span> <span class="n">reb_resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">reb_resol</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"Co-added IVW resolution"</span><span class="p">)</span>
+
+        <span class="c1"># 8. Wrap in Logic Class</span>
+        <span class="n">final_spec_data</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">final_x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">final_x</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> 
+            <span class="n">xmin</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">final_xmin</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">final_xmin</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> 
+            <span class="n">xmax</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">final_xmax</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">final_xmax</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">reb_y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">reb_y</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> 
+            <span class="n">dy</span><span class="o">=</span><span class="n">DataColumnV2</span><span class="p">(</span><span class="n">reb_dy</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">reb_dy</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span>
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">,</span>
+            <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span> 
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">final_spec_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombineMixin.resample_on_grid">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.resample_on_grid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resample_on_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_grid_spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> 
+                         <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Resample this spectrum onto the exact wavelength grid of another spectrum.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target_grid_spec : SpectrumV2</span>
+<span class="sd">            The spectrum whose grid defines the target wavelengths.</span>
+<span class="sd">        fill_value : float, optional</span>
+<span class="sd">            Value to fill outside the interpolation range (default: NaN).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance interpolated to the target grid.</span>
+<span class="sd">        """</span>
+        <span class="n">x_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="n">x_new</span> <span class="o">=</span> <span class="n">target_grid_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="n">all_cols_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">_data_dict</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x_new</span><span class="p">,</span> <span class="n">target_grid_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">xmin_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">target_grid_spec</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">target_grid_spec</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">target_grid_spec</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">target_grid_spec</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">y_col_new</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">dy_col_new</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">aux_cols_new</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">col_q</span> <span class="ow">in</span> <span class="n">all_cols_old</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">col_q</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'fiu'</span><span class="p">:</span> 
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Resampling column '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'..."</span><span class="p">)</span>
+                <span class="n">y_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_new</span><span class="p">,</span> <span class="n">x_old</span><span class="p">,</span> <span class="n">col_q</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                     <span class="n">left</span><span class="o">=</span><span class="n">fill_value</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">fill_value</span><span class="p">)</span>
+                <span class="n">new_data_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y_interp</span><span class="p">,</span> <span class="n">col_q</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'y'</span><span class="p">:</span>
+                    <span class="n">y_col_new</span> <span class="o">=</span> <span class="n">new_data_col</span>
+                <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'dy'</span><span class="p">:</span>
+                    <span class="n">dy_col_new</span> <span class="o">=</span> <span class="n">new_data_col</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">aux_cols_new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_data_col</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot resample non-numerical column '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">', it will be dropped."</span><span class="p">)</span>
+        <span class="n">new_data_core</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span> 
+            <span class="n">y</span><span class="o">=</span><span class="n">y_col_new</span><span class="p">,</span> 
+            <span class="n">dy</span><span class="o">=</span><span class="n">dy_col_new</span><span class="p">,</span> 
+            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols_new</span><span class="p">,</span> 
+            <span class="n">meta</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">),</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>   <span class="c1"># Propagate</span>
+        <span class="p">)</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Resampled on grid of '</span><span class="si">{</span><span class="n">target_grid_spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'name'</span><span class="p">,</span><span class="w"> </span><span class="s1">'unnamed'</span><span class="p">)</span><span class="si">}</span><span class="s2">'"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data_core</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CombineMixin.get_resampled_column">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_combine.html#astrocook.core.spectrum_combine.CombineMixin.get_resampled_column">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_resampled_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                             <span class="n">target_x_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                             <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Lightweight API to interpolate a single column onto a new x-grid.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        col_name : str</span>
+<span class="sd">            Name of the column to interpolate.</span>
+<span class="sd">        target_x_grid : np.ndarray</span>
+<span class="sd">            Target grid in nanometers.</span>
+<span class="sd">        fill_value : float, optional</span>
+<span class="sd">            Value to fill outside the interpolation range. Defaults to ``NaN``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Interpolated values.</span>
+<span class="sd">        """</span>
+        <span class="n">all_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">_data_dict</span>
+        
+        <span class="c1"># 1. Get column to interpolate</span>
+        <span class="k">if</span> <span class="n">col_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Column '</span><span class="si">{</span><span class="n">col_name</span><span class="si">}</span><span class="s2">' not found in spectrum '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+        
+        <span class="n">col_to_interp</span> <span class="o">=</span> <span class="n">all_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span>
+        
+        <span class="c1"># 2. Check that it's numerical</span>
+        <span class="k">if</span> <span class="n">col_to_interp</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">'fiu'</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot resample non-numerical column '</span><span class="si">{</span><span class="n">col_name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+            
+        <span class="c1"># 3. Get old grid (must be in nm)</span>
+        <span class="n">x_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="n">y_old</span> <span class="o">=</span> <span class="n">col_to_interp</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="c1"># 4. Perform interpolation (target_x_grid is already in nm)</span>
+        <span class="n">y_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">target_x_grid</span><span class="p">,</span> <span class="n">x_old</span><span class="p">,</span> <span class="n">y_old</span><span class="p">,</span>
+                          <span class="n">left</span><span class="o">=</span><span class="n">fill_value</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">fill_value</span><span class="p">)</span>
+                          
+        <span class="k">return</span> <span class="n">y_new</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
