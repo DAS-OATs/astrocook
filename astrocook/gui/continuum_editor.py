@@ -4,7 +4,8 @@ curve frozen on the continuum; a moved knot patches the curve around it
 cancel.
 
 Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI), as a mixin
-of ``SpectrumPlotWidget``, which drives it from its mouse handlers.
+of ``SpectrumPlotWidget``, which drives it from its mouse handlers
+(``plot_mouse.py``).
 """
 import logging
 import numpy as np
