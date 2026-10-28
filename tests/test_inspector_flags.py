@@ -8,12 +8,11 @@ from PySide6.QtCore import Qt
 
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2
 from astrocook.core.system_list import SystemListV2
+import astrocook.gui.system_inspector as gui
+from astrocook.gui.inspector_table import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, flag_cue
 
 
 def _gui():
-    # Imported in the tests (as the other GUI tests do): at collection the
-    # Qt backend of matplotlib would clash with the headless one
-    import astrocook.gui.system_inspector as gui
     return gui
 
 
@@ -50,8 +49,6 @@ def _cell(inspector, row, column, role):
 
 
 def test_flag_cue(qapp):
-    gui = _gui()
-    flag_cue, FLAG_BOUND_COLOR, FLAG_NAN_COLOR = gui.flag_cue, gui.FLAG_BOUND_COLOR, gui.FLAG_NAN_COLOR
     flagged, nan, clean = _systs().components
     assert flag_cue(flagged, "b")[0] == FLAG_BOUND_COLOR
     assert flag_cue(flagged, "logN") == (None, [])
@@ -60,8 +57,6 @@ def test_flag_cue(qapp):
 
 
 def test_table_cues(qapp):
-    gui = _gui()
-    FLAG_BOUND_COLOR, FLAG_NAN_COLOR = gui.FLAG_BOUND_COLOR, gui.FLAG_NAN_COLOR
     inspector = _inspector()
     # The b at the bound in amber, not the other parameters
     assert _cell(inspector, 0, "b", Qt.BackgroundRole).name() == FLAG_BOUND_COLOR
