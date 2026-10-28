@@ -70,7 +70,7 @@ def _is_blank(pixmap):
 # --- Geometry --------------------------------------------------------------
 
 def test_plot_controls_card_is_as_tall_as_its_contents(qtbot, window):
-    from astrocook.gui.main_window import CARD_MARGIN
+    from astrocook.gui.main_panels import CARD_MARGIN
     card = _open(qtbot, window, "right")
     top = window.menuBar().height() + CARD_MARGIN
     assert card.y() == top
