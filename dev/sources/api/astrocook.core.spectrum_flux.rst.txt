@@ -1,0 +1,7 @@
+astrocook.core.spectrum\_flux module
+====================================
+
+.. automodule:: astrocook.core.spectrum_flux
+   :members:
+   :show-inheritance:
+   :undoc-members:

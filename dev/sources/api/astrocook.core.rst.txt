@@ -12,6 +12,7 @@ Submodules
    astrocook.core.session
    astrocook.core.spectrum
    astrocook.core.spectrum_continuum
+   astrocook.core.spectrum_flux
    astrocook.core.spectrum_lines
    astrocook.core.structures
    astrocook.core.system_list

@@ -441,6 +441,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_continuum.html">astrocook.core.spectrum_continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_flux.html">astrocook.core.spectrum_flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_lines.html">astrocook.core.spectrum_lines module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
@@ -562,7 +563,7 @@ logic to <a class="reference internal" href="astrocook.core.spectrum.html#astroc
 <dd><p>Calculate running standard deviation.</p>
 <p>Calculates a running Root-Mean-Square (RMS) on a specific column to estimate
 local error or variability.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calculate_running_std" title="astrocook.core.spectrum.SpectrumV2.calculate_running_std"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calculate_running_std()</span></code></a>.</p>
+Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calculate_running_std()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -588,7 +589,7 @@ or 0 on failure.</p>
 <dd><p>Smooth spectrum.</p>
 <p>Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),
 and auxiliary columns.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth" title="astrocook.core.spectrum.SpectrumV2.smooth"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.smooth()</span></code></a>.</p>
+Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.smooth()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sigma_kms</strong> (<em>str</em><em>, </em><em>optional</em>) – Standard deviation for Gaussian kernel in km/s. Defaults to <code class="docutils literal notranslate"><span class="pre">'100.0'</span></code>.</p>
@@ -687,7 +688,7 @@ or 0 on failure.</p>
 <span class="sig-name descname"><span class="pre">calibrate_from_magnitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">magnitudes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SDSS_r=17.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.calibrate_from_magnitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes" title="Link to this definition">#</a></dt>
 <dd><p>Flux calibrate (multi-band).</p>
 <p>Warps the spectrum SED to match multiple photometric points.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calibrate" title="astrocook.core.spectrum.SpectrumV2.calibrate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calibrate()</span></code></a>.</p>
+Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calibrate()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>magnitudes</strong> (<em>str</em><em>, </em><em>optional</em>) – List of ‘Filter=Mag’ pairs separated by commas (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_g=17.5,</span> <span class="pre">SDSS_r=17.0&quot;</span></code>).

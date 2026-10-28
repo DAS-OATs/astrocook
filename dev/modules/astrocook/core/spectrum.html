@@ -481,16 +481,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.photometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_calibration_curve</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">convert_axis_velocity</span><span class="p">,</span> 
     <span class="n">convert_x_axis</span><span class="p">,</span> <span class="n">convert_y_axis</span><span class="p">,</span> 
-    <span class="n">smooth_spectrum</span><span class="p">,</span> <span class="n">rebin_spectrum</span><span class="p">,</span> <span class="n">running_std</span><span class="p">,</span>
+    <span class="n">rebin_spectrum</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDataV2</span><span class="p">,</span> <span class="n">DataColumnV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">column_to_resolving_power</span><span class="p">,</span> <span class="n">migrate_resolution</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContinuumMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">FluxMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinesMixin</span>
 
 <span class="n">_NE_GLOBAL_DICT</span> <span class="o">=</span> <span class="p">{</span>
@@ -618,7 +618,7 @@
 
 <div class="viewcode-block" id="SpectrumV2">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SpectrumV2</span><span class="p">(</span><span class="n">ContinuumMixin</span><span class="p">,</span> <span class="n">LinesMixin</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpectrumV2</span><span class="p">(</span><span class="n">ContinuumMixin</span><span class="p">,</span> <span class="n">FluxMixin</span><span class="p">,</span> <span class="n">LinesMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Composite container for spectral data and operations.</span>
 
@@ -1687,281 +1687,6 @@
         <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data_core</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
 
     
-<div class="viewcode-block" id="SpectrumV2.scale_flux">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.scale_flux">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">scale_flux</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Scale the flux (y, dy) and relevant auxiliary columns (cont, model).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        scale_factor : float or np.ndarray</span>
-<span class="sd">            Multiplicative factor.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with scaled flux.</span>
-<span class="sd">        """</span>
-        <span class="c1"># 1. Scale core columns</span>
-        <span class="c1"># Handle cases where scale_factor is scalar or array</span>
-        <span class="n">new_y</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
-        <span class="n">new_dy</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
-
-        <span class="c1"># 2. Scale flux-like auxiliary columns</span>
-        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
-        <span class="n">cols_to_scale</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'cont'</span><span class="p">,</span> <span class="s1">'model'</span><span class="p">]</span>
-        
-        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cols_to_scale</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">new_aux_cols</span><span class="p">:</span>
-                <span class="n">col</span> <span class="o">=</span> <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-                <span class="c1"># Ensure we propagate description and unit</span>
-                <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-                    <span class="n">col</span><span class="o">.</span><span class="n">values</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">,</span> 
-                    <span class="n">col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> 
-                    <span class="n">col</span><span class="o">.</span><span class="n">description</span>
-                <span class="p">)</span>
-        
-        <span class="c1"># 3. Create new immutable data core</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">new_y</span><span class="p">,</span>
-            <span class="n">dy</span><span class="o">=</span><span class="n">new_dy</span><span class="p">,</span>
-            <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span>
-        <span class="p">)</span>
-        
-        <span class="c1"># 4. Return new SpectrumV2</span>
-        <span class="c1"># (Optional: summarize scalar or mean of array for history)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">scale_factor</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">info</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"array(mean=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)"</span>
-            
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Scaled flux by </span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SpectrumV2.calculate_running_std">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calculate_running_std">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
-                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-                              <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calculate a running RMS on a column and save it as a new column.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        input_col : str</span>
-<span class="sd">            Name of the column to calculate statistics on (e.g., ``'y'``).</span>
-<span class="sd">        output_col : str</span>
-<span class="sd">            Name of the output column (e.g., ``'running_std'``).</span>
-<span class="sd">        window_pix : int</span>
-<span class="sd">            Width of the window in pixels.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with the added RMS column.</span>
-<span class="sd">        """</span>
-        
-        <span class="n">all_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">_data_dict</span>
-        
-        <span class="c1"># 1. Find the target column</span>
-        <span class="k">if</span> <span class="n">input_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input column '</span><span class="si">{</span><span class="n">input_col</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
-            
-        <span class="n">input_col_data</span> <span class="o">=</span> <span class="n">all_cols</span><span class="p">[</span><span class="n">input_col</span><span class="p">]</span>
-        
-        <span class="c1"># 2. Check if it's numerical</span>
-        <span class="k">if</span> <span class="n">input_col_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">'fiu'</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot calculate RMS on non-numerical column '</span><span class="si">{</span><span class="n">input_col</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
-
-        <span class="c1"># 3. Call the pure function (h is half-window)</span>
-        <span class="n">h_window</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_pix</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">rms_values</span> <span class="o">=</span> <span class="n">running_std</span><span class="p">(</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">input_col_data</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="n">h</span><span class="o">=</span><span class="n">h_window</span>
-        <span class="p">)</span>
-        
-        <span class="n">new_std_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">rms_values</span><span class="p">,</span>
-            <span class="n">unit</span><span class="o">=</span><span class="n">input_col_data</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># RMS has same unit as the input</span>
-            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Running StdDev (window=</span><span class="si">{</span><span class="n">window_pix</span><span class="si">}</span><span class="s2">pix) of </span><span class="si">{</span><span class="n">input_col</span><span class="si">}</span><span class="s2">"</span>
-        <span class="p">)</span>
-
-        <span class="c1"># 4. Create new SpectrumDataV2 by adding the new column</span>
-        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
-        <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">output_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_std_col</span>
-        
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
-        
-        <span class="c1"># 5. Return new SpectrumV2</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Calculated running RMS (window=</span><span class="si">{</span><span class="n">window_pix</span><span class="si">}</span><span class="s2">pix) on </span><span class="si">{</span><span class="n">input_col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SpectrumV2.smooth">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Apply Gaussian smoothing to all flux-like columns (y, dy, cont, model).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        sigma_kms : float</span>
-<span class="sd">            Standard deviation of the Gaussian kernel in km/s.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with smoothed columns.</span>
-<span class="sd">        """</span>
-        
-        <span class="c1"># 1. Smooth the core y and dy columns</span>
-        <span class="n">new_y_values</span> <span class="o">=</span> <span class="n">smooth_spectrum</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-            <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">,</span>
-            <span class="n">z_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-        <span class="p">)</span>
-        <span class="n">new_y_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">new_y_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="s2">"Smoothed Flux"</span><span class="p">)</span>
-
-        <span class="n">new_dy_values</span> <span class="o">=</span> <span class="n">smooth_spectrum</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-            <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">,</span>
-            <span class="n">z_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-        <span class="p">)</span>
-        <span class="n">new_dy_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">new_dy_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="s2">"Smoothed Error"</span><span class="p">)</span>
-
-        <span class="c1"># 2. Smooth flux-like auxiliary columns</span>
-        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
-        <span class="c1"># --- RE-ADD 'model' TO THIS LIST ---</span>
-        <span class="n">cols_to_smooth</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'cont'</span><span class="p">,</span> <span class="s1">'model'</span><span class="p">,</span> <span class="s1">'telluric_model'</span><span class="p">]</span>
-        
-        <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">cols_to_smooth</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">new_aux_cols</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">old_col</span> <span class="o">=</span> <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">old_col</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'fiu'</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smoothing auxiliary column: </span><span class="si">{</span><span class="n">col_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-                        <span class="n">new_vals</span> <span class="o">=</span> <span class="n">smooth_spectrum</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-                            <span class="n">old_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-                            <span class="n">sigma_kms</span><span class="p">,</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-                        <span class="p">)</span>
-                        
-                        <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-                            <span class="n">new_vals</span><span class="p">,</span> <span class="n">old_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="n">old_col</span><span class="o">.</span><span class="n">description</span>
-                        <span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to smooth aux col '</span><span class="si">{</span><span class="n">col_name</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        
-        <span class="c1"># --- RE-NORMALIZATION BLOCK HAS BEEN REMOVED ---</span>
-
-        <span class="c1"># 3. Create new SpectrumDataV2</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> 
-            <span class="n">y</span><span class="o">=</span><span class="n">new_y_col</span><span class="p">,</span> 
-            <span class="n">dy</span><span class="o">=</span><span class="n">new_dy_col</span><span class="p">,</span> 
-            <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span>
-        <span class="p">)</span>
-        
-        <span class="c1"># 4. Return new SpectrumV2</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Smoothed spectrum (sigma=</span><span class="si">{</span><span class="n">sigma_kms</span><span class="si">}</span><span class="s2"> km/s)"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SpectrumV2.smooth_column">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth_column">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smooth_column</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Apply Gaussian smoothing to a single target column.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        target_col : str</span>
-<span class="sd">            Name of the column to smooth.</span>
-<span class="sd">        sigma_kms : float</span>
-<span class="sd">            Standard deviation of the Gaussian kernel in km/s.</span>
-<span class="sd">        renorm_model : bool, optional</span>
-<span class="sd">            If True and ``target_col`` is ``'cont'``, the ``'model'`` column will be re-normalized.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with the smoothed column.</span>
-<span class="sd">        """</span>
-        <span class="n">all_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">_data_dict</span>
-        
-        <span class="c1"># 1. Find the target column</span>
-        <span class="k">if</span> <span class="n">target_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_cols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Target column '</span><span class="si">{</span><span class="n">target_col</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
-            
-        <span class="n">old_col_data</span> <span class="o">=</span> <span class="n">all_cols</span><span class="p">[</span><span class="n">target_col</span><span class="p">]</span>
-        
-        <span class="c1"># 2. Check if it's numerical</span>
-        <span class="k">if</span> <span class="n">old_col_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">'fiu'</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot smooth non-numerical column '</span><span class="si">{</span><span class="n">target_col</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
-
-        <span class="c1"># 3. Call the pure function</span>
-        <span class="n">new_values</span> <span class="o">=</span> <span class="n">smooth_spectrum</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">old_col_data</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">,</span>
-            <span class="n">z_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-        <span class="p">)</span>
-        
-        <span class="n">new_data_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">new_values</span><span class="p">,</span>
-            <span class="n">unit</span><span class="o">=</span><span class="n">old_col_data</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Smoothed </span><span class="si">{</span><span class="n">target_col</span><span class="si">}</span><span class="s2">"</span>
-        <span class="p">)</span>
-        
-        <span class="c1"># 4. Create new SpectrumDataV2 using the immutable pattern</span>
-        <span class="n">core_cols</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">'x'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">xmin</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">xmax</span><span class="p">,</span>
-            <span class="s1">'y'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span>
-        <span class="p">}</span>
-        <span class="n">aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span> 
-
-        <span class="c1"># 5. Overwrite the target column</span>
-        <span class="k">if</span> <span class="n">target_col</span> <span class="ow">in</span> <span class="n">core_cols</span><span class="p">:</span>
-            <span class="n">core_cols</span><span class="p">[</span><span class="n">target_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_data_col</span>
-        <span class="k">elif</span> <span class="n">target_col</span> <span class="ow">in</span> <span class="n">aux_cols</span><span class="p">:</span>
-            <span class="n">aux_cols</span><span class="p">[</span><span class="n">target_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_data_col</span>
-
-        <span class="c1"># --- ADD THIS BLOCK (Copied from fit_continuum) ---</span>
-        <span class="c1"># 6. If we just smoothed 'cont', check if we should re-normalize 'model'</span>
-        <span class="k">if</span> <span class="n">target_col</span> <span class="o">==</span> <span class="s1">'cont'</span> <span class="ow">and</span> <span class="n">renorm_model</span><span class="p">:</span>
-            <span class="n">old_model_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'model'</span><span class="p">)</span>
-            <span class="n">old_cont_vals</span> <span class="o">=</span> <span class="n">old_col_data</span><span class="o">.</span><span class="n">value</span> 
-            
-            <span class="n">new_model_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_renormalize_model</span><span class="p">(</span>
-                <span class="n">old_cont_vals</span><span class="p">,</span>
-                <span class="n">new_values</span><span class="p">,</span> <span class="c1"># The new smoothed continuum</span>
-                <span class="n">old_model_col</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">new_model_col</span><span class="p">:</span>
-                <span class="n">aux_cols</span><span class="p">[</span><span class="s1">'model'</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_model_col</span>
-        <span class="c1"># --- END ADD ---</span>
-
-        <span class="c1"># 7. Create the new data core</span>
-        <span class="n">new_data_core</span> <span class="o">=</span> <span class="n">SpectrumDataV2</span><span class="p">(</span>
-            <span class="n">x</span><span class="o">=</span><span class="n">core_cols</span><span class="p">[</span><span class="s1">'x'</span><span class="p">],</span> <span class="n">xmin</span><span class="o">=</span><span class="n">core_cols</span><span class="p">[</span><span class="s1">'xmin'</span><span class="p">],</span> <span class="n">xmax</span><span class="o">=</span><span class="n">core_cols</span><span class="p">[</span><span class="s1">'xmax'</span><span class="p">],</span>
-            <span class="n">y</span><span class="o">=</span><span class="n">core_cols</span><span class="p">[</span><span class="s1">'y'</span><span class="p">],</span> <span class="n">dy</span><span class="o">=</span><span class="n">core_cols</span><span class="p">[</span><span class="s1">'dy'</span><span class="p">],</span>
-            <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span>
-            <span class="n">meta</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">),</span>
-            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-        <span class="p">)</span>
-
-        <span class="c1"># 8. Return a NEW SpectrumV2 instance</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Smoothed column: </span><span class="si">{</span><span class="n">target_col</span><span class="si">}</span><span class="s2"> (sigma=</span><span class="si">{</span><span class="n">sigma_kms</span><span class="si">}</span><span class="s2"> km/s)"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data_core</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="SpectrumV2.rebin">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.rebin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">],</span> 
@@ -2407,54 +2132,6 @@
                           <span class="n">left</span><span class="o">=</span><span class="n">fill_value</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">fill_value</span><span class="p">)</span>
                           
         <span class="k">return</span> <span class="n">y_new</span></div>
-
-    
-<div class="viewcode-block" id="SpectrumV2.calibrate">
-<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calibrate">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Calibrate (and warp) the flux to match target photometric magnitudes.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        magnitudes : str</span>
-<span class="sd">            Comma-separated pairs of ``Filter=Mag`` (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``).</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        SpectrumV2</span>
-<span class="sd">            A new instance with calibrated flux.</span>
-<span class="sd">        """</span>
-        <span class="c1"># 1. Get the pure numerical correction curve</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">correction_curve</span> <span class="o">=</span> <span class="n">generate_calibration_curve</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">magnitudes</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Calibration failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">e</span>
-
-        <span class="c1"># 2. Define standard physical unit</span>
-        <span class="n">new_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">erg</span> <span class="o">/</span> <span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">cm</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">s</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span>
-
-        <span class="c1"># 3. Helper to apply curve and unit to a column</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">apply_corr</span><span class="p">(</span><span class="n">col</span><span class="p">:</span> <span class="n">DataColumnV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataColumnV2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">values</span> <span class="o">*</span> <span class="n">correction_curve</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">,</span> <span class="n">col</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
-
-        <span class="c1"># 4. Apply to all relevant columns</span>
-        <span class="n">new_y</span> <span class="o">=</span> <span class="n">apply_corr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
-        <span class="n">new_dy</span> <span class="o">=</span> <span class="n">apply_corr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
-        
-        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
-        <span class="n">cols_to_scale</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'cont'</span><span class="p">,</span> <span class="s1">'model'</span><span class="p">,</span> <span class="s1">'cont_pl'</span><span class="p">,</span> <span class="s1">'telluric_model'</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">cols_to_scale</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">new_aux_cols</span><span class="p">:</span>
-                 <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_corr</span><span class="p">(</span><span class="n">new_aux_cols</span><span class="p">[</span><span class="n">col_name</span><span class="p">])</span>
-
-        <span class="c1"># 5. Return new state</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">new_y</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">new_dy</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Flux calibrated with: </span><span class="si">{</span><span class="n">magnitudes</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="SpectrumV2.mask_region">
