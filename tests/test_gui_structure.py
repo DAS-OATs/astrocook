@@ -22,6 +22,15 @@ SPECTRUM_PLOT_WIDGET = {
     'stop_continuum_edit', 'toggle_isomag_grid', 'toggle_region_selector',
     'update_continuum_stride', 'update_plot',
 }
+#: ... and the parts of plot_spectrum, split in phase 5
+SPECTRUM_PLOT_WIDGET |= {
+    '_add_legend', '_connect_background_capture', '_format_axes',
+    '_invalidate_plot_caches', '_legend_location', '_plot_arrays',
+    '_plot_aux_column', '_plot_continuum_and_model', '_plot_cursor',
+    '_plot_emission_lines', '_plot_error', '_plot_flux', '_plot_other_sessions',
+    '_plot_systems', '_raw_plot_arrays', '_read_view',
+    '_reconnect_limit_callbacks', '_set_limits', '_slice_to_view', '_was_zoomed',
+}
 
 
 def _astrocook_classes(cls):
