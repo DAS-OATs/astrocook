@@ -1064,7 +1064,20 @@ of the flags, model, delegate and proxy, 410 lines; `system_inspector.py`
 filters and sorting of the proxy had no test; #648); the velocity plot in
 `gui/velocity_plot.py` (`VelocityPlotWidget` and `calc_voigt_profile`, 820
 lines; `system_inspector.py` 1884 → 1085; the tooltip of the ticks, the
-profile under the cursor and the menu of the right click had no test).
+profile under the cursor and the menu of the right click had no test;
+#649, with a test of the GUI that waited a fixed time after a recipe and
+failed on a loaded machine). Speed-ups of the velocity plot (the two
+deferred with Guido): the rest wavelengths converted once per rebuild
+(the ticks of every panel converted ~1000 of them with astropy, half of
+a rebuild), and the constrained layout of matplotlib kept by (panels,
+residuals, size of the figure, x limits) and reused, instead of laying
+out at every draw (half of a draw, also at each move of the mouse, which
+redraws the cursor profile). The same pixels as a rebuild laid out from
+scratch (test checked to fail if the stored layout is not applied); no
+margin moves, unlike what was expected. `select_row` 0.23-0.26 → 0.18 s,
+`inspector_again` 0.43-0.55 → 0.36 s. The panels are still rebuilt at
+each selection (~0.06 s): updating them in place would mean rewriting
+`_update_plot`, not worth it for now.
 
 F66 (ticks in velocity) is taken up at the end of the phase (agreed with
 Guido).
@@ -1790,7 +1803,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s) |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
