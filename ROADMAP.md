@@ -1039,6 +1039,14 @@ of `spectrum.py`; every moved method now has characterization tests
 (`tests/test_spectrum_*.py`). Found along the way: F67-F72, and the
 calibration that failed with recent NumPy (#642).
 
+**Parallel tests** (agreed with Guido, October 2026, before the split of
+the GUI): `pytest-xdist` in the `test` extra, `pytest -n auto` in the CI.
+Measured on 4 cores (as the GitHub runners): the fast suite 440 → 161 s,
+the same tests passing and the same coverage (67%). The slow job stays
+serial (one test of ~10 minutes dominates it, and each process would
+rebuild the costly fixtures). During the split of the GUI the targeted
+tests run locally, the full suite in the CI.
+
 F66 (ticks in velocity) is taken up at the end of the phase (agreed with
 Guido).
 
