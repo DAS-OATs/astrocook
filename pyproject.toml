@@ -47,6 +47,8 @@ test = [
     "pytest-mock",
     "pytest-qt",
     "pytest-cov",
+    # Parallel runs (pytest -n auto): the suite in ~3 minutes instead of ~7
+    "pytest-xdist",
     # Used by the V1 reference of the parity tests (tests/reference/v1)
     "tqdm>=4.66",
 ]

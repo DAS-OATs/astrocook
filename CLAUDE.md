@@ -59,8 +59,9 @@ Current version: 2.2.0. Python ≥3.12.
 - Launch the GUI: `astrocook [file ...]`, `python -m astrocook` or
   `python run_astrocook.py` (launcher in `astrocook/_run_astrocook.py`)
   (headless: `QT_QPA_PLATFORM=offscreen`).
-- Tests: `pytest` (config in `pyproject.toml`); coverage with
-  `pytest --cov=astrocook`. Coverage is still low (56% of the V2 code):
+- Tests: `pytest` (config in `pyproject.toml`), in parallel with
+  `pytest -n auto` (pytest-xdist, ~3 minutes instead of ~7; the CI does
+  so); coverage with `pytest --cov=astrocook`. Coverage is still low (56% of the V2 code):
   before changing production code, add characterization tests for the
   behaviour involved.
 - Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
