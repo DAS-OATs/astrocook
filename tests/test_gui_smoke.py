@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.gui.main_window import MainWindowV2
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
@@ -59,9 +60,6 @@ def messages(monkeypatch):
 def window(qtbot, monkeypatch, tmp_path, messages):
     # Keep the settings of the test run away from the user's ones
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    # Import only once qtbot has created the QApplication: the GUI selects the
-    # QtAgg matplotlib backend at import time, which fails without one (F7).
-    from astrocook.gui.main_window import MainWindowV2
     win = MainWindowV2(None, None)
     qtbot.addWidget(win)
 
@@ -350,6 +348,35 @@ def test_gui_starts_without_corner():
                             text=True, timeout=120,
                             env={**os.environ, "QT_QPA_PLATFORM": "offscreen"})
     assert result.returncode == 0, result.stderr[-2000:]
+
+
+def test_gui_imports_after_pyplot():
+    # F7: pyplot imported first, without a QApplication (a script, a test)
+    # fixed a headless backend, and the GUI then failed at import, asking
+    # matplotlib for QtAgg. The GUI no longer picks the backend of pyplot
+    # (the launcher does); its canvases are QtAgg anyway
+    code = ("import matplotlib.pyplot\n"
+            "import astrocook.gui.main_window as mw\n"
+            "from PySide6.QtWidgets import QApplication\n"
+            "app = QApplication([])\n"
+            "window = mw.MainWindowV2(None, None)\n")
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                            text=True, timeout=120,
+                            env={**os.environ, "QT_QPA_PLATFORM": "offscreen",
+                                 "MPLBACKEND": "Agg"})
+    assert result.returncode == 0, result.stderr[-2000:]
+
+
+def test_plot_colours():
+    # The colours of the plots (characterization, before pyplot was
+    # dropped from pyside_plot.py for F7)
+    import matplotlib
+    from astrocook.gui.pyside_plot import get_color_cycle
+    tab10 = matplotlib.colormaps["tab10"]
+    assert get_color_cycle(4, cmap="tab10") == [tab10(i / 4) for i in range(4)]
+    cycle = matplotlib.rcParams["axes.prop_cycle"].by_key()["color"]
+    assert get_color_cycle(12) == [cycle[i % len(cycle)] for i in range(12)]
+    assert get_color_cycle(3, cmap="no_such_map") == [cycle[i] for i in range(3)]
 
 
 def test_close_session(loaded):

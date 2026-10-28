@@ -15,6 +15,7 @@ import astropy.units as au
 import pytest
 
 from astrocook.core.atomic_data import xem_d
+from astrocook.gui.pyside_plot import SpectrumPlotWidget
 from test_recipes_edit_flux import _session
 
 Z_CURSOR = 2.5
@@ -45,9 +46,6 @@ CURSOR_CASES = {
 
 @pytest.fixture
 def plot_widget_class(qtbot):
-    # Import only once qtbot has created the QApplication: the GUI selects the
-    # QtAgg matplotlib backend at import time, which fails without one (F7).
-    from astrocook.gui.pyside_plot import SpectrumPlotWidget
     return SpectrumPlotWidget
 
 

@@ -10,15 +10,13 @@ from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
+from astrocook.gui.main_window import MainWindowV2
 
 
 @pytest.fixture
 def window_with_v2_session(qtbot, monkeypatch, tmp_path):
     # Keep the settings of the test run away from the user's ones
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    # Import only once qtbot has created the QApplication: the GUI selects the
-    # QtAgg matplotlib backend at import time, which fails without one.
-    from astrocook.gui.main_window import MainWindowV2
     window = MainWindowV2(None, None)
     qtbot.addWidget(window)
 
