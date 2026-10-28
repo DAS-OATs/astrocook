@@ -3,8 +3,10 @@ import astropy.units as au
 import json
 import logging
 import matplotlib
-matplotlib.use('QtAgg')
-from matplotlib import pyplot as plt
+# No matplotlib.use('QtAgg') and no pyplot here: the canvases of the GUI are
+# QtAgg whatever the backend of pyplot, which the launcher sets (it failed
+# at import when pyplot had already picked a headless backend, F7)
+import matplotlib.style
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
@@ -108,17 +110,17 @@ def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
     # ... (function definition as before) ...
     if cmap is not None:
         try:
-            cmap_obj = plt.get_cmap(cmap)
+            cmap_obj = matplotlib.colormaps.get_cmap(cmap)
             return [cmap_obj(i / n) for i in range(n)]
         except Exception as e:
             logging.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
     try:
-        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        colors = matplotlib.rcParams['axes.prop_cycle'].by_key()['color']
 
         return [colors[i % len(colors)] for i in range(n)]
     except Exception as e:
         logging.warning(f"Could not get color cycle: {e}. Using fallback.")
-        cmap = plt.get_cmap(fallback_cmap)
+        cmap = matplotlib.colormaps.get_cmap(fallback_cmap)
         return [cmap(i / n) for i in range(n)]
 
 # ----------------------------
@@ -182,10 +184,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
         try:
             #plt.style.use(['science', 'fast'])
-            plt.style.use('fast')
+            matplotlib.style.use('fast')
         except Exception as e:
             logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
-            plt.style.use('fast')
+            matplotlib.style.use('fast')
 
         fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
         self.axes = fig.add_subplot(111)
@@ -952,7 +954,7 @@ class SpectrumPlotWidget(QWidget):
                             ghost_states.append(hist.current_state)
 
                 if ghost_states:
-                    cmap = plt.get_cmap('tab10') # Distinct, colorblind-friendly palette
+                    cmap = matplotlib.colormaps.get_cmap('tab10') # Distinct, colorblind-friendly palette
                     for i, ghost_state in enumerate(ghost_states):
                         if not ghost_state.spec: continue
                         

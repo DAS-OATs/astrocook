@@ -9,6 +9,8 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.gui.main_window import MainWindowV2
+
 from test_gui_smoke import SESSION_FILE
 
 
@@ -18,8 +20,6 @@ def window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    # Imported once qtbot has created the QApplication (F7)
-    from astrocook.gui.main_window import MainWindowV2
     win = MainWindowV2(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message", lambda *a, **k: None)

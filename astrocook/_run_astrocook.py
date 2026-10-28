@@ -66,6 +66,10 @@ def main():
     app = QApplication.instance()
     if not app:
         app = AstroCookApp(sys.argv)
+    # pyplot (the debug plots of the main window) on Qt, now that the
+    # QApplication exists; the GUI modules do not set it at import (F7)
+    import matplotlib
+    matplotlib.use('QtAgg')
 
     is_frozen = getattr(sys, 'frozen', False)
 
