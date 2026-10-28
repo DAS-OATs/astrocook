@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+- *Flux > Calibrate* failed at every call with recent versions of NumPy ("module 'numpy' has no attribute 'trapz'"): the synthetic magnitudes used `np.trapz`, which NumPy has removed. They now use the same trapezoid rule from SciPy, which works with every supported version of NumPy. No change of results where it worked.
+
 ## [2.2.0] - 2026-10-27
 
 Phase 4 of the consolidation (scientific correctness), measured on a benchmark of 135 synthetic spectra with known parameters (`benchmarks/validate_mocks.py`). **Results change**: the fits use the exact resolution of each pixel and a correct damping parameter, the identification gives one candidate per doublet and none beyond the emission redshift, the automatic continuum is more robust, and the automatic pipelines remove spurious components and flag those at a bound. On the benchmark, against 2.1.0: duplicate doublet candidates reduced by about three times, spurious fitted components from 428 to 11, flagged components from 413 to 22, the spread of the total column of the systems at R = 8900 from 0.39 to 0.095 dex. The pulls of single components are unchanged (~1.1); those of components in systems with several components are wider, because these systems are now fitted with fewer components (see *Result of the phase* in `ROADMAP.md`). How accurate the results are on the benchmark is in the new documentation page *Accuracy*, under *Science*. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).
