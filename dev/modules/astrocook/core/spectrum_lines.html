@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.core.spectrum_lines &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/spectrum_lines';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.spectrum_lines</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.core.spectrum_lines</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Line methods of :class:`~astrocook.core.spectrum.SpectrumV2`: absorbed</span>
+<span class="sd">regions, identification of the lines, velocity bounds, redshift of a</span>
+<span class="sd">doublet across two spectra.</span>
+
+<span class="sd">Part of the split of ``spectrum.py`` into thematic modules (phase 5): the</span>
+<span class="sd">methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and</span>
+<span class="sd">are used as before (``spec.identify_lines(...)``).</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">xem_d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_find_kinematic_doublet_candidates</span><span class="p">,</span> <span class="n">detect_regions</span><span class="p">,</span> <span class="n">merge_regions_by_velocity</span><span class="p">,</span>
+    <span class="n">rate_doublet_candidate</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
+
+<span class="c1">#: Proximity margin of identify_lines (km/s): no candidate system beyond</span>
+<span class="c1">#: z_em by more than this. Absorbers associated with the quasar (outflows,</span>
+<span class="c1">#: infall) and the uncertainty of z_em from broad emission lines (up to</span>
+<span class="c1">#: ~1000 km/s) allow absorption slightly beyond z_em; anything farther is</span>
+<span class="c1">#: a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)</span>
+<span class="n">Z_EM_MARGIN_KMS</span> <span class="o">=</span> <span class="mf">3000.0</span>
+
+
+<div class="viewcode-block" id="LinesMixin">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinesMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Absorbed regions and identification of the lines.</span>
+
+<span class="sd">    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,</span>
+<span class="sd">    ``history``, ``meta``, ``x``, ``y``, ``dy``, ``cont``, ``get_column``,</span>
+<span class="sd">    ``has_aux_column``, ``with_properties`` and ``find_absorbed`` (of</span>
+<span class="sd">    ``ContinuumMixin``). The results are new instances of the class</span>
+<span class="sd">    (``self.__class__``).</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="LinesMixin.detect_absorptions">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin.detect_absorptions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_absorptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'abs_mask'</span><span class="p">,</span> <span class="n">min_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Detect absorption regions based on a boolean mask.</span>
+
+<span class="sd">        Groups adjacent pixels marked as 'absorbed' into discrete regions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column. Defaults to ``'abs_mask'``.</span>
+<span class="sd">        min_pix : int, optional</span>
+<span class="sd">            Minimum pixels to form a region. Defaults to ``3``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``region_id`` column updated.</span>
+<span class="sd">        """</span>
+        <span class="c1"># 1. Get the mask</span>
+        <span class="k">if</span> <span class="n">mask_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' not found. Run 'find_absorbed' first."</span><span class="p">)</span>
+        
+        <span class="n">mask_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        
+        <span class="k">if</span> <span class="n">mask_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">'b'</span><span class="p">:</span>
+            <span class="c1"># It's already boolean, perfect.</span>
+            <span class="n">abs_mask</span> <span class="o">=</span> <span class="n">mask_data</span>
+        <span class="k">elif</span> <span class="n">mask_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'iu'</span><span class="p">:</span> <span class="c1"># Integer or Unsigned Integer</span>
+            <span class="c1"># It's likely 0/1 from a file load. Cast it.</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Casting integer column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' to boolean mask."</span><span class="p">)</span>
+            <span class="n">abs_mask</span> <span class="o">=</span> <span class="n">mask_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># It's float or string, which is probably wrong for a mask.</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' has dtype '</span><span class="si">{</span><span class="n">mask_data</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">', expected boolean or integer mask."</span><span class="p">)</span>
+             
+        <span class="c1"># 2. Call pure function</span>
+        <span class="n">region_map</span><span class="p">,</span> <span class="n">num_regions</span> <span class="o">=</span> <span class="n">detect_regions</span><span class="p">(</span><span class="n">abs_mask</span><span class="p">,</span> <span class="n">min_pix</span><span class="o">=</span><span class="n">min_pix</span><span class="p">)</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Detected </span><span class="si">{</span><span class="n">num_regions</span><span class="si">}</span><span class="s2"> absorption regions (min_pix=</span><span class="si">{</span><span class="n">min_pix</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+
+        <span class="c1"># 3. Create new DataColumnV2 for the IDs</span>
+        <span class="c1"># We use a dimensionless unit for IDs</span>
+        <span class="n">region_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">region_map</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Detected regions from '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' (ID 0 = continuum)"</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># 4. Create new state</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+        <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'region_id'</span><span class="p">]</span> <span class="o">=</span> <span class="n">region_col</span>
+        
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+        <span class="n">new_hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Detected </span><span class="si">{</span><span class="n">num_regions</span><span class="si">}</span><span class="s2"> absorbers from </span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_hist</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="LinesMixin.identify_lines">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin.identify_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">identify_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                       <span class="n">multiplet_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                       <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'abs_mask'</span><span class="p">,</span> 
+                       <span class="n">min_pix_region</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                       <span class="n">merge_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+                       <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                       <span class="n">bypass_scoring</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                       <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Identify absorption lines by correlating regions with multiplet templates.</span>
+
+<span class="sd">        Uses a de-blending strategy to separate merged features. A doublet</span>
+<span class="sd">        gives one candidate system per absorption component, from its</span>
+<span class="sd">        stronger line, and no candidate lies beyond ``z_em`` by more than</span>
+<span class="sd">        ``Z_EM_MARGIN_KMS`` (3000 km/s).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        multiplet_list : list of str</span>
+<span class="sd">            List of multiplets to search for.</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column.</span>
+<span class="sd">        min_pix_region : int, optional</span>
+<span class="sd">            Minimum pixels for a region.</span>
+<span class="sd">        merge_dv : float, optional</span>
+<span class="sd">            Velocity threshold for merging regions (km/s).</span>
+<span class="sd">        score_threshold : float, optional</span>
+<span class="sd">            R^2 score threshold for identification.</span>
+<span class="sd">        bypass_scoring : bool, optional</span>
+<span class="sd">            Accept all candidates if True.</span>
+<span class="sd">        debug_rating : bool, optional</span>
+<span class="sd">            Show debug plots if True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``abs_ids`` column and identification metadata.</span>
+<span class="sd">        """</span>
+        <span class="c1"># This is the 'self' spectrum object</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">z_em</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+        <span class="k">if</span> <span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"z_em must be set before running identify_lines."</span><span class="p">)</span>
+        
+        <span class="c1"># Import SciPy signal processing tools</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_peaks</span><span class="p">,</span> <span class="n">peak_widths</span>
+        
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"identify_lines (De-blending): Starting identification..."</span><span class="p">)</span>
+
+        <span class="c1"># 1. Silently create abs_mask if it doesn't exist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="n">mask_col</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' not found. Running 'find_absorbed' with defaults."</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
+                    <span class="n">smooth_len_lya</span><span class="o">=</span><span class="mf">5000.0</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span>
+                    <span class="n">smooth_len_out</span><span class="o">=</span><span class="mf">400.0</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span>
+                    <span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                    <span class="n">template</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to auto-generate absorbed mask: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        
+        <span class="c1"># 2. Get Merged Regions</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="n">mask_col</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="n">mask_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">'b'</span><span class="p">:</span>
+                 <span class="n">mask_data</span> <span class="o">=</span> <span class="n">mask_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            
+            <span class="n">region_id_map_raw</span><span class="p">,</span> <span class="n">num_raw</span> <span class="o">=</span> <span class="n">detect_regions</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">min_pix_region</span><span class="p">)</span>
+            <span class="n">region_id_map_merged</span><span class="p">,</span> <span class="n">num_merged</span> <span class="o">=</span> <span class="n">merge_regions_by_velocity</span><span class="p">(</span>
+                <span class="n">region_id_map_raw</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="n">merge_dv</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"identify_lines: </span><span class="si">{</span><span class="n">num_merged</span><span class="si">}</span><span class="s2"> regions remain after merging."</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to detect or merge absorption regions: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="c1"># Define AOD profile</span>
+        <span class="n">cont</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">cont</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">cont</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+            <span class="n">aod</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">flux</span> <span class="o">/</span> <span class="n">cont</span><span class="p">)</span>
+        <span class="n">aod</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">aod</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span> 
+
+        <span class="c1"># Define boundaries</span>
+        <span class="n">x_nm</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="n">lya_limit_obs_nm</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span> <span class="o">*</span> <span class="n">xem_d</span><span class="p">[</span><span class="s1">'Ly_lim'</span><span class="p">]</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        <span class="n">lya_obs_nm</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span> <span class="o">*</span> <span class="n">xem_d</span><span class="p">[</span><span class="s1">'Ly_a'</span><span class="p">]</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+        
+        <span class="n">forest_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_nm</span> <span class="o">&lt;</span> <span class="n">lya_obs_nm</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x_nm</span> <span class="o">&gt;</span> <span class="n">lya_limit_obs_nm</span><span class="p">)</span>
+        <span class="n">redward_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_nm</span> <span class="o">&gt;=</span> <span class="n">lya_obs_nm</span><span class="p">)</span>
+        
+        <span class="n">forest_map</span> <span class="o">=</span> <span class="n">region_id_map_merged</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">forest_map</span><span class="p">[</span><span class="o">~</span><span class="n">forest_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> 
+        
+        <span class="n">redward_map</span> <span class="o">=</span> <span class="n">region_id_map_merged</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">redward_map</span><span class="p">[</span><span class="o">~</span><span class="n">redward_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># --- Kinematic Checks (Steps 2-4) ---</span>
+        <span class="n">all_candidates</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="n">metal_doublets</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">multiplet_list</span> 
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">m</span><span class="p">])</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">!=</span> <span class="s1">'Ly_ab'</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Candidate systems at most Z_EM_MARGIN_KMS beyond z_em (F55)</span>
+        <span class="n">z_max</span> <span class="o">=</span> <span class="n">z_em</span> <span class="o">+</span> <span class="n">Z_EM_MARGIN_KMS</span> <span class="o">/</span> <span class="mf">299792.458</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">z_em</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">metal_doublets</span><span class="p">:</span>
+            <span class="n">candidates_red</span> <span class="o">=</span> <span class="n">_find_kinematic_doublet_candidates</span><span class="p">(</span>
+                <span class="n">redward_map</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">z_em</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">)</span> <span class="ow">in</span> <span class="n">candidates_red</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">z_test</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">all_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="s1">'Ly_ab'</span> <span class="ow">in</span> <span class="n">multiplet_list</span><span class="p">:</span>
+            <span class="n">lyab_candidates</span> <span class="o">=</span> <span class="n">_find_kinematic_doublet_candidates</span><span class="p">(</span>
+                <span class="n">forest_map</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="s1">'Ly_ab'</span><span class="p">,</span> <span class="n">z_em</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">)</span> <span class="ow">in</span> <span class="n">lyab_candidates</span><span class="p">:</span>
+                <span class="n">all_candidates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="s1">'Ly_ab'</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">))</span>
+
+        <span class="c1"># --- Rate Candidates ---</span>
+        <span class="n">reliable_ids</span> <span class="o">=</span> <span class="p">{}</span> 
+        <span class="k">for</span> <span class="p">(</span><span class="n">rid_1</span><span class="p">,</span> <span class="n">rid_2</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span> <span class="ow">in</span> <span class="n">all_candidates</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">series_name</span> <span class="o">==</span> <span class="s1">'Ly_ab'</span><span class="p">:</span>
+                <span class="n">threshold</span> <span class="o">=</span> <span class="n">score_threshold</span> 
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">region_mask_for_check</span> <span class="o">=</span> <span class="p">(</span><span class="n">region_id_map_merged</span> <span class="o">==</span> <span class="n">rid_1</span><span class="p">)</span>
+                <span class="n">x_region_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x_nm</span><span class="p">[</span><span class="n">region_mask_for_check</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">x_region_mean</span> <span class="o">&lt;</span> <span class="n">lya_obs_nm</span><span class="p">:</span>
+                    <span class="n">threshold</span> <span class="o">=</span> <span class="mf">1.1</span> <span class="c1"># Impossible threshold for metals in forest</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">threshold</span> <span class="o">=</span> <span class="n">score_threshold</span> 
+                
+            <span class="n">mask_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">region_id_map_merged</span> <span class="o">==</span> <span class="n">rid_1</span><span class="p">)</span>
+            <span class="n">mask_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">region_id_map_merged</span> <span class="o">==</span> <span class="n">rid_2</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask_1</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask_2</span><span class="p">):</span> <span class="k">continue</span>
+            
+            <span class="n">r2_score</span> <span class="o">=</span> <span class="n">rate_doublet_candidate</span><span class="p">(</span>
+                <span class="n">spec</span><span class="p">,</span> <span class="n">mask_1</span><span class="p">,</span> <span class="n">mask_2</span><span class="p">,</span> <span class="n">series_name</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="n">debug_rating</span><span class="o">=</span><span class="n">debug_rating</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">r2_score</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="ow">or</span> <span class="n">bypass_scoring</span><span class="p">:</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">]</span>
+                <span class="n">comp_1</span><span class="p">,</span> <span class="n">comp_2</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">rid_1_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rid_1</span><span class="p">)</span> 
+                <span class="n">rid_2_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rid_2</span><span class="p">)</span> 
+                
+                <span class="c1"># Both regions are labelled, but only the region of the</span>
+                <span class="c1"># first (stronger) line gives the candidate systems: the</span>
+                <span class="c1"># other one would give the same systems again, ~1 km/s</span>
+                <span class="c1"># apart from the pixel sampling (F49)</span>
+                <span class="k">if</span> <span class="n">rid_1_int</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reliable_ids</span><span class="p">:</span> <span class="n">reliable_ids</span><span class="p">[</span><span class="n">rid_1_int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">reliable_ids</span><span class="p">[</span><span class="n">rid_1_int</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">comp_2</span><span class="p">,</span> <span class="n">r2_score</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">rid_2_int</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reliable_ids</span><span class="p">:</span> <span class="n">reliable_ids</span><span class="p">[</span><span class="n">rid_2_int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">reliable_ids</span><span class="p">[</span><span class="n">rid_2_int</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">comp_1</span><span class="p">,</span> <span class="n">r2_score</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+
+        <span class="c1"># --- Forest Cleanup ---</span>
+        <span class="n">forest_rids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">forest_map</span><span class="p">)</span>
+        <span class="n">forest_rids</span> <span class="o">=</span> <span class="n">forest_rids</span><span class="p">[</span><span class="n">forest_rids</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">rid</span> <span class="ow">in</span> <span class="n">forest_rids</span><span class="p">:</span>
+            <span class="n">rid_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rid_int</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reliable_ids</span><span class="p">:</span>
+                <span class="n">region_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">region_id_map_merged</span> <span class="o">==</span> <span class="n">rid_int</span><span class="p">)</span>
+                <span class="n">aod_region</span> <span class="o">=</span> <span class="n">aod</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">aod_region</span><span class="p">[</span><span class="o">~</span><span class="n">region_mask</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                
+                <span class="n">aod_peak_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">aod_region</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">aod_peak_idx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">x_peak_nm</span> <span class="o">=</span> <span class="n">x_nm</span><span class="p">[</span><span class="n">aod_peak_idx</span><span class="p">]</span>
+                    <span class="n">z_test</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_peak_nm</span> <span class="o">/</span> <span class="n">xem_d</span><span class="p">[</span><span class="s1">'Ly_a'</span><span class="p">]</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span>
+                    <span class="n">reliable_ids</span><span class="p">[</span><span class="n">rid_int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">'Ly_a'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z_test</span><span class="p">,</span> <span class="kc">True</span><span class="p">)]</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finalized </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">reliable_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> identified regions (pre-deblending)."</span><span class="p">)</span>
+
+        <span class="c1"># --- 6. Save results with SMART DE-BLENDING ---</span>
+        
+        <span class="n">final_vis_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">region_id_map_merged</span><span class="p">)</span>
+        <span class="n">system_series_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">system_z_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">system_logN_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">system_b_map</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># [NEW] Rich metadata for UI Tooltips</span>
+        <span class="n">region_info</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">sys_id_counter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">processed_systems</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+        
+        <span class="c1"># Pre-calculations</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+            <span class="n">dv_pix</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">))</span> <span class="o">/</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">aod_clean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">aod</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">aod_clean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">aod_clean</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">rid</span><span class="p">,</span> <span class="n">candidates</span> <span class="ow">in</span> <span class="n">reliable_ids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">rid_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rid</span><span class="p">)</span>
+            <span class="n">region_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">region_id_map_merged</span> <span class="o">==</span> <span class="n">rid_int</span><span class="p">)</span>
+            <span class="n">final_vis_map</span><span class="p">[</span><span class="n">region_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">rid_int</span>
+            
+            <span class="c1"># Populate region_info for tooltips: {id: [[series, score], ...]}</span>
+            <span class="c1"># We convert score to float to ensure JSON serializability</span>
+            <span class="n">region_info</span><span class="p">[</span><span class="n">rid_int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">]</span>
+
+            <span class="c1"># --- DE-BLENDING ---</span>
+            <span class="n">flux_seg</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">region_mask</span><span class="p">]</span>
+            <span class="n">err_seg</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">region_mask</span><span class="p">]</span>
+            <span class="n">x_seg</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">region_mask</span><span class="p">]</span>
+            
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flux_seg</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">flux_seg</span><span class="p">)]</span>
+                <span class="n">widths_pix</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">flux_seg</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">inv_flux</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">flux_seg</span>
+                <span class="n">inv_flux_smooth</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">inv_flux</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">local_sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">err_seg</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">err_seg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.01</span>
+                <span class="n">dynamic_prominence</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">local_sigma</span><span class="p">)</span>
+                <span class="n">peaks</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">inv_flux_smooth</span><span class="p">,</span> <span class="n">prominence</span><span class="o">=</span><span class="n">dynamic_prominence</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">inv_flux_smooth</span><span class="p">)]</span>
+                    <span class="n">widths_pix</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">flux_seg</span><span class="p">)]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">widths_pix</span> <span class="o">=</span> <span class="n">peak_widths</span><span class="p">(</span><span class="n">inv_flux_smooth</span><span class="p">,</span> <span class="n">peaks</span><span class="p">,</span> <span class="n">rel_height</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">peak_idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+                <span class="n">x_peak_obs</span> <span class="o">=</span> <span class="n">x_seg</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">]</span>
+                <span class="n">local_dv</span> <span class="o">=</span> <span class="n">dv_pix</span><span class="p">[</span><span class="n">region_mask</span><span class="p">][</span><span class="n">peak_idx</span><span class="p">]</span>
+                <span class="n">fwhm_kms</span> <span class="o">=</span> <span class="n">widths_pix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">local_dv</span>
+                <span class="n">b_guess</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">fwhm_kms</span> <span class="o">/</span> <span class="mf">1.665</span><span class="p">))</span>
+
+                <span class="k">for</span> <span class="p">(</span><span class="n">component_name</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">z_test_orig</span><span class="p">,</span> <span class="n">gives_systems</span><span class="p">)</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">gives_systems</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">system_name</span> <span class="o">=</span> <span class="n">component_name</span>
+                    <span class="k">if</span> <span class="n">component_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">mult</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+                                <span class="n">system_name</span> <span class="o">=</span> <span class="n">mult</span>
+                                <span class="k">break</span>
+                    
+                    <span class="k">if</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+                        <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">component_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span> 
+                        <span class="n">z_peak</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_peak_obs</span> <span class="o">/</span> <span class="n">lam_rest</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">z_peak</span> <span class="o">=</span> <span class="n">z_test_orig</span>
+                        
+                    <span class="n">p_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">peak_idx</span> <span class="o">-</span> <span class="n">widths_pix</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+                    <span class="n">p_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">aod_clean</span><span class="p">[</span><span class="n">region_mask</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">peak_idx</span> <span class="o">+</span> <span class="n">widths_pix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">local_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">aod_clean</span><span class="p">[</span><span class="n">region_mask</span><span class="p">][</span><span class="n">p_start</span><span class="p">:</span><span class="n">p_end</span><span class="p">]</span> <span class="o">*</span> <span class="n">dv_pix</span><span class="p">[</span><span class="n">region_mask</span><span class="p">][</span><span class="n">p_start</span><span class="p">:</span><span class="n">p_end</span><span class="p">])</span>
+                    
+                    <span class="k">if</span> <span class="n">component_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
+                        <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">component_name</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">N_val</span> <span class="o">=</span> <span class="mf">3.768e14</span> <span class="o">*</span> <span class="n">local_tau</span> <span class="o">/</span> <span class="p">(</span><span class="n">atom</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">*</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">])</span>
+                            <span class="n">logN_guess</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">11.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">19.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N_val</span><span class="p">)</span> <span class="k">if</span> <span class="n">N_val</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">13.0</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span> <span class="n">logN_guess</span> <span class="o">=</span> <span class="mf">13.5</span>
+                    <span class="k">else</span><span class="p">:</span> <span class="n">logN_guess</span> <span class="o">=</span> <span class="mf">13.5</span>
+
+                    <span class="k">if</span> <span class="n">z_peak</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                        <span class="k">continue</span>  <span class="c1"># a peak of a region that straddles z_max (F55)</span>
+                    <span class="n">z_round</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">z_peak</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                    <span class="n">uniq_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">system_name</span><span class="p">,</span> <span class="n">z_round</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">uniq_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">processed_systems</span><span class="p">:</span>
+                        <span class="n">system_series_map</span><span class="p">[</span><span class="n">sys_id_counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">system_name</span>
+                        <span class="n">system_z_map</span><span class="p">[</span><span class="n">sys_id_counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">z_peak</span>
+                        <span class="n">system_logN_map</span><span class="p">[</span><span class="n">sys_id_counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">logN_guess</span>
+                        <span class="n">system_b_map</span><span class="p">[</span><span class="n">sys_id_counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">b_guess</span>
+                        <span class="n">sys_id_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">processed_systems</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uniq_key</span><span class="p">)</span>
+
+        <span class="c1"># --- 7. Create Final Data Core ---</span>
+        <span class="n">new_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+
+        <span class="c1"># Storage for Identification</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'series_map_json'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">system_series_map</span><span class="p">)</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'z_map_json'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">system_z_map</span><span class="p">)</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'logN_map_json'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">system_logN_map</span><span class="p">)</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'b_map_json'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">system_b_map</span><span class="p">)</span>
+        
+        <span class="c1"># rich UI Metadata [THE FIX]</span>
+        <span class="n">new_meta</span><span class="p">[</span><span class="s1">'region_identifications'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">region_info</span><span class="p">)</span>
+
+        <span class="n">vis_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">final_vis_map</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">"Absorption regions with identifications"</span>
+        <span class="p">)</span>
+        <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'abs_ids'</span><span class="p">]</span> <span class="o">=</span> <span class="n">vis_col</span>
+
+        <span class="n">final_data_core</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="n">new_meta</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Identified </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">processed_systems</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems (de-blended)"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">final_data_core</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="LinesMixin.get_velocity_bounds">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin.get_velocity_bounds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_velocity_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">trans</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Calculate the min/max velocity coverage of this spectrum relative to a target.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_target : float</span>
+<span class="sd">            The target redshift.</span>
+<span class="sd">        trans : str</span>
+<span class="sd">            Transition name (e.g., ``'Ly_a'``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (min_velocity, max_velocity) in km/s. Returns ``(-inf, inf)`` if invalid.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">trans</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span> <span class="c1"># Assuming nm or Angstrom based on loader</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+        
+        <span class="c1"># Determine rest wavelength in same unit as x (assuming nm for internal)</span>
+        <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">trans</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span> 
+        <span class="n">lam_obs</span> <span class="o">=</span> <span class="n">lam_rest</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_target</span><span class="p">)</span>
+        <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
+        
+        <span class="n">v</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">lam_obs</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_obs</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LinesMixin.detect_doublet_z">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin.detect_doublet_z">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_doublet_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_spec</span><span class="p">:</span> <span class="s1">'SpectrumV2'</span><span class="p">,</span> 
+                         <span class="n">trans_self</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_other</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Find the redshift of maximum coincidence between this spectrum and another.</span>
+
+<span class="sd">        Calculates the cross-correlation (product of absorption depths) to align</span>
+<span class="sd">        two spectra covering different lines of a doublet.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_spec : SpectrumV2</span>
+<span class="sd">            The other spectrum object.</span>
+<span class="sd">        trans_self : str</span>
+<span class="sd">            Transition in this spectrum (e.g., ``'OVI_1031'``).</span>
+<span class="sd">        trans_other : str</span>
+<span class="sd">            Transition in the other spectrum (e.g., ``'OVI_1037'``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The detected redshift, or 0.0 on failure.</span>
+<span class="sd">        """</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">lam1</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">trans_self</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
+        <span class="n">lam2</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">trans_other</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span>
+
+        <span class="n">z1</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">/</span> <span class="n">lam1</span> <span class="o">-</span> <span class="mf">1.0</span>
+        <span class="n">z2</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">/</span> <span class="n">lam2</span> <span class="o">-</span> <span class="mf">1.0</span>
+        
+        <span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">z1</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">z2</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">min</span><span class="p">(</span><span class="n">z1</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">z2</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">z_max</span> <span class="o">&lt;=</span> <span class="n">z_min</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+        
+        <span class="c1"># Grid based on self resolution</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">z1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dz</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> <span class="n">dz</span> <span class="o">=</span> <span class="mf">1e-5</span>
+        <span class="n">z_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span><span class="p">,</span> <span class="n">dz</span><span class="p">)</span>
+        
+        <span class="n">y1_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">z_grid</span><span class="p">,</span> <span class="n">z1</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
+        <span class="n">y2_int</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">z_grid</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="n">y2</span><span class="p">)</span>
+        
+        <span class="c1"># Product of Depths</span>
+        <span class="n">depth1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y1_int</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">))</span>
+        <span class="n">depth2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">y2_int</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">))</span>
+        
+        <span class="n">score</span> <span class="o">=</span> <span class="n">depth1</span> <span class="o">*</span> <span class="n">depth2</span>
+        <span class="n">best_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_grid</span><span class="p">[</span><span class="n">best_idx</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

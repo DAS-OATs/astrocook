@@ -441,6 +441,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_continuum.html">astrocook.core.spectrum_continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_lines.html">astrocook.core.spectrum_lines module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
@@ -543,21 +544,6 @@
                   
   <section id="module-astrocook.core.spectrum">
 <span id="astrocook-core-spectrum-module"></span><h1>astrocook.core.spectrum module<a class="headerlink" href="#module-astrocook.core.spectrum" title="Link to this heading">#</a></h1>
-<dl class="py data">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.Z_EM_MARGIN_KMS">
-<span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">Z_EM_MARGIN_KMS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3000.0</span></span><a class="headerlink" href="#astrocook.core.spectrum.Z_EM_MARGIN_KMS" title="Link to this definition">#</a></dt>
-<dd><p>no candidate system beyond
-z_em by more than this. Absorbers associated with the quasar (outflows,
-infall) and the uncertainty of z_em from broad emission lines (up to
-~1000 km/s) allow absorption slightly beyond z_em; anything farther is
-a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Proximity margin of identify_lines (km/s)</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.TableAdapterV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">TableAdapterV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#TableAdapterV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.TableAdapterV2" title="Link to this definition">#</a></dt>
@@ -573,7 +559,7 @@ a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">SpectrumV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin" title="astrocook.core.spectrum_continuum.ContinuumMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">ContinuumMixin</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin" title="astrocook.core.spectrum_continuum.ContinuumMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">ContinuumMixin</span></code></a>, <a class="reference internal" href="astrocook.core.spectrum_lines.html#astrocook.core.spectrum_lines.LinesMixin" title="astrocook.core.spectrum_lines.LinesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinesMixin</span></code></a></p>
 <p>Composite container for spectral data and operations.</p>
 <p>This class wraps the raw data (flux, wavelength, error) and provides
 immutable operations that return new <code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code> instances. It serves as
@@ -1188,99 +1174,6 @@ converts the result back to the original wavelength unit.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.detect_absorptions">
-<span class="sig-name descname"><span class="pre">detect_absorptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.detect_absorptions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.detect_absorptions" title="Link to this definition">#</a></dt>
-<dd><p>Detect absorption regions based on a boolean mask.</p>
-<p>Groups adjacent pixels marked as ‘absorbed’ into discrete regions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
-<li><p><strong>min_pix</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum pixels to form a region. Defaults to <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">region_id</span></code> column updated.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.identify_lines">
-<span class="sig-name descname"><span class="pre">identify_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">multiplet_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix_region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_dv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bypass_scoring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_rating</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.identify_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.identify_lines" title="Link to this definition">#</a></dt>
-<dd><p>Identify absorption lines by correlating regions with multiplet templates.</p>
-<p>Uses a de-blending strategy to separate merged features. A doublet
-gives one candidate system per absorption component, from its
-stronger line, and no candidate lies beyond <code class="docutils literal notranslate"><span class="pre">z_em</span></code> by more than
-<code class="docutils literal notranslate"><span class="pre">Z_EM_MARGIN_KMS</span></code> (3000 km/s).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>multiplet_list</strong> (<em>list</em><em> of </em><em>str</em>) – List of multiplets to search for.</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column.</p></li>
-<li><p><strong>min_pix_region</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum pixels for a region.</p></li>
-<li><p><strong>merge_dv</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity threshold for merging regions (km/s).</p></li>
-<li><p><strong>score_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – R^2 score threshold for identification.</p></li>
-<li><p><strong>bypass_scoring</strong> (<em>bool</em><em>, </em><em>optional</em>) – Accept all candidates if True.</p></li>
-<li><p><strong>debug_rating</strong> (<em>bool</em><em>, </em><em>optional</em>) – Show debug plots if True.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> column and identification metadata.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.get_velocity_bounds">
-<span class="sig-name descname"><span class="pre">get_velocity_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.get_velocity_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.get_velocity_bounds" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the min/max velocity coverage of this spectrum relative to a target.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>z_target</strong> (<em>float</em>) – The target redshift.</p></li>
-<li><p><strong>trans</strong> (<em>str</em>) – Transition name (e.g., <code class="docutils literal notranslate"><span class="pre">'Ly_a'</span></code>).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>(min_velocity, max_velocity) in km/s. Returns <code class="docutils literal notranslate"><span class="pre">(-inf,</span> <span class="pre">inf)</span></code> if invalid.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.detect_doublet_z">
-<span class="sig-name descname"><span class="pre">detect_doublet_z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.detect_doublet_z"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.detect_doublet_z" title="Link to this definition">#</a></dt>
-<dd><p>Find the redshift of maximum coincidence between this spectrum and another.</p>
-<p>Calculates the cross-correlation (product of absorption depths) to align
-two spectra covering different lines of a doublet.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>other_spec</strong> (<a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The other spectrum object.</p></li>
-<li><p><strong>trans_self</strong> (<em>str</em>) – Transition in this spectrum (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1031'</span></code>).</p></li>
-<li><p><strong>trans_other</strong> (<em>str</em>) – Transition in the other spectrum (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1037'</span></code>).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The detected redshift, or 0.0 on failure.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.mask_region">
 <span class="sig-name descname"><span class="pre">mask_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.mask_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.mask_region" title="Link to this definition">#</a></dt>
 <dd><p>Update a mask column, setting it to False outside the specified bounds.</p>
@@ -1427,7 +1320,6 @@ two spectra covering different lines of a doublet.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Z_EM_MARGIN_KMS"><code class="docutils literal notranslate"><span class="pre">Z_EM_MARGIN_KMS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2.__init__"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2.__init__()</span></code></a></li>
 </ul>
@@ -1469,10 +1361,6 @@ two spectra covering different lines of a doublet.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resample_on_grid()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_resampled_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_resampled_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.calibrate"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calibrate()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.detect_absorptions"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_absorptions()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.identify_lines"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.identify_lines()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_velocity_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_velocity_bounds()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.detect_doublet_z"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_doublet_z()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.mask_region"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.mask_region()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.merge_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.merge_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.update_model"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_model()</span></code></a></li>
