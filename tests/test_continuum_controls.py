@@ -220,3 +220,27 @@ def test_cancel_button(editing, monkeypatch, answer):
 def test_confirm_without_editing(window, monkeypatch):
     asked = _answer(window, monkeypatch, "Cancel")
     assert window._confirm_discard_continuum_edits() is True and asked == []
+
+
+def test_save_with_no_current_session_in_the_list(editing, caplog):
+    """F74: with no current index in the session list, the view is
+    refreshed for the new state (it called a method that does not exist:
+    the state was saved, but an error was logged and the plot not
+    redrawn)."""
+    from PySide6.QtCore import QModelIndex
+    window = editing
+    history = window.active_history
+    viewer = window.plot_viewer
+    i = len(viewer._knots_x) // 2
+    viewer._knots_y[i] *= 1.2
+    viewer._apply_local_patch(viewer._knots_x[i])
+    selection = window.session_list_view.selectionModel()
+    selection.setCurrentIndex(QModelIndex(), selection.SelectionFlag.Clear)
+    n = len(history.states)
+    with caplog.at_level(logging.ERROR):
+        window.edit_cont_button.click()
+    assert "Failed to save continuum" not in caplog.text
+    assert len(history.states) == n + 1  # once
+    assert viewer._plotted_state is history.current_state
+    assert selection.currentIndex().row() == window.session_histories.index(history)
+    assert window.undo_action.isEnabled()

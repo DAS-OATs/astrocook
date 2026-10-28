@@ -190,7 +190,10 @@ class ContinuumControlsMixin:
                         if current_index.isValid():
                             self.session_list_view.clicked.emit(current_index)
                         else:
-                            self.update_gui_from_state(new_session)
+                            # The view for the new state, as a switch of
+                            # session shows it (F74: this called a method
+                            # that does not exist)
+                            self._update_view_for_session(new_session, set_current_list_item=True)
                             
                 except Exception as e:
                     logging.error(f"Failed to save continuum: {e}")
