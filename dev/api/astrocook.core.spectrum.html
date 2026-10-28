@@ -54,7 +54,7 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="astrocook.core.structures module" href="astrocook.core.structures.html" />
+    <link rel="next" title="astrocook.core.spectrum_continuum module" href="astrocook.core.spectrum_continuum.html" />
     <link rel="prev" title="astrocook.core.session module" href="astrocook.core.session.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
@@ -440,6 +440,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.core.spectrum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_continuum.html">astrocook.core.spectrum_continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
@@ -572,7 +573,7 @@ a misidentification, e.g. a SiIV at 16000 km/s in a telluric band (F55)</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">SpectrumV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><span class="pre">SpectrumDataV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin" title="astrocook.core.spectrum_continuum.ContinuumMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">ContinuumMixin</span></code></a></p>
 <p>Composite container for spectral data and operations.</p>
 <p>This class wraps the raw data (flux, wavelength, error) and provides
 immutable operations that return new <code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code> instances. It serves as
@@ -1187,100 +1188,6 @@ converts the result back to the original wavelength unit.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.find_absorbed">
-<span class="sig-name descname"><span class="pre">find_absorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smooth_len_lya</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_len_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.find_absorbed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.find_absorbed" title="Link to this definition">#</a></dt>
-<dd><p>Identify absorbed regions using V1 logic.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>smooth_len_lya</strong> (<em>Quantity</em>) – Smoothing length for the Ly-alpha forest.</p></li>
-<li><p><strong>smooth_len_out</strong> (<em>Quantity</em>) – Smoothing length outside the forest.</p></li>
-<li><p><strong>kappa</strong> (<em>float</em>) – Sigma clipping threshold.</p></li>
-<li><p><strong>template</strong> (<em>bool</em>) – Use PCA template (Not Implemented).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code> column added/updated.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.fit_continuum">
-<span class="sig-name descname"><span class="pre">fit_continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fudge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_std_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.fit_continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.fit_continuum" title="Link to this definition">#</a></dt>
-<dd><p>Fit a continuum to the unabsorbed regions.</p>
-<p>Orchestrates: Interpolate -&gt; Auto-Fudge -&gt; Smooth -&gt; Renormalize Model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fudge</strong> (<em>float</em><em> or </em><em>str</em>) – Fudge factor. Can be a float or <code class="docutils literal notranslate"><span class="pre">'auto'</span></code>. With <code class="docutils literal notranslate"><span class="pre">'auto'</span></code> the
-factor is computed from the residuals of the unabsorbed pixels
-around the interpolated continuum, which passes through those
-pixels: it is 1 by construction. In V1 the automatic fudge
-corrected the running mean from which V1 builds the continuum;
-V2 interpolates instead, so there is nothing to correct
-(findings register F3, accepted). The bias of the final
-smoothing is not corrected.</p></li>
-<li><p><strong>smooth_std_kms</strong> (<em>float</em>) – Smoothing width for the continuum spline in km/s.</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column to use. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, re-normalizes the ‘model’ column to the new continuum.</p></li>
-<li><p><strong>template</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses a QSO template to trace Lyman-alpha emission.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">cont</span></code> column added/updated.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.fit_powerlaw">
-<span class="sig-name descname"><span class="pre">fit_powerlaw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">regions_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.fit_powerlaw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.fit_powerlaw" title="Link to this definition">#</a></dt>
-<dd><p>Fit a power-law continuum to specified rest-frame regions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>regions_str</strong> (<em>str</em>) – Comma-separated list of regions (e.g. <code class="docutils literal notranslate"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5'</span></code>).</p></li>
-<li><p><strong>kappa</strong> (<em>float</em><em>, </em><em>optional</em>) – Sigma-clipping threshold. Defaults to <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance containing the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> column.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots">
-<span class="sig-name descname"><span class="pre">update_continuum_from_knots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knots_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knots_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renorm_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.update_continuum_from_knots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots" title="Link to this definition">#</a></dt>
-<dd><p>Update the continuum using a Cubic Spline through provided knots.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>knots_x</strong> (<em>list</em><em> of </em><em>float</em>) – X-coordinates of the knots.</p></li>
-<li><p><strong>knots_y</strong> (<em>list</em><em> of </em><em>float</em>) – Y-coordinates of the knots.</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, re-normalizes the ‘model’ column.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the updated continuum.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2">SpectrumV2</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.detect_absorptions">
 <span class="sig-name descname"><span class="pre">detect_absorptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'abs_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.detect_absorptions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.detect_absorptions" title="Link to this definition">#</a></dt>
 <dd><p>Detect absorption regions based on a boolean mask.</p>
@@ -1493,11 +1400,11 @@ two spectra covering different lines of a doublet.</p>
       </div>
     </a>
     <a class="right-next"
-       href="astrocook.core.structures.html"
+       href="astrocook.core.spectrum_continuum.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook.core.structures module</p>
+        <p class="prev-next-title">astrocook.core.spectrum_continuum module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1562,10 +1469,6 @@ two spectra covering different lines of a doublet.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.resample_on_grid()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_resampled_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_resampled_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.calibrate"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.calibrate()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.find_absorbed"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.find_absorbed()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.fit_continuum"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_continuum()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.fit_powerlaw"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_powerlaw()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.update_continuum_from_knots()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.detect_absorptions"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.detect_absorptions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.identify_lines"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.identify_lines()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_velocity_bounds"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_velocity_bounds()</span></code></a></li>

@@ -11,6 +11,7 @@ Submodules
    astrocook.core.resolution
    astrocook.core.session
    astrocook.core.spectrum
+   astrocook.core.spectrum_continuum
    astrocook.core.structures
    astrocook.core.system_list
    astrocook.core.templates

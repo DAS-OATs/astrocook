@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.core.spectrum_continuum &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/spectrum_continuum';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.spectrum_continuum</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.core.spectrum_continuum</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Continuum methods of :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
+
+<span class="sd">Part of the split of ``spectrum.py`` into thematic modules (phase 5): the</span>
+<span class="sd">methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and</span>
+<span class="sd">are used as before (``spec.fit_continuum(...)``).</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">PchipInterpolator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_absorbed_regions</span><span class="p">,</span> <span class="n">fit_powerlaw_to_regions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataColumnV2</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
+
+
+<div class="viewcode-block" id="ContinuumMixin">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ContinuumMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Estimate of the continuum: absorbed regions, interpolated or</span>
+<span class="sd">    power-law continuum, continuum from manual knots.</span>
+
+<span class="sd">    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,</span>
+<span class="sd">    ``history``, ``x``, ``get_column``, ``has_aux_column``,</span>
+<span class="sd">    ``update_column`` and ``_renormalize_model``. The results are new</span>
+<span class="sd">    instances of the class (``self.__class__``).</span>
+<span class="sd">    """</span>
+
+<div class="viewcode-block" id="ContinuumMixin.find_absorbed">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.find_absorbed">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_absorbed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smooth_len_lya</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="n">smooth_len_out</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> 
+                      <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Identify absorbed regions using V1 logic.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        smooth_len_lya : Quantity</span>
+<span class="sd">            Smoothing length for the Ly-alpha forest.</span>
+<span class="sd">        smooth_len_out : Quantity</span>
+<span class="sd">            Smoothing length outside the forest.</span>
+<span class="sd">        kappa : float</span>
+<span class="sd">            Sigma clipping threshold.</span>
+<span class="sd">        template : bool</span>
+<span class="sd">            Use PCA template (Not Implemented).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``abs_mask`` column added/updated.</span>
+<span class="sd">        """</span>
+        <span class="c1"># Call Pure Function</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">find_absorbed_regions</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">dy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span>
+            <span class="n">smooth_len_lya</span><span class="o">=</span><span class="n">smooth_len_lya</span><span class="p">,</span>
+            <span class="n">smooth_len_out</span><span class="o">=</span><span class="n">smooth_len_out</span><span class="p">,</span>
+            <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span>
+            <span class="n">template</span><span class="o">=</span><span class="n">template</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># State Update</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+        <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'abs_mask'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">"Mask of absorbed regions (True=absorbed)"</span>
+        <span class="p">)</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Found absorbed (kappa=</span><span class="si">{</span><span class="n">kappa</span><span class="si">}</span><span class="s2">)"</span><span class="p">])</span></div>
+
+        
+<div class="viewcode-block" id="ContinuumMixin.fit_continuum">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.fit_continuum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_continuum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">smooth_std_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
+                      <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'abs_mask'</span><span class="p">,</span> <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                      <span class="n">template</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit a continuum to the unabsorbed regions.</span>
+
+<span class="sd">        Orchestrates: Interpolate -&gt; Auto-Fudge -&gt; Smooth -&gt; Renormalize Model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fudge : float or str</span>
+<span class="sd">            Fudge factor. Can be a float or ``'auto'``. With ``'auto'`` the</span>
+<span class="sd">            factor is computed from the residuals of the unabsorbed pixels</span>
+<span class="sd">            around the interpolated continuum, which passes through those</span>
+<span class="sd">            pixels: it is 1 by construction. In V1 the automatic fudge</span>
+<span class="sd">            corrected the running mean from which V1 builds the continuum;</span>
+<span class="sd">            V2 interpolates instead, so there is nothing to correct</span>
+<span class="sd">            (findings register F3, accepted). The bias of the final</span>
+<span class="sd">            smoothing is not corrected.</span>
+<span class="sd">        smooth_std_kms : float</span>
+<span class="sd">            Smoothing width for the continuum spline in km/s.</span>
+<span class="sd">        mask_col : str, optional</span>
+<span class="sd">            Name of the mask column to use. Defaults to ``'abs_mask'``.</span>
+<span class="sd">        renorm_model : bool, optional</span>
+<span class="sd">            If True, re-normalizes the 'model' column to the new continuum.</span>
+<span class="sd">        template : bool, optional</span>
+<span class="sd">            If True, uses a QSO template to trace Lyman-alpha emission.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the ``cont`` column added/updated.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">interpolate_continuum_mask</span><span class="p">,</span> 
+            <span class="n">compute_auto_fudge</span><span class="p">,</span>
+            <span class="n">smooth_spectrum</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 1. Validation &amp; Setup</span>
+        <span class="k">if</span> <span class="n">mask_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' not found. Run 'find_absorbed' first."</span><span class="p">)</span>
+        
+        <span class="n">mask_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        
+        <span class="c1"># Check for Telluric Model</span>
+        <span class="n">telluric_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'telluric_model'</span><span class="p">)</span>
+        <span class="n">telluric_vals</span> <span class="o">=</span> <span class="n">telluric_col</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">telluric_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">y_fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">y_interp</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># --- NEW: Apply QSO Template Normalization ---</span>
+        <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.templates</span><span class="w"> </span><span class="kn">import</span> <span class="n">qso_composite</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+
+            <span class="c1"># The composite is in Angstroms. Convert to nm and shift to observed frame.</span>
+            <span class="n">x_template</span><span class="p">,</span> <span class="n">y_template</span> <span class="o">=</span> <span class="n">qso_composite</span><span class="p">()</span>
+            <span class="n">x_template_nm</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_template</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">)</span>
+
+            <span class="c1"># Interpolate template onto the current spectrum's grid (in nm)</span>
+            <span class="n">interp_fn</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x_template_nm</span><span class="p">,</span> <span class="n">y_template</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">y_interp</span> <span class="o">=</span> <span class="n">interp_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">))</span>
+
+            <span class="c1"># Normalize the working flux to flatten the emission peak</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">y_interp</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="n">y_fit</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_fit</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">/</span> <span class="n">y_interp</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Applied QSO template for continuum fitting."</span><span class="p">)</span>
+        <span class="c1"># ---------------------------------------------</span>
+
+        <span class="c1"># 2. Step A: Interpolate (Raw Guess)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cont_raw</span> <span class="o">=</span> <span class="n">interpolate_continuum_mask</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y_fit</span><span class="p">,</span> <span class="c1"># Use flattened flux</span>
+                <span class="n">mask_abs</span><span class="o">=</span><span class="n">mask_abs</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># 3. Step B: Auto-Fudge</span>
+        <span class="n">applied_fudge</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fudge</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">fudge</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'auto'</span><span class="p">:</span>
+            <span class="n">applied_fudge</span> <span class="o">=</span> <span class="n">compute_auto_fudge</span><span class="p">(</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">y_fit</span><span class="p">,</span> <span class="c1"># Use flattened flux</span>
+                <span class="n">mask_abs</span><span class="o">=</span><span class="n">mask_abs</span><span class="p">,</span>
+                <span class="n">cont_model</span><span class="o">=</span><span class="n">cont_raw</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Auto-fudge calculated: </span><span class="si">{</span><span class="n">applied_fudge</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">applied_fudge</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid fudge '</span><span class="si">{</span><span class="n">fudge</span><span class="si">}</span><span class="s2">', defaulting to 1.0"</span><span class="p">)</span>
+
+        <span class="n">cont_fudged</span> <span class="o">=</span> <span class="n">cont_raw</span> <span class="o">*</span> <span class="n">applied_fudge</span>
+        
+        <span class="c1"># 4. Step C: Smooth</span>
+        <span class="c1"># We smooth the FLATTENED continuum to avoid smearing the template's Ly-a peak</span>
+        <span class="k">if</span> <span class="n">smooth_std_kms</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cont_intrinsic</span> <span class="o">=</span> <span class="n">smooth_spectrum</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">cont_fudged</span><span class="p">,</span>
+                <span class="n">sigma_kms</span><span class="o">=</span><span class="n">smooth_std_kms</span><span class="p">,</span>
+                <span class="n">z_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cont_intrinsic</span> <span class="o">=</span> <span class="n">cont_fudged</span>
+            
+        <span class="c1"># --- NEW: Restore the Emission Peak ---</span>
+        <span class="k">if</span> <span class="n">template</span> <span class="ow">and</span> <span class="n">y_interp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cont_intrinsic</span> <span class="o">=</span> <span class="n">cont_intrinsic</span> <span class="o">*</span> <span class="n">y_interp</span>
+        <span class="c1"># --------------------------------------</span>
+        
+        <span class="c1"># 5. Build New Auxiliary Columns</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+        
+        <span class="c1"># [CRITICAL] Store the Intrinsic Continuum</span>
+        <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'cont'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">cont_intrinsic</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> 
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Continuum (smooth=</span><span class="si">{</span><span class="n">smooth_std_kms</span><span class="si">}</span><span class="s2"> km/s, fudge=</span><span class="si">{</span><span class="n">applied_fudge</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, template=</span><span class="si">{</span><span class="n">template</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># 6. Step D: Renormalize Model</span>
+        <span class="n">old_cont_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'cont'</span><span class="p">)</span>
+        <span class="n">old_model_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'model'</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">renorm_model</span> <span class="ow">and</span> <span class="n">old_cont_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">old_model_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">old_norm_vals</span> <span class="o">=</span> <span class="n">old_cont_col</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">new_norm_vals</span> <span class="o">=</span> <span class="n">cont_intrinsic</span>
+            
+            <span class="k">if</span> <span class="n">telluric_vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">old_norm_vals</span> <span class="o">=</span> <span class="n">old_norm_vals</span> <span class="o">*</span> <span class="n">telluric_vals</span>
+                <span class="n">new_norm_vals</span> <span class="o">=</span> <span class="n">new_norm_vals</span> <span class="o">*</span> <span class="n">telluric_vals</span>
+
+            <span class="n">new_model_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_renormalize_model</span><span class="p">(</span>
+                <span class="n">old_cont_vals</span><span class="o">=</span><span class="n">old_norm_vals</span><span class="p">,</span>
+                <span class="n">new_cont_vals</span><span class="o">=</span><span class="n">new_norm_vals</span><span class="p">,</span>
+                <span class="n">old_model_col</span><span class="o">=</span><span class="n">old_model_col</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_model_col</span><span class="p">:</span>
+                <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'model'</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_model_col</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model column re-normalized to new continuum (incorporating tellurics)."</span><span class="p">)</span>
+
+        <span class="c1"># 7. Create New Data Core</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+        
+        <span class="c1"># 8. Return New SpectrumV2</span>
+        <span class="n">hist_entry</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Fitted continuum (fudge=</span><span class="si">{</span><span class="n">applied_fudge</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, smooth=</span><span class="si">{</span><span class="n">smooth_std_kms</span><span class="si">}</span><span class="s2"> km/s, template=</span><span class="si">{</span><span class="n">template</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="n">hist_entry</span><span class="p">])</span></div>
+
+    
+
+<div class="viewcode-block" id="ContinuumMixin.fit_powerlaw">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.fit_powerlaw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_powerlaw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regions_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fit a power-law continuum to specified rest-frame regions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        regions_str : str</span>
+<span class="sd">            Comma-separated list of regions (e.g. ``'128.0-129.0, 131.5-132.5'``).</span>
+<span class="sd">        kappa : float, optional</span>
+<span class="sd">            Sigma-clipping threshold. Defaults to ``3.0``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance containing the ``cont_pl`` column.</span>
+<span class="sd">        """</span>
+        
+        <span class="c1"># 1. Call the pure function</span>
+        <span class="n">pl_values</span> <span class="o">=</span> <span class="n">fit_powerlaw_to_regions</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">dy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span> <span class="c1"># Get z_em from self</span>
+            <span class="n">regions_str</span><span class="o">=</span><span class="n">regions_str</span><span class="p">,</span>
+            <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># 2. Create new data core</span>
+        <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+        <span class="n">new_aux_cols</span><span class="p">[</span><span class="s1">'cont_pl'</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">pl_values</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Power-law has same unit as flux</span>
+            <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Power-law fit to regions: </span><span class="si">{</span><span class="n">regions_str</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+        
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">)</span>
+        
+        <span class="c1"># 3. Return new SpectrumV2</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"Fitted power-law (regions=</span><span class="si">{</span><span class="n">regions_str</span><span class="si">}</span><span class="s2">)"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ContinuumMixin.update_continuum_from_knots">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum_continuum.html#astrocook.core.spectrum_continuum.ContinuumMixin.update_continuum_from_knots">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_continuum_from_knots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knots_x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">knots_y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> 
+                                    <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Update the continuum using a Cubic Spline through provided knots.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        knots_x : list of float</span>
+<span class="sd">            X-coordinates of the knots.</span>
+<span class="sd">        knots_y : list of float</span>
+<span class="sd">            Y-coordinates of the knots.</span>
+<span class="sd">        renorm_model : bool, optional</span>
+<span class="sd">            If True, re-normalizes the 'model' column.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SpectrumV2</span>
+<span class="sd">            A new instance with the updated continuum.</span>
+<span class="sd">        """</span>
+        <span class="c1"># 1. Validation (Safe for numpy arrays)</span>
+        <span class="c1"># Check for None first, then length. Avoid "if not knots_x" on arrays.</span>
+        <span class="k">if</span> <span class="n">knots_x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">knots_x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid knots provided (empty)."</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+            
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">knots_x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">knots_y</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Knots length mismatch: x(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">knots_x</span><span class="p">)</span><span class="si">}</span><span class="s2">) != y(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">knots_y</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># 2. Create Spline</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Sort knots to prevent spline errors</span>
+            <span class="n">knots_x_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">knots_x</span><span class="p">)</span>
+            <span class="n">knots_y_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">knots_y</span><span class="p">)</span>
+            <span class="n">sorter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">knots_x_arr</span><span class="p">)</span>
+            
+            <span class="n">cs</span> <span class="o">=</span> <span class="n">PchipInterpolator</span><span class="p">(</span><span class="n">knots_x_arr</span><span class="p">[</span><span class="n">sorter</span><span class="p">],</span> <span class="n">knots_y_arr</span><span class="p">[</span><span class="n">sorter</span><span class="p">])</span>
+            
+            <span class="c1"># Evaluate on current grid</span>
+            <span class="n">x_axis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">new_cont</span> <span class="o">=</span> <span class="n">cs</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to generate spline from knots: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="c1"># 3. Update 'cont' column</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="s1">'cont'</span><span class="p">,</span> <span class="n">new_cont</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"Spline from manual knots"</span><span class="p">)</span>
+        
+        <span class="c1"># 4. Handle Model Renormalization</span>
+        <span class="k">if</span> <span class="n">renorm_model</span> <span class="ow">and</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'model'</span><span class="p">):</span>
+            <span class="n">old_cont_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'cont'</span><span class="p">)</span>
+            
+            <span class="c1"># We can use the helper we used in smooth_column/fit_continuum</span>
+            <span class="c1"># Note: We access _data directly inside the class for the helper</span>
+            <span class="n">new_model_data_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_renormalize_model</span><span class="p">(</span>
+                <span class="n">old_cont_vals</span><span class="o">=</span><span class="n">old_cont_col</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">new_cont_vals</span><span class="o">=</span><span class="n">new_cont</span><span class="p">,</span>
+                <span class="n">old_model_col</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="s1">'model'</span><span class="p">]</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">new_model_data_col</span><span class="p">:</span>
+                <span class="c1"># We use internal update logic to avoid creating two SpectrumV2 objects</span>
+                <span class="n">new_aux</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">new_spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+                <span class="n">new_aux</span><span class="p">[</span><span class="s1">'model'</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_model_data_col</span>
+                <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">new_spec</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux</span><span class="p">)</span>
+                <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model renormalized to match new continuum."</span><span class="p">)</span>
+
+        <span class="c1"># 5. History</span>
+        <span class="n">new_spec</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"Updated continuum from knots"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_spec</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
