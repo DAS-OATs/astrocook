@@ -874,7 +874,8 @@ registry is redesigned.
 
 **GUI benchmark** (`benchmarks/bench_gui.py`, run by hand like
 `bench_fitting.py`): the GUI offscreen on the small J0103-1305 archive of
-the tests (2156 pixels, 764 components), four cases, each ended after the
+the tests (2156 pixels, 764 components), four cases (a fifth,
+`select_row`, added with the fifth fix below), each ended after the
 pending Qt events (deferred draws, the result processed with a `QTimer`)
 and the median of 5 runs: the first opening of the System Inspector in a
 new main window, a second opening, a full redraw of the main plot, and
@@ -953,6 +954,39 @@ after on the same machine:
    0.37 s, `refit_gui` 1.20 → 0.64 s. The same cost of the Qt enums may
    be found in other code called per pixel or per cell (to check with
    the split of the GUI).
+
+5. *Selecting a row of the table* (fifth fix, agreed with Guido after his
+   trial of the four fixes: the inspector opened faster, but browsing the
+   table was still slow; his benchmark on a MacBook Air after #638:
+   `inspector_first` 0.45 s, `inspector_again` 0.33 s, `main_plot`
+   0.07 s, `refit_gui` 0.54 s). Measured with a new case of the benchmark,
+   `select_row`, with the window at the size of a laptop screen (the cost
+   of a draw grows with the size of the plots): ~0.3 s per selection, two
+   full matplotlib draws (the main plot, rebuilt to highlight the
+   selection, and the velocity plot). The main plot now redraws only what
+   changes: the guide lines, the markers and the legend are drawn over the
+   pixels of the rest of the axes, kept from the first selection after
+   each full draw (blitting, as the cursor of z already did). A full draw
+   is still made when the "Selected" entry of the legend appears or
+   disappears, while the continuum is edited, and whenever anything else
+   changes (any full draw discards the kept pixels). Same pixels as a full
+   rebuild after a sequence of selections (characterization test, checked
+   to fail if the markers are not drawn), same images of the tutorials.
+   Before → after: `select_row` 0.32 → 0.22 s; the other cases unchanged
+   within the noise. What is left of a selection is the velocity plot
+   (rebuilt for the new component, ~0.15 s). Seen along the way: after a
+   refit the main plot is drawn twice (already before this fix).
+   Guido's benchmark on his MacBook Air with this fix: `select_row`
+   0.135 s offscreen, 0.148 s with the real screen (`QT_QPA_PLATFORM=cocoa`:
+   the windows are shown and the times include the drawing on the screen;
+   `inspector_first` 0.67 s, `inspector_again` 0.41 s, `refit_gui`
+   0.60 s). What is left (agreed with Guido, not urgent: with the split of
+   the GUI): the draw of the velocity plot (~half of a selection: its
+   constrained layout measures the ticks and the text several times per
+   draw; a layout computed once per number of panels may move the margins
+   by a few pixels), its rebuild (the panels updated instead of recreated
+   when their number does not change), and the updates of the plots only
+   for the last row reached while an arrow key is held.
 
 Result of the four fixes on the benchmark (same machine, against the
 numbers before the phase): `inspector_first` 3.96 → 0.54 s,
@@ -1665,7 +1699,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase) |
+| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s) |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
