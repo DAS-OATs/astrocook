@@ -80,10 +80,36 @@ def loaded(window):
 
 
 def _run_recipe(qtbot, win, category, name, params):
-    """Run a recipe as the dialog does and wait for the worker."""
-    win._on_recipe_requested(category, name, params, {})
-    qtbot.waitUntil(lambda: win.thread_pool.activeThreadCount() == 0, timeout=60000)
-    qtbot.wait(50)  # let the result signals be processed
+    """Run a recipe as the dialog does and wait until the window has
+    processed its result (or its error).
+
+    The window processes the result with a QTimer after the worker ends: a
+    fixed wait after the worker was not always enough on a loaded machine
+    (tests in parallel, coverage), so the test waits for the processing
+    itself."""
+    done = []
+    for attr in ("_process_recipe_result", "_on_recipe_error"):
+        method = getattr(win, attr)
+
+        def wrapped(*args, _method=method, **kwargs):
+            try:
+                return _method(*args, **kwargs)
+            finally:
+                done.append(True)
+
+        setattr(win, attr, wrapped)
+    started = []
+    start = win.thread_pool.start
+    win.thread_pool.start = lambda *args: (started.append(True), start(*args))
+    try:
+        win._on_recipe_requested(category, name, params, {})
+        if started:  # not when the GUI asks for something first (e.g. z_em)
+            qtbot.waitUntil(lambda: bool(done), timeout=60000)
+    finally:
+        for attr in ("_process_recipe_result", "_on_recipe_error"):
+            delattr(win, attr)
+        del win.thread_pool.start
+    qtbot.wait(10)  # let the signals queued by the processing be delivered
 
 
 # --- Start and open -------------------------------------------------------
