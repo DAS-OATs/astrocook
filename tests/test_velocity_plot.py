@@ -185,3 +185,31 @@ def test_left_click_shows_no_menu(civ, menus):
     ax = next(iter(plot._panel_map))
     plot.on_press(_event(plot, "button_press_event", ax, 20.0, button=1))
     assert menus == []
+
+
+# --- Pixels ----------------------------------------------------------------------------------
+
+def _pixels(qtbot, plot):
+    qtbot.wait(100)
+    plot.canvas.draw()
+    return np.array(plot.canvas.buffer_rgba()).copy()
+
+
+def test_the_plot_is_drawn_the_same(qtbot, civ):
+    """The pixels of the velocity plot for a sequence of selections, with
+    and without the residuals, compared with a full rebuild with the
+    constrained layout of matplotlib (characterization, before the
+    rebuild and the layout were made faster in phase 5)."""
+    inspector, comp = civ
+    plot = inspector.vel_plot
+    for row in (0, 5, 6, 40, 5):
+        for resid in (False, True):
+            inspector.resid_cb.setChecked(resid)
+            inspector.table_view.selectRow(row)
+            shown = _pixels(qtbot, plot)
+            # The reference: a new figure laid out from scratch
+            getattr(plot, "_layout_cache", {}).clear()
+            plot.fig.clear()
+            plot.fig.set_layout_engine(layout='constrained')
+            plot._update_plot()
+            assert np.array_equal(shown, _pixels(qtbot, plot)), (row, resid)

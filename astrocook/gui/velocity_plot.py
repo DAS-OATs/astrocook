@@ -9,6 +9,7 @@ import numpy as np
 import astropy.units as au
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from matplotlib.layout_engine import ConstrainedLayoutEngine
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
@@ -139,6 +140,12 @@ class VelocityPlotWidget(QWidget):
         self._panel_map = {} 
         self.axes = [] 
         self._tick_map_visuals = []
+        # Positions of the axes and of the common labels laid out by the
+        # constrained layout, by (panels, residuals, size of the figure, x
+        # limits): reused instead of laying out each draw again (half of a
+        # draw on J0103-1305), see _update_plot
+        self._layout_cache = {}
+        self._layout_key = None
         
         self._current_session = None
         self._current_component = None
@@ -148,6 +155,7 @@ class VelocityPlotWidget(QWidget):
         self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
         self.canvas.mpl_connect('button_press_event', self.on_press)
         self.canvas.mpl_connect('draw_event', self.on_draw_update_limits)
+        self.canvas.mpl_connect('draw_event', self._keep_layout)
         
         # Detect end of pan/zoom to refetch data
         self.canvas.mpl_connect('button_release_event', self.on_mouse_release)
@@ -316,12 +324,28 @@ class VelocityPlotWidget(QWidget):
             axs = self.fig.subplots(nrows=num_trans, ncols=1, sharex=True)
             if num_trans == 1: axs = [axs]
 
-        self.fig.set_layout_engine(layout='constrained')
+        # The layout depends only on the number of panels, the residuals, the
+        # size of the figure and the x limits (the tick labels): laid out
+        # by matplotlib the first time, then reused (_apply_layout)
+        self._layout_key = (num_trans, show_resid, tuple(self.fig.bbox.size),
+                            self.fig.dpi, tuple(self._xlim))
+        self.fig.set_layout_engine(
+            layout='none' if self._layout_key in self._layout_cache else 'constrained')
         
         session = self._current_session
         x_full = session.spec.x.value
         c_kms = 299792.458
         z_sys = self._plot_center_z
+        # Rest wavelengths in Angstrom, each converted once: the ticks of
+        # every panel go through all the lines of all the components
+        # (~1000 astropy conversions per panel on J0103-1305, half of a
+        # rebuild, before phase 5)
+        rest_ang = {}
+
+        def rest_wavelength_ang(name):
+            if name not in rest_ang:
+                rest_ang[name] = xem_d[name].to(au.Angstrom).value
+            return rest_ang[name]
 
         # Resolving power per pixel (#526), None if unknown
         resol_col = session.spec.resolution()
@@ -459,7 +483,7 @@ class VelocityPlotWidget(QWidget):
             # ... (Rest of plotting logic: Ticks, Labels, Residuals) ...
             tick_ymin, tick_ymax = 0.02, 0.08 
             trans_axis = ax_main.get_xaxis_transform()
-            lam_rest_panel_ang = xem_d[trans_name].to(au.Angstrom).value
+            lam_rest_panel_ang = rest_wavelength_ang(trans_name)
             lam_obs_panel_center_ang = lam_rest_panel_ang * (1 + z_sys)
 
             for other_c in session.systs.components:
@@ -474,7 +498,7 @@ class VelocityPlotWidget(QWidget):
                     if line_name == trans_name:
                         v_shift = c_kms * (other_c.z - z_sys) / (1.0 + z_sys)
                     else:
-                        lam_rest_c = xem_d[line_name].to(au.Angstrom).value
+                        lam_rest_c = rest_wavelength_ang(line_name)
                         lam_obs_c = lam_rest_c * (1 + other_c.z)
                         v_shift = c_kms * (lam_obs_c - lam_obs_panel_center_ang) / lam_obs_panel_center_ang
 
@@ -510,7 +534,37 @@ class VelocityPlotWidget(QWidget):
         self.fig.supxlabel("Relative velocity (Δv, km/s)")
         if not show_resid:
             self.fig.supylabel("Normalized Flux")
+        self._apply_layout()
         self.canvas.draw_idle()
+
+    def _apply_layout(self):
+        """Put the axes and the common labels where the constrained layout
+        put them for the same key, if it was laid out already."""
+        cached = self._layout_cache.get(self._layout_key)
+        if cached is None:
+            return
+        positions, labels = cached
+        for ax, pos in zip(self.fig.axes, positions):
+            ax.set_position(pos)
+        for name, pos in labels.items():
+            label = getattr(self.fig, name, None)
+            if label is not None:
+                label.set_position(pos)
+
+    def _keep_layout(self, event):
+        """After a draw laid out by matplotlib, keep the layout: store it
+        for its key and stop laying out the following draws (the cursor
+        profile redraws the figure at each move of the mouse)."""
+        if self._layout_key is None or self.fig.get_layout_engine() is None:
+            return
+        if not isinstance(self.fig.get_layout_engine(), ConstrainedLayoutEngine):
+            return
+        positions = [ax.get_position() for ax in self.fig.axes]
+        labels = {name: getattr(self.fig, name).get_position()
+                  for name in ('_supxlabel', '_supylabel')
+                  if getattr(self.fig, name, None) is not None}
+        self._layout_cache[self._layout_key] = (positions, labels)
+        self.fig.set_layout_engine(layout='none')
 
     def on_mouse_move(self, event):
         if not event.inaxes or not self._current_component or not self._current_session: return
