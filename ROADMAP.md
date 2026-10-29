@@ -1190,6 +1190,44 @@ on a velocity axis are referred to z_em, like the other conversions; the
 spectrum does not keep the z_ref of a conversion (F84, for phase 6-bis
 or 7).
 
+**Result of the phase** (October 2026). Pure refactoring and performance:
+the snapshots and the mock benchmark unchanged (no PR touched the
+numerical code; the fixes of the phase, F7, F66, F74, F82, F83 and the
+calibration of #642, touch the GUI and the export).
+- GUI benchmark (`bench_gui.py`, the best of two runs, on one machine,
+  against the code at the start of the phase, the merge of #634, measured
+  with the same script): first opening of the System Inspector
+  5.07 → 0.74 s, next openings 3.22 → 0.50 s, selection of a row (laptop
+  size) 0.59 → 0.21 s, redraw of the main plot 0.24 → 0.17 s, the GUI
+  part of a refit 2.33 → 0.85 s; the fit itself unchanged. (That machine
+  is slower than the one of the earlier measurements: 3.96 s for the
+  first opening before the phase.)
+- Large files: `core/spectrum.py` 2826 → 774 lines (five mixins of 340-550
+  lines); `gui/main_window.py` 4831 → 541 (six mixins and three modules);
+  `gui/pyside_plot.py` 2884 → 1266 (`plot_spectrum` ~1000 → ~100 lines,
+  two mixins and four modules); `gui/system_inspector.py` 2239 → 1085
+  (the table and the velocity plot in their modules). The largest files
+  are now the recipes (`absorbers.py` 2116, `edit.py` 1373 lines), whose
+  split belongs to phase 6-bis (the recipe API), and `system_list.py`
+  (1284) and `spectrum_operations.py` (1142), pure functions.
+- Tests: 73 test files; coverage 67% → 81% (`pytest --cov=astrocook`; the
+  GUI 81%, the core 90%), because each moved part got its
+  characterization tests first, checked with mutations; the interface of
+  the split classes is checked by `test_spectrum_structure.py` and
+  `test_gui_structure.py`. The suite runs in parallel (~4 min in the CI).
+- Documentation: the API reference lists the methods of `SpectrumV2` on
+  its page again (they had moved to pages of the mixins with the split,
+  and 19 references of the recipes no longer resolved; found at the
+  closing of the phase), and the build has no warnings.
+- Findings: F66-F84 found in the phase. Fixed: F7, F66, F74, F82, F83
+  (and the calibration, #642). For phase 5-bis: F67, F69, F70, F71
+  (agreed), and proposed F75 (the SNR view and its error column), F78
+  (Logarithmic F not in the panel), F81 (the zoom switched on by the
+  recipe dialogs); for Guido's decision: F73, F77, F80 (dead code), F76
+  (decimation of long spectra). For phase 6-bis: F79 (a schema rewritten
+  at run time), F84 (the z_ref of a velocity axis), with F12. For phase
+  7: F68, F72.
+
 F66 (ticks in velocity) is taken up at the end of the phase (agreed with
 Guido).
 
@@ -1254,6 +1292,13 @@ linked parameters are written as 0 in the ASCII list of the systems: a
 problem when the list is used for statistics; what error a linked
 parameter should carry, e.g. that of its target, scaled through the
 expression of the link, to be agreed with Guido).
+
+Found in phase 5 and proposed for this phase (each to be agreed with
+Guido): F75 (the default error column of the SNR view looked up as a
+column, an error in the log at each plot), F78 (the "Logarithmic F" box
+not in the panel), F81 (the recipe dialogs switch the zoom of the main
+plot on); and Guido's decision on the dead code (F73, F77, F80) and on
+the decimation of long spectra (F76).
 
 Then release 2.3.0 (see "Releases").
 
@@ -1926,7 +1971,7 @@ review); each of its decisions goes into the log.
 | 3-bis – Small fixes before 2.1.0 (#575, F6, F13, #559, F45, #560) | done (October 2026): F41 (#575), F6, F13, F36 (#559), F45, F37 (#560) fixed; note on F8 |
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
-| 5 – Splitting large files (and GUI performance) | in progress (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 |
+| 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | not started |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
