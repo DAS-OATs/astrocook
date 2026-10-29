@@ -6,6 +6,7 @@ Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI).
 """
 import logging
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from PySide6.QtGui import QAction
 import qtawesome as qta
 
 
@@ -31,11 +32,14 @@ class AstrocookToolbar(NavigationToolbar):
         ('Save', 'Save the figure', 'filesave', 'save_figure'),
     ]
 
-    def __init__(self, canvas, parent):
+    def __init__(self, canvas, parent, select: bool = False):
+        """``select``: add the Select tool (selection of a region, main plot
+        only, F73)."""
         # 1. Base Class Initialization: This CREATES and stores the C++ QAction objects.
         # This MUST run first.
         super().__init__(canvas, parent, coordinates=True) 
         self.viewer_parent = parent
+        self.select_action = None
 
         # 2. Final cleanup (Remove unwanted actions created by the base class)
         actions_to_remove = ['Customize', 'Subplots', 'Edit axis, curve and image parameters']
@@ -44,15 +48,21 @@ class AstrocookToolbar(NavigationToolbar):
             if action.text() in actions_to_remove or action.iconText() in actions_to_remove:
                 self.removeAction(action)
 
-        for action in self.actions():
-            if action.text() == 'Select':
-                # Use a standard Qt icon. 
-                # SP_FileDialogDetailedView often looks like a list/selection.
-                # You can try others like SP_ArrowRight or SP_ToolBarHorizontalExtensionButton
-                icon = qta.icon('mdi.selection-drag', color='black')
-                action.setIcon(icon)
-                break
-            
+        # 3. The Select tool, after Zoom, as a third mode exclusive with
+        # Pan and Zoom
+        if select:
+            self.select_action = QAction(qta.icon('mdi.selection-drag', color='black'),
+                                         'Select', self)
+            self.select_action.setCheckable(True)
+            self.select_action.setToolTip(
+                "Select a region: drag along the wavelength axis, then choose "
+                "what to do with it")
+            self.select_action.triggered.connect(self.toggle_select_mode)
+            actions = self.actions()
+            after_zoom = actions[actions.index(self._actions['zoom']) + 1]
+            self.insertAction(after_zoom, self.select_action)
+
+
     def deactivate_tools(self):
         """Switch off the active tool (Pan or Zoom), if any.
 
@@ -66,18 +76,38 @@ class AstrocookToolbar(NavigationToolbar):
             self.zoom()
 
     def toggle_select_mode(self):
-        """Toggles the region selection mode on/off."""
+        """Toggles the region selection mode on/off (the Select button)."""
         if not self.viewer_parent: return
-        
-        # Toggle the mode in the parent widget
         self.viewer_parent.toggle_region_selector()
-        
-        # Visual feedback: "press" or "unpress" the button based on new state
-        # (We need to find our action in the toolbar list)
-        for action in self.actions():
-             if action.text() == 'Select':
-                 action.setChecked(self.viewer_parent._is_selecting_region)
-                 break
+
+    def sync_select_action(self):
+        """Check the Select button as the selection mode is."""
+        if self.select_action is not None:
+            self.select_action.setChecked(bool(self.viewer_parent._is_selecting_region))
+
+    def set_select_enabled(self, enabled: bool):
+        """The Select tool is offered only on a wavelength axis (the region
+        becomes an expression on λ): switched off otherwise."""
+        if self.select_action is None:
+            return
+        if not enabled and self.viewer_parent._is_selecting_region:
+            self.viewer_parent.set_region_selection(False)
+        self.select_action.setEnabled(enabled)
+
+    def _leave_select(self):
+        if self.select_action is not None and self.viewer_parent._is_selecting_region:
+            self.viewer_parent.set_region_selection(False)
+
+    def pan(self, *args):
+        """Pan, switching the Select tool off (the three tools exclude each
+        other)."""
+        self._leave_select()
+        super().pan(*args)
+
+    def zoom(self, *args):
+        """Zoom, switching the Select tool off."""
+        self._leave_select()
+        super().zoom(*args)
 
     def home(self):
         """ Overrides the default 'home' to reset to the *current*

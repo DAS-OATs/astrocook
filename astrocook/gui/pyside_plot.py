@@ -203,7 +203,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self.main_layout.addWidget(self.canvas, 1)
 
         # 2. Toolbar (NO Checkboxes here anymore)
-        self.toolbar = AstrocookToolbar(self.canvas, self) # Pass self as parent
+        self.toolbar = AstrocookToolbar(self.canvas, self, select=True) # Pass self as parent
 
         # ** Store the last-drawn normalization state **
         self._last_draw_norm_state = False # Default to non-normalized
@@ -219,9 +219,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._show_isomag_grid = False
         self.isomag_artists = []
 
-        # Selection Mode State
+        # Selection Mode State (the span being dragged is on the canvas)
         self._is_selecting_region = False
-        self._selection_start_x = None
         
         # Store the original Matplotlib coordinate formatter ONCE
         self._default_format_coord = self.canvas.axes.format_coord
@@ -276,6 +275,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         if session_state is None:
             logging.debug("plot_spectrum called with no session manager. Clearing plot.")
+            self.toolbar.set_select_enabled(False)
             ax = self.canvas.axes
             ax.clear()
             ax.set_title("No Spectrum Data Loaded")
@@ -289,6 +289,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         spec = session_state.spec
         ax = self.canvas.axes
+        # The Select tool needs λ (F73)
+        self.toolbar.set_select_enabled(spec.x.unit.is_equivalent(au.nm))
 
         # ** Store current limits BEFORE clearing **
         previous_xlim = ax.get_xlim()

@@ -13,6 +13,8 @@ import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QToolTip
 
+from .plot_style import SELECTION_STYLE
+
 
 class MatplotlibCanvas(FigureCanvasQTAgg):
     """A custom Matplotlib canvas enabling blitting for cursor dragging."""
@@ -149,7 +151,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.selection_artist.remove()
             
             self.selection_artist = self.axes.axvspan(
-                self.selection_start_x, event.xdata, color='yellow', alpha=0.3
+                self.selection_start_x, event.xdata, **SELECTION_STYLE
             )
             self.draw_idle()
             return # Don't do cursor updates while selecting

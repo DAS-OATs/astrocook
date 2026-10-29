@@ -32,6 +32,8 @@ SPECTRUM_PLOT_WIDGET |= {
     '_plot_systems', '_raw_plot_arrays', '_read_view',
     '_reconnect_limit_callbacks', '_set_limits', '_slice_to_view', '_was_zoomed',
 }
+#: ... and the selection of a region, restored in phase 5-bis (F73)
+SPECTRUM_PLOT_WIDGET |= {'_region_menu', 'set_region_selection'}
 
 
 #: Methods and class attributes of MainWindowV2 before the split (without
@@ -75,6 +77,8 @@ MAIN_WINDOW = {
     'open_session_from_path', 'resizeEvent', 'run_script', 'update_gui_session_state',
     'update_plot_swatches', 'update_session_highlights',
 }
+#: ... and the split of a selected region (phase 5-bis, F73)
+MAIN_WINDOW |= {'launch_split_from_region'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

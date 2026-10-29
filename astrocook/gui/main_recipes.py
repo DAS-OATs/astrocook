@@ -25,6 +25,11 @@ from .recipe_progress import (LogSignalBridge, QtLogHandler, RecipeProgressDialo
                               WarningCaptureHandler)
 
 
+def region_expression(xmin: float, xmax: float) -> str:
+    """The expression on λ (the x of the data, nm) that selects a region."""
+    return f"(λ > {xmin:.4f}) & (λ < {xmax:.4f})"
+
+
 class MainRecipesMixin:
     """The recipes of ``MainWindowV2``.
 
@@ -775,18 +780,15 @@ class MainRecipesMixin:
             logging.error(f"Could not get plot limits: {e}")
             return
 
-        # 2. Build the expression string
-        # Note: 'x' in the data is typically nm. 
-        expression = f"(λ > {xmin:.4f}) & (λ < {xmax:.4f})"
-        
-        logging.info(f"Splitting from view: {expression}")
+        self.launch_split_from_region(xmin, xmax)
 
-        # 3. Launch the dialog with these params pre-filled
-        self._launch_recipe_dialog(
-            "edit", 
-            "split", 
-            initial_params={"expression": expression}
-        )
+    def launch_split_from_region(self, xmin: float, xmax: float):
+        """The dialog of the 'split' recipe, filled in with a region (x in
+        the unit of the data, nm): from the current view, or from a region
+        selected with the Select tool of the main plot (F73)."""
+        expression = region_expression(xmin, xmax)
+        logging.info(f"Splitting from region: {expression}")
+        self._launch_recipe_dialog("edit", "split", initial_params={"expression": expression})
 
     def _safely_close_progress_dialog(self):
         """

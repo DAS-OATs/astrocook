@@ -22,7 +22,8 @@ if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
 from .data_inspector import DataInspectorDialog
-from .plot_style import z_convert_inverse
+from .main_recipes import region_expression
+from .plot_style import SELECTION_STYLE, z_convert_inverse
 
 
 class PlotMouseMixin:
@@ -35,24 +36,57 @@ class PlotMouseMixin:
     """
 
     def toggle_region_selector(self):
-        """ Enables/disables the region selection mode. """
-        # 1. Toggle state
-        self._is_selecting_region = not self._is_selecting_region
-        
-        if self._is_selecting_region:
+        """ Enables/disables the region selection mode (the Select button). """
+        self.set_region_selection(not self._is_selecting_region)
+
+    def set_region_selection(self, active: bool):
+        """Switch the region selection mode on or off (F73).
+
+        On: Pan and Zoom off (the three tools exclude each other), a cross
+        cursor; a drag along the x axis selects a region (``on_press``,
+        the canvas, ``on_release``)."""
+        if active == self._is_selecting_region:
+            return
+        if active:
+            # Before the flag: switching a tool off calls the toolbar's pan
+            # or zoom, which would switch the selection off again
+            self.toolbar.deactivate_tools()
+            self._is_selecting_region = True
             logging.info("Region selection mode ACTIVE.")
-            # Disable standard Matplotlib tools to avoid conflicts
-            if self.toolbar.mode != '':
-                self.toolbar.zoom() # Toggles off if active
-                self.toolbar.pan()  # Toggles off if active
-            
-            # Change cursor to indicate mode
             self.setCursor(Qt.CrossCursor)
         else:
+            self._is_selecting_region = False
             logging.info("Region selection mode DEACTIVATED.")
             self.setCursor(Qt.ArrowCursor)
             # Clean up any half-drawn selection
             self.canvas.cleanup_selection()
+        self.toolbar.sync_select_action()
+
+    def _region_menu(self, xmin: float, xmax: float) -> QMenu:
+        """The actions on a selected region (x in nm, the unit of the data):
+        each recipe opens its dialog with the region filled in."""
+        mw = self.main_window
+        expression = region_expression(xmin, xmax)
+        menu = QMenu(self)
+        menu.addSection(f"Region {xmin:.2f}\u2013{xmax:.2f} nm")
+        for text, tip, slot in (
+                ("Split region", "A new session with the region only (Edit > Split)",
+                 lambda: mw.launch_split_from_region(xmin, xmax)),
+                ("Mask region...", "Mask the region in a column (Edit > Mask Expression)",
+                 lambda: mw._launch_recipe_dialog(
+                     "edit", "mask_expression", initial_params={"expression": expression})),
+                ("Rebin region...", "Rebin the region only (Flux > Rebin)",
+                 lambda: mw._launch_recipe_dialog(
+                     "flux", "rebin", initial_params={"xstart": f"{xmin:.4f}",
+                                                      "xend": f"{xmax:.4f}"})),
+                ("Zoom to region", "Show the region on the whole plot",
+                 lambda: self.canvas.axes.set_xlim(xmin, xmax))):
+            action = QAction(text, menu)
+            action.setToolTip(tip)
+            action.triggered.connect(slot)
+            menu.addAction(action)
+        menu.setToolTipsVisible(True)
+        return menu
 
     def get_cursor_line_positions_at_z(self, session_state: 'SessionV2', z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
@@ -575,8 +609,10 @@ class PlotMouseMixin:
 
         # --- 3. Region Selection (Button 1) ---
         if event.button == 1 and event.inaxes == self.canvas.axes and self._is_selecting_region:
-            self._selection_start_x = event.xdata
-            self.canvas.selection_artist = self.canvas.axes.axvspan(event.xdata, event.xdata, color='orange', alpha=0.3)
+            self.canvas.cleanup_selection()
+            self.canvas.selection_start_x = event.xdata
+            self.canvas.selection_artist = self.canvas.axes.axvspan(
+                event.xdata, event.xdata, **SELECTION_STYLE)
             self.canvas.draw_idle() 
             return True
 
@@ -596,20 +632,25 @@ class PlotMouseMixin:
                 self.toolbar.zoom()
             self._paused_tool_mode = None
 
-        # 2. Handle Existing Region Selection Logic
-        if self._selection_start_x is not None:
-            start = self._selection_start_x
-            end = event.xdata
-            self.canvas.cleanup_selection()
-            self._selection_start_x = None
-            
-            if start is None or end is None or start == end: 
+        # 3. A region selected: its span stays while the menu of the
+        #    actions is open; the menu closed (an action or Esc), it goes
+        if self._is_selecting_region and self.canvas.selection_start_x is not None:
+            start = self.canvas.selection_start_x
+            end = event.xdata if event.inaxes == self.canvas.axes else None
+            self.canvas.selection_start_x = None
+            if start is None or end is None or start == end:
+                self.canvas.cleanup_selection()
                 return
-            
             xmin, xmax = sorted([start, end])
+            if self.canvas.selection_artist is not None:
+                self.canvas.selection_artist.remove()
+            self.canvas.selection_artist = self.canvas.axes.axvspan(
+                xmin, xmax, **SELECTION_STYLE)
+            self.canvas.draw_idle()
+            logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
             if self.main_window:
-                logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
-                self.main_window.launch_split_from_region(xmin, xmax)
+                self._region_menu(xmin, xmax).exec(QCursor.pos())
+            self.canvas.cleanup_selection()
 
     def _open_data_inspector(self, session, center_idx):
         """Launches the Data Inspector Dialog (Non-blocking)."""

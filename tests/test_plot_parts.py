@@ -8,10 +8,10 @@ Characterization tests written before these parts were moved out of
 import numpy as np
 import pytest
 from matplotlib.backend_bases import MouseEvent
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMenu, QMessageBox
 
 from astrocook.gui.main_window import MainWindowV2
-from astrocook.gui import plot_style
+from astrocook.gui import plot_mouse, plot_style
 
 from test_gui_smoke import SESSION_FILE
 
@@ -96,23 +96,108 @@ def test_cursor_follows_the_mouse(qtbot, window):
     assert [a.get_xdata()[0] for a in canvas.cursor_artists] == pytest.approx(positions)
 
 
-def test_region_selection_is_not_reachable(window):
-    # The selection of a region with the mouse (toggle_select_mode ->
-    # toggle_region_selector, then on_press/on_motion/on_release) is dead
-    # code: the toolbar has no 'Select' action, nothing else calls it, and
-    # its last step calls main_window.launch_split_from_region, which does
-    # not exist (findings register F73). Splitting by the current view is in
-    # the context menu (launch_split_from_current_view)
+def test_select_tool(window):
+    # The Select tool (F73: the selection of a region was dead code, with no
+    # button): in the main toolbar after Zoom, exclusive with Pan and Zoom
     viewer = window.plot_viewer
-    assert "Select" not in [a.text() for a in viewer.toolbar.actions()]
-    assert not hasattr(window, "launch_split_from_region")
-    assert hasattr(window, "launch_split_from_current_view")
+    toolbar = viewer.toolbar
+    texts = [a.text() for a in toolbar.actions()]
+    assert texts[texts.index("Zoom") + 1] == "Select"
+    toolbar.pan()
+    toolbar.select_action.trigger()
+    assert viewer._is_selecting_region and toolbar.select_action.isChecked()
+    assert toolbar.mode == ""
+    toolbar.zoom()
+    assert not viewer._is_selecting_region and not toolbar.select_action.isChecked()
+    assert toolbar.mode == "zoom rect"
+    toolbar.select_action.trigger()
+    assert viewer._is_selecting_region and toolbar.mode == ""
+    toolbar.select_action.trigger()
     assert not viewer._is_selecting_region
+    # Not in the other plots
+    from astrocook.gui.plot_toolbar import AstrocookToolbar
+    other = AstrocookToolbar(viewer.canvas, viewer)
+    assert other.select_action is None and "Select" not in [a.text() for a in other.actions()]
+
+
+def _drag(viewer, x0, x1):
+    canvas = viewer.canvas
+    y = _y_inside(canvas)
+    viewer.on_press(_event(canvas, "button_press_event", x0, y, button=1))
+    canvas.on_motion(_event(canvas, "motion_notify_event", 0.5 * (x0 + x1), y))
+    viewer.on_release(_event(canvas, "button_release_event", x1, y, button=1))
+
+
+@pytest.mark.parametrize("choice, recipe, params", [
+    ("Split region", ("edit", "split"), "expression"),
+    ("Mask region...", ("edit", "mask_expression"), "expression"),
+    ("Rebin region...", ("flux", "rebin"), "range"),
+    ("Zoom to region", None, None)])
+def test_region_menu(window, monkeypatch, choice, recipe, params):
+    viewer = window.plot_viewer
+    canvas = viewer.canvas
+    launched, menus = [], []
+    monkeypatch.setattr(window, "_launch_recipe_dialog",
+                        lambda cat, name, initial_params=None: launched.append(
+                            ((cat, name), initial_params)))
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            # The span is drawn while the menu is open
+            assert canvas.selection_artist is not None
+            actions = {a.text(): a for a in self.actions() if not a.isSeparator()}
+            menus.append(list(actions))
+            actions[choice].trigger()
+    monkeypatch.setattr(plot_mouse, "QMenu", RecordedMenu)
+
+    viewer.set_region_selection(True)
+    x0, x1 = _x_inside(canvas, 0.6), _x_inside(canvas, 0.3)  # dragged leftwards
+    _drag(viewer, x0, x1)
+    assert menus == [["Split region", "Mask region...", "Rebin region...", "Zoom to region"]]
+    lo, hi = x1, x0
+    if recipe is None:
+        assert canvas.axes.get_xlim() == pytest.approx((lo, hi))
+        assert launched == []
+    elif params == "expression":
+        assert launched == [(recipe, {"expression": f"(λ > {lo:.4f}) & (λ < {hi:.4f})"})]
+    else:
+        assert launched == [(recipe, {"xstart": f"{lo:.4f}", "xend": f"{hi:.4f}"})]
+    # The span is gone after the menu; the tool stays on
+    assert canvas.selection_artist is None and viewer._is_selecting_region
+
+
+def test_a_click_is_not_a_region(window, monkeypatch):
+    menus = []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            menus.append(self)
+    monkeypatch.setattr(plot_mouse, "QMenu", RecordedMenu)
+    viewer = window.plot_viewer
+    viewer.set_region_selection(True)
+    x = _x_inside(viewer.canvas, 0.5)
+    _drag(viewer, x, x)
+    assert menus == [] and viewer.canvas.selection_artist is None
+    # Not in selection mode, a drag selects nothing
+    viewer.set_region_selection(False)
+    _drag(viewer, _x_inside(viewer.canvas, 0.2), _x_inside(viewer.canvas, 0.4))
+    assert menus == []
+
+
+def test_select_needs_a_wavelength_axis(window):
+    import astropy.units as au
+    viewer = window.plot_viewer
+    viewer.set_region_selection(True)
+    state = window.active_history.current_state
+    in_velocity = state.with_new_spectrum(state.spec.x_convert(z_ref=3.0, xunit=au.km / au.s))
+    viewer.plot_spectrum(in_velocity)
+    assert not viewer.toolbar.select_action.isEnabled() and not viewer._is_selecting_region
+    viewer.plot_spectrum(state)
+    assert viewer.toolbar.select_action.isEnabled()
 
 
 def test_selection_span_is_drawn_and_removed(qtbot, window):
-    # The canvas part of the (unreachable) selection: the span follows the
-    # mouse and is removed by cleanup_selection
+    # The span follows the mouse and is removed by cleanup_selection
     viewer = window.plot_viewer
     canvas = viewer.canvas
     viewer.toggle_region_selector()

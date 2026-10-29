@@ -487,6 +487,35 @@ def getting_started_plot_controls(s: Studio):
 
 
 @scene
+def getting_started_region_select(s: Studio):
+    """The Select tool (F73): a region of the Lyman-alpha forest selected,
+    with the menu of the actions on it."""
+    from astrocook.gui.plot_style import SELECTION_STYLE
+    w = s.new_window("My QSO", size=(1000, 760))
+    s.limits(x=(409.5, 476.6))
+    viewer = w.plot_viewer
+    viewer.set_region_selection(True)
+    xmin, xmax = 438.0, 446.0
+    ax = viewer.canvas.axes
+    span = ax.axvspan(xmin, xmax, **SELECTION_STYLE)
+    viewer.canvas.draw()
+    s.pump(0.3)
+    menu, item = s.context_menu(lambda: viewer._region_menu(xmin, xmax).exec(QPoint(0, 0)),
+                                "Split region")
+    # The menu where the mouse was released: the right edge of the region
+    canvas = viewer.canvas
+    ratio = canvas.devicePixelRatioF()
+    dx, dy = ax.transData.transform((xmax, sum(ax.get_ylim()) / 2))
+    x, y = s.at(canvas, QPoint(int(dx / ratio), int(canvas.height() - dy / ratio)))
+    image = grab(w)
+    paste(image, popup(menu), (x, y), shadow_margin=8)
+    pointer(image, (x + item.right() - 30, y + item.center().y()))
+    span.remove()
+    viewer.set_region_selection(False)
+    return framed(image, w.windowTitle())
+
+
+@scene
 def getting_started_session_list(s: Studio):
     w = s.new_window(*SESSIONS)
     s.open_panel("left")
