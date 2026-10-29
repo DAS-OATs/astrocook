@@ -1,7 +1,0 @@
-astrocook.core.spectrum\_expressions module
-===========================================
-
-.. automodule:: astrocook.core.spectrum_expressions
-   :members:
-   :show-inheritance:
-   :undoc-members:

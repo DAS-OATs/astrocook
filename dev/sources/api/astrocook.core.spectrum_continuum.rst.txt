@@ -1,7 +1,0 @@
-astrocook.core.spectrum\_continuum module
-=========================================
-
-.. automodule:: astrocook.core.spectrum_continuum
-   :members:
-   :show-inheritance:
-   :undoc-members:

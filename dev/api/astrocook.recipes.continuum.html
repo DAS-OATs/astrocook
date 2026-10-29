@@ -440,11 +440,6 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_combine.html">astrocook.core.spectrum_combine module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_continuum.html">astrocook.core.spectrum_continuum module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_expressions.html">astrocook.core.spectrum_expressions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_flux.html">astrocook.core.spectrum_flux module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum_lines.html">astrocook.core.spectrum_lines module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
@@ -601,7 +596,7 @@ and absorption mask, or 0 on failure.</p>
 <dd><p>Find absorbed regions (V1 logic).</p>
 <p>Runs the V1 ‘clip_flux’ kappa-sigma algorithm (with Ly-alpha forest split)
 to create a boolean mask (<code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>) where True indicates absorption.
-Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.find_absorbed()</span></code>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.find_absorbed" title="astrocook.core.spectrum.SpectrumV2.find_absorbed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.find_absorbed()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -630,7 +625,7 @@ column added/updated, or 0 on failure.</p>
 <dd><p>Fit continuum to mask (V1 logic).</p>
 <p>Interpolates unabsorbed regions from a mask, optionally applies an auto-fudge
 factor to center residuals, and smooths the result.
-Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_continuum()</span></code>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.fit_continuum" title="astrocook.core.spectrum.SpectrumV2.fit_continuum"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_continuum()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -660,7 +655,7 @@ column added/updated, or 0 on failure.</p>
 <dd><p>Fit power-law continuum.</p>
 <p>Fits a power-law (linear in log-log space) to user-defined, unabsorbed
 rest-frame regions. Creates the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> column.
-Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_powerlaw()</span></code>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.fit_powerlaw" title="astrocook.core.spectrum.SpectrumV2.fit_powerlaw"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.fit_powerlaw()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -686,7 +681,7 @@ column added/updated, or 0 on failure.</p>
 <dd><p>Update continuum from manual knots.</p>
 <p>Interpolates a Cubic Spline through manually placed knots and updates the
 continuum.
-Delegates to <code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots()</span></code>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots" title="astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

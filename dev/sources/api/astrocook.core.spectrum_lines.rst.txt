@@ -1,7 +1,0 @@
-astrocook.core.spectrum\_lines module
-=====================================
-
-.. automodule:: astrocook.core.spectrum_lines
-   :members:
-   :show-inheritance:
-   :undoc-members:
