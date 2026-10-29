@@ -534,7 +534,7 @@ class CombineMixin:
         
         # 1. Get column to interpolate
         if col_name not in all_cols:
-            raise ValueError(f"Column '{col_name}' not found in spectrum '{self.name}'.")
+            raise ValueError(f"Column '{col_name}' not found in the spectrum.")
         
         col_to_interp = all_cols[col_name]
         

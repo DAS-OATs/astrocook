@@ -262,7 +262,8 @@ phase 7. The snapshots and the mock benchmark unchanged. The private data
 of `DAS-OATs/astrocook-data` (spectra of the screenshots) are cloned next
 to the repository when needed.
 
-Next: phase 5-bis (`ROADMAP.md`), then release 2.3.0. Work in
+Next: phase 5-bis (`ROADMAP.md`; order of the work and Guido's decisions
+agreed, "Order of the phase"; in progress), then release 2.3.0. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

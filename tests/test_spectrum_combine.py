@@ -114,10 +114,9 @@ def test_resampled_column():
 def test_resampled_column_errors():
     spec = _spec(500.0, 510.0, aux=lambda x: {
         "abs_mask": DataColumnV2(x > 505.0, au.dimensionless_unscaled)})
-    # The message of a missing column refers to self.name, which SpectrumV2
-    # does not have: AttributeError instead of ValueError (findings
-    # register F71)
-    with pytest.raises(AttributeError, match="name"):
+    # The message once referred to self.name, which SpectrumV2 does not
+    # have: AttributeError instead of ValueError (findings register F71)
+    with pytest.raises(ValueError, match="'missing' not found"):
         spec.get_resampled_column("missing", np.array([505.0]))
     with pytest.raises(TypeError, match="non-numerical"):
         spec.get_resampled_column("abs_mask", np.array([505.0]))
