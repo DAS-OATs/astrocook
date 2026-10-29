@@ -29,8 +29,11 @@ from .plot_toolbar import AstrocookToolbar
 
 #: When more pixels than this are in view, they are decimated (min-max) to
 #: keep the plot fast (F76: at every plot, in the full view or in a wide
-#: zoom; the comment of the first version said "> 20k points")
-DECIMATION_THRESHOLD = 2000000
+#: zoom). 1 million (Guido, phase 5-bis; it was 2 million, and the comment
+#: of the first version said "> 20k points"): a redraw of 3 million pixels
+#: took 3.9 s whole and 1.0 s decimated, of 300 000 pixels 0.77 and 0.57 s
+#: (with the legend in a fixed corner, see F86)
+DECIMATION_THRESHOLD = 1000000
 DECIMATION_FACTOR = 10       # Plot 2 points for every 10
 
 # Default limits of the normalized flux: linear, and with the logarithmic
