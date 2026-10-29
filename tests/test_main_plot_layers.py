@@ -156,6 +156,11 @@ def test_other_selected_sessions(qtbot, window, columns):
     assert len(ghost) == 1
     other = window.session_histories[0].current_state.spec
     np.testing.assert_array_equal(lines[ghost[0]].get_ydata(), other.y.value)
+    # In the SNR view they are divided by their error too (before, the
+    # default "dF" was looked up as a column and they stayed in flux, F75)
+    _set(window, snr_checkbox=True)
+    lines = _lines(_replot(window))
+    np.testing.assert_allclose(lines[ghost[0]].get_ydata(), other.y.value / other.dy.value)
 
 
 # --- Normalized and SNR ----------------------------------------------------------------
@@ -178,9 +183,12 @@ def test_signal_to_noise(window, columns, caplog):
         ax = _replot(window)
     np.testing.assert_allclose(_lines(ax)["Spectrum"].get_ydata(), spec.y.value / spec.dy.value)
     assert ax.get_ylabel() == "Signal-to-Noise Ratio (F / dy)"
-    # The default error column "dF" is looked up as a column and not
-    # found: an error in the log, then dy (findings register F75)
-    assert "Could not get SNR error column 'dF'" in caplog.text
+    # The default "dF" of the box is dy: no error in the log (before, it was
+    # looked up as a column, findings register F75), and the arrays are
+    # cached for the next plot
+    assert "Could not get SNR error column" not in caplog.text
+    assert window.plot_viewer._cached_snr_error_col == "dy"
+    assert "snr" in window.plot_viewer._plot_cache
     window.snr_col_combo.blockSignals(True)
     if window.snr_col_combo.findText("running_std") < 0:
         window.snr_col_combo.addItem("running_std")

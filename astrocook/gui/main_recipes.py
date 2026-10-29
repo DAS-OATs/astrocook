@@ -149,11 +149,10 @@ class MainRecipesMixin:
         if not self._check_and_handle_requirements(category, name, initial_params, mode='dialog'):
             return
 
-        # ... (Existing Fix for Zoom/Pan Bug) ...
+        # Switch off Pan/Zoom while the dialog is open
         if self.plot_viewer and self.plot_viewer.toolbar:
             try:
-                self.plot_viewer.toolbar.pan(False)
-                self.plot_viewer.toolbar.zoom(False)
+                self.plot_viewer.toolbar.deactivate_tools()
             except Exception: pass
 
         logging.info(f"Launching dialog for recipe: {category}.{name}")

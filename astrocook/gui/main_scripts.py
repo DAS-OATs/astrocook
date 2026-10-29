@@ -98,8 +98,7 @@ class MainScriptsMixin:
         # --- *** FIX 1: Reset toolbar *** ---
         if self.plot_viewer and self.plot_viewer.toolbar:
             try:
-                self.plot_viewer.toolbar.pan(False)
-                self.plot_viewer.toolbar.zoom(False)
+                self.plot_viewer.toolbar.deactivate_tools()
             except Exception as e:
                 logging.warning(f"Could not reset toolbar state: {e}")
         # --- *** END FIX 1 *** ---
