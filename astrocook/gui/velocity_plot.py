@@ -695,7 +695,7 @@ class VelocityPlotWidget(QWidget):
         """
         Handles mouse clicks on the velocity plot.
         Right-Click (Button 3):
-        1. If clicked on a Tick -> Focus on that component (Group View).
+        1. If clicked on a Tick -> Focus on that component (Only group).
         2. If clicked on Background -> Add new component.
         """
         if not event.inaxes: return
@@ -728,7 +728,7 @@ class VelocityPlotWidget(QWidget):
                         break
 
             if found_comp:
-                # "Focus" triggers the Group View logic in the Inspector
+                # "Focus" triggers the Only group logic in the Inspector
                 act_focus = QAction(f"Focus on Component {found_comp.id}", menu)
                 act_focus.triggered.connect(
                     lambda: self.inspector.focus_on_component(found_comp.uuid, force_group_view=False)

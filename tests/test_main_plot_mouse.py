@@ -255,7 +255,7 @@ def test_right_click_on_a_component(window, menus, modifiers, monkeypatch):
     texts = list(menus[-1])
     spec = _spec(window)
     idx = int(np.clip(np.searchsorted(spec.x.value, x), 0, len(spec.x.value) - 1))
-    assert texts == [f"Inspect {comp.series} (Group View)", "Split from Current Zoom",
+    assert texts == [f"Inspect {comp.series} (its group)", "Split from Current Zoom",
                      f"Inspect Data (near {spec.x.value[idx]:.4f} nm)"]
     menus[-1][texts[0]].trigger()
     assert opened == [comp.uuid]

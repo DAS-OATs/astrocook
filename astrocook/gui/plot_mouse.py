@@ -517,7 +517,7 @@ class PlotMouseMixin:
             
             # --- Menu Items ---
             if found_comp:
-                act_inspect = QAction(f"Inspect {found_comp.series} (Group View)", menu)
+                act_inspect = QAction(f"Inspect {found_comp.series} (its group)", menu)
                 if self.main_window: act_inspect.triggered.connect(lambda checked=False, u=found_comp.uuid: self.main_window.open_inspector_on_component(u))
                 menu.addAction(act_inspect)
                 menu.addSeparator()
