@@ -19,6 +19,16 @@ from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+# The auxiliary columns that the flux methods change along with y and dy
+# (findings register F69). Chosen by name, not by unit: many loaders give
+# the flux no unit, and then the unit cannot tell a continuum from a
+# transmission, a resolution or a quality flag.
+# Flux columns: scaled and calibrated as the flux, and smoothed.
+FLUX_AUX_COLUMNS = ('cont', 'model', 'cont_pl')
+# Transmissions (dimensionless, multiplied by the continuum in
+# SpectrumV2.norm): smoothed, as the flux they apply to, but never scaled.
+TRANSMISSION_AUX_COLUMNS = ('telluric_model',)
+
 
 class FluxMixin:
     """Operations on the flux: scaling, running standard deviation,
@@ -31,7 +41,8 @@ class FluxMixin:
 
     def scale_flux(self, scale_factor: Union[float, np.ndarray]) -> 'SpectrumV2':
         """
-        Scale the flux (y, dy) and relevant auxiliary columns (cont, model).
+        Scale the flux (y, dy) and the flux auxiliary columns (cont, model,
+        cont_pl).
 
         Parameters
         ----------
@@ -50,9 +61,7 @@ class FluxMixin:
 
         # 2. Scale flux-like auxiliary columns
         new_aux_cols = deepcopy(self._data.aux_cols)
-        cols_to_scale = ['cont', 'model']
-        
-        for name in cols_to_scale:
+        for name in FLUX_AUX_COLUMNS:
             if name in new_aux_cols:
                 col = new_aux_cols[name]
                 # Ensure we propagate description and unit
@@ -139,7 +148,8 @@ class FluxMixin:
 
     def smooth(self, sigma_kms: float) -> 'SpectrumV2':
         """
-        Apply Gaussian smoothing to all flux-like columns (y, dy, cont, model).
+        Apply Gaussian smoothing to the flux (y, dy), the flux auxiliary
+        columns (cont, model, cont_pl) and the transmission (telluric_model).
 
         Parameters
         ----------
@@ -171,10 +181,7 @@ class FluxMixin:
 
         # 2. Smooth flux-like auxiliary columns
         new_aux_cols = deepcopy(self._data.aux_cols)
-        # --- RE-ADD 'model' TO THIS LIST ---
-        cols_to_smooth = ['cont', 'model', 'telluric_model']
-        
-        for col_name in cols_to_smooth:
+        for col_name in FLUX_AUX_COLUMNS + TRANSMISSION_AUX_COLUMNS:
             if col_name in new_aux_cols:
                 try:
                     old_col = new_aux_cols[col_name]
@@ -327,8 +334,8 @@ class FluxMixin:
         new_dy = apply_corr(self._data.dy)
         
         new_aux_cols = deepcopy(self._data.aux_cols)
-        cols_to_scale = ['cont', 'model', 'cont_pl', 'telluric_model']
-        for col_name in cols_to_scale:
+        # Not the transmission: it stays dimensionless (F69)
+        for col_name in FLUX_AUX_COLUMNS:
             if col_name in new_aux_cols:
                  new_aux_cols[col_name] = apply_corr(new_aux_cols[col_name])
 

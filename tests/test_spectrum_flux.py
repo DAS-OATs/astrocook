@@ -51,12 +51,12 @@ def test_scale_flux_by_a_number(spec):
     new = spec.scale_flux(2.0)
     for name in ("y", "dy"):
         np.testing.assert_array_equal(getattr(new, name).value, 2.0 * getattr(spec, name).value)
-    for name in ("cont", "model"):
+    for name in ("cont", "model", "cont_pl"):
         np.testing.assert_array_equal(_col(new, name).value, 2.0 * _col(spec, name).value)
         assert new._data.aux_cols[name].description == spec._data.aux_cols[name].description
-    # Not scaled: the power law and the transmission
-    for name in ("cont_pl", "telluric_model"):
-        np.testing.assert_array_equal(_col(new, name).value, _col(spec, name).value)
+    # Not scaled: the transmission (the power law was not either, F69)
+    np.testing.assert_array_equal(_col(new, "telluric_model").value,
+                                  _col(spec, "telluric_model").value)
     assert new.history[-1] == "Scaled flux by 2.000"
 
 
@@ -96,11 +96,10 @@ def test_smooth(spec):
     np.testing.assert_array_equal(new.y.value, _smoothed(spec, spec.y.value))
     np.testing.assert_array_equal(new.dy.value, _smoothed(spec, spec.dy.value))
     assert new._data.y.description == "Smoothed Flux"
-    for name in ("cont", "model", "telluric_model"):
+    # Also the power law (not smoothed before F69) and the transmission
+    for name in ("cont", "model", "cont_pl", "telluric_model"):
         np.testing.assert_array_equal(_col(new, name).value,
                                       _smoothed(spec, _col(spec, name).value))
-    # Not smoothed: the power law, and the columns that are not numbers
-    np.testing.assert_array_equal(_col(new, "cont_pl").value, _col(spec, "cont_pl").value)
     assert new.history[-1] == f"Smoothed spectrum (sigma={SIGMA_KMS} km/s)"
 
 
@@ -155,15 +154,39 @@ def test_calibrate(spec):
     assert new.history[-1] == f"Flux calibrated with: {MAGS}"
 
 
-def test_calibrate_also_scales_the_transmission(spec):
+def test_calibrate_leaves_the_transmission(spec):
     # The telluric model is a dimensionless transmission (see
-    # SpectrumV2.norm), yet it is multiplied by the calibration curve and
-    # given a flux unit (findings register F69)
-    curve = generate_calibration_curve(spec.x, spec.y, MAGS)
+    # SpectrumV2.norm): it was multiplied by the calibration curve and given
+    # a flux unit (findings register F69)
     new = spec.calibrate(MAGS)
     np.testing.assert_array_equal(_col(new, "telluric_model").value,
-                                  _col(spec, "telluric_model").value * curve)
-    assert _col(new, "telluric_model").unit == FLAM
+                                  _col(spec, "telluric_model").value)
+    assert _col(new, "telluric_model").unit == au.dimensionless_unscaled
+    # The normalization is unchanged by the calibration
+    np.testing.assert_allclose(new.y.value / new.norm.value,
+                               spec.y.value / spec.norm.value, rtol=1e-12)
+
+
+def test_flux_columns_with_a_flux_without_unit(spec):
+    # The columns are chosen by name: with a flux without unit the
+    # dimensionless columns that are not flux (here the transmission and a
+    # resolution) are not scaled
+    data = spec._data
+    aux = dict(data.aux_cols)
+    for name in ("cont", "model", "cont_pl"):
+        aux[name] = type(aux[name])(aux[name].values, au.dimensionless_unscaled)
+    aux["resol"] = type(aux["cont"])(np.full(spec.x.size, 50000.0),
+                                     au.dimensionless_unscaled)
+    nounit = SpectrumV2(type(data)(
+        x=data.x, xmin=data.xmin, xmax=data.xmax,
+        y=type(data.y)(data.y.values, au.dimensionless_unscaled),
+        dy=type(data.dy)(data.dy.values, au.dimensionless_unscaled),
+        aux_cols=aux, z_em=data.z_em), history=["start"])
+    new = nounit.scale_flux(2.0)
+    for name in ("cont", "model", "cont_pl"):
+        np.testing.assert_array_equal(_col(new, name).value, 2.0 * _col(nounit, name).value)
+    for name in ("telluric_model", "resol"):
+        np.testing.assert_array_equal(_col(new, name).value, _col(nounit, name).value)
 
 
 def test_calibrate_with_invalid_magnitudes(spec, caplog):
