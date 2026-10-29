@@ -28,7 +28,7 @@ Smoothing is the simplest way to visualize faint features by reducing high-frequ
    - Smaller values (e.g., `10-30` km/s) preserve narrow absorption lines.
 3. Click **Run**.
 
-The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency.
+The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency, and so are the continuum (`cont`), the model (`model`), the power-law continuum (`cont_pl`) and the telluric transmission (`telluric_model`), if present.
 
 ```{image} ../_static/flux_smooth.png
 :alt: A smoothed spectrum
@@ -88,7 +88,7 @@ If your spectrum is not flux-calibrated (or the calibration is off), you can war
     * Supported filters include standard optical systems (SDSS, Johnson, etc.).
 3.  Click **Run**.
 
-Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes.
+Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes. The curve is applied to the flux, its error, the continuum, the model and the power-law continuum, which take the unit erg cm⁻² s⁻¹ Å⁻¹; the telluric transmission is dimensionless and is left unchanged.
 
 :::{tip}
 After calibration, check the **Show Iso-Mag Grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
