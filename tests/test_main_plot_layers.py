@@ -219,6 +219,36 @@ def test_zoom_is_kept(window, columns):
 
 # --- Axes ----------------------------------------------------------------------------------
 
+def test_logarithmic_flux(window, columns, recwarn):
+    # Findings register F78: the box was not in the panel; the normalized
+    # view needs a positive lower limit
+    _set(window, log_y_checkbox=True)
+    ax = _replot(window, force_autoscale=True)
+    assert ax.get_yscale() == "log" and ax.get_ylim()[0] > 0
+    # The normalized view: from 0.01
+    _set(window, norm_y_checkbox=True, continuum_checkbox=True)
+    ax = _replot(window)
+    assert ax.get_ylim() == pytest.approx(pyside_plot.NORM_YLIM_LOG)
+    # Switched on over the linear normalized view: the default lower limit,
+    # the upper limit kept
+    _set(window, log_y_checkbox=False)
+    ax = _replot(window)
+    ax.set_ylim(-0.3, 1.2)
+    _set(window, log_y_checkbox=True)
+    ax = _replot(window)
+    assert ax.get_ylim() == pytest.approx((0.01, 1.2))
+    # Switched on over a linear zoom of the flux that reaches below 0:
+    # autoscale
+    _set(window, log_y_checkbox=False, norm_y_checkbox=False)
+    ax = _replot(window, force_autoscale=True)
+    ax.set_ylim(-1e-17, 1e-16)
+    _set(window, log_y_checkbox=True)
+    ax = _replot(window)
+    assert ax.get_ylim()[0] > 0
+    assert not [w for w in recwarn if "non-positive ylim" in str(w.message)]
+    _set(window, log_y_checkbox=False)
+
+
 def test_units_of_the_x_axis(window, columns):
     for unit, symbol, factor in (("nm", "nm", 1.0), ("Angstrom", "Å", 10.0),
                                  ("micron", "µm", 1e-3)):

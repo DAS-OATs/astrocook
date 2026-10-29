@@ -101,12 +101,31 @@ def test_redraw_while_editing_the_continuum(window, monkeypatch, replots):
     assert refreshed == [True] and len(replots) == 1
 
 
-def test_log_f_is_not_in_the_panel(window):
-    # The box exists and redraws the plot, but it is not in the card
-    # (findings register F78)
-    assert window.log_x_checkbox.parent() is not None
-    assert window.log_y_checkbox.parent() is None
-    assert window.log_y_checkbox not in window.right_sidebar_widget.findChildren(type(window.log_y_checkbox))
+def test_log_f_is_in_the_panel(window):
+    # Below "Logarithmic λ" (before, it was not in the panel: findings
+    # register F78)
+    boxes = window.right_sidebar_widget.findChildren(type(window.log_y_checkbox))
+    assert window.log_y_checkbox in boxes
+    layout = window.log_x_checkbox.parentWidget().layout()
+    assert (layout.indexOf(window.log_y_checkbox)
+            == layout.indexOf(window.log_x_checkbox) + 1)
+
+
+def test_custom_limits_with_log_f(window, caplog):
+    import logging
+    ax = window.plot_viewer.canvas.axes
+    ax.set_yscale("log")
+    ax.set_ylim(1.0, 100.0)
+    window.log_y_checkbox.blockSignals(True)
+    window.log_y_checkbox.setChecked(True)
+    window.log_y_checkbox.blockSignals(False)
+    window.ymin_input.setText("-5")
+    window.ymax_input.setText("50")
+    with caplog.at_level(logging.WARNING):
+        window._on_set_custom_limits()
+    # A lower limit that is not positive is not applied
+    assert ax.get_ylim() == pytest.approx((1.0, 50.0))
+    assert "must be positive" in caplog.text
 
 
 # --- Normalized and SNR ------------------------------------------------------------------

@@ -79,6 +79,7 @@ You can show or hide specific layers of the plot. Next to each one, a short samp
 - **Show SNR**: Plots the Signal-to-Noise Ratio instead of flux.
     * **Error Col.**: When showing SNR, you can select which column to use as the noise estimate (default is `dF`).
 - **Logarithmic $\lambda$**: Switches the X-axis to a logarithmic scale.
+- **Logarithmic F**: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the **Iso-Mag Grid** as straight lines. Pixels with $F \le 0$ (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive **F Min** is not applied while the scale is logarithmic.
 
 ### Axis Limits
 
