@@ -4,6 +4,8 @@
 No test reached this code until phase 5, when ``np.trapz`` was found to be
 gone from recent NumPy: the calibration failed at every call.
 """
+import logging
+
 import astropy.units as au
 import numpy as np
 import pytest
@@ -44,14 +46,38 @@ def test_one_band_calibration_is_exact():
     assert calculate_synthetic_ab_mag(x, y * curve, "SDSS_g") == pytest.approx(17.5, abs=1e-9)
 
 
-def test_two_band_calibration():
-    # The factors of the two bands are interpolated between their effective
-    # wavelengths: the calibrated spectrum is ~0.1 mag from the targets
-    # (findings register F70)
+@pytest.mark.parametrize("slope", [0.0, -2.0])
+@pytest.mark.parametrize("magnitudes", ["SDSS_g=17.5, SDSS_r=17.0",
+                                        "Johnson_B=18.0, Johnson_V=17.5, SDSS_r=17.2"])
+def test_calibration_with_more_bands_is_exact(magnitudes, slope):
+    # The factors of the bands are solved together: each band reaches its
+    # target. Before, the factor of each band alone was interpolated between
+    # the effective wavelengths, and g = 17.5, r = 17.0 gave 17.40 and 17.08
+    # on a flat spectrum (findings register F70)
     x, y = _flat_fnu()
-    curve = generate_calibration_curve(x, y, "SDSS_g=17.5, SDSS_r=17.0")
-    assert calculate_synthetic_ab_mag(x, y * curve, "SDSS_g") == pytest.approx(17.404, abs=1e-3)
-    assert calculate_synthetic_ab_mag(x, y * curve, "SDSS_r") == pytest.approx(17.083, abs=1e-3)
+    y = y * (x.value / 500.0)**slope
+    curve = generate_calibration_curve(x, y, magnitudes)
+    assert np.all(curve > 0)
+    for pair in magnitudes.split(","):
+        band, mag = pair.split("=")
+        assert calculate_synthetic_ab_mag(x, y * curve, band.strip()) == pytest.approx(
+            float(mag), abs=1e-9)
+    # Linear between the effective wavelengths, constant beyond them
+    assert curve[0] == curve[1] and curve[-1] == curve[-2]
+
+
+@pytest.mark.parametrize("magnitudes", ["SDSS_g=17.0, Johnson_B=19.0",
+                                        "SDSS_g=17.5, SDSS_g=17.0"])
+def test_calibration_that_cannot_be_exact(magnitudes, caplog):
+    # Targets that only a curve with negative values would reach, or the
+    # same filter twice: the factors of the bands alone, with a warning
+    x, y = _flat_fnu()
+    with caplog.at_level(logging.WARNING):
+        curve = generate_calibration_curve(x, y, magnitudes)
+    assert "cannot be matched together" in caplog.text
+    assert np.all(curve > 0)
+    single = [generate_calibration_curve(x, y, pair)[0] for pair in magnitudes.split(",")]
+    assert min(single) <= curve.min() and curve.max() <= max(single)
 
 
 @pytest.mark.parametrize("magnitudes, error", [("SDSS_g 17.5", "Invalid format"),
