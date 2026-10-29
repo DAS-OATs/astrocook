@@ -32,6 +32,12 @@ from .plot_toolbar import AstrocookToolbar
 DECIMATION_THRESHOLD = 2000000
 DECIMATION_FACTOR = 10       # Plot 2 points for every 10
 
+# Default limits of the normalized flux: linear, and with the logarithmic
+# F scale (F78), which needs a positive lower limit (saturated lines are
+# shown down to 1% of the continuum)
+NORM_YLIM = (-0.3, 1.3)
+NORM_YLIM_LOG = (0.01, 1.3)
+
 # Symbols of the labels and of the coordinates under the mouse
 SYM_LAMBDA = "λ"      # λ
 SYM_LAMBDA_R = "λᵣ" # λᵣ (lambda sub r)
@@ -1062,7 +1068,11 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
     @staticmethod
     def _set_limits(ax, view: '_PlotView'):
         """The zoom of the previous plot kept, the default normalized range
-        when the normalization was switched on, otherwise autoscale."""
+        when the normalization was switched on, otherwise autoscale.
+
+        With the logarithmic F scale a lower limit that is not positive
+        (e.g. the zoom of a linear plot) is not kept: the default lower
+        limit in the normalized view, autoscale otherwise (F78)."""
         # --- X Limits ---
         # Priority: Autoscale if requested (e.g., by unit change)
         if view.was_zoomed and not view.force_autoscale:
@@ -1077,13 +1087,20 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if view.norm_state_changed:
             if view.is_norm_y:
                 logging.debug("Normalization toggled ON: Setting default Y limits.")
-                ax.set_ylim(-0.3, 1.3)
+                ax.set_ylim(NORM_YLIM_LOG if view.is_log_y else NORM_YLIM)
             else:
                 logging.debug("Normalization toggled OFF: Autoscaling Y.")
                 ax.autoscale(enable=True, axis='y')
         elif view.was_zoomed and not view.force_autoscale:
-            logging.debug(f"Restoring previous Y zoom: {view.previous_ylim}")
-            ax.set_ylim(view.previous_ylim)
+            ylim = view.previous_ylim
+            if view.is_log_y and ylim[0] <= 0:
+                if view.is_norm_y and ylim[1] > NORM_YLIM_LOG[0]:
+                    ax.set_ylim(NORM_YLIM_LOG[0], ylim[1])
+                else:
+                    ax.autoscale(enable=True, axis='y')
+            else:
+                logging.debug(f"Restoring previous Y zoom: {ylim}")
+                ax.set_ylim(ylim)
         # Else (initial draw or zoomed out), let Matplotlib autoscale
         else:
             logging.debug("Allowing default Y autoscale.")

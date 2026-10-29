@@ -350,7 +350,12 @@ class MainPanelsMixin:
 
         self.log_x_checkbox = QCheckBox("Logarithmic λ")
         view_layout.addWidget(self.log_x_checkbox)
+        # Not in the panel before (findings register F78)
         self.log_y_checkbox = QCheckBox("Logarithmic F")
+        self.log_y_checkbox.setToolTip(
+            "Logarithmic scale of the flux. Pixels with F \u2264 0 are drawn at "
+            "the bottom of the plot; the normalized flux starts from 0.01.")
+        view_layout.addWidget(self.log_y_checkbox)
         
         view_section = self._make_card_section("View Controls", expanded=True)
         view_section.setContentLayout(view_layout)
@@ -644,6 +649,14 @@ class MainPanelsMixin:
         if xmax_nm <= xmin_nm or ymax <= ymin:
             logging.warning("Invalid custom limit range (max <= min).")
             return
+        if self.log_y_checkbox.isChecked() and ymin <= 0:
+            # A log scale needs a positive limit: Matplotlib would ignore it
+            # with a warning (F78)
+            ymin = self.plot_viewer.canvas.axes.get_ylim()[0]
+            logging.warning("With the logarithmic F scale the lower limit of F must "
+                            f"be positive: kept at {ymin:.4g}.")
+            if ymax <= ymin:
+                return
 
         # Set limits on the Matplotlib axes
         # This will automatically trigger the 'on_lim_changed' callback
