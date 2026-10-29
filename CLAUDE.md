@@ -34,7 +34,16 @@ Current version: 2.2.0. Python ≥3.12.
 - `astrocook/fitting/` – Voigt fitting (`voigt_fitter.py`), constraints
   (`voigt_model.py`), Bayesian engine (`bayesian_fitter.py`).
 - `astrocook/recipes/` – user-facing operations, with structured parameters.
-- `astrocook/gui/` – PySide6 interface.
+- `astrocook/gui/` – PySide6 interface. Split in phase 5, as the spectrum:
+  `MainWindowV2` (`main_window.py`) inherits its mixins by theme
+  (`main_menus.py`, `main_panels.py`, `continuum_controls.py`,
+  `main_sessions.py`, `main_recipes.py`, `main_scripts.py`), the main plot
+  `SpectrumPlotWidget` (`pyside_plot.py`) those of the continuum editor and
+  of the mouse (`continuum_editor.py`, `plot_mouse.py`), and its
+  `plot_spectrum` calls one method per layer; the System Inspector keeps its
+  table and velocity plot in `inspector_table.py` and `velocity_plot.py`. A
+  new method goes in the module of its theme; `tests/test_gui_structure.py`
+  checks the interface of the split classes.
 - `astrocook/io/` – loaders and V1 → V2 migration.
 - `astrocook/mcp_server/` – MCP server for agents (pilot, `ROADMAP.md`
   section 4.1): a thin layer over the recipes, optional `[mcp]` extra.
@@ -61,9 +70,9 @@ Current version: 2.2.0. Python ≥3.12.
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`), in parallel with
   `pytest -n auto` (pytest-xdist, ~3 minutes instead of ~7; the CI does
-  so); coverage with `pytest --cov=astrocook`. Coverage is still low (56% of the V2 code):
-  before changing production code, add characterization tests for the
-  behaviour involved.
+  so); coverage with `pytest --cov=astrocook` (81%, the GUI 81%, the core
+  90%, after phase 5): before changing production code, add
+  characterization tests for the behaviour involved.
 - Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
   fixture (`tests/conftest.py`). Regenerate only for an intended change
   (`pytest --update-snapshots`) and say so in the PR.
@@ -112,7 +121,7 @@ Current version: 2.2.0. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis and 4 done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4 and 5 done (October 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -152,7 +161,8 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 7. release 2.2.0 (done);
 8. phase 5 – splitting large files, with the GUI performance (timing
    benchmark of the GUI; the System Inspector opens in ~4-6 s on
-   J0103-1305); pure refactoring and performance, no visible change;
+   J0103-1305); pure refactoring and performance, no visible change
+   (done);
 9. phase 5-bis – GUI look and ergonomics (the open proposals of the GUI
    review, agreed one by one);
 10. release 2.3.0;
@@ -235,14 +245,24 @@ updated when a phase changes them). The baseline of the benchmark is now
 that of 2.2.0 (`benchmarks/results/validate_mocks_baseline.json`):
 phases 5, 6 and 6-bis must leave it unchanged.
 
-Phase 5 started (October 2026): order of the phase agreed (`ROADMAP.md`,
-phase 5): the GUI benchmark (`benchmarks/bench_gui.py`, run by hand like
-`bench_fitting.py`, before and after each change of the GUI), the three
-local fixes of the System Inspector, the split of `SpectrumV2`, the split
-of the GUI with F7. The private data of `DAS-OATs/astrocook-data` (spectra
-of the screenshots) are cloned next to the repository when needed.
+Phase 5 done (October 2026, PRs #634-#662; `ROADMAP.md`, phase 5,
+"Result of the phase"): the GUI benchmark (`benchmarks/bench_gui.py`, run
+by hand like `bench_fitting.py`, before and after each change of the GUI);
+the System Inspector ~7× faster to open (5.1 → 0.7 s on one machine), the
+selection of a row ~3× (0.59 → 0.21 s); `SpectrumV2` split into five
+mixins (`spectrum.py` 2826 → 774 lines), the GUI into mixins and modules
+(`main_window.py` 4831 → 541, `pyside_plot.py` 2884 → 1266,
+`system_inspector.py` 2239 → 1085), each part covered by characterization
+tests first (coverage 67% → 81%); tests in parallel (pytest-xdist). Fixed:
+F7, F66, F74, F82 (data loss: the ASCII export overwrote a file without
+asking), F83, the calibration (#642). Found F66-F84: for phase 5-bis
+F67, F69, F70, F71 (agreed) and F75, F78, F81 (proposed), for Guido's
+decision F73, F76, F77, F80; F79, F84 for phase 6-bis; F68, F72 for
+phase 7. The snapshots and the mock benchmark unchanged. The private data
+of `DAS-OATs/astrocook-data` (spectra of the screenshots) are cloned next
+to the repository when needed.
 
-Next: phase 5 (`ROADMAP.md`). Work in
+Next: phase 5-bis (`ROADMAP.md`), then release 2.3.0. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

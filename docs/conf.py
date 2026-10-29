@@ -111,6 +111,10 @@ autodoc_default_options = {
     # __all__ of a package (astrocook.core, astrocook.mocks) would be
     # described twice
     'ignore-module-all': True,
+    # The methods of SpectrumV2 live in mixin classes, one per theme
+    # (phase 5): its page lists them as before, and the references to them
+    # resolve; the members of the bases outside Astrocook are left out
+    'inherited-members': True,
     # 'private-members': True, # Uncomment if you also want _functions
 }
 
