@@ -244,33 +244,36 @@ def test_export_ascii(qtbot, ready, monkeypatch, tmp_path):
         assert (tmp_path / folder / expected).exists()
 
 
-def test_export_over_existing_files(ready, monkeypatch, tmp_path):
-    # The question before overwriting fails: QMessageBox is imported again
-    # further down in the same method, so it is a local name not yet bound
-    # (findings register F83). Nothing is written
+@pytest.mark.parametrize("answer", ["Yes", "No"])
+def test_export_over_existing_files(ready, monkeypatch, tmp_path, answer):
+    # Asked before overwriting (F83: the question raised UnboundLocalError,
+    # QMessageBox was imported again further down in the same method)
     window = ready
     name = window.active_history.current_state.name
     (tmp_path / f"{name}_spec.csv").write_text("old")
-    _messages(window, monkeypatch, "Yes")
+    shown = _messages(window, monkeypatch, answer)
     _save_as(window, monkeypatch, tmp_path, f"{name}_spec.csv")
-    with pytest.raises(UnboundLocalError):
-        window._on_recipe_requested("file", "export_ascii", {"targets": "y, dy"}, {})
-    assert (tmp_path / f"{name}_spec.csv").read_text() == "old"
+    window._on_recipe_requested("file", "export_ascii", {"targets": "y, dy"}, {})
+    assert shown[0]["header"] == "Files already exist"
+    assert shown[0]["text"].startswith(f"The following files will be overwritten:\n\n• {name}_spec.csv")
+    assert ((tmp_path / f"{name}_spec.csv").read_text() == "old") == (answer == "No")
 
 
-def test_export_with_the_names_of_the_gui(ready, monkeypatch, tmp_path):
-    # Targets named only as in the GUI (λ, F, dF) are not recognized as
-    # columns of the spectrum: no _spec suggested, and an existing file is
-    # overwritten without asking (findings register F82)
+@pytest.mark.parametrize("targets", ["F, dF", "λ, F", "F, cont, systems", "spec"])
+def test_export_with_the_names_of_the_gui(ready, monkeypatch, tmp_path, targets):
+    # Targets named as in the GUI (λ, F, dF), or the whole spectrum: the
+    # spectrum file is expected, and an existing one is not overwritten
+    # without asking (F82)
     window = ready
     name = window.active_history.current_state.name
     (tmp_path / f"{name}_spec.csv").write_text("old")
     shown = _messages(window, monkeypatch, "No")
     suggested = _save_as(window, monkeypatch, tmp_path)
-    window._on_recipe_requested("file", "export_ascii", {"targets": "F, dF"}, {})
-    assert suggested == [name]
-    assert "Files already exist" not in [m["header"] for m in shown]
-    assert (tmp_path / f"{name}_spec.csv").read_text() != "old"
+    window._on_recipe_requested("file", "export_ascii", {"targets": targets}, {})
+    expected = name if "systems" in targets else f"{name}_spec.csv"
+    assert suggested == [expected]
+    assert [m["header"] for m in shown] == ["Files already exist"]
+    assert (tmp_path / f"{name}_spec.csv").read_text() == "old"
 
 
 def test_variable_resolution_overwrite_asked(ready, monkeypatch, workers):

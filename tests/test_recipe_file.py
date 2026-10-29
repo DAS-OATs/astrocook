@@ -46,3 +46,26 @@ def test_export_ascii_maps_ui_names_on_whole_words_only(tmp_path):
     assert saved is True
     table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
     assert table.colnames == ["x", "xmin", "xmax"]
+
+
+def test_export_ascii_outputs(tmp_path):
+    # The files written, as the GUI asks before exporting (F82)
+    session = _make_session()
+    for targets, outputs in (("F, dF", ["spec"]), ("λmin", ["spec"]), ("λ", []),
+                             ("spec", ["spec"]), ("cont", []), ("systems", ["systems"]),
+                             ("F, systems", ["spec", "systems"]), ("", [])):
+        assert session.file.export_ascii_outputs(targets) == outputs, targets
+        for f in tmp_path.iterdir():
+            f.unlink()
+        session.file.export_ascii(targets=targets, path=str(tmp_path), prefix="qso")
+        written = sorted(f.name for f in tmp_path.iterdir())
+        assert written == [f"qso_{o}.csv" for o in outputs], targets
+
+
+def test_export_ascii_whole_spectrum(tmp_path):
+    # 'spec': all the columns of the spectrum (as documented; it wrote
+    # nothing before F82 was fixed)
+    session = _make_session()
+    assert session.file.export_ascii(targets="spec", path=str(tmp_path), prefix="qso")
+    table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
+    assert table.colnames == ["x", "xmin", "xmax", "y", "dy"]

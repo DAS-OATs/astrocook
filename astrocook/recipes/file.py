@@ -4,7 +4,7 @@ import re
 import numpy as np
 from astropy.io import ascii
 from astropy.table import Table
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -67,23 +67,11 @@ class RecipeFileV2:
         bool
             ``True`` if at least one file was successfully saved, ``False`` otherwise.
         """
-        mapping = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
-        processed_targets = targets
-        for ui_name, internal_name in mapping.items():
-            # Replace whole words only
-            processed_targets = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_targets)
-            
-        target_list = [t.strip() for t in processed_targets.split(',') if t.strip()]
+        spec_req, write_systems, syst_req, target_list = self._export_targets(targets)
         saved_any = False
-        
-        # Get authoritative column lists
-        spec_colnames = self._session.spec.t.colnames if self._session.spec else []
-        syst_colnames = self._session.systs.t.colnames if self._session.systs else []
-        
+
         try:
             # 1. Spectrum Export
-            # Any target that exists in spec table (and isn't the literal 'systems')
-            spec_req = [t for t in target_list if t in spec_colnames and t != 'x']
             if spec_req:
                 valid_cols = ['x'] + spec_req
                 raw_data = {c: self._session.spec.t[c] for c in valid_cols}
@@ -92,8 +80,7 @@ class RecipeFileV2:
                 saved_any = True
 
             # 2. Systems Export (Refined)
-            syst_req = [t for t in target_list if t in syst_colnames]
-            if ("systems" in target_list or syst_req) and self._session.systs:
+            if write_systems:
                 syst_table = self._session.systs.t
                 
                 if "systems" not in target_list:
@@ -119,6 +106,58 @@ class RecipeFileV2:
             logging.error(f"Export failed: {e}")
             return False
         
+    def export_ascii_outputs(self, targets: str) -> List[str]:
+        """
+        The files that :meth:`export_ascii` writes for these targets.
+
+        The GUI asks this before exporting, to suggest a file name and to
+        check for files that would be overwritten (F82: it used to decide
+        it by itself, without the names of the columns shown in the GUI).
+
+        Parameters
+        ----------
+        targets : str
+            Comma-separated list of structures or columns, as for
+            :meth:`export_ascii`.
+
+        Returns
+        -------
+        list of str
+            ``'spec'`` (the ``_spec.csv`` file) and/or ``'systems'`` (the
+            ``_systems.csv`` file), in this order.
+        """
+        spec_req, write_systems, _, _ = self._export_targets(targets)
+        return (['spec'] if spec_req else []) + (['systems'] if write_systems else [])
+
+    def _export_targets(self, targets: str):
+        """What :meth:`export_ascii` writes for these targets.
+
+        Returns the columns of the spectrum to write (besides ``x``, always
+        written), whether the systems are written, the columns of the systems
+        asked for, and the targets with the names of the GUI translated.
+        ``'spec'`` asks for all the columns of the spectrum.
+        """
+        mapping = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
+        processed_targets = targets
+        for ui_name, internal_name in mapping.items():
+            # Replace whole words only
+            processed_targets = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_targets)
+
+        target_list = [t.strip() for t in processed_targets.split(',') if t.strip()]
+
+        # Get authoritative column lists
+        spec_colnames = self._session.spec.t.colnames if self._session.spec else []
+        syst_colnames = self._session.systs.t.colnames if self._session.systs else []
+
+        # Any target that exists in spec table (and isn't the literal 'systems')
+        if 'spec' in target_list:
+            spec_req = [c for c in spec_colnames if c != 'x']
+        else:
+            spec_req = [t for t in target_list if t in spec_colnames and t != 'x']
+        syst_req = [t for t in target_list if t in syst_colnames]
+        write_systems = bool(("systems" in target_list or syst_req) and self._session.systs)
+        return spec_req, write_systems, syst_req, target_list
+
     def import_ascii(self, file_path: str) -> 'SessionV2':
         """
         Import columns from an ASCII/CSV file into the current session.

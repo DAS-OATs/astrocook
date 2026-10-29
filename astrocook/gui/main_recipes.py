@@ -198,16 +198,13 @@ class MainRecipesMixin:
         if recipe_name == "export_ascii":
             # 1. CLEAN PARSING OF TARGETS
             raw_targets = params.get('targets', '')
-            target_list = [t.strip() for t in raw_targets.split(',') if t.strip()]
-            
-            # Authoritative identification
-            # A 'spec' target is anything in the spectrum table (excluding 'systems')
-            spec_colnames = self.active_history.current_state.spec.t.colnames
-            has_spec = any(t in spec_colnames or t == "spec" for t in target_list if t != "systems")
-            
-            # A 'systems' target is the literal 'systems' or any column in the systems table
-            syst_colnames = self.active_history.current_state.systs.t.colnames
-            has_systems = "systems" in target_list or any(t in syst_colnames for t in target_list)
+
+            # The files the export writes, as the recipe decides them (F82:
+            # decided here from the internal names of the columns only, an
+            # existing spectrum file could be overwritten without asking)
+            outputs = self.active_history.current_state.file.export_ascii_outputs(raw_targets)
+            has_spec = 'spec' in outputs
+            has_systems = 'systems' in outputs
         
             # 2. SMART FILENAME SUGGESTION (REFINED)
             session_name = self.active_history.current_state.name
@@ -283,8 +280,6 @@ class MainRecipesMixin:
                 # or missing one is always replaced (#526)
                 if (self.active_history
                         and resolution_summary(self.active_history.current_state.spec)[1]):
-                    from PySide6.QtWidgets import QMessageBox, QApplication
-                    
                     # Find the currently active floating window/dialog
                     active_win = QApplication.activeWindow()
                     if active_win is None:
@@ -321,7 +316,6 @@ class MainRecipesMixin:
                             
                     # Mismatch detected!
                     if 0 < resol_count < len(specs_to_coadd):
-                        from PySide6.QtWidgets import QMessageBox, QApplication
                         active_win = QApplication.activeWindow()
                         if active_win is None: active_win = self
                             
