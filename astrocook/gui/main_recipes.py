@@ -9,17 +9,15 @@ Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
 of ``MainWindowV2``.
 """
 import logging
-import os
 from typing import Any, Dict
 
-from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import (QApplication, QCheckBox, QDialog, QFileDialog, QLineEdit,
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
                                QMessageBox, QProgressDialog)
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
-from astrocook.core.utils import is_branching_recipe, resource_path
+from astrocook.core.utils import is_branching_recipe
 
 from .qt_workers import RecipeWorker
 from .recipe_dialog import RecipeDialog
@@ -597,48 +595,6 @@ class MainRecipesMixin:
         finally:
             QApplication.restoreOverrideCursor()
             QTimer.singleShot(0, self._force_restack_floating_widgets)
-
-    def _show_refit_warning_with_checkbox(self, parent_widget):
-        """Shows a warning with a 'Don't show again' checkbox, styled like custom messages."""
-        msg_box = QMessageBox(parent_widget)
-        msg_box.setWindowTitle("Parameters Updated")
-        
-        # --- 1. Custom Icon (Same as _show_custom_message) ---
-        try:
-            icon_path = resource_path(os.path.join("assets", "icon_3d_HR.png"))
-            pixmap = QPixmap(icon_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                msg_box.setIconPixmap(pixmap)
-        except Exception:
-            msg_box.setIcon(QMessageBox.Icon.Information)
-
-        # --- 2. HTML Formatting (Same as _show_custom_message) ---
-        header = "Component parameters have been updated."
-        text = "To see the effect on the absorption model (green line), please <b>refit</b> the components."
-        
-        formatted_text = (
-            f"<p style='font-size: 13pt; font-weight: bold; margin: 0px;'>{header}</p>"
-            f"<p style='font-size: 12pt; font-weight: normal; margin-top: 8px;'>{text}</p>"
-        )
-        msg_box.setText(formatted_text)
-        
-        # --- 3. CSS Styling (Same as _show_custom_message) ---
-        msg_box.setStyleSheet("""
-            QLabel { padding-top: 10px; }
-            QCheckBox { margin-top: 10px; font-size: 12pt; }
-        """)
-
-        # Add Checkbox
-        cb = QCheckBox("Don't show this again")
-        msg_box.setCheckBox(cb)
-        
-        msg_box.setStandardButtons(QMessageBox.Ok)
-        msg_box.exec()
-        
-        if cb.isChecked():
-            self._suppress_refit_warning = True
-            logging.info("User suppressed future refit warnings for this session.")
 
     def _on_recipe_dialog_finished(self, result: int):
         """

@@ -34,16 +34,16 @@ SPECTRUM_PLOT_WIDGET |= {
 }
 
 
-#: Methods and class attributes of MainWindowV2 before the split
+#: Methods and class attributes of MainWindowV2 before the split (without
+#: the dead code removed in phase 5-bis, F77 and F80)
 MAIN_WINDOW = {
-    '_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM', '_SCRIPT_LINE_REGEX',
-    '_add_session_internal', '_apply_session_info_changes', '_apply_styles',
+    '_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM', '_add_session_internal',
+    '_apply_session_info_changes', '_apply_styles',
     '_ask_to_renormalize_model', '_blank_swatch', '_check_and_handle_requirements',
     '_cleanup_progress_ui', '_close_session', '_confirm_discard_continuum_edits',
     '_create_menubar', '_force_restack_floating_widgets', '_get_log_stride',
     '_import_systems_ascii', '_launch_identification_viewer', '_launch_log_scripter',
-    '_launch_rebin_dialog', '_launch_recipe_dialog', '_launch_x_convert_dialog',
-    '_launch_y_convert_dialog', '_log_for_new_session', '_make_card_section',
+    '_launch_recipe_dialog', '_log_for_new_session', '_make_card_section',
     '_on_about_requested', '_on_cancel_continuum_clicked',
     '_on_close_multiple_sessions', '_on_close_session_requested', '_on_coadd_requested',
     '_on_cursor_checkbox_toggled', '_on_debug_plot_requested', '_on_duplicate_session',
@@ -65,7 +65,7 @@ MAIN_WINDOW = {
     '_set_pending_action', '_set_plot_controls_faded', '_set_sessions_faded',
     '_set_slider_from_stride', '_setup_collapse_buttons', '_setup_empty_view',
     '_setup_left_sidebar', '_setup_plot_view', '_setup_right_sidebar',
-    '_show_custom_message', '_show_refit_warning_with_checkbox', '_swatch',
+    '_show_custom_message', '_swatch',
     '_swatch_checkboxes', '_toggle_continuum_editor', '_toggle_left_sidebar',
     '_toggle_right_sidebar', '_trigger_replot', '_undo_last_action',
     '_update_cursor_and_replot', '_update_limit_boxes_from_plot',

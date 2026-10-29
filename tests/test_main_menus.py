@@ -258,11 +258,8 @@ def test_documentation(empty, monkeypatch):
     assert opened == ["https://das-oats.github.io/astrocook/"]
 
 
-def test_placeholder_dialogs(empty, capsys):
-    # Not reachable from the menus (findings register F77)
-    empty._launch_x_convert_dialog()
-    empty._launch_y_convert_dialog()
-    empty._launch_rebin_dialog()
-    assert capsys.readouterr().out.splitlines() == [
-        "Launching X Convert Dialog...", "Launching Y Convert Dialog...",
-        "Launching Rebin Dialog..."]
+def test_placeholder_dialogs_are_gone(empty):
+    # Placeholders not reachable from the menus, removed (findings register F77)
+    for name in ("_launch_x_convert_dialog", "_launch_y_convert_dialog",
+                 "_launch_rebin_dialog"):
+        assert not hasattr(empty, name)
