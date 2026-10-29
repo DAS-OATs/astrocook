@@ -477,7 +477,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
@@ -547,23 +547,11 @@
 <span class="sd">        bool</span>
 <span class="sd">            ``True`` if at least one file was successfully saved, ``False`` otherwise.</span>
 <span class="sd">        """</span>
-        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'λ'</span><span class="p">:</span> <span class="s1">'x'</span><span class="p">,</span> <span class="s1">'λmin'</span><span class="p">:</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'λmax'</span><span class="p">:</span> <span class="s1">'xmax'</span><span class="p">,</span> <span class="s1">'F'</span><span class="p">:</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dF'</span><span class="p">:</span> <span class="s1">'dy'</span><span class="p">}</span>
-        <span class="n">processed_targets</span> <span class="o">=</span> <span class="n">targets</span>
-        <span class="k">for</span> <span class="n">ui_name</span><span class="p">,</span> <span class="n">internal_name</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Replace whole words only</span>
-            <span class="n">processed_targets</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\b'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">ui_name</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">'\b'</span><span class="p">,</span> <span class="n">internal_name</span><span class="p">,</span> <span class="n">processed_targets</span><span class="p">)</span>
-            
-        <span class="n">target_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">processed_targets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="n">spec_req</span><span class="p">,</span> <span class="n">write_systems</span><span class="p">,</span> <span class="n">syst_req</span><span class="p">,</span> <span class="n">target_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_targets</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
         <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">False</span>
-        
-        <span class="c1"># Get authoritative column lists</span>
-        <span class="n">spec_colnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">colnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span> <span class="k">else</span> <span class="p">[]</span>
-        <span class="n">syst_colnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">colnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="k">else</span> <span class="p">[]</span>
-        
+
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Spectrum Export</span>
-            <span class="c1"># Any target that exists in spec table (and isn't the literal 'systems')</span>
-            <span class="n">spec_req</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">spec_colnames</span> <span class="ow">and</span> <span class="n">t</span> <span class="o">!=</span> <span class="s1">'x'</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">spec_req</span><span class="p">:</span>
                 <span class="n">valid_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">+</span> <span class="n">spec_req</span>
                 <span class="n">raw_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_cols</span><span class="p">}</span>
@@ -572,8 +560,7 @@
                 <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># 2. Systems Export (Refined)</span>
-            <span class="n">syst_req</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">syst_colnames</span><span class="p">]</span>
-            <span class="k">if</span> <span class="p">(</span><span class="s2">"systems"</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="ow">or</span> <span class="n">syst_req</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">write_systems</span><span class="p">:</span>
                 <span class="n">syst_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">t</span>
                 
                 <span class="k">if</span> <span class="s2">"systems"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
@@ -600,6 +587,61 @@
             <span class="k">return</span> <span class="kc">False</span></div>
 
         
+<div class="viewcode-block" id="RecipeFileV2.export_ascii_outputs">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2.export_ascii_outputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_ascii_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        The files that :meth:`export_ascii` writes for these targets.</span>
+
+<span class="sd">        The GUI asks this before exporting, to suggest a file name and to</span>
+<span class="sd">        check for files that would be overwritten (F82: it used to decide</span>
+<span class="sd">        it by itself, without the names of the columns shown in the GUI).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        targets : str</span>
+<span class="sd">            Comma-separated list of structures or columns, as for</span>
+<span class="sd">            :meth:`export_ascii`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of str</span>
+<span class="sd">            ``'spec'`` (the ``_spec.csv`` file) and/or ``'systems'`` (the</span>
+<span class="sd">            ``_systems.csv`` file), in this order.</span>
+<span class="sd">        """</span>
+        <span class="n">spec_req</span><span class="p">,</span> <span class="n">write_systems</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_targets</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">([</span><span class="s1">'spec'</span><span class="p">]</span> <span class="k">if</span> <span class="n">spec_req</span> <span class="k">else</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">([</span><span class="s1">'systems'</span><span class="p">]</span> <span class="k">if</span> <span class="n">write_systems</span> <span class="k">else</span> <span class="p">[])</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_export_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""What :meth:`export_ascii` writes for these targets.</span>
+
+<span class="sd">        Returns the columns of the spectrum to write (besides ``x``, always</span>
+<span class="sd">        written), whether the systems are written, the columns of the systems</span>
+<span class="sd">        asked for, and the targets with the names of the GUI translated.</span>
+<span class="sd">        ``'spec'`` asks for all the columns of the spectrum.</span>
+<span class="sd">        """</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'λ'</span><span class="p">:</span> <span class="s1">'x'</span><span class="p">,</span> <span class="s1">'λmin'</span><span class="p">:</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'λmax'</span><span class="p">:</span> <span class="s1">'xmax'</span><span class="p">,</span> <span class="s1">'F'</span><span class="p">:</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dF'</span><span class="p">:</span> <span class="s1">'dy'</span><span class="p">}</span>
+        <span class="n">processed_targets</span> <span class="o">=</span> <span class="n">targets</span>
+        <span class="k">for</span> <span class="n">ui_name</span><span class="p">,</span> <span class="n">internal_name</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Replace whole words only</span>
+            <span class="n">processed_targets</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\b'</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">ui_name</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">'\b'</span><span class="p">,</span> <span class="n">internal_name</span><span class="p">,</span> <span class="n">processed_targets</span><span class="p">)</span>
+
+        <span class="n">target_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">processed_targets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+
+        <span class="c1"># Get authoritative column lists</span>
+        <span class="n">spec_colnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">colnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="n">syst_colnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">colnames</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="c1"># Any target that exists in spec table (and isn't the literal 'systems')</span>
+        <span class="k">if</span> <span class="s1">'spec'</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
+            <span class="n">spec_req</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">spec_colnames</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s1">'x'</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spec_req</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">spec_colnames</span> <span class="ow">and</span> <span class="n">t</span> <span class="o">!=</span> <span class="s1">'x'</span><span class="p">]</span>
+        <span class="n">syst_req</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">syst_colnames</span><span class="p">]</span>
+        <span class="n">write_systems</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">((</span><span class="s2">"systems"</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="ow">or</span> <span class="n">syst_req</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">spec_req</span><span class="p">,</span> <span class="n">write_systems</span><span class="p">,</span> <span class="n">syst_req</span><span class="p">,</span> <span class="n">target_list</span>
+
 <div class="viewcode-block" id="RecipeFileV2.import_ascii">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2.import_ascii">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">import_ascii</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
