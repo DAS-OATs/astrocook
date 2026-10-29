@@ -323,7 +323,8 @@ class VoigtFitterV2:
         return final_model
 
     @staticmethod
-    def _scaled_errors(residuals: np.ndarray, jac: np.ndarray) -> Tuple[np.ndarray, float]:
+    def _scaled_errors(residuals: np.ndarray, jac: np.ndarray
+                       ) -> Tuple[np.ndarray, float, np.ndarray]:
         """Parameter errors sqrt(diag((J^T J)^-1)) scaled by sqrt(reduced chi2).
 
         Scaled as in V1 (lmfit ``scale_covar=True``; findings register F29,
@@ -332,7 +333,9 @@ class VoigtFitterV2:
         constrain the fitted parameters (rows of the Jacobian that are not
         negligible), so that unrelated absorption or misfit elsewhere in the
         fit window does not inflate the errors (issue #534). It is returned
-        and stored in each fitted component (``chi2``).
+        and stored in each fitted component (``chi2``), with the covariance
+        matrix scaled in the same way (for the errors of the linked
+        parameters, ``_linked_errors``).
         """
         n_par = jac.shape[1]
         row_norm = np.sqrt(np.sum(jac ** 2, axis=1))
@@ -344,7 +347,39 @@ class VoigtFitterV2:
         # error: reported by fit() instead of a bare RuntimeWarning (F20)
         with np.errstate(invalid='ignore'):
             errors = np.sqrt(np.diag(cov)) * np.sqrt(red_chi2)
-        return errors, red_chi2
+        return errors, red_chi2, cov * red_chi2
+
+    def _linked_errors(self, p_free: np.ndarray, cov: np.ndarray) -> Dict[int, float]:
+        """Errors of the linked parameters, propagated from the free ones.
+
+        A linked parameter is a function of the free parameters through the
+        expression of its link (``map_p_free_to_full``): its error is
+        sqrt(g C g^T), with C the covariance of the free parameters and g the
+        gradient of the expression, computed numerically (central
+        differences; exact for the usual links, a copy or a shift of the
+        target). Before, a linked parameter was given error 0, which the
+        ASCII list of the systems exported (issue #630). A parameter linked
+        to targets that are not free in this fit (frozen, or outside the
+        fitted group) gets 0, as a frozen parameter.
+
+        Returns
+        -------
+        dict
+            Index in the full parameter vector -> error.
+        """
+        linked = [idx for idx, _ in self._constraints._compiled_links]
+        if not linked or len(p_free) == 0:
+            return {}
+        grad = np.empty((len(linked), len(p_free)))
+        for k in range(len(p_free)):
+            h = 1e-6 * max(1.0, abs(p_free[k]))
+            p_plus = p_free.copy(); p_plus[k] += h
+            p_minus = p_free.copy(); p_minus[k] -= h
+            grad[:, k] = (self._constraints.map_p_free_to_full(p_plus)[linked]
+                          - self._constraints.map_p_free_to_full(p_minus)[linked]) / (2 * h)
+        with np.errstate(invalid='ignore'):
+            errors = np.sqrt(np.einsum('ij,jk,ik->i', grad, cov, grad))
+        return dict(zip(linked, errors))
 
     def evaluate_uncertainties(self, z_window_kms: float = 20.0) -> SystemListV2:
         """
@@ -374,7 +409,8 @@ class VoigtFitterV2:
         self._active_fit_components = None
         self._active_lines_data = None
         try:
-            errors, red_chi2 = self._scaled_errors(r0, jac)
+            errors, red_chi2, cov = self._scaled_errors(r0, jac)
+            linked_errors = self._linked_errors(p0, cov)
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
             return self._system_list
@@ -392,6 +428,8 @@ class VoigtFitterV2:
                             ('dbtur', idx + 3)):
                 if is_free_mask[j]:
                     new[name] = full_errors[j]
+                elif j in linked_errors:
+                    new[name] = linked_errors[j]
             comps.append(dataclasses.replace(c, **new))
         return SystemListV2(dataclasses.replace(self._system_list._data, components=comps))
 
@@ -894,13 +932,16 @@ class VoigtFitterV2:
         p_free_errors = np.zeros_like(res.x)
         is_free_mask = self._constraints._param_map['is_free']
         red_chi2 = 0
+        linked_errors = {}
         try:
-            p_free_errors, red_chi2 = self._scaled_errors(res.fun, res.jac)
+            p_free_errors, red_chi2, cov = self._scaled_errors(res.fun, res.jac)
+            linked_errors = self._linked_errors(res.x, cov)
             logging.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
             logging.warning(f"Error calc failed: {e}")
             p_free_errors = np.zeros_like(res.x)
             p_free_errors[:] = np.nan
+            linked_errors = {idx: np.nan for idx, _ in self._constraints._compiled_links}
 
         p_fitted_full = self._constraints.map_p_free_to_full(res.x)
         p_full_errors = np.zeros_like(p_fitted_full)
@@ -928,6 +969,8 @@ class VoigtFitterV2:
                     return p_full_errors[param_idx] # New calculated error
                 elif is_spectator:
                     return old_err # PRESERVE old error for spectators
+                elif param_idx in linked_errors:
+                    return linked_errors[param_idx] # Propagated through the link (#630)
                 else:
                     return 0.0 # ZERO error for user-frozen params
                 
