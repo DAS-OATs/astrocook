@@ -497,15 +497,3 @@ class MainMenusMixin:
             self._on_recipe_requested("edit", "import_systems_ascii",
                                       {"file_path": file_path, "append": "True",
                                        "refit": "False"}, {})
-
-    def _launch_x_convert_dialog(self):
-        # Placeholder function called by the QAction
-        print("Launching X Convert Dialog...")
-
-    def _launch_y_convert_dialog(self):
-        # Placeholder function called by the QAction
-        print("Launching Y Convert Dialog...")
-
-    def _launch_rebin_dialog(self):
-        # Placeholder function called by the QAction
-        print("Launching Rebin Dialog...")

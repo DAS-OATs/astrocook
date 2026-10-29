@@ -6,7 +6,6 @@ Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
 of ``MainWindowV2``.
 """
 import logging
-import re
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
@@ -71,9 +70,6 @@ class MainScriptsMixin:
             self.plot_controls_collapse_button.raise_()
         except Exception as e:
             logging.warning(f"Could not re-raise buttons: {e}")
-
-    # Simple regex to find recipe(args)
-    _SCRIPT_LINE_REGEX = re.compile(r'(\w+)\((.*)\)')
 
     def run_script(self, script_text: str):
         """

@@ -476,7 +476,7 @@ def test_log_scripter(ready):
     assert window.log_scripter_dialog is None
 
 
-def test_dead_code(window):
-    # Not called by anything (findings register F80)
-    assert callable(window._show_refit_warning_with_checkbox)
-    assert window._SCRIPT_LINE_REGEX.match("smooth(sigma=1)").groups() == ("smooth", "sigma=1")
+def test_dead_code_is_gone(window):
+    # Called by nothing, removed (findings register F80)
+    assert not hasattr(window, "_show_refit_warning_with_checkbox")
+    assert not hasattr(window, "_SCRIPT_LINE_REGEX")
