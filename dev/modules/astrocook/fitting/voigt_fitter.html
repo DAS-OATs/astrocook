@@ -804,7 +804,8 @@
         <span class="k">return</span> <span class="n">final_model</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_scaled_errors</span><span class="p">(</span><span class="n">residuals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jac</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_scaled_errors</span><span class="p">(</span><span class="n">residuals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">jac</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""Parameter errors sqrt(diag((J^T J)^-1)) scaled by sqrt(reduced chi2).</span>
 
 <span class="sd">        Scaled as in V1 (lmfit ``scale_covar=True``; findings register F29,</span>
@@ -813,7 +814,9 @@
 <span class="sd">        constrain the fitted parameters (rows of the Jacobian that are not</span>
 <span class="sd">        negligible), so that unrelated absorption or misfit elsewhere in the</span>
 <span class="sd">        fit window does not inflate the errors (issue #534). It is returned</span>
-<span class="sd">        and stored in each fitted component (``chi2``).</span>
+<span class="sd">        and stored in each fitted component (``chi2``), with the covariance</span>
+<span class="sd">        matrix scaled in the same way (for the errors of the linked</span>
+<span class="sd">        parameters, ``_linked_errors``).</span>
 <span class="sd">        """</span>
         <span class="n">n_par</span> <span class="o">=</span> <span class="n">jac</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">row_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">jac</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -825,7 +828,39 @@
         <span class="c1"># error: reported by fit() instead of a bare RuntimeWarning (F20)</span>
         <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
             <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">cov</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">red_chi2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">*</span> <span class="n">red_chi2</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_linked_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_free</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Errors of the linked parameters, propagated from the free ones.</span>
+
+<span class="sd">        A linked parameter is a function of the free parameters through the</span>
+<span class="sd">        expression of its link (``map_p_free_to_full``): its error is</span>
+<span class="sd">        sqrt(g C g^T), with C the covariance of the free parameters and g the</span>
+<span class="sd">        gradient of the expression, computed numerically (central</span>
+<span class="sd">        differences; exact for the usual links, a copy or a shift of the</span>
+<span class="sd">        target). Before, a linked parameter was given error 0, which the</span>
+<span class="sd">        ASCII list of the systems exported (issue #630). A parameter linked</span>
+<span class="sd">        to targets that are not free in this fit (frozen, or outside the</span>
+<span class="sd">        fitted group) gets 0, as a frozen parameter.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Index in the full parameter vector -&gt; error.</span>
+<span class="sd">        """</span>
+        <span class="n">linked</span> <span class="o">=</span> <span class="p">[</span><span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_compiled_links</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">linked</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_free</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">linked</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_free</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p_free</span><span class="p">)):</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="mf">1e-6</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p_free</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="n">p_plus</span> <span class="o">=</span> <span class="n">p_free</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">p_plus</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">h</span>
+            <span class="n">p_minus</span> <span class="o">=</span> <span class="n">p_free</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">p_minus</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-=</span> <span class="n">h</span>
+            <span class="n">grad</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">p_plus</span><span class="p">)[</span><span class="n">linked</span><span class="p">]</span>
+                          <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">p_minus</span><span class="p">)[</span><span class="n">linked</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'ij,jk,ik-&gt;i'</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">grad</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">linked</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
 
 <div class="viewcode-block" id="VoigtFitterV2.evaluate_uncertainties">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties">[docs]</a>
@@ -857,7 +892,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
+            <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
+            <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error calc failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span>
@@ -875,6 +911,8 @@
                             <span class="p">(</span><span class="s1">'dbtur'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
                     <span class="n">new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_errors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">linked_errors</span><span class="p">:</span>
+                    <span class="n">new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">linked_errors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
             <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">new</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span></div>
 
@@ -1386,13 +1424,16 @@
         <span class="n">p_free_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
         <span class="n">red_chi2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">linked_errors</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">p_free_errors</span><span class="p">,</span> <span class="n">red_chi2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">jac</span><span class="p">)</span>
+            <span class="n">p_free_errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">jac</span><span class="p">)</span>
+            <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Errors calculated: </span><span class="si">{</span><span class="n">p_free_errors</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error calc failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">p_free_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
             <span class="n">p_free_errors</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">linked_errors</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_compiled_links</span><span class="p">}</span>
 
         <span class="n">p_fitted_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">p_full_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">p_fitted_full</span><span class="p">)</span>
@@ -1420,6 +1461,8 @@
                     <span class="k">return</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]</span> <span class="c1"># New calculated error</span>
                 <span class="k">elif</span> <span class="n">is_spectator</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">old_err</span> <span class="c1"># PRESERVE old error for spectators</span>
+                <span class="k">elif</span> <span class="n">param_idx</span> <span class="ow">in</span> <span class="n">linked_errors</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">linked_errors</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]</span> <span class="c1"># Propagated through the link (#630)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="mf">0.0</span> <span class="c1"># ZERO error for user-frozen params</span>
                 
