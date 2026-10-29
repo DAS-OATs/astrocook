@@ -108,8 +108,13 @@ class SystemInspector(QWidget):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(0)
         
-        # [Task 2] Create a layout for the checkbox that matches the Right Toolbar's height/margins
-        self.group_cb = QCheckBox("Group View (Selected Component Only)")
+        # Only the group of the selection: the components fitted with it
+        # (get_connected_group). The old label, "Group View (Selected
+        # Component Only)", did not say so (findings register F85)
+        self.group_cb = QCheckBox("Only group")
+        self.group_cb.setToolTip("Show only the group of the selected components: those "
+                                 "linked to them, blended with them or close in velocity, "
+                                 "which are fitted together")
         self.group_cb.toggled.connect(self._on_group_toggled)
         
         # Flags of the fit (#517): show only, or select, the components
@@ -125,6 +130,9 @@ class SystemInspector(QWidget):
 
         l_toolbar = QHBoxLayout()
         l_toolbar.setContentsMargins(5, 5, 15, 15) # Exact match to Right Toolbar
+        # Its own spacing: a nested layout takes that of its parent, 0 here,
+        # and the boxes touched (F85)
+        l_toolbar.setSpacing(12)
         l_toolbar.addWidget(self.group_cb)
         l_toolbar.addWidget(self.flagged_cb)
         l_toolbar.addWidget(self.select_flagged_btn)
@@ -487,7 +495,7 @@ class SystemInspector(QWidget):
         Public API: Selects a component and scrolls to it.
         Args:
         
-        force_group_view: If True, checks 'Group View' at the end (Main Window behavior). If False, restores previous state (Inspector Plot behavior).
+        force_group_view: If True, checks 'Only group' at the end (Main Window behavior). If False, restores previous state (Inspector Plot behavior).
         """
         # 1. Capture previous state
         was_checked = self.group_cb.isChecked()
@@ -519,7 +527,7 @@ class SystemInspector(QWidget):
         self.table_view.selectRow(proxy_idx.row())
         self.table_view.scrollTo(proxy_idx)
         
-        # 6. [FIX] Logic for Group View State
+        # 6. [FIX] Logic for the 'Only group' State
         if force_group_view:
             # Case 1: Main Window -> Always Enforce
             self.group_cb.setChecked(True)

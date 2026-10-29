@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from astrocook.gui.main_window import MainWindowV2
 from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
@@ -307,6 +307,21 @@ def test_inspector_columns_fit_their_contents(qtbot, loaded):
     inspector.group_cb.setChecked(False)
     qtbot.waitUntil(lambda: _columns_fit_their_contents(inspector)
                     and header.sectionSize(1) == wide)
+
+
+def test_inspector_boxes_above_the_table(loaded):
+    """The boxes above the table do not touch, and the group box says what
+    it shows (findings register F85: no spacing in their row, and the
+    label "Group View (Selected Component Only)")."""
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    inspector.resize(1000, 700)
+    QApplication.processEvents()
+    group, flagged, button = (inspector.group_cb, inspector.flagged_cb,
+                              inspector.select_flagged_btn)
+    assert group.text() == "Only group" and "fitted together" in group.toolTip()
+    assert group.geometry().right() + 10 < flagged.geometry().left()
+    assert flagged.geometry().right() + 10 < button.geometry().left()
 
 
 def test_inspector_fit_window(loaded, monkeypatch):

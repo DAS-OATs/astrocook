@@ -11,6 +11,9 @@ Italian.
 
 ## Working with Guido
 - Do not subscribe to PR activity (no automatic watching of the PRs).
+- After opening a PR, check its CI with a scheduled reminder (not by
+  subscribing to the PR activity) and tell Guido the result as soon as
+  the tests finish.
 - Short progress messages during the work are fine; at the end of each
   task, a discursive summary of what was done, why, what was found and
   what is left (not just a terse list). Do not wait for long test runs to

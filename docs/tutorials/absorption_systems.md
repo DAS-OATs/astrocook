@@ -77,7 +77,7 @@ This table lists every component in the model.
 * **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
 * **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
-* **Group View:** Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.
+* **Only group:** Check the box above the table to show only the group of the selected components: the components linked to them, blended with them or close in velocity, which are fitted together with them. Right-clicking a component in the main plot and choosing **Inspect ... (its group)** (e.g. *Inspect CIV (its group)*) opens the inspector this way.
 
 #### Understanding Resolution Priority
 Astrocook handles instrumental resolution ($R$) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The resolution of a spectrum lives in its `resol` column (visible in the Data Inspector): resolving power $R$ if dimensionless, FWHM if in km/s. The Voigt fitting engine and the velocity plots use it according to this hierarchy:
