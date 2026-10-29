@@ -10,6 +10,11 @@ sphinx-apidoc -f -e --no-toc -o \
     astrocook/core/photometry.py \
     astrocook/core/session_manager.py \
     astrocook/core/spectrum_operations.py \
+    astrocook/core/spectrum_combine.py \
+    astrocook/core/spectrum_continuum.py \
+    astrocook/core/spectrum_expressions.py \
+    astrocook/core/spectrum_flux.py \
+    astrocook/core/spectrum_lines.py \
     astrocook/core/utils.py \
     astrocook/gui/*.py \
     astrocook/io/*.py \

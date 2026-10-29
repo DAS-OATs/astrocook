@@ -2,7 +2,7 @@
 
 The model flux F is computed on a fine grid, uniform in velocity, and each
 pixel i of the spectrum gets the mean over its own edges [v_lo_i, v_hi_i]
-of F convolved with a Gaussian of the resolution *of that pixel*:
+of F convolved with a Gaussian of the resolution *of that pixel*::
 
     model_i = (1 / (v_hi_i - v_lo_i)) * integral over [v_lo_i, v_hi_i] of (F * G_i)(v) dv
             = integral of F(v) K_i(v) dv / integral of K_i(v) dv,
