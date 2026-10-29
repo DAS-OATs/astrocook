@@ -24,6 +24,10 @@ STRONG_EMISSION_LINES = {
 }
 
 # --- Centralized Plot Style Configuration ---
+# The span of a region selected with the Select tool (F73): the colour of
+# the selection elsewhere (the highlighted group of the System Inspector)
+SELECTION_STYLE = {'color': '#f5a100', 'alpha': 0.25, 'linewidth': 0}
+
 PLOT_STYLE = {
     'flux': {
         'color_idx': 0,       # Index in color cycle (tab20)

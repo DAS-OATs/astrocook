@@ -104,6 +104,8 @@ To extract a custom range into a *new* session:
     * Example: `(λ > 400) & (λ < 500)`
 3.  A new session containing only that data range will appear in your list.
 
+You can also select the range with the mouse: choose the **Select** tool in the plot toolbar, drag over the region and pick **Split region** (see [Navigating the Plot](#getting-started-navigating)), or right-click the plot and choose **Split from Current Zoom** to split what the plot shows.
+
 ### Quick Extraction (Presets)
 
 Astrocook knows standard quasar regions. If your $z_\mathrm{em}$ is set:

@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+- GUI: a **Select** tool in the toolbar of the main plot (F73: the selection of a region was there, but no button reached it). Drag along the wavelength axis to select a region, then choose **Split region**, **Mask region...**, **Rebin region...** or **Zoom to region**; the recipe dialogs open with the region filled in. See *Navigating the Plot* in the *Getting Started* tutorial.
+
 ### Changed
 - GUI: the System Inspector opens much faster, and selecting a component redraws the plots faster (phase 5). On a session with 764 components, on the same machine: the first opening from about 5 s to 0.7 s, the next ones from 3.2 s to 0.5 s, the selection of a row from 0.6 s to 0.2 s, the redraw of the main plot from 0.24 s to 0.17 s, the refit of a group from the inspector (the time of the GUI around the fit) from 2.3 s to 0.9 s. No change of results.
 - The code of the spectrum (`SpectrumV2`) and of the GUI is split into smaller modules, one per theme (phase 5). Nothing changes for the user or in scripts: `SpectrumV2` has the same methods, documented on its page of the API reference as before.

@@ -17,17 +17,24 @@ Once loaded, the interface will come alive. The central area displays your spect
 :align: center
 ```
 
+(getting-started-navigating)=
 ## 2. Navigating the Plot
 
 The central plot is interactive. You can explore the details of your spectrum using the toolbar located directly above the graph (standard Matplotlib controls):
 
 - **Pan**: Click the "Cross arrow" icon to click and drag the spectrum.
 - **Zoom**: Click the "Magnifying glass" icon to draw a rectangle and zoom into a specific feature.
+- **Select**: Click the "Dashed rectangle" icon, then drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: **Split region** (a new session with the region only), **Mask region...**, **Rebin region...** (each opens its recipe dialog with the region filled in, so you can check it before running) and **Zoom to region**. Press `Esc` or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.
 - **Home**: Click the "Home" icon to reset the view to the full range.
 
 :::{tip}
 Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!
 :::
+
+```{image} ../_static/getting_started_region_select.png
+:alt: A region of the spectrum selected with the Select tool, and the menu of the actions on it
+:align: center
+```
 
 (data-inspector)=
 ### The Data Inspector
