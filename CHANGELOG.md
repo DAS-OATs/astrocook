@@ -1,6 +1,15 @@
 ## [Unreleased]
 
+### Changed
+- GUI: the System Inspector opens much faster, and selecting a component redraws the plots faster (phase 5). On a session with 764 components, on the same machine: the first opening from about 5 s to 0.7 s, the next ones from 3.2 s to 0.5 s, the selection of a row from 0.6 s to 0.2 s, the redraw of the main plot from 0.24 s to 0.17 s, the refit of a group from the inspector (the time of the GUI around the fit) from 2.3 s to 0.9 s. No change of results.
+- The code of the spectrum (`SpectrumV2`) and of the GUI is split into smaller modules, one per theme (phase 5). Nothing changes for the user or in scripts: `SpectrumV2` has the same methods, documented on its page of the API reference as before.
+
 ### Fixed
+- *Data loss* (GUI): *File > Export to ASCII...* could overwrite an existing `_spec.csv` file without asking, when the columns to export were written only with the names shown in the GUI (e.g. `F, dF`, or the default `F, cont, systems` on a session without continuum): the GUI did not expect a spectrum file, so it did not suggest its name nor check for it (F82). The GUI now asks the export which files it will write. The target `spec`, documented as "all the columns of the spectrum", wrote nothing: it now writes them.
+- GUI: when the files to export already existed, *File > Export to ASCII...* failed silently instead of asking whether to overwrite them (an `UnboundLocalError` in the console, F83).
+- GUI: on a wavelength axis converted to velocity (`x_convert`, from a script), the ticks of the absorption systems were drawn relative to z = 0 instead of the emission redshift, so they fell outside the plot (F66). They now use the emission redshift, as the conversion of the axis by default.
+- GUI: saving a continuum edited by hand could log "Failed to save continuum" and leave the plot not redrawn, although the continuum was saved (F74).
+- Importing the GUI from a script that had already imported `matplotlib.pyplot` without a window failed (F7).
 - *Flux > Calibrate* failed at every call with recent versions of NumPy ("module 'numpy' has no attribute 'trapz'"): the synthetic magnitudes used `np.trapz`, which NumPy has removed. They now use the same trapezoid rule from SciPy, which works with every supported version of NumPy. No change of results where it worked.
 
 ## [2.2.0] - 2026-10-27
