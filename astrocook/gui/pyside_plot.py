@@ -523,7 +523,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             raw = self._raw_plot_arrays(full, view)
 
             # The ERROR array to use
-            error_col_name = self.main_window.snr_col_combo.currentText()
+            # The name of the column ("dy" for the "dF" of the box, F75)
+            error_col_name = view.snr_col
             try:
                 if error_col_name == 'dy':
                     full_error_data = full.dy
@@ -612,7 +613,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     ghost_dy = _divide(ghost_dy, ghost_norm)
             elif view.is_snr:
                 try:
-                    err_col = self.main_window.snr_col_combo.currentText()
+                    err_col = view.snr_col
                     err_data = ghost_dy if err_col == 'dy' else ghost_state.spec.get_column(err_col).value
                     ghost_y = _divide(ghost_y, err_data)
                     ghost_dy = np.ones_like(ghost_y)

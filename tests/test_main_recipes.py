@@ -138,9 +138,16 @@ def test_recipe_dialog(ready, monkeypatch):
     window._launch_recipe_dialog("flux", "smooth")
     dialog = window.active_recipe_dialog
     assert dialog.recipe_name == "smooth" and dialog.isVisible()
-    # pan(False) and zoom(False) were meant to switch the tools off, but
-    # they toggle them: zoom ends up on (findings register F81)
-    assert viewer.toolbar.mode == "zoom rect"
+    # No tool is on while the dialog is open (before, pan(False) and
+    # zoom(False) toggled them and left zoom on: findings register F81)
+    assert viewer.toolbar.mode == ""
+    dialog.reject()
+    # A tool that is on is switched off
+    viewer.toolbar.pan()
+    assert viewer.toolbar.mode == "pan/zoom"
+    window._launch_recipe_dialog("flux", "smooth")
+    dialog = window.active_recipe_dialog
+    assert viewer.toolbar.mode == ""
     # A second dialog is not opened while one is
     window._launch_recipe_dialog("flux", "rebin")
     assert window.active_recipe_dialog is dialog

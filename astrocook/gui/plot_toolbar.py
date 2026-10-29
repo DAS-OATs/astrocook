@@ -53,6 +53,18 @@ class AstrocookToolbar(NavigationToolbar):
                 action.setIcon(icon)
                 break
             
+    def deactivate_tools(self):
+        """Switch off the active tool (Pan or Zoom), if any.
+
+        Matplotlib's ``pan`` and ``zoom`` toggle their tool and ignore their
+        argument: ``pan(False)`` with no tool on switches pan on (findings
+        register F81).
+        """
+        if self.mode == 'pan/zoom':
+            self.pan()
+        elif self.mode == 'zoom rect':
+            self.zoom()
+
     def toggle_select_mode(self):
         """Toggles the region selection mode on/off."""
         if not self.viewer_parent: return
