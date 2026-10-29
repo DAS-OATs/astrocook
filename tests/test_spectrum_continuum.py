@@ -65,14 +65,17 @@ def test_knots_renormalize_the_model():
                                   spec.get_column("model").value)
 
 
-def test_knots_with_a_model_and_no_continuum_fail():
-    # The old continuum is needed to renormalize the model, and is not
-    # checked: AttributeError (findings register F67, reported to Guido)
+def test_knots_with_a_model_and_no_continuum_keep_the_model():
+    # Without an old continuum the model cannot be renormalized: it is kept
+    # as it is, as in fit_continuum (it raised AttributeError, findings
+    # register F67)
     spec = _spec(model=True)
-    with pytest.raises(AttributeError):
-        spec.update_continuum_from_knots(KNOTS_X, KNOTS_Y)
-    new = spec.update_continuum_from_knots(KNOTS_X, KNOTS_Y, renorm_model=False)
-    assert new.has_aux_column("cont")
+    for renorm in (True, False):
+        new = spec.update_continuum_from_knots(KNOTS_X, KNOTS_Y,
+                                               renorm_model=renorm)
+        assert new.has_aux_column("cont")
+        np.testing.assert_array_equal(new.get_column("model").value,
+                                      spec.get_column("model").value)
 
 
 @pytest.mark.parametrize("knots_x, knots_y", [([], []), (None, None),

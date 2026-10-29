@@ -316,8 +316,10 @@ class ContinuumMixin:
         # 3. Update 'cont' column
         new_spec = self.update_column('cont', new_cont, description="Spline from manual knots")
         
-        # 4. Handle Model Renormalization
-        if renorm_model and new_spec.has_aux_column('model'):
+        # 4. Handle Model Renormalization (needs the old continuum, as in
+        #    fit_continuum: without it the model is kept as it is)
+        if (renorm_model and new_spec.has_aux_column('model')
+                and self.has_aux_column('cont')):
             old_cont_col = self.get_column('cont')
             
             # We can use the helper we used in smooth_column/fit_continuum

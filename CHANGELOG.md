@@ -10,6 +10,8 @@
 - GUI: on a wavelength axis converted to velocity (`x_convert`, from a script), the ticks of the absorption systems were drawn relative to z = 0 instead of the emission redshift, so they fell outside the plot (F66). They now use the emission redshift, as the conversion of the axis by default.
 - GUI: saving a continuum edited by hand could log "Failed to save continuum" and leave the plot not redrawn, although the continuum was saved (F74).
 - Importing the GUI from a script that had already imported `matplotlib.pyplot` without a window failed (F7).
+- Saving a continuum edited by hand (*Update from knots*) failed with an `AttributeError` on a spectrum with a model and no continuum (F67): the model is now kept as it is, as when the continuum is fitted.
+- Asking a spectrum for a column it does not have, resampled on another grid (e.g. when spectra are combined), raised a confusing `AttributeError` instead of the `ValueError` that names the column (F71).
 - *Flux > Calibrate* failed at every call with recent versions of NumPy ("module 'numpy' has no attribute 'trapz'"): the synthetic magnitudes used `np.trapz`, which NumPy has removed. They now use the same trapezoid rule from SciPy, which works with every supported version of NumPy. No change of results where it worked.
 
 ## [2.2.0] - 2026-10-27
