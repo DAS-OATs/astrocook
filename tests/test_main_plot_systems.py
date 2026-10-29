@@ -58,10 +58,32 @@ def test_system_ticks_in_nm(window, snapshot):
 
 
 def test_system_ticks_in_velocity(window, snapshot):
-    # The ticks are converted with z_ref = 0 whatever the z_ref of the
-    # conversion (F66): only z_ref = 0 puts them on the plot today
+    # The archive has no z_em: the reference of the ticks is 0, as the
+    # z_ref of the conversion
     state = window.active_history.current_state.edit.x_convert(
         z_ref="0", xunit="km/s")
     ticks = _ticks(window.plot_viewer, state, _selection(state))
     assert len(ticks["x"]) > 700 and len(ticks["selected"]) == 3
     snapshot.check("main_plot_system_ticks_kms", ticks)
+
+
+def test_system_ticks_in_velocity_with_z_em(window):
+    """With z_em, the axis converted at z_ref = z_em (the default): the
+    ticks are referred to z_em too, all on the plot (F66: they were
+    referred to 0 and fell outside it)."""
+    from astrocook.core.spectrum_operations import convert_axis_velocity
+    import astropy.units as au
+    state = window.active_history.current_state
+    plain = _ticks(window.plot_viewer, state.edit.x_convert(z_ref="0", xunit="km/s"),
+                   _selection(state))
+    z_em = 4.072
+    with_z_em = state.edit.set_properties(z_em=str(z_em))
+    converted = with_z_em.edit.x_convert(xunit="km/s")  # z_ref = z_em
+    ticks = _ticks(window.plot_viewer, converted, _selection(with_z_em))
+    np.testing.assert_array_equal(ticks["id"], plain["id"])
+    shift = convert_axis_velocity(np.array([1.0]) * au.nm, z_em, au.km / au.s).value[0] - \
+        convert_axis_velocity(np.array([1.0]) * au.nm, 0.0, au.km / au.s).value[0]
+    np.testing.assert_allclose(ticks["x"], plain["x"] + shift, rtol=0, atol=1e-6)
+    assert len(ticks["selected"]) == 3
+    lo, hi = window.plot_viewer.canvas.axes.get_xlim()
+    assert lo <= ticks["x"].min() and ticks["x"].max() <= hi
