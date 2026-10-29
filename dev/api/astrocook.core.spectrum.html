@@ -1286,7 +1286,8 @@ spectrum’s grid.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.scale_flux">
 <span class="sig-name descname"><span class="pre">scale_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.scale_flux" title="Link to this definition">#</a></dt>
-<dd><p>Scale the flux (y, dy) and relevant auxiliary columns (cont, model).</p>
+<dd><p>Scale the flux (y, dy) and the flux auxiliary columns (cont, model,
+cont_pl).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>scale_factor</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Multiplicative factor.</p>
@@ -1303,7 +1304,8 @@ spectrum’s grid.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.smooth">
 <span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a></span></span><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.smooth" title="Link to this definition">#</a></dt>
-<dd><p>Apply Gaussian smoothing to all flux-like columns (y, dy, cont, model).</p>
+<dd><p>Apply Gaussian smoothing to the flux (y, dy), the flux auxiliary
+columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sigma_kms</strong> (<em>float</em>) – Standard deviation of the Gaussian kernel in km/s.</p>

@@ -531,7 +531,7 @@
 </li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
-<p>The operation creates a <em>new</em> session state with the smoothed flux. The original data is preserved in the history (undo with <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>). Note that the error array (<code class="docutils literal notranslate"><span class="pre">dy</span></code>) is also smoothed to maintain consistency.</p>
+<p>The operation creates a <em>new</em> session state with the smoothed flux. The original data is preserved in the history (undo with <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>). Note that the error array (<code class="docutils literal notranslate"><span class="pre">dy</span></code>) is also smoothed to maintain consistency, and so are the continuum (<code class="docutils literal notranslate"><span class="pre">cont</span></code>), the model (<code class="docutils literal notranslate"><span class="pre">model</span></code>), the power-law continuum (<code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>) and the telluric transmission (<code class="docutils literal notranslate"><span class="pre">telluric_model</span></code>), if present.</p>
 <img alt="A smoothed spectrum" class="align-center" src="../images/flux_smooth.png" />
 </section>
 <section id="rebinning">
@@ -592,7 +592,7 @@
 </li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
-<p>Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes.</p>
+<p>Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes. The curve is applied to the flux, its error, the continuum, the model and the power-law continuum, which take the unit erg cm⁻² s⁻¹ Å⁻¹; the telluric transmission is dimensionless and is left unchanged.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>After calibration, check the <strong>Show Iso-Mag Grid</strong> box in the <a class="reference internal" href="getting_started.html#getting-started-customizing"><span class="std std-ref">Plot Controls</span></a> to verify the result against reference magnitude curves.</p>
