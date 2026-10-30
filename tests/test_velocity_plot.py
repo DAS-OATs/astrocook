@@ -54,6 +54,9 @@ def _plot_module(inspector):
 def menus(civ, monkeypatch):
     """The texts of the actions of each menu that would be shown, and the
     actions themselves, to trigger them."""
+    # The archive of the tests has no continuum, without which the entries
+    # that add a component are disabled (phase 5-bis): as with one
+    monkeypatch.setattr(civ[0], "has_continuum", lambda: True)
     shown = []
 
     class RecordedMenu(QMenu):

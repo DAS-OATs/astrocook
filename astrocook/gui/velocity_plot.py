@@ -13,7 +13,8 @@ from matplotlib.layout_engine import ConstrainedLayoutEngine
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QMenu, QSizePolicy, QScrollBar, QToolTip,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QMenu, QPushButton, QSizePolicy,
+    QScrollBar, QStackedWidget, QToolTip,
 )
 from typing import List
 
@@ -25,6 +26,7 @@ from ..fitting.voigt_fitter import voigt_optical_depth
 from .inspector_table import flag_cue
 from .plot_style import ERROR_COLOR, get_color_cycle, get_style_color
 from .theme import SELECTION
+from .floating_cards import WrappedLabel
 from .plot_toolbar import AstrocookToolbar
 
 
@@ -126,7 +128,25 @@ class VelocityPlotWidget(QWidget):
                 # Connect our custom handler
                 action.triggered.connect(self.on_home)
         
-        self.left_layout.addWidget(self.canvas)
+        # The plot, or a message saying why there is none: no continuum, or
+        # no systems yet (visual review of phase 5-bis: the panels were
+        # empty, or blank, without a word)
+        self.message = QWidget()
+        message_layout = QVBoxLayout(self.message)
+        message_layout.addStretch()
+        self.message_label = WrappedLabel()
+        self.message_label.setWordWrap(True)
+        self.message_label.setAlignment(Qt.AlignCenter)
+        self.message_label.setFixedWidth(400)
+        message_layout.addWidget(self.message_label, 0, Qt.AlignHCenter)
+        self.continuum_button = QPushButton("Auto-estimate Continuum...")
+        self.continuum_button.clicked.connect(self._estimate_continuum)
+        message_layout.addWidget(self.continuum_button, 0, Qt.AlignHCenter)
+        message_layout.addStretch()
+        self.plot_stack = QStackedWidget()
+        self.plot_stack.addWidget(self.canvas)
+        self.plot_stack.addWidget(self.message)
+        self.left_layout.addWidget(self.plot_stack)
         self.left_layout.addWidget(self.toolbar)
 
         # Right Side
@@ -207,13 +227,60 @@ class VelocityPlotWidget(QWidget):
         self.canvas.draw_idle()
 
     def plot_spectrum(self, session_state=None, force_autoscale=False):
-        session = session_state if session_state else self._current_session
+        session = (session_state or self._current_session
+                   or getattr(self.inspector, 'current_session', None))
         comp = self._current_component
         if session and comp:
             self.plot_system(session, comp, self._selected_components)
         else:
-            self.fig.clear()
-            self.canvas.draw()
+            # No component: the transitions and the redshift typed above,
+            # to look at the spectrum before any system is added
+            self._current_session = session
+            self._selected_components = []
+            self._expand_transitions()
+            self._update_scrollbar_range()
+            self._update_plot()
+
+    def _expand_transitions(self):
+        """The transitions of the box above the plot, multiplets expanded."""
+        expanded = []
+        for item in self.inspector.active_transitions:
+            if item in xem_d:
+                expanded.append(item)
+            elif item in STANDARD_MULTIPLETS:
+                expanded.extend(STANDARD_MULTIPLETS[item])
+        seen = set()
+        self._all_transitions = [x for x in expanded if not (x in seen or seen.add(x))]
+
+    #: The messages shown instead of the plot
+    NO_CONTINUUM = ("No continuum. The velocity plot shows the flux divided by the "
+                    "continuum: estimate it first.")
+    NO_SYSTEMS = ("No absorption systems yet. Type transitions and a redshift above to "
+                  "look at the spectrum, then add components from the menu of the plot "
+                  "(right click), or run Absorbers > Auto-detect Doublets...")
+
+    def _message(self):
+        """The message to show instead of the plot, or None."""
+        session = self._current_session or getattr(self.inspector, 'current_session', None)
+        if session is None or session.spec is None:
+            return None
+        if session.spec.norm is None:
+            return self.NO_CONTINUUM
+        if not self._all_transitions and not (session.systs and session.systs.components):
+            return self.NO_SYSTEMS
+        return None
+
+    def _show_message(self, text):
+        if text is None:
+            self.plot_stack.setCurrentWidget(self.canvas)
+            return
+        self.message_label.setText(text)
+        self.continuum_button.setVisible(text == self.NO_CONTINUUM)
+        self.plot_stack.setCurrentWidget(self.message)
+
+    def _estimate_continuum(self):
+        if self.main_window:
+            self.main_window._launch_recipe_dialog("continuum", "estimate_auto")
 
     def set_velocity_limits(self, v_min, v_max):
         self._xlim = (v_min, v_max)
@@ -224,7 +291,10 @@ class VelocityPlotWidget(QWidget):
         width = self._xlim[1] - self._xlim[0]
         self._xlim = (-width/2, width/2)
         self.inspector.update_limit_boxes(self._xlim[0], self._xlim[1])
-        self._update_plot()
+        if self._current_component is None:
+            self.plot_spectrum()  # the transitions typed, without a component
+        else:
+            self._update_plot()
 
     def plot_system(self, session, component: ComponentDataV2, selected_components: List[ComponentDataV2] = None):
         is_new_component = (self._current_component != component)
@@ -245,16 +315,7 @@ class VelocityPlotWidget(QWidget):
             self._update_plot()
             return
 
-        expanded = []
-        for item in self.inspector.active_transitions:
-            if item in xem_d: 
-                expanded.append(item)
-            elif item in STANDARD_MULTIPLETS: 
-                expanded.extend(STANDARD_MULTIPLETS[item])
-        
-        seen = set()
-        self._all_transitions = [x for x in expanded if not (x in seen or seen.add(x))]
-
+        self._expand_transitions()
         self._update_scrollbar_range()
         self._update_plot()
 
@@ -305,6 +366,7 @@ class VelocityPlotWidget(QWidget):
         # The canvas is drawn with draw_idle: opening the inspector or
         # changing its size updates the plot more than once in a row, and the
         # draws (~0.1 s each on J0103-1305) are coalesced into one
+        self._show_message(self._message())
         if not self._all_transitions or not self._current_session:
             self.canvas.draw_idle(); return
 
@@ -569,7 +631,7 @@ class VelocityPlotWidget(QWidget):
         self.fig.set_layout_engine(layout='none')
 
     def on_mouse_move(self, event):
-        if not event.inaxes or not self._current_component or not self._current_session: return
+        if not event.inaxes or not self._current_session: return
         
         tooltip_text = ""
         view_width = self._xlim[1] - self._xlim[0]
@@ -871,6 +933,15 @@ class VelocityPlotWidget(QWidget):
                     menu.addAction(act_link)
 
                 has_actions = True
+
+            # The components are fitted when added: not without a continuum
+            if not self.inspector.has_continuum():
+                menu.setToolTipsVisible(True)
+                for action in menu.actions():
+                    if action.text().startswith("Add "):
+                        action.setEnabled(False)
+                        action.setToolTip(
+                            "Needs a continuum (Continuum > Auto-estimate Continuum...)")
 
             # --- Execute ---
             if has_actions: menu.exec(QCursor.pos())

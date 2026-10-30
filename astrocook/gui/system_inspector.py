@@ -25,6 +25,9 @@ from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND,
                     TOOLTIP_TEXT)
 
 
+#: The tooltip of the fits disabled without a continuum
+NO_CONTINUUM_TIP = "Needs a continuum (Continuum > Auto-estimate Continuum...)"
+
 #: The columns of the table shown or hidden by the user, in the settings
 HIDDEN_COLUMNS_KEY = "inspector_hidden_columns"
 
@@ -112,6 +115,12 @@ class SystemInspector(QWidget):
         # The columns shown: a menu on the header; btur, almost always a
         # frozen 0, is hidden unless a component uses it (visual review of
         # phase 5-bis), or as the user chose (saved in the settings)
+        # An empty table says so, not to look broken (visual review)
+        self.empty_label = QLabel("No components", self.table_view.viewport())
+        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setEnabled(False)  # the grey of disabled text
+        empty_layout = QVBoxLayout(self.table_view.viewport())
+        empty_layout.addWidget(self.empty_label)
         header = self.table_view.horizontalHeader()
         header.setContextMenuPolicy(Qt.CustomContextMenu)
         header.customContextMenuRequested.connect(self._on_header_menu)
@@ -329,6 +338,7 @@ class SystemInspector(QWidget):
             
         self.table_model.update_data(new_comps, constraints)
         self._update_column_visibility()
+        self.empty_label.setVisible(not new_comps)
         
         # 3. Determine Selection Target
         max_id_new = max([c.id for c in new_comps], default=0) if new_comps else 0
@@ -711,7 +721,7 @@ class SystemInspector(QWidget):
         act_refit.triggered.connect(lambda: self._refit_list(selected_comps))
         m.addAction(act_refit)
 
-        m.addAction("Refit All", self._refit_all)
+        act_refit_all = m.addAction("Refit All", self._refit_all)
         
         act_del = QAction(f"Delete{suffix}", m)
         act_del.triggered.connect(lambda: self._delete_list(selected_comps))
@@ -731,6 +741,13 @@ class SystemInspector(QWidget):
             act_bayesian_mcmc.setEnabled(False)
             act_bayesian_mcmc.setToolTip(missing_tip)
         m.addAction(act_bayesian_mcmc)
+
+        # The fits need a continuum: without one they failed with an error
+        # of the fitter (visual review of phase 5-bis)
+        if not self.has_continuum():
+            for action in (act_refit, act_refit_all, act_bayesian_mcmc):
+                action.setEnabled(False)
+                action.setToolTip(NO_CONTINUUM_TIP)
 
         #act_bayesian_nested = QAction(f"Refit Bayesian (Nested){suffix}", m)
         #act_bayesian_nested.triggered.connect(lambda: self._fit_bayesian(selected_comps, 'nested'))
@@ -755,6 +772,12 @@ class SystemInspector(QWidget):
         m.exec(self.table_view.mapToGlobal(pos))
 
     # --- [NEW] Batch Helper Methods ---
+
+    def has_continuum(self) -> bool:
+        """Whether the spectrum can be normalized (a continuum, or a flux
+        already normalized), as the fits need."""
+        session = self.current_session
+        return bool(session and session.spec is not None and session.spec.norm is not None)
 
     def _unfreeze_btur(self, comps):
         """Free btur of the components and show its column (hidden while no
