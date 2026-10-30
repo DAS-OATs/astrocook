@@ -1041,6 +1041,7 @@ class SystemInspector(QWidget):
         if event.type() == QEvent.Type.ApplicationPaletteChange and hasattr(self, 'trans_in'):
             self._apply_field_styles()
             self.table_model.refresh_colours()
+            self.vel_plot.toolbar.refresh_icons()
         return super().event(event)
 
     def _update_trans_box_visuals(self):

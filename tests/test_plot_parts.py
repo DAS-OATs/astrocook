@@ -299,3 +299,54 @@ def test_data_inspector_keeps_a_window_of_rows(qtbot, window):
     assert dialog.table.rowCount() <= dialog.max_rows
     assert dialog.table.rowCount() == dialog.current_end - dialog.current_start
     dialog.close()
+
+
+# --- The toolbar (redesigned in phase 5-bis) --------------------------------------
+
+def test_toolbar_icons_and_tips(window):
+    from astrocook.gui.plot_toolbar import TOOL_ICONS
+    toolbar = window.plot_viewer.toolbar
+    assert set(toolbar._tool_actions) == set(TOOL_ICONS)
+    for key, action in toolbar._tool_actions.items():
+        assert not action.icon().isNull(), key
+    tips = {k: a.toolTip() for k, a in toolbar._tool_actions.items()}
+    assert tips["pan"].endswith("(P)") and tips["zoom"].endswith("(Z)")
+    assert tips["select"].endswith("(X)") and tips["home"].endswith("(H)")
+    assert toolbar.iconSize().width() == 24
+    # The coordinates under the mouse are still written by the toolbar
+    assert toolbar.locLabel is not None
+    # The other plots get the same look, without Select
+    from astrocook.gui.plot_toolbar import AstrocookToolbar
+    other = AstrocookToolbar(window.plot_viewer.canvas, None)
+    assert "select" not in other._tool_actions and not other._tool_actions["pan"].icon().isNull()
+
+
+def test_toolbar_shortcuts(qtbot, window):
+    from PySide6.QtCore import Qt
+    viewer = window.plot_viewer
+    toolbar = viewer.toolbar
+    window.activateWindow()
+    viewer.canvas.setFocus()
+    qtbot.waitUntil(lambda: viewer.canvas.hasFocus())
+    qtbot.keyClick(viewer.canvas, Qt.Key.Key_P)
+    assert toolbar.mode == "pan/zoom"
+    qtbot.keyClick(viewer.canvas, Qt.Key.Key_Z)
+    assert toolbar.mode == "zoom rect"
+    qtbot.keyClick(viewer.canvas, Qt.Key.Key_X)
+    assert viewer._is_selecting_region and toolbar.mode == ""
+    qtbot.keyClick(viewer.canvas, Qt.Key.Key_Escape)
+    assert not viewer._is_selecting_region and toolbar.mode == ""
+    # Not while typing in a field of the window
+    window.cursor_z_input.setFocus()
+    qtbot.waitUntil(lambda: window.cursor_z_input.hasFocus())
+    qtbot.keyClick(window.cursor_z_input, Qt.Key.Key_P)
+    assert toolbar.mode == ""
+
+
+def test_a_click_gives_the_plot_the_focus(qtbot, window):
+    canvas = window.plot_viewer.canvas
+    window.activateWindow()
+    window.cursor_z_input.setFocus()
+    canvas.on_press(_event(canvas, "button_press_event", _x_inside(canvas, 0.5),
+                           _y_inside(canvas), button=1))
+    qtbot.waitUntil(lambda: canvas.hasFocus())

@@ -215,9 +215,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
     def on_press(self, event):
         """Delegate press to widget."""
-        # Force the main window to take focus back so hotkeys work
-        if self.plot_widget and self.plot_widget.main_window:
-            self.plot_widget.main_window.setFocus()
+        # The plot takes the focus: the keys of its toolbar act on it, and
+        # the shortcuts of the window still work (they act on the whole
+        # window). Before, the focus went to the window itself
+        self.setFocus()
 
         if self.plot_widget:
             self.plot_widget.on_press(event)
