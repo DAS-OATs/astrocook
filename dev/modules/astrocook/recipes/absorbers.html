@@ -755,6 +755,52 @@
 <span class="n">MIN_B_ROUNDS</span> <span class="o">=</span> <span class="mi">2</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_region_ident_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The identifications of the regions ({region ID: [[transition,</span>
+<span class="sd">    score], ...]}), stored as a JSON string or, after an .acs2 round trip, as</span>
+<span class="sd">    a dict (F27)."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">k</span><span class="p">)):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+
+<div class="viewcode-block" id="merge_region_ids">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.merge_region_ids">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">merge_region_ids</span><span class="p">(</span><span class="n">old_ids</span><span class="p">,</span> <span class="n">old_ident</span><span class="p">,</span> <span class="n">new_ids</span><span class="p">,</span> <span class="n">new_ident</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Merge the regions of a new identification with those of earlier</span>
+<span class="sd">    steps of a pipeline.</span>
+
+<span class="sd">    The old regions are kept; the new ones, with their IDs shifted past the</span>
+<span class="sd">    largest old ID, fill the pixels that no old region covers. The</span>
+<span class="sd">    identifications follow the same IDs: the old ones are kept, the new ones</span>
+<span class="sd">    get the shifted IDs, and only the regions left in the merged column are</span>
+<span class="sd">    kept (F90).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        The merged region IDs (array) and identifications (dict).</span>
+<span class="sd">    """</span>
+    <span class="n">old_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">old_ids</span><span class="p">)</span>
+    <span class="n">new_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span>
+    <span class="n">max_old</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">old_ids</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">shifted_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span>
+    <span class="n">mask_new</span> <span class="o">=</span> <span class="n">new_ids</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">shifted_new</span><span class="p">[</span><span class="n">mask_new</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_ids</span><span class="p">[</span><span class="n">mask_new</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_old</span>
+    <span class="n">final_ids</span> <span class="o">=</span> <span class="n">old_ids</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">fill_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">shifted_new</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">final_ids</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">final_ids</span><span class="p">[</span><span class="n">fill_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">shifted_new</span><span class="p">[</span><span class="n">fill_mask</span><span class="p">]</span>
+
+    <span class="n">merged</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">_region_ident_dict</span><span class="p">(</span><span class="n">old_ident</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">rid</span><span class="p">,</span> <span class="n">cands</span> <span class="ow">in</span> <span class="n">_region_ident_dict</span><span class="p">(</span><span class="n">new_ident</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">merged</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">rid</span> <span class="o">+</span> <span class="n">max_old</span><span class="p">)]</span> <span class="o">=</span> <span class="n">cands</span>
+    <span class="n">present</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">final_ids</span><span class="p">[</span><span class="n">final_ids</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="n">merged</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">merged</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">present</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">final_ids</span><span class="p">,</span> <span class="n">merged</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The session without the components ``uuids`` (and the constraints</span>
 <span class="sd">    on them), with the model recomputed from the remaining ones."""</span>
@@ -983,6 +1029,7 @@
         
         <span class="c1"># Capture the OLD abs_ids before they are overwritten</span>
         <span class="n">old_abs_ids</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">old_ident</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'region_identifications'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">):</span>
             <span class="n">old_abs_ids</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             
@@ -1005,23 +1052,18 @@
         <span class="c1"># --- 2.5 MERGE IDENTIFICATION IDs ---</span>
         <span class="k">if</span> <span class="n">old_abs_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># 1. Get the newly generated IDs</span>
-                <span class="n">new_ids</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-                
-                <span class="c1"># 2. Shift new IDs to avoid collisions</span>
-                <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-                <span class="n">max_old</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">old_abs_ids</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_abs_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-                <span class="n">shifted_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">new_ids</span><span class="p">)</span>
-                <span class="n">mask_new</span> <span class="o">=</span> <span class="n">new_ids</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                <span class="n">shifted_new</span><span class="p">[</span><span class="n">mask_new</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_ids</span><span class="p">[</span><span class="n">mask_new</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_old</span>
-                
-                <span class="c1"># 3. Combine: Keep OLD, fill gaps with NEW</span>
-                <span class="n">final_ids</span> <span class="o">=</span> <span class="n">old_abs_ids</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                <span class="n">fill_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">shifted_new</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">final_ids</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="n">final_ids</span><span class="p">[</span><span class="n">fill_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">shifted_new</span><span class="p">[</span><span class="n">fill_mask</span><span class="p">]</span>
-                
-                <span class="c1"># 4. Save</span>
+                <span class="c1"># The regions of the earlier steps are kept, the new ones fill</span>
+                <span class="c1"># the gaps with shifted IDs; the identifications of the</span>
+                <span class="c1"># regions are merged in the same way (F90: they kept the</span>
+                <span class="c1"># unshifted IDs of the last step only, and pointed to the</span>
+                <span class="c1"># wrong regions)</span>
+                <span class="n">final_ids</span><span class="p">,</span> <span class="n">merged_ident</span> <span class="o">=</span> <span class="n">merge_region_ids</span><span class="p">(</span>
+                    <span class="n">old_abs_ids</span><span class="p">,</span> <span class="n">old_ident</span><span class="p">,</span>
+                    <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                    <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'region_identifications'</span><span class="p">))</span>
                 <span class="n">final_spec</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">,</span> <span class="n">final_ids</span><span class="p">)</span>
+                <span class="n">final_spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'region_identifications'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                    <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">merged_ident</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
                 <span class="n">session_step1</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">final_spec</span><span class="p">)</span>
                 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
