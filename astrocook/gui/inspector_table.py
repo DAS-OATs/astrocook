@@ -26,6 +26,23 @@ COL_MAP = {
 COLUMNS = list(COL_MAP.keys())
 EDITABLE_COLS = {"z", "logN", "b", "btur"}
 
+#: The speed of light (km/s), for the error of z in velocity
+C_KMS = 299792.458
+
+
+def dz_kms(z: float, dz: float) -> float:
+    """The error of a redshift as a velocity, c dz / (1 + z)."""
+    return C_KMS * dz / (1.0 + z)
+
+
+def _dz_tip(comp) -> str:
+    """The error of z in the tooltip of a row: as a redshift and in km/s."""
+    dz = getattr(comp, 'dz', None)
+    if dz is None or not np.isfinite(dz) or dz <= 0:
+        return ""
+    return f" \u00b1 {dz:.2e} ({dz_kms(comp.z, dz):.2f} km/s)"
+
+
 # --- Flags of the fit (#517) ---
 #: Parameter of each bound flag, and what it means for the user
 _BOUND_FLAGS = {
@@ -264,7 +281,7 @@ class SystemTableModel(QAbstractTableModel):
              tooltip_html = (
                 f"<div style='font-size: 13px'>"
                 f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
-                f"<b>z:</b> {comp.z:.6f}<br>"
+                f"<b>z:</b> {comp.z:.6f}{_dz_tip(comp)}<br>"
                 f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
              )
              if is_constrained_col:
@@ -342,7 +359,13 @@ class SystemTableModel(QAbstractTableModel):
                         err_val = getattr(comp, err_attr, None)
                         
                         if err_val is not None and np.isfinite(err_val) and err_val > 0:
-                            err_str = err_fmt.format(err_val)
+                            if attr == 'z':
+                                # In velocity: dz in scientific notation was
+                                # hard to compare between rows (visual review
+                                # of phase 5-bis); dz is in the tooltip
+                                err_str = f"{dz_kms(comp.z, err_val):.2f} km/s"
+                            else:
+                                err_str = err_fmt.format(err_val)
                             return f"{val_str} ± {err_str}"
                 
                 return val_str

@@ -288,7 +288,8 @@ def _columns_fit_their_contents(inspector):
     return all(
         header.sectionSize(col) == max(view.sizeHintForColumn(col),
                                        header.sectionSizeHint(col))
-        for col in range(inspector.proxy_model.columnCount()))
+        for col in range(inspector.proxy_model.columnCount())
+        if not view.isColumnHidden(col))  # btur, hidden when not in use
 
 
 def test_inspector_columns_fit_their_contents(qtbot, loaded):
@@ -324,6 +325,72 @@ def test_inspector_boxes_above_the_table(loaded):
     assert flagged.geometry().right() + 10 < button.geometry().left()
 
 
+def test_inspector_fields_in_groups(loaded):
+    # One row above the plot, as the boxes above the table, in three groups
+    # (the view, a new component, the residuals) with tooltips (visual
+    # review of phase 5-bis)
+    from PySide6.QtWidgets import QFrame
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    inspector.resize(1200, 700)
+    QApplication.processEvents()
+    fields = (inspector.trans_in, inspector.z_in, inspector.vmin_in, inspector.vmax_in,
+              inspector.logn_in, inspector.b_in, inspector.fit_window_in, inspector.resid_cb)
+    assert all(f.toolTip() for f in fields)
+    assert "right click" in inspector.logn_in.toolTip()
+    tops = {f.mapTo(inspector, f.rect().topLeft()).y() // 10 for f in fields}
+    assert len(tops) == 1  # one row
+    lines = [w for w in inspector.findChildren(QFrame)
+             if w.frameShape() == QFrame.Shape.VLine and w.isVisible()]
+    xs = sorted(w.mapTo(inspector, w.rect().topLeft()).x() for w in lines)
+    x_of = lambda w: w.mapTo(inspector, w.rect().topLeft()).x()  # noqa: E731
+    assert len(xs) == 2
+    assert x_of(inspector.vmax_in) < xs[0] < x_of(inspector.logn_in)
+    assert x_of(inspector.fit_window_in) < xs[1] < x_of(inspector.resid_cb)
+
+
+def test_inspector_btur_column(loaded, monkeypatch):
+    # btur, almost always a frozen 0, hidden unless a component uses it;
+    # the header menu shows or hides a column, remembered (visual review)
+    import dataclasses
+    from PySide6.QtCore import QSettings
+    from astrocook.gui import system_inspector
+    from astrocook.gui.inspector_table import COLUMNS
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    view, col = inspector.table_view, COLUMNS.index("btur")
+    assert view.isColumnHidden(col)
+    # A component with btur: shown
+    model = inspector.table_model
+    comps = list(model._components)
+    comps[0] = dataclasses.replace(comps[0], btur=5.0)
+    model.update_data(comps, model._constraints_map)
+    inspector._update_column_visibility()
+    assert not view.isColumnHidden(col)
+    # The user hides it: hidden, and remembered
+    inspector._set_column_shown("btur", False)
+    assert view.isColumnHidden(col)
+    assert "btur" in QSettings("Astrocook", "AstrocookV2").value(
+        system_inspector.HIDDEN_COLUMNS_KEY)
+    inspector._set_column_shown("logN", False)
+    assert view.isColumnHidden(COLUMNS.index("logN"))
+    # Default Columns: btur shown again (in use), logN back
+    inspector._reset_columns()
+    assert not view.isColumnHidden(col) and not view.isColumnHidden(COLUMNS.index("logN"))
+    # The menu of the header: one entry per column but ID
+    from PySide6.QtWidgets import QMenu
+    shown = []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            shown.append([x.text() for x in self.actions() if not x.isSeparator()])
+
+    monkeypatch.setattr(system_inspector, "QMenu", RecordedMenu)
+    inspector._on_header_menu(view.horizontalHeader().rect().center())
+    assert shown[0][:len(COLUMNS) - 1] == COLUMNS[1:]
+    assert shown[0][-1] == "Default Columns"
+
+
 def test_inspector_fit_window(loaded, monkeypatch):
     # #518 (F4): the velocity window of the manual fits is visible and
     # editable; empty keeps the default of each recipe
@@ -345,6 +412,39 @@ def test_inspector_fit_window(loaded, monkeypatch):
     assert calls[2][1]["z_window_kms"] == "40.0"
     assert calls[2][1]["group_depth"] == "2"
     assert calls[3] == ("refit_all", {"z_window_kms": "40.0"})
+
+
+def test_inspector_unfreeze_btur_with_its_column_hidden(loaded, monkeypatch):
+    # With the btur column hidden, the menu of the table frees btur of the
+    # selected components and shows the column (Guido, phase 5-bis)
+    from PySide6.QtWidgets import QMenu
+    from astrocook.gui import system_inspector
+    from astrocook.gui.inspector_table import COLUMNS
+    menus, calls = [], []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            menus.append(self)
+
+    monkeypatch.setattr(system_inspector, "QMenu", RecordedMenu)
+    monkeypatch.setattr(loaded, "_on_recipe_requested",
+                        lambda menu, name, params, extra: calls.append((name, params)))
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    view, col = inspector.table_view, COLUMNS.index("btur")
+    assert view.isColumnHidden(col)
+    view.selectRow(0)
+    pos = view.visualRect(inspector.proxy_model.index(0, 0)).center()
+    inspector._on_context_menu(pos)
+    action = next(a for a in menus[-1].actions() if a.text() == "Unfreeze 'btur'")
+    action.trigger()
+    assert not view.isColumnHidden(col)
+    uuid = inspector._get_selected_components()[0].uuid
+    assert calls and calls[-1][0] == "update_constraint"
+    assert calls[-1][1]["uuid"] == uuid and calls[-1][1]["param"] == "btur"
+    # The column shown: the entry is not needed (the cells of btur have it)
+    inspector._on_context_menu(pos)
+    assert "Unfreeze 'btur'" not in [a.text() for a in menus[-1].actions()]
 
 
 @pytest.mark.parametrize("installed", [True, False])

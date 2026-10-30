@@ -93,10 +93,11 @@ The fit does not write the resolution it used into the components: changing the 
 
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
+The boxes above the plot are in three groups, separated by thin lines: what the plot shows (**Trans.**, **z**, **Δv**), the starting values and fit window of a new component (**logN**, **b**, **Fit ±**), and the residuals (**Resid.**). Each box has a tooltip.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
 * **Scroll:** If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.
 * **Displayed Lines:** The text box at the top shows which transitions are plotted (e.g., `CIV, SiIV`). You can type new ions here (comma-separated) to inspect other species at the same redshift.
-* **Test Component:** The `logN` and `b` boxes above the plot control the shape of the "ghost" profile attached to your mouse cursor, useful for visually estimating parameters before adding a component.
+* **Test Component:** The `logN` and `b` boxes above the plot control the shape of the "ghost" profile attached to your mouse cursor, useful for visually estimating parameters before adding a component; they are also the starting values of a component added from the menu of the plot (right click).
 * **Residuals:** Check the **Resid.** box to show a residual plot below each transition panel.
 
 ```{image} ../_static/absorbers_system_inspector.png
@@ -167,10 +168,12 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 - **Link (Thermal):** Assumes the broadening is **thermal**. The `b` value is scaled according to the atomic mass ratio of the two ions ($b \propto m^{-1/2}$).
 
 :::{note}
-Astrocook also tracks a turbulent broadening parameter `btur` separately. It is available in the table but **frozen (italic)** by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.
+Astrocook also tracks a turbulent broadening parameter `btur` separately. It is **frozen (italic)** at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (**btur** included); **Default Columns** goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose **Unfreeze 'btur'** in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.
 :::
 
 ### Uncertainties
+In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the tooltip of the row gives it also as $\delta z$. The exported tables keep $\delta z$.
+
 The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by $\sqrt{\chi^2_\nu}$ of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced $\chi^2_\nu$ is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large $\chi^2_\nu$ (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.
 
 A linked parameter is computed from its target, so its uncertainty is propagated from the target through the expression of the link: a `z` linked by value has the same uncertainty as the `z` of its target, a `b` linked thermally the uncertainty of the target's `b` scaled by the same mass ratio. The two uncertainties are therefore fully correlated, which matters when a list of components is used for statistics (count them once). A frozen parameter has uncertainty 0, as does a parameter linked to a frozen one.

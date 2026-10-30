@@ -1,13 +1,15 @@
 import importlib.util
+import json
 import logging
 import numpy as np
 import astropy.units as au
-from PySide6.QtCore import QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QTimer
+from PySide6.QtCore import (QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QSettings,
+                            QTimer)
 from PySide6.QtGui import QAction, QDoubleValidator
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
-    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton
+    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame
 )
 from typing import List
 
@@ -21,6 +23,10 @@ from .inspector_table import (COL_MAP, COLUMNS, LinkColorDelegate, SystemSortFil
 from .velocity_plot import VelocityPlotWidget
 from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND, TOOLTIP_BORDER,
                     TOOLTIP_TEXT)
+
+
+#: The columns of the table shown or hidden by the user, in the settings
+HIDDEN_COLUMNS_KEY = "inspector_hidden_columns"
 
 
 def _corner_installed() -> bool:
@@ -103,6 +109,12 @@ class SystemInspector(QWidget):
             signal.connect(self._schedule_column_fit)
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
+        # The columns shown: a menu on the header; btur, almost always a
+        # frozen 0, is hidden unless a component uses it (visual review of
+        # phase 5-bis), or as the user chose (saved in the settings)
+        header = self.table_view.horizontalHeader()
+        header.setContextMenuPolicy(Qt.CustomContextMenu)
+        header.customContextMenuRequested.connect(self._on_header_menu)
         self.table_model.data_changed_request.connect(self._forward)
         
         left_widget = QWidget()
@@ -156,15 +168,23 @@ class SystemInspector(QWidget):
         c_layout.setContentsMargins(5, 5, 5, 5) # Exact match to Left Toolbar
         c_layout.setSpacing(5)
 
-        c_layout.addWidget(QLabel("Trans.:"))
+        # Three groups (visual review of phase 5-bis): what the plot shows,
+        # the starting values and fit window of a new component, the
+        # residuals; on one row, so that the plot starts where the table
+        # does: short labels, explained by the tooltips
+        trans_tip = "The transitions shown in the velocity plot (e.g. CIV, SiIV)"
+        c_layout.addWidget(self._field_label("Trans.:", trans_tip))
         self.trans_in = QLineEdit()
         self.trans_in.setPlaceholderText("CIV, SiIV")
+        self.trans_in.setToolTip(trans_tip)
         self.trans_in.returnPressed.connect(self._apply)
         self.trans_in.textEdited.connect(self._on_manual_edit)
         c_layout.addWidget(self.trans_in, 1) 
         
-        c_layout.addWidget(QLabel("z:"))
+        z_tip = "The redshift at the centre of the velocity plot (Δv = 0)"
+        c_layout.addWidget(self._field_label("z:", z_tip))
         self.z_in = QLineEdit()
+        self.z_in.setToolTip(z_tip)
         self.z_in.setFixedWidth(70)
         validator = QDoubleValidator()
         validator.setLocale(QLocale.C) 
@@ -172,27 +192,37 @@ class SystemInspector(QWidget):
         self.z_in.returnPressed.connect(self._apply_z)
         c_layout.addWidget(self.z_in)
 
-        c_layout.addWidget(QLabel("Δv:"))
+        dv_tip = "The velocity range of the plot (km/s), from and to"
+        c_layout.addWidget(self._field_label("Δv:", dv_tip))
         self.vmin_in = QLineEdit("-300")
+        self.vmin_in.setToolTip(dv_tip)
         self.vmin_in.setFixedWidth(50)
         self.vmin_in.setValidator(validator)
         self.vmin_in.returnPressed.connect(self._apply_limits)
         c_layout.addWidget(self.vmin_in)
         self.vmax_in = QLineEdit("300")
+        self.vmax_in.setToolTip(dv_tip)
         self.vmax_in.setFixedWidth(50)
         self.vmax_in.setValidator(validator)
         self.vmax_in.returnPressed.connect(self._apply_limits)
         c_layout.addWidget(self.vmax_in)
         
-        c_layout.addWidget(QLabel("logN:"))
+        c_layout.addWidget(self._separator())
+        logn_tip = ("The starting logN of a component added from the menu of the\n"
+                    "velocity plot (right click); its profile follows the cursor")
+        c_layout.addWidget(self._field_label("logN:", logn_tip))
         self.logn_in = QLineEdit("13.5")
+        self.logn_in.setToolTip(logn_tip)
         self.logn_in.setFixedWidth(40)
         self.logn_in.setValidator(validator)
         self.logn_in.textChanged.connect(self._update_cursor)
         c_layout.addWidget(self.logn_in)
         
-        c_layout.addWidget(QLabel("b:"))
+        b_tip = ("The starting b (km/s) of a component added from the menu of\n"
+                 "the velocity plot (right click); its profile follows the cursor")
+        c_layout.addWidget(self._field_label("b:", b_tip))
         self.b_in = QLineEdit("10.0")
+        self.b_in.setToolTip(b_tip)
         self.b_in.setFixedWidth(40)
         self.b_in.setValidator(validator)
         self.b_in.textChanged.connect(self._update_cursor)
@@ -220,7 +250,9 @@ class SystemInspector(QWidget):
         self.fit_window_in.setToolTip(fit_window_tip)
         c_layout.addWidget(self.fit_window_in)
         
+        c_layout.addWidget(self._separator())
         self.resid_cb = QCheckBox("Resid.")
+        self.resid_cb.setToolTip("Show the residuals of the model below each panel")
         self.resid_cb.toggled.connect(self._apply) 
         c_layout.addWidget(self.resid_cb)
         
@@ -296,6 +328,7 @@ class SystemInspector(QWidget):
             constraints = session.systs.constraint_model.v2_constraints_by_uuid
             
         self.table_model.update_data(new_comps, constraints)
+        self._update_column_visibility()
         
         # 3. Determine Selection Target
         max_id_new = max([c.id for c in new_comps], default=0) if new_comps else 0
@@ -657,6 +690,16 @@ class SystemInspector(QWidget):
             m.addSeparator()
 
         # Set Resolution (Multi-aware via internal logic)
+        # btur, with its column hidden while no component uses it: unfrozen
+        # from any cell, and its column shown (visual review of phase 5-bis)
+        if self.table_view.isColumnHidden(COLUMNS.index('btur')):
+            act_btur = QAction(f"Unfreeze 'btur'{suffix}", m)
+            act_btur.setToolTip("Free the turbulent broadening of the selected components "
+                                "and show its column")
+            act_btur.triggered.connect(lambda: self._unfreeze_btur(selected_comps))
+            m.addAction(act_btur)
+            m.addSeparator()
+
         act_resol = QAction(f"Set Resolving Power...{suffix}", m)
         act_resol.triggered.connect(self._set_component_resolution)
         m.addAction(act_resol)
@@ -712,6 +755,12 @@ class SystemInspector(QWidget):
         m.exec(self.table_view.mapToGlobal(pos))
 
     # --- [NEW] Batch Helper Methods ---
+
+    def _unfreeze_btur(self, comps):
+        """Free btur of the components and show its column (hidden while no
+        component uses it)."""
+        self._set_column_shown('btur', True)
+        self._toggle_constraint_list(comps, 'btur', True)
 
     def _toggle_constraint_list(self, comps, param, is_free):
         """Iterates list and applies constraint update."""
@@ -1013,6 +1062,77 @@ class SystemInspector(QWidget):
         
         # 5. Update Proxy Filter (Show entire group)
         self.proxy_model.set_allowed_uuids(all_group_uuids)
+
+    @staticmethod
+    def _field_label(text: str, tip: str) -> QLabel:
+        label = QLabel(text)
+        label.setToolTip(tip)
+        return label
+
+    @staticmethod
+    def _separator() -> QFrame:
+        """A thin vertical line between the groups of fields."""
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.VLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        return line
+
+    # --- The columns shown ---
+
+    def _hidden_columns(self) -> dict:
+        """The columns shown or hidden by the user ({name: hidden}), from
+        the settings; a column not in it follows its default."""
+        raw = QSettings("Astrocook", "AstrocookV2").value(HIDDEN_COLUMNS_KEY, "")
+        try:
+            return {k: bool(v) for k, v in json.loads(raw).items()} if raw else {}
+        except (TypeError, ValueError):
+            return {}
+
+    def _btur_in_use(self) -> bool:
+        """Whether a component has btur other than 0, or linked. Not "free":
+        the constraints of some sessions mark btur free at 0 everywhere,
+        where it does nothing; a fit that moves it makes it non-zero."""
+        model = self.table_model
+        for comp in model._components:
+            if comp.btur:
+                return True
+            constraint = model._constraints_map.get(comp.uuid, {}).get('btur')
+            if constraint is not None and (constraint.target_uuid or constraint.expression):
+                return True
+        return False
+
+    def _update_column_visibility(self):
+        hidden = self._hidden_columns()
+        for i, name in enumerate(COLUMNS):
+            if name in hidden:
+                hide = hidden[name]
+            else:
+                hide = name == 'btur' and not self._btur_in_use()
+            self.table_view.setColumnHidden(i, hide)
+
+    def _on_header_menu(self, pos):
+        """Show or hide a column; the choice is saved in the settings."""
+        menu = QMenu(self)
+        for i, name in enumerate(COLUMNS):
+            if name == 'ID':
+                continue
+            action = menu.addAction(name)
+            action.setCheckable(True)
+            action.setChecked(not self.table_view.isColumnHidden(i))
+            action.toggled.connect(lambda shown, n=name: self._set_column_shown(n, shown))
+        menu.addSeparator()
+        menu.addAction("Default Columns", self._reset_columns)
+        menu.exec(self.table_view.horizontalHeader().mapToGlobal(pos))
+
+    def _set_column_shown(self, name: str, shown: bool):
+        hidden = self._hidden_columns()
+        hidden[name] = not shown
+        QSettings("Astrocook", "AstrocookV2").setValue(HIDDEN_COLUMNS_KEY, json.dumps(hidden))
+        self._update_column_visibility()
+
+    def _reset_columns(self):
+        QSettings("Astrocook", "AstrocookV2").remove(HIDDEN_COLUMNS_KEY)
+        self._update_column_visibility()
 
     def _apply_field_styles(self):
         """The fields above the velocity plot, with the colours of the
