@@ -146,6 +146,11 @@ class CollapsibleSection(QWidget):
     def setExpanded(self, expanded: bool):
         self.header.setChecked(expanded)
 
+    def refresh_icon(self):
+        """The triangle takes the colour of the text: again when the palette
+        switches between light and dark (called by the main window)."""
+        self.header.setIcon(disclosure_icon('down' if self.isExpanded() else 'right'))
+
     def _on_toggled(self, expanded: bool):
         self.header.setIcon(disclosure_icon('down' if expanded else 'right'))
         self.content.setVisible(expanded)

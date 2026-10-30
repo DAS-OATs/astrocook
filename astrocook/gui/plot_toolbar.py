@@ -53,8 +53,7 @@ class AstrocookToolbar(NavigationToolbar):
         if select:
             # FontAwesome, the family of the icons of Matplotlib (the
             # dashed rectangle of Material Design looked thinner than them)
-            self.select_action = QAction(qta.icon('fa5s.arrows-alt-h', color='black'),
-                                         'Select', self)
+            self.select_action = QAction(self._select_icon(), 'Select', self)
             self.select_action.setCheckable(True)
             self.select_action.setToolTip(
                 "Select a region: drag along the wavelength axis, then choose "
@@ -64,6 +63,17 @@ class AstrocookToolbar(NavigationToolbar):
             after_zoom = actions[actions.index(self._actions['zoom']) + 1]
             self.insertAction(after_zoom, self.select_action)
 
+
+    def _select_icon(self):
+        # The colour of the text: black, or light in dark mode (the icons of
+        # Matplotlib follow the palette by themselves)
+        return qta.icon('fa5s.arrows-alt-h', color=self.palette().color(self.foregroundRole()))
+
+    def refresh_icons(self):
+        """The icon of Select in the colour of the text, again when the
+        palette switches between light and dark (called by the window)."""
+        if self.select_action is not None:
+            self.select_action.setIcon(self._select_icon())
 
     def deactivate_tools(self):
         """Switch off the active tool (Pan or Zoom), if any.

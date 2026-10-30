@@ -47,7 +47,7 @@ os.environ["XDG_CONFIG_HOME"] = _settings
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter  # noqa: E402
 from PySide6.QtCore import QBuffer, QIODevice, QPoint, QRect, Qt, QTimer  # noqa: E402
-from PySide6.QtGui import QColor, QFont, QImage, QPainter  # noqa: E402
+from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPalette  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QPushButton, QToolTip  # noqa: E402
 
 SCALE = 2                       # physical pixels per logical pixel
@@ -117,9 +117,22 @@ def with_shadow(image: Image.Image, margin=SHADOW, offset=8, strength=90):
     return canvas
 
 
-def title_bar(width, title, active=True):
+def title_bar(width, title, active=True, dark=False):
     """A neutral title bar (not the one of a real system), in physical pixels."""
     image = QImage(width, px(TITLE_BAR), QImage.Format.Format_ARGB32)
+    if dark:
+        image.fill(QColor("#323232"))
+        painter = QPainter(image)
+        font = QFont(QApplication.font())
+        font.setPixelSize(px(13))
+        font.setBold(True)
+        painter.setFont(font)
+        painter.setPen(QColor("#dcdcdc"))
+        painter.drawText(QRect(0, 0, width, px(TITLE_BAR)), Qt.AlignmentFlag.AlignCenter, title)
+        painter.setPen(QColor("#1a1a1a"))
+        painter.drawLine(0, px(TITLE_BAR) - 1, width, px(TITLE_BAR) - 1)
+        painter.end()
+        return to_pil(image)
     image.fill(QColor("#ececec" if active else "#f4f4f4"))
     painter = QPainter(image)
     font = QFont(QApplication.font())
@@ -134,9 +147,9 @@ def title_bar(width, title, active=True):
     return to_pil(image)
 
 
-def framed(content: Image.Image, title: str, active=True, shadow=True):
+def framed(content: Image.Image, title: str, active=True, shadow=True, dark=False):
     """A window: title bar, contents, rounded corners and shadow."""
-    bar = title_bar(content.width, title, active)
+    bar = title_bar(content.width, title, active, dark)
     window = Image.new("RGBA", (content.width, bar.height + content.height))
     window.paste(bar, (0, 0))
     window.paste(content, (0, bar.height))
@@ -467,6 +480,37 @@ def getting_started_main_view(s: Studio):
     s.open_panel("left")
     s.open_panel("right")
     return framed(grab(w), w.windowTitle())
+
+
+#: A dark palette, as macOS in dark mode (the same as tests/test_theme.py)
+DARK_PALETTE = {
+    QPalette.ColorRole.Window: "#2b2b2b", QPalette.ColorRole.WindowText: "#e6e6e6",
+    QPalette.ColorRole.Base: "#1e1e1e", QPalette.ColorRole.AlternateBase: "#262626",
+    QPalette.ColorRole.Text: "#e6e6e6", QPalette.ColorRole.Button: "#353535",
+    QPalette.ColorRole.ButtonText: "#e6e6e6", QPalette.ColorRole.Highlight: "#2f65ca",
+    QPalette.ColorRole.HighlightedText: "#ffffff", QPalette.ColorRole.Mid: "#555555",
+}
+
+
+@scene
+def getting_started_dark_mode(s: Studio):
+    """The main window in dark mode, with both cards open: the interface
+    follows the palette, the plot stays white (theme PR B)."""
+    light = QPalette(s.app.palette())
+    dark = QPalette(light)
+    for role, colour in DARK_PALETTE.items():
+        dark.setColor(role, QColor(colour))
+    s.app.setPalette(dark)
+    try:
+        w = s.new_window("My QSO")
+        s.open_panel("left")
+        s.open_panel("right")
+        image = framed(grab(w), w.windowTitle(), dark=True)
+        w.close()
+    finally:
+        s.app.setPalette(light)
+        s.pump(0.3)
+    return image
 
 
 @scene

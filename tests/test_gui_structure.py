@@ -82,6 +82,8 @@ MAIN_WINDOW = {
 }
 #: ... and the split of a selected region (phase 5-bis, F73)
 MAIN_WINDOW |= {'launch_split_from_region'}
+#: ... and the switch between light and dark (phase 5-bis, theme PR B)
+MAIN_WINDOW |= {'event'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

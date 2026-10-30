@@ -111,6 +111,15 @@ This is a handy tool for quick visual inspection.
 If the **Zoom** or **Pan** tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold `Ctrl` (or `Cmd` on Mac) while right-clicking to access the context menu.
 :::
 
+### Dark Mode
+
+Astrocook follows the light or dark appearance of your system (on macOS, *System Settings > Appearance*), and switches with it while it is open. The plots stay white in both, like the figures of a paper, so that the colours of the lines are always the same.
+
+```{image} ../_static/getting_started_dark_mode.png
+:alt: The main window in dark mode, with the plot white
+:align: center
+```
+
 ### The Continuum Editor
 
 Located at the bottom of the sidebar, this panel allows you to interactively refine the continuum shape using spline knots. See the [Interactive Manual Editing](#continuum-manual) in the Continuum Fitting tutorial for a detailed guide on using the slider, spacing box, and editing tools.

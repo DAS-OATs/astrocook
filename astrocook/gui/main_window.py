@@ -1,7 +1,7 @@
 import logging
 import os
 from PySide6.QtCore import (
-    Qt, QThreadPool
+    QEvent, Qt, QThreadPool
 )
 from PySide6.QtGui import (
     QIcon, QPixmap
@@ -21,6 +21,7 @@ from .main_recipes import MainRecipesMixin
 from .main_scripts import MainScriptsMixin
 from .main_sessions import MainSessionsMixin, SessionListModel
 from .script_dialog import ScriptDialog
+from .floating_cards import CollapsibleSection
 from .theme import FOCUS_BORDER
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
@@ -194,6 +195,25 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         # the main thread through the signal (F6)
         set_debug_plot_handler(GLOBAL_PLOTTER.plot_requested.emit)
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
+
+    def event(self, event):
+        """The system switched between light and dark (dark mode): the
+        stylesheets and icons that take their colours from the palette are
+        applied again. Qt sends ApplicationPaletteChange to the windows only
+        (not to changeEvent, nor to their children): the window passes it on
+        to the toolbar and to the sections of the cards."""
+        if (event.type() == QEvent.Type.ApplicationPaletteChange
+                and hasattr(self, 'plot_controls_collapse_button')):  # built
+            self._apply_styles()
+            self._update_sidebar_button_icon(self.session_collapse_button,
+                                             self.left_sidebar_widget.width() > 0, is_left=True)
+            self._update_sidebar_button_icon(self.plot_controls_collapse_button,
+                                             self.right_sidebar_widget.width() > 0, is_left=False)
+            if getattr(self, 'plot_viewer', None) is not None:
+                self.plot_viewer.toolbar.refresh_icons()
+            for section in self.findChildren(CollapsibleSection):
+                section.refresh_icon()
+        return super().event(event)
 
     def _apply_styles(self):
         # ... (Get palette colors) ...
