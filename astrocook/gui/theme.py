@@ -14,7 +14,8 @@ live long (the main window, the System Inspector, the toolbars) apply them
 again when the system switches between light and dark
 (``QEvent.ApplicationPaletteChange``).
 """
-from PySide6.QtGui import QPalette
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 #: The accent of Astrocook: the border of a field being edited, titles,
@@ -98,3 +99,57 @@ def themed(colour: str) -> str:
 def link_colours() -> list:
     """The link colours for the current palette."""
     return LINK_COLOURS_DARK if is_dark() else LINK_COLOURS
+
+
+# --- Appearance (View > Appearance) ------------------------------------------
+
+#: The choices of View > Appearance, saved in the settings ("appearance")
+APPEARANCES = ("system", "light", "dark")
+
+#: The dark palette used where the platform does not switch by itself (Linux
+#: without a dark theme, Qt offscreen); also used by the tests and the
+#: screenshots
+DARK_PALETTE = {
+    QPalette.ColorRole.Window: "#2b2b2b", QPalette.ColorRole.WindowText: "#e6e6e6",
+    QPalette.ColorRole.Base: "#1e1e1e", QPalette.ColorRole.AlternateBase: "#262626",
+    QPalette.ColorRole.Text: "#e6e6e6", QPalette.ColorRole.Button: "#353535",
+    QPalette.ColorRole.ButtonText: "#e6e6e6", QPalette.ColorRole.Highlight: "#2f65ca",
+    QPalette.ColorRole.HighlightedText: "#ffffff", QPalette.ColorRole.Mid: "#555555",
+}
+
+_palette_forced = False
+
+
+def dark_palette() -> QPalette:
+    """The palette of the application with the dark colours above."""
+    palette = QPalette(QApplication.palette())
+    for role, colour in DARK_PALETTE.items():
+        palette.setColor(role, QColor(colour))
+    return palette
+
+
+def apply_appearance(mode: str):
+    """Light, dark, or as the system (``APPEARANCES``).
+
+    Qt is asked for the native appearance first (``QStyleHints.
+    setColorScheme``, Qt >= 6.8: macOS and Windows switch their own
+    controls); where the palette does not follow (Linux without a dark
+    theme, offscreen), the palette is set here. "system" undoes a palette
+    set here, giving back that of the system."""
+    global _palette_forced
+    app = QApplication.instance()
+    scheme = {"system": Qt.ColorScheme.Unknown, "light": Qt.ColorScheme.Light,
+              "dark": Qt.ColorScheme.Dark}[mode]
+    hints = app.styleHints()
+    if hasattr(hints, "setColorScheme"):
+        hints.setColorScheme(scheme)
+    if mode == "system":
+        if _palette_forced:
+            app.setPalette(QPalette())  # an empty palette: that of the system
+            _palette_forced = False
+    elif is_dark() != (mode == "dark"):
+        if _palette_forced:
+            app.setPalette(QPalette())
+        if is_dark() != (mode == "dark"):
+            app.setPalette(dark_palette() if mode == "dark" else app.style().standardPalette())
+            _palette_forced = True

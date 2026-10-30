@@ -84,6 +84,10 @@ MAIN_WINDOW = {
 MAIN_WINDOW |= {'launch_split_from_region'}
 #: ... and the switch between light and dark (phase 5-bis, theme PR B)
 MAIN_WINDOW |= {'event'}
+#: ... and View > Appearance, View > Show Toolbar, the rows of the drop-down
+#: menus of the plot controls (phase 5-bis, F88)
+MAIN_WINDOW |= {'_set_appearance', '_set_toolbar_visible', '_restore_view_settings', '_combo_row',
+                '_align_combo_labels'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

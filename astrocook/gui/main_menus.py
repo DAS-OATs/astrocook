@@ -7,13 +7,14 @@ of ``MainWindowV2``.
 """
 import logging
 
-from PySide6.QtCore import QTimer, QUrl, Qt
-from PySide6.QtGui import QAction, QDesktopServices, QKeySequence
+from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from .about_dialog import AboutDialog
 from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
+from .theme import APPEARANCES, apply_appearance
 
 
 class MainMenusMixin:
@@ -26,6 +27,33 @@ class MainMenusMixin:
     (``_update_view_for_session``); the actions it creates are enabled by
     ``_update_ui_state``.
     """
+
+    def _set_appearance(self, mode: str, save: bool = True):
+        """View > Appearance: light, dark, or as the system. The windows
+        apply the new palette by themselves (ApplicationPaletteChange)."""
+        if mode not in APPEARANCES:
+            mode = "system"
+        apply_appearance(mode)
+        self.appearance_actions[mode].setChecked(True)
+        if save:
+            QSettings("Astrocook", "AstrocookV2").setValue("appearance", mode)
+
+    def _set_toolbar_visible(self, visible: bool, save: bool = True):
+        """View > Show Toolbar: the toolbar of the main plot (with the
+        coordinates under the mouse) shown or hidden."""
+        if getattr(self, 'plot_viewer', None) is not None:
+            self.plot_viewer.toolbar.setVisible(visible)
+        if self.show_toolbar_action.isChecked() != visible:
+            self.show_toolbar_action.setChecked(visible)
+        if save:
+            QSettings("Astrocook", "AstrocookV2").setValue("show_toolbar", visible)
+
+    def _restore_view_settings(self):
+        """The appearance and the toolbar as the user left them."""
+        settings = QSettings("Astrocook", "AstrocookV2")
+        self._set_appearance(settings.value("appearance", "system"), save=False)
+        visible = settings.value("show_toolbar", True)
+        self._set_toolbar_visible(visible not in (False, "false"), save=False)
 
     def _create_menubar(self):
         menu_bar = self.menuBar()
@@ -84,6 +112,26 @@ class MainMenusMixin:
         view_menu.addAction(toggle_right_action)
         self.toggle_left_action = toggle_left_action
         self.toggle_right_action = toggle_right_action
+
+        # The toolbar of the plot (its tools have keys: it can be hidden)
+        self.show_toolbar_action = QAction("Show &Toolbar", self)
+        self.show_toolbar_action.setCheckable(True)
+        self.show_toolbar_action.setChecked(True)
+        self.show_toolbar_action.toggled.connect(self._set_toolbar_visible)
+        view_menu.addAction(self.show_toolbar_action)
+
+        # Light, dark, or as the system (saved in the settings)
+        appearance_menu = view_menu.addMenu("&Appearance")
+        self.appearance_actions = {}
+        group = QActionGroup(self)
+        group.setExclusive(True)
+        for mode in APPEARANCES:
+            action = QAction(mode.capitalize(), self)
+            action.setCheckable(True)
+            action.triggered.connect(lambda checked=False, m=mode: self._set_appearance(m))
+            group.addAction(action)
+            appearance_menu.addAction(action)
+            self.appearance_actions[mode] = action
 
         view_menu.addSeparator()
         self.view_system_inspector_action = QAction("View System &Inspector", self)

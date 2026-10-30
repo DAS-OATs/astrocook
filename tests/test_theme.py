@@ -166,3 +166,44 @@ def test_session_info_stylesheet(window, monkeypatch):
     assert shown and "{" + "palette" not in shown[0] and "{{" not in shown[0]
     assert theme.FOCUS_BORDER in shown[0]
     assert theme.palette_hex(QPalette.ColorRole.Base) in shown[0]
+
+
+# --- View > Appearance and View > Show Toolbar -------------------------------------
+
+def test_appearance_menu(qtbot, window, qapp):
+    actions = window.appearance_actions
+    assert list(actions) == ["system", "light", "dark"]
+    assert actions["system"].isChecked() and not theme.is_dark()
+    try:
+        actions["dark"].trigger()
+        assert theme.is_dark() and actions["dark"].isChecked()
+        # The interface follows (ApplicationPaletteChange)
+        qtbot.wait(50)
+        assert theme.palette_hex(QPalette.ColorRole.Base) in window.styleSheet()
+        from PySide6.QtCore import QSettings
+        assert QSettings("Astrocook", "AstrocookV2").value("appearance") == "dark"
+        # A new window starts as the user left it
+        from astrocook.gui.main_window import MainWindowV2
+        other = MainWindowV2(None, None)
+        qtbot.addWidget(other)
+        assert other.appearance_actions["dark"].isChecked() and theme.is_dark()
+        actions["light"].trigger()
+        assert not theme.is_dark()
+    finally:
+        actions["system"].trigger()
+    assert not theme.is_dark()
+
+
+def test_show_toolbar(qtbot, window):
+    from PySide6.QtCore import QSettings
+    toolbar = window.plot_viewer.toolbar
+    assert window.show_toolbar_action.isChecked() and toolbar.isVisible()
+    window.show_toolbar_action.trigger()
+    assert not toolbar.isVisible()
+    assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
+    from astrocook.gui.main_window import MainWindowV2
+    other = MainWindowV2(None, None)
+    qtbot.addWidget(other)
+    assert not other.show_toolbar_action.isChecked()
+    window.show_toolbar_action.trigger()
+    assert toolbar.isVisible()

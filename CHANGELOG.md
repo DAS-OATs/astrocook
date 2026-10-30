@@ -1,10 +1,12 @@
 ## [Unreleased]
 
 ### Added
+- GUI: **View > Appearance** chooses a light or dark appearance for Astrocook alone, or follows the system (the default); **View > Show Toolbar** hides the toolbar of the plot. Both choices are remembered.
 - GUI: dark mode. The interface follows the light or dark appearance of the system, and switches with it while Astrocook is open; the plots stay white. The colours that did not read on a dark background (the link colours of the System Inspector, the borders and buttons of the recipe dialogs, warnings) have lighter variants, and the icons follow the colour of the text. See *Dark Mode* in the *Getting Started* tutorial.
 - GUI: a **Select** tool in the toolbar of the main plot (F73: the selection of a region was there, but no button reached it). Drag along the wavelength axis to select a region, then choose **Split region**, **Mask region...**, **Rebin region...** or **Zoom to region**; the recipe dialogs open with the region filled in. See *Navigating the Plot* in the *Getting Started* tutorial.
 
 ### Changed
+- GUI: the drop-down menus of the plot controls (Aux. Column, λ Unit, Error Col.) are aligned (F88); the sample of the auxiliary column is now inside its menu.
 - GUI: the main plot has no legend any more: the samples next to the plot controls show how each element is drawn, and new samples show the auxiliary column (next to **Aux. Column**) and each other session shown (next to its name in the session list). Placed automatically, the legend took most of the time of a redraw of a long spectrum: a spectrum of 300 000 pixels now redraws in 0.65 s instead of 6.3 s on one machine (F86).
 - GUI: the toolbar of the plots is redesigned (main plot, System Inspector, corner plot): icons of one family that follow the light or dark appearance, rounded buttons, the tool that is on highlighted in blue, Back and Forward grey when there is no view to go to, and keyboard shortcuts after a click on the plot (`H` Home, `←`/`→` Back/Forward, `P` Pan, `Z` Zoom, `X` Select, `Esc` no tool). All the functions are kept. A click on the plot gives it the keyboard focus.
 - GUI: spectra with more than a million pixels in view are drawn decimated (two points, the minimum and the maximum, every ten pixels) at every redraw, in the full view and in wide zooms, which keeps the plot responsive (F76). Before, only the first plot was decimated, and after Home or any later redraw a long spectrum was drawn in full, or with the decimated points drawn as steps; an auxiliary column failed to plot. The threshold was 2 million pixels.

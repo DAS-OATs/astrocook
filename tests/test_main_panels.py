@@ -299,3 +299,17 @@ def test_state_with_and_without_a_session(window):
     assert not window.save_action.isEnabled() and not window.norm_y_checkbox.isEnabled()
     window._update_ui_state(True)
     assert window.central_stack.currentIndex() == 0 and window.save_action.isEnabled()
+
+
+def test_the_drop_down_menus_line_up(qtbot, window):
+    # Aux. Column, λ Unit and Error Col.: the same left edge and width (F88:
+    # three form layouts, each with the width of its own label)
+    if window.right_sidebar_widget.width() == 0:
+        window._toggle_right_sidebar()
+    for section in window.right_sidebar_widget.findChildren(type(window.plot_elements_section)):
+        section.setExpanded(True)
+    qtbot.wait(400)
+    combos = [window.aux_col_combo, window.x_unit_combo, window.snr_col_combo]
+    lefts = {c.mapTo(window, c.rect().topLeft()).x() for c in combos}
+    widths = {c.width() for c in combos}
+    assert len(lefts) == 1 and len(widths) == 1, (lefts, widths)

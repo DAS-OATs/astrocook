@@ -157,10 +157,11 @@ def test_swatch_of_the_auxiliary_column(window):
     window.aux_col_combo.setCurrentIndex(window.aux_col_combo.findText("running_std"))
     window.aux_col_combo.blockSignals(False)
     window._trigger_replot()
-    assert not _is_blank(window.aux_swatch.pixmap())
+    combo = window.aux_col_combo
+    assert not _is_blank(combo.itemIcon(combo.currentIndex()).pixmap(combo.iconSize()))
     window.aux_col_combo.setCurrentIndex(0)  # None
     window._trigger_replot()
-    assert _is_blank(window.aux_swatch.pixmap())
+    assert window.aux_col_combo.itemIcon(window.aux_col_combo.currentIndex()).isNull()
 
 
 def test_swatch_of_a_shaded_area(window):
