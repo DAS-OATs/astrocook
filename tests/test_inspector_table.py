@@ -58,7 +58,9 @@ def test_display_and_edit(filled):
     assert _data(filled, 0, "ID", Qt.DisplayRole) == "⚠ 1"  # flagged
     assert _data(filled, 2, "ID", Qt.DisplayRole) == "3"
     assert _data(filled, 0, "Trans.", Qt.DisplayRole) == "CIV"
-    assert _data(filled, 0, "z", Qt.DisplayRole) == "2.000000 ± 1.50e-05"
+    # The error of z in velocity, c dz / (1 + z) (visual review of phase 5-bis)
+    assert _data(filled, 0, "z", Qt.DisplayRole) == "2.000000 ± 1.50 km/s"
+    assert "± 1.50e-05 (1.50 km/s)" in _data(filled, 0, "z", Qt.ToolTipRole)
     assert _data(filled, 0, "logN", Qt.DisplayRole) == "13.000 ± 0.050"
     assert _data(filled, 0, "b", Qt.DisplayRole) == "10.00 ± 1.25"
     # No error without one, for a linked or a frozen parameter
