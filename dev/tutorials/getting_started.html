@@ -519,13 +519,16 @@
 </section>
 <section id="navigating-the-plot">
 <span id="getting-started-navigating"></span><h2>2. Navigating the Plot<a class="headerlink" href="#navigating-the-plot" title="Link to this heading">#</a></h2>
-<p>The central plot is interactive. You can explore the details of your spectrum using the toolbar located directly above the graph (standard Matplotlib controls):</p>
+<p>The central plot is interactive. You can explore the details of your spectrum using the toolbar below the graph. The tool that is on (Pan, Zoom or Select) is highlighted in blue; Back and Forward are grey when there is no view to go to. The keys in brackets act after a click on the plot:</p>
 <ul class="simple">
-<li><p><strong>Pan</strong>: Click the “Cross arrow” icon to click and drag the spectrum.</p></li>
-<li><p><strong>Zoom</strong>: Click the “Magnifying glass” icon to draw a rectangle and zoom into a specific feature.</p></li>
-<li><p><strong>Select</strong>: Click the “Double arrow” icon, then drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: <strong>Split region</strong> (a new session with the region only), <strong>Mask region…</strong>, <strong>Rebin region…</strong> (each opens its recipe dialog with the region filled in, so you can check it before running) and <strong>Zoom to region</strong>. Press <code class="docutils literal notranslate"><span class="pre">Esc</span></code> or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.</p></li>
-<li><p><strong>Home</strong>: Click the “Home” icon to reset the view to the full range.</p></li>
+<li><p><strong>Home</strong> (<code class="docutils literal notranslate"><span class="pre">H</span></code>): reset the view to the full range.</p></li>
+<li><p><strong>Back</strong> and <strong>Forward</strong> (<code class="docutils literal notranslate"><span class="pre">←</span></code>, <code class="docutils literal notranslate"><span class="pre">→</span></code>): the previous and next views.</p></li>
+<li><p><strong>Pan</strong> (<code class="docutils literal notranslate"><span class="pre">P</span></code>): drag the spectrum; drag with the right button to zoom.</p></li>
+<li><p><strong>Zoom</strong> (<code class="docutils literal notranslate"><span class="pre">Z</span></code>): draw a rectangle to zoom into a specific feature.</p></li>
+<li><p><strong>Select</strong> (<code class="docutils literal notranslate"><span class="pre">X</span></code>): the “Range” icon (a double arrow between two bars); drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: <strong>Split region</strong> (a new session with the region only), <strong>Mask region…</strong>, <strong>Rebin region…</strong> (each opens its recipe dialog with the region filled in, so you can check it before running) and <strong>Zoom to region</strong>. Press <code class="docutils literal notranslate"><span class="pre">Esc</span></code> or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.</p></li>
+<li><p><strong>Save</strong>: save the figure to an image file.</p></li>
 </ul>
+<p><code class="docutils literal notranslate"><span class="pre">Esc</span></code> switches off the tool that is on. The position of the mouse (wavelength and flux) is shown at the right end of the toolbar.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
