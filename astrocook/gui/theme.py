@@ -115,6 +115,10 @@ DARK_PALETTE = {
     QPalette.ColorRole.Text: "#e6e6e6", QPalette.ColorRole.Button: "#353535",
     QPalette.ColorRole.ButtonText: "#e6e6e6", QPalette.ColorRole.Highlight: "#2f65ca",
     QPalette.ColorRole.HighlightedText: "#ffffff", QPalette.ColorRole.Mid: "#555555",
+    # Links (About) and the placeholders of the fields (script console):
+    # left to the light palette they did not read on the dark background
+    QPalette.ColorRole.Link: "#6e9bff", QPalette.ColorRole.LinkVisited: "#b28cff",
+    QPalette.ColorRole.PlaceholderText: "#8a8a8a",
 }
 
 _palette_forced = False

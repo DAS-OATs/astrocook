@@ -96,6 +96,26 @@ def test_cursor_follows_the_mouse(qtbot, window):
     assert [a.get_xdata()[0] for a in canvas.cursor_artists] == pytest.approx(positions)
 
 
+def test_cursor_after_a_resize(qtbot, window):
+    # The pixels kept for blitting the cursor were those before the resize:
+    # moving the cursor after View > Show Toolbar drew the old plot over the
+    # new one (reported by Guido in phase 5-bis)
+    canvas = window.plot_viewer.canvas
+    window.cursor_z_input.setText("3.0")
+    window.cursor_show_checkbox.setChecked(True)
+    qtbot.wait(100)
+    before = canvas.background.get_extents()
+    window.show_toolbar_action.trigger()
+    qtbot.wait(100)
+    canvas.on_motion(_event(canvas, "motion_notify_event", _x_inside(canvas, 0.5),
+                            _y_inside(canvas)))
+    bbox = canvas.axes.bbox
+    extents = canvas.background.get_extents()
+    assert extents != before
+    assert extents[3] - extents[1] == pytest.approx(bbox.height, abs=2)
+    window.show_toolbar_action.trigger()
+
+
 def test_select_tool(window):
     # The Select tool (F73: the selection of a region was dead code, with no
     # button): in the main toolbar after Zoom, exclusive with Pan and Zoom

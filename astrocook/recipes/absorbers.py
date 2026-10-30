@@ -282,6 +282,49 @@ ABSORBERS_RECIPES_SCHEMAS = {
 MIN_B_ROUNDS = 2
 
 
+def _region_ident_dict(value) -> dict:
+    """The identifications of the regions ({region ID: [[transition,
+    score], ...]}), stored as a JSON string or, after an .acs2 round trip, as
+    a dict (F27)."""
+    if not value:
+        return {}
+    raw = json.loads(value) if isinstance(value, str) else value
+    return {int(float(k)): v for k, v in raw.items()}
+
+
+def merge_region_ids(old_ids, old_ident, new_ids, new_ident):
+    """Merge the regions of a new identification with those of earlier
+    steps of a pipeline.
+
+    The old regions are kept; the new ones, with their IDs shifted past the
+    largest old ID, fill the pixels that no old region covers. The
+    identifications follow the same IDs: the old ones are kept, the new ones
+    get the shifted IDs, and only the regions left in the merged column are
+    kept (F90).
+
+    Returns
+    -------
+    tuple
+        The merged region IDs (array) and identifications (dict).
+    """
+    old_ids = np.asarray(old_ids)
+    new_ids = np.asarray(new_ids)
+    max_old = np.max(old_ids) if len(old_ids) > 0 else 0
+    shifted_new = np.zeros_like(new_ids)
+    mask_new = new_ids > 0
+    shifted_new[mask_new] = new_ids[mask_new] + max_old
+    final_ids = old_ids.copy()
+    fill_mask = (shifted_new > 0) & (final_ids == 0)
+    final_ids[fill_mask] = shifted_new[fill_mask]
+
+    merged = dict(_region_ident_dict(old_ident))
+    for rid, cands in _region_ident_dict(new_ident).items():
+        merged[int(rid + max_old)] = cands
+    present = set(np.unique(final_ids[final_ids > 0]).astype(int).tolist())
+    merged = {k: v for k, v in merged.items() if k in present}
+    return final_ids, merged
+
+
 def _without_components(session, uuids):
     """The session without the components ``uuids`` (and the constraints
     on them), with the model recomputed from the remaining ones."""
@@ -503,6 +546,7 @@ class RecipeAbsorbersV2:
         
         # Capture the OLD abs_ids before they are overwritten
         old_abs_ids = None
+        old_ident = session_current.spec.meta.get('region_identifications')
         if session_current.spec.has_aux_column('abs_ids'):
             old_abs_ids = session_current.spec.get_column('abs_ids').value.copy()
             
@@ -525,23 +569,18 @@ class RecipeAbsorbersV2:
         # --- 2.5 MERGE IDENTIFICATION IDs ---
         if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
             try:
-                # 1. Get the newly generated IDs
-                new_ids = session_step1.spec.get_column('abs_ids').value
-                
-                # 2. Shift new IDs to avoid collisions
-                import numpy as np
-                max_old = np.max(old_abs_ids) if len(old_abs_ids) > 0 else 0
-                shifted_new = np.zeros_like(new_ids)
-                mask_new = new_ids > 0
-                shifted_new[mask_new] = new_ids[mask_new] + max_old
-                
-                # 3. Combine: Keep OLD, fill gaps with NEW
-                final_ids = old_abs_ids.copy()
-                fill_mask = (shifted_new > 0) & (final_ids == 0)
-                final_ids[fill_mask] = shifted_new[fill_mask]
-                
-                # 4. Save
+                # The regions of the earlier steps are kept, the new ones fill
+                # the gaps with shifted IDs; the identifications of the
+                # regions are merged in the same way (F90: they kept the
+                # unshifted IDs of the last step only, and pointed to the
+                # wrong regions)
+                final_ids, merged_ident = merge_region_ids(
+                    old_abs_ids, old_ident,
+                    session_step1.spec.get_column('abs_ids').value,
+                    session_step1.spec.meta.get('region_identifications'))
                 final_spec = session_step1.spec.update_column('abs_ids', final_ids)
+                final_spec._data.meta['region_identifications'] = json.dumps(
+                    {str(k): v for k, v in merged_ident.items()})
                 session_step1 = session_step1.with_new_spectrum(final_spec)
                 
             except Exception as e:

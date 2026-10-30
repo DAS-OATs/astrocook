@@ -20,6 +20,8 @@ most 200 MCMC steps overwrote the component parameters with NaN) and F25
 fixed and covered by regression tests (findings register, ``ROADMAP.md``,
 section 3.2).
 """
+import json
+
 import numpy as np
 import pytest
 
@@ -460,3 +462,33 @@ def test_wider_z_window_reaches_a_distant_guess(data):
     (comp_wide,) = wide.systs.components
     assert _dv(comp_narrow.z, CIV_Z) > 8.0
     assert _dv(comp_wide.z, CIV_Z) < 3.0
+
+
+# --- Identifications of the regions after a second pipeline (F90) ---------------------------
+
+@pytest.mark.parametrize("as_json", [True, False])
+def test_merge_region_ids_shifts_the_identifications(as_json):
+    from astrocook.recipes.absorbers import merge_region_ids
+    old_ids = np.array([0, 1, 1, 0, 2, 0, 0, 0])
+    new_ids = np.array([0, 1, 1, 0, 0, 2, 0, 3])
+    old_ident = {1: [["CIV_1548", 0.9]], 2: [["CIV_1550", 0.8]], 7: [["SiIV_1393", 0.5]]}
+    new_ident = {1: [["Ly_a", 0.7]], 2: [["Ly_a", 0.6]], 3: [["Ly_b", 0.4]]}
+    if as_json:
+        # As stored by identify_lines; string keys, also "1.0" after an old round trip
+        old_ident = json.dumps({f"{k}.0" if k == 2 else str(k): v for k, v in old_ident.items()})
+        new_ident = json.dumps({str(k): v for k, v in new_ident.items()})
+    ids, ident = merge_region_ids(old_ids, old_ident, new_ids, new_ident)
+    # The old regions win where they overlap; the new ones shifted after them
+    np.testing.assert_array_equal(ids, [0, 1, 1, 0, 2, 4, 0, 5])
+    # Each region keeps its own identification; the new region 1, covered
+    # by the old region 1, and the old region 7, not in the mask, are dropped
+    assert ident == {1: [["CIV_1548", 0.9]], 2: [["CIV_1550", 0.8]],
+                     4: [["Ly_a", 0.6]], 5: [["Ly_b", 0.4]]}
+
+
+def test_merge_region_ids_without_old_regions():
+    from astrocook.recipes.absorbers import merge_region_ids
+    ids, ident = merge_region_ids(np.zeros(4, dtype=int), None,
+                                  np.array([0, 1, 1, 2]), {1: [["Ly_a", 1.0]], 2: []})
+    np.testing.assert_array_equal(ids, [0, 1, 1, 2])
+    assert ident == {1: [["Ly_a", 1.0]], 2: []}

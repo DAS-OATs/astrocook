@@ -109,6 +109,20 @@ def test_about_dialog(qtbot, monkeypatch):
     assert dialog.result() == dialog.DialogCode.Accepted
 
 
+def test_about_tagline_is_not_clipped(qtbot):
+    # At 16pt it was wider than the dialog and lost its first and last
+    # letters (findings register F89): now it wraps
+    dialog = AboutDialog()
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.wait(50)
+    label = dialog.tagline_lbl
+    assert label.wordWrap()
+    words = max(label.text().split(), key=label.fontMetrics().horizontalAdvance)
+    assert label.fontMetrics().horizontalAdvance(words) <= label.contentsRect().width()
+    assert label.height() >= label.heightForWidth(label.width())
+
+
 def test_about_from_the_window(qtbot, monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     shown = []

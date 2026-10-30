@@ -68,6 +68,10 @@ class AboutDialog(QDialog):
         tagline_lbl = QLabel("A thousand recipes to cook a spectrum")
         tagline_lbl.setStyleSheet("font-size: 16pt; font-weight: bold;")
         tagline_lbl.setAlignment(Qt.AlignCenter)
+        # On two lines if needed: at 16pt it is wider than the dialog on
+        # some platforms (findings register F89)
+        tagline_lbl.setWordWrap(True)
+        self.tagline_lbl = tagline_lbl
         layout.addWidget(tagline_lbl)
 
         layout.addSpacing(20)
