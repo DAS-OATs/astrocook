@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
-from astrocook.gui import pyside_plot
+from astrocook.gui import plot_style, pyside_plot
 from astrocook.gui.main_window import MainWindowV2
 
 from test_gui_smoke import SESSION_FILE
@@ -272,9 +272,9 @@ def test_units_of_the_x_axis(window, columns):
         assert ax.get_xlabel() == f"Wavelength (λ, {symbol})"
         text = ax.format_coord(500.0, 2e-17)
         rest = 500.0 / (1 + Z_EM)
+        # The unit of the flux as on the axis, in the usual order
         assert text == (f"λ = {500.0 * factor:.4f} {symbol}, F = {2e-17:.3e} "
-                        f"{columns.y.unit:s}".replace("Angstrom", "Å").replace("**", "^")
-                        + f", λᵣ = {rest * factor:.4f} {symbol}")
+                        "erg s⁻¹ cm⁻² Å⁻¹" + f", λᵣ = {rest * factor:.4f} {symbol}")
         formatter = ax.xaxis.get_major_formatter()
         if unit != "nm":
             assert formatter(500.0, 0) == f"{500.0 * factor:g}"
@@ -286,7 +286,14 @@ def test_rest_frame_axis_and_emission_lines(window, columns):
     assert len(ax.child_axes) == 1
     assert ax.child_axes[0].get_xlabel() == "Rest-frame (λᵣ, nm)"
     strong = {t.get_text() for t in ax.texts}
-    assert strong and strong <= set(pyside_plot.STRONG_EMISSION_LINES)
+    # In spectroscopic notation (visual review of phase 5-bis), on a ground
+    assert strong and strong <= {plot_style.emission_label(k)
+                                 for k in pyside_plot.STRONG_EMISSION_LINES}
+    assert {"Lyα", "N V"} <= strong
+    assert all(t.get_bbox_patch() is not None for t in ax.texts)
+    # No title: the name of the session is in the window and in the list
+    assert ax.get_title() == ""
+    assert ax.get_ylabel() == "Flux (F, erg s⁻¹ cm⁻² Å⁻¹)"
     _set(window, strong_lines_checkbox=False)
     ax = _replot(window, force_autoscale=True)
     assert {t.get_text() for t in ax.texts} > strong

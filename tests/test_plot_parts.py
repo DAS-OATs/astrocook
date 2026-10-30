@@ -33,6 +33,31 @@ def test_z_from_x():
     assert plot_style.z_convert_inverse("bad", 121.567) is None
 
 
+@pytest.mark.parametrize("key, label", [
+    ("Ly_a", "Lyα"), ("Ly_b", "Lyβ"), ("Ly_6", "Ly6"), ("Ly_lim", "Ly limit"),
+    ("H_a", "Hα"), ("D_b", "D Lyβ"), ("CIV_1548", "C IV"), ("CIII_1908", "C III]"),
+    ("OIII_5008", "[O III]"), ("CII_1334", "C II 1334"), ("CII*_1335", "C II* 1335"),
+    ("NI_1134a", "N I 1134a"), ("SiIV_1402", "Si IV 1402"), ("unknown", "unknown")])
+def test_emission_labels(key, label):
+    # The names of the emission lines in spectroscopic notation (visual
+    # review of phase 5-bis: the plot showed the keys, e.g. NV_1238)
+    assert plot_style.emission_label(key) == label
+
+
+def test_every_line_has_a_label():
+    from astrocook.core.atomic_data import xem_d
+    assert all(plot_style.emission_label(k) != k for k in xem_d)
+
+
+def test_flux_unit_labels():
+    import astropy.units as au
+    flux = au.erg / (au.cm**2 * au.s * au.Angstrom)
+    assert plot_style.flux_unit_label(flux) == "erg s⁻¹ cm⁻² Å⁻¹"
+    assert plot_style.flux_unit_label(au.erg / (au.cm**2 * au.s * au.Hz)) == "erg s⁻¹ cm⁻² Hz⁻¹"
+    assert plot_style.flux_unit_label(au.Unit("1e-17 erg / (s cm2 Angstrom)")) == "1×10⁻¹⁷ erg s⁻¹ cm⁻² Å⁻¹"
+    assert plot_style.flux_unit_label(au.Jy) == "Jy"
+
+
 def test_min_max_decimation():
     y = np.array([3.0, 1.0, 2.0, 5.0, 4.0, 0.0, 9.0])
     x = np.arange(7.0)
@@ -140,10 +165,10 @@ def test_cursor_after_a_resize(qtbot, window):
     qtbot.wait(100)
     canvas.on_motion(_event(canvas, "motion_notify_event", _x_inside(canvas, 0.5),
                             _y_inside(canvas)))
-    bbox = canvas.axes.bbox
+    box = canvas.blit_box()
     extents = canvas.background.get_extents()
     assert extents != before
-    assert extents[3] - extents[1] == pytest.approx(bbox.height, abs=2)
+    assert extents[3] - extents[1] == pytest.approx(box.height, abs=2)
     window.show_toolbar_action.trigger()
 
 

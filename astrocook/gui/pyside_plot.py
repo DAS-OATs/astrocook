@@ -24,8 +24,9 @@ if TYPE_CHECKING:
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
 from .plot_mouse import PlotMouseMixin
-from .plot_style import (ERROR_COLOR, STRONG_EMISSION_LINES, decimate_x_for_min_max,
-                         decimate_y_min_max, get_color_cycle)
+from .plot_style import (ERROR_COLOR, HI_TICK_COLOR, STRONG_EMISSION_LINES,
+                         decimate_x_for_min_max, decimate_y_min_max, emission_label,
+                         flux_unit_label, get_color_cycle)
 from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
@@ -134,6 +135,12 @@ def _full_plot_arrays(spec) -> _PlotArrays:
                        full_norm_data, full_model_data)
 
 
+#: Room kept above the axes when nothing is drawn there (no title since the
+#: visual review, no rest-frame axis without z_em): the tabs of the cards
+#: (28 px) are over the top of the plot
+TOP_ROOM_PX = 32
+
+
 def _coordinate_formatter(spec, view: _PlotView, z_em, x_label_unit):
     """The text of the coordinates under the mouse (in the toolbar):
     wavelength, flux and rest-frame wavelength, in the units shown."""
@@ -146,10 +153,8 @@ def _coordinate_formatter(spec, view: _PlotView, z_em, x_label_unit):
     elif view.is_snr:
         y_label_unit = ""
     elif spec.y.unit:
-        unit_str = f"{spec.y.unit:s}"
-        unit_str = unit_str.replace("Angstrom", SYM_ANGSTROM)
-        unit_str = unit_str.replace("**", "^") # Es. cm^2
-        y_label_unit = unit_str
+        # As on the axis (it was the generic string, cm^2 written as cm2)
+        y_label_unit = flux_unit_label(spec.y.unit)
 
     selected_x_unit = view.x_unit
     is_norm_y, is_snr = view.is_norm_y, view.is_snr
@@ -343,7 +348,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             self._plot_cursor(session_state, colors)
 
             self._update_swatches(ax)
-            ax.set_title(f"Spectrum: {session_state.name}")
+            # No title: the name of the session is in the title of the
+            # window and in the list of the sessions (visual review)
             self._format_axes(ax, spec, view, full.x)
             self._set_limits(ax, view)
 
@@ -808,8 +814,10 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # Get current plot limits to only draw visible lines
         xlim = ax.get_xlim()
 
-        # Define Y position for markers (e.g., slightly below top, in axis coords)
-        marker_y_axis_coord = 0.05 # 5% from the bottom
+        # The ticks in two rows above the bottom (axes coordinates): HI
+        # below, metals above, so that the dense ticks of the forest do not
+        # hide those of the metals; the selection across both
+        hi_y, metal_y, marker_y_axis_coord = 0.035, 0.075, 0.055
 
         trans = ax.get_xaxis_transform()
 
@@ -885,14 +893,16 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         # ** Make only TWO plot calls, outside the loop **
         if hi_lines_x:
-            ax.plot(hi_lines_x, [marker_y_axis_coord] * len(hi_lines_x),
-                    marker='|', markersize=12, linestyle='None',
-                    color='red', alpha=0.9, label="HI Systems",
+            # Short, thin and translucent: in the forest they made a solid
+            # red block over the bottom of the spectrum (visual review)
+            ax.plot(hi_lines_x, [hi_y] * len(hi_lines_x),
+                    marker='|', markersize=8, markeredgewidth=1.0, linestyle='None',
+                    color=HI_TICK_COLOR, alpha=0.6, label="HI Systems",
                     transform=trans)
         if metal_lines_x:
-            ax.plot(metal_lines_x, [marker_y_axis_coord] * len(metal_lines_x),
-                    marker='|', markersize=12, linestyle='None',
-                    color='darkgray', alpha=0.9, label="Metal Systems",
+            ax.plot(metal_lines_x, [metal_y] * len(metal_lines_x),
+                    marker='|', markersize=8, markeredgewidth=1.0, linestyle='None',
+                    color='dimgray', alpha=0.8, label="Metal Systems",
                     transform=trans)
 
         if highlight_lines_x:
@@ -1015,10 +1025,22 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 y_label_text = f"Flux ({SYM_FLUX}, arbitrary units)"
             else:
                 # Use Astropy's pretty formatter for the unit string
-                unit_str = spec.y.unit.to_string('latex_inline')
+                unit_str = flux_unit_label(spec.y.unit)
                 y_label_text = f"Flux ({SYM_FLUX}, {unit_str})"
 
         ax.set_ylabel(y_label_text)
+        self._has_top_axis = has_rest_frame
+        self._update_top_room()
+
+    def _update_top_room(self):
+        """The space above the axes: none with the rest-frame axis (its
+        labels are there), ``TOP_ROOM_PX`` without it."""
+        engine = self.canvas.figure.get_layout_engine()
+        height = self.canvas.height()
+        if engine is None or height <= 0:
+            return
+        top = 1.0 if getattr(self, '_has_top_axis', False) else max(0.5, 1.0 - TOP_ROOM_PX / height)
+        engine.set(rect=(0, 0, 1, top))
 
     def _plot_emission_lines(self, ax, view: '_PlotView', z_em, full_x):
         """The emission lines at z_em in view: a label at the top and a
@@ -1058,13 +1080,19 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
                 # Only plot if within the current view
                 if view_xmin <= obs_nm <= view_xmax:
-                    ax.text(obs_nm, 0.95, label,
+                    # The name in spectroscopic notation, on a white
+                    # ground: it is drawn over the data (visual review);
+                    # below the highlights (zorder 4, 5), which are blitted
+                    # over the plot
+                    ax.text(obs_nm, 0.95, emission_label(label),
                             transform=trans,
                             rotation=90,
                             verticalalignment='top',
                             horizontalalignment='center',
                             color=color, alpha=alpha_text,
-                            fontsize=8, clip_on=True)
+                            fontsize=8, clip_on=True, zorder=3.5,
+                            bbox=dict(facecolor='white', alpha=0.75,
+                                      edgecolor='none', pad=1.0))
                     ax.axvline(obs_nm, color=color, alpha=alpha_line, lw=1.0, ls=':')
 
             except Exception:
@@ -1273,16 +1301,16 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 self._drawing_highlight_base = False
                 for artist in overlay:
                     artist.set_visible(True)
-            self._highlight_base = canvas.copy_from_bbox(ax.bbox)
+            self._highlight_base = canvas.copy_from_bbox(canvas.blit_box())
         else:
             canvas.restore_region(self._highlight_base)
         for artist in overlay:
             ax.draw_artist(artist)
         # The background of the blitted cursor, which is drawn over it
-        canvas.background = canvas.copy_from_bbox(ax.bbox)
+        canvas.background = canvas.copy_from_bbox(canvas.blit_box())
         for artist in canvas.cursor_artists:
             ax.draw_artist(artist)
         if canvas.cursor_label is not None and canvas.cursor_artists:
             ax.draw_artist(canvas.cursor_label)
-        canvas.blit(ax.bbox)
+        canvas.blit(canvas.blit_box())
         return True

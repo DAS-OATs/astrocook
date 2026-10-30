@@ -82,6 +82,14 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # ** Use lambda to pass the session_state argument **
             QTimer.singleShot(0, lambda: self.plot_widget.plot_spectrum(session_state=session_state))
 
+    def blit_box(self):
+        """The pixels kept and redrawn when the lines over the plot move
+        (cursor, highlights): the axes and 2 pixels around them. The edges
+        of the axes are at fractions of a pixel, and the vertical lines end
+        there: a row of pixels just outside the axes was drawn over at each
+        move and never restored."""
+        return self.axes.bbox.padded(2)
+
     def update_cursor_label(self, z, x_positions):
         """Move the label of the cursor to its first line in view, and write
         its redshift; hidden when no line is in view. On the left of the
@@ -107,13 +115,15 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.background = None
         if self.plot_widget is not None and hasattr(self.plot_widget, '_connect_background_capture'):
             self.plot_widget._connect_background_capture()
+        if self.plot_widget is not None and hasattr(self.plot_widget, '_update_top_room'):
+            self.plot_widget._update_top_room()
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
         try:
             if self.background is None and self.figure.get_size_inches().any():
                 if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
-                    self.background = self.copy_from_bbox(self.axes.bbox)
+                    self.background = self.copy_from_bbox(self.blit_box())
         except Exception as e:
             logging.error(f"Failed during background copy: {e}")
             self.background = None
@@ -145,7 +155,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         if self.cursor_label is not None and drawn_artists:
             self.axes.draw_artist(self.cursor_label)
         if drawn_artists:
-            try: self.blit(self.axes.bbox)
+            try: self.blit(self.blit_box())
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
 
 

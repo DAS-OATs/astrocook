@@ -282,7 +282,8 @@ def test_right_click_with_the_cursor(window, menus, modifiers, monkeypatch):
         menus[-1][text].trigger()
     assert requests[0][:2] == ("absorbers", "add_component")
     assert requests[0][2]["series"] == "CIV" and requests[0][2]["z"] == pytest.approx(z)
-    assert requests[1] == ("edit", "set_properties", {"z_em": str(z)})
+    assert requests[1][:2] == ("edit", "set_properties")
+    assert float(requests[1][2]["z_em"]) == pytest.approx(z, abs=1e-12)
     assert splits == [True]
     spec = _spec(window)
     assert inspected == [int(np.clip(np.searchsorted(spec.x.value, x), 0, len(spec.x.value) - 1))]
