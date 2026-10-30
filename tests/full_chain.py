@@ -16,6 +16,7 @@ are kept so that the UUIDs in the output are reproducible too. Usage::
 with ``<case>`` one of :data:`CASES`.
 """
 import dataclasses
+import json
 import logging
 import random
 import sys
@@ -120,6 +121,21 @@ def _components(systs, prefix):
     return out
 
 
+def _identifications(state, prefix):
+    """The regions of the absorbed mask and the best identification of each
+    region in the metadata (not in the snapshots: checked by the intent of
+    the chain, findings register F90)."""
+    meta = state.spec.meta.get("region_identifications") or {}
+    ident = json.loads(meta) if isinstance(meta, str) else meta
+    ids = state.spec.get_column("abs_ids").value
+    keys = sorted(int(float(k)) for k in ident)
+    return {f"{prefix}_regions": np.unique(ids[ids > 0]).astype(int),
+            f"{prefix}_keys": np.array(keys, dtype=int),
+            f"{prefix}_best": np.array(
+                [ident.get(k, ident.get(str(k)))[0][0] if ident.get(k, ident.get(str(k)))
+                 else "" for k in keys], dtype=str)}
+
+
 def chain_arrays(continuum, doublets, forest):
     """Arrays recorded by the snapshots, one group per stage."""
     spec = continuum.spec
@@ -128,6 +144,8 @@ def chain_arrays(continuum, doublets, forest):
            "abs_mask": spec.get_column("abs_mask").value.astype(bool)}
     out.update(_components(doublets.systs, "doublets"))
     out.update(_components(forest.systs, "forest"))
+    for stage, state in (("doublets", doublets), ("forest", forest)):
+        out.update(_identifications(state, f"ident_{stage}"))
     model = forest.spec.get_column("model").value
     out["model_norm"] = (model / forest.spec.get_column("cont").value).astype(np.float32)
     return out

@@ -35,6 +35,7 @@ what is correct.
 import os
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -179,6 +180,15 @@ def _check_intent(arrays):
     for stage in ("doublets", "forest"):
         b = arrays[f"{stage}_b"]
         assert np.all(b <= 50.0 + 1e-6), f"{stage}: b up to {b.max():.1f} km/s"
+    # One identification per absorbed region, keyed by the region ID in the
+    # mask; those of the doublets kept after lya_auto (findings register F90:
+    # lya_auto shifted the IDs of its regions but not the keys of their
+    # identifications, and the metals ones were lost)
+    for stage in ("doublets", "forest"):
+        np.testing.assert_array_equal(arrays[f"ident_{stage}_keys"],
+                                      arrays[f"ident_{stage}_regions"], err_msg=stage)
+    metals = Counter(arrays["ident_doublets_best"])
+    assert metals and not metals - Counter(arrays["ident_forest_best"])
 
 
 @pytest.mark.slow

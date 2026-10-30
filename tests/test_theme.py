@@ -85,6 +85,17 @@ def test_text_colours_read_on_the_background(qapp, palette_dark):
         qapp.setPalette(light)
 
 
+def test_dark_palette_links_and_placeholders():
+    # Left to the light palette, the links (About) were dark blue on dark and
+    # the placeholder of the script console almost invisible (visual review
+    # of phase 5-bis)
+    base = theme.DARK_PALETTE[QPalette.ColorRole.Base]
+    window = theme.DARK_PALETTE[QPalette.ColorRole.Window]
+    for role in (QPalette.ColorRole.Link, QPalette.ColorRole.LinkVisited):
+        assert _contrast(theme.DARK_PALETTE[role], window) >= 4.5, role
+    assert _contrast(theme.DARK_PALETTE[QPalette.ColorRole.PlaceholderText], base) >= 4.5
+
+
 # --- The interface follows the palette ---------------------------------------
 
 @pytest.fixture

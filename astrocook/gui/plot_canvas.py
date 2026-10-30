@@ -58,6 +58,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.mpl_connect('motion_notify_event', self.on_motion)
         self.mpl_connect('button_press_event', self.on_press)
         self.mpl_connect('button_release_event', self.on_release)
+        self.mpl_connect('resize_event', self._on_resize)
         self.xlim_cid = self.axes.callbacks.connect('xlim_changed', self.on_lim_changed)
         self.ylim_cid = self.axes.callbacks.connect('ylim_changed', self.on_lim_changed)
 
@@ -76,6 +77,15 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # Schedule plot_spectrum to run soon via the event loop
             # ** Use lambda to pass the session_state argument **
             QTimer.singleShot(0, lambda: self.plot_widget.plot_spectrum(session_state=session_state))
+
+    def _on_resize(self, event):
+        """The pixels kept for blitting have the old size: captured again at
+        the redraw that follows the resize. Before, the redshift cursor
+        restored them over the resized plot, e.g. after View > Show Toolbar
+        (reported by Guido in phase 5-bis)."""
+        self.background = None
+        if self.plot_widget is not None and hasattr(self.plot_widget, '_connect_background_capture'):
+            self.plot_widget._connect_background_capture()
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
