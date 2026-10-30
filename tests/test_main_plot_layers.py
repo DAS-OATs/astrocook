@@ -73,6 +73,10 @@ def _set(window, **boxes):
         box.blockSignals(False)
 
 
+def viewer_ghosts(window):
+    return set(window.plot_viewer._ghost_artists)
+
+
 def _lines(ax):
     return {line.get_label(): line for line in ax.get_lines()}
 
@@ -156,6 +160,15 @@ def test_other_selected_sessions(qtbot, window, columns):
     assert len(ghost) == 1
     other = window.session_histories[0].current_state.spec
     np.testing.assert_array_equal(lines[ghost[0]].get_ydata(), other.y.value)
+    # Its swatch next to its name in the list (the plot has no legend, F86);
+    # the active session gets a blank one, to keep the names aligned
+    from PySide6.QtCore import Qt
+    model = window.session_list_view.model()
+    ghost_row = next(r for r in range(model.rowCount())
+                     if window.session_histories[r] is not window.active_history)
+    icon = model.data(model.index(ghost_row), Qt.ItemDataRole.DecorationRole)
+    assert icon is not None and not icon.isNull()
+    assert viewer_ghosts(window) == {ghost_row}
     # In the SNR view they are divided by their error too (before, the
     # default "dF" was looked up as a column and they stayed in flux, F75)
     _set(window, snr_checkbox=True)
@@ -291,14 +304,10 @@ def test_no_session(window):
     assert not viewer.canvas.axes.has_data()
 
 
-def test_legend_without_the_swatches(window, columns):
-    # With the Plot Elements section open, the entries shown there as
-    # swatches are left out of the legend
-    window.plot_elements_section.setExpanded(True)
-    legend = _replot(window).get_legend()
-    texts = {t.get_text() for t in legend.get_texts()} if legend else set()
-    panel_open = window.right_sidebar_widget.width() > 1
-    assert not (panel_open and texts & set(pyside_plot.PANEL_LEGEND_LABELS))
+def test_no_legend(window, columns):
+    # The swatches of the panels show the styles (F86)
+    window.plot_elements_section.setExpanded(False)
+    assert _replot(window).get_legend() is None
 
 
 # --- Decimation -----------------------------------------------------------------------------

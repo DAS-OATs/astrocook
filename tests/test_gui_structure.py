@@ -25,8 +25,8 @@ SPECTRUM_PLOT_WIDGET = {
 }
 #: ... and the parts of plot_spectrum, split in phase 5
 SPECTRUM_PLOT_WIDGET |= {
-    '_add_legend', '_connect_background_capture', '_format_axes',
-    '_invalidate_plot_caches', '_legend_location', '_plot_arrays',
+    '_connect_background_capture', '_format_axes',
+    '_invalidate_plot_caches', '_plot_arrays',
     '_plot_aux_column', '_plot_continuum_and_model', '_plot_cursor',
     '_plot_emission_lines', '_plot_error', '_plot_flux', '_plot_other_sessions',
     '_plot_systems', '_raw_plot_arrays', '_read_view',
@@ -36,6 +36,8 @@ SPECTRUM_PLOT_WIDGET |= {
 SPECTRUM_PLOT_WIDGET |= {'_region_menu', 'set_region_selection'}
 #: ... and the decimation by view, redone in phase 5-bis (F76)
 SPECTRUM_PLOT_WIDGET |= {'_decimate'}
+#: ... and the swatches instead of the legend (phase 5-bis, F86)
+SPECTRUM_PLOT_WIDGET |= {'_update_swatches'}
 
 
 #: Methods and class attributes of MainWindowV2 before the split (without
@@ -63,8 +65,7 @@ MAIN_WINDOW = {
     '_on_stride_slider_released', '_on_stride_text_changed', '_on_view_identifications',
     '_on_view_log', '_on_view_script_console', '_on_view_system_inspector',
     '_on_view_toggle', '_open_docs', '_populate_snr_combo', '_process_recipe_result',
-    '_process_script_result', '_redo_last_action', '_replot_if_session',
-    '_reposition_floating_widgets', '_reset_continuum_ui',
+    '_process_script_result', '_redo_last_action', '_reposition_floating_widgets', '_reset_continuum_ui',
     '_safely_close_progress_dialog', '_save_session', '_session_list_height',
     '_set_pending_action', '_set_plot_controls_faded', '_set_sessions_faded',
     '_set_slider_from_stride', '_setup_collapse_buttons', '_setup_empty_view',

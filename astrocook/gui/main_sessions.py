@@ -13,7 +13,7 @@ from copy import deepcopy
 from typing import List, Optional
 
 import numpy as np
-from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, Qt
+from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, QStringListModel, Qt
 from PySide6.QtGui import QAction, QDoubleValidator
 from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDialog,
                                QFormLayout, QLabel, QLineEdit, QMenu, QMessageBox,
@@ -23,6 +23,35 @@ from astrocook.core.resolution import resolution_summary
 from astrocook.core.session import SessionV2, load_session_from_file
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+
+
+class SessionListModel(QStringListModel):
+    """The names of the sessions, with the swatch of each other session
+    shown in the plot next to its name (the plot has no legend, F86)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._swatches = {}  # row -> QIcon
+        self._blank = None
+
+    def set_swatches(self, swatches: dict, blank):
+        """``swatches``: row -> icon of the sessions shown; with some, the
+        other rows get ``blank`` so that the names stay aligned."""
+        if swatches == self._swatches:
+            return
+        self._swatches, self._blank = swatches, blank
+        if self.rowCount():
+            # Only the decoration: the names are untouched (dataChanged on
+            # the names renames the sessions, _on_session_name_changed)
+            self.dataChanged.emit(self.index(0), self.index(self.rowCount() - 1),
+                                  [Qt.ItemDataRole.DecorationRole])
+
+    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DecorationRole:
+            if not self._swatches:
+                return None
+            return self._swatches.get(index.row(), self._blank)
+        return super().data(index, role)
 
 
 class MainSessionsMixin:
@@ -883,10 +912,12 @@ class MainSessionsMixin:
         
         dialog.accept()
 
-    def _on_session_name_changed(self, index_top_left, index_bottom_right):
+    def _on_session_name_changed(self, index_top_left, index_bottom_right, roles=()):
         """ 
         Slot called when the user renames a session directly in the sidebar list.
         """
+        if roles and not ({Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole} & set(roles)):
+            return  # Only the swatches changed (SessionListModel)
         row = index_top_left.row()
         if not (0 <= row < len(self.session_histories)):
             return

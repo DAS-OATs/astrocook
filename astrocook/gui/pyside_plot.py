@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
 from .plot_mouse import PlotMouseMixin
-from .plot_style import (STRONG_EMISSION_LINES, PANEL_LEGEND_LABELS, decimate_x_for_min_max,
+from .plot_style import (STRONG_EMISSION_LINES, decimate_x_for_min_max,
                          decimate_y_min_max, get_color_cycle)
 from .plot_toolbar import AstrocookToolbar
 
@@ -32,7 +32,7 @@ from .plot_toolbar import AstrocookToolbar
 #: zoom). 1 million (Guido, phase 5-bis; it was 2 million, and the comment
 #: of the first version said "> 20k points"): a redraw of 3 million pixels
 #: took 3.9 s whole and 1.0 s decimated, of 300 000 pixels 0.77 and 0.57 s
-#: (with the legend in a fixed corner, see F86)
+#: (with the legend, since removed from the plot, in a fixed corner: F86)
 DECIMATION_THRESHOLD = 1000000
 DECIMATION_FACTOR = 10       # Plot 2 points for every 10
 
@@ -255,8 +255,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # --- Highlight State ---
         self._highlighted_uuids = set()
         # The highlighted systems of the last plot, (marker line, guide
-        # lines) or None, and the pixels of the axes without them and the
-        # legend: a new selection is drawn over these (_blit_highlights)
+        # lines) or None, and the pixels of the axes without them: a new
+        # selection is drawn over these (_blit_highlights)
         self._highlight_artists = None
         self._highlight_base = None
         self._drawing_highlight_base = False
@@ -308,7 +308,6 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         ax.clear() # Now clear axes
         self._reconnect_limit_callbacks()
-        legend_loc = self._legend_location(initial_draw)
 
         # ** Reset background and clear artists for blitting **
         self.canvas.background = None
@@ -317,6 +316,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._tick_visuals = []
         self._highlight_artists = None
         self._plotted_state = session_state
+        self._ghost_artists = {}  # row of the session list -> its line
 
         plot_occurred = False
         if spec and len(spec.x) > 0:
@@ -339,7 +339,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             self._plot_systems(ax, spec, session_state.systs)
             self._plot_cursor(session_state, colors)
 
-            self._add_legend(ax, legend_loc)
+            self._update_swatches(ax)
             ax.set_title(f"Spectrum: {session_state.name}")
             self._format_axes(ax, spec, view, full.x)
             self._set_limits(ax, view)
@@ -439,29 +439,6 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             logging.debug("Reconnected limit change callbacks in plot_spectrum.")
         except Exception as e:
             logging.error(f"Failed to reconnect limit callbacks: {e}")
-
-    def _legend_location(self, initial_draw) -> str:
-        """The corner of the legend away from the open sidebars."""
-        legend_loc = 'best' # Default
-        if not initial_draw:
-            try:
-                # Check width as a proxy for visibility/expanded state
-                left_sidebar_open = self.main_window.left_sidebar_widget.width() > 1
-                right_sidebar_open = self.main_window.right_sidebar_widget.width() > 1
-
-                if left_sidebar_open and not right_sidebar_open:
-                    legend_loc = 'upper right'
-                elif not left_sidebar_open and right_sidebar_open:
-                    legend_loc = 'upper left'
-                elif left_sidebar_open and right_sidebar_open:
-                    # Maybe center top if both are open? Or stick to one side.
-                    legend_loc = 'upper center'
-                # else: use 'best' if both closed
-                logging.debug(f"Legend location set to: {legend_loc} (L:{left_sidebar_open}, R:{right_sidebar_open})")
-            except Exception as e:
-                logging.warning(f"Could not determine sidebar state for legend: {e}")
-                legend_loc = 'best' # Fallback
-        return legend_loc
 
     def _read_view(self, spec, selected_snr_col, was_zoomed, force_autoscale,
                    previous_xlim, previous_ylim) -> '_PlotView':
@@ -614,7 +591,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if not (hasattr(self.main_window, 'session_list_view') and self.main_window.session_list_view.selectionModel()):
             return
         indexes = self.main_window.session_list_view.selectionModel().selectedIndexes()
-        ghost_states = []
+        ghost_states, rows = [], []
         for idx in indexes:
             row = idx.row()
             if 0 <= row < len(self.main_window.session_histories):
@@ -622,6 +599,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 # Exclude the primary active history
                 if hist != self.main_window.active_history:
                     ghost_states.append(hist.current_state)
+                    rows.append(row)
         if not ghost_states:
             return
 
@@ -665,7 +643,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             label = f"Ghost: {ghost_state.name}"
 
             # Plot Ghost Flux (solid but slightly transparent, low z-order)
-            ax.step(ghost_x, ghost_y, where='mid', color=color, alpha=0.7, lw=0.8, label=label, zorder=0.8, rasterized=True)
+            line, = ax.step(ghost_x, ghost_y, where='mid', color=color, alpha=0.7, lw=0.8, label=label, zorder=0.8, rasterized=True)
+            # Its swatch goes next to its name in the list of the sessions
+            self._ghost_artists[rows[i]] = line
 
             # Plot Ghost Error (faint boundary lines of the same color)
             if ghost_dy is not None:
@@ -948,30 +928,21 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         except Exception as e:
             logging.error(f"Unexpected error drawing cursor: {e}", exc_info=True)
 
-    # --- Parts of plot_spectrum: legend, axes and limits ---
+    # --- Parts of plot_spectrum: swatches, axes and limits ---
 
-    def _add_legend(self, ax, legend_loc):
-        """The legend, without the entries shown as swatches by the plot
-        controls when their section is open."""
-        if not ax.has_data(): # Only add legend if something was plotted
-            return
+    def _update_swatches(self, ax):
+        """The styles of the plotted elements, shown as swatches in the
+        panels: the plot controls (spectrum, error, continuum, model,
+        systems, auxiliary column) and the list of the sessions (the other
+        sessions shown). There is no legend on the plot (F86, Guido's
+        decision): placed with loc='best' it took most of the redraw of a
+        long spectrum (6.3 s instead of 0.77 s on 300 000 pixels)."""
         handles, labels = ax.get_legend_handles_labels()
-        panel_open = False
         try:
-            self.main_window.update_plot_swatches(dict(zip(labels, handles)))
-            panel_open = (self.main_window.right_sidebar_widget.width() > 1
-                          and self.main_window.plot_elements_section.isExpanded())
+            self.main_window.update_plot_swatches(dict(zip(labels, handles)),
+                                                  self._ghost_artists)
         except AttributeError:
             pass  # No main window controls (e.g. in tests)
-        if panel_open:
-            # The plot controls show these entries as swatches
-            # (when their Plot Elements section is open)
-            kept = [(h, lab) for h, lab in zip(handles, labels)
-                    if lab not in PANEL_LEGEND_LABELS]
-            handles = [h for h, _ in kept]
-            labels = [lab for _, lab in kept]
-        if handles:
-            ax.legend(handles, labels, loc=legend_loc, markerscale=0.2) # Smaller legend font
 
     def _format_axes(self, ax, spec, view: '_PlotView', full_x):
         """Scales, grid, units of the x axis, the text of the coordinates
@@ -1255,14 +1226,13 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         of the main plot took ~0.15 s on a laptop screen, at each selection
         in the System Inspector).
 
-        The pixels of the axes without the highlights and the legend are
-        kept from a full draw (``_highlight_base``, made at the first
-        selection after each full draw); a new selection restores them and
-        draws the guide lines, the markers and the legend over them, in the
-        order of a full draw (zorder 4, 5, then the legend): the same
-        pixels as a full draw. Returns False when a full redraw is needed:
-        the "Selected" entry of the legend appears or disappears, or the
-        continuum is being edited.
+        The pixels of the axes without the highlights are kept from a full
+        draw (``_highlight_base``, made at the first selection after each
+        full draw); a new selection restores them and draws the guide lines
+        and the markers over them, in the order of a full draw (zorder 4,
+        then 5): the same pixels as a full draw. Returns False when a full
+        redraw is needed: the highlights appear or disappear (their
+        artists are made by a full plot), or the continuum is being edited.
         """
         if getattr(self, '_edit_mode_active', False):
             return False
@@ -1281,8 +1251,6 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         guides = [self._highlight_guide(ax, x) for x in new_x]
         self._highlight_artists = (marker, guides)
         overlay = guides + [marker]
-        if ax.get_legend() is not None:
-            overlay.append(ax.get_legend())
 
         if self._highlight_base is None:
             for artist in overlay:

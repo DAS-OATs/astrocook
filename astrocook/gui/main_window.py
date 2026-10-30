@@ -1,7 +1,7 @@
 import logging
 import os
 from PySide6.QtCore import (
-    Qt, QStringListModel, QThreadPool
+    Qt, QThreadPool
 )
 from PySide6.QtGui import (
     QIcon, QPixmap
@@ -19,7 +19,7 @@ from .main_menus import MainMenusMixin
 from .main_panels import MainPanelsMixin
 from .main_recipes import MainRecipesMixin
 from .main_scripts import MainScriptsMixin
-from .main_sessions import MainSessionsMixin
+from .main_sessions import MainSessionsMixin, SessionListModel
 from .script_dialog import ScriptDialog
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
@@ -70,7 +70,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         self.session_histories: List[SessionHistory] = [] # List of history managers
         self.active_history: Optional[SessionHistory] = None # Reference to the selected manager
-        self.session_model = QStringListModel()
+        self.session_model = SessionListModel()
         
         self.log_scripter_dialog: Optional[LogScripterDialog] = None
         self.identification_viewer_dialog: Optional[IdentificationViewerDialog] = None # <<< *** ADD ***
