@@ -414,6 +414,39 @@ def test_inspector_fit_window(loaded, monkeypatch):
     assert calls[3] == ("refit_all", {"z_window_kms": "40.0"})
 
 
+def test_inspector_unfreeze_btur_with_its_column_hidden(loaded, monkeypatch):
+    # With the btur column hidden, the menu of the table frees btur of the
+    # selected components and shows the column (Guido, phase 5-bis)
+    from PySide6.QtWidgets import QMenu
+    from astrocook.gui import system_inspector
+    from astrocook.gui.inspector_table import COLUMNS
+    menus, calls = [], []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            menus.append(self)
+
+    monkeypatch.setattr(system_inspector, "QMenu", RecordedMenu)
+    monkeypatch.setattr(loaded, "_on_recipe_requested",
+                        lambda menu, name, params, extra: calls.append((name, params)))
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    view, col = inspector.table_view, COLUMNS.index("btur")
+    assert view.isColumnHidden(col)
+    view.selectRow(0)
+    pos = view.visualRect(inspector.proxy_model.index(0, 0)).center()
+    inspector._on_context_menu(pos)
+    action = next(a for a in menus[-1].actions() if a.text() == "Unfreeze 'btur'")
+    action.trigger()
+    assert not view.isColumnHidden(col)
+    uuid = inspector._get_selected_components()[0].uuid
+    assert calls and calls[-1][0] == "update_constraint"
+    assert calls[-1][1]["uuid"] == uuid and calls[-1][1]["param"] == "btur"
+    # The column shown: the entry is not needed (the cells of btur have it)
+    inspector._on_context_menu(pos)
+    assert "Unfreeze 'btur'" not in [a.text() for a in menus[-1].actions()]
+
+
 @pytest.mark.parametrize("installed", [True, False])
 def test_inspector_bayesian_entries(loaded, monkeypatch, installed):
     # emcee and corner are optional (extra "bayes"): without them the menu

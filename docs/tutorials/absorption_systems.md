@@ -168,7 +168,7 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 - **Link (Thermal):** Assumes the broadening is **thermal**. The `b` value is scaled according to the atomic mass ratio of the two ions ($b \propto m^{-1/2}$).
 
 :::{note}
-Astrocook also tracks a turbulent broadening parameter `btur` separately. It is **frozen (italic)** at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (**btur** included); **Default Columns** goes back to this behaviour. You can unfreeze `btur` via the right-click menu of the table if you need to model mixed thermal/turbulent broadening explicitly.
+Astrocook also tracks a turbulent broadening parameter `btur` separately. It is **frozen (italic)** at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (**btur** included); **Default Columns** goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose **Unfreeze 'btur'** in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.
 :::
 
 ### Uncertainties

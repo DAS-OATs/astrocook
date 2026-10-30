@@ -690,6 +690,16 @@ class SystemInspector(QWidget):
             m.addSeparator()
 
         # Set Resolution (Multi-aware via internal logic)
+        # btur, with its column hidden while no component uses it: unfrozen
+        # from any cell, and its column shown (visual review of phase 5-bis)
+        if self.table_view.isColumnHidden(COLUMNS.index('btur')):
+            act_btur = QAction(f"Unfreeze 'btur'{suffix}", m)
+            act_btur.setToolTip("Free the turbulent broadening of the selected components "
+                                "and show its column")
+            act_btur.triggered.connect(lambda: self._unfreeze_btur(selected_comps))
+            m.addAction(act_btur)
+            m.addSeparator()
+
         act_resol = QAction(f"Set Resolving Power...{suffix}", m)
         act_resol.triggered.connect(self._set_component_resolution)
         m.addAction(act_resol)
@@ -745,6 +755,12 @@ class SystemInspector(QWidget):
         m.exec(self.table_view.mapToGlobal(pos))
 
     # --- [NEW] Batch Helper Methods ---
+
+    def _unfreeze_btur(self, comps):
+        """Free btur of the components and show its column (hidden while no
+        component uses it)."""
+        self._set_column_shown('btur', True)
+        self._toggle_constraint_list(comps, 'btur', True)
 
     def _toggle_constraint_list(self, comps, param, is_free):
         """Iterates list and applies constraint update."""
