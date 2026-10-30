@@ -558,21 +558,21 @@
 <p>The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (<strong>Plot Elements</strong>, <strong>View Controls</strong>, <strong>Axis Limits</strong>, <strong>Redshift Cursor</strong>, <strong>Edit Continuum</strong>) open and close with a click on their title, and Astrocook remembers which ones you left open.</p>
 <section id="plot-elements">
 <h3>Plot Elements<a class="headerlink" href="#plot-elements" title="Link to this heading">#</a></h3>
-<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Aux. Column</strong> has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
+<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Auxiliary column</strong> has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
 <ul>
 <li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
 <li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
 <li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
 <li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
 <li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
-<li><p><strong>Aux. Column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
+<li><p><strong>Auxiliary column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
 <li><p><strong>Strong emission lines</strong>: Shows markers for major emission lines (e.g., Ly-<span class="math notranslate nohighlight">\(\alpha\)</span>, CIV).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires defining the emission redshift first (see <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Setting Session Properties</span></a>).</p>
 </div>
 </li>
-<li><p><strong>Show Iso-Mag Grid</strong>: Overlays curves of constant AB magnitude.</p>
+<li><p><strong>Show iso-magnitude grid</strong>: Overlays curves of constant AB magnitude.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires flux calibration (see <a class="reference internal" href="flux_operations.html#flux-calibration"><span class="std std-ref">Flux Calibration</span></a>).</p>
@@ -585,13 +585,13 @@
 <ul class="simple">
 <li><p><strong>Units</strong>: You can switch the X-axis display between <code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>, and <code class="docutils literal notranslate"><span class="pre">micron</span></code> on the fly.</p></li>
 <li><p><strong>Normalize F</strong>: Plots the flux relative to the continuum (showing <span class="math notranslate nohighlight">\(f = F / F_\mathrm{cont}\)</span>) (this control becomes active only when a <code class="docutils literal notranslate"><span class="pre">cont</span></code> column is present).</p></li>
-<li><p><strong>Show SNR</strong>: Plots the Signal-to-Noise Ratio instead of flux.</p>
+<li><p><strong>Show S/N</strong>: Plots the signal-to-noise ratio instead of flux.</p>
 <ul>
-<li><p><strong>Error Col.</strong>: When showing SNR, you can select which column to use as the noise estimate (default is <code class="docutils literal notranslate"><span class="pre">dF</span></code>).</p></li>
+<li><p><strong>Error column</strong>: When showing the S/N, you can select which column to use as the noise estimate (default is <code class="docutils literal notranslate"><span class="pre">dF</span></code>).</p></li>
 </ul>
 </li>
 <li><p><strong>Logarithmic <span class="math notranslate nohighlight">\(\lambda\)</span></strong>: Switches the X-axis to a logarithmic scale.</p></li>
-<li><p><strong>Logarithmic F</strong>: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the <strong>Iso-Mag Grid</strong> as straight lines. Pixels with <span class="math notranslate nohighlight">\(F \le 0\)</span> (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive <strong>F Min</strong> is not applied while the scale is logarithmic.</p></li>
+<li><p><strong>Logarithmic F</strong>: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the <strong>iso-magnitude grid</strong> as straight lines. Pixels with <span class="math notranslate nohighlight">\(F \le 0\)</span> (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive <strong>F Min</strong> is not applied while the scale is logarithmic.</p></li>
 </ul>
 </section>
 <section id="axis-limits">
@@ -603,11 +603,11 @@
 <p>This is a handy tool for quick visual inspection.</p>
 <ol class="arabic simple">
 <li><p>In the <strong>Redshift Cursor</strong> section, enter a transition name (e.g., <code class="docutils literal notranslate"><span class="pre">Ly_a</span></code>, <code class="docutils literal notranslate"><span class="pre">CIV</span></code>, <code class="docutils literal notranslate"><span class="pre">MgII</span></code>) and a redshift <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p></li>
-<li><p>Check the <strong>Show Cursor Lines</strong> box.</p></li>
-<li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to slide the cursor along the spectrum.</p></li>
+<li><p>Check the <strong>Show cursor</strong> box.</p></li>
+<li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found, with their redshift written at the top of the first one. The cursor follows the mouse over the plot; you can also type the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to place it.</p></li>
 </ol>
 <img alt="The Plot Controls sidebar" class="align-center" src="../images/getting_started_plot_controls.png" />
-<p><strong>Interactive Setting:</strong> You can <strong>Right-click</strong> directly on the plot background to open a context menu. Select <strong>Set emission redshift to z=…</strong> to instantly update the session’s <span class="math notranslate nohighlight">\(z_{em}\)</span> based on the cursor’s current position.</p>
+<p><strong>Interactive Setting:</strong> You can <strong>Right-click</strong> directly on the plot background to open a context menu. Select <strong>Set Emission Redshift to z=…</strong> to instantly update the session’s <span class="math notranslate nohighlight">\(z_{em}\)</span> based on the cursor’s current position.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) while right-clicking to access the context menu.</p>
@@ -644,9 +644,9 @@
 <h3>Session Info &amp; Properties<a class="headerlink" href="#session-info-properties" title="Link to this heading">#</a></h3>
 <p>Right-click on any session in the list to open the context menu. This menu offers several powerful tools:</p>
 <ul>
-<li><p><strong>View Info</strong>: Opens the Session Inspector. Here you can see (and edit) critical metadata:</p>
+<li><p><strong>View Info</strong>: Opens the <em>Session Info</em> dialog. Here you can see (and edit) critical metadata:</p>
 <ul class="simple">
-<li><p><strong>Object Name</strong></p></li>
+<li><p><strong>Object</strong></p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong>: Crucial for many recipes like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis.</p></li>
 <li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong>: Essential for accurate Voigt profile fitting.</p></li>
 </ul>
@@ -658,9 +658,9 @@
 <li><p><strong>Duplicate</strong>: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).</p></li>
 </ul>
 </section>
-<section id="the-log-scripter">
-<h3>The Log Scripter<a class="headerlink" href="#the-log-scripter" title="Link to this heading">#</a></h3>
-<p>Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select <strong>View Log</strong> to open the <strong>Log Scripter</strong>.</p>
+<section id="the-session-log">
+<h3>The Session Log<a class="headerlink" href="#the-session-log" title="Link to this heading">#</a></h3>
+<p>Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select <strong>View Log</strong> to open the <strong>Session Log</strong>.</p>
 <p>This dialog allows you to:</p>
 <ul>
 <li><p><strong>Review History:</strong> See a readable list of every recipe run on this session.</p></li>
@@ -678,7 +678,7 @@
 <h3>View Menu Tools<a class="headerlink" href="#view-menu-tools" title="Link to this heading">#</a></h3>
 <p>The <strong>View</strong> menu also provides access to specialized analysis windows:</p>
 <ul class="simple">
-<li><p><strong>View Session Log</strong>: Opens the Log Scripter (see above).</p></li>
+<li><p><strong>View Session Log</strong>: Opens the Session Log (see above).</p></li>
 <li><p><strong>View System Inspector</strong>: Opens the advanced interface for analyzing absorption lines. <em>See the <a class="reference internal" href="absorption_systems.html#system-inspector"><span class="std std-ref">Absorption Systems</span></a> tutorial for a full guide.</em></p></li>
 <li><p><strong>View Identifications</strong>: Opens a summary table of all candidate lines found by the <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code> recipe.</p></li>
 <li><p><strong>View Script Console</strong>: Opens a Python console for running custom scripts on the current session data.</p></li>
@@ -787,7 +787,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switching-sessions">Switching Sessions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-multiple-spectra-ghost-overlay">Visualizing Multiple Spectra (Ghost Overlay)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#session-info-properties">Session Info &amp; Properties</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-log-scripter">The Log Scripter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-session-log">The Session Log</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#view-menu-tools">View Menu Tools</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-closing">Saving and Closing</a></li>
 </ul>

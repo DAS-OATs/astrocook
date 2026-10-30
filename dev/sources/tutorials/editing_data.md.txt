@@ -53,7 +53,7 @@ You can also create new auxiliary columns. For example, to create a column repre
 
 1. **Target Column**: `snr` (A new name).
 2. **Expression:** `F / dF`.
-3. Once created, you can visualize this new column using the Aux. Column dropdown in the [Plot Controls](#getting-started-customizing).
+3. Once created, you can visualize this new column using the Auxiliary column dropdown in the [Plot Controls](#getting-started-customizing).
 
 ```{image} ../_static/editing_apply_expression.png
 :alt: Applying a mathematical expression to a column
