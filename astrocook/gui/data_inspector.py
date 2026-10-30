@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView,
                                QTableWidget, QTableWidgetItem, QVBoxLayout)
+from .theme import SELECTION
 
 
 class DataInspectorDialog(QDialog):
@@ -201,7 +202,7 @@ class DataInspectorDialog(QDialog):
 
     def _apply_highlight(self, item):
         """Helper to apply the persistent orange highlight."""
-        item.setBackground(QColor("#f5a100"))
+        item.setBackground(QColor(SELECTION))
         font = item.font()
         font.setBold(True)
         item.setFont(font)

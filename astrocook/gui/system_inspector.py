@@ -19,6 +19,8 @@ from ..fitting import bayesian_fitter
 from .inspector_table import (COL_MAP, COLUMNS, LinkColorDelegate, SystemSortFilterProxyModel,
                               SystemTableModel)
 from .velocity_plot import VelocityPlotWidget
+from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND, TOOLTIP_BORDER,
+                    TOOLTIP_TEXT)
 
 
 def _corner_installed() -> bool:
@@ -38,19 +40,19 @@ class SystemInspector(QWidget):
         self.resize(1200, 800) 
 
         # [CHANGE] Apply Rounded Tooltip Style
-        self.setStyleSheet("""
-            QTableView {
-                selection-background-color: #f5a100;
-                selection-color: black;
-            }
-            QToolTip {
-                border: 1px solid gray;
+        self.setStyleSheet(f"""
+            QTableView {{
+                selection-background-color: {SELECTION};
+                selection-color: {SELECTION_TEXT};
+            }}
+            QToolTip {{
+                border: 1px solid {TOOLTIP_BORDER};
                 border-radius: 5px;
-                background-color: #f2f8f8;
-                color: black;
+                background-color: {TOOLTIP_BACKGROUND};
+                color: {TOOLTIP_TEXT};
                 padding: 4px;
                 background-clip: border-box;
-            }
+            }}
         """)
 
         self._setup_ui()
@@ -230,7 +232,7 @@ class SystemInspector(QWidget):
                 background: {pal.color(pal.ColorRole.Base).name()}; 
                 color: {pal.color(pal.ColorRole.Text).name()}; }}
             QLineEdit:focus {{
-                border: 1px solid #296bff; /* Highlight color */
+                {FOCUS_BORDER}
             }}
         """
         for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in,
@@ -887,7 +889,7 @@ class SystemInspector(QWidget):
                 color: {text_col};
             }}
             QLineEdit:focus {{
-                border: 1px solid #296bff; /* Highlight color */
+                {FOCUS_BORDER}
             }}
         """)
         layout = QVBoxLayout(dialog)
@@ -1051,7 +1053,7 @@ class SystemInspector(QWidget):
                 font-weight: {font_weight};
             }}
             QLineEdit:focus {{
-                border: 1px solid #296bff;
+                {FOCUS_BORDER}
                 color: {text_col.name()}; /* Always bright when focused for editing */
             }}
         """)

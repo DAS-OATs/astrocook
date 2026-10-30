@@ -3,6 +3,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                                QPushButton, QSplitter)
 from .scripting import AppController
+from .theme import CONSOLE_BACKGROUND, CONSOLE_TEXT
 
 class ScriptDialog(QDialog):
     def __init__(self, main_window):
@@ -23,7 +24,7 @@ class ScriptDialog(QDialog):
         # Output Log
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
-        self.log_view.setStyleSheet("background-color: #222; color: #EEE;")
+        self.log_view.setStyleSheet(f"background-color: {CONSOLE_BACKGROUND}; color: {CONSOLE_TEXT};")
         
         splitter = QSplitter()
         splitter.setOrientation(Qt.Vertical) # Vertical

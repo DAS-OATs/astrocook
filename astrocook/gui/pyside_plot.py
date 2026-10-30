@@ -23,8 +23,9 @@ if TYPE_CHECKING:
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
 from .plot_mouse import PlotMouseMixin
-from .plot_style import (STRONG_EMISSION_LINES, decimate_x_for_min_max,
+from .plot_style import (ERROR_COLOR, STRONG_EMISSION_LINES, decimate_x_for_min_max,
                          decimate_y_min_max, get_color_cycle)
+from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
 #: When more pixels than this are in view, they are decimated (min-max) to
@@ -668,7 +669,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         if show_err_as_line:
             # OPTION A: Plot Error as separate Line (dy)
-            err_color = '#aaaaaa'
+            err_color = ERROR_COLOR
             if view.is_scatter:
                 ax.plot(x_data, dy_data, label=label,
                         linestyle='None', marker='.', markersize=view.scatter_ms,
@@ -682,19 +683,19 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             if view.is_scatter:
                 # fmt='none' ensures no connecting lines
                 ax.errorbar(x_data, y_data, xerr=dx_data,
-                            fmt='none', ecolor='#aaaaaa', elinewidth=0.8,
+                            fmt='none', ecolor=ERROR_COLOR, elinewidth=0.8,
                             alpha=0.5, rasterized=True, zorder=0.9, label='bin size')
                 ax.errorbar(x_data, y_data, yerr=dy_data,
-                            fmt='none', ecolor='#aaaaaa', elinewidth=0.8,
+                            fmt='none', ecolor=ERROR_COLOR, elinewidth=0.8,
                             alpha=0.5, rasterized=True, zorder=0.9, label=label)
             elif view.use_decimation:
                 # Use plot() for decimated data (fast)
-                ax.plot(x_data, y_data - dy_data, lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                ax.plot(x_data, y_data + dy_data, lw=0.3, color='#aaaaaa', rasterized=True)
+                ax.plot(x_data, y_data - dy_data, lw=0.3, color=ERROR_COLOR, rasterized=True, label=label)
+                ax.plot(x_data, y_data + dy_data, lw=0.3, color=ERROR_COLOR, rasterized=True)
             else:
                 # Use step() for non-decimated data (correct)
-                ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True, label=label)
-                ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color='#aaaaaa', rasterized=True)
+                ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color=ERROR_COLOR, rasterized=True, label=label)
+                ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color=ERROR_COLOR, rasterized=True)
 
     @staticmethod
     def _plot_flux(ax, arrays: '_PlotArrays', view: '_PlotView', colors):
@@ -896,7 +897,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             # 1. Bold Markers at top
             marker, = ax.plot(highlight_lines_x, [marker_y_axis_coord] * len(highlight_lines_x),
                     marker='|', markersize=20, markeredgewidth=2.0, linestyle='None',
-                    color='#f5a100', alpha=1.0, label="Selected", zorder=5,
+                    color=SELECTION, alpha=1.0, label="Selected", zorder=5,
                     transform=trans)
 
             # 2. Faint Vertical Guide Lines (Gold)
@@ -1214,7 +1215,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
     @staticmethod
     def _highlight_guide(ax, x):
         """Faint vertical guide line of a highlighted system."""
-        return ax.axvline(x, color='#f5a100', alpha=0.6, lw=1.0, linestyle=':', zorder=4)
+        return ax.axvline(x, color=SELECTION, alpha=0.6, lw=1.0, linestyle=':', zorder=4)
 
     def _on_full_draw(self, event):
         if not self._drawing_highlight_base:

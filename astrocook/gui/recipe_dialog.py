@@ -9,6 +9,8 @@ from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 
 from astrocook.core.session import SessionV2
 from astrocook.core.utils import get_recipe_schema
+from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
+                    INPUT_BORDER, WARNING)
 
 class RecipeDialog(QDialog):
     """
@@ -61,33 +63,33 @@ class RecipeDialog(QDialog):
                 border-radius: 6px;
                 background-color: {base_col};
                 color: {text_col};
-                border: 1px solid #ccc;
+                border: 1px solid {INPUT_BORDER};
             }}
             QLineEdit:focus, QComboBox:focus {{
-                border: 1px solid #296bff;
+                {FOCUS_BORDER}
             }}
             
             /* Reference Pane Frame */
             QFrame#ReferencePane {{
                 background-color: {base_col}; 
-                border: 1px solid #ccc;
+                border: 1px solid {INPUT_BORDER};
                 border-radius: 8px;
             }}
 
             /* Helper Buttons (Specific to the pane ONLY) */
             QFrame#ReferencePane QPushButton {{
                 background-color: {btn_col};
-                border: 1px solid #ccc;
+                border: 1px solid {INPUT_BORDER};
                 border-radius: 6px;
                 padding: 4px 8px;
                 min-width: 20px;
             }}
             QFrame#ReferencePane QPushButton:hover {{
-                background-color: #e0e0e0;
-                border: 1px solid #999;
+                background-color: {BUTTON_BACKGROUND};
+                border: 1px solid {BUTTON_BORDER};
             }}
             QFrame#ReferencePane QPushButton:pressed {{
-                background-color: #d0d0d0;
+                background-color: {BUTTON_PRESSED};
             }}
 
             QLabel {{ margin-right: 5px; }}
@@ -200,7 +202,7 @@ class RecipeDialog(QDialog):
 
         if self.recipe_name == 'resample':
             self.oversample_warning_label = QLabel("⚠️ **Warning:** Target grid is finer. This will oversample the data.")
-            self.oversample_warning_label.setStyleSheet("color: #D35400;") 
+            self.oversample_warning_label.setStyleSheet(f"color: {WARNING};") 
             self.oversample_warning_label.setVisible(False)
             form_layout.addRow(self.oversample_warning_label)
 
@@ -243,7 +245,7 @@ class RecipeDialog(QDialog):
             spec_grid.setSpacing(4)
             
             btn_spec_all = QPushButton("spec (all)")
-            btn_spec_all.setStyleSheet("font-weight: bold; color: #296bff;")
+            btn_spec_all.setStyleSheet(f"font-weight: bold; color: {ACCENT};")
             # Helper to select all current spec columns
             btn_spec_all.clicked.connect(lambda: self._insert_text_into_expression(", ".join(available_cols)))
             spec_grid.addWidget(btn_spec_all, 0, 0)
@@ -265,7 +267,7 @@ class RecipeDialog(QDialog):
             syst_grid.setSpacing(4)
             
             btn_syst_all = QPushButton("systems (all)")
-            btn_syst_all.setStyleSheet("font-weight: bold; color: #d35400;")
+            btn_syst_all.setStyleSheet(f"font-weight: bold; color: {WARNING};")
             btn_syst_all.clicked.connect(lambda: self._insert_text_into_expression("systems"))
             syst_grid.addWidget(btn_syst_all, 0, 0)
 
@@ -353,10 +355,10 @@ class RecipeDialog(QDialog):
                 if item_name == "systems":
                     display_label = "systems (lines)"
                     button.setText(display_label)
-                    button.setStyleSheet("color: darkred; font-weight: bold;") 
+                    button.setStyleSheet(f"color: {DANGER}; font-weight: bold;") 
                 elif item_name in standard_ui_cols:
                     # Give standard columns a distinct color (e.g., orange) to indicate a different behavior
-                    button.setStyleSheet("color: #d35400;")
+                    button.setStyleSheet(f"color: {WARNING};")
 
                 # --- [FIX 2] Add the Warning Intercept ---
                 # We use a helper function to handle the click logic cleanly

@@ -1,12 +1,20 @@
-"""Style of the main plot: the legend entries shown as swatches, the strong
-emission lines, the colours of the plotted elements, and the helpers
-(colour cycle, x to redshift, min-max decimation of long spectra).
+"""Style of the plots: the strong emission lines, the colours of the
+plotted elements, and the helpers (colour cycle, x to redshift, min-max
+decimation of long spectra).
 
-Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI).
+Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI). The plots
+stay white also in dark mode (Guido's decision): their colours do not
+follow the theme of the interface, except the selection, shared with it
+(``theme.SELECTION``).
 """
 import logging
 import matplotlib
 import numpy as np
+
+from .theme import SELECTION
+
+#: The error of the flux (band, line or bars), in every plot
+ERROR_COLOR = '#aaaaaa'
 
 
 # Keys must match exactly what is in xem_d (core/atomic_data.py)
@@ -18,7 +26,7 @@ STRONG_EMISSION_LINES = {
 # --- Centralized Plot Style Configuration ---
 # The span of a region selected with the Select tool (F73): the colour of
 # the selection elsewhere (the highlighted group of the System Inspector)
-SELECTION_STYLE = {'color': '#f5a100', 'alpha': 0.25, 'linewidth': 0}
+SELECTION_STYLE = {'color': SELECTION, 'alpha': 0.25, 'linewidth': 0}
 
 PLOT_STYLE = {
     'flux': {
@@ -35,7 +43,7 @@ PLOT_STYLE = {
         'label': 'Model'
     },
     'error': {
-        'color': '#aaaaaa',   # Grey shading
+        'color': ERROR_COLOR,   # Grey shading
         'lw': 0.3,
         'alpha': 1.0
     },
