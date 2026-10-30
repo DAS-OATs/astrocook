@@ -10,6 +10,7 @@ of ``MainWindowV2``.
 """
 import logging
 import os
+from typing import Optional
 
 import qtawesome as qta
 from PySide6.QtCore import (QEasingCurve, QLocale, QParallelAnimationGroup, QPoint,
@@ -295,7 +296,14 @@ class MainPanelsMixin:
         self.aux_col_combo = QComboBox()
         self.aux_col_combo.setToolTip("Select an auxiliary column to plot")
         self.aux_col_combo.currentTextChanged.connect(self._trigger_replot)
-        form_layout_aux.addRow("Aux. Column:", self.aux_col_combo) 
+        # Its swatch, as for the elements above (the plot has no legend, F86)
+        self.aux_swatch = QLabel()
+        self.aux_swatch.setPixmap(self._blank_swatch())
+        aux_row = QHBoxLayout()
+        aux_row.setSpacing(4)
+        aux_row.addWidget(self.aux_swatch)
+        aux_row.addWidget(self.aux_col_combo, 1)
+        form_layout_aux.addRow("Aux. Column:", aux_row)
         plot_toggles_layout.addLayout(form_layout_aux)
 
         self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
@@ -304,10 +312,9 @@ class MainPanelsMixin:
         self.strong_lines_checkbox.stateChanged.connect(self._trigger_replot)
         plot_toggles_layout.addWidget(self.strong_lines_checkbox)
 
-        # While this section is open its swatches replace the legend
+        # Its swatches show the styles of the plot, which has no legend (F86)
         self.plot_elements_section = self._make_card_section("Plot Elements", expanded=True)
         self.plot_elements_section.setContentLayout(plot_toggles_layout)
-        self.plot_elements_section.toggled.connect(self._replot_if_session)
         sidebar_layout.addWidget(self.plot_elements_section)
 
         self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
@@ -813,15 +820,10 @@ class MainPanelsMixin:
         # Opaque when it opens, and its tab opaque when it closes
         self._plot_controls_fader.timer.stop()
         self._set_plot_controls_faded(False, animate=False)
-        # Redraw once the card has moved, to move the panel entries out of
-        # (or back into) the legend
-        self.right_animation_group.finished.connect(self._replot_if_session)
+        # No redraw: it moved the entries of the legend out of the card, and
+        # the plot has no legend now (F86)
         self.right_animation_group.start()
         self._update_sidebar_button_icon(self.plot_controls_collapse_button, target_visible, is_left=False)
-
-    def _replot_if_session(self):
-        if self.active_history:
-            self._trigger_replot()
 
     # --- Floating cards: fading and legend swatches ---
 
@@ -855,6 +857,15 @@ class MainPanelsMixin:
                 coll = artist.lines[2][0] if artist.lines[2] else None
                 rgba = coll.get_colors()[0] if coll is not None else (0.5, 0.5, 0.5, 1)
                 linestyle, marker, lw = '-', 'None', 1.0
+            elif not hasattr(artist, 'get_linestyle') or hasattr(artist, 'get_paths'):
+                # A shaded area (regions, masks): a filled rectangle, more
+                # opaque than in the plot to read at this size
+                rgba = to_rgba(artist.get_facecolor()[0])
+                color = QColor.fromRgbF(rgba[0], rgba[1], rgba[2], max(rgba[3], 0.5))
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(color)
+                painter.drawRect(int(i * w / n) + 1, 2, int(w / n) - 2, h - 4)
+                continue
             else:
                 rgba = to_rgba(artist.get_color(), artist.get_alpha())
                 linestyle, marker = artist.get_linestyle(), artist.get_marker()
@@ -884,8 +895,11 @@ class MainPanelsMixin:
         painter.end()
         return pix
 
-    def update_plot_swatches(self, handles_by_label: dict):
-        """Shows the plotted styles next to the plot controls.
+    def update_plot_swatches(self, handles_by_label: dict, ghosts: Optional[dict] = None):
+        """Shows the plotted styles next to the plot controls, and those of
+        the other sessions shown (``ghosts``: row of the list -> line) next
+        to their names in the list of the sessions. The plot has no legend:
+        these swatches replace it (F86).
 
         Called by the plot after each redraw. An element that is not drawn
         although its box is checked (e.g. no continuum) gets a blank swatch;
@@ -906,6 +920,21 @@ class MainPanelsMixin:
                 checkbox.setIcon(QIcon(self._swatch(artists)))
             elif checkbox.isChecked():
                 checkbox.setIcon(QIcon(self._blank_swatch()))
+        aux = self.aux_col_combo.currentText()
+        artists = pick(aux, 'Detected Regions', f'Mask: {aux}')
+        self.aux_swatch.setPixmap(self._swatch(artists[:1]) if artists
+                                  else self._blank_swatch())
+        # The colour of each session shown, opaque and thick: its line is
+        # thin and translucent, and the swatch is drawn on the selection
+        from matplotlib.lines import Line2D
+        swatches = {}
+        for row, line in (ghosts or {}).items():
+            pix = self._swatch([Line2D([], [], color=line.get_color(), lw=3)])
+            icon = QIcon(pix)
+            # The same colours on a selected row (Qt tints the icon there)
+            icon.addPixmap(pix, QIcon.Mode.Selected)
+            swatches[row] = icon
+        self.session_model.set_swatches(swatches, QIcon(self._blank_swatch()))
 
     def _update_sidebar_button_icon(self, button, sidebar_is_visible, is_left):
         """Updates collapse button icon based on sidebar visibility."""

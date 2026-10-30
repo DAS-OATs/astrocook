@@ -250,7 +250,7 @@ def test_sidebars_open_and_close(qtbot, window, monkeypatch):
     left, right = window.left_sidebar_widget, window.right_sidebar_widget
     open_left, open_right = left.width() > 0, right.width() > 0
     replots = []
-    monkeypatch.setattr(window, "_replot_if_session", lambda: replots.append(True))
+    monkeypatch.setattr(window, "_trigger_replot", lambda *a: replots.append(True))
     window._toggle_left_sidebar()
     window._toggle_right_sidebar()
     _settle(qtbot, window)
@@ -261,13 +261,14 @@ def test_sidebars_open_and_close(qtbot, window, monkeypatch):
     _settle(qtbot, window)
     assert left.width() == (LEFT_SIDEBAR_WIDTH if open_left else 0)
     assert right.width() == (RIGHT_SIDEBAR_WIDTH if open_right else 0)
-    # The tab of each card is next to its edge; the plot is redrawn once
-    # the plot controls have moved (the legend)
+    # The tab of each card is next to its edge; the plot is not redrawn
+    # (it was, to move the legend out of the card: the plot has no legend
+    # now, F86)
     assert window.session_collapse_button.x() == left.width()
     assert window.plot_controls_collapse_button.x() == window.width() - right.width() - 28
     assert window.session_collapse_button.toolTip() == (
         "Collapse Session Panel" if open_left else "Expand Session Panel")
-    assert len(replots) == 2
+    assert replots == []
 
 
 def test_restack_keeps_the_size(qtbot, window):

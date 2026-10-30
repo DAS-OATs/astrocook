@@ -9,14 +9,6 @@ import matplotlib
 import numpy as np
 
 
-# Legend entries shown as swatches in the plot controls of the main window:
-# while those are open they are left out of the legend, which would
-# otherwise show through them
-PANEL_LEGEND_LABELS = {
-    'Spectrum', 'Spectrum (decimated)', '1-sigma error', 'bin size',
-    'Normalization', 'Absorption model', 'HI Systems', 'Metal Systems',
-}
-
 # Keys must match exactly what is in xem_d (core/atomic_data.py)
 STRONG_EMISSION_LINES = {
     'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 

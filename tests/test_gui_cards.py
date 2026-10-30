@@ -4,9 +4,9 @@ The session list (left) and the plot controls (right) float over the plot,
 so that opening them does not change the aspect of the spectrum. Each is a
 card as tall as its contents, below the menu bar, with a tab just outside
 its edge; it fades out while the mouse is away from it. The sections of the
-plot controls are collapsible and remember their state. While the Plot
-Elements section is open, its checkboxes show the plotted styles and those
-entries are left out of the matplotlib legend.
+plot controls are collapsible and remember their state. The checkboxes of
+the Plot Elements section show the plotted styles, which the plot does not
+repeat in a legend (F86).
 """
 from pathlib import Path
 
@@ -134,15 +134,43 @@ def test_sections_default_and_remembered_state(qtbot, window):
 
 # --- Legend and swatches ---------------------------------------------------
 
-def test_panel_entries_leave_the_legend_while_shown(qtbot, window):
-    assert "Spectrum" in _legend_labels(window)
-
+def test_no_legend_on_the_plot(qtbot, window):
+    # The swatches of the panels replace it (F86: placed with loc='best',
+    # the legend took most of the redraw of a long spectrum). Before, the
+    # entries of the Plot Elements section left the legend while it was
+    # open, and the plot was redrawn when the card opened or closed
+    window._trigger_replot()
+    assert _legend_labels(window) == []
     _open(qtbot, window, "right")
-    qtbot.waitUntil(lambda: "Spectrum" not in _legend_labels(window), timeout=ANIMATION_TIMEOUT)
-
-    # With Plot Elements closed, the legend is complete again
     _sections(window)["Plot Elements"].setExpanded(False)
-    qtbot.waitUntil(lambda: "Spectrum" in _legend_labels(window), timeout=ANIMATION_TIMEOUT)
+    assert _legend_labels(window) == []
+
+
+def test_swatch_of_the_auxiliary_column(window):
+    history = window.active_history
+    spec = history.current_state.spec
+    history.add_state(history.current_state.with_new_spectrum(
+        spec.update_column("running_std", np.ones(len(spec.x)))))
+    window.aux_col_combo.blockSignals(True)
+    if window.aux_col_combo.findText("running_std") < 0:
+        window.aux_col_combo.addItem("running_std")
+    window.aux_col_combo.setCurrentIndex(window.aux_col_combo.findText("running_std"))
+    window.aux_col_combo.blockSignals(False)
+    window._trigger_replot()
+    assert not _is_blank(window.aux_swatch.pixmap())
+    window.aux_col_combo.setCurrentIndex(0)  # None
+    window._trigger_replot()
+    assert _is_blank(window.aux_swatch.pixmap())
+
+
+def test_swatch_of_a_shaded_area(window):
+    from matplotlib.figure import Figure
+    ax = Figure().add_subplot()
+    area = ax.fill_between([0, 1], 0, 1, color="#008080", alpha=0.05)
+    image = window._swatch([area]).toImage()
+    colours = {image.pixelColor(x, y).name() for x in range(image.width())
+               for y in range(image.height()) if image.pixelColor(x, y).alpha() > 0}
+    assert colours == {"#008080"}
 
 
 def test_swatches_show_what_is_drawn(qtbot, window):
