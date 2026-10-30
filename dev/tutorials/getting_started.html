@@ -528,7 +528,7 @@
 <li><p><strong>Select</strong> (<code class="docutils literal notranslate"><span class="pre">X</span></code>): the “Range” icon (a double arrow between two bars); drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: <strong>Split region</strong> (a new session with the region only), <strong>Mask region…</strong>, <strong>Rebin region…</strong> (each opens its recipe dialog with the region filled in, so you can check it before running) and <strong>Zoom to region</strong>. Press <code class="docutils literal notranslate"><span class="pre">Esc</span></code> or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.</p></li>
 <li><p><strong>Save</strong>: save the figure to an image file.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">Esc</span></code> switches off the tool that is on. The position of the mouse (wavelength and flux) is shown at the right end of the toolbar.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Esc</span></code> switches off the tool that is on. The position of the mouse (wavelength and flux) is shown at the right end of the toolbar. <strong>View &gt; Show Toolbar</strong> hides the toolbar (and shows it again), to give the plot more room; its keys still work, and the choice is remembered.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
@@ -558,7 +558,7 @@
 <p>The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (<strong>Plot Elements</strong>, <strong>View Controls</strong>, <strong>Axis Limits</strong>, <strong>Redshift Cursor</strong>, <strong>Edit Continuum</strong>) open and close with a click on their title, and Astrocook remembers which ones you left open.</p>
 <section id="plot-elements">
 <h3>Plot Elements<a class="headerlink" href="#plot-elements" title="Link to this heading">#</a></h3>
-<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Aux. Column</strong> has its sample next to the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
+<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Aux. Column</strong> has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
 <ul>
 <li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
 <li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
@@ -615,7 +615,7 @@
 </section>
 <section id="dark-mode">
 <h3>Dark Mode<a class="headerlink" href="#dark-mode" title="Link to this heading">#</a></h3>
-<p>Astrocook follows the light or dark appearance of your system (on macOS, <em>System Settings &gt; Appearance</em>), and switches with it while it is open. The plots stay white in both, like the figures of a paper, so that the colours of the lines are always the same.</p>
+<p>By default Astrocook follows the light or dark appearance of your system (on macOS, <em>System Settings &gt; Appearance</em>), and switches with it while it is open. <strong>View &gt; Appearance</strong> chooses <em>Light</em> or <em>Dark</em> for Astrocook alone, or <em>System</em> to follow the system again; the choice is remembered. The plots stay white in both, like the figures of a paper, so that the colours of the lines are always the same.</p>
 <img alt="The main window in dark mode, with the plot white" class="align-center" src="../images/getting_started_dark_mode.png" />
 </section>
 <section id="the-continuum-editor">
