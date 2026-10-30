@@ -2029,7 +2029,137 @@ review); each of its decisions goes into the log.
 
 ---
 
-## 6. Progress
+## 6. Papers
+
+Discussed with Guido (October 2026). The papers must speak both to the
+developers of astrophysical codes and to the scientists who could use
+Astrocook. The MCP approach makes sense only once people know Astrocook,
+rather than asking an LLM to improvise the analysis code; so the agent
+paper comes after the reference paper.
+
+What exists: the V1 SPIE papers (Cupani et al. 2016, 2018, 2020) and
+Cupani et al. 2026, SPIE 14155, 1X, *ASTROCOOK v2: LLM-Ready Foundation
+for Autonomous Analysis of Quasar Spectra*. The 2026 paper describes the
+three-layer architecture, the parameter constraints, the Fluid Groups,
+the GUI, the Bayesian sampling and the LLM-readiness (through the
+`AppController` of the script console, not MCP); it has no measured
+accuracy. Some of its statements were refined by phase 4 (the convolution
+with a variable R was not exact, #526 and F59; the damping parameter, F61;
+the log replay "pixel for pixel" is not yet checked on real logs). The
+reference paper measures the engine described there, and states what the
+measurement changed.
+
+Plan (order and dependencies; dates not fixed):
+
+| Paper | Content | Depends on |
+|---|---|---|
+| A | Reference paper (MNRAS): physical model, validation on mocks, automatic re-analysis of HE0940–1050 | phase 7, full MCP server |
+| B | Software paper (JOSS), short, with an external code review | LICENSE (#549); best with the stable API of phase 6-bis |
+| C | Agents through MCP: agent with MCP vs agent improvising code vs expert with the GUI | full MCP server, paper A known |
+| D | Science on EQUALS with the v3 loop (alternative models with a credibility) | section 5, schedule of EQUALS |
+| (process) | Rebuilding a legacy scientific code with an AI assistant: safety net, findings register | optional, at the end (ADASS, SPIE) |
+
+### Paper A
+
+Working title: *Astrocook 2: automatic, reproducible modelling of quasar
+absorption spectra, validated on mocks and on the UVES Deep Spectrum of
+HE0940–1050*. Journal: MNRAS (template and costs to be checked by Guido).
+Valentina D'Odorico is involved (author of the published analysis, D'Odorico
+et al. 2016); she provides the material of that analysis (component
+lists, continuum). The spectrum is available.
+
+**Idea.** Instead of a direct comparison with VPFIT, a comparison with the
+literature: HE0940–1050 is re-modelled with Astrocook, as automatically as
+possible (analysis assisted by an agent through MCP), and the result is
+compared with the published one, a VPFIT analysis by experts, so that
+VPFIT is compared in its best conditions. Astrocook is applied both to the
+real spectrum and to a *synthetic twin*: a mock with exactly the published
+components, on the pixel grid, with the error spectrum, the resolution
+and the continuum of the real one. On the twin the truth is known, so it
+measures the discrepancy expected from noise and degeneracy alone in
+those conditions. If Astrocook reproduces the twin and differs on the
+real spectrum, either the real data contain something the twin does not
+(continuum, correlated noise of the co-addition, unidentified blends,
+systematics), or the Astrocook model is better than the published one. To
+tell these apart a positive test is needed: the published model is
+evaluated on the real spectrum inside Astrocook, without fitting, and its
+chi2, residuals and AIC/BIC per system are compared with those of the
+Astrocook model on the same data.
+
+**Structure.**
+1. Introduction, for both audiences: the bottleneck of manual analysis
+   (EQUALS, 4MOST, ANDES); the existing codes (VPFIT, VoigtFit, ALIS,
+   automatic approaches); what is missing, the measured accuracy and the
+   reproducibility of automatic analyses; relation to the SPIE 2026 paper.
+2. Astrocook 2 in brief (the architecture cited from the SPIE paper): the
+   reproducible log, the recipes, the GUI as a review bench, the MCP
+   layer.
+3. Physical and statistical model: profile, atomic data with sources
+   (`docs/atomic_data.md`), exact convolution with the LSF of each pixel,
+   integration over the pixels, errors (#534), constraints, bounds and
+   flags (#517), criterion for adding components; the emission model with
+   an uncertainty and the identification as a comparison of hypotheses
+   (phase 7).
+4. Analysis procedure: the automatic chain; what the agent decides through
+   MCP, what the human decides, and how every decision enters the log;
+   frozen version and parameters.
+5. Validation on mocks: the generator (independent of the fitting code),
+   the grid, the metrics (`benchmarks/validate_mocks.py`); results for
+   continuum, identification, components and system columns; known
+   limits (e.g. F58, decomposition).
+6. HE0940–1050:
+   1. data and published analysis;
+   2. the twin: construction and results (expected discrepancy);
+   3. the real spectrum, compared at several levels, from the most robust:
+      systems found, missed and new; total column per system; column
+      density distribution of CIV and distribution of b; isolated
+      components; continuum;
+   4. the discrepancies classified: within the expected; explained by the
+      continuum (a run with the published continuum); systems where the
+      Astrocook model is statistically better on the same data; systems
+      where it is worse.
+7. Discussion: what automation can and cannot do; the role of the agent;
+   timing; implications for surveys.
+8. Conclusions. Data availability: spectrum, models, logs, benchmark, the
+   version of the code with a Zenodo DOI.
+Appendices: an excerpt of the log as a generated methods section; full
+tables.
+
+**Choices of method** (to be fixed before the analysis):
+- *The real spectrum stays blind until the version of the paper is
+  frozen*: during phases 5-7 Astrocook is developed and measured only on
+  the mocks and on the twin, never on the real spectrum, so that it is
+  not tuned on HE0940–1050. Corrections made after looking at the real
+  result are stated as such.
+- *Analysis plan written before looking*: the quantities compared, their
+  tolerances, and the criterion that allows the paper to call a model
+  "better" (a short document, kept with the paper).
+- *Two kinds of run*: purely automatic (deterministic, the reference) and
+  assisted by an agent through MCP, repeated N times, with the spread of
+  the results (the agent is not deterministic; a first data point for
+  paper C).
+- Two runs of the automatic chain: fully automatic, and with the
+  published continuum, to separate the effect of the continuum from that
+  of identification and fit.
+
+**Dependencies on development:**
+
+| For | What | When |
+|---|---|---|
+| §3, §6 | Emission model with uncertainty; identification with alternatives and credibility | phase 7 |
+| §4 | Full MCP server, structured outputs, log of the decisions | phase 6-bis, full server |
+| §6.2 | Twin: a mock from an arbitrary component list, on a given pixel grid, with a given error spectrum, resolution and continuum (`astrocook/mocks` has a uniform velocity grid, a power-law continuum and an error from the S/N today) | small, when the material arrives |
+| §6.4 | Import of a VPFIT model (fort.26 or the tables of the paper) into a `SystemListV2`, and its evaluation without fitting | new, small |
+| §5 | Benchmark rerun with the frozen version | after phase 7 |
+
+What can be done before phase 7: the analysis plan, the VPFIT import,
+the twin (when the material arrives; it also gives phase 7 a realistic
+high-S/N development case, which the mocks of phase 4 do not cover),
+sections 1-2, the frame of section 5.
+
+---
+
+## 7. Progress
 
 | Phase | Status |
 |---|---|
