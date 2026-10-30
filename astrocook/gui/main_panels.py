@@ -17,7 +17,7 @@ from PySide6.QtCore import (QEasingCurve, QLocale, QParallelAnimationGroup, QPoi
                             QPropertyAnimation, QRect, QSettings, QSize, Qt)
 from PySide6.QtGui import QColor, QDoubleValidator, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
-                               QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit,
+                               QGridLayout, QHBoxLayout, QLabel, QLineEdit,
                                QListView, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QStyle, QVBoxLayout, QWidget)
 
@@ -292,20 +292,17 @@ class MainPanelsMixin:
         plot_toggles_layout.addWidget(self.systems_checkbox)
 
         # Aux Column
-        form_layout_aux = QFormLayout()
-        form_layout_aux.setSpacing(5)
+        # The three rows with a drop-down menu (Aux. Column, λ Unit, Error
+        # Col.) share the width of their labels, so that the menus line up
+        # (F88: each had its own form layout and width)
+        self._combo_labels = []
         self.aux_col_combo = QComboBox()
         self.aux_col_combo.setToolTip("Select an auxiliary column to plot")
         self.aux_col_combo.currentTextChanged.connect(self._trigger_replot)
-        # Its swatch, as for the elements above (the plot has no legend, F86)
-        self.aux_swatch = QLabel()
-        self.aux_swatch.setPixmap(self._blank_swatch())
-        aux_row = QHBoxLayout()
-        aux_row.setSpacing(4)
-        aux_row.addWidget(self.aux_swatch)
-        aux_row.addWidget(self.aux_col_combo, 1)
-        form_layout_aux.addRow("Aux. Column:", aux_row)
-        plot_toggles_layout.addLayout(form_layout_aux)
+        # Its swatch is the icon of the column chosen, as for the elements
+        # above (the plot has no legend, F86): inside the menu, so that the
+        # menu lines up with the others (F88)
+        plot_toggles_layout.addLayout(self._combo_row("Aux. Column:", self.aux_col_combo))
 
         self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
         self.strong_lines_checkbox.setToolTip("Show only major emission lines when z_em is active.")
@@ -329,13 +326,11 @@ class MainPanelsMixin:
         view_layout.setSpacing(4)
 
         # X-Axis Unit
-        form_layout_x = QFormLayout()
         self.x_unit_combo = QComboBox()
         self.x_unit_options = ["nm", "Angstrom", "micron"]
         self.x_unit_combo.addItems(self.x_unit_options)
         self.x_unit_combo.setToolTip("Change λ display units (data remains nm).")
-        form_layout_x.addRow("λ Unit:", self.x_unit_combo)
-        view_layout.addLayout(form_layout_x)
+        view_layout.addLayout(self._combo_row("λ Unit:", self.x_unit_combo))
         
         # X/Y Toggles
         self.norm_y_checkbox = QCheckBox("Normalize F")
@@ -348,13 +343,11 @@ class MainPanelsMixin:
         self.snr_checkbox.toggled.connect(self._on_view_toggle)
         view_layout.addWidget(self.snr_checkbox)
         
-        form_layout_snr = QFormLayout()
-        form_layout_snr.setSpacing(5)
         self.snr_col_combo = QComboBox()
         self.snr_col_combo.setToolTip("Select column to use as error for SNR")
         self.snr_col_combo.currentTextChanged.connect(self._trigger_replot)
-        form_layout_snr.addRow("  Error Col.:", self.snr_col_combo)
-        view_layout.addLayout(form_layout_snr)
+        view_layout.addLayout(self._combo_row("Error Col.:", self.snr_col_combo))
+        self._align_combo_labels()
 
         self.log_x_checkbox = QCheckBox("Logarithmic λ")
         view_layout.addWidget(self.log_x_checkbox)
@@ -834,6 +827,30 @@ class MainPanelsMixin:
     def _set_sessions_faded(self, faded: bool, animate: bool = True):
         self._sessions_fader.set_faded(faded, animate)
 
+    def _combo_row(self, text, combo):
+        """A row of the plot controls with a label and a drop-down menu; the
+        labels are given one width afterwards (F88)."""
+        row = QHBoxLayout()
+        row.setSpacing(5)
+        label = QLabel(text)
+        self._combo_labels.append(label)
+        row.addWidget(label)
+        row.addWidget(combo, 1)
+        return row
+
+    def _align_combo_labels(self):
+        """All the labels of the drop-down menus as wide as the widest, with
+        the font of the stylesheet of the window (measured before it, the
+        widest label was cut)."""
+        for label in self._combo_labels:
+            label.setMinimumWidth(0)
+            label.setMaximumWidth(16777215)
+            label.ensurePolished()
+        width = max(label.fontMetrics().horizontalAdvance(label.text())
+                    for label in self._combo_labels) + 4
+        for label in self._combo_labels:
+            label.setFixedWidth(width)
+
     def _swatch_checkboxes(self):
         return [self.error_checkbox, self.continuum_checkbox,
                 self.model_checkbox, self.systems_checkbox]
@@ -923,8 +940,10 @@ class MainPanelsMixin:
                 checkbox.setIcon(QIcon(self._blank_swatch()))
         aux = self.aux_col_combo.currentText()
         artists = pick(aux, 'Detected Regions', f'Mask: {aux}')
-        self.aux_swatch.setPixmap(self._swatch(artists[:1]) if artists
-                                  else self._blank_swatch())
+        current = self.aux_col_combo.currentIndex()
+        for i in range(self.aux_col_combo.count()):
+            self.aux_col_combo.setItemIcon(
+                i, QIcon(self._swatch(artists[:1])) if i == current and artists else QIcon())
         # The colour of each session shown, opaque and thick: its line is
         # thin and translucent, and the swatch is drawn on the selection
         from matplotlib.lines import Line2D

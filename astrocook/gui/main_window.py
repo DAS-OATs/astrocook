@@ -152,6 +152,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         # --- Menubar, Styles, Initial State ---
         self._create_menubar()
         self._apply_styles()
+        self._align_combo_labels()  # with the font of the stylesheet
+        self._restore_view_settings()
 
         # --- Initial State ---
         # Normalize input to a list

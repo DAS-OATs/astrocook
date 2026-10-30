@@ -20,7 +20,8 @@ SEP = "---"
 MENUS = {
     "File": ["Open Session...", "Export to ASCII...", "Import from ASCII...", "Save Session...",
              SEP, "Close Session"],
-    "View": ["Toggle Session Panel", "Toggle Plot Controls", SEP, "View System Inspector", SEP,
+    "View": ["Toggle Session Panel", "Toggle Plot Controls", "Show Toolbar", "Appearance", SEP,
+             "View System Inspector", SEP,
              "View Session Log", "View Script Console", "View Identifications"],
     "Edit": ["Undo", "Redo", SEP, "Set Properties...", SEP, "Apply Expression...",
              "Mask by Expression...", "Smooth Column...", "Import Systems...",
@@ -130,7 +131,9 @@ def test_shortcuts(empty):
 
 
 def test_actions_enabled_with_a_session(empty, qtbot):
-    always = {"Open Session...", "Online Documentation", "About Astrocook..."}
+    # Also with no session: the toolbar and the appearance (phase 5-bis)
+    always = {"Open Session...", "Online Documentation", "About Astrocook...",
+              "Show Toolbar", "Appearance"}
     for text, action in _actions(empty).items():
         assert action.isEnabled() == (text in always), text
     empty.open_session_from_path(str(SESSION_FILE))
