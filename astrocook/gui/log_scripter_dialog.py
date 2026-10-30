@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QDialog, QMessageBox, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QDialogButtonBox, 
     QFileDialog, QMenu
 )
-from PySide6.QtGui import QKeySequence, QTextCursor
+from PySide6.QtGui import QFontDatabase, QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Union, Optional
 
 # --- V2 Imports ---
@@ -38,7 +38,7 @@ class LogScripterDialog(QDialog):
     def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindowV2', recipe_map: dict):
         super().__init__(parent)
         self.main_window = parent # Store reference to MainWindowV2
-        self.setWindowTitle(f"Log Scripter: {session_name}")
+        self.setWindowTitle(f"Session Log: {session_name}")
         
         self.log_object = log_object # Save the log manager
         self.recipe_map = recipe_map
@@ -86,7 +86,9 @@ class LogScripterDialog(QDialog):
         # --- 2. Scripter Text Edit ---
         self.scripter_edit = QTextEdit()
         self.scripter_edit.setReadOnly(False) # Make it editable
-        #self.scripter_edit.setFontFamily("Monospace")
+        # The log is code (calls of recipes): the fixed-width font of the
+        # system, as in the script console
+        self.scripter_edit.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         # Connect textChanged to update the button state
         self.scripter_edit.textChanged.connect(self._update_button_state)
         self.layout.addWidget(self.scripter_edit)
@@ -119,7 +121,7 @@ class LogScripterDialog(QDialog):
         Updates the log scripter to point to a new log manager
         (e.g., when the active session changes).
         """
-        new_title = "Log Scripter"
+        new_title = "Session Log"
         if new_log_object is None:
             self.log_object = None
             self.scripter_edit.setPlainText("# No active session.")
@@ -127,7 +129,7 @@ class LogScripterDialog(QDialog):
         elif new_log_object is not self.log_object:
             if self.main_window and self.main_window.active_history:
                  if self.main_window.active_history.log_manager is new_log_object:
-                    new_title = f"Log Scripter: {self.main_window.active_history.display_name}"
+                    new_title = f"Session Log: {self.main_window.active_history.display_name}"
             
             self.log_object = new_log_object
             self.setWindowTitle(new_title) 
@@ -273,7 +275,7 @@ class LogScripterDialog(QDialog):
             default_name = f"{self.main_window.active_history.display_name}_log.json"
             
         file_name, _ = QFileDialog.getSaveFileName(
-            self, "Save Log Scripter", default_name, "JSON Log (*.json);;Text File (*.txt)"
+            self, "Save Session Log", default_name, "JSON Log (*.json);;Text File (*.txt)"
         )
         
         if file_name:

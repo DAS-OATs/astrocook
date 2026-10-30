@@ -292,7 +292,7 @@ class MainPanelsMixin:
         plot_toggles_layout.addWidget(self.systems_checkbox)
 
         # Aux Column
-        # The three rows with a drop-down menu (Aux. Column, λ Unit, Error
+        # The three rows with a drop-down menu (Auxiliary column, λ unit, Error
         # Col.) share the width of their labels, so that the menus line up
         # (F88: each had its own form layout and width)
         self._combo_labels = []
@@ -302,7 +302,7 @@ class MainPanelsMixin:
         # Its swatch is the icon of the column chosen, as for the elements
         # above (the plot has no legend, F86): inside the menu, so that the
         # menu lines up with the others (F88)
-        plot_toggles_layout.addLayout(self._combo_row("Aux. Column:", self.aux_col_combo))
+        plot_toggles_layout.addLayout(self._combo_row("Auxiliary column:", self.aux_col_combo))
 
         self.strong_lines_checkbox = QCheckBox("Strong emission lines only")
         self.strong_lines_checkbox.setToolTip("Show only major emission lines when z_em is active.")
@@ -315,7 +315,7 @@ class MainPanelsMixin:
         self.plot_elements_section.setContentLayout(plot_toggles_layout)
         sidebar_layout.addWidget(self.plot_elements_section)
 
-        self.isomag_checkbox = QCheckBox("Show Iso-Mag Grid")
+        self.isomag_checkbox = QCheckBox("Show iso-magnitude grid")
         self.isomag_checkbox.setToolTip("Show lines of constant AB magnitude")
         self.isomag_checkbox.toggled.connect(lambda b: self.plot_viewer.toggle_isomag_grid(b))
         self.isomag_checkbox.setObjectName("PlotControlCheckbox")
@@ -330,7 +330,7 @@ class MainPanelsMixin:
         self.x_unit_options = ["nm", "Angstrom", "micron"]
         self.x_unit_combo.addItems(self.x_unit_options)
         self.x_unit_combo.setToolTip("Change λ display units (data remains nm).")
-        view_layout.addLayout(self._combo_row("λ Unit:", self.x_unit_combo))
+        view_layout.addLayout(self._combo_row("λ unit:", self.x_unit_combo))
         
         # X/Y Toggles
         self.norm_y_checkbox = QCheckBox("Normalize F")
@@ -338,15 +338,15 @@ class MainPanelsMixin:
         self.norm_y_checkbox.toggled.connect(self._on_view_toggle)
         view_layout.addWidget(self.norm_y_checkbox)
 
-        self.snr_checkbox = QCheckBox("Show SNR (F / error)")
-        self.snr_checkbox.setToolTip("Plot F / Error Column.")
+        self.snr_checkbox = QCheckBox("Show S/N (F / error)")
+        self.snr_checkbox.setToolTip("Plot F / error column.")
         self.snr_checkbox.toggled.connect(self._on_view_toggle)
         view_layout.addWidget(self.snr_checkbox)
         
         self.snr_col_combo = QComboBox()
-        self.snr_col_combo.setToolTip("Select column to use as error for SNR")
+        self.snr_col_combo.setToolTip("Select the column to use as error for the S/N")
         self.snr_col_combo.currentTextChanged.connect(self._trigger_replot)
-        view_layout.addLayout(self._combo_row("Error Col.:", self.snr_col_combo))
+        view_layout.addLayout(self._combo_row("Error column:", self.snr_col_combo))
         self._align_combo_labels()
 
         self.log_x_checkbox = QCheckBox("Logarithmic λ")
@@ -419,12 +419,12 @@ class MainPanelsMixin:
         z_validator.setNotation(QDoubleValidator.StandardNotation)
         self.cursor_z_input.setValidator(z_validator)
 
-        cursor_layout.addWidget(QLabel("Trans.:"), 0, 0)
+        cursor_layout.addWidget(QLabel("Transitions:"), 0, 0)
         cursor_layout.addWidget(self.cursor_series_input, 0, 1)
         cursor_layout.addWidget(QLabel("Redshift:"), 1, 0)
         cursor_layout.addWidget(self.cursor_z_input, 1, 1)
 
-        self.cursor_show_checkbox = QCheckBox("Show Cursor Lines")
+        self.cursor_show_checkbox = QCheckBox("Show cursor")
         self.cursor_show_checkbox.setChecked(False)
         cursor_layout.addWidget(self.cursor_show_checkbox, 2, 0, 1, 2)
 
@@ -971,6 +971,9 @@ class MainPanelsMixin:
             tooltip = "Collapse Plot Controls" if sidebar_is_visible else "Expand Plot Controls"
 
         button.setIcon(icon); button.setToolTip(tooltip)
+        action = getattr(self, "toggle_left_action" if is_left else "toggle_right_action", None)
+        if action is not None:
+            action.setChecked(sidebar_is_visible)
 
     def _on_view_toggle(self, checked: bool):
         """ Handles toggling the main view (Norm vs SNR vs Raw). """

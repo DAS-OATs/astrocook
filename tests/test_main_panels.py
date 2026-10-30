@@ -271,6 +271,24 @@ def test_sidebars_open_and_close(qtbot, window, monkeypatch):
     assert replots == []
 
 
+def test_view_menu_shows_the_panels(qtbot, window):
+    # "Show Session Panel" and "Show Plot Controls", checkable, as Show
+    # Toolbar (they were "Toggle ...": text pass of phase 5-bis); the check
+    # follows the panel also when it is opened or closed by its tab
+    _settle(qtbot, window)
+    left, right = window.toggle_left_action, window.toggle_right_action
+    assert left.isCheckable() and right.isCheckable()
+    assert left.isChecked() == (window.left_sidebar_widget.width() > 0)
+    assert right.isChecked() == (window.right_sidebar_widget.width() > 0)
+    before = left.isChecked()
+    left.trigger()
+    _settle(qtbot, window)
+    assert left.isChecked() == (not before) == (window.left_sidebar_widget.width() > 0)
+    window._toggle_left_sidebar()  # the tab
+    _settle(qtbot, window)
+    assert left.isChecked() == before == (window.left_sidebar_widget.width() > 0)
+
+
 def test_restack_keeps_the_size(qtbot, window):
     size = window.size()
     window._force_restack_floating_widgets()
@@ -302,7 +320,7 @@ def test_state_with_and_without_a_session(window):
 
 
 def test_the_drop_down_menus_line_up(qtbot, window):
-    # Aux. Column, λ Unit and Error Col.: the same left edge and width (F88:
+    # Auxiliary column, λ unit and Error column: the same left edge and width (F88:
     # three form layouts, each with the width of its own label)
     if window.right_sidebar_widget.width() == 0:
         window._toggle_right_sidebar()

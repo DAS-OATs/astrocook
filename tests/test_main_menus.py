@@ -20,7 +20,7 @@ SEP = "---"
 MENUS = {
     "File": ["Open Session...", "Export to ASCII...", "Import from ASCII...", "Save Session...",
              SEP, "Close Session"],
-    "View": ["Toggle Session Panel", "Toggle Plot Controls", "Show Toolbar", "Appearance", SEP,
+    "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", SEP,
              "View System Inspector", SEP,
              "View Session Log", "View Script Console", "View Identifications"],
     "Edit": ["Undo", "Redo", SEP, "Set Properties...", SEP, "Apply Expression...",

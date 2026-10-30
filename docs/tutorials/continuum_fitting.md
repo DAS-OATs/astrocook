@@ -115,4 +115,4 @@ This operation assumes your spectrum is **flux calibrated** (the overall shape i
    - Default: `128.0-129.0, 131.5-132.5, 134.5-136.0` (standard windows outside the Lyman forest).
 3. Click **Run**.
 
-This creates a new column `cont_pl` which is **automatically displayed** on the plot (via the *Aux. Column* selector). You can use it as a baseline for further fitting.
+This creates a new column `cont_pl` which is **automatically displayed** on the plot (via the *Auxiliary column* selector). You can use it as a baseline for further fitting.

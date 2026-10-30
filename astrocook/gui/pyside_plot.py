@@ -7,6 +7,7 @@ import matplotlib
 # at import when pyplot had already picked a headless backend, F7)
 import matplotlib.style
 import matplotlib.ticker as plt_ticker
+from matplotlib.transforms import blended_transform_factory
 import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -313,6 +314,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # ** Reset background and clear artists for blitting **
         self.canvas.background = None
         self.canvas.cursor_artists = []
+        self.canvas.cursor_label = None
 
         self._tick_visuals = []
         self._highlight_artists = None
@@ -923,6 +925,14 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                                                  animated=True) # <<< ANIMATED
                 self.canvas.cursor_artists.append(line)
                 added_cursor_label = True # Only label first line potentially visible
+            if cursor_x_positions:
+                ax = self.canvas.axes
+                self.canvas.cursor_label = ax.text(
+                    cursor_x_positions[0], 0.98, "", color=colors[3], fontsize=9,
+                    ha='left', va='top', animated=True,
+                    transform=blended_transform_factory(ax.transData, ax.transAxes),
+                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1.5))
+                self.canvas.update_cursor_label(z_cursor, cursor_x_positions)
             logging.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
         except (ValueError, AttributeError) as e:
             logging.warning(f"Could not draw cursor lines: {e}")
@@ -1272,5 +1282,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         canvas.background = canvas.copy_from_bbox(ax.bbox)
         for artist in canvas.cursor_artists:
             ax.draw_artist(artist)
+        if canvas.cursor_label is not None and canvas.cursor_artists:
+            ax.draw_artist(canvas.cursor_label)
         canvas.blit(ax.bbox)
         return True

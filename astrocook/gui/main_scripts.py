@@ -35,7 +35,7 @@ class MainScriptsMixin:
 
         if self.log_scripter_dialog:
             self.log_scripter_dialog.set_log_object(log_object_to_view) 
-            self.log_scripter_dialog.setWindowTitle(f"Log Scripter: {session_name}")
+            self.log_scripter_dialog.setWindowTitle(f"Session Log: {session_name}")
             self.log_scripter_dialog.raise_()
             self.log_scripter_dialog.activateWindow()
             logging.debug(f"Activating existing log scripter for {session_name}")

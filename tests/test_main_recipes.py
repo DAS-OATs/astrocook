@@ -470,7 +470,10 @@ def test_log_scripter(ready):
     assert dialog.isVisible() and dialog.log_object is history.log_manager
     window._launch_log_scripter(history)
     assert window.log_scripter_dialog is dialog
-    assert dialog.windowTitle() == f"Log Scripter: {history.display_name}"
+    assert dialog.windowTitle() == f"Session Log: {history.display_name}"
+    # The log is code: a fixed-width font (visual review of phase 5-bis)
+    from PySide6.QtGui import QFontInfo
+    assert QFontInfo(dialog.scripter_edit.font()).fixedPitch()
     dialog.close()
     dialog.done(0)
     assert window.log_scripter_dialog is None

@@ -693,7 +693,7 @@ class MainSessionsMixin:
 
         # --- Create Custom Dialog ---
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"Session Inspector: {history_item.display_name}")
+        dialog.setWindowTitle(f"Session Info: {history_item.display_name}")
         dialog.setMinimumWidth(400)
         
         # A real f-string: it was a plain string with the placeholders of
@@ -723,19 +723,19 @@ class MainSessionsMixin:
 
         # Name
         self.info_name_edit = _expand_field(QLineEdit(history_item.display_name))
-        form_layout.addRow("Session Name:", self.info_name_edit)
+        form_layout.addRow("Session name:", self.info_name_edit)
         
         # Object
         current_obj = meta.get('OBJECT', '')
         obj_display = str(current_obj) if current_obj else "undefined"
         self.info_object_edit = _expand_field(QLineEdit(obj_display))
-        form_layout.addRow("Object Name:", self.info_object_edit)
+        form_layout.addRow("Object:", self.info_object_edit)
         
         # z_em
         self.info_zem_edit = _expand_field(QLineEdit(f"{spec._data.z_em:.5f}"))
         dbl_validator = QDoubleValidator(); dbl_validator.setLocale(QLocale.C)
         self.info_zem_edit.setValidator(dbl_validator)
-        form_layout.addRow("Emission Redshift (z_em):", self.info_zem_edit)
+        form_layout.addRow("Emission redshift (z_em):", self.info_zem_edit)
 
         # Resolution: median R of the resol column (#526)
         median_r, variable_r = resolution_summary(spec)
@@ -743,12 +743,12 @@ class MainSessionsMixin:
         self._info_resol_shown = current_resol_str
             
         self.info_resol_edit = _expand_field(QLineEdit(current_resol_str))
-        self.info_resol_edit.setPlaceholderText("Resolving Power R")
+        self.info_resol_edit.setPlaceholderText("e.g. 50000")
         if variable_r:
             self.info_resol_edit.setToolTip(
                 "The resolution varies with wavelength: this is its median. "
                 "A new value replaces it only if you confirm.")
-        form_layout.addRow("Resolution (R, median):" if variable_r else "Resolution (R):",
+        form_layout.addRow("Resolving power (R, median):" if variable_r else "Resolving power (R):",
                            self.info_resol_edit)
         
         layout.addLayout(form_layout)
@@ -790,11 +790,12 @@ class MainSessionsMixin:
                         # Convert to Velocity Step: dv = c * ln(10) * dlog10(lambda)
                         c_kms = 299792.458
                         dv = c_kms * med_dlog * np.log(10)
-                        step_str = f"{med_dx:.4f} {spec.x.unit} (log; dv: {dv:.2f} km/s)"
+                        # In velocity first: the step of a logarithmic grid
+                        step_str = f"{dv:.2f} km/s (logarithmic grid, {med_dx:.4f} {spec.x.unit})"
                     else:
                         step_str = f"{med_dx:.4f} {spec.x.unit} (variable)"
 
-        chi2_html = "<tr><td>Red. χ² (Global):</td><td>N/A (No model)</td></tr>"
+        chi2_html = "<tr><td>Reduced χ²:</td><td>N/A (no model)</td></tr>"
         
         if spec.model is not None and len(spec.model.value) > 0:
             try:
@@ -835,24 +836,24 @@ class MainSessionsMixin:
                             c_red = np.sum(chi2_array[red_mask]) / np.sum(red_mask)
                             c_red_str = f"{c_red:.2f}"
                             
-                        chi2_html = f"<tr><td>Red. χ² (forest / red side):</td><td>{c_forest_str} / {c_red_str}</td></tr>"
+                        chi2_html = f"<tr><td>Reduced χ² (forest / red side):</td><td>{c_forest_str} / {c_red_str}</td></tr>"
                     else:
                         # Fallback if z_em is not set
                         c_glob = np.sum(chi2_array) / len(chi2_array)
-                        chi2_html = f"<tr><td>Red. χ² (global):</td><td>{c_glob:.2f}</td></tr>"
+                        chi2_html = f"<tr><td>Reduced χ²:</td><td>{c_glob:.2f}</td></tr>"
             except Exception as e:
                 logging.warning(f"Could not calculate chi-squared for info panel: {e}")
 
         stats_html = (
-            "<p style='margin-bottom: 5px;'><b>Other info:</b></p>"
+            "<p style='margin-bottom: 5px;'><b>Statistics:</b></p>"
             "<style>td { padding-left: 15px; padding-top: 5px; }</style>"
             "<table width='100%'>"
-            f"<tr><td>Wavelength Range:</td><td>{x_range}</td></tr>"
-            f"<tr><td>Median Step:</td><td>{step_str}</td></tr>" # Added Row
-            f"<tr><td>Median SNR:</td><td>{snr_str}</td></tr>"
+            f"<tr><td>Wavelength range:</td><td>{x_range}</td></tr>"
+            f"<tr><td>Median step:</td><td>{step_str}</td></tr>" # Added Row
+            f"<tr><td>Median S/N:</td><td>{snr_str}</td></tr>"
             f"{chi2_html}"  # <--- [NEW] Inject the Chi-Squared row here
-            f"<tr><td>Number of data points:</td><td>{len(spec.x)}</td></tr>"
-            f"<tr><td>Number of components:</td><td>{len(systs.components)}</td></tr>"
+            f"<tr><td>Pixels:</td><td>{len(spec.x)}</td></tr>"
+            f"<tr><td>Components:</td><td>{len(systs.components)}</td></tr>"
             "</table>"
         )
         
