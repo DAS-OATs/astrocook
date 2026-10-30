@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.gui import plot_style
 from astrocook.gui.main_window import MainWindowV2
 
 from test_gui_smoke import SESSION_FILE
@@ -55,6 +56,20 @@ def test_system_ticks_in_nm(window, snapshot):
     ticks = _ticks(window.plot_viewer, state, _selection(state))
     assert len(ticks["x"]) > 700 and len(ticks["selected"]) == 3
     snapshot.check("main_plot_system_ticks_nm", ticks)
+
+
+def test_system_ticks_in_two_rows(window):
+    # HI below the metals, short and translucent: in the forest they made a
+    # solid red block that hid the metals (visual review of phase 5-bis);
+    # the selection across both rows
+    state = window.active_history.current_state
+    viewer = window.plot_viewer
+    _ticks(viewer, state, _selection(state))
+    lines = {line.get_label(): line for line in viewer.canvas.axes.get_lines()}
+    hi, metal, sel = lines["HI Systems"], lines["Metal Systems"], lines["Selected"]
+    assert hi.get_ydata()[0] < sel.get_ydata()[0] < metal.get_ydata()[0]
+    assert hi.get_alpha() < 0.9 and hi.get_markersize() < 12
+    assert hi.get_color() == plot_style.HI_TICK_COLOR
 
 
 def test_system_ticks_in_velocity(window, snapshot):

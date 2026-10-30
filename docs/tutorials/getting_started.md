@@ -68,13 +68,13 @@ The panel floats over the plot, so that opening it does not change the aspect of
 
 You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in **Auxiliary column** has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.
 
-- **1-sigma error**: Hides the grey error shading.
-- **Show error as line**: Instead of a shaded band, plots the error array ($dy$) as a separate line. Useful for inspecting noise structure in high-resolution spectra.
+- **1-sigma error**: Shows or hides the error of the flux (grey).
+- **Show error as line**: Checked by default: the error array ($dy$) is drawn as a line of its own, useful for inspecting the noise structure in high-resolution spectra. Unchecked, the error is drawn as a band around the flux.
 - **Normalization**: Hides the continuum level (dashed black line).
-- **Absorption model**: Hides the Voigt profile fits (solid red line).
-- **Systems**: Hides the vertical tick marks indicating identified systems.
+- **Absorption model**: Hides the Voigt profile fits (solid green line).
+- **Systems**: Hides the tick marks of the fitted components at the bottom of the plot, in two rows: HI (red) below, metals (grey) above.
 - **Auxiliary column**: Select an additional data column (e.g., `abs_mask`, `running_std`) to overlay on the plot.
-- **Strong emission lines**: Shows markers for major emission lines (e.g., Ly-$\alpha$, CIV). 
+- **Strong emission lines only**: Shows only the major emission lines (e.g., Lyα, C IV), named in spectroscopic notation; unchecked, all the lines of the atomic data, fainter. 
   :::{note}
   This requires defining the emission redshift first (see [Setting Session Properties](#editing-properties)).
   :::

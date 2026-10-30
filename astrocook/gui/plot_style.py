@@ -8,6 +8,8 @@ follow the theme of the interface, except the selection, shared with it
 (``theme.SELECTION``).
 """
 import logging
+import re
+
 import matplotlib
 import numpy as np
 
@@ -16,12 +18,67 @@ from .theme import SELECTION
 #: The error of the flux (band, line or bars), in every plot
 ERROR_COLOR = '#aaaaaa'
 
+#: The ticks of the HI components on the main plot: a softer red than pure
+#: red, drawn translucent
+HI_TICK_COLOR = '#d62728'
+
 
 # Keys must match exactly what is in xem_d (core/atomic_data.py)
 STRONG_EMISSION_LINES = {
     'Ly_a', 'Ly_b', 'NV_1238', 'SiIV_1393', 'CIV_1548', 
     'CIII_1908', 'MgII_2796', 'H_b', 'OIII_5008', 'H_a'
 }
+
+#: The names of the strong emission lines on the plot: ions in spectroscopic
+#: notation, the forbidden and semi-forbidden lines with their brackets
+EMISSION_LABELS = {
+    'Ly_a': 'Ly\u03b1', 'Ly_b': 'Ly\u03b2', 'NV_1238': 'N V', 'SiIV_1393': 'Si IV',
+    'CIV_1548': 'C IV', 'CIII_1908': 'C III]', 'MgII_2796': 'Mg II',
+    'H_b': 'H\u03b2', 'OIII_5008': '[O III]', 'H_a': 'H\u03b1',
+}
+
+_GREEK = {'a': '\u03b1', 'b': '\u03b2', 'g': '\u03b3', 'd': '\u03b4', 'e': '\u03b5'}
+
+#: The ions of the other lines: element, ionization (Roman numerals),
+#: excited levels (*), rest wavelength, and a letter for close lines
+_ION_KEY = re.compile(r'^([A-Z][a-z]?)([IVX]+)(\**)_(\d+)([a-z]?)$')
+
+
+def emission_label(key: str) -> str:
+    """The name of a line of ``xem_d`` as written on the plot (e.g.
+    'CIV_1548' -> 'C IV', 'Ly_b' -> 'Ly\u03b2', 'CII_1334' -> 'C II 1334');
+    the key itself if it follows no known pattern."""
+    if key in EMISSION_LABELS:
+        return EMISSION_LABELS[key]
+    match = _ION_KEY.match(key)
+    if match:
+        element, ion, stars, wave, letter = match.groups()
+        return f"{element} {ion}{stars} {wave}{letter}"
+    series, _, member = key.partition('_')
+    if series in ('Ly', 'H', 'D') and member:
+        name = 'Ly' if series in ('Ly', 'D') else 'H'
+        prefix = 'D ' if series == 'D' else ''
+        if member == 'lim':
+            return f"{prefix}{name} limit"
+        return f"{prefix}{name}{_GREEK.get(member, member)}"
+    return key
+
+
+def flux_unit_label(unit) -> str:
+    """The unit of the flux as written on the axis: the usual order for
+    f_lambda and f_nu (erg s\u207b\u00b9 cm\u207b\u00b2 \u00c5\u207b\u00b9), Unicode for the
+    others. Astropy writes erg \u00c5\u207b\u00b9 s\u207b\u00b9 cm\u207b\u00b2, and in mathtext the \u00c5
+    was drawn out of place (visual review of phase 5-bis)."""
+    import astropy.units as au
+    per_s_cm2 = '\u207b\u00b9 cm\u207b\u00b2'
+    scale = getattr(unit, 'scale', 1.0)
+    base = unit / scale if scale != 1.0 else unit
+    prefix = f"{au.Unit(scale).to_string('unicode')} " if scale != 1.0 else ""
+    for per, name in ((au.Angstrom, '\u00c5'), (au.nm, 'nm'), (au.Hz, 'Hz')):
+        if base == au.erg / (au.s * au.cm**2 * per):
+            return f"{prefix}erg s{per_s_cm2} {name}\u207b\u00b9"
+    return unit.to_string('unicode')
+
 
 # --- Centralized Plot Style Configuration ---
 # The span of a region selected with the Select tool (F73): the colour of

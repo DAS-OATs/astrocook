@@ -38,6 +38,9 @@ SPECTRUM_PLOT_WIDGET |= {'_region_menu', 'set_region_selection'}
 SPECTRUM_PLOT_WIDGET |= {'_decimate'}
 #: ... and the swatches instead of the legend (phase 5-bis, F86)
 SPECTRUM_PLOT_WIDGET |= {'_update_swatches'}
+#: ... and the room for the tabs of the cards above the axes, without a title
+#: (phase 5-bis, main plot)
+SPECTRUM_PLOT_WIDGET |= {'_update_top_room'}
 
 
 #: Methods and class attributes of MainWindowV2 before the split (without

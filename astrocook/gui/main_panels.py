@@ -264,7 +264,7 @@ class MainPanelsMixin:
         # --- Error Style Toggle ---
         self.error_line_checkbox = QCheckBox("Show error as line")
         self.error_line_checkbox.setToolTip("If checked, plots the error value (dy) as a line instead of a band.")
-        self.error_line_checkbox.setChecked(True) # Default to Band
+        self.error_line_checkbox.setChecked(True) # The default: a line (unchecked: a band)
         # Indent to show hierarchy
         self.error_line_checkbox.setStyleSheet("margin-left: 20px;")
         
