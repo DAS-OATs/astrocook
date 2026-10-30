@@ -560,13 +560,13 @@
 <h3>Plot Elements<a class="headerlink" href="#plot-elements" title="Link to this heading">#</a></h3>
 <p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Auxiliary column</strong> has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
 <ul>
-<li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
-<li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
+<li><p><strong>1-sigma error</strong>: Shows or hides the error of the flux (grey).</p></li>
+<li><p><strong>Show error as line</strong>: Checked by default: the error array (<span class="math notranslate nohighlight">\(dy\)</span>) is drawn as a line of its own, useful for inspecting the noise structure in high-resolution spectra. Unchecked, the error is drawn as a band around the flux.</p></li>
 <li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
-<li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
-<li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
+<li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid green line).</p></li>
+<li><p><strong>Systems</strong>: Hides the tick marks of the fitted components at the bottom of the plot, in two rows: HI (red) below, metals (grey) above.</p></li>
 <li><p><strong>Auxiliary column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
-<li><p><strong>Strong emission lines</strong>: Shows markers for major emission lines (e.g., Ly-<span class="math notranslate nohighlight">\(\alpha\)</span>, CIV).</p>
+<li><p><strong>Strong emission lines only</strong>: Shows only the major emission lines (e.g., Lyα, C IV), named in spectroscopic notation; unchecked, all the lines of the atomic data, fainter.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires defining the emission redshift first (see <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Setting Session Properties</span></a>).</p>
