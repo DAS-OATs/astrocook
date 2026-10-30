@@ -125,7 +125,7 @@ class SystemInspector(QWidget):
         self.flagged_cb.setToolTip("Show only the components with warnings of the fit "
                                    "(\u26a0: a parameter at a bound, or no uncertainties)")
         self.flagged_cb.toggled.connect(self.proxy_model.set_flagged_only)
-        self.select_flagged_btn = QPushButton("Select flagged")
+        self.select_flagged_btn = QPushButton("Select Flagged")
         self.select_flagged_btn.setToolTip("Select the components with warnings of the fit, "
                                            "e.g. to refit them (table menu > Refit Selected)")
         self.select_flagged_btn.clicked.connect(self.select_flagged)
@@ -599,7 +599,7 @@ class SystemInspector(QWidget):
         if col_name in ['z', 'logN', 'b', 'btur']:
             
             # Allows setting z, logN, b, btur for ALL selected rows to a single value
-            act_set_val = QAction(f"Set value for '{col_name}'...{suffix}", m)
+            act_set_val = QAction(f"Set Value of '{col_name}'...{suffix}", m)
             act_set_val.triggered.connect(
                 lambda: self._batch_set_value(selected_comps, col_name)
             )
@@ -657,7 +657,7 @@ class SystemInspector(QWidget):
             m.addSeparator()
 
         # Set Resolution (Multi-aware via internal logic)
-        act_resol = QAction(f"Set R...{suffix}", m)
+        act_resol = QAction(f"Set Resolving Power...{suffix}", m)
         act_resol.triggered.connect(self._set_component_resolution)
         m.addAction(act_resol)
 

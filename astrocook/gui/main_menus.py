@@ -106,9 +106,13 @@ class MainMenusMixin:
         self.close_session_action = close_action
 
         # 'VIEW' MENU ACTIONS
-        toggle_left_action = QAction("Toggle Session Panel", self); toggle_left_action.triggered.connect(self._toggle_left_sidebar)
+        # Checkable, as Show Toolbar: the check follows the panel, also when it
+        # is opened or closed by its tab (_update_sidebar_button_icon)
+        toggle_left_action = QAction("Show Session Panel", self); toggle_left_action.setCheckable(True)
+        toggle_left_action.triggered.connect(self._toggle_left_sidebar)
         view_menu.addAction(toggle_left_action)
-        toggle_right_action = QAction("Toggle Plot Controls", self); toggle_right_action.triggered.connect(self._toggle_right_sidebar)
+        toggle_right_action = QAction("Show Plot Controls", self); toggle_right_action.setCheckable(True)
+        toggle_right_action.triggered.connect(self._toggle_right_sidebar)
         view_menu.addAction(toggle_right_action)
         self.toggle_left_action = toggle_left_action
         self.toggle_right_action = toggle_right_action

@@ -563,7 +563,7 @@ class PlotMouseMixin:
                 act_add.triggered.connect(lambda checked=False, z=z_click, s=series_str: self.main_window._on_recipe_requested("absorbers", "add_component", {'series': s, 'z': z}, {}))
                 menu.addAction(act_add)
                 
-                act_zem = QAction(f"Set emission redshift to z={z_click:.5f}", menu)
+                act_zem = QAction(f"Set Emission Redshift to z={z_click:.5f}", menu)
                 act_zem.triggered.connect(lambda checked=False, z=z_click: self.main_window._on_recipe_requested("edit", "set_properties", {"z_em": str(z)}, {}))
                 menu.addAction(act_zem)
 

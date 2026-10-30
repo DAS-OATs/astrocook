@@ -1,7 +1,7 @@
 """Cues of the flags of the fit in the System Inspector (#517, PR 3):
 the parameter at a bound in amber, the ID of a component without
 uncertainties in red, a warning sign on the ID, "Only flagged" and
-"Select flagged"."""
+"Select Flagged"."""
 from types import SimpleNamespace
 
 from PySide6.QtCore import Qt

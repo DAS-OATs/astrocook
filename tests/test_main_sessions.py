@@ -393,16 +393,19 @@ def test_session_inspector(window, inspector):
     spec = history.current_state.spec
     window._on_session_info(history)
     dialog = inspector[-1]
-    assert dialog.windowTitle() == f"Session Inspector: {history.display_name}"
+    assert dialog.windowTitle() == f"Session Info: {history.display_name}"
     assert window.info_name_edit.text() == history.display_name
     assert window.info_object_edit.text() == str(spec.meta.get("OBJECT") or "undefined")
     assert window.info_zem_edit.text() == f"{spec._data.z_em:.5f}"
-    stats = next(label.text() for label in dialog.findChildren(QLabel) if "Other info" in label.text())
+    stats = next(label.text() for label in dialog.findChildren(QLabel) if "Statistics" in label.text())
     x = spec.x.value
     assert f"{np.min(x):.2f} - {np.max(x):.2f} nm" in stats
-    assert "N/A (No model)" in stats
-    assert f"<td>Number of data points:</td><td>{len(x)}</td>" in stats
-    assert f"<td>Number of components:</td><td>{len(history.current_state.systs.components)}</td>" in stats
+    assert "<td>Reduced χ²:</td><td>N/A (no model)</td>" in stats
+    assert f"<td>Pixels:</td><td>{len(x)}</td>" in stats
+    assert f"<td>Components:</td><td>{len(history.current_state.systs.components)}</td>" in stats
+    # The step of a logarithmic grid in velocity first (visual review)
+    dv = 299792.458 * np.log(10) * np.median(np.diff(np.log10(x)))
+    assert f"<td>Median step:</td><td>{dv:.2f} km/s (logarithmic grid, " in stats
 
 
 def test_session_inspector_chi2(window, inspector):
@@ -414,7 +417,7 @@ def test_session_inspector_chi2(window, inspector):
     history.add_state(state.with_new_spectrum(spec))
     window._on_session_info(history)
     stats = next(label.text() for label in inspector[-1].findChildren(QLabel)
-                 if "Other info" in label.text())
+                 if "Statistics" in label.text())
     x, y, dy = spec.x.value, spec.y.value, spec.dy.value
     valid = (dy > 0) & np.isfinite(y) & np.isfinite(model) & np.isfinite(dy)
     chi2 = ((y - model) / dy)[valid] ** 2

@@ -96,6 +96,9 @@ class ContinuumControlsMixin:
                         try: artist.remove()
                         except: pass
                     self.plot_viewer.canvas.cursor_artists = []
+                    if self.plot_viewer.canvas.cursor_label is not None:
+                        self.plot_viewer.canvas.cursor_label.remove()
+                        self.plot_viewer.canvas.cursor_label = None
 
             self.edit_hints_label.setVisible(True)
 

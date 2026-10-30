@@ -41,6 +41,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         # Blitting Attributes
         self.background = None # Store the clean background pixels
         self.cursor_artists = [] # Store references to the cursor axvline objects
+        # The redshift of the cursor, written at the top of its first line
+        # in view: the box in the card of the plot controls fades while the
+        # mouse is on the plot (findings register F92)
+        self.cursor_label = None
         self.draw_event_cid = None # Store connection ID for draw_event
 
         # Hover Timer for Tooltips
@@ -77,6 +81,23 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # Schedule plot_spectrum to run soon via the event loop
             # ** Use lambda to pass the session_state argument **
             QTimer.singleShot(0, lambda: self.plot_widget.plot_spectrum(session_state=session_state))
+
+    def update_cursor_label(self, z, x_positions):
+        """Move the label of the cursor to its first line in view, and write
+        its redshift; hidden when no line is in view. On the left of the
+        line in the right half of the plot, where the card of the plot
+        controls would cover it."""
+        if self.cursor_label is None:
+            return
+        lo, hi = sorted(self.axes.get_xlim())
+        in_view = [x for x in x_positions if lo <= x <= hi]
+        self.cursor_label.set_visible(bool(in_view))
+        if in_view:
+            x = in_view[0]
+            right_half = (x - lo) > 0.5 * (hi - lo)
+            self.cursor_label.set_x(x)
+            self.cursor_label.set_horizontalalignment('right' if right_half else 'left')
+            self.cursor_label.set_text(f"z = {z:.5f} " if right_half else f" z = {z:.5f}")
 
     def _on_resize(self, event):
         """The pixels kept for blitting have the old size: captured again at
@@ -121,6 +142,8 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 self.axes.draw_artist(self.plot_widget.knot_artist)
             if hasattr(self.plot_widget, 'spline_artist') and self.plot_widget.spline_artist:
                 self.axes.draw_artist(self.plot_widget.spline_artist)
+        if self.cursor_label is not None and drawn_artists:
+            self.axes.draw_artist(self.cursor_label)
         if drawn_artists:
             try: self.blit(self.axes.bbox)
             except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
@@ -207,6 +230,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                         # Update existing artists
                         for artist, x_pos in zip(self.cursor_artists, new_x_positions):
                             artist.set_xdata([x_pos])
+                        self.update_cursor_label(new_z, new_x_positions)
                         self.draw_animated() # Use blitting redraw
 
             except Exception as e:

@@ -275,7 +275,7 @@ def test_right_click_with_the_cursor(window, menus, modifiers, monkeypatch):
     assert viewer.on_press(_event(viewer.canvas, "button_press_event", x, 0.5 * (lo + hi), button=3))
     texts = list(menus[-1])
     z = viewer.calculate_z_from_x(x)
-    assert texts[:3] == [f"Add CIV at z={z:.5f}", f"Set emission redshift to z={z:.5f}",
+    assert texts[:3] == [f"Add CIV at z={z:.5f}", f"Set Emission Redshift to z={z:.5f}",
                          "Split from Current Zoom"]
     assert texts[3].startswith("Inspect Data (near ")
     for text in texts:

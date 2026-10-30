@@ -96,6 +96,37 @@ def test_cursor_follows_the_mouse(qtbot, window):
     assert [a.get_xdata()[0] for a in canvas.cursor_artists] == pytest.approx(positions)
 
 
+def test_cursor_label(qtbot, window):
+    # The redshift of the cursor at the top of its first line in view: the
+    # box of the card fades while the mouse is on the plot (F92)
+    canvas = window.plot_viewer.canvas
+    window.cursor_z_input.setText("3.0")
+    window.cursor_show_checkbox.setChecked(True)
+    qtbot.wait(100)
+    label = canvas.cursor_label
+    assert label is not None and label.get_animated()
+    assert label.get_text().strip() == "z = 3.00000"
+    x = _x_inside(canvas, 0.5)
+    canvas.on_motion(_event(canvas, "motion_notify_event", x, _y_inside(canvas)))
+    z = float(window.cursor_z_input.text())
+    assert label.get_text().strip() == f"z = {z:.5f}"
+    lo, hi = canvas.axes.get_xlim()
+    in_view = [a.get_xdata()[0] for a in canvas.cursor_artists
+               if lo <= a.get_xdata()[0] <= hi]
+    assert label.get_visible() and label.get_position()[0] == pytest.approx(in_view[0])
+    # On the side of the line away from the card of the plot controls
+    canvas.update_cursor_label(z, [lo + 0.2 * (hi - lo)])
+    assert label.get_horizontalalignment() == "left"
+    canvas.update_cursor_label(z, [lo + 0.8 * (hi - lo)])
+    assert label.get_horizontalalignment() == "right"
+    # No line in view: no label
+    canvas.update_cursor_label(z, [hi + 1.0])
+    assert not label.get_visible()
+    window.cursor_show_checkbox.setChecked(False)
+    qtbot.wait(100)
+    assert canvas.cursor_label is None
+
+
 def test_cursor_after_a_resize(qtbot, window):
     # The pixels kept for blitting the cursor were those before the resize:
     # moving the cursor after View > Show Toolbar drew the old plot over the

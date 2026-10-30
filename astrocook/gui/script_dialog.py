@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                                QPushButton, QSplitter)
 from .scripting import AppController
@@ -9,14 +9,15 @@ class ScriptDialog(QDialog):
     def __init__(self, main_window):
         super().__init__(main_window)
         self.resize(800, 600)
-        self.setWindowTitle("Astrocook Script Console")
+        self.setWindowTitle("Script Console")
         self.controller = AppController(main_window)
         
         layout = QVBoxLayout(self)
         
         # Editor
         self.editor = QTextEdit()
-        self.editor.setFont(QFont("Monospace", 12))
+        # The fixed-width font of the system ("Monospace" is not one on macOS)
+        self.editor.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.editor.setPlaceholderText("# Access loaded data via 'app'\n"
                                        "# s = app.get_active_session()\n"
                                        "# s.spec.y_convert(...)")
@@ -24,6 +25,7 @@ class ScriptDialog(QDialog):
         # Output Log
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
+        self.log_view.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.log_view.setStyleSheet(f"background-color: {CONSOLE_BACKGROUND}; color: {CONSOLE_TEXT};")
         
         splitter = QSplitter()

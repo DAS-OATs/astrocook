@@ -66,19 +66,19 @@ The panel floats over the plot, so that opening it does not change the aspect of
 
 ### Plot Elements
 
-You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in **Aux. Column** has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.
+You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in **Auxiliary column** has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.
 
 - **1-sigma error**: Hides the grey error shading.
 - **Show error as line**: Instead of a shaded band, plots the error array ($dy$) as a separate line. Useful for inspecting noise structure in high-resolution spectra.
 - **Normalization**: Hides the continuum level (dashed black line).
 - **Absorption model**: Hides the Voigt profile fits (solid red line).
 - **Systems**: Hides the vertical tick marks indicating identified systems.
-- **Aux. Column**: Select an additional data column (e.g., `abs_mask`, `running_std`) to overlay on the plot.
+- **Auxiliary column**: Select an additional data column (e.g., `abs_mask`, `running_std`) to overlay on the plot.
 - **Strong emission lines**: Shows markers for major emission lines (e.g., Ly-$\alpha$, CIV). 
   :::{note}
   This requires defining the emission redshift first (see [Setting Session Properties](#editing-properties)).
   :::
-- **Show Iso-Mag Grid**: Overlays curves of constant AB magnitude. 
+- **Show iso-magnitude grid**: Overlays curves of constant AB magnitude. 
   :::{note} 
   This requires flux calibration (see [Flux Calibration](#flux-calibration)).
   :::
@@ -87,10 +87,10 @@ You can show or hide specific layers of the plot. Next to each one, a short samp
 
 - **Units**: You can switch the X-axis display between `nm`, `Angstrom`, and `micron` on the fly.
 - **Normalize F**: Plots the flux relative to the continuum (showing $f = F / F_\mathrm{cont}$) (this control becomes active only when a `cont` column is present).
-- **Show SNR**: Plots the Signal-to-Noise Ratio instead of flux.
-    * **Error Col.**: When showing SNR, you can select which column to use as the noise estimate (default is `dF`).
+- **Show S/N**: Plots the signal-to-noise ratio instead of flux.
+    * **Error column**: When showing the S/N, you can select which column to use as the noise estimate (default is `dF`).
 - **Logarithmic $\lambda$**: Switches the X-axis to a logarithmic scale.
-- **Logarithmic F**: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the **Iso-Mag Grid** as straight lines. Pixels with $F \le 0$ (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive **F Min** is not applied while the scale is logarithmic.
+- **Logarithmic F**: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the **iso-magnitude grid** as straight lines. Pixels with $F \le 0$ (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive **F Min** is not applied while the scale is logarithmic.
 
 ### Axis Limits
 
@@ -101,15 +101,15 @@ You can manually set the precise bounds of the plot view. Enter values for **$\l
 This is a handy tool for quick visual inspection.
 
 1. In the **Redshift Cursor** section, enter a transition name (e.g., `Ly_a`, `CIV`, `MgII`) and a redshift `z`.
-2. Check the **Show Cursor Lines** box.
-3. Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the `z` value to slide the cursor along the spectrum.
+2. Check the **Show cursor** box.
+3. Vertical dashed lines will appear on the plot indicating where that transition should be found, with their redshift written at the top of the first one. The cursor follows the mouse over the plot; you can also type the `z` value to place it.
 
 ```{image} ../_static/getting_started_plot_controls.png
 :alt: The Plot Controls sidebar
 :align: center
 ```
 
-**Interactive Setting:** You can **Right-click** directly on the plot background to open a context menu. Select **Set emission redshift to z=...** to instantly update the session's $z_{em}$ based on the cursor's current position.
+**Interactive Setting:** You can **Right-click** directly on the plot background to open a context menu. Select **Set Emission Redshift to z=...** to instantly update the session's $z_{em}$ based on the cursor's current position.
 
 :::{note}
 If the **Zoom** or **Pan** tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold `Ctrl` (or `Cmd` on Mac) while right-clicking to access the context menu.
@@ -153,8 +153,8 @@ You can easily compare multiple spectra simultaneously directly in the main plot
 
 Right-click on any session in the list to open the context menu. This menu offers several powerful tools:
 
-- **View Info**: Opens the Session Inspector. Here you can see (and edit) critical metadata:
-  - **Object Name**
+- **View Info**: Opens the *Session Info* dialog. Here you can see (and edit) critical metadata:
+  - **Object**
   - **Emission Redshift ($z_\mathrm{em}$)**: Crucial for many recipes like the Ly-$\alpha$ forest analysis.
   - **Resolution ($R$)**: Essential for accurate Voigt profile fitting.
   :::{note}
@@ -163,9 +163,9 @@ Right-click on any session in the list to open the context menu. This menu offer
 
 - **Duplicate**: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).
 
-### The Log Scripter
+### The Session Log
 
-Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select **View Log** to open the **Log Scripter**.
+Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select **View Log** to open the **Session Log**.
 
 This dialog allows you to:
 * **Review History:** See a readable list of every recipe run on this session.
@@ -180,7 +180,7 @@ This dialog allows you to:
 
 The **View** menu also provides access to specialized analysis windows:
 
-* **View Session Log**: Opens the Log Scripter (see above).
+* **View Session Log**: Opens the Session Log (see above).
 * **View System Inspector**: Opens the advanced interface for analyzing absorption lines. *See the [Absorption Systems](#system-inspector) tutorial for a full guide.*
 * **View Identifications**: Opens a summary table of all candidate lines found by the `identify_lines` recipe.
 * **View Script Console**: Opens a Python console for running custom scripts on the current session data.

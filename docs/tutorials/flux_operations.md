@@ -91,5 +91,5 @@ If your spectrum is not flux-calibrated (or the calibration is off), you can war
 Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes. With one magnitude the curve is a constant; with two or more it is linear between the central wavelengths of the filters and constant beyond them, and its values there are chosen so that every magnitude is matched exactly. If the magnitudes cannot be matched together by a positive curve (e.g. two strongly overlapping filters with very different magnitudes, or the same filter twice), a warning is logged and each filter's own factor is used, so the magnitudes are only approximately matched. The curve is applied to the flux, its error, the continuum, the model and the power-law continuum, which take the unit erg cm⁻² s⁻¹ Å⁻¹; the telluric transmission is dimensionless and is left unchanged.
 
 :::{tip}
-After calibration, check the **Show Iso-Mag Grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
+After calibration, check the **Show iso-magnitude grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
 :::
