@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 from astrocook.core.session import SessionV2
 from astrocook.core.utils import get_recipe_schema
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
-                    INPUT_BORDER, WARNING)
+                    INPUT_BORDER, WARNING, themed)
 
 class RecipeDialog(QDialog):
     """
@@ -63,7 +63,7 @@ class RecipeDialog(QDialog):
                 border-radius: 6px;
                 background-color: {base_col};
                 color: {text_col};
-                border: 1px solid {INPUT_BORDER};
+                border: 1px solid {themed(INPUT_BORDER)};
             }}
             QLineEdit:focus, QComboBox:focus {{
                 {FOCUS_BORDER}
@@ -72,24 +72,24 @@ class RecipeDialog(QDialog):
             /* Reference Pane Frame */
             QFrame#ReferencePane {{
                 background-color: {base_col}; 
-                border: 1px solid {INPUT_BORDER};
+                border: 1px solid {themed(INPUT_BORDER)};
                 border-radius: 8px;
             }}
 
             /* Helper Buttons (Specific to the pane ONLY) */
             QFrame#ReferencePane QPushButton {{
                 background-color: {btn_col};
-                border: 1px solid {INPUT_BORDER};
+                border: 1px solid {themed(INPUT_BORDER)};
                 border-radius: 6px;
                 padding: 4px 8px;
                 min-width: 20px;
             }}
             QFrame#ReferencePane QPushButton:hover {{
-                background-color: {BUTTON_BACKGROUND};
-                border: 1px solid {BUTTON_BORDER};
+                background-color: {themed(BUTTON_BACKGROUND)};
+                border: 1px solid {themed(BUTTON_BORDER)};
             }}
             QFrame#ReferencePane QPushButton:pressed {{
-                background-color: {BUTTON_PRESSED};
+                background-color: {themed(BUTTON_PRESSED)};
             }}
 
             QLabel {{ margin-right: 5px; }}
@@ -202,7 +202,7 @@ class RecipeDialog(QDialog):
 
         if self.recipe_name == 'resample':
             self.oversample_warning_label = QLabel("⚠️ **Warning:** Target grid is finer. This will oversample the data.")
-            self.oversample_warning_label.setStyleSheet(f"color: {WARNING};") 
+            self.oversample_warning_label.setStyleSheet(f"color: {themed(WARNING)};") 
             self.oversample_warning_label.setVisible(False)
             form_layout.addRow(self.oversample_warning_label)
 
@@ -267,7 +267,7 @@ class RecipeDialog(QDialog):
             syst_grid.setSpacing(4)
             
             btn_syst_all = QPushButton("systems (all)")
-            btn_syst_all.setStyleSheet(f"font-weight: bold; color: {WARNING};")
+            btn_syst_all.setStyleSheet(f"font-weight: bold; color: {themed(WARNING)};")
             btn_syst_all.clicked.connect(lambda: self._insert_text_into_expression("systems"))
             syst_grid.addWidget(btn_syst_all, 0, 0)
 
@@ -355,10 +355,10 @@ class RecipeDialog(QDialog):
                 if item_name == "systems":
                     display_label = "systems (lines)"
                     button.setText(display_label)
-                    button.setStyleSheet(f"color: {DANGER}; font-weight: bold;") 
+                    button.setStyleSheet(f"color: {themed(DANGER)}; font-weight: bold;") 
                 elif item_name in standard_ui_cols:
                     # Give standard columns a distinct color (e.g., orange) to indicate a different behavior
-                    button.setStyleSheet(f"color: {WARNING};")
+                    button.setStyleSheet(f"color: {themed(WARNING)};")
 
                 # --- [FIX 2] Add the Warning Intercept ---
                 # We use a helper function to handle the click logic cleanly

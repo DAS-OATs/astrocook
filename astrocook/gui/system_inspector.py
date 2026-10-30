@@ -2,7 +2,7 @@ import importlib.util
 import logging
 import numpy as np
 import astropy.units as au
-from PySide6.QtCore import Qt, QLocale, QItemSelection, QItemSelectionModel, QTimer
+from PySide6.QtCore import QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QTimer
 from PySide6.QtGui import QAction, QDoubleValidator
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
@@ -224,20 +224,7 @@ class SystemInspector(QWidget):
         self.resid_cb.toggled.connect(self._apply) 
         c_layout.addWidget(self.resid_cb)
         
-        pal = QApplication.palette()
-        style = f"""
-            QLineEdit {{ 
-                padding: 3px; 
-                border-radius: 4px; 
-                background: {pal.color(pal.ColorRole.Base).name()}; 
-                color: {pal.color(pal.ColorRole.Text).name()}; }}
-            QLineEdit:focus {{
-                {FOCUS_BORDER}
-            }}
-        """
-        for w in [self.trans_in, self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in,
-                  self.fit_window_in]:
-            w.setStyleSheet(style)
+        self._apply_field_styles()
         
         r_layout.addLayout(c_layout)
         
@@ -1026,6 +1013,35 @@ class SystemInspector(QWidget):
         
         # 5. Update Proxy Filter (Show entire group)
         self.proxy_model.set_allowed_uuids(all_group_uuids)
+
+    def _apply_field_styles(self):
+        """The fields above the velocity plot, with the colours of the
+        palette (again when it changes, dark mode)."""
+        pal = QApplication.palette()
+        style = f"""
+            QLineEdit {{ 
+                padding: 3px; 
+                border-radius: 4px; 
+                background: {pal.color(pal.ColorRole.Base).name()}; 
+                color: {pal.color(pal.ColorRole.Text).name()}; }}
+            QLineEdit:focus {{
+                {FOCUS_BORDER}
+            }}
+        """
+        for w in [self.z_in, self.vmin_in, self.vmax_in, self.logn_in, self.b_in,
+                  self.fit_window_in]:
+            w.setStyleSheet(style)
+        # The transition box has its own style (automatic or manual)
+        self._update_trans_box_visuals()
+
+    def event(self, event):
+        """The system switched between light and dark: the colours that
+        come from the palette are applied again (Qt sends the change to the
+        windows only, see MainWindowV2.event)."""
+        if event.type() == QEvent.Type.ApplicationPaletteChange and hasattr(self, 'trans_in'):
+            self._apply_field_styles()
+            self.table_model.refresh_colours()
+        return super().event(event)
 
     def _update_trans_box_visuals(self):
         """Updates the text color of the Trans box to indicate Auto vs Manual mode."""

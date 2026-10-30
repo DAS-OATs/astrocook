@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QStyledItemDelegate
 from typing import List
 
 from ..core.structures import ComponentDataV2
-from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, LINK_COLOURS
+from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours
 
 # --- 1. Table Configuration (UPDATED) ---
 # We removed the separate error columns (dz, dlogN, db)
@@ -106,7 +106,9 @@ class SystemTableModel(QAbstractTableModel):
 
         # Store constraints: {uuid: {param: ConstraintObj}}
         self._constraints_map = {} 
-        # Link colours of the selected group: {(target_uuid, param): QColor}
+        # Link colours of the selected group: {(target_uuid, param): index
+        # in the link colours}; the index, so that a link keeps its colour
+        # when the palette switches between light and dark
         self._link_color_map = {}
 
     def update_data(self, components: List[ComponentDataV2], constraints_map: dict = None):
@@ -153,16 +155,25 @@ class SystemTableModel(QAbstractTableModel):
                         if cons.target_uuid:
                             link_clusters.add((cons.target_uuid, attr))
 
-            # Color palette (Deep Blue, Magenta, Forest Green, Purple, Teal, Maroon)
-            palette = LINK_COLOURS
+            # Color palette (Deep Blue, Magenta, Forest Green, Purple, Teal,
+            # Maroon; lighter on a dark palette, theme.link_colours)
+            n_colours = len(link_colours())
             kept = {c: previous[c] for c in link_clusters if c in previous}
-            used = [color.name() for color in kept.values()]
-            free = [color for color in palette if color not in used] or palette
+            used = set(kept.values())
+            free = [i for i in range(n_colours) if i not in used] or list(range(n_colours))
             # New links in a fixed order (the set order depends on the UUIDs)
             new = sorted(c for c in link_clusters if c not in kept)
             for i, cluster in enumerate(new):
-                kept[cluster] = QColor(free[i % len(free)])
+                kept[cluster] = free[i % len(free)]
             self._link_color_map = kept
+
+    def refresh_colours(self):
+        """Draw the table again with the colours of the palette (it switched
+        between light and dark)."""
+        if self._components:
+            self.dataChanged.emit(self.index(0, 0),
+                                  self.index(len(self._components) - 1, len(COLUMNS) - 1),
+                                  [_FOREGROUND, _BACKGROUND])
 
     def rowCount(self, parent=QModelIndex()): return len(self._components)
     def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
@@ -236,13 +247,13 @@ class SystemTableModel(QAbstractTableModel):
                 if is_linked and c_data.target_uuid:
                     cluster = (c_data.target_uuid, attr)
                     if cluster in self._link_color_map:
-                        return QBrush(self._link_color_map[cluster])
+                        return QBrush(QColor(link_colours()[self._link_color_map[cluster]]))
                 
                 # If it's the TARGET variable...
                 elif is_free:
                     cluster = (comp.uuid, attr)
                     if cluster in self._link_color_map:
-                        return QBrush(self._link_color_map[cluster])
+                        return QBrush(QColor(link_colours()[self._link_color_map[cluster]]))
 
             return None
         

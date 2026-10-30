@@ -5,6 +5,14 @@ widgets. The colours of the plots are in ``plot_style.py``: the plots stay
 white also in dark mode (Guido's decision), so they do not follow the
 theme. The colours of the system palette (backgrounds, text, borders) are
 read with ``palette_hex``.
+
+Dark mode (phase 5-bis, theme PR B): the interface follows the palette of
+the system. The constants below are the colours on a light palette; those
+that would not read on a dark one have a dark variant (``DARK``), which
+``themed`` returns when the palette is dark (``is_dark``). The widgets that
+live long (the main window, the System Inspector, the toolbars) apply them
+again when the system switches between light and dark
+(``QEvent.ApplicationPaletteChange``).
 """
 from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
@@ -52,6 +60,41 @@ CONSOLE_TEXT = "#EEE"
 FOCUS_BORDER = f"border: 1px solid {ACCENT};"
 
 
+#: The variants on a dark palette of the colours that would not read on it
+#: (light borders and buttons, dark red, the darker link colours). The
+#: accent, the selection (with black text on it), the tooltips of the
+#: System Inspector (light, with black text) and the console (dark) read
+#: on both.
+DARK = {
+    DANGER: "#ff6b6b",
+    WARNING: "#ff8c42",
+    INPUT_BORDER: "#5a5a5a",
+    BUTTON_BACKGROUND: "#4a4a4a",
+    BUTTON_BORDER: "#777777",
+    BUTTON_PRESSED: "#3a3a3a",
+}
+#: The link colours on a dark palette: the same hues, lighter
+LINK_COLOURS_DARK = ["#6e9bff", "#ff5cc0", "#4cd964", "#c08cff", "#40d0d0", "#ff7070"]
+
+
 def palette_hex(role: QPalette.ColorRole) -> str:
     """A colour of the system palette (light or dark), as ``#rrggbb``."""
     return QApplication.palette().color(role).name()
+
+
+def is_dark() -> bool:
+    """Whether the palette of the application is dark (the background of
+    the windows darker than mid grey): on macOS in dark mode, or with a dark
+    palette set by the user."""
+    return QApplication.palette().color(QPalette.ColorRole.Window).lightness() < 128
+
+
+def themed(colour: str) -> str:
+    """``colour`` (one of the constants above), or its dark variant when
+    the palette is dark."""
+    return DARK.get(colour, colour) if is_dark() else colour
+
+
+def link_colours() -> list:
+    """The link colours for the current palette."""
+    return LINK_COLOURS_DARK if is_dark() else LINK_COLOURS

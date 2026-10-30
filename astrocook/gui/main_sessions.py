@@ -14,7 +14,7 @@ from typing import List, Optional
 
 import numpy as np
 from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, QStringListModel, Qt
-from PySide6.QtGui import QAction, QDoubleValidator
+from PySide6.QtGui import QAction, QDoubleValidator, QPalette
 from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDialog,
                                QFormLayout, QLabel, QLineEdit, QMenu, QMessageBox,
                                QSizePolicy, QVBoxLayout)
@@ -23,6 +23,8 @@ from astrocook.core.resolution import resolution_summary
 from astrocook.core.session import SessionV2, load_session_from_file
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+
+from .theme import FOCUS_BORDER, palette_hex
 
 
 class SessionListModel(QStringListModel):
@@ -694,15 +696,17 @@ class MainSessionsMixin:
         dialog.setWindowTitle(f"Session Inspector: {history_item.display_name}")
         dialog.setMinimumWidth(400)
         
-        dialog.setStyleSheet("""
-            QLineEdit {
+        # A real f-string: it was a plain string with the placeholders of
+        # one, not valid CSS (findings register F87)
+        dialog.setStyleSheet(f"""
+            QLineEdit {{
                 padding: 3px;
                 border-radius: 5px;
-                background-color: {palette.color(palette.ColorRole.Base).name() if 'palette' in locals() else '#FFFFFF'};
-                color: {text_color};
-            }
+                background-color: {palette_hex(QPalette.ColorRole.Base)};
+                color: {palette_hex(QPalette.ColorRole.Text)};
+            }}
             QLineEdit:focus {{
-                border: 1px solid #296bff; /* Highlight color */
+                {FOCUS_BORDER}
             }}
         """)
         
