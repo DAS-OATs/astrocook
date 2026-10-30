@@ -62,7 +62,7 @@ The panel floats over the plot, so that opening it does not change the aspect of
 
 ### Plot Elements
 
-You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: while this section is open it replaces the legend of the plot, and the legend shows only what is not listed here (e.g. other sessions or an auxiliary column).
+You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in **Aux. Column** has its sample next to the menu, and each other session shown (see below) next to its name in the list of the sessions.
 
 - **1-sigma error**: Hides the grey error shading.
 - **Show error as line**: Instead of a shaded band, plots the error array ($dy$) as a separate line. Useful for inspecting noise structure in high-resolution spectra.
@@ -128,7 +128,7 @@ If you loaded multiple spectra, click on their names in this list to switch the 
 You can easily compare multiple spectra simultaneously directly in the main plot window:
 
 * **How to use:** Hold `Ctrl` (or `Cmd` on macOS) and click on multiple sessions in the left-hand Session List. You can also use `Shift+Click` to select a continuous range.
-* **What you'll see:** Your primary active session remains fully featured (showing models, continuums, and system markers). The additional selected sessions will appear underneath as "ghost" spectra, plotted in distinct, colorblind-friendly colors with semi-transparent flux and error bands. A legend will automatically appear to help you identify them.
+* **What you'll see:** Your primary active session remains fully featured (showing models, continuums, and system markers). The additional selected sessions will appear underneath as "ghost" spectra, plotted in distinct, colorblind-friendly colors with semi-transparent flux and error bands. A sample of its colour appears next to the name of each of them in the session list, to help you identify them.
 * **Smart Scaling:** The ghost spectra are fully integrated with your View Controls! If you toggle **Normalize F**, all visible spectra will automatically rescale to match the active view.
 
 ```{image} ../_static/getting_started_ghost_spectra.png
