@@ -34,6 +34,8 @@ SPECTRUM_PLOT_WIDGET |= {
 }
 #: ... and the selection of a region, restored in phase 5-bis (F73)
 SPECTRUM_PLOT_WIDGET |= {'_region_menu', 'set_region_selection'}
+#: ... and the decimation by view, redone in phase 5-bis (F76)
+SPECTRUM_PLOT_WIDGET |= {'_decimate'}
 
 
 #: Methods and class attributes of MainWindowV2 before the split (without

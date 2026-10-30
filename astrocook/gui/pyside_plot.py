@@ -27,9 +27,13 @@ from .plot_style import (STRONG_EMISSION_LINES, PANEL_LEGEND_LABELS, decimate_x_
                          decimate_y_min_max, get_color_cycle)
 from .plot_toolbar import AstrocookToolbar
 
-#: Spectra longer than this are decimated (min-max) in the full view; the
-#: comment of the first version said "> 20k points"
-DECIMATION_THRESHOLD = 2000000
+#: When more pixels than this are in view, they are decimated (min-max) to
+#: keep the plot fast (F76: at every plot, in the full view or in a wide
+#: zoom). 1 million (Guido, phase 5-bis; it was 2 million, and the comment
+#: of the first version said "> 20k points"): a redraw of 3 million pixels
+#: took 3.9 s whole and 1.0 s decimated, of 300 000 pixels 0.77 and 0.57 s
+#: (with the legend in a fixed corner, see F86)
+DECIMATION_THRESHOLD = 1000000
 DECIMATION_FACTOR = 10       # Plot 2 points for every 10
 
 # Default limits of the normalized flux: linear, and with the logarithmic
@@ -62,6 +66,11 @@ class _PlotArrays(NamedTuple):
         return _PlotArrays(self.x[s], self.y[s], self.dx[s], self.dy[s],
                            None if self.norm is None else self.norm[s],
                            None if self.model is None else self.model[s])
+
+    def decimated(self, factor: int) -> '_PlotArrays':
+        """Min-max decimation: 2 points every ``factor``."""
+        return _PlotArrays(decimate_x_for_min_max(self.x, factor),
+                           *(decimate_y_min_max(a, factor) for a in self[1:]))
 
 
 @dataclass
@@ -316,7 +325,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                                    previous_xlim, previous_ylim)
             full = _full_plot_arrays(spec)
             arrays = self._plot_arrays(spec, full, view)
+            source = id(arrays)  # the cached arrays the cut is made from
             arrays = self._slice_to_view(arrays, view)
+            arrays = self._decimate(arrays, view, source)
             view.set_marker_style(spec, len(arrays.x))
             colors = get_color_cycle(5, cmap='tab20') # Get colors
 
@@ -478,28 +489,20 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._last_draw_norm_state = view.is_norm_y
         self._last_draw_snr_state = view.is_snr
 
-        if not was_zoomed and len(spec.x.value) > DECIMATION_THRESHOLD and not force_autoscale:
-            view.use_decimation = True
-            logging.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}) for full-view plot.")
         return view
 
     # --- Parts of plot_spectrum: the arrays ---
 
     def _raw_plot_arrays(self, full: '_PlotArrays', view: '_PlotView') -> '_PlotArrays':
-        """The arrays of the spectrum, decimated in the full view of a long
-        spectrum (cached until the data change)."""
+        """The arrays of the spectrum (cached until the data change). Not
+        decimated: the decimation depends on the view (``_decimate``, F76)."""
         cached = self._plot_cache.get('raw')
         if cached is not None:
             logging.debug("Using cached RAW plot data.")
             return cached
         logging.debug("Computing RAW plot data...")
-        if view.use_decimation:
-            arrays = _PlotArrays(decimate_x_for_min_max(full.x, DECIMATION_FACTOR),
-                                 *(decimate_y_min_max(a, DECIMATION_FACTOR) for a in full[1:]))
-        else: # We are zoomed, forcing home, or data is small
-            arrays = full
-        self._plot_cache['raw'] = arrays
-        return arrays
+        self._plot_cache['raw'] = full
+        return full
 
     def _plot_arrays(self, spec, full: '_PlotArrays', view: '_PlotView') -> '_PlotArrays':
         """The arrays to plot: as they are, normalized to the continuum, or
@@ -543,10 +546,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 logging.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
                 full_error_data = full.dy # Fallback
                 self.main_window.snr_col_combo.setCurrentIndex(0) # Reset combo
-            if view.use_decimation:
-                error = decimate_y_min_max(full_error_data, DECIMATION_FACTOR)
-            else:
-                error = full_error_data
+            error = full_error_data
 
             y = _divide(raw.y, error)
             arrays = _PlotArrays(
@@ -572,8 +572,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             idx_end = np.searchsorted(arrays.x, view.previous_xlim[1], side='right')
 
             # Add a buffer (in *indices*, not data units)
-            # 10 bins for decimated, 50 for full
-            buffer = (DECIMATION_FACTOR * 2) if view.use_decimation else 50
+            buffer = 50
             idx_start = max(0, idx_start - buffer)
             idx_end = min(len(arrays.x), idx_end + buffer)
 
@@ -585,6 +584,27 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         except Exception as e:
             logging.warning(f"Failed to apply zoom slice: {e}")
         return arrays
+
+    def _decimate(self, arrays: '_PlotArrays', view: '_PlotView', source: int) -> '_PlotArrays':
+        """Min-max decimation of the arrays in view, when they are more than
+        ``DECIMATION_THRESHOLD`` (F76): at every plot, in the full view or
+        in a zoom, after the cut to the view. The whole arrays stay in the
+        cache; the decimated ones are cached by view (the arrays they come
+        from, ``source``, and the cut), which saves ~0.2 s at each plot of a
+        spectrum of 3 million pixels."""
+        if len(arrays.x) <= DECIMATION_THRESHOLD:
+            return arrays
+        view.use_decimation = True
+        key = ('decimated', source, view.final_slice.start, view.final_slice.stop)
+        cached = self._plot_cache.get(key)
+        if cached is None:
+            logging.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}): "
+                          f"{len(arrays.x)} points in view.")
+            # Only the last view: the cuts of a pan would pile up
+            for old in [k for k in self._plot_cache if k[0] == 'decimated']:
+                del self._plot_cache[old]
+            cached = self._plot_cache[key] = arrays.decimated(DECIMATION_FACTOR)
+        return cached
 
     # --- Parts of plot_spectrum: the layers ---
 
@@ -742,14 +762,15 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
             full_aux_col_data = full_aux_col_data.value # Get numpy array
 
-            # 1. Apply Decimation (if it was applied to x_data)
+            # As the flux: cut to the view, then decimated
+            aux_data = full_aux_col_data[view.final_slice]
             if view.use_decimation:
-                aux_data = decimate_y_min_max(full_aux_col_data, DECIMATION_FACTOR)
-            else:
-                aux_data = full_aux_col_data
-
-            # 2. Apply Zoom Slicing (must match x_data's final state)
-            aux_data = aux_data[view.final_slice]
+                if aux_data.dtype.kind == 'b':
+                    # A mask: a decimated block is masked if any pixel is
+                    aux_data = decimate_y_min_max(aux_data.astype(float),
+                                                  DECIMATION_FACTOR) > 0
+                else:
+                    aux_data = decimate_y_min_max(aux_data, DECIMATION_FACTOR)
 
             if aux_col_to_plot in ['abs_mask', 'abs_ids']:
                 # Create a boolean mask where regions exist

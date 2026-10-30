@@ -304,23 +304,48 @@ def test_legend_without_the_swatches(window, columns):
 # --- Decimation -----------------------------------------------------------------------------
 
 def test_decimation_of_long_spectra(window, monkeypatch):
-    """A spectrum longer than the threshold is decimated (min-max) in the
-    full view, only at the first plot after the axes were cleared: then the
-    limits are kept (was_zoomed) and the decimated arrays stay in the
-    cache, drawn as steps (findings register F76)."""
+    """When more pixels than the threshold are in view, they are decimated
+    (min-max) at every plot: in the full view, after Home and in a wide
+    zoom, not in a narrow one; the cache keeps the whole arrays, and the
+    auxiliary column follows the flux. Before (findings register F76) only
+    the first plot after the axes were cleared was decimated, the decimated
+    arrays stayed in the cache, and an auxiliary column failed."""
     monkeypatch.setattr(pyside_plot, "DECIMATION_THRESHOLD", 1000)
     long = _spec(x0=600.0, x1=620.0, step=0.01)  # 2000 pixels
+    long = long.update_column("running_std", np.linspace(0.0, 1.0, long.x.size))
     history = window.active_history
     history.add_state(history.current_state.with_new_spectrum(long))
     viewer = window.plot_viewer
     viewer.plot_spectrum(None)
+    expected = pyside_plot.decimate_y_min_max(long.y.value, 10)
+    for kwargs in ({}, {}, {"force_autoscale": True}):  # first plot, next, Home
+        lines = _lines(_replot(window, **kwargs))
+        assert "Spectrum" not in lines
+        np.testing.assert_array_equal(lines["Spectrum (decimated)"].get_ydata(), expected)
+    assert len(viewer._plot_cache["raw"].x) == 2000
+    # The decimated arrays cached by view: the same object at the next plot
+    first = _lines(_replot(window))["Spectrum (decimated)"].get_ydata()
+    again = [v for k, v in viewer._plot_cache.items() if k[0] == "decimated"]
+    assert len(again) == 1
+    np.testing.assert_array_equal(first, again[0].y)
+    # An auxiliary column, decimated as the flux
+    window.aux_col_combo.blockSignals(True)
+    if window.aux_col_combo.findText("running_std") < 0:
+        window.aux_col_combo.addItem("running_std")
+    window.aux_col_combo.setCurrentIndex(window.aux_col_combo.findText("running_std"))
+    window.aux_col_combo.blockSignals(False)
     lines = _lines(_replot(window))
-    decimated = lines["Spectrum (decimated)"]
-    assert len(decimated.get_xdata()) == 2 * (2000 // 10)
-    np.testing.assert_array_equal(decimated.get_ydata(),
-                                  pyside_plot.decimate_y_min_max(long.y.value, 10))
+    assert len(lines["running_std"].get_ydata()) == len(expected)
+    window.aux_col_combo.setCurrentIndex(0)
+    # A narrow zoom (fewer pixels than the threshold): the whole resolution
+    ax = viewer.canvas.axes
+    ax.set_xlim(605.0, 608.0)
     lines = _lines(_replot(window))
     assert "Spectrum (decimated)" not in lines
-    assert len(lines["Spectrum"].get_xdata()) == 400  # still the decimated arrays
-    # Home: the cache is emptied, and the full view is not decimated
-    assert len(_lines(_replot(window, force_autoscale=True))["Spectrum"].get_xdata()) == 2000
+    assert lines["Spectrum"].get_drawstyle() == "steps-mid"
+    np.testing.assert_array_equal(lines["Spectrum"].get_xdata(),
+                                  long.x.value[(long.x.value >= 605.0 - 0.5) &
+                                               (long.x.value <= 608.0 + 0.5)])
+    # A wide zoom (more pixels than the threshold): decimated again
+    ax.set_xlim(601.0, 619.0)
+    assert "Spectrum (decimated)" in _lines(_replot(window))
