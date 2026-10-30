@@ -23,7 +23,8 @@ from ..core.resolution import resolution_at
 from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
 from ..fitting.voigt_fitter import voigt_optical_depth
 from .inspector_table import flag_cue
-from .plot_style import get_color_cycle, get_style_color
+from .plot_style import ERROR_COLOR, get_color_cycle, get_style_color
+from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
 
@@ -433,11 +434,11 @@ class VelocityPlotWidget(QWidget):
 
             if show_err_as_line:
                 # OPTION A: Plot Error as a separate line (e.g. Orange)
-                ax_main.step(v_p, dy_p, where='mid', color='#aaaaaa', lw=1.0, alpha=0.8)
+                ax_main.step(v_p, dy_p, where='mid', color=ERROR_COLOR, lw=1.0, alpha=0.8)
             else:
                 # OPTION B: Traditional Band (Original)
-                ax_main.step(v_p, y_p-dy_p, where='mid', color='#aaaaaa', lw=0.3)
-                ax_main.step(v_p, y_p+dy_p, where='mid', color='#aaaaaa', lw=0.3)
+                ax_main.step(v_p, y_p-dy_p, where='mid', color=ERROR_COLOR, lw=0.3)
+                ax_main.step(v_p, y_p+dy_p, where='mid', color=ERROR_COLOR, lw=0.3)
 
             ax_main.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
             
@@ -479,7 +480,7 @@ class VelocityPlotWidget(QWidget):
                                 resol=comp_res_arg, resol_unit=comp_res_unit,
                                 context="STATIC_PLOT", edges_ang=edges_p
                             )
-                            ax_main.plot(v_p, prof, color='#f5a100', ls='--', lw=1.2, alpha=0.9)
+                            ax_main.plot(v_p, prof, color=SELECTION, ls='--', lw=1.2, alpha=0.9)
 
             # ... (Rest of plotting logic: Ticks, Labels, Residuals) ...
             tick_ymin, tick_ymax = 0.02, 0.08 
@@ -525,7 +526,7 @@ class VelocityPlotWidget(QWidget):
 
             if show_resid and y_resid is not None:
                 resid_p = y_resid[mask]
-                ax_resid.fill_between(v_p, - 1.0, 1.0, step='mid', color='#aaaaaa', alpha=0.15)
+                ax_resid.fill_between(v_p, - 1.0, 1.0, step='mid', color=ERROR_COLOR, alpha=0.15)
                 ax_resid.step(v_p, resid_p, where='mid', color='red', lw=0.8)
                 ax_resid.axhline(0, color=get_style_color('model', colors), lw=1.0, alpha=0.5)
                 ax_resid.set_ylim(-5, 5)

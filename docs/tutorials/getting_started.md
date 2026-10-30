@@ -24,7 +24,7 @@ The central plot is interactive. You can explore the details of your spectrum us
 
 - **Pan**: Click the "Cross arrow" icon to click and drag the spectrum.
 - **Zoom**: Click the "Magnifying glass" icon to draw a rectangle and zoom into a specific feature.
-- **Select**: Click the "Dashed rectangle" icon, then drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: **Split region** (a new session with the region only), **Mask region...**, **Rebin region...** (each opens its recipe dialog with the region filled in, so you can check it before running) and **Zoom to region**. Press `Esc` or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.
+- **Select**: Click the "Double arrow" icon, then drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: **Split region** (a new session with the region only), **Mask region...**, **Rebin region...** (each opens its recipe dialog with the region filled in, so you can check it before running) and **Zoom to region**. Press `Esc` or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.
 - **Home**: Click the "Home" icon to reset the view to the full range.
 
 :::{tip}

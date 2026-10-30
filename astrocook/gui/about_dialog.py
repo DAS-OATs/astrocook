@@ -10,6 +10,7 @@ from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QPushButton, QVBoxLayout
 
 from astrocook.core.utils import resource_path
+from .theme import ACCENT, SELECTION
 
 
 class AboutDialog(QDialog):
@@ -42,12 +43,12 @@ class AboutDialog(QDialog):
 
         # --- Title & Version ---
         title_lbl = QLabel("Astrocook V2")
-        title_lbl.setStyleSheet("font-size: 20pt; font-weight: bold; color: #296bff;")
+        title_lbl.setStyleSheet(f"font-size: 20pt; font-weight: bold; color: {ACCENT};")
         title_lbl.setAlignment(Qt.AlignCenter)
         #layout.addWidget(title_lbl)
 
         copy_lbl = QLabel("© 2017-2026 Guido Cupani")
-        copy_lbl.setStyleSheet("font-size: 14pt; color: #296bff;")
+        copy_lbl.setStyleSheet(f"font-size: 14pt; color: {ACCENT};")
         copy_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(copy_lbl)
 
@@ -58,7 +59,7 @@ class AboutDialog(QDialog):
             ver = "unknown"
 
         ver_lbl = QLabel(f"Version: {ver}")
-        ver_lbl.setStyleSheet("font-weight: bold; color: #f5a100;")
+        ver_lbl.setStyleSheet(f"font-weight: bold; color: {SELECTION};")
         ver_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(ver_lbl)
 

@@ -21,6 +21,7 @@ from .main_recipes import MainRecipesMixin
 from .main_scripts import MainScriptsMixin
 from .main_sessions import MainSessionsMixin, SessionListModel
 from .script_dialog import ScriptDialog
+from .theme import FOCUS_BORDER
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, LogManager
@@ -267,7 +268,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 color: {text_color};
             }}
             QLineEdit:focus {{
-                border: 1px solid #296bff; /* Highlight color */
+                {FOCUS_BORDER}
             }}
             
             

@@ -51,7 +51,9 @@ class AstrocookToolbar(NavigationToolbar):
         # 3. The Select tool, after Zoom, as a third mode exclusive with
         # Pan and Zoom
         if select:
-            self.select_action = QAction(qta.icon('mdi.selection-drag', color='black'),
+            # FontAwesome, the family of the icons of Matplotlib (the
+            # dashed rectangle of Material Design looked thinner than them)
+            self.select_action = QAction(qta.icon('fa5s.arrows-alt-h', color='black'),
                                          'Select', self)
             self.select_action.setCheckable(True)
             self.select_action.setToolTip(

@@ -26,6 +26,7 @@ from astrocook.core.utils import resource_path
 
 from .floating_cards import CardFader, CollapsibleSection, WrappedLabel
 from .pyside_plot import SpectrumPlotWidget
+from .theme import ACCENT, HINT_TEXT
 
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = 250
@@ -139,7 +140,7 @@ class MainPanelsMixin:
         # 2. Add a welcome message
         label = QLabel("Welcome to")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 36pt; color: #296bff;")
+        label.setStyleSheet(f"font-size: 36pt; color: {ACCENT};")
         layout.addWidget(label)
 
         layout.addSpacing(20)
@@ -162,7 +163,7 @@ class MainPanelsMixin:
 
         label = QLabel("Use 'File > Open Session...'")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 24pt; color: #ff7f0e;")
+        label.setStyleSheet(f"font-size: 24pt; color: {HINT_TEXT};")
 
         layout.addWidget(label)
 

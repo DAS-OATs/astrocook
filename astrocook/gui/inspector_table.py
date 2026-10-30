@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QStyledItemDelegate
 from typing import List
 
 from ..core.structures import ComponentDataV2
+from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, LINK_COLOURS
 
 # --- 1. Table Configuration (UPDATED) ---
 # We removed the separate error columns (dz, dlogN, db)
@@ -26,12 +27,6 @@ COLUMNS = list(COL_MAP.keys())
 EDITABLE_COLS = {"z", "logN", "b", "btur"}
 
 # --- Flags of the fit (#517) ---
-#: Colours of the cues: violet for a parameter at a bound of the fit, red for
-#: uncertainties that could not be computed (Guido's choice; amber, proposed
-#: first, is the colour of the highlighted group, #f5a100, and was confused
-#: with it in the screenshots)
-FLAG_BOUND_COLOR = "#9467bd"
-FLAG_NAN_COLOR = "#d62728"
 #: Parameter of each bound flag, and what it means for the user
 _BOUND_FLAGS = {
     'z_at_window': ('z', "z at the edge of the fit window: the line may lie outside it; "
@@ -159,7 +154,7 @@ class SystemTableModel(QAbstractTableModel):
                             link_clusters.add((cons.target_uuid, attr))
 
             # Color palette (Deep Blue, Magenta, Forest Green, Purple, Teal, Maroon)
-            palette = ["#296bff", "#d90077", "#008a00", "#7030a0", "#008080", "#800000"]
+            palette = LINK_COLOURS
             kept = {c: previous[c] for c in link_clusters if c in previous}
             used = [color.name() for color in kept.values()]
             free = [color for color in palette if color not in used] or palette
@@ -233,7 +228,7 @@ class SystemTableModel(QAbstractTableModel):
         if role == _FOREGROUND and is_constrained_col:
             # 1. Global Behavior: Frozen parameters are always gray
             if not is_free and not is_linked:
-                return QBrush(QColor("#888888"))
+                return QBrush(QColor(FROZEN_TEXT))
 
             # 2. Dynamic Behavior: Coloring Links within the selected group
             if comp.uuid in self._primary_uuids or comp.uuid in self._secondary_uuids:
