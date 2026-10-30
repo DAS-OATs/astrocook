@@ -2,12 +2,50 @@
 matplotlib toolbar without the buttons Astrocook does not use, and a Home
 that replots the current state.
 
-Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI).
+Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI). Redesigned in
+phase 5-bis (Guido's request): icons of one family (Material Design 6, in
+the colour of the text, also in dark mode), rounded buttons, the active tool
+on the accent colour, keyboard shortcuts. The functions of the Matplotlib
+toolbar are all kept.
 """
 import logging
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QKeySequence, QPalette, QShortcut
+from PySide6.QtWidgets import QApplication
 import qtawesome as qta
+
+from .theme import ACCENT
+
+#: The icon of each tool (Material Design 6, outlined)
+TOOL_ICONS = {
+    'home': 'mdi6.home-outline',
+    'back': 'mdi6.arrow-left',
+    'forward': 'mdi6.arrow-right',
+    'pan': 'mdi6.cursor-move',
+    'zoom': 'mdi6.magnify-plus-outline',
+    'select': 'mdi6.arrow-expand-horizontal',  # a range along the x axis
+    'save_figure': 'mdi6.content-save-outline',
+}
+#: The keyboard shortcuts, active while the plot has the focus (a click on
+#: it): Matplotlib's own keys work only in its windows, not in a plot
+#: embedded in an application. S is "save" in Matplotlib, so Select is X;
+#: Ctrl+S is left to the session
+TOOL_SHORTCUTS = {
+    'home': 'H', 'back': 'Left', 'forward': 'Right',
+    'pan': 'P', 'zoom': 'Z', 'select': 'X',
+}
+TOOL_TIPS = {
+    'home': 'Home: the whole spectrum',
+    'back': 'Back to the previous view',
+    'forward': 'Forward to the next view',
+    'pan': 'Pan: drag to move, right-drag to zoom',
+    'zoom': 'Zoom: draw a rectangle',
+    'select': 'Select a region: drag along the wavelength axis, then choose what '
+              'to do with it',
+    'save_figure': 'Save the figure',
+}
+ICON_SIZE = QSize(24, 24)
 
 
 class AstrocookToolbar(NavigationToolbar):
@@ -51,29 +89,74 @@ class AstrocookToolbar(NavigationToolbar):
         # 3. The Select tool, after Zoom, as a third mode exclusive with
         # Pan and Zoom
         if select:
-            # FontAwesome, the family of the icons of Matplotlib (the
-            # dashed rectangle of Material Design looked thinner than them)
-            self.select_action = QAction(self._select_icon(), 'Select', self)
+            self.select_action = QAction('Select', self)
             self.select_action.setCheckable(True)
-            self.select_action.setToolTip(
-                "Select a region: drag along the wavelength axis, then choose "
-                "what to do with it")
             self.select_action.triggered.connect(self.toggle_select_mode)
             actions = self.actions()
             after_zoom = actions[actions.index(self._actions['zoom']) + 1]
             self.insertAction(after_zoom, self.select_action)
 
+        # 4. Look and shortcuts
+        self.setIconSize(ICON_SIZE)
+        self._tool_actions = dict(self._actions)
+        if self.select_action is not None:
+            self._tool_actions['select'] = self.select_action
+        for key, action in self._tool_actions.items():
+            tip = TOOL_TIPS[key]
+            if key in TOOL_SHORTCUTS:
+                tip += f" ({QKeySequence(TOOL_SHORTCUTS[key]).toString(QKeySequence.NativeText)})"
+            action.setToolTip(tip)
+        self.refresh_icons()
+        self._add_shortcuts(parent)
 
-    def _select_icon(self):
-        # The colour of the text: black, or light in dark mode (the icons of
-        # Matplotlib follow the palette by themselves)
-        return qta.icon('fa5s.arrows-alt-h', color=self.palette().color(self.foregroundRole()))
+    def _add_shortcuts(self, parent):
+        """The keys of the tools, on the plot widget and its children: they
+        act while the plot has the focus (a click on it), and do not take
+        the keys of the fields or tables of the window. Esc switches the
+        active tool off."""
+        if parent is None:
+            return
+        # The canvas takes the focus when clicked
+        self.canvas.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        slots = {'home': self.home, 'back': self.back, 'forward': self.forward,
+                 'pan': self.pan, 'zoom': self.zoom}
+        if self.select_action is not None:
+            slots['select'] = self.toggle_select_mode
+        self._shortcuts = []
+        for key, slot in slots.items():
+            shortcut = QShortcut(QKeySequence(TOOL_SHORTCUTS[key]), parent)
+            shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+            shortcut.activated.connect(slot)
+            self._shortcuts.append(shortcut)
+        escape = QShortcut(QKeySequence(Qt.Key.Key_Escape), parent)
+        escape.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        escape.activated.connect(self._all_tools_off)
+        self._shortcuts.append(escape)
+
+    def _all_tools_off(self):
+        self._leave_select()
+        self.deactivate_tools()
 
     def refresh_icons(self):
-        """The icon of Select in the colour of the text, again when the
-        palette switches between light and dark (called by the window)."""
-        if self.select_action is not None:
-            self.select_action.setIcon(self._select_icon())
+        """The icons in the colour of the text (black, or light in dark
+        mode), white on the accent of the active tool, grey when disabled
+        (Back and Forward with no view to go to); again when the palette
+        switches between light and dark (called by the window)."""
+        # The palette of the application: when it changes, the window is
+        # told before its children get the new one
+        palette = QApplication.palette()
+        text = palette.color(QPalette.ColorRole.WindowText)
+        disabled = palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText)
+        for key, action in self._tool_actions.items():
+            action.setIcon(qta.icon(TOOL_ICONS[key], color=text, color_on='white',
+                                    color_disabled=disabled, scale_factor=1.15))
+        self.setStyleSheet(f"""
+            QToolBar {{ spacing: 2px; padding: 4px 6px; }}
+            QToolButton {{ border: none; border-radius: 6px; padding: 5px; }}
+            QToolButton:hover {{ background: rgba(128, 128, 128, 0.18); }}
+            QToolButton:checked {{ background: {ACCENT}; }}
+            QLabel {{ color: {palette.color(QPalette.ColorRole.PlaceholderText).name()}; }}
+        """)
 
     def deactivate_tools(self):
         """Switch off the active tool (Pan or Zoom), if any.

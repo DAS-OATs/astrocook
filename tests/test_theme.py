@@ -109,6 +109,7 @@ def test_the_interface_switches_with_the_palette(qtbot, window, qapp):
     light_base = theme.palette_hex(QPalette.ColorRole.Base)
     assert light_base in window.styleSheet() and light_base in inspector.z_in.styleSheet()
     icon_before = window.plot_viewer.toolbar.select_action.icon().pixmap(16, 16).toImage()
+    vel_icon_before = inspector.vel_plot.toolbar._tool_actions["pan"].icon().pixmap(16, 16).toImage()
     light = QPalette(qapp.palette())
     qapp.setPalette(_dark_palette())
     try:
@@ -122,6 +123,9 @@ def test_the_interface_switches_with_the_palette(qtbot, window, qapp):
         # The icon of Select takes the colour of the text
         icon_after = window.plot_viewer.toolbar.select_action.icon().pixmap(16, 16).toImage()
         assert icon_after != icon_before
+        # Also the toolbar of the velocity plot
+        assert vel_icon_before != inspector.vel_plot.toolbar._tool_actions["pan"].icon() \
+            .pixmap(16, 16).toImage()
     finally:
         qapp.setPalette(light)
     qtbot.wait(50)
