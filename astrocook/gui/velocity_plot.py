@@ -10,7 +10,7 @@ import astropy.units as au
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.layout_engine import ConstrainedLayoutEngine
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QMenu, QPushButton, QSizePolicy,
@@ -78,6 +78,9 @@ def calc_voigt_profile(wave_grid_ang, lambda_0, f_val, gamma, z, N, b_kms, resol
     return lsf.apply(np.exp(-tau), r)
 
 # --- 2. The Paged Plot Widget ---
+
+#: The toolbar of the velocity plot shown or hidden (its tab), in the settings
+INSPECTOR_TOOLBAR_KEY = "inspector_show_toolbar"
 
 class VelocityPlotWidget(QWidget):
     def __init__(self, inspector_parent): 
@@ -147,7 +150,14 @@ class VelocityPlotWidget(QWidget):
         self.plot_stack.addWidget(self.canvas)
         self.plot_stack.addWidget(self.message)
         self.left_layout.addWidget(self.plot_stack)
-        self.left_layout.addWidget(self.toolbar)
+        # The toolbar floats over the plot, as in the main window; shown or
+        # hidden as the user left it (its own setting: the inspector has no
+        # View menu)
+        self.toolbar.float_over(self.plot_stack)
+        self.toolbar.set_shown(QSettings("Astrocook", "AstrocookV2").value(
+            INSPECTOR_TOOLBAR_KEY, True, type=bool))
+        self.toolbar.on_toggled = lambda shown: QSettings("Astrocook", "AstrocookV2").setValue(
+            INSPECTOR_TOOLBAR_KEY, shown)
 
         # Right Side
         self.scrollbar = QScrollBar(Qt.Vertical)

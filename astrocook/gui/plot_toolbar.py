@@ -10,14 +10,24 @@ toolbar are all kept.
 """
 import logging
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QAction, QKeySequence, QPalette, QShortcut
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QPushButton, QSizePolicy
+
+QWIDGETSIZE_MAX = (1 << 24) - 1  # the maximum size of a widget in Qt
 import qtawesome as qta
 
+from .floating_cards import CARD_WIDTH, CardFader
 from .theme import ACCENT
 
 #: The icon of each tool (Material Design 6, outlined)
+#: The tab that shows or hides the floating toolbar, as those of the cards
+TAB_SIZE = 28
+TAB_ICON = 'mdi6.tools'
+#: The icons of the floating toolbar, a little smaller than in a toolbar
+#: row, to fit the width of the cards
+FLOAT_ICON_SIZE = 22
+
 TOOL_ICONS = {
     'home': 'mdi6.home-outline',
     'back': 'mdi6.arrow-left',
@@ -169,13 +179,108 @@ class AstrocookToolbar(NavigationToolbar):
         for key, action in self._tool_actions.items():
             action.setIcon(qta.icon(TOOL_ICONS[key], color=text, color_on='white',
                                     color_disabled=disabled, scale_factor=1.15))
+        floating = getattr(self, '_anchor', None) is not None
+        # Floating over the plot: the background of the side cards, no
+        # border, rounded on the inner corner only (it is flush with the
+        # bottom left corner of the plot area)
+        card = palette.color(QPalette.ColorRole.Window)
+        background = f"rgba({card.red()}, {card.green()}, {card.blue()}, 0.95)"
+        frame = (f"background: {background}; border: none; border-radius: 0px; "
+                 "border-top-right-radius: 8px;") if floating else ""
+        if floating:
+            self.tab.setIcon(qta.icon(TAB_ICON, color=text))
+            self.tab.setIconSize(QSize(18, 18))
+            self.tab.setStyleSheet(
+                f"QPushButton#ToolbarTab {{ background: {background}; border: none; "
+                "border-top-right-radius: 6px; border-bottom-right-radius: 0px; "
+                "margin: 0px; padding: 0px; }")
+        # Tighter when floating, to fit the width of the cards
+        spacing, padding, button = ("1px", "4px 4px", "3px") if floating else ("2px", "4px 6px", "5px")
         self.setStyleSheet(f"""
-            QToolBar {{ spacing: 2px; padding: 4px 6px; }}
-            QToolButton {{ border: none; border-radius: 6px; padding: 5px; }}
+            QToolBar {{ spacing: {spacing}; padding: {padding}; {frame} }}
+            QToolButton {{ border: none; border-radius: 6px; padding: {button}; }}
             QToolButton:hover {{ background: rgba(128, 128, 128, 0.18); }}
             QToolButton:checked {{ background: {ACCENT}; }}
             QLabel {{ color: {palette.color(QPalette.ColorRole.PlaceholderText).name()}; }}
         """)
+
+    def float_over(self, anchor):
+        """Float the toolbar over the plot, as the side cards of the main
+        window (phase 5-bis, Guido's request): out of the layout, in the
+        bottom left corner of the area of ``anchor`` (the plot), flush with
+        it, without a border, fading while the mouse is away; a tab at its
+        right edge shows or hides it. Its keys work also when hidden."""
+        self._anchor = anchor
+        host = anchor.parentWidget()
+        self.setParent(host)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.tab = QPushButton(host)
+        self.tab.setObjectName("ToolbarTab")
+        self.tab.setFixedSize(TAB_SIZE, TAB_SIZE)
+        self.tab.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.tab.clicked.connect(lambda: self.set_shown(not self.isVisible(), notify=True))
+        self.on_toggled = None  # called with the new state when the tab is clicked
+        self._fader = CardFader(self)
+        self._fader.add_handle(self.tab)
+        anchor.installEventFilter(self)
+        host.installEventFilter(self)
+        self.refresh_icons()
+        self.place()
+
+    def _fit_to_width(self, width: int):
+        size = FLOAT_ICON_SIZE
+        self.ensurePolished()
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(QWIDGETSIZE_MAX)
+        while True:
+            if self.iconSize().width() != size:
+                self.setIconSize(QSize(size, size))
+            if self.sizeHint().width() <= width or size <= 16:
+                break
+            size -= 2
+        # The toolbar of the main plot as wide as the side cards next to it;
+        # that of the System Inspector (no Select, no cards) as wide as its
+        # tools, with the same icons, not to end with an empty space
+        self.setFixedWidth(width if self.select_action is not None
+                           else min(width, self.sizeHint().width()))
+        self.adjustSize()
+
+    def set_shown(self, shown: bool, notify: bool = False):
+        """Show or hide the floating toolbar; its tab stays."""
+        self.setVisible(shown)
+        self.place()
+        if notify and self.on_toggled is not None:
+            self.on_toggled(shown)
+
+    def place(self):
+        """The toolbar in the bottom left corner of the plot area, its tab
+        at its right edge, at the bottom (in the corner when hidden)."""
+        anchor = getattr(self, '_anchor', None)
+        if anchor is None:
+            return
+        # As wide as the side cards (Guido): tighter buttons (refresh_icons),
+        # and smaller icons where they still do not fit (platform styles).
+        # Again at each placement: the size of the buttons is known only
+        # once the window is shown
+        self._fit_to_width(CARD_WIDTH)
+        host = anchor.parentWidget()
+        bottom = host.rect().bottom() + 1
+        self.move(0, bottom - self.height())
+        right = self.width() if not self.isHidden() else 0
+        self.tab.move(right, bottom - TAB_SIZE)
+        self.tab.setToolTip("Hide the toolbar" if right else "Show the toolbar")
+        self.raise_()
+        self.tab.raise_()
+
+    def eventFilter(self, obj, event):
+        if event.type() in (QEvent.Type.Resize, QEvent.Type.Move, QEvent.Type.Show):
+            try:
+                anchor = getattr(self, '_anchor', None)
+                if anchor is not None and obj in (anchor, anchor.parentWidget()):
+                    self.place()
+            except RuntimeError:  # the plot already deleted (window closing)
+                pass
+        return super().eventFilter(obj, event)
 
     def deactivate_tools(self):
         """Switch off the active tool (Pan or Zoom), if any.

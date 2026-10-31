@@ -92,7 +92,7 @@ MAIN_WINDOW |= {'event'}
 MAIN_WINDOW |= {'_set_appearance', '_set_toolbar_visible', '_restore_view_settings', '_combo_row',
                 '_align_combo_labels'}
 #: ... and the status bar (phase 5-bis)
-MAIN_WINDOW |= {'_setup_status_bar', 'show_status', '_report_recipe_outcome'}
+MAIN_WINDOW |= {'_setup_status_bar', 'show_status', '_report_recipe_outcome', '_toolbar_room'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

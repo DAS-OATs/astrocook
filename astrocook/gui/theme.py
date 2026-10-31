@@ -83,6 +83,15 @@ def palette_hex(role: QPalette.ColorRole) -> str:
     return QApplication.palette().color(role).name()
 
 
+def status_bar_style() -> str:
+    """One look for the status bars of the main window and of the System
+    Inspector: the native one (a line on top, on macOS) and that of a status
+    bar in a layout differed (reported by Guido)."""
+    return (f"QStatusBar {{ background: {palette_hex(QPalette.ColorRole.Window)}; "
+            f"border: none; border-top: 1px solid {palette_hex(QPalette.ColorRole.Mid)}; "
+            "min-height: 22px; } QStatusBar::item { border: none; }")
+
+
 def is_dark() -> bool:
     """Whether the palette of the application is dark (the background of
     the windows darker than mid grey): on macOS in dark mode, or with a dark

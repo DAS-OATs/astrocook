@@ -486,6 +486,11 @@ def test_coordinates_in_the_status_bars(loaded):
     loaded.show_toolbar_action.trigger()
     loaded._on_view_system_inspector()
     inspector = loaded.system_inspector
+    # As tall as the status bar of the window (it took the height left by
+    # the splitter, reported by Guido)
+    inspector.resize(1200, 900)
+    QApplication.processEvents()
+    assert inspector.status_bar.height() <= loaded.statusBar().height() + 4
     inspector.table_view.selectRow(0)
     QApplication.processEvents()
     vel = inspector.vel_plot

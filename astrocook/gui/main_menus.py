@@ -42,7 +42,8 @@ class MainMenusMixin:
         """View > Show Toolbar: the toolbar of the main plot (with the
         coordinates under the mouse) shown or hidden."""
         if getattr(self, 'plot_viewer', None) is not None:
-            self.plot_viewer.toolbar.setVisible(visible)
+            self.plot_viewer.toolbar.set_shown(visible)
+            self._reposition_floating_widgets()  # the session card stops above it
         if self.show_toolbar_action.isChecked() != visible:
             self.show_toolbar_action.setChecked(visible)
         if save:
@@ -122,6 +123,9 @@ class MainMenusMixin:
         self.show_toolbar_action.setCheckable(True)
         self.show_toolbar_action.setChecked(True)
         self.show_toolbar_action.toggled.connect(self._set_toolbar_visible)
+        # The tab of the floating toolbar does the same
+        if getattr(self, 'plot_viewer', None) is not None:
+            self.plot_viewer.toolbar.on_toggled = self._set_toolbar_visible
         view_menu.addAction(self.show_toolbar_action)
 
         # Light, dark, or as the system (saved in the settings)

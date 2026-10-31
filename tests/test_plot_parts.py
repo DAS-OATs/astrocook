@@ -152,6 +152,113 @@ def test_cursor_label(qtbot, window):
     assert canvas.cursor_label is None
 
 
+def test_floating_toolbar(qtbot, window):
+    # The toolbar floats over the plot as the side cards (phase 5-bis,
+    # Guido's request): flush with the bottom left corner of the plot area,
+    # fading, with a tab at its right edge that shows or hides it, as View >
+    # Show Toolbar does
+    from PySide6.QtCore import QSettings
+    viewer = window.plot_viewer
+    toolbar, tab = viewer.toolbar, viewer.toolbar.tab
+    assert viewer.main_layout.indexOf(toolbar) == -1
+    # As wide as the side cards, and all its tools fit (Guido)
+    from astrocook.gui.floating_cards import CARD_WIDTH
+    assert toolbar.width() == CARD_WIDTH
+    assert toolbar.sizeHint().width() <= CARD_WIDTH
+
+    def in_the_corner():
+        g, t = toolbar.geometry(), tab.geometry()
+        bottom = viewer.rect().bottom()
+        return (g.left() == 0 and g.bottom() == bottom
+                and t.left() == g.right() + 1 and t.bottom() == bottom)
+    assert in_the_corner()
+    window.resize(window.width() - 100, window.height() - 80)
+    qtbot.wait(100)
+    assert in_the_corner()
+    # It fades as the cards, with its tab
+    toolbar._fader.set_faded(True, animate=False)
+    assert toolbar._fader.effect.opacity() < 0.5
+    toolbar._fader.set_faded(False, animate=False)
+    # The tab hides it (and stays in the corner), as View > Show Toolbar
+    tab.click()
+    assert not toolbar.isVisible() and tab.isVisible()
+    assert tab.geometry().left() == 0
+    assert not window.show_toolbar_action.isChecked()
+    assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
+    window.show_toolbar_action.trigger()
+    assert toolbar.isVisible() and tab.geometry().left() == toolbar.width()
+    tab.click()
+    tab.click()
+    assert toolbar.isVisible() and window.show_toolbar_action.isChecked()
+
+
+def test_session_card_stops_above_the_toolbar(qtbot, window, monkeypatch):
+    # With many sessions the card of the sessions reached the floating
+    # toolbar in the bottom left corner and covered it (Guido): it stops
+    # above the toolbar, or above its tab when the toolbar is hidden
+    toolbar = window.plot_viewer.toolbar
+    monkeypatch.setattr(window, "_session_list_height", lambda: 5000)
+    window._reposition_floating_widgets()
+
+    def top_of(widget):
+        return widget.mapTo(window, widget.rect().topLeft()).y()
+    card = window.left_sidebar_widget
+    assert card.geometry().bottom() < top_of(toolbar)
+    window.show_toolbar_action.trigger()  # hidden: only the tab
+    assert card.geometry().bottom() < top_of(toolbar.tab)
+    assert card.height() > 0
+    window.show_toolbar_action.trigger()
+    assert card.geometry().bottom() < top_of(toolbar)
+
+
+def test_inspector_toolbar_width(qtbot, window):
+    # One tool less (no Select): as wide as its tools, with the icons of the
+    # main toolbar, not with an empty space at its end (Guido)
+    from astrocook.gui.floating_cards import CARD_WIDTH
+    window._on_view_system_inspector()
+    inspector = window.system_inspector
+    inspector.resize(1200, 700)
+    qtbot.wait(50)
+    toolbar = inspector.vel_plot.toolbar
+    assert toolbar.iconSize() == window.plot_viewer.toolbar.iconSize()
+    assert toolbar.width() == toolbar.sizeHint().width() < CARD_WIDTH
+    assert toolbar.tab.geometry().left() == toolbar.geometry().right() + 1
+
+
+def test_inspector_toolbar_remembered(qtbot, window):
+    # The toolbar of the velocity plot, shown or hidden by its tab, as the
+    # user left it (Guido)
+    from PySide6.QtCore import QSettings
+    from astrocook.gui.velocity_plot import INSPECTOR_TOOLBAR_KEY
+    window._on_view_system_inspector()
+    toolbar = window.system_inspector.vel_plot.toolbar
+    assert toolbar.isVisible()
+    toolbar.tab.click()
+    assert not toolbar.isVisible()
+    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (False, "false")
+    from astrocook.gui.system_inspector import SystemInspector
+    other = SystemInspector(window)
+    qtbot.addWidget(other)
+    assert other.vel_plot.toolbar.isHidden()
+    toolbar.tab.click()
+    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (True, "true")
+
+
+def test_status_bars_look_the_same(qtbot, window):
+    # The status line of the inspector looked different from the status bar
+    # of the window (Guido): one style, and the full width of the window
+    from astrocook.gui.theme import status_bar_style
+    window._on_view_system_inspector()
+    inspector = window.system_inspector
+    inspector.resize(1200, 700)
+    qtbot.wait(50)
+    assert status_bar_style() in window.styleSheet()
+    assert inspector.status_bar.styleSheet() == status_bar_style()
+    bar = inspector.status_bar
+    assert bar.mapTo(inspector, bar.rect().topLeft()).x() == 0
+    assert bar.width() == inspector.width()
+
+
 def test_axes_on_whole_pixels(qtbot, window):
     # The constrained layout moved the axes by ~1e-13 px between draws,
     # which changed the simplified path of the spectrum: the blitted
@@ -168,13 +275,14 @@ def test_axes_on_whole_pixels(qtbot, window):
 def test_cursor_after_a_resize(qtbot, window):
     # The pixels kept for blitting the cursor were those before the resize:
     # moving the cursor after View > Show Toolbar drew the old plot over the
-    # new one (reported by Guido in phase 5-bis)
+    # new one (reported by Guido in phase 5-bis). The toolbar now floats
+    # over the plot: a resize of the window instead
     canvas = window.plot_viewer.canvas
     window.cursor_z_input.setText("3.0")
     window.cursor_show_checkbox.setChecked(True)
     qtbot.wait(100)
     before = canvas.background.get_extents()
-    window.show_toolbar_action.trigger()
+    window.resize(window.width(), window.height() - 60)
     qtbot.wait(100)
     canvas.on_motion(_event(canvas, "motion_notify_event", _x_inside(canvas, 0.5),
                             _y_inside(canvas)))
@@ -182,7 +290,6 @@ def test_cursor_after_a_resize(qtbot, window):
     extents = canvas.background.get_extents()
     assert extents != before
     assert extents[3] - extents[1] == pytest.approx(box.height, abs=2)
-    window.show_toolbar_action.trigger()
 
 
 def test_select_tool(window):
@@ -401,7 +508,8 @@ def test_toolbar_icons_and_tips(window):
     tips = {k: a.toolTip() for k, a in toolbar._tool_actions.items()}
     assert tips["pan"].endswith("(P)") and tips["zoom"].endswith("(Z)")
     assert tips["select"].endswith("(X)") and tips["home"].endswith("(H)")
-    assert toolbar.iconSize().width() == 24
+    # 22 px floating over the plot, to fit the width of the cards (phase 5-bis)
+    assert toolbar.iconSize().width() == 22
     # The coordinates under the mouse are still written by the toolbar
     assert toolbar.locLabel is not None
     # The other plots get the same look, without Select
