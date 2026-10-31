@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 import os
 from PySide6.QtCore import (
     QEvent, Qt, QThreadPool
@@ -456,9 +457,10 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         try:
             dialog = IdentificationViewerDialog(
-                spec_to_view, 
-                session_name, 
-                self
+                spec_to_view,
+                session_name,
+                self,
+                zoom_to=self._zoom_main_plot,
             )
             self.identification_viewer_dialog = dialog
             dialog.finished.connect(
@@ -468,6 +470,26 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             logging.debug(f"Creating new identification viewer for {session_name}")
         except Exception as e:
             logging.error(f"Failed to launch identification viewer: {e}", exc_info=True)
+
+    def _zoom_main_plot(self, xmin: float, xmax: float):
+        """Show a range of wavelengths (nm) in the main plot (a region of
+        the Identifications window)."""
+        axes = self.plot_viewer.canvas.axes
+        # The flux too, from the spectrum in the range (as drawn: in flux,
+        # normalized or S/N), with a margin of 10%
+        for line in axes.get_lines():
+            if line.get_label() != "Spectrum":
+                continue
+            x = np.asarray(line.get_xdata(), dtype=float)
+            y = np.asarray(line.get_ydata(), dtype=float)
+            inside = (x >= xmin) & (x <= xmax) & np.isfinite(y)
+            if inside.any():
+                lo, hi = y[inside].min(), y[inside].max()
+                pad = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(hi) or 1.0
+                axes.set_ylim(lo - pad, hi + pad)
+            break
+        axes.set_xlim(xmin, xmax)
+        self.plot_viewer.canvas.draw_idle()
 
     def _on_identification_viewer_closed(self):
         """

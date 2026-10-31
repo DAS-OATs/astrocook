@@ -182,7 +182,7 @@ The **View** menu also provides access to specialized analysis windows:
 
 * **View Session Log**: Opens the Session Log (see above).
 * **View System Inspector**: Opens the advanced interface for analyzing absorption lines. *See the [Absorption Systems](#system-inspector) tutorial for a full guide.*
-* **View Identifications**: Opens a summary table of all candidate lines found by the `identify_lines` recipe.
+* **View Identifications**: Opens a table of the absorbed regions identified by *Identify Absorption Lines* or by the automatic pipelines: for each region its best identification, its redshift, the score, its wavelength range and the other candidates. Click a column header to sort, and a row to show the region in the main plot.
 * **View Script Console**: Opens a Python console for running custom scripts on the current session data.
 
 ### Saving and Closing
