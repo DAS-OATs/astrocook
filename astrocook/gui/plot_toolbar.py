@@ -174,10 +174,10 @@ class AstrocookToolbar(NavigationToolbar):
             action.setIcon(qta.icon(TOOL_ICONS[key], color=text, color_on='white',
                                     color_disabled=disabled, scale_factor=1.15))
         floating = getattr(self, '_anchor', None) is not None
-        # Floating over the plot: a rounded card, as the tabs of the cards
+        # Floating over the plot: a rounded card without a border, as the
+        # side cards and their tabs
         frame = (f"background: {palette.color(QPalette.ColorRole.Window).name()}; "
-                 f"border: 1px solid {palette.color(QPalette.ColorRole.Mid).name()}; "
-                 "border-radius: 10px;") if floating else ""
+                 "border: none; border-radius: 10px;") if floating else ""
         self.setStyleSheet(f"""
             QToolBar {{ spacing: 2px; padding: 4px 6px; {frame} }}
             QToolButton {{ border: none; border-radius: 6px; padding: 5px; }}
