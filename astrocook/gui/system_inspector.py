@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
-    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame, QStatusBar
+    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame, QSizePolicy, QStatusBar
 )
 from typing import List
 
@@ -281,6 +281,9 @@ class SystemInspector(QWidget):
         # velocity plot (they were in its toolbar; phase 5-bis)
         self.status_bar = QStatusBar()
         self.status_bar.setSizeGripEnabled(False)
+        # As tall as its text: in the layout of the window it took the
+        # height left by the splitter (reported by Guido)
+        self.status_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.status_recipe = QLabel()
         self.status_coords = QLabel()
         for label in (self.status_recipe, self.status_coords):

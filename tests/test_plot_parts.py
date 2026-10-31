@@ -153,32 +153,40 @@ def test_cursor_label(qtbot, window):
 
 
 def test_floating_toolbar(qtbot, window):
-    # The toolbar floats over the bottom left corner of the plot, out of
-    # the layout, and fades as the cards (phase 5-bis, Guido's request)
-    from astrocook.gui.plot_toolbar import FLOAT_MARGIN
+    # The toolbar floats over the plot as the side cards (phase 5-bis,
+    # Guido's request): flush with the bottom left corner of the plot area,
+    # fading, with a tab at its right edge that shows or hides it, as View >
+    # Show Toolbar does
+    from PySide6.QtCore import QSettings
     viewer = window.plot_viewer
-    toolbar, canvas = viewer.toolbar, viewer.canvas
+    toolbar, tab = viewer.toolbar, viewer.toolbar.tab
     assert viewer.main_layout.indexOf(toolbar) == -1
-    assert toolbar.width() < canvas.width() / 2
+    assert toolbar.width() < viewer.width() / 2
 
-    def at_the_corner():
-        g, c = toolbar.geometry(), canvas.geometry()
-        return (g.left() == c.left() + FLOAT_MARGIN
-                and g.bottom() == c.bottom() - FLOAT_MARGIN)
-    assert at_the_corner()
+    def in_the_corner():
+        g, t = toolbar.geometry(), tab.geometry()
+        bottom = viewer.rect().bottom()
+        return (g.left() == 0 and g.bottom() == bottom
+                and t.left() == g.right() + 1 and t.bottom() == bottom)
+    assert in_the_corner()
     window.resize(window.width() - 100, window.height() - 80)
     qtbot.wait(100)
-    assert at_the_corner()
-    # It fades as the cards, and comes back when the mouse is on it
+    assert in_the_corner()
+    # It fades as the cards, with its tab
     toolbar._fader.set_faded(True, animate=False)
     assert toolbar._fader.effect.opacity() < 0.5
     toolbar._fader.set_faded(False, animate=False)
-    assert toolbar._fader.effect.opacity() == 1.0
-    # View > Show Toolbar still hides it
+    # The tab hides it (and stays in the corner), as View > Show Toolbar
+    tab.click()
+    assert not toolbar.isVisible() and tab.isVisible()
+    assert tab.geometry().left() == 0
+    assert not window.show_toolbar_action.isChecked()
+    assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
     window.show_toolbar_action.trigger()
-    assert not toolbar.isVisible()
-    window.show_toolbar_action.trigger()
-    assert toolbar.isVisible()
+    assert toolbar.isVisible() and tab.geometry().left() == toolbar.width()
+    tab.click()
+    tab.click()
+    assert toolbar.isVisible() and window.show_toolbar_action.isChecked()
 
 
 def test_axes_on_whole_pixels(qtbot, window):
