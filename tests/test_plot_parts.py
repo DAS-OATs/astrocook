@@ -470,6 +470,8 @@ def test_data_inspector(qtbot, window):
     center = 1000 - dialog.current_start
     assert table.item(center, 0).text() == "1000"
     assert table.item(center, 0).font().bold()  # the clicked pixel highlighted
+    # A format per column, not all in scientific notation (phase 5-bis)
+    assert "e" not in table.item(center, 1).text()
     # Scrolling to the bottom loads the next chunk
     vbar = table.verticalScrollBar()
     vbar.setValue(vbar.maximum())
@@ -483,6 +485,22 @@ def test_data_inspector(qtbot, window):
     assert table.rowCount() == dialog.current_end - dialog.current_start
     dialog.close()
     qtbot.waitUntil(lambda: viewer._data_inspector_dialog is None)
+
+
+def test_zoom_to_a_region(qtbot, window):
+    # A row of the Identifications window shows its region: the wavelength
+    # range, and the flux of the spectrum in it with a margin
+    import numpy as np
+    canvas = window.plot_viewer.canvas
+    spec = window.active_history.current_state.spec
+    x = spec.x.value
+    xmin, xmax = x[1000], x[1100]
+    window._zoom_main_plot(xmin, xmax)
+    assert canvas.axes.get_xlim() == pytest.approx((xmin, xmax))
+    y = spec.y.value[1000:1101]
+    lo, hi = canvas.axes.get_ylim()
+    assert lo < np.nanmin(y) and hi > np.nanmax(y)
+    assert hi - lo < 2 * (np.nanmax(y) - np.nanmin(y))
 
 
 def test_data_inspector_keeps_a_window_of_rows(qtbot, window):

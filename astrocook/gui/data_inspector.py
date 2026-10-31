@@ -11,6 +11,40 @@ from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHe
 from .theme import SELECTION
 
 
+#: The columns of wavelength, written with a fixed number of decimals
+WAVELENGTH_COLUMNS = ('x', 'xmin', 'xmax')
+
+
+def format_value(col_name: str, val, col_obj=None) -> str:
+    """One value of the table, in the format of its column (visual review
+    of phase 5-bis: every column was in scientific notation, also the
+    wavelength):
+
+    - the wavelengths with 5 decimals (0.01 pm in nm);
+    - the masks and the integer columns (e.g. ``abs_mask``, ``abs_ids``)
+      as integers;
+    - the other values with 5 significant digits, in fixed notation from
+      0.001 to a million (flux, error, continuum, model, resolution),
+      scientific outside (e.g. a flux in erg s^-1 cm^-2 A^-1).
+    """
+    dtype = getattr(getattr(col_obj, 'value', None), 'dtype', None)
+    if dtype is not None and dtype.kind in 'biu':
+        return str(int(val))
+    if not isinstance(val, (float, np.floating)):
+        return str(val)
+    if not np.isfinite(val):
+        return str(val)
+    if col_name in WAVELENGTH_COLUMNS:
+        return f"{val:.5f}"
+    magnitude = abs(val)
+    if magnitude == 0:
+        return "0"
+    if 1e-3 <= magnitude < 1e6:
+        decimals = max(0, 4 - int(np.floor(np.log10(magnitude))))
+        return f"{val:.{decimals}f}"
+    return f"{val:.4e}"
+
+
 class DataInspectorDialog(QDialog):
     """
     Non-blocking popup table with Sliding Window scrolling.
@@ -185,10 +219,7 @@ class DataInspectorDialog(QDialog):
                         col_obj = self.spec.get_column(col_name)
                         val = col_obj.value[data_idx] if col_obj is not None else np.nan
                         
-                    if isinstance(val, (float, np.floating)):
-                        val_str = f"{val:.5e}"
-                    else:
-                        val_str = str(val)
+                    val_str = format_value(col_name, val, col_obj)
                 except:
                     pass
 

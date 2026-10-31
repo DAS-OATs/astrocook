@@ -57,7 +57,7 @@ MAIN_WINDOW = {
     '_on_close_multiple_sessions', '_on_close_session_requested', '_on_coadd_requested',
     '_on_cursor_checkbox_toggled', '_on_debug_plot_requested', '_on_duplicate_session',
     '_on_equalized_stitch_dialog_requested', '_on_export_requested',
-    '_on_identification_viewer_closed', '_on_import_requested',
+    '_on_identification_viewer_closed', '_on_import_requested', '_zoom_main_plot',
     '_on_log_scripter_closed', '_on_open_spectrum', '_on_recipe_dialog_finished',
     '_on_recipe_error', '_on_recipe_finished', '_on_recipe_requested',
     '_on_reset_continuum_clicked', '_on_save_session', '_on_save_session_context',
