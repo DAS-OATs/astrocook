@@ -16,6 +16,29 @@ from PySide6.QtWidgets import QToolTip
 from .plot_style import SELECTION_STYLE
 
 
+def _snap_layout_to_pixels(fig):
+    """Round the positions of the axes laid out by the constrained layout
+    to whole pixels. The layout gives positions that differ by ~1e-13 px
+    from one draw to the next: that changes how the long path of the
+    spectrum is simplified, and the pixels kept for blitting (highlights,
+    cursor) no longer matched a new full draw of the same plot."""
+    engine = fig.get_layout_engine()
+    execute = engine.execute
+
+    def execute_and_snap(figure):
+        result = execute(figure)
+        w, h = figure.bbox.width, figure.bbox.height
+        if w > 0 and h > 0:
+            for ax in figure.axes:
+                b = ax.get_position(original=False)
+                x0, x1 = round(b.x0 * w) / w, round(b.x1 * w) / w
+                y0, y1 = round(b.y0 * h) / h, round(b.y1 * h) / h
+                ax._set_position([x0, y0, x1 - x0, y1 - y0], which='both')
+        return result
+
+    engine.execute = execute_and_snap
+
+
 class MatplotlibCanvas(FigureCanvasQTAgg):
     """A custom Matplotlib canvas enabling blitting for cursor dragging."""
     def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
@@ -28,6 +51,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
         fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
         self.axes = fig.add_subplot(111)
+        _snap_layout_to_pixels(fig)
         #fig.tight_layout()
 
         super(MatplotlibCanvas, self).__init__(fig)
@@ -115,8 +139,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         self.background = None
         if self.plot_widget is not None and hasattr(self.plot_widget, '_connect_background_capture'):
             self.plot_widget._connect_background_capture()
-        if self.plot_widget is not None and hasattr(self.plot_widget, '_update_top_room'):
-            self.plot_widget._update_top_room()
 
     def _capture_background(self, event):
         """Callback for draw_event to capture the background for blitting."""
