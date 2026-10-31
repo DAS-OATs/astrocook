@@ -611,6 +611,11 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 </ul>
 <img alt="The System Inspector showing a metal doublet" class="align-center" src="../images/absorbers_system_inspector.png" />
 </section>
+<section id="before-the-first-system">
+<h3>Before the first system<a class="headerlink" href="#before-the-first-system" title="Link to this heading">#</a></h3>
+<p>The velocity plot shows the flux divided by the continuum, and the fits need it. Without a continuum the plot shows a message instead, with a button that opens <strong>Auto-estimate Continuum…</strong>; <strong>Refit Selected</strong>, <strong>Refit All</strong>, the Bayesian fit and the entries that add a component are disabled, with a tooltip that says why. With a continuum but no systems yet, the message says how to start: type transitions and a redshift above the plot to look at the spectrum (also before any component exists), then add components from the menu of the plot (right click), or run an automatic pipeline.</p>
+<img alt="The System Inspector of a session without continuum" class="align-center" src="../images/absorbers_no_continuum.png" />
+</section>
 <section id="components-with-warnings-of-the-fit">
 <h3>Components with warnings of the fit<a class="headerlink" href="#components-with-warnings-of-the-fit" title="Link to this heading">#</a></h3>
 <p>Each fit leaves a warning on the components whose result is not reliable:</p>
@@ -798,6 +803,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#right-panel-velocity-plot">Right Panel: Velocity Plot</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#before-the-first-system">Before the first system</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#components-with-warnings-of-the-fit">Components with warnings of the fit</a></li>
 </ul>
 </li>
