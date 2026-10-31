@@ -71,6 +71,15 @@ class MainPanelsMixin:
             lambda state: QSettings("Astrocook", "AstrocookV2").setValue(key, state))
         return section
 
+    def _toolbar_room(self) -> int:
+        """The height taken in the bottom left corner by the floating
+        toolbar of the plot, or by its tab when it is hidden."""
+        toolbar = getattr(getattr(self, 'plot_viewer', None), 'toolbar', None)
+        tab = getattr(toolbar, 'tab', None)
+        if toolbar is None or tab is None:
+            return 0
+        return (toolbar.height() if not toolbar.isHidden() else tab.height()) + CARD_MARGIN
+
     def _session_list_height(self) -> int:
         """Height of the session card: all the rows, at least one."""
         view = self.session_list_view
@@ -86,14 +95,21 @@ class MainPanelsMixin:
         window_width = self.width()
         menubar_height = self.menuBar().height() if self.menuBar() else 0
         content_y_start = menubar_height
-        content_height = window_height - content_y_start
+        # Down to the status bar, not to the bottom of the window
+        status_bar = self.statusBar() if hasattr(self, 'status_recipe') else None
+        content_bottom = window_height - (status_bar.height() if status_bar else 0)
+        content_height = content_bottom - content_y_start
 
         # --- Left Sidebar (card) & Button ---
         left_width = self.left_sidebar_widget.width()
         # The tab is a handle just outside the card's edge (on the plot)
         button_x = left_width
         card_y = content_y_start + CARD_MARGIN
-        left_height = min(self._session_list_height(), content_height - 2 * CARD_MARGIN)
+        # Above the floating toolbar (or its tab) in the bottom left corner:
+        # with many sessions the card reached it and covered it; its list
+        # scrolls instead
+        left_height = min(self._session_list_height(),
+                          content_height - 2 * CARD_MARGIN - self._toolbar_room())
         # The tab stays at the top of the card: it does not move when the
         # card grows or shrinks
         left_button_y = card_y + CARD_TAB_OFFSET

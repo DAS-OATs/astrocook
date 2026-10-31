@@ -22,7 +22,7 @@ from .inspector_table import (COL_MAP, COLUMNS, LinkColorDelegate, SystemSortFil
                               SystemTableModel)
 from .velocity_plot import VelocityPlotWidget
 from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND, TOOLTIP_BORDER,
-                    TOOLTIP_TEXT)
+                    TOOLTIP_TEXT, status_bar_style)
 
 
 #: The tooltip of the fits disabled without a continuum
@@ -69,7 +69,9 @@ class SystemInspector(QWidget):
     def _setup_ui(self):
         # [Task 3] Zero margins for the main window to match Main Window style
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
+        # The margins around the splitter only: the status line spans the
+        # window, as the status bar of the main window
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
         # [Task 1] Reduce splitter size
@@ -274,7 +276,11 @@ class SystemInspector(QWidget):
         
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
-        layout.addWidget(splitter)
+        body = QWidget()
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(12, 12, 12, 12)
+        body_layout.addWidget(splitter)
+        layout.addWidget(body, 1)
 
         # A status line, as the status bar of the main window: the outcome
         # of the last recipe, the coordinates under the mouse in the
@@ -284,6 +290,7 @@ class SystemInspector(QWidget):
         # As tall as its text: in the layout of the window it took the
         # height left by the splitter (reported by Guido)
         self.status_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.status_bar.setStyleSheet(status_bar_style())
         self.status_recipe = QLabel()
         self.status_coords = QLabel()
         for label in (self.status_recipe, self.status_coords):
@@ -1235,6 +1242,7 @@ class SystemInspector(QWidget):
             self._apply_field_styles()
             self.table_model.refresh_colours()
             self.vel_plot.toolbar.refresh_icons()
+            self.status_bar.setStyleSheet(status_bar_style())
         return super().event(event)
 
     def _update_trans_box_visuals(self):

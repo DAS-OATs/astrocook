@@ -189,6 +189,59 @@ def test_floating_toolbar(qtbot, window):
     assert toolbar.isVisible() and window.show_toolbar_action.isChecked()
 
 
+def test_session_card_stops_above_the_toolbar(qtbot, window, monkeypatch):
+    # With many sessions the card of the sessions reached the floating
+    # toolbar in the bottom left corner and covered it (Guido): it stops
+    # above the toolbar, or above its tab when the toolbar is hidden
+    toolbar = window.plot_viewer.toolbar
+    monkeypatch.setattr(window, "_session_list_height", lambda: 5000)
+    window._reposition_floating_widgets()
+
+    def top_of(widget):
+        return widget.mapTo(window, widget.rect().topLeft()).y()
+    card = window.left_sidebar_widget
+    assert card.geometry().bottom() < top_of(toolbar)
+    window.show_toolbar_action.trigger()  # hidden: only the tab
+    assert card.geometry().bottom() < top_of(toolbar.tab)
+    assert card.height() > 0
+    window.show_toolbar_action.trigger()
+    assert card.geometry().bottom() < top_of(toolbar)
+
+
+def test_inspector_toolbar_remembered(qtbot, window):
+    # The toolbar of the velocity plot, shown or hidden by its tab, as the
+    # user left it (Guido)
+    from PySide6.QtCore import QSettings
+    from astrocook.gui.velocity_plot import INSPECTOR_TOOLBAR_KEY
+    window._on_view_system_inspector()
+    toolbar = window.system_inspector.vel_plot.toolbar
+    assert toolbar.isVisible()
+    toolbar.tab.click()
+    assert not toolbar.isVisible()
+    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (False, "false")
+    from astrocook.gui.system_inspector import SystemInspector
+    other = SystemInspector(window)
+    qtbot.addWidget(other)
+    assert other.vel_plot.toolbar.isHidden()
+    toolbar.tab.click()
+    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (True, "true")
+
+
+def test_status_bars_look_the_same(qtbot, window):
+    # The status line of the inspector looked different from the status bar
+    # of the window (Guido): one style, and the full width of the window
+    from astrocook.gui.theme import status_bar_style
+    window._on_view_system_inspector()
+    inspector = window.system_inspector
+    inspector.resize(1200, 700)
+    qtbot.wait(50)
+    assert status_bar_style() in window.styleSheet()
+    assert inspector.status_bar.styleSheet() == status_bar_style()
+    bar = inspector.status_bar
+    assert bar.mapTo(inspector, bar.rect().topLeft()).x() == 0
+    assert bar.width() == inspector.width()
+
+
 def test_axes_on_whole_pixels(qtbot, window):
     # The constrained layout moved the axes by ~1e-13 px between draws,
     # which changed the simplified path of the spectrum: the blitted

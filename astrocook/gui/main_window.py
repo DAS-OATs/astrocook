@@ -22,7 +22,7 @@ from .main_scripts import MainScriptsMixin
 from .main_sessions import MainSessionsMixin, SessionListModel
 from .script_dialog import ScriptDialog
 from .floating_cards import CollapsibleSection
-from .theme import FOCUS_BORDER
+from .theme import FOCUS_BORDER, status_bar_style
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, LogManager
@@ -319,7 +319,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 border-top-left-radius: 6px; border-bottom-left-radius: 6px;
             }}
         """
-        self.setStyleSheet(qss)
+        self.setStyleSheet(qss + status_bar_style())
         # Set object names after creation if not done elsewhere
 
     def _update_window_title(self, session_name: Optional[str] = None):

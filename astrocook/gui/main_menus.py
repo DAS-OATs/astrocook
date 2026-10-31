@@ -43,6 +43,7 @@ class MainMenusMixin:
         coordinates under the mouse) shown or hidden."""
         if getattr(self, 'plot_viewer', None) is not None:
             self.plot_viewer.toolbar.set_shown(visible)
+            self._reposition_floating_widgets()  # the session card stops above it
         if self.show_toolbar_action.isChecked() != visible:
             self.show_toolbar_action.setChecked(visible)
         if save:
