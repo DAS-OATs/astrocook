@@ -20,7 +20,7 @@ Once loaded, the interface will come alive. The central area displays your spect
 (getting-started-navigating)=
 ## 2. Navigating the Plot
 
-The central plot is interactive. You can explore the details of your spectrum using the toolbar below the graph. The tool that is on (Pan, Zoom or Select) is highlighted in blue; Back and Forward are grey when there is no view to go to. The keys in brackets act after a click on the plot:
+The central plot is interactive. You can explore the details of your spectrum using the toolbar at the bottom left of the graph: it floats over the plot, which takes the whole height of the window, and fades while the mouse is on the plot (it comes back when you move the mouse over it). The tool that is on (Pan, Zoom or Select) is highlighted in blue; Back and Forward are grey when there is no view to go to. The keys in brackets act after a click on the plot:
 
 - **Home** (`H`): reset the view to the full range.
 - **Back** and **Forward** (`←`, `→`): the previous and next views.

@@ -10,14 +10,18 @@ toolbar are all kept.
 """
 import logging
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QAction, QKeySequence, QPalette, QShortcut
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSizePolicy
 import qtawesome as qta
 
+from .floating_cards import CardFader
 from .theme import ACCENT
 
 #: The icon of each tool (Material Design 6, outlined)
+#: The distance (px) of the floating toolbar from the corner of its plot
+FLOAT_MARGIN = 8
+
 TOOL_ICONS = {
     'home': 'mdi6.home-outline',
     'back': 'mdi6.arrow-left',
@@ -169,13 +173,48 @@ class AstrocookToolbar(NavigationToolbar):
         for key, action in self._tool_actions.items():
             action.setIcon(qta.icon(TOOL_ICONS[key], color=text, color_on='white',
                                     color_disabled=disabled, scale_factor=1.15))
+        floating = getattr(self, '_anchor', None) is not None
+        # Floating over the plot: a rounded card, as the tabs of the cards
+        frame = (f"background: {palette.color(QPalette.ColorRole.Window).name()}; "
+                 f"border: 1px solid {palette.color(QPalette.ColorRole.Mid).name()}; "
+                 "border-radius: 10px;") if floating else ""
         self.setStyleSheet(f"""
-            QToolBar {{ spacing: 2px; padding: 4px 6px; }}
+            QToolBar {{ spacing: 2px; padding: 4px 6px; {frame} }}
             QToolButton {{ border: none; border-radius: 6px; padding: 5px; }}
             QToolButton:hover {{ background: rgba(128, 128, 128, 0.18); }}
             QToolButton:checked {{ background: {ACCENT}; }}
             QLabel {{ color: {palette.color(QPalette.ColorRole.PlaceholderText).name()}; }}
         """)
+
+    def float_over(self, anchor):
+        """Float the toolbar over the bottom left corner of ``anchor`` (the
+        plot), out of the layout: the plot takes the room it had, and the
+        toolbar fades while the mouse is away from it, as the cards of the
+        main window (phase 5-bis, Guido's request). Its keys still work."""
+        self._anchor = anchor
+        self.setParent(anchor.parentWidget())
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self._fader = CardFader(self)
+        anchor.installEventFilter(self)
+        self.refresh_icons()
+        self.place()
+
+    def place(self):
+        """At the bottom left corner of the plot, above it."""
+        anchor = getattr(self, '_anchor', None)
+        if anchor is None:
+            return
+        self.adjustSize()
+        geometry = anchor.geometry()
+        self.move(geometry.left() + FLOAT_MARGIN,
+                  geometry.bottom() - self.height() - FLOAT_MARGIN + 1)
+        self.raise_()
+
+    def eventFilter(self, obj, event):
+        if obj is getattr(self, '_anchor', None) and event.type() in (
+                QEvent.Type.Resize, QEvent.Type.Move, QEvent.Type.Show):
+            self.place()
+        return super().eventFilter(obj, event)
 
     def deactivate_tools(self):
         """Switch off the active tool (Pan or Zoom), if any.

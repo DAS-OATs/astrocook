@@ -152,6 +152,35 @@ def test_cursor_label(qtbot, window):
     assert canvas.cursor_label is None
 
 
+def test_floating_toolbar(qtbot, window):
+    # The toolbar floats over the bottom left corner of the plot, out of
+    # the layout, and fades as the cards (phase 5-bis, Guido's request)
+    from astrocook.gui.plot_toolbar import FLOAT_MARGIN
+    viewer = window.plot_viewer
+    toolbar, canvas = viewer.toolbar, viewer.canvas
+    assert viewer.main_layout.indexOf(toolbar) == -1
+    assert toolbar.width() < canvas.width() / 2
+
+    def at_the_corner():
+        g, c = toolbar.geometry(), canvas.geometry()
+        return (g.left() == c.left() + FLOAT_MARGIN
+                and g.bottom() == c.bottom() - FLOAT_MARGIN)
+    assert at_the_corner()
+    window.resize(window.width() - 100, window.height() - 80)
+    qtbot.wait(100)
+    assert at_the_corner()
+    # It fades as the cards, and comes back when the mouse is on it
+    toolbar._fader.set_faded(True, animate=False)
+    assert toolbar._fader.effect.opacity() < 0.5
+    toolbar._fader.set_faded(False, animate=False)
+    assert toolbar._fader.effect.opacity() == 1.0
+    # View > Show Toolbar still hides it
+    window.show_toolbar_action.trigger()
+    assert not toolbar.isVisible()
+    window.show_toolbar_action.trigger()
+    assert toolbar.isVisible()
+
+
 def test_axes_on_whole_pixels(qtbot, window):
     # The constrained layout moved the axes by ~1e-13 px between draws,
     # which changed the simplified path of the spectrum: the blitted
@@ -168,13 +197,14 @@ def test_axes_on_whole_pixels(qtbot, window):
 def test_cursor_after_a_resize(qtbot, window):
     # The pixels kept for blitting the cursor were those before the resize:
     # moving the cursor after View > Show Toolbar drew the old plot over the
-    # new one (reported by Guido in phase 5-bis)
+    # new one (reported by Guido in phase 5-bis). The toolbar now floats
+    # over the plot: a resize of the window instead
     canvas = window.plot_viewer.canvas
     window.cursor_z_input.setText("3.0")
     window.cursor_show_checkbox.setChecked(True)
     qtbot.wait(100)
     before = canvas.background.get_extents()
-    window.show_toolbar_action.trigger()
+    window.resize(window.width(), window.height() - 60)
     qtbot.wait(100)
     canvas.on_motion(_event(canvas, "motion_notify_event", _x_inside(canvas, 0.5),
                             _y_inside(canvas)))
@@ -182,7 +212,6 @@ def test_cursor_after_a_resize(qtbot, window):
     extents = canvas.background.get_extents()
     assert extents != before
     assert extents[3] - extents[1] == pytest.approx(box.height, abs=2)
-    window.show_toolbar_action.trigger()
 
 
 def test_select_tool(window):

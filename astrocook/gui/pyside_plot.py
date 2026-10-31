@@ -247,8 +247,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._tip_data_rows = None # List of (label, value, unit) tuples
         self._tip_region_html = None
 
-        # Add ONLY toolbar to main layout
-        self.main_layout.addWidget(self.toolbar, 0) # Stretch 0
+        # The toolbar floats over the plot (phase 5-bis)
+        self.toolbar.float_over(self.canvas)
 
         # --- Continuum Editor State ---
         self._edit_mode_active = False

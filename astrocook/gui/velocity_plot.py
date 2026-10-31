@@ -147,7 +147,8 @@ class VelocityPlotWidget(QWidget):
         self.plot_stack.addWidget(self.canvas)
         self.plot_stack.addWidget(self.message)
         self.left_layout.addWidget(self.plot_stack)
-        self.left_layout.addWidget(self.toolbar)
+        # The toolbar floats over the plot, as in the main window
+        self.toolbar.float_over(self.plot_stack)
 
         # Right Side
         self.scrollbar = QScrollBar(Qt.Vertical)
