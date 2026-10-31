@@ -161,7 +161,10 @@ def test_floating_toolbar(qtbot, window):
     viewer = window.plot_viewer
     toolbar, tab = viewer.toolbar, viewer.toolbar.tab
     assert viewer.main_layout.indexOf(toolbar) == -1
-    assert toolbar.width() < viewer.width() / 2
+    # As wide as the side cards, and all its tools fit (Guido)
+    from astrocook.gui.floating_cards import CARD_WIDTH
+    assert toolbar.width() == CARD_WIDTH
+    assert toolbar.sizeHint().width() <= CARD_WIDTH
 
     def in_the_corner():
         g, t = toolbar.geometry(), tab.geometry()
@@ -491,7 +494,8 @@ def test_toolbar_icons_and_tips(window):
     tips = {k: a.toolTip() for k, a in toolbar._tool_actions.items()}
     assert tips["pan"].endswith("(P)") and tips["zoom"].endswith("(Z)")
     assert tips["select"].endswith("(X)") and tips["home"].endswith("(H)")
-    assert toolbar.iconSize().width() == 24
+    # 22 px floating over the plot, to fit the width of the cards (phase 5-bis)
+    assert toolbar.iconSize().width() == 22
     # The coordinates under the mouse are still written by the toolbar
     assert toolbar.locLabel is not None
     # The other plots get the same look, without Select

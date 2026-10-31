@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
 from astrocook.core.session import SessionV2
 from astrocook.core.utils import resource_path
 
-from .floating_cards import CardFader, CollapsibleSection, WrappedLabel
+from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLabel
 from .pyside_plot import SpectrumPlotWidget
 from .theme import ACCENT, HINT_TEXT
 
 # --- Constants for Sidebar Widths ---
-LEFT_SIDEBAR_WIDTH = 250
-RIGHT_SIDEBAR_WIDTH = 250
+LEFT_SIDEBAR_WIDTH = CARD_WIDTH   # as the floating toolbar of the plot
+RIGHT_SIDEBAR_WIDTH = CARD_WIDTH
 ANIMATION_DURATION = 150 # ** Speed up animation **
 BUTTON_WIDTH = 28
 BUTTON_HEIGHT = 28

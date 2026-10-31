@@ -11,6 +11,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QApplication, QGraphicsOpacityEffect, QLabel, QToolButton,
                                QVBoxLayout, QWidget)
 
+CARD_WIDTH = 250       # Width of the cards and of the floating toolbar (px)
 CARD_FADED = 0.35      # Opacity of a card while the mouse is away
 CARD_FADE_DELAY = 500  # ms before fading out after the mouse leaves
 CARD_FADE_TIME = 200   # ms of the fade animation

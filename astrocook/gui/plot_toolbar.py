@@ -13,15 +13,20 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QAction, QKeySequence, QPalette, QShortcut
 from PySide6.QtWidgets import QApplication, QPushButton, QSizePolicy
+
+QWIDGETSIZE_MAX = (1 << 24) - 1  # the maximum size of a widget in Qt
 import qtawesome as qta
 
-from .floating_cards import CardFader
+from .floating_cards import CARD_WIDTH, CardFader
 from .theme import ACCENT
 
 #: The icon of each tool (Material Design 6, outlined)
 #: The tab that shows or hides the floating toolbar, as those of the cards
 TAB_SIZE = 28
 TAB_ICON = 'mdi6.tools'
+#: The icons of the floating toolbar, a little smaller than in a toolbar
+#: row, to fit the width of the cards
+FLOAT_ICON_SIZE = 22
 
 TOOL_ICONS = {
     'home': 'mdi6.home-outline',
@@ -189,9 +194,11 @@ class AstrocookToolbar(NavigationToolbar):
                 f"QPushButton#ToolbarTab {{ background: {background}; border: none; "
                 "border-top-right-radius: 6px; border-bottom-right-radius: 0px; "
                 "margin: 0px; padding: 0px; }")
+        # Tighter when floating, to fit the width of the cards
+        spacing, padding, button = ("1px", "4px 4px", "3px") if floating else ("2px", "4px 6px", "5px")
         self.setStyleSheet(f"""
-            QToolBar {{ spacing: 2px; padding: 4px 6px; {frame} }}
-            QToolButton {{ border: none; border-radius: 6px; padding: 5px; }}
+            QToolBar {{ spacing: {spacing}; padding: {padding}; {frame} }}
+            QToolButton {{ border: none; border-radius: 6px; padding: {button}; }}
             QToolButton:hover {{ background: rgba(128, 128, 128, 0.18); }}
             QToolButton:checked {{ background: {ACCENT}; }}
             QLabel {{ color: {palette.color(QPalette.ColorRole.PlaceholderText).name()}; }}
@@ -220,6 +227,20 @@ class AstrocookToolbar(NavigationToolbar):
         self.refresh_icons()
         self.place()
 
+    def _fit_to_width(self, width: int):
+        size = FLOAT_ICON_SIZE
+        self.ensurePolished()
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(QWIDGETSIZE_MAX)
+        while True:
+            if self.iconSize().width() != size:
+                self.setIconSize(QSize(size, size))
+            if self.sizeHint().width() <= width or size <= 16:
+                break
+            size -= 2
+        self.setFixedWidth(width)
+        self.adjustSize()
+
     def set_shown(self, shown: bool, notify: bool = False):
         """Show or hide the floating toolbar; its tab stays."""
         self.setVisible(shown)
@@ -233,7 +254,11 @@ class AstrocookToolbar(NavigationToolbar):
         anchor = getattr(self, '_anchor', None)
         if anchor is None:
             return
-        self.adjustSize()
+        # As wide as the side cards (Guido): tighter buttons (refresh_icons),
+        # and smaller icons where they still do not fit (platform styles).
+        # Again at each placement: the size of the buttons is known only
+        # once the window is shown
+        self._fit_to_width(CARD_WIDTH)
         host = anchor.parentWidget()
         bottom = host.rect().bottom() + 1
         self.move(0, bottom - self.height())
