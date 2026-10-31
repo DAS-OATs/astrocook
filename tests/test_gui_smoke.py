@@ -447,6 +447,92 @@ def test_inspector_unfreeze_btur_with_its_column_hidden(loaded, monkeypatch):
     assert "Unfreeze 'btur'" not in [a.text() for a in menus[-1].actions()]
 
 
+def _inspector_state(window, continuum=True, systems=True):
+    """The session of the window with or without a continuum and systems."""
+    import numpy as np
+    from astrocook.core.structures import SystemListDataV2
+    from astrocook.core.system_list import SystemListV2
+    history = window.active_history
+    state = history.current_state
+    spec = state.spec
+    if continuum:
+        spec = spec.update_column("cont", np.full(len(spec.x), np.nanmedian(spec.y.value)))
+    state = state.with_new_spectrum(spec)
+    if not systems:
+        state = state.with_new_system_list(SystemListV2(SystemListDataV2()))
+    history.add_state(state)
+    window._on_view_system_inspector()
+    inspector = window.system_inspector
+    inspector.set_session(state)
+    QApplication.processEvents()
+    return inspector
+
+
+def test_inspector_without_a_continuum(loaded, monkeypatch):
+    # A message instead of empty panels, with a button to estimate the
+    # continuum; the fits disabled, they failed with an error of the fitter
+    # (visual review of phase 5-bis)
+    from PySide6.QtWidgets import QMenu
+    from astrocook.gui import system_inspector
+    inspector = _inspector_state(loaded, continuum=False)
+    assert loaded.active_history.current_state.spec.norm is None
+    vel = inspector.vel_plot
+    inspector.table_view.selectRow(0)
+    QApplication.processEvents()
+    assert vel.plot_stack.currentWidget() is vel.message
+    assert vel.message_label.text() == vel.NO_CONTINUUM
+    assert not vel.continuum_button.isHidden()
+    opened = []
+    monkeypatch.setattr(loaded, "_launch_recipe_dialog",
+                        lambda cat, name, initial_params=None: opened.append((cat, name)))
+    vel.continuum_button.click()
+    assert opened == [("continuum", "estimate_auto")]
+    menus = []
+
+    class RecordedMenu(QMenu):
+        def exec(self, *args):
+            menus.append(self)
+
+    monkeypatch.setattr(system_inspector, "QMenu", RecordedMenu)
+    pos = inspector.table_view.visualRect(inspector.proxy_model.index(0, 0)).center()
+    inspector._on_context_menu(pos)
+    actions = {a.text().split(" (")[0]: a for a in menus[-1].actions()}
+    for name in ("Refit Selected", "Refit All", "Refit Bayesian"):
+        assert not actions[name].isEnabled(), name
+        assert actions[name].toolTip() == system_inspector.NO_CONTINUUM_TIP
+    assert actions["Delete"].isEnabled()
+
+
+def test_inspector_without_systems(loaded):
+    # With a continuum and no systems: a message says how to start; the
+    # transitions and the redshift typed above show the spectrum, also
+    # without a component (it showed nothing)
+    inspector = _inspector_state(loaded, continuum=True, systems=False)
+    vel = inspector.vel_plot
+    vel.plot_spectrum()
+    QApplication.processEvents()
+    assert vel.plot_stack.currentWidget() is vel.message
+    assert vel.message_label.text() == vel.NO_SYSTEMS
+    assert vel.continuum_button.isHidden()
+    assert not inspector.empty_label.isHidden()
+    inspector.trans_in.setText("CIV")
+    inspector._apply()
+    inspector.z_in.setText("2.0")
+    inspector._apply_z()
+    QApplication.processEvents()
+    assert vel.plot_stack.currentWidget() is vel.canvas
+    assert vel._all_transitions == ["CIV_1548", "CIV_1550"] and len(vel.axes) == 2
+
+
+def test_inspector_with_a_continuum_and_systems(loaded):
+    inspector = _inspector_state(loaded, continuum=True)
+    inspector.table_view.selectRow(0)
+    QApplication.processEvents()
+    assert inspector.vel_plot.plot_stack.currentWidget() is inspector.vel_plot.canvas
+    assert inspector.empty_label.isHidden()
+    assert inspector.has_continuum()
+
+
 @pytest.mark.parametrize("installed", [True, False])
 def test_inspector_bayesian_entries(loaded, monkeypatch, installed):
     # emcee and corner are optional (extra "bayes"): without them the menu
@@ -467,6 +553,8 @@ def test_inspector_bayesian_entries(loaded, monkeypatch, installed):
 
     loaded._on_view_system_inspector()
     inspector = loaded.system_inspector
+    # The archive has no continuum, without which the fits are disabled
+    monkeypatch.setattr(inspector, "has_continuum", lambda: True)
     pos = inspector.table_view.visualRect(inspector.proxy_model.index(0, 0)).center()
     inspector._on_context_menu(pos)
     actions = {a.text(): a for a in menus[0].actions()}

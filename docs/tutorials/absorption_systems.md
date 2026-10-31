@@ -105,6 +105,14 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 :align: center
 ```
 
+### Before the first system
+The velocity plot shows the flux divided by the continuum, and the fits need it. Without a continuum the plot shows a message instead, with a button that opens **Auto-estimate Continuum...**; **Refit Selected**, **Refit All**, the Bayesian fit and the entries that add a component are disabled, with a tooltip that says why. With a continuum but no systems yet, the message says how to start: type transitions and a redshift above the plot to look at the spectrum (also before any component exists), then add components from the menu of the plot (right click), or run an automatic pipeline.
+
+```{image} ../_static/absorbers_no_continuum.png
+:alt: The System Inspector of a session without continuum
+:align: center
+```
+
 ### Components with warnings of the fit
 Each fit leaves a warning on the components whose result is not reliable:
 

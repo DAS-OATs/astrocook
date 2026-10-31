@@ -827,6 +827,18 @@ def absorbers_flags(s: Studio):
     return framed(insp, inspector.windowTitle())
 
 
+@scene
+def absorbers_no_continuum(s: Studio):
+    """The System Inspector of a session just opened: no continuum, no
+    systems; the message with its button instead of the plot."""
+    s.new_window("My QSO")
+    inspector = s.inspector()
+    s.pump(0.5)
+    insp = grab(inspector)
+    inspector.hide()
+    return framed(insp, inspector.windowTitle())
+
+
 # --- Main -------------------------------------------------------------------
 
 def main(argv=None):
