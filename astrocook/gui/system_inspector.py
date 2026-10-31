@@ -5,11 +5,11 @@ import numpy as np
 import astropy.units as au
 from PySide6.QtCore import (QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QSettings,
                             QTimer)
-from PySide6.QtGui import QAction, QDoubleValidator
+from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
-    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame
+    QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame, QStatusBar
 )
 from typing import List
 
@@ -275,6 +275,21 @@ class SystemInspector(QWidget):
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
         layout.addWidget(splitter)
+
+        # A status line, as the status bar of the main window: the outcome
+        # of the last recipe, the coordinates under the mouse in the
+        # velocity plot (they were in its toolbar; phase 5-bis)
+        self.status_bar = QStatusBar()
+        self.status_bar.setSizeGripEnabled(False)
+        self.status_recipe = QLabel()
+        self.status_coords = QLabel()
+        for label in (self.status_recipe, self.status_coords):
+            label.setContentsMargins(8, 0, 8, 0)
+        self.status_bar.addWidget(self.status_recipe, 1)
+        self.status_bar.addPermanentWidget(self.status_coords)
+        layout.addWidget(self.status_bar)
+        self.vel_plot.toolbar.set_message_sink(self.status_coords.setText)
+        self._add_shortcuts()
 
         # Add helper to set style based on state
         self._update_trans_box_visuals()
@@ -572,6 +587,36 @@ class SystemInspector(QWidget):
         self.raise_()
         self.activateWindow()
 
+    #: The keys of the table (phase 5-bis), also shown in its menu
+    REFIT_KEYS = (QKeySequence(Qt.Key.Key_Return), QKeySequence(Qt.Key.Key_Enter))
+    DELETE_KEYS = (QKeySequence(Qt.Key.Key_Delete), QKeySequence(Qt.Key.Key_Backspace))
+
+    def _add_shortcuts(self):
+        """Return refits and Delete (or Backspace) deletes the selected
+        components, in the table; Undo and Redo work in this window too
+        (their shortcuts were only in the menu of the main window)."""
+        table = Qt.ShortcutContext.WidgetWithChildrenShortcut
+        for keys, slot in ((self.REFIT_KEYS, self._refit_selected_by_key),
+                           (self.DELETE_KEYS, self._delete_selected_by_key)):
+            for key in keys:
+                shortcut = QShortcut(key, self.table_view)
+                shortcut.setContext(table)
+                shortcut.activated.connect(slot)
+        for key, name in ((QKeySequence.StandardKey.Undo, '_undo_last_action'),
+                          (QKeySequence.StandardKey.Redo, '_redo_last_action')):
+            shortcut = QShortcut(QKeySequence(key), self)
+            shortcut.activated.connect(lambda n=name: self.main_window and getattr(self.main_window, n)())
+
+    def _refit_selected_by_key(self):
+        comps = self._get_selected_components()
+        if comps and self.has_continuum():
+            self._refit_list(comps)
+
+    def _delete_selected_by_key(self):
+        comps = self._get_selected_components()
+        if comps:
+            self._delete_list(comps)
+
     def _get_selected_components(self) -> List[ComponentDataV2]:
         rows = self.table_view.selectionModel().selectedRows()
         comps = []
@@ -718,12 +763,14 @@ class SystemInspector(QWidget):
         
         # 3. Operations (Multi-aware)
         act_refit = QAction(f"Refit Selected{suffix}", m)
+        act_refit.setShortcuts(list(self.REFIT_KEYS))  # shown, the keys are the table's
         act_refit.triggered.connect(lambda: self._refit_list(selected_comps))
         m.addAction(act_refit)
 
         act_refit_all = m.addAction("Refit All", self._refit_all)
         
         act_del = QAction(f"Delete{suffix}", m)
+        act_del.setShortcuts(list(self.DELETE_KEYS))
         act_del.triggered.connect(lambda: self._delete_list(selected_comps))
         m.addAction(act_del)
 

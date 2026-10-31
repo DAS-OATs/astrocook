@@ -455,7 +455,9 @@ class VelocityPlotWidget(QWidget):
             def make_fmt(z):
                 def fmt(x, y):
                     val_z = (1 + z) * (1 + x / c_kms) - 1
-                    return f"Δv={x:.0f}, y={y:.2f}, z={val_z:.5f}"
+                    # As the coordinates of the main plot (status bar,
+                    # phase 5-bis): ƒ is the normalized flux there too
+                    return f"Δv = {x:.1f} km/s, ƒ = {y:.3f}, z = {val_z:.6f}"
                 return fmt
             ax_main.format_coord = make_fmt(z_sys)
 
