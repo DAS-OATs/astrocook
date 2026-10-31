@@ -29,7 +29,7 @@ The central plot is interactive. You can explore the details of your spectrum us
 - **Select** (`X`): the "Range" icon (a double arrow between two bars); drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: **Split region** (a new session with the region only), **Mask region...**, **Rebin region...** (each opens its recipe dialog with the region filled in, so you can check it before running) and **Zoom to region**. Press `Esc` or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.
 - **Save**: save the figure to an image file.
 
-`Esc` switches off the tool that is on. The position of the mouse (wavelength and flux) is shown at the right end of the toolbar. **View > Show Toolbar** hides the toolbar (and shows it again), to give the plot more room; its keys still work, and the choice is remembered.
+`Esc` switches off the tool that is on. The position of the mouse (wavelength, flux and rest-frame wavelength) is shown at the right end of the status bar, at the bottom of the window; its left end says how the last recipe went (e.g. *Auto-fit Ly-alpha forest: done in 12.3 s, 44 → 977 components*, and how many warnings it gave). **View > Show Toolbar** hides the toolbar (and shows it again), to give the plot more room; its keys still work, the position of the mouse stays in the status bar, and the choice is remembered.
 
 :::{tip}
 Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!

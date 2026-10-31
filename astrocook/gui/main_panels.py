@@ -129,6 +129,29 @@ class MainPanelsMixin:
     def _setup_plot_view(self, session_for_plot: SessionV2):
         self.plot_viewer = SpectrumPlotWidget(session_for_plot, self)
         self.central_stack.addWidget(self.plot_viewer)
+        self._setup_status_bar()
+
+    def _setup_status_bar(self):
+        """The status bar: the outcome of the last recipe on the left, the
+        coordinates under the mouse on the right (they were in the toolbar,
+        hidden with it; phase 5-bis)."""
+        self.status_recipe = QLabel()
+        self.status_coords = QLabel()
+        for label in (self.status_recipe, self.status_coords):
+            label.setContentsMargins(8, 0, 8, 0)
+        bar = self.statusBar()
+        bar.setSizeGripEnabled(False)
+        bar.addWidget(self.status_recipe, 1)
+        bar.addPermanentWidget(self.status_coords)
+        self.plot_viewer.toolbar.set_message_sink(self.status_coords.setText)
+
+    def show_status(self, text: str):
+        """The outcome of the last recipe, in the status bars of the window
+        and of the System Inspector."""
+        self.status_recipe.setText(text)
+        inspector = getattr(self, 'system_inspector', None)
+        if inspector is not None:
+            inspector.status_recipe.setText(text)
 
     def _setup_empty_view(self):
         empty_widget = QWidget()

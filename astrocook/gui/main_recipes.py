@@ -9,6 +9,7 @@ Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
 of ``MainWindowV2``.
 """
 import logging
+import time
 from typing import Any, Dict
 
 from PySide6.QtCore import QTimer
@@ -17,7 +18,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
-from astrocook.core.utils import is_branching_recipe
+from astrocook.core.utils import get_recipe_schema, is_branching_recipe
 
 from .qt_workers import RecipeWorker
 from .recipe_dialog import RecipeDialog
@@ -414,6 +415,12 @@ class MainRecipesMixin:
             self.qt_log_handler = None
 
 
+        # For the outcome in the status bar: when, what, and the components
+        # before (_report_recipe_outcome)
+        systs = self.active_history.current_state.systs
+        self._recipe_started = (time.perf_counter(), category, recipe_name,
+                                len(systs.components) if systs else 0)
+
         # Start Worker (Existing Code)
         worker = RecipeWorker(
             session=self.active_history.current_state,
@@ -426,6 +433,28 @@ class MainRecipesMixin:
         worker.signals.finished.connect(self._on_recipe_finished)
         worker.signals.error.connect(self._on_recipe_error)
         self.thread_pool.start(worker)
+
+    def _report_recipe_outcome(self, recipe_name: str, new_state):
+        """One line in the status bar: the recipe, its time, the change of
+        the number of components, the warnings (their dialog stays). A
+        recipe that succeeded said nothing (phase 5-bis)."""
+        started = getattr(self, '_recipe_started', None)
+        if not started or started[2] != recipe_name:
+            return
+        t0, category, _, n_before = started
+        self._recipe_started = None
+        schema = get_recipe_schema(category, recipe_name) or {}
+        text = f"{schema.get('brief', recipe_name).rstrip('.')}: done in " \
+               f"{time.perf_counter() - t0:.1f} s"
+        systs = getattr(new_state, 'systs', None)
+        n_after = len(systs.components) if systs else 0
+        if n_after != n_before:
+            text += f", {n_before} \u2192 {n_after} components"
+        warnings = [w for w in dict.fromkeys(getattr(self, '_captured_warnings', None) or [])
+                    if "Recipe" not in w and "Aborted" not in w]
+        if warnings:
+            text += f", with {len(warnings)} warning{'s' if len(warnings) > 1 else ''}"
+        self.show_status(text)
 
     def _process_recipe_result(self, result_data: tuple):
         """The actual GUI update."""
@@ -576,6 +605,8 @@ class MainRecipesMixin:
                         buttons=QMessageBox.StandardButton.Ok,
                         icon_name="icon_3d_HR.png" # or a warning icon
                     )
+
+            self._report_recipe_outcome(recipe_name, new_sessions[-1])
 
             # --- Resume Pending Action ---
             if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:

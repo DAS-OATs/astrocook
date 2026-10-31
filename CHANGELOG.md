@@ -1,6 +1,8 @@
 ## [Unreleased]
 
 ### Added
+- GUI: a status bar. On the left, how the last recipe went: its name, time, the change of the number of components and the warnings (a recipe that succeeded said nothing; the dialog of the warnings stays). On the right, the position of the mouse, which was at the end of the toolbar: it stays visible when the toolbar is hidden. The System Inspector has the same status line, with the position in the velocity plot (now written as in the main window: `Δv = -12.0 km/s, ƒ = 0.500, z = 2.355300`).
+- System Inspector: keys in the table, `Return` refits and `Delete` (or `Backspace`) deletes the selected components; Undo and Redo work in the inspector too. The keys are shown in the menu of the table.
 - GUI: **View > Appearance** chooses a light or dark appearance for Astrocook alone, or follows the system (the default); **View > Show Toolbar** hides the toolbar of the plot. Both choices are remembered.
 - GUI: dark mode. The interface follows the light or dark appearance of the system, and switches with it while Astrocook is open; the plots stay white. The colours that did not read on a dark background (the link colours of the System Inspector, the borders and buttons of the recipe dialogs, warnings) have lighter variants, and the icons follow the colour of the text. See *Dark Mode* in the *Getting Started* tutorial.
 - GUI: a **Select** tool in the toolbar of the main plot (F73: the selection of a region was there, but no button reached it). Drag along the wavelength axis to select a region, then choose **Split region**, **Mask region...**, **Rebin region...** or **Zoom to region**; the recipe dialogs open with the region filled in. See *Navigating the Plot* in the *Getting Started* tutorial.

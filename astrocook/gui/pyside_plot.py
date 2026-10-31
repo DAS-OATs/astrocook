@@ -137,8 +137,9 @@ def _full_plot_arrays(spec) -> _PlotArrays:
 
 #: Room kept above the axes when nothing is drawn there (no title since the
 #: visual review, no rest-frame axis without z_em): the tabs of the cards
-#: (28 px) are over the top of the plot
-TOP_ROOM_PX = 32
+#: (28 px) are over the top of the plot. The font size (points) of an empty
+#: title of about that height
+TOP_ROOM_PT = 18
 
 
 def _coordinate_formatter(spec, view: _PlotView, z_em, x_label_unit):
@@ -1034,13 +1035,16 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
     def _update_top_room(self):
         """The space above the axes: none with the rest-frame axis (its
-        labels are there), ``TOP_ROOM_PX`` without it."""
-        engine = self.canvas.figure.get_layout_engine()
-        height = self.canvas.height()
-        if engine is None or height <= 0:
-            return
-        top = 1.0 if getattr(self, '_has_top_axis', False) else max(0.5, 1.0 - TOP_ROOM_PX / height)
-        engine.set(rect=(0, 0, 1, top))
+        labels are there), else that of an empty title (``TOP_ROOM_PT``).
+        Not the rectangle of the constrained layout: with it the layout
+        moved the axes by ~1e-13 px between draws, which changed how the
+        spectrum is simplified, and the blitted highlights no longer
+        matched a full draw."""
+        ax = self.canvas.axes
+        if getattr(self, '_has_top_axis', False):
+            ax.set_title("")
+        else:
+            ax.set_title(" ", fontsize=TOP_ROOM_PT, pad=0)
 
     def _plot_emission_lines(self, ax, view: '_PlotView', z_em, full_x):
         """The emission lines at z_em in view: a label at the top and a

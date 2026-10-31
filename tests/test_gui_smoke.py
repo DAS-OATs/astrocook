@@ -447,6 +447,89 @@ def test_inspector_unfreeze_btur_with_its_column_hidden(loaded, monkeypatch):
     assert "Unfreeze 'btur'" not in [a.text() for a in menus[-1].actions()]
 
 
+def test_status_bar_outcome_of_a_recipe(qtbot, loaded):
+    # A recipe that succeeded said nothing: one line in the status bar,
+    # also in the System Inspector (phase 5-bis)
+    loaded._on_view_system_inspector()
+    _run_recipe(qtbot, loaded, "edit", "set_properties", {"z_em": "4.072"})
+    text = loaded.status_recipe.text()
+    assert text.startswith("Set ") and ": done in " in text and text.endswith(" s")
+    assert "components" not in text  # the number did not change
+    assert loaded.system_inspector.status_recipe.text() == text
+
+
+def test_status_bar_components_and_warnings(loaded):
+    import time
+    state = loaded.active_history.current_state
+    n = len(state.systs.components)
+    loaded._recipe_started = (time.perf_counter(), "absorbers", "clean_negligible", n + 3)
+    loaded._captured_warnings = ["one", "two", "one"]
+    loaded._report_recipe_outcome("clean_negligible", state)
+    text = loaded.status_recipe.text()
+    assert f"{n + 3} \u2192 {n} components" in text and text.endswith("with 2 warnings")
+    # Only the recipe that was started
+    loaded._recipe_started = (time.perf_counter(), "edit", "set_properties", n)
+    loaded._report_recipe_outcome("smooth", state)
+    assert loaded.status_recipe.text() == text
+
+
+def test_coordinates_in_the_status_bars(loaded):
+    # The coordinates under the mouse, from the toolbars to the status bars:
+    # they stay when the toolbar is hidden (phase 5-bis)
+    toolbar = loaded.plot_viewer.toolbar
+    assert not toolbar.locLabel.isVisible()
+    toolbar.set_message("λ = 500.0000 nm")
+    assert loaded.status_coords.text() == "λ = 500.0000 nm"
+    loaded.show_toolbar_action.trigger()  # hidden
+    toolbar.set_message("λ = 501.0000 nm")
+    assert loaded.status_coords.text() == "λ = 501.0000 nm"
+    loaded.show_toolbar_action.trigger()
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    inspector.table_view.selectRow(0)
+    QApplication.processEvents()
+    vel = inspector.vel_plot
+    text = vel.axes[0].format_coord(-12.0, 0.5)  # as in the main window
+    assert text.startswith("Δv = -12.0 km/s, ƒ = 0.500, z = ")
+    vel.toolbar.set_message(text)
+    assert inspector.status_coords.text() == text
+
+
+def test_inspector_keys(loaded, monkeypatch):
+    # Return refits and Delete deletes the selected components, in the
+    # table; Undo and Redo in the inspector too (phase 5-bis)
+    from PySide6.QtGui import QKeySequence, QShortcut
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    calls = []
+    monkeypatch.setattr(inspector, "_refit_list", lambda comps: calls.append(("refit", len(comps))))
+    monkeypatch.setattr(inspector, "_delete_list", lambda comps: calls.append(("delete", len(comps))))
+    monkeypatch.setattr(loaded, "_undo_last_action", lambda: calls.append(("undo",)))
+    monkeypatch.setattr(loaded, "_redo_last_action", lambda: calls.append(("redo",)))
+    inspector.table_view.selectRow(0)
+    shortcuts = {s.key().toString(): s for s in inspector.findChildren(QShortcut)}
+
+    def press(key):
+        shortcuts[QKeySequence(key).toString()].activated.emit()
+
+    press(QKeySequence.StandardKey.Undo)
+    press(QKeySequence.StandardKey.Redo)
+    for name in ("Return", "Enter"):
+        press(name)
+    assert calls[:2] == [("undo",), ("redo",)]
+    assert calls[2:] == []  # no refit without a continuum (the archive has none)
+    monkeypatch.setattr(inspector, "has_continuum", lambda: True)
+    press("Return")
+    press("Del")
+    press("Backspace")
+    assert calls[2:] == [("refit", 1), ("delete", 1), ("delete", 1)]
+    # In the table only: not while typing in the boxes above the plot
+    from PySide6.QtCore import Qt
+    for name in ("Return", "Del"):
+        assert shortcuts[name].context() == Qt.ShortcutContext.WidgetWithChildrenShortcut
+        assert shortcuts[name].parent() is inspector.table_view
+
+
 def _inspector_state(window, continuum=True, systems=True):
     """The session of the window with or without a continuum and systems."""
     import numpy as np
@@ -521,7 +604,9 @@ def test_inspector_without_systems(loaded):
     inspector._apply_z()
     QApplication.processEvents()
     assert vel.plot_stack.currentWidget() is vel.canvas
-    assert vel._all_transitions == ["CIV_1548", "CIV_1550"] and len(vel.axes) == 2
+    # The panels of a page, as many as fit the height of the window
+    assert vel._all_transitions == ["CIV_1548", "CIV_1550"] and vel.axes
+    assert {v[0] for v in vel._panel_map.values()} <= set(vel._all_transitions)
 
 
 def test_inspector_with_a_continuum_and_systems(loaded):

@@ -152,6 +152,19 @@ def test_cursor_label(qtbot, window):
     assert canvas.cursor_label is None
 
 
+def test_axes_on_whole_pixels(qtbot, window):
+    # The constrained layout moved the axes by ~1e-13 px between draws,
+    # which changed the simplified path of the spectrum: the blitted
+    # highlights did not match a full draw at some window heights
+    canvas = window.plot_viewer.canvas
+    for dh in (0, 7, 13):
+        window.resize(window.width(), window.height() - dh)
+        qtbot.wait(50)
+        canvas.draw()
+        bounds = canvas.axes.bbox.bounds
+        assert all(abs(v - round(v)) < 1e-9 for v in bounds), bounds
+
+
 def test_cursor_after_a_resize(qtbot, window):
     # The pixels kept for blitting the cursor were those before the resize:
     # moving the cursor after View > Show Toolbar drew the old plot over the

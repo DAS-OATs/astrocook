@@ -109,6 +109,25 @@ class AstrocookToolbar(NavigationToolbar):
         self.refresh_icons()
         self._add_shortcuts(parent)
 
+    def set_message_sink(self, sink):
+        """Send the text of the toolbar (the coordinates under the mouse) to
+        ``sink`` (a status bar) instead of showing it: the toolbar keeps
+        only its tools, and the coordinates stay visible when it is hidden
+        (phase 5-bis)."""
+        self._message_sink = sink
+        # The label is in an action of the toolbar, which shows it again:
+        # the action is hidden
+        for action in self.actions():
+            if self.widgetForAction(action) is getattr(self, 'locLabel', None):
+                action.setVisible(False)
+
+    def set_message(self, s):
+        sink = getattr(self, '_message_sink', None)
+        if sink is not None:
+            sink(s)
+        else:
+            super().set_message(s)
+
     def _add_shortcuts(self, parent):
         """The keys of the tools, on the plot widget and its children: they
         act while the plot has the focus (a click on it), and do not take
