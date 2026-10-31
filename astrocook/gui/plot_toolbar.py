@@ -238,7 +238,11 @@ class AstrocookToolbar(NavigationToolbar):
             if self.sizeHint().width() <= width or size <= 16:
                 break
             size -= 2
-        self.setFixedWidth(width)
+        # The toolbar of the main plot as wide as the side cards next to it;
+        # that of the System Inspector (no Select, no cards) as wide as its
+        # tools, with the same icons, not to end with an empty space
+        self.setFixedWidth(width if self.select_action is not None
+                           else min(width, self.sizeHint().width()))
         self.adjustSize()
 
     def set_shown(self, shown: bool, notify: bool = False):

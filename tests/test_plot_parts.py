@@ -211,6 +211,20 @@ def test_session_card_stops_above_the_toolbar(qtbot, window, monkeypatch):
     assert card.geometry().bottom() < top_of(toolbar)
 
 
+def test_inspector_toolbar_width(qtbot, window):
+    # One tool less (no Select): as wide as its tools, with the icons of the
+    # main toolbar, not with an empty space at its end (Guido)
+    from astrocook.gui.floating_cards import CARD_WIDTH
+    window._on_view_system_inspector()
+    inspector = window.system_inspector
+    inspector.resize(1200, 700)
+    qtbot.wait(50)
+    toolbar = inspector.vel_plot.toolbar
+    assert toolbar.iconSize() == window.plot_viewer.toolbar.iconSize()
+    assert toolbar.width() == toolbar.sizeHint().width() < CARD_WIDTH
+    assert toolbar.tab.geometry().left() == toolbar.geometry().right() + 1
+
+
 def test_inspector_toolbar_remembered(qtbot, window):
     # The toolbar of the velocity plot, shown or hidden by its tab, as the
     # user left it (Guido)
