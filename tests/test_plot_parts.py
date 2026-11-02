@@ -488,19 +488,33 @@ def test_data_inspector(qtbot, window):
 
 
 def test_zoom_to_a_region(qtbot, window):
-    # A row of the Identifications window shows its region: the wavelength
-    # range, and the flux of the spectrum in it with a margin
+    # A row of the Identifications window shows its regions: the wavelength
+    # range, and the flux axis fitted to the data in it. It took the flux
+    # from the line drawn, which holds only the pixels of the previous view
+    # (a distant region kept the old scale) and not the continuum (cut over
+    # deep lines), reported by Guido
     import numpy as np
     canvas = window.plot_viewer.canvas
-    spec = window.active_history.current_state.spec
+    history = window.active_history
+    spec = history.current_state.spec
+    y = spec.y.value
+    spec = spec.update_column("cont", np.full(len(y), 2.0 * np.nanmax(y[1000:1101])))
+    history.add_state(history.current_state.with_new_spectrum(spec))
+    window._update_view_for_session(history.current_state)
+    qtbot.wait(50)
     x = spec.x.value
-    xmin, xmax = x[1000], x[1100]
-    window._zoom_main_plot(xmin, xmax)
-    assert canvas.axes.get_xlim() == pytest.approx((xmin, xmax))
-    y = spec.y.value[1000:1101]
+    window._zoom_main_plot(x[1000], x[1100])
+    qtbot.wait(50)
+    assert canvas.axes.get_xlim() == pytest.approx((x[1000], x[1100]))
     lo, hi = canvas.axes.get_ylim()
-    assert lo < np.nanmin(y) and hi > np.nanmax(y)
-    assert hi - lo < 2 * (np.nanmax(y) - np.nanmin(y))
+    assert lo < np.nanmin(y[1000:1101]) and hi > spec.cont.value[1000]  # the continuum
+    # A region far from the previous view
+    far = len(x) - 2000
+    window._zoom_main_plot(x[far], x[far + 100])
+    qtbot.wait(50)
+    lo, hi = canvas.axes.get_ylim()
+    assert lo < np.nanmin(y[far:far + 101]) and hi > np.nanmax(y[far:far + 101])
+    assert hi - lo < 3 * (spec.cont.value[far] - np.nanmin(y[far:far + 101]))
 
 
 def test_data_inspector_keeps_a_window_of_rows(qtbot, window):

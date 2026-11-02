@@ -1,4 +1,5 @@
 import logging
+import astropy.units as au
 import numpy as np
 import os
 from PySide6.QtCore import (
@@ -473,23 +474,52 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
     def _zoom_main_plot(self, xmin: float, xmax: float):
         """Show a range of wavelengths (nm) in the main plot (a region of
-        the Identifications window)."""
+        the Identifications window), the flux axis fitted to the data in
+        it with a margin of 10%."""
         axes = self.plot_viewer.canvas.axes
-        # The flux too, from the spectrum in the range (as drawn: in flux,
-        # normalized or S/N), with a margin of 10%
-        for line in axes.get_lines():
-            if line.get_label() != "Spectrum":
-                continue
-            x = np.asarray(line.get_xdata(), dtype=float)
-            y = np.asarray(line.get_ydata(), dtype=float)
-            inside = (x >= xmin) & (x <= xmax) & np.isfinite(y)
-            if inside.any():
-                lo, hi = y[inside].min(), y[inside].max()
-                pad = 0.1 * (hi - lo) if hi > lo else 0.1 * abs(hi) or 1.0
-                axes.set_ylim(lo - pad, hi + pad)
-            break
+        limits = self._flux_limits_in(xmin, xmax)
+        if limits is not None:
+            axes.set_ylim(*limits)
         axes.set_xlim(xmin, xmax)
         self.plot_viewer.canvas.draw_idle()
+
+    def _flux_limits_in(self, xmin: float, xmax: float):
+        """The limits of the flux axis for a range of wavelengths (nm), from
+        the data of the session as the plot shows them (flux, normalized or
+        S/N): the spectrum, the continuum and the model. Not from the lines
+        drawn: they hold only the pixels of the previous view (the zoom to a
+        distant region kept the old scale) and the continuum was left out
+        (cut in deep lines)."""
+        if not self.active_history:
+            return None
+        spec = self.active_history.current_state.spec
+        try:
+            x = spec.x.to_value(au.nm)
+        except Exception:
+            return None
+        inside = (x >= xmin) & (x <= xmax)
+        if not inside.any():
+            return None
+        y = spec.y.value[inside]
+        cont = spec.cont.value[inside] if spec.cont is not None else None
+        model = spec.model.value[inside] if spec.model is not None else None
+        if self.snr_checkbox.isChecked() and spec.dy is not None:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                curves = [y / spec.dy.value[inside]]
+        elif self.norm_y_checkbox.isChecked() and cont is not None:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                curves = [y / cont, np.ones_like(y)]
+                if model is not None:
+                    curves.append(model / cont)
+        else:
+            curves = [c for c in (y, cont, model) if c is not None]
+        values = np.concatenate([np.asarray(c, dtype=float) for c in curves])
+        values = values[np.isfinite(values)]
+        if values.size == 0:
+            return None
+        lo, hi = float(values.min()), float(values.max())
+        pad = 0.1 * (hi - lo) if hi > lo else (0.1 * abs(hi) or 1.0)
+        return lo - pad, hi + pad
 
     def _on_identification_viewer_closed(self):
         """

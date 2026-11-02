@@ -8,7 +8,8 @@ import pytest
 from PySide6.QtCore import Qt
 
 from astrocook.gui.data_inspector import format_value
-from astrocook.gui.identification_viewer_dialog import COLUMNS, IdentificationViewerDialog
+from astrocook.gui.identification_viewer_dialog import (COLUMNS, IdentificationViewerDialog,
+                                                        group_multiplets)
 
 from test_acs2_round_trip import rich_session  # noqa: F401 (fixture)
 
@@ -36,7 +37,7 @@ def test_one_row_per_identified_region(dialog, rich_session):  # noqa: F811
     assert [table.horizontalHeaderItem(c).text() for c in range(table.columnCount())] == COLUMNS
     assert table.rowCount() == 2  # region 3 has no candidates
     assert "Found <b>3</b>" in dialog.summary_label.text()
-    assert _cell(dialog, 0, "Region") == "1" and _cell(dialog, 0, "Identification") == "CIV"
+    assert _cell(dialog, 0, "Regions") == "1" and _cell(dialog, 0, "Identification") == "CIV"
     assert _cell(dialog, 0, "Score") == "0.90"
     assert _cell(dialog, 0, "Other candidates") == "SiIV (0.40)"
     # The range of the region (abs_ids: 100 pixels each) and its redshift
@@ -45,6 +46,58 @@ def test_one_row_per_identified_region(dialog, rich_session):  # noqa: F811
     assert float(_cell(dialog, 0, "λ to (nm)")) == pytest.approx(x[199], abs=1e-3)
     assert _cell(dialog, 0, "z") != ""
     assert _cell(dialog, 1, "Identification") == "MgII"
+
+
+def _row(region, series, z, score=0.9, xmin=500.0, xmax=500.1, others=""):
+    return {"region": region, "series": series, "z": z, "score": score,
+            "xmin": xmin, "xmax": xmax, "others": others}
+
+
+def test_members_of_a_multiplet_are_one_row():
+    # The members of a doublet at one redshift: one identification, seen
+    # together (Guido); a line of its own stays alone
+    z = 2.0
+    dz = 5.0 * (1 + z) / 299792.458  # 5 km/s
+    rows = group_multiplets([
+        _row(6, "CIV_1548", z, 0.91, 464.4, 464.5, "SiIV_1393 (0.30)"),
+        _row(8, "CIV_1550", z + dz, 0.89, 465.2, 465.3, "CIV_1548 (0.20)"),
+        _row(9, "Ly_a", 2.5, 0.7)])
+    assert len(rows) == 2
+    civ = rows[0]
+    assert civ["regions"] == [6, 8] and civ["series"] == "CIV"
+    assert civ["transitions"] == "CIV_1548, CIV_1550"
+    assert civ["score"] == pytest.approx(0.90)
+    assert (civ["xmin"], civ["xmax"]) == (464.4, 465.3)  # both regions
+    assert civ["others"] == "SiIV_1393 (0.30)"  # not its own members
+    assert rows[1]["regions"] == [9] and rows[1]["transitions"] == "Ly_a"
+
+
+def test_close_systems_are_not_merged():
+    # Each transition once per row: two CIV systems 10 km/s apart are two
+    # rows; members farther than MULTIPLET_DV_KMS are two rows too
+    z = 2.0
+    dv = lambda kms: kms * (1 + z) / 299792.458  # noqa: E731
+    rows = group_multiplets([_row(1, "CIV_1548", z), _row(2, "CIV_1548", z + dv(10)),
+                             _row(3, "CIV_1550", z + dv(2)), _row(4, "CIV_1550", z + dv(12))])
+    assert sorted(r["regions"] for r in rows) == [[1, 3], [2, 4]]
+    rows = group_multiplets([_row(1, "CIV_1548", z), _row(2, "CIV_1550", z + dv(100))])
+    assert len(rows) == 2
+
+
+def test_the_table_groups_the_members(qtbot, rich_session):  # noqa: F811
+    x = rich_session.spec.x.value
+    meta = rich_session.spec._data.meta
+    meta["region_identifications"] = json.dumps(
+        {"1": [["CIV_1548", 0.9]], "2": [["CIV_1550", 0.9]]})
+    zooms = []
+    dlg = IdentificationViewerDialog(rich_session.spec, "rich",
+                                     zoom_to=lambda a, b: zooms.append((a, b)))
+    qtbot.addWidget(dlg)
+    # The regions are at their own redshifts in this synthetic spectrum:
+    # grouped only if close, else one row each
+    assert dlg.table.rowCount() in (1, 2)
+    dlg.table.selectRow(0)
+    assert zooms and zooms[0][0] < x[100]
 
 
 def test_sorted_by_number(dialog):

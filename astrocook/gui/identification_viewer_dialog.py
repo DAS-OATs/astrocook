@@ -15,8 +15,72 @@ if TYPE_CHECKING:
 
 
 #: The columns of the table of the identifications
-COLUMNS = ["Region", "Identification", "z", "Score", "\u03bb from (nm)", "\u03bb to (nm)",
-           "Other candidates"]
+COLUMNS = ["Regions", "Identification", "Transitions", "z", "Score", "\u03bb from (nm)",
+           "\u03bb to (nm)", "Other candidates"]
+
+#: The regions identified as members of the same multiplet (e.g. CIV_1548
+#: and CIV_1550) are one row when their redshifts differ by less than this
+#: (km/s): measured at the deepest pixel of each region, the members of one
+#: system differ by a few km/s (pixels, blends). Each transition at most once
+#: per row, so that two close systems are not merged
+MULTIPLET_DV_KMS = 20.0
+C_KMS = 299792.458
+
+
+def multiplet_of(series: str) -> Optional[str]:
+    """The multiplet of a transition (e.g. 'CIV' for 'CIV_1548'), the name
+    itself for a multiplet, None for a line of its own (e.g. 'Ly_a')."""
+    if series in STANDARD_MULTIPLETS:
+        return series
+    for name, members in STANDARD_MULTIPLETS.items():
+        if series in members:
+            return name
+    return None
+
+
+def group_multiplets(rows: List[dict]) -> List[dict]:
+    """The rows of the members of one multiplet at one redshift merged into
+    one (Guido: the members are one identification, and seen together they
+    are easier to confirm): its regions, the transitions found, the mean
+    redshift and score, the range of all the regions."""
+    groups = []  # [multiplet, [rows]]
+    singles = []
+    for row in sorted(rows, key=lambda r: (np.nan_to_num(r["z"], nan=np.inf), r["region"])):
+        name = multiplet_of(row["series"])
+        if name is None or not np.isfinite(row["z"]):
+            singles.append(row)
+            continue
+        for group_name, members in groups:
+            if group_name != name or any(m["series"] == row["series"] for m in members):
+                continue
+            z0 = members[0]["z"]
+            if abs(row["z"] - z0) * C_KMS / (1 + z0) <= MULTIPLET_DV_KMS:
+                members.append(row)
+                break
+        else:
+            groups.append([name, [row]])
+    merged = [dict(row, regions=[row["region"]], transitions=row["series"]) for row in singles]
+    for name, members in groups:
+        if len(members) == 1:
+            row = members[0]
+            merged.append(dict(row, regions=[row["region"]], transitions=row["series"]))
+            continue
+        found = {m["series"] for m in members}
+        others = []
+        for m in members:
+            others += [o for o in m["others"].split(", ") if o and o.split(" (")[0] not in found]
+        merged.append({
+            "region": min(m["region"] for m in members),
+            "regions": sorted(m["region"] for m in members),
+            "series": name,
+            "transitions": ", ".join(sorted(found)),
+            "z": float(np.mean([m["z"] for m in members])),
+            "score": float(np.mean([m["score"] for m in members])),
+            "xmin": float(np.nanmin([m["xmin"] for m in members])),
+            "xmax": float(np.nanmax([m["xmax"] for m in members])),
+            "others": ", ".join(dict.fromkeys(others)),
+        })
+    return sorted(merged, key=lambda r: r["region"])
 
 
 class _NumberItem(QTableWidgetItem):
@@ -113,10 +177,11 @@ class IdentificationViewerDialog(QDialog):
                 ident_dict_raw = json_string
             ident_dict = {int(float(k)): v for k, v in ident_dict_raw.items()}
 
-            rows = self._rows(spec, ident_dict, region_map)
+            rows = group_multiplets(self._rows(spec, ident_dict, region_map))
             self.summary_label.setText(
-                f"Found <b>{len(ident_dict)}</b> identified absorption regions. "
-                "Click a row to show the region in the main plot.")
+                f"Found <b>{len(ident_dict)}</b> identified absorption regions; "
+                "the members of a multiplet are one row. "
+                "Click a row to show its regions in the main plot.")
             self._fill_table(rows)
 
         except Exception as e:
@@ -157,7 +222,9 @@ class IdentificationViewerDialog(QDialog):
                                value if np.isfinite(value) else -np.inf)
 
         for r, row in enumerate(rows):
-            items = [number(row["region"], "{:d}"), QTableWidgetItem(row["series"]),
+            regions = _NumberItem(", ".join(str(r) for r in row["regions"]), row["region"])
+            items = [regions, QTableWidgetItem(row["series"]),
+                     QTableWidgetItem(row["transitions"]),
                      number(row["z"], "{:.5f}"), number(row["score"], "{:.2f}"),
                      number(row["xmin"], "{:.3f}"), number(row["xmax"], "{:.3f}"),
                      QTableWidgetItem(row["others"])]
