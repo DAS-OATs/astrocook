@@ -470,6 +470,8 @@ def test_data_inspector(qtbot, window):
     center = 1000 - dialog.current_start
     assert table.item(center, 0).text() == "1000"
     assert table.item(center, 0).font().bold()  # the clicked pixel highlighted
+    # A format per column, not all in scientific notation (phase 5-bis)
+    assert "e" not in table.item(center, 1).text()
     # Scrolling to the bottom loads the next chunk
     vbar = table.verticalScrollBar()
     vbar.setValue(vbar.maximum())
@@ -483,6 +485,36 @@ def test_data_inspector(qtbot, window):
     assert table.rowCount() == dialog.current_end - dialog.current_start
     dialog.close()
     qtbot.waitUntil(lambda: viewer._data_inspector_dialog is None)
+
+
+def test_zoom_to_a_region(qtbot, window):
+    # A row of the Identifications window shows its regions: the wavelength
+    # range, and the flux axis fitted to the data in it. It took the flux
+    # from the line drawn, which holds only the pixels of the previous view
+    # (a distant region kept the old scale) and not the continuum (cut over
+    # deep lines), reported by Guido
+    import numpy as np
+    canvas = window.plot_viewer.canvas
+    history = window.active_history
+    spec = history.current_state.spec
+    y = spec.y.value
+    spec = spec.update_column("cont", np.full(len(y), 2.0 * np.nanmax(y[1000:1101])))
+    history.add_state(history.current_state.with_new_spectrum(spec))
+    window._update_view_for_session(history.current_state)
+    qtbot.wait(50)
+    x = spec.x.value
+    window._zoom_main_plot(x[1000], x[1100])
+    qtbot.wait(50)
+    assert canvas.axes.get_xlim() == pytest.approx((x[1000], x[1100]))
+    lo, hi = canvas.axes.get_ylim()
+    assert lo < np.nanmin(y[1000:1101]) and hi > spec.cont.value[1000]  # the continuum
+    # A region far from the previous view
+    far = len(x) - 2000
+    window._zoom_main_plot(x[far], x[far + 100])
+    qtbot.wait(50)
+    lo, hi = canvas.axes.get_ylim()
+    assert lo < np.nanmin(y[far:far + 101]) and hi > np.nanmax(y[far:far + 101])
+    assert hi - lo < 3 * (spec.cont.value[far] - np.nanmin(y[far:far + 101]))
 
 
 def test_data_inspector_keeps_a_window_of_rows(qtbot, window):
