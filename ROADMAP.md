@@ -1419,7 +1419,7 @@ changed the GUI.
   in the code until it is clear whether it is needed with the MCP
   server, or can be given another use).
 
-Then release 2.3.0 (see "Releases").
+Then release 2.3.0 (see "Releases"; released in November 2026).
 
 ### Phase 6 – Error handling
 Broad `except` clauses, case by case: specific exception, explicit log, or
@@ -1530,15 +1530,14 @@ publishes the docs of the tag at the root of the website.
   pages *Science* and *Accuracy* (the results on the mock benchmark);
   baseline of the benchmark moved to 2.2.0. Published on GitHub with the
   macOS app; not on PyPI (INAF has not answered yet, #549).
-- **2.3.0, after phases 5 and 5-bis (planned, agreed with Guido, October
-  2026):** the faster System Inspector, the split of the large files, the
+- **2.3.0, after phases 5 and 5-bis (November 2026):** the faster System Inspector, the split of the large files, the
   GUI review of phase 5-bis, F7; the results of fitting, identification
   and the pipelines unchanged (the *Accuracy* page stays as for 2.2.0);
   the release notes state the three fixes that change numbers elsewhere:
   F69 and F70 (calibration) and #630 (errors of linked parameters).
-  Phase 5-bis closed (November 2026): next. A stable point before phases 6 and
-  6-bis, which change the interface of the recipes. With the LICENSE and
-  PyPI if INAF has answered by then (#549).
+  A stable point before phases 6 and 6-bis, which change the interface
+  of the recipes. Published on GitHub with the macOS app; not on PyPI
+  (INAF has not answered yet, #549).
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
