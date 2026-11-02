@@ -4,7 +4,8 @@ import logging
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QAbstractItemView, QDialog, QDialogButtonBox, QLabel, QTableWidget, QTableWidgetItem,
+    QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView, QLabel, QTableWidget,
+    QTableWidgetItem,
     QTextEdit, QVBoxLayout
 )
 from typing import List, Optional, TYPE_CHECKING
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 
 #: The columns of the table of the identifications
-COLUMNS = ["Regions", "Identification", "z (mean)", "z min", "z max", "Score"]
+COLUMNS = ["Regions", "Identification", "z (mean)", "z min", "z max", "Score", "Alternatives"]
 
 #: The label of a region of the forest that no doublet identified: the
 #: recipe assigns it to Ly_a with score 0, it is not an identification
@@ -90,7 +91,17 @@ def doublet_rows(spec, ident_dict, region_map) -> List[dict]:
                          "score": np.nan if assumed else float(sc),
                          "z": 0.5 * (zr[0] + zr[1]), "zmin": zr[0], "zmax": zr[1],
                          "xmin": float(x_nm[indices[0]]), "xmax": float(x_nm[indices[-1]])})
-    return sorted(rows, key=lambda r: (r["region"], r["series"]))
+    rows.sort(key=lambda r: (r["region"], r["series"]))
+    # The alternatives of a row: the other rows with one of its regions (the
+    # same region in another pair, of another doublet or of the same one at
+    # another redshift), as the recipe kept them for that region
+    for row in rows:
+        others = [o for o in rows if o is not row and set(o["regions"]) & set(row["regions"])
+                  and not np.isnan(o["score"])]
+        row["others"] = ", ".join(
+            f"{o['series']} {o['z']:.5f} [{', '.join(map(str, o['regions']))}] ({o['score']:.2f})"
+                                  for o in sorted(others, key=lambda o: -o["score"]))
+    return rows
 
 
 class _NumberItem(QTableWidgetItem):
@@ -151,7 +162,7 @@ class IdentificationViewerDialog(QDialog):
 
         self._regions = {}  # row region ID -> (xmin, xmax) in nm
         self._populate_results(spec)
-        self.resize(620, 520)
+        self.resize(760, 520)
 
     def _show_text(self, text: str):
         self.table.setVisible(False)
@@ -215,15 +226,23 @@ class IdentificationViewerDialog(QDialog):
                                   row["region"])
             items = [regions, QTableWidgetItem(row["series"]),
                      number(row["z"], "{:.5f}"), number(row["zmin"], "{:.5f}"),
-                     number(row["zmax"], "{:.5f}"), number(row["score"], "{:.2f}")]
+                     number(row["zmax"], "{:.5f}"), number(row["score"], "{:.2f}"),
+                     QTableWidgetItem(row.get("others", ""))]
             for c, item in enumerate(items):
-                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                if c < len(items) - 1:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(r, c, item)
             self._regions[r] = (row["xmin"], row["xmax"])
             regions.setData(Qt.ItemDataRole.UserRole, r)
         self.table.setSortingEnabled(True)
         self.table.sortItems(0, Qt.SortOrder.AscendingOrder)
-        self.table.resizeColumnsToContents()
+        # The columns as wide as their contents, the last one (the
+        # alternatives) taking the rest of the window: no empty column on
+        # the right (reported by Guido)
+        header = self.table.horizontalHeader()
+        for c in range(len(COLUMNS) - 1):
+            header.setSectionResizeMode(c, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(len(COLUMNS) - 1, QHeaderView.ResizeMode.Stretch)
 
     def _on_row_selected(self):
         """The region of the selected row in the main plot, with a margin of

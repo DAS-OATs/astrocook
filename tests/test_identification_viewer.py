@@ -85,6 +85,9 @@ def test_a_region_in_two_pairs():
     regions[np.where(regions == 2)[0] + 5] = 4  # a second region overlapping
     rows = [r for r in doublet_rows(spec, ident, regions) if r["series"] == "CIV"]
     assert sorted(r["regions"] for r in rows) == [[1, 2], [1, 4]]
+    # Each is an alternative of the other (they share region 1)
+    first = next(r for r in rows if r["regions"] == [1, 2])
+    assert first["others"].startswith("CIV ") and first["others"].endswith("[1, 4] (0.70)")
 
 
 def test_the_table(qtbot, rich_session):  # noqa: F811
@@ -100,6 +103,16 @@ def test_the_table(qtbot, rich_session):  # noqa: F811
     assert table.rowCount() == 2
     assert _cell(dlg, 1, "Identification") == ASSUMED_LYA and _cell(dlg, 1, "Score") == ""
     assert "doublets found" in dlg.summary_label.text()
+    # The last column takes the rest of the window: no empty column on the
+    # right (Guido)
+    from PySide6.QtWidgets import QHeaderView
+    header = table.horizontalHeader()
+    assert header.sectionResizeMode(len(COLUMNS) - 1) == QHeaderView.ResizeMode.Stretch
+    dlg.resize(1200, 500)
+    dlg.show()
+    qtbot.wait(50)
+    used = sum(header.sectionSize(c) for c in range(len(COLUMNS)))
+    assert used >= table.viewport().width() - 2
     table.sortItems(COLUMNS.index("Regions"), Qt.SortOrder.DescendingOrder)
     assert _cell(dlg, 0, "Regions") == "2"
     table.selectRow(1)  # region 1 after sorting
