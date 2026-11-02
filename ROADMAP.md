@@ -1364,6 +1364,61 @@ automatic pipelines: the fast suite and targeted tests (F70: the
 magnitudes reached) are enough; the GUI benchmark before and after F76
 and the theme module.
 
+**Result of the phase** (November 2026, PRs #664-#688). The GUI changed
+in look and ergonomics, each change agreed with Guido on screenshots
+before the PR; the screenshots of the tutorials rebuilt at each PR that
+changed the GUI.
+- Numbers: the snapshots and the mock benchmark unchanged (no snapshot
+  regenerated in the phase). Three fixes change numbers outside them, as
+  agreed: F69 (the columns scaled, calibrated and smoothed by the flux
+  methods), F70 (the calibration with two or more bands reaches the
+  target magnitudes, ~0.1 mag before) and #630 (the errors of linked
+  parameters propagated through the link instead of 0; the fitted values
+  and the errors of the free parameters unchanged).
+- The interface: dark mode following the system, or chosen in
+  *View > Appearance*, with the colours in one module (`gui/theme.py`);
+  the toolbar of the plots redesigned (one family of icons, keys) and
+  floating over the plot as the side cards, with its tab, remembered
+  shown or hidden also in the System Inspector; a status bar with the
+  outcome of the last recipe and the coordinates of the mouse, in both
+  windows; the texts in one rule (Title Case in menus and buttons,
+  whole words); the main plot without title and legend (swatches in the
+  panels instead, F86), the emission lines in spectroscopic notation, the
+  ticks of the systems in two softer rows, the redshift of the cursor on
+  the plot (F92); the System Inspector with the error of z in km/s, btur
+  hidden while unused (a menu of the columns), the boxes in groups, keys
+  for refit and delete, a message instead of empty panels without a
+  continuum; the *Identifications* window a table of the doublets as the
+  recipe finds them; the *Data Inspector* with a format per column; the
+  welcome screen, *File > Open Recent*, the window geometry remembered,
+  several files loaded in the background with their progress, the File
+  menu in groups with the imports; *View > Plot Colours*, the standard
+  palette with a thinner model or a colour-blind safe one.
+- Restored or redone: the selection of a region (F73, a Select tool), the
+  decimation of long spectra (F76), "Logarithmic F" in the panel (F78);
+  dead code removed (F77, F80).
+- GUI benchmark (`bench_gui.py`, the best of two runs, alternating, on one
+  machine; the end of phase 5, #663, against master after #688): first
+  opening of the System Inspector 0.56 → 0.50 s, next openings
+  0.34 → 0.28 s, redraw of the main plot 0.127 → 0.099 s (the legend
+  removed, F86), selection of a row 0.174 → 0.144 s, the GUI part of a
+  refit 0.61 → 0.57 s; the fit itself unchanged (10.7 s). No regression
+  from the new features.
+- Tests: 77 test files (73 at the end of phase 5); coverage 81% → 82%
+  (the GUI 81% → 84%, the core 90%). The documentation builds without
+  warnings; its review at the closing fixed two names of menu entries
+  left from before the phase (*Identify Absorption Lines*, *Export to
+  ASCII...*).
+- Findings: fixed in the phase F67, F69, F70, F71, F73, F75, F76, F77,
+  F78, F80, F81 (from phase 5) and F85-F92 (found in the phase; F90 also
+  touched the identification: the identifications of old regions were
+  lost when a pipeline ran again); #630. For phase 7: F93 (the
+  identification by doublets only, the pairs not stored). For phase
+  6-bis: the long labels and the typed widgets of the recipe dialogs, the
+  buttons of the ASCII export. Kept as it is: the script console (Guido:
+  in the code until it is clear whether it is needed with the MCP
+  server, or can be given another use).
+
 Then release 2.3.0 (see "Releases").
 
 ### Phase 6 – Error handling
@@ -1477,8 +1532,11 @@ publishes the docs of the tag at the root of the website.
   macOS app; not on PyPI (INAF has not answered yet, #549).
 - **2.3.0, after phases 5 and 5-bis (planned, agreed with Guido, October
   2026):** the faster System Inspector, the split of the large files, the
-  GUI review of phase 5-bis, F7; no numerical result changes (the
-  *Accuracy* page stays as for 2.2.0). A stable point before phases 6 and
+  GUI review of phase 5-bis, F7; the results of fitting, identification
+  and the pipelines unchanged (the *Accuracy* page stays as for 2.2.0);
+  the release notes state the three fixes that change numbers elsewhere:
+  F69 and F70 (calibration) and #630 (errors of linked parameters).
+  Phase 5-bis closed (November 2026): next. A stable point before phases 6 and
   6-bis, which change the interface of the recipes. With the LICENSE and
   PyPI if INAF has answered by then (#549).
 
@@ -2045,7 +2103,7 @@ review); each of its decisions goes into the log.
 | MCP pilot (sections 4.1, 4.2) | done (October 2026): scope (#595); skeleton with `session_open`, `session_save` (#596); `continuum_estimate_auto`, `absorbers_identify_lines` (#597); `absorbers_doublets_auto` (#598); docs page and stdio test (#599); report (section 4.2, #600): two agent trials and Guido's; found F46-F55 |
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
-| 5-bis – GUI look and ergonomics | in progress (October 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request) |
+| 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | not started |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
