@@ -1245,6 +1245,12 @@ class SystemInspector(QWidget):
             self.status_bar.setStyleSheet(status_bar_style())
         return super().event(event)
 
+    def refresh_plot_colours(self):
+        """View > Plot Colours changed: the velocity plot and the cues of the
+        flags in the table, in the new palette."""
+        self.table_model.refresh_colours()
+        self.vel_plot._update_plot()
+
     def _update_trans_box_visuals(self):
         """Updates the text color of the Trans box to indicate Auto vs Manual mode."""
         pal = QApplication.palette()

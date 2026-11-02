@@ -98,6 +98,8 @@ MAIN_WINDOW |= {'_setup_status_bar', 'show_status', '_report_recipe_outcome', '_
 MAIN_WINDOW |= {'_load_session', 'open_files', '_open_files_in_background', '_recent_files',
                 '_add_recent_file', '_clear_recent_files', '_rebuild_recent_menu',
                 '_save_window_geometry', '_refresh_recent_list', 'closeEvent'}
+#: ... and View > Plot Colours (phase 5-bis)
+MAIN_WINDOW |= {'_set_plot_colours'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

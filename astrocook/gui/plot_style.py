@@ -19,8 +19,51 @@ from .theme import SELECTION
 ERROR_COLOR = '#aaaaaa'
 
 #: The ticks of the HI components on the main plot: a softer red than pure
-#: red, drawn translucent
+#: red, drawn translucent (the standard palette, ``PLOT_PALETTES``)
 HI_TICK_COLOR = '#d62728'
+
+#: The palettes of the plots, chosen in View > Plot Colours (phase 5-bis):
+#: "standard", the colours of 2.2.0 with a thinner model (lw 1.6 -> 1.1: the
+#: thick model covered the data in the forest), and "colorblind", from the
+#: Okabe-Ito palette, whose blue model, dark spectrum and orange selection
+#: stay apart for every type of colour blindness (in the standard palette,
+#: model, selection and residuals of the velocity plot become one olive for
+#: a deuteranope). The selection (``theme.SELECTION``, an amber close to
+#: the orange of Okabe-Ito) is the same in both: it is shared with the
+#: widgets. Compared on the "My QSO" session with simulations of colour
+#: blindness (Machado et al. 2009) before the choice (Guido).
+PLOT_PALETTES = {
+    "standard": {
+        "flux": "#1f77b4", "model": "#2ca02c", "model_lw": 1.1, "model_alpha": 0.9,
+        "cursor": "#e377c2", "residuals": "#ff0000", "hi_ticks": HI_TICK_COLOR,
+        "flag_bound": "#9467bd", "flag_nan": "#d62728",
+    },
+    "colorblind": {
+        "flux": "#333333", "model": "#0072b2", "model_lw": 1.1, "model_alpha": 0.9,
+        "cursor": "#56b4e9", "residuals": "#d55e00", "hi_ticks": "#d55e00",
+        "flag_bound": "#cc79a7", "flag_nan": "#d55e00",
+    },
+}
+#: Their names in View > Plot Colours
+PLOT_PALETTE_NAMES = {"standard": "Standard", "colorblind": "Colour-blind Safe"}
+_plot_palette = "standard"
+
+
+def set_plot_palette(name: str) -> str:
+    """Use the palette ``name`` in the plots drawn from now on (an unknown
+    name is the standard palette); returns the name used."""
+    global _plot_palette
+    _plot_palette = name if name in PLOT_PALETTES else "standard"
+    return _plot_palette
+
+
+def plot_palette_name() -> str:
+    return _plot_palette
+
+
+def plot_colour(key: str):
+    """A colour (or width, alpha) of the current palette."""
+    return PLOT_PALETTES[_plot_palette][key]
 
 
 # Keys must match exactly what is in xem_d (core/atomic_data.py)

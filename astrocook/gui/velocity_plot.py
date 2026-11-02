@@ -24,7 +24,7 @@ from ..core.resolution import resolution_at
 from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
 from ..fitting.voigt_fitter import voigt_optical_depth
 from .inspector_table import flag_cue
-from .plot_style import ERROR_COLOR, get_color_cycle, get_style_color
+from .plot_style import ERROR_COLOR, plot_colour
 from .theme import SELECTION
 from .floating_cards import WrappedLabel
 from .plot_toolbar import AstrocookToolbar
@@ -442,8 +442,6 @@ class VelocityPlotWidget(QWidget):
                 mod_norm = np.divide(mod, norm, out=np.full_like(mod, np.nan), where=norm!=0) if has_norm else mod
                 y_resid = np.divide(y_norm - mod_norm, dy_norm, out=np.full_like(y_norm, np.nan), where=dy_norm!=0)
 
-        colors = get_color_cycle(5, cmap='tab20')
-        #colors[0] = "#296bff"
 
         for i, trans_name in enumerate(visible_trans):
             if show_resid:
@@ -455,10 +453,10 @@ class VelocityPlotWidget(QWidget):
                 ax_resid = None
                 self.axes.append(ax_main)
 
-            cursor_line_main, = ax_main.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
+            cursor_line_main, = ax_main.plot([], [], color=plot_colour('model'), lw=2, alpha=0.3, zorder=10)
             cursor_line_resid = None
             if show_resid:
-                cursor_line_resid, = ax_resid.plot([], [], color=get_style_color('model', colors), lw=2, alpha=0.3, zorder=10)
+                cursor_line_resid, = ax_resid.plot([], [], color=plot_colour('model'), lw=2, alpha=0.3, zorder=10)
             
             self._panel_map[ax_main] = (trans_name, cursor_line_main, cursor_line_resid)
 
@@ -514,11 +512,12 @@ class VelocityPlotWidget(QWidget):
                 ax_main.step(v_p, y_p-dy_p, where='mid', color=ERROR_COLOR, lw=0.3)
                 ax_main.step(v_p, y_p+dy_p, where='mid', color=ERROR_COLOR, lw=0.3)
 
-            ax_main.step(v_p, y_p, where='mid', color=get_style_color('flux', colors), lw=0.8)
+            ax_main.step(v_p, y_p, where='mid', color=plot_colour('flux'), lw=0.8)
             
             if session.spec.model is not None:
                 mod_p = mod_norm[mask]
-                ax_main.plot(v_p, mod_p, color=get_style_color('model', colors), lw=1.6, alpha=0.8)
+                ax_main.plot(v_p, mod_p, color=plot_colour('model'),
+                             lw=plot_colour('model_lw'), alpha=plot_colour('model_alpha'))
 
             # --- Plot Components ---
             if self._selected_components:
@@ -581,7 +580,7 @@ class VelocityPlotWidget(QWidget):
                     if v_min <= v_shift <= v_max:
                         self._tick_map_visuals.append((ax_main, v_shift, other_c))
                         is_h = other_c.series.startswith('Ly') or other_c.series.startswith('H')
-                        col = 'red' if is_h else 'gray'
+                        col = plot_colour('hi_ticks') if is_h else 'gray'
                         # Flags of the fit (#517): dashed, in the colour of the cue
                         flag_col, _ = flag_cue(other_c)
                         ax_main.plot([v_shift, v_shift], [tick_ymin, tick_ymax],
@@ -601,8 +600,8 @@ class VelocityPlotWidget(QWidget):
             if show_resid and y_resid is not None:
                 resid_p = y_resid[mask]
                 ax_resid.fill_between(v_p, - 1.0, 1.0, step='mid', color=ERROR_COLOR, alpha=0.15)
-                ax_resid.step(v_p, resid_p, where='mid', color='red', lw=0.8)
-                ax_resid.axhline(0, color=get_style_color('model', colors), lw=1.0, alpha=0.5)
+                ax_resid.step(v_p, resid_p, where='mid', color=plot_colour('residuals'), lw=0.8)
+                ax_resid.axhline(0, color=plot_colour('model'), lw=1.0, alpha=0.5)
                 ax_resid.set_ylim(-5, 5)
                 ax_resid.set_ylabel(r"χ")
                 ax_main.tick_params(labelbottom=False)

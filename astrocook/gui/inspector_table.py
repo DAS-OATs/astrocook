@@ -11,7 +11,8 @@ from PySide6.QtWidgets import QStyledItemDelegate
 from typing import List
 
 from ..core.structures import ComponentDataV2
-from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours
+from .plot_style import plot_colour
+from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours  # noqa: F401 (re-exported)
 
 # --- 1. Table Configuration (UPDATED) ---
 # We removed the separate error columns (dz, dlogN, db)
@@ -72,10 +73,10 @@ def flag_cue(comp, attr: str = None):
             param, text = _BOUND_FLAGS[flag]
             if attr is None or attr == param:
                 messages.append(text)
-                color = FLAG_BOUND_COLOR
+                color = plot_colour('flag_bound')
         elif flag == 'nan_errors' and attr is None:
             messages.append(_NAN_MESSAGE)
-            color = color or FLAG_NAN_COLOR
+            color = color or plot_colour('flag_nan')
     return color, messages
 
 
@@ -225,7 +226,7 @@ class SystemTableModel(QAbstractTableModel):
                     c = QColor(color); c.setAlpha(110)
                     return c
             elif attr == 'id' and 'nan_errors' in (comp.flags or ()):
-                c = QColor(FLAG_NAN_COLOR); c.setAlpha(90)
+                c = QColor(plot_colour('flag_nan')); c.setAlpha(90)
                 return c
             if comp.uuid in self._secondary_uuids:
                 return QColor(245, 161, 0, 50) 
