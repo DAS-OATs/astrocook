@@ -28,7 +28,7 @@ Smoothing is the simplest way to visualize faint features by reducing high-frequ
    - Smaller values (e.g., `10-30` km/s) preserve narrow absorption lines.
 3. Click **Run**.
 
-The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency.
+The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency, and so are the continuum (`cont`), the model (`model`), the power-law continuum (`cont_pl`) and the telluric transmission (`telluric_model`), if present.
 
 ```{image} ../_static/flux_smooth.png
 :alt: A smoothed spectrum
@@ -88,8 +88,8 @@ If your spectrum is not flux-calibrated (or the calibration is off), you can war
     * Supported filters include standard optical systems (SDSS, Johnson, etc.).
 3.  Click **Run**.
 
-Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes.
+Astrocook calculates a smooth correction curve to force the synthetic photometry of your spectrum to match the input magnitudes. With one magnitude the curve is a constant; with two or more it is linear between the central wavelengths of the filters and constant beyond them, and its values there are chosen so that every magnitude is matched exactly. If the magnitudes cannot be matched together by a positive curve (e.g. two strongly overlapping filters with very different magnitudes, or the same filter twice), a warning is logged and each filter's own factor is used, so the magnitudes are only approximately matched. The curve is applied to the flux, its error, the continuum, the model and the power-law continuum, which take the unit erg cm⁻² s⁻¹ Å⁻¹; the telluric transmission is dimensionless and is left unchanged.
 
 :::{tip}
-After calibration, check the **Show Iso-Mag Grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
+After calibration, check the **Show iso-magnitude grid** box in the [Plot Controls](#getting-started-customizing) to verify the result against reference magnitude curves.
 :::

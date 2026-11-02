@@ -53,7 +53,7 @@ You can also create new auxiliary columns. For example, to create a column repre
 
 1. **Target Column**: `snr` (A new name).
 2. **Expression:** `F / dF`.
-3. Once created, you can visualize this new column using the Aux. Column dropdown in the [Plot Controls](#getting-started-customizing).
+3. Once created, you can visualize this new column using the Auxiliary column dropdown in the [Plot Controls](#getting-started-customizing).
 
 ```{image} ../_static/editing_apply_expression.png
 :alt: Applying a mathematical expression to a column
@@ -87,7 +87,7 @@ To clean up your session:
 ### Importing Systems
 
 If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.
-1.  Go to **Edit > Import Systems...**.
+1.  Go to **File > Import Systems from Session...**.
 2.  **Source Session:** Select the other open session by name.
 3.  **Append:** Check this to add to your current list; uncheck to replace it entirely.
 
@@ -103,6 +103,8 @@ To extract a custom range into a *new* session:
 2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `λ`.
     * Example: `(λ > 400) & (λ < 500)`
 3.  A new session containing only that data range will appear in your list.
+
+You can also select the range with the mouse: choose the **Select** tool in the plot toolbar, drag over the region and pick **Split region** (see [Navigating the Plot](#getting-started-navigating)), or right-click the plot and choose **Split from Current Zoom** to split what the plot shows.
 
 ### Quick Extraction (Presets)
 

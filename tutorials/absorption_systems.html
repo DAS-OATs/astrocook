@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.2.0 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.3.0 documentation</title>
   
   
   
@@ -26,20 +26,20 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
-<link href="../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
-<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=b21de401"></script>
+    <script src="../static/documentation_options.js?v=c3c8ae58"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,9 +47,9 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/absorption_systems';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.2.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.2.0" />
+  <meta name="docsearch:version" content="2.3.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -109,7 +109,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -225,14 +225,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -287,7 +287,7 @@
   
 
   
-    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -301,7 +301,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
@@ -372,14 +372,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -480,7 +480,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-home"></i>
+        <i class="fa-solid fa-house"></i>
       </a>
     </li>
     
@@ -554,7 +554,7 @@
 <ol class="arabic simple">
 <li><p>Go to <strong>Absorbers &gt; Identify Absorption Lines…</strong>.</p></li>
 <li><p>This generates a list of candidate regions but <em>does not</em> fit them immediately.</p></li>
-<li><p>You can then visualize these regions by selecting <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> in the <strong>Aux. Column</strong> dropdown of the Plot Controls.</p></li>
+<li><p>You can then visualize these regions by selecting <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> in the <strong>Auxiliary column</strong> dropdown of the Plot Controls.</p></li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -579,9 +579,11 @@
 <ul class="simple">
 <li><p><strong>Edit:</strong> Double-click any cell (<code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>) to modify its value directly.</p></li>
 <li><p><strong>Sort:</strong> Click any column header to sort the list (e.g., by Redshift or Series).</p></li>
+<li><p><strong>Keys:</strong> The arrows move the selection, and the plot follows it. <code class="docutils literal notranslate"><span class="pre">Return</span></code> refits the selected components (<strong>Refit Selected</strong>), <code class="docutils literal notranslate"><span class="pre">Delete</span></code> (or <code class="docutils literal notranslate"><span class="pre">Backspace</span></code>) deletes them; <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code> on Mac) and <code class="docutils literal notranslate"><span class="pre">Ctrl+Shift+Z</span></code> undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.</p></li>
+<li><p><strong>Status line:</strong> At the bottom of the inspector, how the last recipe went (e.g. a refit) and, on the right, the position of the mouse in the velocity plot.</p></li>
 <li><p><strong>Tooltips:</strong> Hover over a row to see detailed fit statistics (<span class="math notranslate nohighlight">\(\chi^2\)</span>) and constraints status.</p></li>
 <li><p><strong>Resolution:</strong> Right-click a component to set a specific <strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong> for that line, overriding the global session default.</p></li>
-<li><p><strong>Group View:</strong> Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.</p></li>
+<li><p><strong>Only group:</strong> Check the box above the table to show only the group of the selected components: the components linked to them, blended with them or close in velocity, which are fitted together with them. Right-clicking a component in the main plot and choosing <strong>Inspect … (its group)</strong> (e.g. <em>Inspect CIV (its group)</em>) opens the inspector this way.</p></li>
 </ul>
 <section id="understanding-resolution-priority">
 <h4>Understanding Resolution Priority<a class="headerlink" href="#understanding-resolution-priority" title="Link to this heading">#</a></h4>
@@ -600,15 +602,21 @@
 </section>
 <section id="right-panel-velocity-plot">
 <h3>Right Panel: Velocity Plot<a class="headerlink" href="#right-panel-velocity-plot" title="Link to this heading">#</a></h3>
-<p>A zoomed-in view of the selected system in velocity space.</p>
+<p>A zoomed-in view of the selected system in velocity space.
+The boxes above the plot are in three groups, separated by thin lines: what the plot shows (<strong>Trans.</strong>, <strong>z</strong>, <strong>Δv</strong>), the starting values and fit window of a new component (<strong>logN</strong>, <strong>b</strong>, <strong>Fit ±</strong>), and the residuals (<strong>Resid.</strong>). Each box has a tooltip.</p>
 <ul class="simple">
 <li><p><strong>Navigation:</strong> The plot centers on the selected component. You can manually edit the <strong>Redshift (z)</strong> and <strong>Velocity Range (<span class="math notranslate nohighlight">\(\pm v\)</span>)</strong> using the text boxes above the plot.</p></li>
 <li><p><strong>Scroll:</strong> If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.</p></li>
 <li><p><strong>Displayed Lines:</strong> The text box at the top shows which transitions are plotted (e.g., <code class="docutils literal notranslate"><span class="pre">CIV,</span> <span class="pre">SiIV</span></code>). You can type new ions here (comma-separated) to inspect other species at the same redshift.</p></li>
-<li><p><strong>Test Component:</strong> The <code class="docutils literal notranslate"><span class="pre">logN</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> boxes above the plot control the shape of the “ghost” profile attached to your mouse cursor, useful for visually estimating parameters before adding a component.</p></li>
+<li><p><strong>Test Component:</strong> The <code class="docutils literal notranslate"><span class="pre">logN</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> boxes above the plot control the shape of the “ghost” profile attached to your mouse cursor, useful for visually estimating parameters before adding a component; they are also the starting values of a component added from the menu of the plot (right click).</p></li>
 <li><p><strong>Residuals:</strong> Check the <strong>Resid.</strong> box to show a residual plot below each transition panel.</p></li>
 </ul>
 <img alt="The System Inspector showing a metal doublet" class="align-center" src="../images/absorbers_system_inspector.png" />
+</section>
+<section id="before-the-first-system">
+<h3>Before the first system<a class="headerlink" href="#before-the-first-system" title="Link to this heading">#</a></h3>
+<p>The velocity plot shows the flux divided by the continuum, and the fits need it. Without a continuum the plot shows a message instead, with a button that opens <strong>Auto-estimate Continuum…</strong>; <strong>Refit Selected</strong>, <strong>Refit All</strong>, the Bayesian fit and the entries that add a component are disabled, with a tooltip that says why. With a continuum but no systems yet, the message says how to start: type transitions and a redshift above the plot to look at the spectrum (also before any component exists), then add components from the menu of the plot (right click), or run an automatic pipeline.</p>
+<img alt="The System Inspector of a session without continuum" class="align-center" src="../images/absorbers_no_continuum.png" />
 </section>
 <section id="components-with-warnings-of-the-fit">
 <h3>Components with warnings of the fit<a class="headerlink" href="#components-with-warnings-of-the-fit" title="Link to this heading">#</a></h3>
@@ -617,7 +625,7 @@
 <li><p><strong>A parameter at a bound of the fit:</strong> z at the edge of the fit window, logN or b at their lower or upper bound. The automatic pipelines fit with tighter upper bounds (<strong>Max b</strong> = 50 km/s, <strong>Max logN</strong> = 19) than the manual fits (300 km/s, 23), so a component at one of those bounds may be broader or stronger in reality. The cell of the parameter is highlighted.</p></li>
 <li><p><strong>No uncertainties:</strong> the fit could not compute the errors of the component (the value is not constrained). Its <strong>ID</strong> is highlighted in red.</p></li>
 </ul>
-<p>A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check <strong>Only flagged</strong> to list only these components, and click <strong>Select flagged</strong> to select them all, e.g. to refit them with <strong>Refit Selected</strong> (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.</p>
+<p>A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check <strong>Only flagged</strong> to list only these components, and click <strong>Select Flagged</strong> to select them all, e.g. to refit them with <strong>Refit Selected</strong> (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.</p>
 <img alt="The System Inspector with Only flagged checked and the tooltip of a component at the upper bound of b" class="align-center" src="../images/absorbers_flags.png" />
 </section>
 </section>
@@ -677,16 +685,18 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Astrocook also tracks a turbulent broadening parameter <code class="docutils literal notranslate"><span class="pre">btur</span></code> separately. It is available in the table but <strong>frozen (italic)</strong> by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.</p>
+<p>Astrocook also tracks a turbulent broadening parameter <code class="docutils literal notranslate"><span class="pre">btur</span></code> separately. It is <strong>frozen (italic)</strong> at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (<strong>btur</strong> included); <strong>Default Columns</strong> goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose <strong>Unfreeze ‘btur’</strong> in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.</p>
 </div>
 </section>
 <section id="uncertainties">
 <h3>Uncertainties<a class="headerlink" href="#uncertainties" title="Link to this heading">#</a></h3>
+<p>In the table, the uncertainty of <code class="docutils literal notranslate"><span class="pre">z</span></code> is shown as a velocity, <span class="math notranslate nohighlight">\(c\,\delta z/(1+z)\)</span> in km/s, which compares directly with <code class="docutils literal notranslate"><span class="pre">b</span></code>; the tooltip of the row gives it also as <span class="math notranslate nohighlight">\(\delta z\)</span>. The exported tables keep <span class="math notranslate nohighlight">\(\delta z\)</span>.</p>
 <p>The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by <span class="math notranslate nohighlight">\(\sqrt{\chi^2_\nu}\)</span> of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced <span class="math notranslate nohighlight">\(\chi^2_\nu\)</span> is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large <span class="math notranslate nohighlight">\(\chi^2_\nu\)</span> (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.</p>
+<p>A linked parameter is computed from its target, so its uncertainty is propagated from the target through the expression of the link: a <code class="docutils literal notranslate"><span class="pre">z</span></code> linked by value has the same uncertainty as the <code class="docutils literal notranslate"><span class="pre">z</span></code> of its target, a <code class="docutils literal notranslate"><span class="pre">b</span></code> linked thermally the uncertainty of the target’s <code class="docutils literal notranslate"><span class="pre">b</span></code> scaled by the same mass ratio. The two uncertainties are therefore fully correlated, which matters when a list of components is used for statistics (count them once). A frozen parameter has uncertainty 0, as does a parameter linked to a frozen one.</p>
 </section>
 <section id="importing-a-line-list">
 <h3>Importing a Line List<a class="headerlink" href="#importing-a-line-list" title="Link to this heading">#</a></h3>
-<p><strong>Edit &gt; Import Systems from ASCII…</strong> reads absorption components from a table with a header, in CSV or whitespace-separated format: columns <code class="docutils literal notranslate"><span class="pre">series</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> (required) and optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code> (default 13.0), <code class="docutils literal notranslate"><span class="pre">b</span></code> (default 10 km/s), <code class="docutils literal notranslate"><span class="pre">btur</span></code>, <code class="docutils literal notranslate"><span class="pre">dz</span></code>, <code class="docutils literal notranslate"><span class="pre">dlogN</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>. The <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> written by <strong>File &gt; Export ASCII</strong> can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with <strong>Refit All</strong>.</p>
+<p><strong>File &gt; Import Systems from ASCII…</strong> reads absorption components from a table with a header, in CSV or whitespace-separated format: columns <code class="docutils literal notranslate"><span class="pre">series</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> (required) and optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code> (default 13.0), <code class="docutils literal notranslate"><span class="pre">b</span></code> (default 10 km/s), <code class="docutils literal notranslate"><span class="pre">btur</span></code>, <code class="docutils literal notranslate"><span class="pre">dz</span></code>, <code class="docutils literal notranslate"><span class="pre">dlogN</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>. The <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> written by <strong>File &gt; Export to ASCII…</strong> can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with <strong>Refit All</strong>.</p>
 </section>
 <section id="refitting">
 <h3>Refitting<a class="headerlink" href="#refitting" title="Link to this heading">#</a></h3>
@@ -771,7 +781,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
@@ -795,6 +805,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#right-panel-velocity-plot">Right Panel: Velocity Plot</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#before-the-first-system">Before the first system</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#components-with-warnings-of-the-fit">Components with warnings of the fit</a></li>
 </ul>
 </li>
@@ -834,8 +845,8 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
-<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -868,7 +879,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
 </p></div>
       
     </div>

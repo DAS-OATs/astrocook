@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Getting Started &#8212; Astrocook 2.2.0 documentation</title>
+    <title>Getting Started &#8212; Astrocook 2.3.0 documentation</title>
   
   
   
@@ -26,20 +26,20 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
-<link href="../static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
-<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=b21de401"></script>
+    <script src="../static/documentation_options.js?v=c3c8ae58"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,9 +47,9 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/getting_started';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.2.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.2.0" />
+  <meta name="docsearch:version" content="2.3.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -109,7 +109,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -225,14 +225,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -287,7 +287,7 @@
   
 
   
-    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -301,7 +301,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
@@ -372,14 +372,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -480,7 +480,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-home"></i>
+        <i class="fa-solid fa-house"></i>
       </a>
     </li>
     
@@ -510,25 +510,30 @@
 <h2>1. Loading a Spectrum<a class="headerlink" href="#loading-a-spectrum" title="Link to this heading">#</a></h2>
 <p>Let’s begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>).</p>
 <ol class="arabic simple">
-<li><p>Launch Astrocook. You will be greeted by the welcome screen.</p></li>
-<li><p>Go to the menu bar and select <strong>File &gt; Open Session…</strong> (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+O</span></code>).</p></li>
-<li><p>Select your spectrum file. You can select multiple files at once if you want to load several observations simultaneously.</p></li>
+<li><p>Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons <strong>Open Session…</strong> and <strong>Open Recent</strong> (a drop-down menu of the files you opened last).</p></li>
+<li><p>Click <strong>Open Session…</strong>, or select <strong>File &gt; Open Session…</strong> in the menu bar (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+O</span></code>). <strong>File &gt; Open Recent</strong> lists the files opened last; you can also drop files on the window.</p></li>
+<li><p>Select your spectrum file. You can select multiple files at once if you want to load several observations simultaneously: they are loaded in the background, with a window that shows the progress and can cancel the files not yet opened; the status bar then says how many were opened, and the files that could not be opened are listed together.</p></li>
 </ol>
 <p>Once loaded, the interface will come alive. The central area displays your spectrum, while two sidebars provide control over your data and visualization.</p>
 <img alt="The main Astrocook interface with a spectrum loaded" class="align-center" src="../images/getting_started_main_view.png" />
 </section>
 <section id="navigating-the-plot">
-<h2>2. Navigating the Plot<a class="headerlink" href="#navigating-the-plot" title="Link to this heading">#</a></h2>
-<p>The central plot is interactive. You can explore the details of your spectrum using the toolbar located directly above the graph (standard Matplotlib controls):</p>
+<span id="getting-started-navigating"></span><h2>2. Navigating the Plot<a class="headerlink" href="#navigating-the-plot" title="Link to this heading">#</a></h2>
+<p>The central plot is interactive. You can explore the details of your spectrum using the toolbar in the bottom left corner of the graph. Like the side panels, it floats over the plot, which takes the whole height of the window, fades while the mouse is on the plot (it comes back when you move the mouse over it), and has a tab at its right edge that hides it and shows it again. The tool that is on (Pan, Zoom or Select) is highlighted in blue; Back and Forward are grey when there is no view to go to. The keys in brackets act after a click on the plot:</p>
 <ul class="simple">
-<li><p><strong>Pan</strong>: Click the “Cross arrow” icon to click and drag the spectrum.</p></li>
-<li><p><strong>Zoom</strong>: Click the “Magnifying glass” icon to draw a rectangle and zoom into a specific feature.</p></li>
-<li><p><strong>Home</strong>: Click the “Home” icon to reset the view to the full range.</p></li>
+<li><p><strong>Home</strong> (<code class="docutils literal notranslate"><span class="pre">H</span></code>): reset the view to the full range.</p></li>
+<li><p><strong>Back</strong> and <strong>Forward</strong> (<code class="docutils literal notranslate"><span class="pre">←</span></code>, <code class="docutils literal notranslate"><span class="pre">→</span></code>): the previous and next views.</p></li>
+<li><p><strong>Pan</strong> (<code class="docutils literal notranslate"><span class="pre">P</span></code>): drag the spectrum; drag with the right button to zoom.</p></li>
+<li><p><strong>Zoom</strong> (<code class="docutils literal notranslate"><span class="pre">Z</span></code>): draw a rectangle to zoom into a specific feature.</p></li>
+<li><p><strong>Select</strong> (<code class="docutils literal notranslate"><span class="pre">X</span></code>): the “Range” icon (a double arrow between two bars); drag along the wavelength axis to select a region. When you release the mouse, a menu offers what to do with it: <strong>Split region</strong> (a new session with the region only), <strong>Mask region…</strong>, <strong>Rebin region…</strong> (each opens its recipe dialog with the region filled in, so you can check it before running) and <strong>Zoom to region</strong>. Press <code class="docutils literal notranslate"><span class="pre">Esc</span></code> or click elsewhere to discard the region. The tool stays on until you click its icon again or choose Pan or Zoom; it is not available when the x axis is in velocity.</p></li>
+<li><p><strong>Save</strong>: save the figure to an image file.</p></li>
 </ul>
+<p><code class="docutils literal notranslate"><span class="pre">Esc</span></code> switches off the tool that is on. The position of the mouse (wavelength, flux and rest-frame wavelength) is shown at the right end of the status bar, at the bottom of the window; its left end says how the last recipe went (e.g. <em>Auto-fit Ly-alpha forest: done in 12.3 s, 44 → 977 components</em>, and how many warnings it gave). <strong>View &gt; Show Toolbar</strong> hides the toolbar (and shows it again), to give the plot more room; its keys still work, the position of the mouse stays in the status bar, and the choice is remembered.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
 </div>
+<img alt="A region of the spectrum selected with the Select tool, and the menu of the actions on it" class="align-center" src="../images/getting_started_region_select.png" />
 <section id="the-data-inspector">
 <span id="data-inspector"></span><h3>The Data Inspector<a class="headerlink" href="#the-data-inspector" title="Link to this heading">#</a></h3>
 <p>For precise pixel-level analysis, you can open the <strong>Data Inspector</strong>.</p>
@@ -553,21 +558,21 @@
 <p>The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (<strong>Plot Elements</strong>, <strong>View Controls</strong>, <strong>Axis Limits</strong>, <strong>Redshift Cursor</strong>, <strong>Edit Continuum</strong>) open and close with a click on their title, and Astrocook remembers which ones you left open.</p>
 <section id="plot-elements">
 <h3>Plot Elements<a class="headerlink" href="#plot-elements" title="Link to this heading">#</a></h3>
-<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: while this section is open it replaces the legend of the plot, and the legend shows only what is not listed here (e.g. other sessions or an auxiliary column).</p>
+<p>You can show or hide specific layers of the plot. Next to each one, a short sample of the line shows how it is drawn: these samples are the legend of the plot, which has none of its own. The auxiliary column chosen in <strong>Auxiliary column</strong> has its sample inside the menu, and each other session shown (see below) next to its name in the list of the sessions.</p>
 <ul>
-<li><p><strong>1-sigma error</strong>: Hides the grey error shading.</p></li>
-<li><p><strong>Show error as line</strong>: Instead of a shaded band, plots the error array (<span class="math notranslate nohighlight">\(dy\)</span>) as a separate line. Useful for inspecting noise structure in high-resolution spectra.</p></li>
+<li><p><strong>1-sigma error</strong>: Shows or hides the error of the flux (grey).</p></li>
+<li><p><strong>Show error as line</strong>: Checked by default: the error array (<span class="math notranslate nohighlight">\(dy\)</span>) is drawn as a line of its own, useful for inspecting the noise structure in high-resolution spectra. Unchecked, the error is drawn as a band around the flux.</p></li>
 <li><p><strong>Normalization</strong>: Hides the continuum level (dashed black line).</p></li>
-<li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid red line).</p></li>
-<li><p><strong>Systems</strong>: Hides the vertical tick marks indicating identified systems.</p></li>
-<li><p><strong>Aux. Column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
-<li><p><strong>Strong emission lines</strong>: Shows markers for major emission lines (e.g., Ly-<span class="math notranslate nohighlight">\(\alpha\)</span>, CIV).</p>
+<li><p><strong>Absorption model</strong>: Hides the Voigt profile fits (solid green line).</p></li>
+<li><p><strong>Systems</strong>: Hides the tick marks of the fitted components at the bottom of the plot, in two rows: HI (red) below, metals (grey) above.</p></li>
+<li><p><strong>Auxiliary column</strong>: Select an additional data column (e.g., <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">running_std</span></code>) to overlay on the plot.</p></li>
+<li><p><strong>Strong emission lines only</strong>: Shows only the major emission lines (e.g., Lyα, C IV), named in spectroscopic notation; unchecked, all the lines of the atomic data, fainter.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires defining the emission redshift first (see <a class="reference internal" href="editing_data.html#editing-properties"><span class="std std-ref">Setting Session Properties</span></a>).</p>
 </div>
 </li>
-<li><p><strong>Show Iso-Mag Grid</strong>: Overlays curves of constant AB magnitude.</p>
+<li><p><strong>Show iso-magnitude grid</strong>: Overlays curves of constant AB magnitude.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires flux calibration (see <a class="reference internal" href="flux_operations.html#flux-calibration"><span class="std std-ref">Flux Calibration</span></a>).</p>
@@ -580,12 +585,13 @@
 <ul class="simple">
 <li><p><strong>Units</strong>: You can switch the X-axis display between <code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>, and <code class="docutils literal notranslate"><span class="pre">micron</span></code> on the fly.</p></li>
 <li><p><strong>Normalize F</strong>: Plots the flux relative to the continuum (showing <span class="math notranslate nohighlight">\(f = F / F_\mathrm{cont}\)</span>) (this control becomes active only when a <code class="docutils literal notranslate"><span class="pre">cont</span></code> column is present).</p></li>
-<li><p><strong>Show SNR</strong>: Plots the Signal-to-Noise Ratio instead of flux.</p>
+<li><p><strong>Show S/N</strong>: Plots the signal-to-noise ratio instead of flux.</p>
 <ul>
-<li><p><strong>Error Col.</strong>: When showing SNR, you can select which column to use as the noise estimate (default is <code class="docutils literal notranslate"><span class="pre">dF</span></code>).</p></li>
+<li><p><strong>Error column</strong>: When showing the S/N, you can select which column to use as the noise estimate (default is <code class="docutils literal notranslate"><span class="pre">dF</span></code>).</p></li>
 </ul>
 </li>
 <li><p><strong>Logarithmic <span class="math notranslate nohighlight">\(\lambda\)</span></strong>: Switches the X-axis to a logarithmic scale.</p></li>
+<li><p><strong>Logarithmic F</strong>: Switches the Y-axis to a logarithmic scale, e.g. to see the continuum and the emission lines over several orders of magnitude, or the <strong>iso-magnitude grid</strong> as straight lines. Pixels with <span class="math notranslate nohighlight">\(F \le 0\)</span> (saturated absorption, noise) are drawn at the bottom of the plot. In the normalized view the axis starts from 0.01, so saturated lines are shown down to 1% of the continuum. A non-positive <strong>F Min</strong> is not applied while the scale is logarithmic.</p></li>
 </ul>
 </section>
 <section id="axis-limits">
@@ -597,15 +603,22 @@
 <p>This is a handy tool for quick visual inspection.</p>
 <ol class="arabic simple">
 <li><p>In the <strong>Redshift Cursor</strong> section, enter a transition name (e.g., <code class="docutils literal notranslate"><span class="pre">Ly_a</span></code>, <code class="docutils literal notranslate"><span class="pre">CIV</span></code>, <code class="docutils literal notranslate"><span class="pre">MgII</span></code>) and a redshift <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p></li>
-<li><p>Check the <strong>Show Cursor Lines</strong> box.</p></li>
-<li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found. You can update the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to slide the cursor along the spectrum.</p></li>
+<li><p>Check the <strong>Show cursor</strong> box.</p></li>
+<li><p>Vertical dashed lines will appear on the plot indicating where that transition should be found, with their redshift written at the top of the first one. The cursor follows the mouse over the plot; you can also type the <code class="docutils literal notranslate"><span class="pre">z</span></code> value to place it.</p></li>
 </ol>
 <img alt="The Plot Controls sidebar" class="align-center" src="../images/getting_started_plot_controls.png" />
-<p><strong>Interactive Setting:</strong> You can <strong>Right-click</strong> directly on the plot background to open a context menu. Select <strong>Set emission redshift to z=…</strong> to instantly update the session’s <span class="math notranslate nohighlight">\(z_{em}\)</span> based on the cursor’s current position.</p>
+<p><strong>Interactive Setting:</strong> You can <strong>Right-click</strong> directly on the plot background to open a context menu. Select <strong>Set Emission Redshift to z=…</strong> to instantly update the session’s <span class="math notranslate nohighlight">\(z_{em}\)</span> based on the cursor’s current position.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If the <strong>Zoom</strong> or <strong>Pan</strong> tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) while right-clicking to access the context menu.</p>
 </div>
+</section>
+<section id="dark-mode-and-plot-colours">
+<h3>Dark Mode and Plot Colours<a class="headerlink" href="#dark-mode-and-plot-colours" title="Link to this heading">#</a></h3>
+<p>By default Astrocook follows the light or dark appearance of your system (on macOS, <em>System Settings &gt; Appearance</em>), and switches with it while it is open. <strong>View &gt; Appearance</strong> chooses <em>Light</em> or <em>Dark</em> for Astrocook alone, or <em>System</em> to follow the system again; the choice is remembered. The plots stay white in both, like the figures of a paper, so that the colours of the lines are always the same.</p>
+<img alt="The main window in dark mode, with the plot white" class="align-center" src="../images/getting_started_dark_mode.png" />
+<p><strong>View &gt; Plot Colours</strong> chooses the colours of the plots, in the main window and in the System Inspector, also remembered. <em>Standard</em> draws the spectrum in blue and the model in green. <em>Colour-blind Safe</em> uses the palette of Okabe and Ito: the spectrum in dark grey, the model in blue, the residuals and the ticks of the HI components in vermilion, a component at a bound of the fit in reddish purple; the selection stays amber. Its colours stay apart for every common type of colour blindness, while in the standard colours the model, the selected component and the residuals of the System Inspector look alike to a deuteranope.</p>
+<img alt="The System Inspector with the colour-blind safe colours: a blue model over a dark grey spectrum, the selected component in amber" class="align-center" src="../images/getting_started_plot_colours.png" />
 </section>
 <section id="the-continuum-editor">
 <h3>The Continuum Editor<a class="headerlink" href="#the-continuum-editor" title="Link to this heading">#</a></h3>
@@ -624,7 +637,7 @@
 <p>You can easily compare multiple spectra simultaneously directly in the main plot window:</p>
 <ul class="simple">
 <li><p><strong>How to use:</strong> Hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on macOS) and click on multiple sessions in the left-hand Session List. You can also use <code class="docutils literal notranslate"><span class="pre">Shift+Click</span></code> to select a continuous range.</p></li>
-<li><p><strong>What you’ll see:</strong> Your primary active session remains fully featured (showing models, continuums, and system markers). The additional selected sessions will appear underneath as “ghost” spectra, plotted in distinct, colorblind-friendly colors with semi-transparent flux and error bands. A legend will automatically appear to help you identify them.</p></li>
+<li><p><strong>What you’ll see:</strong> Your primary active session remains fully featured (showing models, continuums, and system markers). The additional selected sessions will appear underneath as “ghost” spectra, plotted in distinct, colorblind-friendly colors with semi-transparent flux and error bands. A sample of its colour appears next to the name of each of them in the session list, to help you identify them.</p></li>
 <li><p><strong>Smart Scaling:</strong> The ghost spectra are fully integrated with your View Controls! If you toggle <strong>Normalize F</strong>, all visible spectra will automatically rescale to match the active view.</p></li>
 </ul>
 <img alt="Overlay of multiple ghost spectra in the main plot window" class="align-center" src="../images/getting_started_ghost_spectra.png" />
@@ -633,9 +646,9 @@
 <h3>Session Info &amp; Properties<a class="headerlink" href="#session-info-properties" title="Link to this heading">#</a></h3>
 <p>Right-click on any session in the list to open the context menu. This menu offers several powerful tools:</p>
 <ul>
-<li><p><strong>View Info</strong>: Opens the Session Inspector. Here you can see (and edit) critical metadata:</p>
+<li><p><strong>View Info</strong>: Opens the <em>Session Info</em> dialog. Here you can see (and edit) critical metadata:</p>
 <ul class="simple">
-<li><p><strong>Object Name</strong></p></li>
+<li><p><strong>Object</strong></p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>)</strong>: Crucial for many recipes like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis.</p></li>
 <li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>)</strong>: Essential for accurate Voigt profile fitting.</p></li>
 </ul>
@@ -647,9 +660,9 @@
 <li><p><strong>Duplicate</strong>: Creates a complete copy of the current session. This allows you to branch your analysis (e.g., to test two different continuum fits on the same data).</p></li>
 </ul>
 </section>
-<section id="the-log-scripter">
-<h3>The Log Scripter<a class="headerlink" href="#the-log-scripter" title="Link to this heading">#</a></h3>
-<p>Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select <strong>View Log</strong> to open the <strong>Log Scripter</strong>.</p>
+<section id="the-session-log">
+<h3>The Session Log<a class="headerlink" href="#the-session-log" title="Link to this heading">#</a></h3>
+<p>Astrocook automatically records every operation you perform (smoothing, fitting, editing). Right-click a session and select <strong>View Log</strong> to open the <strong>Session Log</strong>.</p>
 <p>This dialog allows you to:</p>
 <ul>
 <li><p><strong>Review History:</strong> See a readable list of every recipe run on this session.</p></li>
@@ -667,9 +680,9 @@
 <h3>View Menu Tools<a class="headerlink" href="#view-menu-tools" title="Link to this heading">#</a></h3>
 <p>The <strong>View</strong> menu also provides access to specialized analysis windows:</p>
 <ul class="simple">
-<li><p><strong>View Session Log</strong>: Opens the Log Scripter (see above).</p></li>
+<li><p><strong>View Session Log</strong>: Opens the Session Log (see above).</p></li>
 <li><p><strong>View System Inspector</strong>: Opens the advanced interface for analyzing absorption lines. <em>See the <a class="reference internal" href="absorption_systems.html#system-inspector"><span class="std std-ref">Absorption Systems</span></a> tutorial for a full guide.</em></p></li>
-<li><p><strong>View Identifications</strong>: Opens a summary table of all candidate lines found by the <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code> recipe.</p></li>
+<li><p><strong>View Identifications</strong>: Opens a table of the identifications made by <em>Identify Absorption Lines</em> or by the automatic pipelines, as they are made: one row per doublet found (e.g. CIV), i.e. per pair of absorbed regions whose separation matches the doublet and whose optical depths agree with it (the score, the <span class="math notranslate nohighlight">\(R^2\)</span> of the comparison). Its redshift range is that of the two regions, its redshift the middle of it. A region can be in more than one pair: the other pairs of its regions are its <em>Alternatives</em> (doublet, redshift, regions and score). The regions of the Lyman-α forest that no doublet identified are listed as <em>Ly_a (assumed)</em>, without a score: the recipe assigns them to Lyα, it does not identify them. Click a column header to sort, and a row to show its regions together in the main plot, with the flux axis fitted to them.</p></li>
 <li><p><strong>View Script Console</strong>: Opens a Python console for running custom scripts on the current session data.</p></li>
 </ul>
 </section>
@@ -746,7 +759,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
@@ -768,6 +781,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-limits">Axis Limits</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-redshift-cursor">The Redshift Cursor</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dark-mode-and-plot-colours">Dark Mode and Plot Colours</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-continuum-editor">The Continuum Editor</a></li>
 </ul>
 </li>
@@ -775,7 +789,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switching-sessions">Switching Sessions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-multiple-spectra-ghost-overlay">Visualizing Multiple Spectra (Ghost Overlay)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#session-info-properties">Session Info &amp; Properties</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-log-scripter">The Log Scripter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-session-log">The Session Log</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#view-menu-tools">View Menu Tools</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-closing">Saving and Closing</a></li>
 </ul>
@@ -811,8 +825,8 @@ A dialog will appear allowing you to select exactly what to export:</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
-<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -845,7 +859,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
 </p></div>
       
     </div>

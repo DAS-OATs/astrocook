@@ -44,7 +44,7 @@ This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** t
 For a more generic search (or if you are looking for specific ions):
 1.  Go to **Absorbers > Identify Absorption Lines...**.
 2.  This generates a list of candidate regions but *does not* fit them immediately.
-3.  You can then visualize these regions by selecting `abs_ids` in the **Aux. Column** dropdown of the Plot Controls.
+3.  You can then visualize these regions by selecting `abs_ids` in the **Auxiliary column** dropdown of the Plot Controls.
 
 :::{note}
 This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
@@ -75,9 +75,11 @@ To open it: **View > View System Inspector**, or right-click over a component in
 This table lists every component in the model.
 * **Edit:** Double-click any cell (`z`, `logN`, `b`) to modify its value directly.
 * **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
+* **Keys:** The arrows move the selection, and the plot follows it. `Return` refits the selected components (**Refit Selected**), `Delete` (or `Backspace`) deletes them; `Ctrl+Z` (`Cmd+Z` on Mac) and `Ctrl+Shift+Z` undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.
+* **Status line:** At the bottom of the inspector, how the last recipe went (e.g. a refit) and, on the right, the position of the mouse in the velocity plot.
 * **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
-* **Group View:** Check the box above the table to hide unrelated systems and show only the components physically linked to your selection.
+* **Only group:** Check the box above the table to show only the group of the selected components: the components linked to them, blended with them or close in velocity, which are fitted together with them. Right-clicking a component in the main plot and choosing **Inspect ... (its group)** (e.g. *Inspect CIV (its group)*) opens the inspector this way.
 
 #### Understanding Resolution Priority
 Astrocook handles instrumental resolution ($R$) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The resolution of a spectrum lives in its `resol` column (visible in the Data Inspector): resolving power $R$ if dimensionless, FWHM if in km/s. The Voigt fitting engine and the velocity plots use it according to this hierarchy:
@@ -93,14 +95,23 @@ The fit does not write the resolution it used into the components: changing the 
 
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
+The boxes above the plot are in three groups, separated by thin lines: what the plot shows (**Trans.**, **z**, **Δv**), the starting values and fit window of a new component (**logN**, **b**, **Fit ±**), and the residuals (**Resid.**). Each box has a tooltip.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
 * **Scroll:** If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.
 * **Displayed Lines:** The text box at the top shows which transitions are plotted (e.g., `CIV, SiIV`). You can type new ions here (comma-separated) to inspect other species at the same redshift.
-* **Test Component:** The `logN` and `b` boxes above the plot control the shape of the "ghost" profile attached to your mouse cursor, useful for visually estimating parameters before adding a component.
+* **Test Component:** The `logN` and `b` boxes above the plot control the shape of the "ghost" profile attached to your mouse cursor, useful for visually estimating parameters before adding a component; they are also the starting values of a component added from the menu of the plot (right click).
 * **Residuals:** Check the **Resid.** box to show a residual plot below each transition panel.
 
 ```{image} ../_static/absorbers_system_inspector.png
 :alt: The System Inspector showing a metal doublet
+:align: center
+```
+
+### Before the first system
+The velocity plot shows the flux divided by the continuum, and the fits need it. Without a continuum the plot shows a message instead, with a button that opens **Auto-estimate Continuum...**; **Refit Selected**, **Refit All**, the Bayesian fit and the entries that add a component are disabled, with a tooltip that says why. With a continuum but no systems yet, the message says how to start: type transitions and a redshift above the plot to look at the spectrum (also before any component exists), then add components from the menu of the plot (right click), or run an automatic pipeline.
+
+```{image} ../_static/absorbers_no_continuum.png
+:alt: The System Inspector of a session without continuum
 :align: center
 ```
 
@@ -110,7 +121,7 @@ Each fit leaves a warning on the components whose result is not reliable:
 * **A parameter at a bound of the fit:** z at the edge of the fit window, logN or b at their lower or upper bound. The automatic pipelines fit with tighter upper bounds (**Max b** = 50 km/s, **Max logN** = 19) than the manual fits (300 km/s, 23), so a component at one of those bounds may be broader or stronger in reality. The cell of the parameter is highlighted.
 * **No uncertainties:** the fit could not compute the errors of the component (the value is not constrained). Its **ID** is highlighted in red.
 
-A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check **Only flagged** to list only these components, and click **Select flagged** to select them all, e.g. to refit them with **Refit Selected** (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.
+A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check **Only flagged** to list only these components, and click **Select Flagged** to select them all, e.g. to refit them with **Refit Selected** (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.
 
 ```{image} ../_static/absorbers_flags.png
 :alt: The System Inspector with Only flagged checked and the tooltip of a component at the upper bound of b
@@ -167,14 +178,18 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 - **Link (Thermal):** Assumes the broadening is **thermal**. The `b` value is scaled according to the atomic mass ratio of the two ions ($b \propto m^{-1/2}$).
 
 :::{note}
-Astrocook also tracks a turbulent broadening parameter `btur` separately. It is available in the table but **frozen (italic)** by default. You can unfreeze it via the right-click menu if you need to model mixed thermal/turbulent broadening explicitly.
+Astrocook also tracks a turbulent broadening parameter `btur` separately. It is **frozen (italic)** at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (**btur** included); **Default Columns** goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose **Unfreeze 'btur'** in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.
 :::
 
 ### Uncertainties
+In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the tooltip of the row gives it also as $\delta z$. The exported tables keep $\delta z$.
+
 The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by $\sqrt{\chi^2_\nu}$ of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced $\chi^2_\nu$ is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large $\chi^2_\nu$ (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.
 
+A linked parameter is computed from its target, so its uncertainty is propagated from the target through the expression of the link: a `z` linked by value has the same uncertainty as the `z` of its target, a `b` linked thermally the uncertainty of the target's `b` scaled by the same mass ratio. The two uncertainties are therefore fully correlated, which matters when a list of components is used for statistics (count them once). A frozen parameter has uncertainty 0, as does a parameter linked to a frozen one.
+
 ### Importing a Line List
-**Edit > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export ASCII** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
+**File > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export to ASCII...** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
 
 ### Refitting
 
