@@ -469,6 +469,19 @@ class MainMenusMixin:
         about_action.triggered.connect(self._on_about_requested)
         help_menu.addAction(about_action)
 
+        # The File menu in groups (Guido): open, save, import, export, close
+        # (removed one by one: clear() deletes the actions the menu owns)
+        for action in file_menu.actions():
+            file_menu.removeAction(action)
+        for group in ((open_action, self.recent_menu.menuAction()), (save_action,),
+                      (import_action, self.import_systems_ascii_action,
+                       self.import_systems_action),
+                      (export_action,), (close_action,)):
+            if file_menu.actions():
+                file_menu.addSeparator()
+            for action in group:
+                file_menu.addAction(action)
+
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""
         QApplication.setOverrideCursor(Qt.WaitCursor)

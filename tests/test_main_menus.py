@@ -18,10 +18,11 @@ from test_gui_smoke import SESSION_FILE, _run_recipe
 SEP = "---"
 
 MENUS = {
-    "File": ["Open Session...", "Open Recent", "Export to ASCII...", "Import from ASCII...",
-             # Moved from Edit (phase 5-bis, Guido)
-             "Import Systems from ASCII...", "Import Systems from Session...", "Save Session...",
-             SEP, "Close Session"],
+    # In groups (phase 5-bis, Guido): open, save, import, export, close
+    "File": ["Open Session...", "Open Recent", SEP, "Save Session...", SEP,
+             "Import from ASCII...", "Import Systems from ASCII...",
+             "Import Systems from Session...", SEP, "Export to ASCII...", SEP,
+             "Close Session"],
     "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", SEP,
              "View System Inspector", SEP,
              "View Session Log", "View Script Console", "View Identifications"],
