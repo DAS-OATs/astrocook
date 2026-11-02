@@ -27,7 +27,7 @@ On each spectrum the chain runs with the default parameters of the
 dialogs:
 
 1. **Continuum > Auto-estimate Continuum**;
-2. **Absorbers > Identify Lines**;
+2. **Absorbers > Identify Absorption Lines**;
 3. **Absorbers > Auto-detect Doublets**.
 
 A fitted line is matched to a true one within 20 km/s. The script is
