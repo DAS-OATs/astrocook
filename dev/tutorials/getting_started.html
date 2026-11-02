@@ -680,7 +680,7 @@
 <ul class="simple">
 <li><p><strong>View Session Log</strong>: Opens the Session Log (see above).</p></li>
 <li><p><strong>View System Inspector</strong>: Opens the advanced interface for analyzing absorption lines. <em>See the <a class="reference internal" href="absorption_systems.html#system-inspector"><span class="std std-ref">Absorption Systems</span></a> tutorial for a full guide.</em></p></li>
-<li><p><strong>View Identifications</strong>: Opens a summary table of all candidate lines found by the <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code> recipe.</p></li>
+<li><p><strong>View Identifications</strong>: Opens a table of the identifications made by <em>Identify Absorption Lines</em> or by the automatic pipelines, as they are made: one row per doublet found (e.g. CIV), i.e. per pair of absorbed regions whose separation matches the doublet and whose optical depths agree with it (the score, the <span class="math notranslate nohighlight">\(R^2\)</span> of the comparison). Its redshift range is that of the two regions, its redshift the middle of it. A region can be in more than one pair: the other pairs of its regions are its <em>Alternatives</em> (doublet, redshift, regions and score). The regions of the Lyman-α forest that no doublet identified are listed as <em>Ly_a (assumed)</em>, without a score: the recipe assigns them to Lyα, it does not identify them. Click a column header to sort, and a row to show its regions together in the main plot, with the flux axis fitted to them.</p></li>
 <li><p><strong>View Script Console</strong>: Opens a Python console for running custom scripts on the current session data.</p></li>
 </ul>
 </section>
