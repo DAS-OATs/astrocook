@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from .about_dialog import AboutDialog
 from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
+from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
 from .theme import APPEARANCES, apply_appearance
 
 #: The files opened last, in the settings (File > Open Recent, the empty window)
@@ -22,6 +23,8 @@ RECENT_FILES_KEY = "recent_files"
 MAX_RECENT_FILES = 10
 #: The size and position of the main window, in the settings
 GEOMETRY_KEY = "window_geometry"
+#: View > Plot Colours: the palette of the plots ("standard", "colorblind")
+PLOT_COLOURS_KEY = "plot_colours"
 
 
 class MainMenusMixin:
@@ -44,6 +47,20 @@ class MainMenusMixin:
         self.appearance_actions[mode].setChecked(True)
         if save:
             QSettings("Astrocook", "AstrocookV2").setValue("appearance", mode)
+
+    def _set_plot_colours(self, name: str, save: bool = True):
+        """View > Plot Colours: the standard palette of the plots or the
+        colour-blind safe one (``plot_style.PLOT_PALETTES``). The main plot
+        and the System Inspector are drawn again."""
+        name = set_plot_palette(name)
+        self.plot_colours_actions[name].setChecked(True)
+        if save:
+            QSettings("Astrocook", "AstrocookV2").setValue(PLOT_COLOURS_KEY, name)
+        if getattr(self, 'plot_viewer', None) is not None and self.active_history:
+            self._trigger_replot()
+        inspector = getattr(self, 'system_inspector', None)
+        if inspector is not None:
+            inspector.refresh_plot_colours()
 
     def _set_toolbar_visible(self, visible: bool, save: bool = True):
         """View > Show Toolbar: the toolbar of the main plot (with the
@@ -97,6 +114,7 @@ class MainMenusMixin:
         """The appearance and the toolbar as the user left them."""
         settings = QSettings("Astrocook", "AstrocookV2")
         self._set_appearance(settings.value("appearance", "system"), save=False)
+        self._set_plot_colours(settings.value(PLOT_COLOURS_KEY, "standard"), save=False)
         visible = settings.value("show_toolbar", True)
         self._set_toolbar_visible(visible not in (False, "false"), save=False)
         # The size and position of the window, as the user left them (they
@@ -202,6 +220,20 @@ class MainMenusMixin:
             group.addAction(action)
             appearance_menu.addAction(action)
             self.appearance_actions[mode] = action
+
+        # The palette of the plots: standard or colour-blind safe (saved)
+        colours_menu = view_menu.addMenu("Plot &Colours")
+        self.plot_colours_actions = {}
+        group = QActionGroup(self)
+        group.setExclusive(True)
+        for name, label in PLOT_PALETTE_NAMES.items():
+            action = QAction(label, self)
+            action.setCheckable(True)
+            action.setChecked(name == plot_palette_name())
+            action.triggered.connect(lambda checked=False, n=name: self._set_plot_colours(n))
+            group.addAction(action)
+            colours_menu.addAction(action)
+            self.plot_colours_actions[name] = action
 
         view_menu.addSeparator()
         self.view_system_inspector_action = QAction("View System &Inspector", self)

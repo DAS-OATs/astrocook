@@ -403,6 +403,7 @@ class Studio:
             self.run("continuum", "estimate_auto")
             self.run("absorbers", "doublets_auto")
             self.run("absorbers", "lya_auto")
+            self._refine_metal_system()
             folder = Path(tempfile.mkdtemp(prefix="astrocook-shots-data-"))
             self._analysed = folder / "My QSO.acs2"
             self.window.active_history.current_state.save(str(self._analysed))
@@ -410,6 +411,25 @@ class Studio:
         self.window.open_session_from_path(str(self._analysed))
         self.pump(1.5)
         return self.window
+
+    def _refine_metal_system(self):
+        """The system at z ~ 2.3555 of the System Inspector scenes, refined
+        as a user would: the automatic pipelines leave the CIV with too few
+        components (mean chi2 ~20 per pixel on CIV_1548) and a SiIV at the
+        upper bound of b over a narrow structure. Optimize System on the
+        strongest SiIV and CIV, then the broad SiIV removed and the SiIV
+        optimized again (chi2 ~1.5-3 on the four lines)."""
+        def system(series):
+            comps = self.window.active_history.current_state.systs.components
+            return [c for c in comps if c.series == series and abs(c.z - 2.3555) < 0.003]
+
+        for series in ("SiIV", "CIV"):
+            seed = max(system(series), key=lambda c: c.logN)
+            self.run("absorbers", "optimize_system", uuid=seed.uuid)
+        for comp in [c for c in system("SiIV") if c.b > 40]:
+            self.run("absorbers", "delete_component", uuid=comp.uuid)
+        seed = max(system("SiIV"), key=lambda c: c.logN)
+        self.run("absorbers", "optimize_system", uuid=seed.uuid)
 
     def at(self, widget, point=None):
         """Logical position of a point of a widget, in the main window."""
@@ -729,10 +749,12 @@ def continuum_manual_edit(s: Studio):
 
 
 def _metal_system(session):
-    """The strongest SiIV of the system at z ~ 2.3555 and its closest CIV."""
+    """The strongest narrow SiIV of the system at z ~ 2.3555 (a broad one
+    would show a wide profile over narrow lines) and its closest CIV."""
     comps = session.systs.components
     near = [c for c in comps if abs(c.z - 2.3555) < 0.002]
-    siiv = max((c for c in near if c.series.startswith("SiIV")), key=lambda c: c.logN)
+    siiv = max((c for c in near if c.series.startswith("SiIV") and c.b < 20),
+               key=lambda c: c.logN)
     civ = min((c for c in near if c.series.startswith("CIV")), key=lambda c: abs(c.z - siiv.z))
     return siiv, civ
 
@@ -789,6 +811,25 @@ def _component_tooltip(s: Studio, inspector, image):
     px_, py_ = s.at(canvas, QPoint(int(cx), int(cy)))
     paste(image, popup(tip), (px_ + 8, py_ + 12), shadow_margin=8)
     pointer(image, (px_, py_))
+
+
+@scene
+def getting_started_plot_colours(s: Studio):
+    """The System Inspector with View > Plot Colours > Colour-blind Safe."""
+    w = s.analysed()
+    w._set_plot_colours("colorblind", save=False)
+    try:
+        siiv, civ = _metal_system(w.active_history.current_state)
+        inspector = s.inspector()
+        s.select_components(inspector, civ)
+        inspector.resid_cb.setChecked(True)
+        s.pump(1.0)
+        insp = grab(inspector)
+        inspector.resid_cb.setChecked(False)
+        inspector.hide()
+    finally:
+        w._set_plot_colours("standard", save=False)
+    return framed(insp, inspector.windowTitle())
 
 
 @scene

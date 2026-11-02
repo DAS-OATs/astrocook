@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
 from .plot_mouse import PlotMouseMixin
-from .plot_style import (ERROR_COLOR, HI_TICK_COLOR, STRONG_EMISSION_LINES,
+from .plot_style import (ERROR_COLOR, STRONG_EMISSION_LINES,
                          decimate_x_for_min_max, decimate_y_min_max, emission_label,
-                         flux_unit_label, get_color_cycle)
+                         flux_unit_label, get_color_cycle, plot_colour)  # noqa: F401 (get_color_cycle re-exported)
 from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
@@ -338,15 +338,14 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             arrays = self._slice_to_view(arrays, view)
             arrays = self._decimate(arrays, view, source)
             view.set_marker_style(spec, len(arrays.x))
-            colors = get_color_cycle(5, cmap='tab20') # Get colors
 
             self._plot_other_sessions(ax, view)
             self._plot_error(ax, arrays, view)
-            self._plot_flux(ax, arrays, view, colors)
-            self._plot_continuum_and_model(ax, arrays, colors)
+            self._plot_flux(ax, arrays, view)
+            self._plot_continuum_and_model(ax, arrays)
             self._plot_aux_column(ax, spec, arrays, view)
             self._plot_systems(ax, spec, session_state.systs)
-            self._plot_cursor(session_state, colors)
+            self._plot_cursor(session_state)
 
             self._update_swatches(ax)
             # No title: the name of the session is in the title of the
@@ -707,7 +706,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color=ERROR_COLOR, rasterized=True)
 
     @staticmethod
-    def _plot_flux(ax, arrays: '_PlotArrays', view: '_PlotView', colors):
+    def _plot_flux(ax, arrays: '_PlotArrays', view: '_PlotView'):
         """The flux (uses Matplotlib style defaults for color)."""
         if view.is_scatter:
             # Use a fast marker plot for echelle data
@@ -715,13 +714,13 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             # 'marker="."' is a pixel-like dot
             ax.plot(arrays.x, arrays.y, label="Spectrum",
                     linestyle='None', marker='.', markersize=view.scatter_ms, markeredgewidth=0,
-                    color=colors[0], alpha=0.7, rasterized=True)
+                    color=plot_colour('flux'), alpha=0.7, rasterized=True)
         elif view.use_decimation:
-            ax.plot(arrays.x, arrays.y, label="Spectrum (decimated)", lw=0.5, color=colors[0], rasterized=True)
+            ax.plot(arrays.x, arrays.y, label="Spectrum (decimated)", lw=0.5, color=plot_colour('flux'), rasterized=True)
         else:
-            ax.step(arrays.x, arrays.y, where='mid', label="Spectrum", lw=0.5, color=colors[0], rasterized=True)
+            ax.step(arrays.x, arrays.y, where='mid', label="Spectrum", lw=0.5, color=plot_colour('flux'), rasterized=True)
 
-    def _plot_continuum_and_model(self, ax, arrays: '_PlotArrays', colors):
+    def _plot_continuum_and_model(self, ax, arrays: '_PlotArrays'):
         """The continuum (normalization) and the absorption model, when
         shown."""
         if self.main_window.continuum_checkbox.isChecked():
@@ -735,7 +734,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
         if self.main_window.model_checkbox.isChecked():
             if arrays.model is not None:
-                ax.plot(arrays.x, arrays.model, ls='-', color=colors[1], lw=1.6, alpha=0.8, label='Absorption model', rasterized=True)
+                ax.plot(arrays.x, arrays.model, ls='-', color=plot_colour('model'),
+                        lw=plot_colour('model_lw'), alpha=plot_colour('model_alpha'),
+                        label='Absorption model', rasterized=True)
 
     def _plot_aux_column(self, ax, spec, arrays: '_PlotArrays', view: '_PlotView'):
         """The auxiliary column chosen in the main window: the detected
@@ -898,7 +899,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             # red block over the bottom of the spectrum (visual review)
             ax.plot(hi_lines_x, [hi_y] * len(hi_lines_x),
                     marker='|', markersize=8, markeredgewidth=1.0, linestyle='None',
-                    color=HI_TICK_COLOR, alpha=0.6, label="HI Systems",
+                    color=plot_colour('hi_ticks'), alpha=0.6, label="HI Systems",
                     transform=trans)
         if metal_lines_x:
             ax.plot(metal_lines_x, [metal_y] * len(metal_lines_x),
@@ -918,7 +919,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             guides = [self._highlight_guide(ax, hx) for hx in highlight_lines_x]
             self._highlight_artists = (marker, guides)
 
-    def _plot_cursor(self, session_state, colors):
+    def _plot_cursor(self, session_state):
         """The lines of the redshift cursor, animated (blitted when the
         cursor moves)."""
         if not self.main_window.cursor_show_checkbox.isChecked():
@@ -931,7 +932,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
 
             for x_plot in cursor_x_positions:
                 label = f"Cursor (z={z_cursor:.4f})" if not added_cursor_label else None
-                line = self.canvas.axes.axvline(x_plot, ls='--', color=colors[3],
+                line = self.canvas.axes.axvline(x_plot, ls='--', color=plot_colour('cursor'),
                                                  alpha=0.8, lw=1.0, label=label,
                                                  animated=True) # <<< ANIMATED
                 self.canvas.cursor_artists.append(line)
@@ -939,7 +940,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             if cursor_x_positions:
                 ax = self.canvas.axes
                 self.canvas.cursor_label = ax.text(
-                    cursor_x_positions[0], 0.98, "", color=colors[3], fontsize=9,
+                    cursor_x_positions[0], 0.98, "", color=plot_colour('cursor'), fontsize=9,
                     ha='left', va='top', animated=True,
                     transform=blended_transform_factory(ax.transData, ax.transAxes),
                     bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1.5))

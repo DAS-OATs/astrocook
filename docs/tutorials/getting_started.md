@@ -115,12 +115,19 @@ This is a handy tool for quick visual inspection.
 If the **Zoom** or **Pan** tools are active in the toolbar, the right-click shortcut is overridden. In this case, hold `Ctrl` (or `Cmd` on Mac) while right-clicking to access the context menu.
 :::
 
-### Dark Mode
+### Dark Mode and Plot Colours
 
 By default Astrocook follows the light or dark appearance of your system (on macOS, *System Settings > Appearance*), and switches with it while it is open. **View > Appearance** chooses *Light* or *Dark* for Astrocook alone, or *System* to follow the system again; the choice is remembered. The plots stay white in both, like the figures of a paper, so that the colours of the lines are always the same.
 
 ```{image} ../_static/getting_started_dark_mode.png
 :alt: The main window in dark mode, with the plot white
+:align: center
+```
+
+**View > Plot Colours** chooses the colours of the plots, in the main window and in the System Inspector, also remembered. *Standard* draws the spectrum in blue and the model in green. *Colour-blind Safe* uses the palette of Okabe and Ito: the spectrum in dark grey, the model in blue, the residuals and the ticks of the HI components in vermilion, a component at a bound of the fit in reddish purple; the selection stays amber. Its colours stay apart for every common type of colour blindness, while in the standard colours the model, the selected component and the residuals of the System Inspector look alike to a deuteranope.
+
+```{image} ../_static/getting_started_plot_colours.png
+:alt: The System Inspector with the colour-blind safe colours: a blue model over a dark grey spectrum, the selected component in amber
 :align: center
 ```
 
