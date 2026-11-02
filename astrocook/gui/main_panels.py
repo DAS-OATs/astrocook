@@ -45,6 +45,7 @@ BUTTON_HEIGHT = 28
 CARD_MARGIN = 2        # Gap between the menu bar and the cards (px)
 CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
 SWATCH_SIZE = QSize(24, 12)
+MAX_RECENT_SHOWN = 5   # Recent files listed in the empty window
 
 
 class MainPanelsMixin:
@@ -170,46 +171,73 @@ class MainPanelsMixin:
             inspector.status_recipe.setText(text)
 
     def _setup_empty_view(self):
+        """The window without sessions: the logo, a button to open a file,
+        the files opened last and a hint that files can be dropped here
+        (visual review of phase 5-bis: a large logo and a hint, no action)."""
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-
-        # 1. Add some stretching at the top so the content stays centered
         layout.addStretch()
-        
-        # 2. Add a welcome message
-        label = QLabel("Welcome to")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet(f"font-size: 36pt; color: {ACCENT};")
-        layout.addWidget(label)
 
-        layout.addSpacing(20)
-
-        # 3. Add the Logo
         try:
             icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             if os.path.exists(icon_path):
                 logo_lbl = QLabel()
-                # Scale the image, keeping it smooth and proportioned
-                pixmap = QPixmap(icon_path).scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = QPixmap(icon_path).scaled(240, 240, Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation)
                 logo_lbl.setPixmap(pixmap)
                 logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(logo_lbl)
         except Exception as e:
             logging.warning(f"Could not load logo for empty view: {e}")
 
-        # 4. Add instructions
-        layout.addSpacing(40)
+        layout.addSpacing(16)  # the logo has the name
 
-        label = QLabel("Use 'File > Open Session...'")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet(f"font-size: 24pt; color: {HINT_TEXT};")
+        self.empty_open_button = QPushButton("Open Session...")
+        self.empty_open_button.setToolTip("Open a spectrum or a session (File > Open Session...)")
+        self.empty_open_button.clicked.connect(self._on_open_spectrum)
+        layout.addWidget(self.empty_open_button, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addSpacing(16)
 
-        layout.addWidget(label)
+        # The files opened last, refreshed when one is opened
+        self.empty_recent_title = QLabel("Recent files")
+        self.empty_recent_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.empty_recent_title.setStyleSheet("font-weight: bold;")
+        layout.addWidget(self.empty_recent_title)
+        self.empty_recent_layout = QVBoxLayout()
+        self.empty_recent_layout.setSpacing(2)
+        layout.addLayout(self.empty_recent_layout)
+        layout.addSpacing(16)
 
-        # 5. Add stretching at the bottom
+        hint = QLabel("You can also drop files on this window.")
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hint.setStyleSheet(f"color: {HINT_TEXT};")
+        layout.addWidget(hint)
         layout.addStretch()
 
         self.central_stack.addWidget(empty_widget)
+        self._refresh_recent_list()
+
+    def _refresh_recent_list(self):
+        """The recent files of the empty window: up to five, as links."""
+        layout = getattr(self, 'empty_recent_layout', None)
+        if layout is None:
+            return
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().hide()  # deleted later: not to stay drawn meanwhile
+                item.widget().deleteLater()
+        recent = self._recent_files()[:MAX_RECENT_SHOWN]
+        self.empty_recent_title.setVisible(bool(recent))
+        for path in recent:
+            button = QPushButton(os.path.basename(path))
+            button.setFlat(True)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            button.setToolTip(path)
+            button.setStyleSheet(f"QPushButton {{ color: {ACCENT}; border: none; }}"
+                                 "QPushButton:hover { text-decoration: underline; }")
+            button.clicked.connect(lambda checked=False, p=path: self.open_files([p]))
+            layout.addWidget(button, 0, Qt.AlignmentFlag.AlignHCenter)
 
     def _setup_left_sidebar(self):
         """Creates the left sidebar widget as a child of the main window."""

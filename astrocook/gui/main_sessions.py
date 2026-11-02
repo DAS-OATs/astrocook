@@ -9,21 +9,24 @@ of ``MainWindowV2``.
 """
 import logging
 import os
+import time
 from copy import deepcopy
 from typing import List, Optional
 
 import numpy as np
 from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, QStringListModel, Qt
 from PySide6.QtGui import QAction, QDoubleValidator, QPalette
+from shiboken6 import isValid
 from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDialog,
                                QFormLayout, QLabel, QLineEdit, QMenu, QMessageBox,
-                               QSizePolicy, QVBoxLayout)
+                               QProgressDialog, QSizePolicy, QVBoxLayout)
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.session import SessionV2, load_session_from_file
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 
+from .qt_workers import SessionLoadWorker
 from .theme import FOCUS_BORDER, palette_hex
 
 
@@ -417,36 +420,87 @@ class MainSessionsMixin:
         if file_names:
             # --- Save the directory for next time ---
             settings.setValue("last_working_dir", os.path.dirname(file_names[0]))
-            
-            # Show a wait cursor if loading multiple files
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            try:
-                for file_name in file_names:
-                    logging.info(f"Opening: {file_name}")
-                    
-                    # 'auto' format detection is now standard
-                    session_name = os.path.splitext(os.path.basename(file_name))[0]
-                    gui_context = self.mock_gui_context
+            self.open_files(file_names)
 
-                    try:
-                        new_session = load_session_from_file(
-                            archive_path=file_name, 
-                            name=session_name, 
-                            format_name='auto', # Use auto detection
-                            gui_context=gui_context
-                        )
+    # --- Opening files (one, or several in the background) ---
 
-                        if new_session == 0:
-                            logging.error(f"Failed to load {file_name}")
-                            continue
+    def _load_session(self, file_path: str):
+        """The session of a file (auto-detected format), or 0."""
+        session_name = os.path.splitext(os.path.basename(file_path))[0]
+        return load_session_from_file(archive_path=file_path, name=session_name,
+                                      format_name='auto', gui_context=self.mock_gui_context)
 
-                        self.add_session(new_session)
+    def open_files(self, paths: List[str]):
+        """Open files: one as before (open_session_from_path), several in
+        a background thread with a progress dialog (Guido: several sessions
+        took long, with the window frozen and no sign of progress)."""
+        paths = [p for p in paths if p]
+        if len(paths) == 1:
+            self.open_session_from_path(paths[0])
+        elif paths:
+            self._open_files_in_background(paths)
 
-                    except Exception as e:
-                        logging.error(f"Failed to load file {file_name}: {e}")
-                        # Don't show a popup for every single failure in a batch, just log it.
-            finally:
-                QApplication.restoreOverrideCursor()
+    def _open_files_in_background(self, paths: List[str]):
+        """A worker loads the files one after the other; each session is
+        added as soon as it is ready; Cancel skips those not yet started;
+        the failures are told once, at the end."""
+        n = len(paths)
+        dialog = QProgressDialog(f"Opening {n} files...", "Cancel", 0, n, self)
+        dialog.setWindowTitle("Opening Sessions")
+        dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.setValue(0)
+        worker = SessionLoadWorker(paths, self._load_session)
+        failures = []
+        started = time.perf_counter()
+
+        # The window may be closed while the files load (the loading is then
+        # cancelled, closeEvent): the slots do nothing on deleted objects
+        def alive():
+            return isValid(self) and isValid(dialog)
+
+        def on_started(i, path):
+            if not alive():
+                return
+            dialog.setLabelText(f"Opening {i + 1} of {n}: {os.path.basename(path)}")
+
+        def on_loaded(i, path, session):
+            if not alive():
+                return
+            self.add_session(session)
+            self._add_recent_file(path)
+            self._update_ui_state(is_valid_session=True)
+            dialog.setValue(i + 1)
+
+        def on_failed(i, path, message):
+            failures.append(f"{os.path.basename(path)}: {message}")
+            if alive():
+                dialog.setValue(i + 1)
+
+        def on_done(loaded, failed, cancelled):
+            if not alive():
+                return
+            dialog.reset()
+            dialog.close()
+            self._loading_worker = None
+            text = (f"Opened {loaded} session{'s' if loaded != 1 else ''} "
+                    f"in {time.perf_counter() - started:.1f} s")
+            if failed:
+                text += f", {failed} failed"
+            if cancelled:
+                text += ", cancelled"
+            self.show_status(text)
+            if failures:
+                QMessageBox.warning(self, "Some Files Not Opened",
+                                    "These files could not be opened:\n\n" + "\n".join(failures))
+
+        worker.signals.started.connect(on_started)
+        worker.signals.loaded.connect(on_loaded)
+        worker.signals.failed.connect(on_failed)
+        worker.signals.done.connect(on_done)
+        dialog.canceled.connect(worker.cancel)
+        self._loading_worker = worker  # kept alive while it runs
+        self.thread_pool.start(worker)
 
     def _on_session_list_context_menu(self, pos: QPoint):
         """
@@ -1116,20 +1170,14 @@ class MainSessionsMixin:
 
         logging.info(f"Direct load requested for: {file_path}")
         
-        session_name = os.path.splitext(os.path.basename(file_path))[0]
-        gui_context = self.mock_gui_context
-
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            new_session = load_session_from_file(
-                archive_path=file_path, 
-                name=session_name, 
-                format_name='auto',  # <--- Let the loader decide
-                gui_context=gui_context
-            )
+            new_session = self._load_session(file_path)
 
             if new_session and new_session != 0:
                 self.add_session(new_session)
-                # Se la finestra era in stato "vuoto", aggiorniamo UI
+                self._add_recent_file(file_path)
+                # The window may have been empty: update the interface
                 self._update_ui_state(is_valid_session=True)
             else:
                 logging.error("Session load returned failure.")
@@ -1140,7 +1188,7 @@ class MainSessionsMixin:
             QMessageBox.critical(self, "Error Loading File", f"Could not load {file_path}:\n{e}")
         finally:
             QApplication.restoreOverrideCursor()
-            # Forza il focus sulla finestra (utile su macOS se l'app era in background)
+            # Focus the window (on macOS the app may have been in the background)
             self.activateWindow()
             self.raise_()
 
@@ -1157,15 +1205,6 @@ class MainSessionsMixin:
         if not urls:
             return
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        try:
-            for url in urls:
-                file_path = url.toLocalFile()
-                if file_path:
-                    logging.info(f"Dropped file detected: {file_path}")
-                    # Use your existing public method
-                    self.open_session_from_path(file_path)
-        finally:
-            QApplication.restoreOverrideCursor()
+        self.open_files([url.toLocalFile() for url in urls])
         
         event.acceptProposedAction()

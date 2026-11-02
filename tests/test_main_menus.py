@@ -18,14 +18,14 @@ from test_gui_smoke import SESSION_FILE, _run_recipe
 SEP = "---"
 
 MENUS = {
-    "File": ["Open Session...", "Export to ASCII...", "Import from ASCII...", "Save Session...",
+    "File": ["Open Session...", "Open Recent", "Export to ASCII...", "Import from ASCII...", "Save Session...",
              SEP, "Close Session"],
     "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", SEP,
              "View System Inspector", SEP,
              "View Session Log", "View Script Console", "View Identifications"],
     "Edit": ["Undo", "Redo", SEP, "Set Properties...", SEP, "Apply Expression...",
-             "Mask by Expression...", "Smooth Column...", "Import Systems...",
-             "Import Systems from ASCII...", "Delete Elements...", SEP, "Split Out Region...",
+             "Mask by Expression...", "Smooth Column...", "Delete Elements...", SEP,
+             "Split Out Region...",
              "Extract Preset Region...", SEP, "Co-add Spectra..."],
     "Flux": ["Calculate Running StdDev...", SEP, "Smooth Spectrum...", "Rebin Spectrum...",
              "Equalize to Reference...", "Resample on Grid...", SEP, "Flux Calibrate..."],
@@ -33,7 +33,9 @@ MENUS = {
                   "Fit Continuum to Mask...", SEP, "Fit Power-Law..."],
     "Absorbers": ["Auto-detect Doublets...", "Auto-fit Ly-alpha Forest...", SEP,
                   "Identify Absorption Lines...", "Refit All Systems...",
-                  "Clean Negligible Components..."],
+                  "Clean Negligible Components...", SEP,
+                  # Moved from Edit (phase 5-bis)
+                  "Import Systems...", "Import Systems from ASCII..."],
     "Help": ["Online Documentation", SEP, "About Astrocook..."],
 }
 
@@ -132,7 +134,7 @@ def test_shortcuts(empty):
 
 def test_actions_enabled_with_a_session(empty, qtbot):
     # Also with no session: the toolbar and the appearance (phase 5-bis)
-    always = {"Open Session...", "Online Documentation", "About Astrocook...",
+    always = {"Open Session...", "Open Recent", "Online Documentation", "About Astrocook...",
               "Show Toolbar", "Appearance"}
     for text, action in _actions(empty).items():
         assert action.isEnabled() == (text in always), text

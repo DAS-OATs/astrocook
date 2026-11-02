@@ -102,15 +102,27 @@ def test_open_a_missing_or_bad_file(empty, monkeypatch, tmp_path, caplog):
     assert empty.session_histories == [] and len(shown) == 1
 
 
-def test_open_with_the_dialog(empty, monkeypatch, tmp_path):
+def test_open_with_the_dialog(qtbot, empty, monkeypatch, tmp_path):
+    # Several files: loaded in the background, with a progress dialog; the
+    # failures told once at the end, the outcome in the status bar (phase
+    # 5-bis: the window was frozen, with no sign of progress)
     from PySide6.QtCore import QSettings
-    dialog = _module(empty, "_on_open_spectrum").QFileDialog
+    module = _module(empty, "_on_open_spectrum")
+    dialog = module.QFileDialog
     bad = tmp_path / "bad.fits"
     bad.write_text("not a spectrum")
     monkeypatch.setattr(dialog, "getOpenFileNames", staticmethod(
         lambda *a, **k: ([str(SESSION_FILE), str(bad), str(SESSION_FILE)], "")))
+    warnings = []
+    monkeypatch.setattr(module.QMessageBox, "warning",
+                        staticmethod(lambda *a, **k: warnings.append(a[2])))
     empty._on_open_spectrum()
+    qtbot.waitUntil(lambda: getattr(empty, "_loading_worker", None) is None, timeout=30000)
     assert _names(empty) == [SESSION_FILE.stem] * 2  # the bad file skipped
+    assert len(warnings) == 1 and "bad.fits" in warnings[0]
+    status = empty.status_recipe.text()
+    assert status.startswith("Opened 2 sessions in ") and status.endswith(", 1 failed")
+    assert empty._recent_files()[0] == str(SESSION_FILE)
     assert QSettings("Astrocook", "AstrocookV2").value("last_working_dir") == str(SESSION_FILE.parent)
 
 
@@ -129,7 +141,7 @@ def test_open_while_editing_the_continuum(qtbot, window, monkeypatch):
 
 def test_drag_and_drop(empty, monkeypatch):
     opened = []
-    monkeypatch.setattr(empty, "open_session_from_path", opened.append)
+    monkeypatch.setattr(empty, "open_files", opened.append)
 
     class Event:
         def __init__(self, urls):
@@ -151,7 +163,7 @@ def test_drag_and_drop(empty, monkeypatch):
     empty.dragEnterEvent(event)
     assert event.accepted
     empty.dropEvent(event)
-    assert opened == ["/a/one.fits", "/a/two.acs2"]
+    assert opened == [["/a/one.fits", "/a/two.acs2"]]  # together: in the background
     event = Event([])
     empty.dragEnterEvent(event)
     assert event.ignored
