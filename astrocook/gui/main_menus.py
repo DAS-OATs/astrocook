@@ -432,21 +432,20 @@ class MainMenusMixin:
         clean_negligible_action.setToolTip("Removes components with negligible column densities or broadening.")
         clean_negligible_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "clean_negligible"))
         absorbers_menu.addAction(clean_negligible_action)
-        # Moved from Edit (visual review of phase 5-bis): the systems go
-        # with the other operations on absorbers
-        absorbers_menu.addSeparator()
+        # In File with the other imports (they were in Edit; phase 5-bis,
+        # Guido), before Save
         # import_systems Action
-        import_sys_action = QAction("&Import Systems...", self)
+        import_sys_action = QAction("Import Systems from &Session...", self)
         import_sys_action.setToolTip("Copy absorption systems from another open session.")
         import_sys_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "import_systems"))
-        absorbers_menu.addAction(import_sys_action)
+        file_menu.insertAction(self.save_action, import_sys_action)
         self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
 
         # import_systems_ascii Action (issue #480)
         import_sys_ascii_action = QAction("Import Systems from &ASCII...", self)
         import_sys_ascii_action.setToolTip("Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).")
         import_sys_ascii_action.triggered.connect(self._import_systems_ascii)
-        absorbers_menu.addAction(import_sys_ascii_action)
+        file_menu.insertAction(import_sys_action, import_sys_ascii_action)
         self.import_systems_ascii_action = import_sys_ascii_action
         self.import_systems_ascii_action.setEnabled(False)
 

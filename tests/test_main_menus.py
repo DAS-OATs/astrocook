@@ -18,7 +18,9 @@ from test_gui_smoke import SESSION_FILE, _run_recipe
 SEP = "---"
 
 MENUS = {
-    "File": ["Open Session...", "Open Recent", "Export to ASCII...", "Import from ASCII...", "Save Session...",
+    "File": ["Open Session...", "Open Recent", "Export to ASCII...", "Import from ASCII...",
+             # Moved from Edit (phase 5-bis, Guido)
+             "Import Systems from ASCII...", "Import Systems from Session...", "Save Session...",
              SEP, "Close Session"],
     "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", SEP,
              "View System Inspector", SEP,
@@ -33,9 +35,7 @@ MENUS = {
                   "Fit Continuum to Mask...", SEP, "Fit Power-Law..."],
     "Absorbers": ["Auto-detect Doublets...", "Auto-fit Ly-alpha Forest...", SEP,
                   "Identify Absorption Lines...", "Refit All Systems...",
-                  "Clean Negligible Components...", SEP,
-                  # Moved from Edit (phase 5-bis)
-                  "Import Systems...", "Import Systems from ASCII..."],
+                  "Clean Negligible Components..."],
     "Help": ["Online Documentation", SEP, "About Astrocook..."],
 }
 
@@ -45,7 +45,7 @@ RECIPE_ENTRIES = {
     "Apply Expression...": ("edit", "apply_expression"),
     "Mask by Expression...": ("edit", "mask_expression"),
     "Smooth Column...": ("edit", "smooth_column"),
-    "Import Systems...": ("edit", "import_systems"),
+    "Import Systems from Session...": ("edit", "import_systems"),
     "Delete Elements...": ("edit", "delete"),
     "Split Out Region...": ("edit", "split"),
     "Extract Preset Region...": ("edit", "extract_preset"),

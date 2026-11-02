@@ -87,7 +87,7 @@ To clean up your session:
 ### Importing Systems
 
 If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.
-1.  Go to **Edit > Import Systems...**.
+1.  Go to **File > Import Systems from Session...**.
 2.  **Source Session:** Select the other open session by name.
 3.  **Append:** Check this to add to your current list; uncheck to replace it entirely.
 
