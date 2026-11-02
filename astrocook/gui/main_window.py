@@ -103,19 +103,19 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         #self.setGeometry(100, 100, 450, 150) # Initial small size
         self.resize(1400,900)
-        # Centratura robusta (Fix per macOS)
+        # Centred on the screen (robust on macOS)
         screen = QApplication.primaryScreen()
         if screen:
-            # geometry() include la barra dei menu, availableGeometry() no (meglio!)
+            # geometry() includes the menu bar, availableGeometry() does not
             screen_rect = screen.availableGeometry() 
             
-            # Prendiamo il rettangolo della nostra finestra
+            # The rectangle of the window
             window_rect = self.frameGeometry()
             
-            # Spostiamo il centro del rettangolo finestra al centro dello schermo
+            # Its centre on the centre of the screen
             window_rect.moveCenter(screen_rect.center())
             
-            # Muoviamo la finestra vera e propria nella nuova posizione calcolata
+            # The window moved there
             self.move(window_rect.topLeft())
 
         try:
@@ -199,6 +199,14 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         # the main thread through the signal (F6)
         set_debug_plot_handler(GLOBAL_PLOTTER.plot_requested.emit)
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
+
+    def closeEvent(self, event):
+        """The size and position of the window saved for the next start."""
+        self._save_window_geometry()
+        worker = getattr(self, '_loading_worker', None)
+        if worker is not None:  # files still loading: the rest skipped
+            worker.cancel()
+        super().closeEvent(event)
 
     def event(self, event):
         """The system switched between light and dark (dark mode): the

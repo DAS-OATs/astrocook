@@ -299,11 +299,58 @@ def test_restack_keeps_the_size(qtbot, window):
 
 def test_welcome_view(empty):
     assert empty.central_stack.currentIndex() == 1
-    texts = [label.text() for label in empty.central_stack.currentWidget().findChildren(QLabel)]
-    assert "Welcome to" in texts and "Use 'File > Open Session...'" in texts
+    # A button to open a file, the recent files, the hint that files can be
+    # dropped (visual review of phase 5-bis)
+    page = empty.central_stack.currentWidget()
+    texts = [label.text() for label in page.findChildren(QLabel)]
+    assert "You can also drop files on this window." in texts
+    assert empty.empty_open_button.text() == "Open Session..."
+    assert empty.empty_recent_button.isEnabled() == bool(empty._recent_files())
     assert not empty.session_collapse_button.isVisible()
     assert not empty.plot_controls_collapse_button.isVisible()
     assert not empty.left_sidebar_widget.isVisible() and not empty.right_sidebar_widget.isVisible()
+
+
+def test_recent_files(empty, tmp_path):
+    # File > Open Recent and the list of the empty window, from the settings;
+    # the files that no longer exist left out, the most recent first
+    empty._clear_recent_files()
+    assert not empty.empty_recent_button.isEnabled()
+    files = []
+    for name in ("a.fits", "b.acs2", "c.fits"):
+        path = tmp_path / name
+        path.write_text("x")
+        files.append(str(path))
+        empty._add_recent_file(str(path))
+    empty._add_recent_file(files[0])  # again: to the top, once
+    assert empty._recent_files() == [files[0], files[2], files[1]]
+    (tmp_path / "c.fits").unlink()
+    assert empty._recent_files() == [files[0], files[1]]
+    empty._rebuild_recent_menu()
+    texts = [a.text() for a in empty.recent_menu.actions() if not a.isSeparator()]
+    assert texts == ["a.fits", "b.acs2", "Clear Menu"]
+    opened = []
+    empty.open_files = opened.append
+    empty.recent_menu.actions()[0].trigger()
+    assert opened == [[files[0]]]
+    # The Open Recent button of the welcome screen: the same drop-down menu
+    # (Guido)
+    assert empty.empty_recent_button.isEnabled()
+    assert empty.empty_recent_button.menu() is empty.recent_menu
+    assert empty.recent_menu.actions()[0].toolTip() == files[0]
+    empty._clear_recent_files()
+    empty._rebuild_recent_menu()
+    assert [a.text() for a in empty.recent_menu.actions()][0] == "No Recent Files"
+
+
+def test_window_geometry_remembered(qtbot, empty):
+    # The size and position of the window, as the user left them
+    from astrocook.gui.main_window import MainWindowV2
+    empty.resize(700, 500)  # within the screen of the tests
+    empty.close()
+    other = MainWindowV2(None, None)
+    qtbot.addWidget(other)
+    assert (other.width(), other.height()) == (700, 500)
 
 
 def test_state_with_and_without_a_session(window):

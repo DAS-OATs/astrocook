@@ -293,6 +293,9 @@ class Studio:
         params = {k: str(v) for k, v in params.items()}
         self.window._on_recipe_requested(category, recipe, params, {})
         self.wait_for_recipes()
+        # The outcome in the status bar has the time of the recipe, which
+        # changes at each run: cleared, so that the images do not change
+        self.window.show_status("")
 
     def select_sessions(self, *names, current=None):
         """Select sessions in the list; the last (or ``current``) is shown."""

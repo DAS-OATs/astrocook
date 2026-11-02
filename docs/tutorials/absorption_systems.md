@@ -189,7 +189,7 @@ The uncertainties of the fitted parameters are the square roots of the diagonal 
 A linked parameter is computed from its target, so its uncertainty is propagated from the target through the expression of the link: a `z` linked by value has the same uncertainty as the `z` of its target, a `b` linked thermally the uncertainty of the target's `b` scaled by the same mass ratio. The two uncertainties are therefore fully correlated, which matters when a list of components is used for statistics (count them once). A frozen parameter has uncertainty 0, as does a parameter linked to a frozen one.
 
 ### Importing a Line List
-**Edit > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export ASCII** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
+**File > Import Systems from ASCII...** reads absorption components from a table with a header, in CSV or whitespace-separated format: columns `series` and `z` (required) and optionally `logN` (default 13.0), `b` (default 10 km/s), `btur`, `dz`, `dlogN`, `db`. The `_systems.csv` written by **File > Export ASCII** can be read back this way. Components outside the spectral range are skipped; the imported components are added to the existing ones and can then be refitted with **Refit All**.
 
 ### Refitting
 

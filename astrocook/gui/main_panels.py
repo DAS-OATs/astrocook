@@ -26,7 +26,7 @@ from astrocook.core.utils import resource_path
 
 from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLabel
 from .pyside_plot import SpectrumPlotWidget
-from .theme import ACCENT, HINT_TEXT
+from .theme import HINT_TEXT
 
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = CARD_WIDTH   # as the floating toolbar of the plot
@@ -170,46 +170,61 @@ class MainPanelsMixin:
             inspector.status_recipe.setText(text)
 
     def _setup_empty_view(self):
+        """The window without sessions: the logo, a button to open a file,
+        the files opened last and a hint that files can be dropped here
+        (visual review of phase 5-bis: a large logo and a hint, no action)."""
         empty_widget = QWidget()
         layout = QVBoxLayout(empty_widget)
-
-        # 1. Add some stretching at the top so the content stays centered
         layout.addStretch()
-        
-        # 2. Add a welcome message
-        label = QLabel("Welcome to")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet(f"font-size: 36pt; color: {ACCENT};")
-        layout.addWidget(label)
 
-        layout.addSpacing(20)
-
-        # 3. Add the Logo
         try:
             icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             if os.path.exists(icon_path):
                 logo_lbl = QLabel()
-                # Scale the image, keeping it smooth and proportioned
-                pixmap = QPixmap(icon_path).scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = QPixmap(icon_path).scaled(240, 240, Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation)
                 logo_lbl.setPixmap(pixmap)
                 logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(logo_lbl)
         except Exception as e:
             logging.warning(f"Could not load logo for empty view: {e}")
 
-        # 4. Add instructions
-        layout.addSpacing(40)
+        layout.addSpacing(16)  # the logo has the name
 
-        label = QLabel("Use 'File > Open Session...'")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet(f"font-size: 24pt; color: {HINT_TEXT};")
+        # Open, and the files opened last in a drop-down menu, the same as
+        # File > Open Recent (Guido: a list of links was less tidy)
+        buttons = QHBoxLayout()
+        buttons.addStretch()
+        self.empty_open_button = QPushButton("Open Session...")
+        self.empty_open_button.setToolTip("Open a spectrum or a session (File > Open Session...)")
+        self.empty_open_button.clicked.connect(self._on_open_spectrum)
+        buttons.addWidget(self.empty_open_button)
+        self.empty_recent_button = QPushButton("Open Recent")
+        self.empty_recent_button.setToolTip("The files opened last (File > Open Recent)")
+        buttons.addWidget(self.empty_recent_button)
+        buttons.addStretch()
+        layout.addLayout(buttons)
+        layout.addSpacing(16)
 
-        layout.addWidget(label)
-
-        # 5. Add stretching at the bottom
+        hint = QLabel("You can also drop files on this window.")
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hint.setStyleSheet(f"color: {HINT_TEXT};")
+        layout.addWidget(hint)
         layout.addStretch()
 
         self.central_stack.addWidget(empty_widget)
+        self._refresh_recent_list()
+
+    def _refresh_recent_list(self):
+        """The Open Recent button of the welcome screen: the menu of File >
+        Open Recent, disabled without recent files."""
+        button = getattr(self, 'empty_recent_button', None)
+        menu = getattr(self, 'recent_menu', None)
+        if button is None:
+            return
+        if menu is not None and button.menu() is not menu:
+            button.setMenu(menu)
+        button.setEnabled(bool(self._recent_files()))
 
     def _setup_left_sidebar(self):
         """Creates the left sidebar widget as a child of the main window."""

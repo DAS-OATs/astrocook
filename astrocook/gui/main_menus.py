@@ -6,6 +6,7 @@ Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
 of ``MainWindowV2``.
 """
 import logging
+import os
 
 from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
@@ -15,6 +16,12 @@ from .about_dialog import AboutDialog
 from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
 from .theme import APPEARANCES, apply_appearance
+
+#: The files opened last, in the settings (File > Open Recent, the empty window)
+RECENT_FILES_KEY = "recent_files"
+MAX_RECENT_FILES = 10
+#: The size and position of the main window, in the settings
+GEOMETRY_KEY = "window_geometry"
 
 
 class MainMenusMixin:
@@ -49,12 +56,57 @@ class MainMenusMixin:
         if save:
             QSettings("Astrocook", "AstrocookV2").setValue("show_toolbar", visible)
 
+    # --- Recent files ---
+
+    def _recent_files(self) -> list:
+        """The files opened last, most recent first, those that still exist."""
+        value = QSettings("Astrocook", "AstrocookV2").value(RECENT_FILES_KEY, [])
+        if isinstance(value, str):  # one entry comes back as a string
+            value = [value]
+        return [p for p in (value or []) if os.path.exists(p)]
+
+    def _add_recent_file(self, path: str):
+        path = os.path.abspath(path)
+        recent = [p for p in self._recent_files() if p != path]
+        QSettings("Astrocook", "AstrocookV2").setValue(
+            RECENT_FILES_KEY, ([path] + recent)[:MAX_RECENT_FILES])
+        if hasattr(self, '_refresh_recent_list'):
+            self._refresh_recent_list()
+
+    def _clear_recent_files(self):
+        QSettings("Astrocook", "AstrocookV2").remove(RECENT_FILES_KEY)
+        if hasattr(self, '_refresh_recent_list'):
+            self._refresh_recent_list()
+
+    def _rebuild_recent_menu(self):
+        """File > Open Recent: the recent files, and Clear Menu."""
+        self.recent_menu.clear()
+        recent = self._recent_files()
+        for path in recent:
+            action = self.recent_menu.addAction(os.path.basename(path))
+            action.setToolTip(path)
+            action.triggered.connect(lambda checked=False, p=path: self.open_files([p]))
+        if not recent:
+            self.recent_menu.addAction("No Recent Files").setEnabled(False)
+        self.recent_menu.addSeparator()
+        clear = self.recent_menu.addAction("Clear Menu", self._clear_recent_files)
+        clear.setEnabled(bool(recent))
+        self.recent_menu.setToolTipsVisible(True)
+
     def _restore_view_settings(self):
         """The appearance and the toolbar as the user left them."""
         settings = QSettings("Astrocook", "AstrocookV2")
         self._set_appearance(settings.value("appearance", "system"), save=False)
         visible = settings.value("show_toolbar", True)
         self._set_toolbar_visible(visible not in (False, "false"), save=False)
+        # The size and position of the window, as the user left them (they
+        # were not saved)
+        geometry = settings.value(GEOMETRY_KEY)
+        if geometry is not None:
+            self.restoreGeometry(geometry)
+
+    def _save_window_geometry(self):
+        QSettings("Astrocook", "AstrocookV2").setValue(GEOMETRY_KEY, self.saveGeometry())
 
     def _create_menubar(self):
         menu_bar = self.menuBar()
@@ -73,12 +125,22 @@ class MainMenusMixin:
 
         # 3. Help Menu
         help_menu = menu_bar.addMenu("&Help")
+        # The tooltips of the entries (e.g. the two Smooth entries) shown
+        for menu in (file_menu, view_menu, edit_menu, flux_menu, continuum_menu,
+                     absorbers_menu, help_menu):
+            menu.setToolTipsVisible(True)
         
         # --- File and View operations ---
 
         # --- File Menu Actions
         open_action = QAction("&Open Session...", self); open_action.setShortcut("Ctrl+O"); open_action.triggered.connect(self._on_open_spectrum)
         file_menu.addAction(open_action)
+        # The files opened last (saved in the settings), rebuilt each time
+        # the menu opens
+        self.recent_menu = file_menu.addMenu("Open &Recent")
+        self.recent_menu.aboutToShow.connect(self._rebuild_recent_menu)
+        if hasattr(self, '_refresh_recent_list'):
+            self._refresh_recent_list()  # the button of the welcome screen
         save_action = QAction("&Save Session...", self); save_action.setShortcut("Ctrl+S"); save_action.triggered.connect(self._on_save_session); 
         save_action.setEnabled(False)
         file_menu.addAction(save_action)
@@ -207,26 +269,12 @@ class MainMenusMixin:
 
         # smooth_column Action
         smooth_col_action = QAction("Smooth &Column...", self)
-        smooth_col_action.setToolTip("Apply Gaussian smoothing to a single column")
+        smooth_col_action.setToolTip("Smooth one column of the spectrum (e.g. the continuum or an "
+                                     "auxiliary column); Flux > Smooth Spectrum smooths the flux "
+                                     "and the columns that go with it")
         smooth_col_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "smooth_column"))
         edit_menu.addAction(smooth_col_action)
         self.smooth_column_action = smooth_col_action; self.smooth_column_action.setEnabled(False)
-
-        # import_systems Action
-        import_sys_action = QAction("&Import Systems...", self)
-        import_sys_action.setToolTip("Copy absorption systems from another open session.")
-        # Note: We call the 'absorbers' category because that's where the recipe logic lives
-        import_sys_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "import_systems"))
-        edit_menu.addAction(import_sys_action)
-        self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
-
-        # import_systems_ascii Action (issue #480)
-        import_sys_ascii_action = QAction("Import Systems from &ASCII...", self)
-        import_sys_ascii_action.setToolTip("Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).")
-        import_sys_ascii_action.triggered.connect(self._import_systems_ascii)
-        edit_menu.addAction(import_sys_ascii_action)
-        self.import_systems_ascii_action = import_sys_ascii_action
-        self.import_systems_ascii_action.setEnabled(False)
 
         # delete Action
         delete_action = QAction("&Delete Elements...", self)
@@ -276,7 +324,8 @@ class MainMenusMixin:
 
         # smooth Action
         smooth_action = QAction("&Smooth Spectrum...", self)
-        smooth_action.setToolTip("Apply Gaussian smoothing to the flux")
+        smooth_action.setToolTip("Smooth the flux and the columns that go with it (continuum, "
+                                 "model, transmission); Edit > Smooth Column smooths one column")
         smooth_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "smooth"))
         flux_menu.addAction(smooth_action)
         self.smooth_action = smooth_action; self.smooth_action.setEnabled(False)
@@ -385,6 +434,23 @@ class MainMenusMixin:
         clean_negligible_action.setToolTip("Removes components with negligible column densities or broadening.")
         clean_negligible_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "clean_negligible"))
         absorbers_menu.addAction(clean_negligible_action)
+        # In File with the other imports (they were in Edit; phase 5-bis,
+        # Guido), before Save
+        # import_systems Action
+        import_sys_action = QAction("Import Systems from &Session...", self)
+        import_sys_action.setToolTip("Copy absorption systems from another open session.")
+        import_sys_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "import_systems"))
+        file_menu.insertAction(self.save_action, import_sys_action)
+        self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
+
+        # import_systems_ascii Action (issue #480)
+        import_sys_ascii_action = QAction("Import Systems from &ASCII...", self)
+        import_sys_ascii_action.setToolTip("Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).")
+        import_sys_ascii_action.triggered.connect(self._import_systems_ascii)
+        file_menu.insertAction(import_sys_action, import_sys_ascii_action)
+        self.import_systems_ascii_action = import_sys_ascii_action
+        self.import_systems_ascii_action.setEnabled(False)
+
         self.clean_negligible_action = clean_negligible_action; self.clean_negligible_action.setEnabled(False)
         self._update_undo_redo_actions()
 
@@ -402,6 +468,19 @@ class MainMenusMixin:
         about_action = QAction("&About Astrocook...", self)
         about_action.triggered.connect(self._on_about_requested)
         help_menu.addAction(about_action)
+
+        # The File menu in groups (Guido): open, save, import, export, close
+        # (removed one by one: clear() deletes the actions the menu owns)
+        for action in file_menu.actions():
+            file_menu.removeAction(action)
+        for group in ((open_action, self.recent_menu.menuAction()), (save_action,),
+                      (import_action, self.import_systems_ascii_action,
+                       self.import_systems_action),
+                      (export_action,), (close_action,)):
+            if file_menu.actions():
+                file_menu.addSeparator()
+            for action in group:
+                file_menu.addAction(action)
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""

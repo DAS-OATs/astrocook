@@ -251,3 +251,47 @@ class ScriptWorker(QRunnable):
             line_info = f"line {i+1}: {line}" if 'i' in locals() else "N/A"
             logging.error(f"ScriptWorker: Failed on {line_info}\nError: {e}", exc_info=True)
             self.signals.error.emit((i+1, line, str(e)))
+
+class SessionLoadSignals(QObject):
+    """The signals of SessionLoadWorker: each file starting (index, path),
+    loaded (index, path, session) or failed (index, path, message), and the
+    end (loaded, failed, cancelled)."""
+    started = Signal(int, str)
+    loaded = Signal(int, str, object)
+    failed = Signal(int, str, str)
+    done = Signal(int, int, bool)
+
+
+class SessionLoadWorker(QRunnable):
+    """Loads several files one after the other in a background thread, so
+    that the window stays responsive and can show the progress (phase
+    5-bis: the files were loaded in the thread of the interface, with only
+    the wait cursor). ``cancel`` skips the files not yet started."""
+
+    def __init__(self, paths, loader):
+        super().__init__()
+        self.paths = list(paths)
+        self.loader = loader  # path -> session, or raises / returns 0
+        self.signals = SessionLoadSignals()
+        self._cancelled = False
+
+    def cancel(self):
+        self._cancelled = True
+
+    def run(self):
+        loaded = failed = 0
+        for i, path in enumerate(self.paths):
+            if self._cancelled:
+                break
+            self.signals.started.emit(i, path)
+            try:
+                session = self.loader(path)
+                if session is None or session == 0:
+                    raise ValueError("the loader could not read it")
+                loaded += 1
+                self.signals.loaded.emit(i, path, session)
+            except Exception as e:
+                failed += 1
+                logging.error(f"Failed to load {path}: {e}")
+                self.signals.failed.emit(i, path, str(e))
+        self.signals.done.emit(loaded, failed, self._cancelled)
