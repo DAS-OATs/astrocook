@@ -73,8 +73,8 @@ Current version: 2.2.0. Python ≥3.12.
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`), in parallel with
   `pytest -n auto` (pytest-xdist, ~3 minutes instead of ~7; the CI does
-  so); coverage with `pytest --cov=astrocook` (81%, the GUI 81%, the core
-  90%, after phase 5): before changing production code, add
+  so); coverage with `pytest --cov=astrocook` (82%, the GUI 84%, the core
+  90%, after phase 5-bis): before changing production code, add
   characterization tests for the behaviour involved.
 - Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
   fixture (`tests/conftest.py`). Regenerate only for an intended change
@@ -124,7 +124,7 @@ Current version: 2.2.0. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4 and 5 done (October 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5 and 5-bis done (October-November 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -167,7 +167,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
    J0103-1305); pure refactoring and performance, no visible change
    (done);
 9. phase 5-bis – GUI look and ergonomics (the open proposals of the GUI
-   review, agreed one by one);
+   review, agreed one by one) (done);
 10. release 2.3.0;
 11. phase 6 – error handling;
 12. phase 6-bis – recipe API (typed parameters, structured results,
@@ -265,8 +265,23 @@ phase 7. The snapshots and the mock benchmark unchanged. The private data
 of `DAS-OATs/astrocook-data` (spectra of the screenshots) are cloned next
 to the repository when needed.
 
-Next: phase 5-bis (`ROADMAP.md`; order of the work and Guido's decisions
-agreed, "Order of the phase"; in progress), then release 2.3.0. Work in
+Phase 5-bis done (October-November 2026, PRs #664-#688; `ROADMAP.md`,
+phase 5-bis, "Result of the phase"): dark mode and *View > Appearance*,
+colours in `gui/theme.py`; the toolbar of the plots redesigned and
+floating as the side cards; a status bar in both windows; one rule for the
+texts; the main plot without title and legend, emission lines in
+spectroscopic notation; the System Inspector (error of z in km/s, menu of
+the columns, keys, a message without a continuum); the *Identifications*
+window as a table of doublets; recent files, window geometry, files loaded
+in the background; *View > Plot Colours* (standard or colour-blind safe).
+Fixed F67, F69, F70, F71, F73, F75-F78, F80, F81, F85-F92, #630; F93 for
+phase 7. The snapshots and the mock benchmark unchanged; numbers change
+only in the calibration (F69, F70) and in the errors of linked parameters
+(#630). GUI benchmark: no regression (the main plot redraws in 0.10 s
+instead of 0.13 s, without the legend). Coverage 82% (the GUI 84%, the
+core 90%). The script console kept in the code (Guido).
+
+Next: release 2.3.0 (steps in `ROADMAP.md`, "Releases"), then phase 6. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
