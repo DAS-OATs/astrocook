@@ -26,7 +26,7 @@ from astrocook.core.utils import resource_path
 
 from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLabel
 from .pyside_plot import SpectrumPlotWidget
-from .theme import ACCENT, HINT_TEXT
+from .theme import HINT_TEXT
 
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = CARD_WIDTH   # as the floating toolbar of the plot
@@ -45,7 +45,6 @@ BUTTON_HEIGHT = 28
 CARD_MARGIN = 2        # Gap between the menu bar and the cards (px)
 CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
 SWATCH_SIZE = QSize(24, 12)
-MAX_RECENT_SHOWN = 5   # Recent files listed in the empty window
 
 
 class MainPanelsMixin:
@@ -192,20 +191,19 @@ class MainPanelsMixin:
 
         layout.addSpacing(16)  # the logo has the name
 
+        # Open, and the files opened last in a drop-down menu, the same as
+        # File > Open Recent (Guido: a list of links was less tidy)
+        buttons = QHBoxLayout()
+        buttons.addStretch()
         self.empty_open_button = QPushButton("Open Session...")
         self.empty_open_button.setToolTip("Open a spectrum or a session (File > Open Session...)")
         self.empty_open_button.clicked.connect(self._on_open_spectrum)
-        layout.addWidget(self.empty_open_button, 0, Qt.AlignmentFlag.AlignHCenter)
-        layout.addSpacing(16)
-
-        # The files opened last, refreshed when one is opened
-        self.empty_recent_title = QLabel("Recent files")
-        self.empty_recent_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_recent_title.setStyleSheet("font-weight: bold;")
-        layout.addWidget(self.empty_recent_title)
-        self.empty_recent_layout = QVBoxLayout()
-        self.empty_recent_layout.setSpacing(2)
-        layout.addLayout(self.empty_recent_layout)
+        buttons.addWidget(self.empty_open_button)
+        self.empty_recent_button = QPushButton("Open Recent")
+        self.empty_recent_button.setToolTip("The files opened last (File > Open Recent)")
+        buttons.addWidget(self.empty_recent_button)
+        buttons.addStretch()
+        layout.addLayout(buttons)
         layout.addSpacing(16)
 
         hint = QLabel("You can also drop files on this window.")
@@ -218,26 +216,15 @@ class MainPanelsMixin:
         self._refresh_recent_list()
 
     def _refresh_recent_list(self):
-        """The recent files of the empty window: up to five, as links."""
-        layout = getattr(self, 'empty_recent_layout', None)
-        if layout is None:
+        """The Open Recent button of the welcome screen: the menu of File >
+        Open Recent, disabled without recent files."""
+        button = getattr(self, 'empty_recent_button', None)
+        menu = getattr(self, 'recent_menu', None)
+        if button is None:
             return
-        while layout.count():
-            item = layout.takeAt(0)
-            if item.widget() is not None:
-                item.widget().hide()  # deleted later: not to stay drawn meanwhile
-                item.widget().deleteLater()
-        recent = self._recent_files()[:MAX_RECENT_SHOWN]
-        self.empty_recent_title.setVisible(bool(recent))
-        for path in recent:
-            button = QPushButton(os.path.basename(path))
-            button.setFlat(True)
-            button.setCursor(Qt.CursorShape.PointingHandCursor)
-            button.setToolTip(path)
-            button.setStyleSheet(f"QPushButton {{ color: {ACCENT}; border: none; }}"
-                                 "QPushButton:hover { text-decoration: underline; }")
-            button.clicked.connect(lambda checked=False, p=path: self.open_files([p]))
-            layout.addWidget(button, 0, Qt.AlignmentFlag.AlignHCenter)
+        if menu is not None and button.menu() is not menu:
+            button.setMenu(menu)
+        button.setEnabled(bool(self._recent_files()))
 
     def _setup_left_sidebar(self):
         """Creates the left sidebar widget as a child of the main window."""

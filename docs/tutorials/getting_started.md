@@ -6,7 +6,7 @@ Welcome to Astrocook V2! This guide will walk you through the basics of the inte
 
 Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`).
 
-1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen: a button **Open Session...** and the files you opened last.
+1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons **Open Session...** and **Open Recent** (a drop-down menu of the files you opened last).
 2.  Click **Open Session...**, or select **File > Open Session...** in the menu bar (or press `Ctrl+O` / `Cmd+O`). **File > Open Recent** lists the files opened last; you can also drop files on the window.
 3.  Select your spectrum file. You can select multiple files at once if you want to load several observations simultaneously: they are loaded in the background, with a window that shows the progress and can cancel the files not yet opened; the status bar then says how many were opened, and the files that could not be opened are listed together.
 

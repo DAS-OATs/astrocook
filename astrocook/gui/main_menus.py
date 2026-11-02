@@ -139,6 +139,8 @@ class MainMenusMixin:
         # the menu opens
         self.recent_menu = file_menu.addMenu("Open &Recent")
         self.recent_menu.aboutToShow.connect(self._rebuild_recent_menu)
+        if hasattr(self, '_refresh_recent_list'):
+            self._refresh_recent_list()  # the button of the welcome screen
         save_action = QAction("&Save Session...", self); save_action.setShortcut("Ctrl+S"); save_action.triggered.connect(self._on_save_session); 
         save_action.setEnabled(False)
         file_menu.addAction(save_action)

@@ -1,7 +1,7 @@
 ## [Unreleased]
 
 ### Added
-- GUI: **File > Open Recent**, the files opened last (up to ten); the welcome screen has a button **Open Session...**, the five files opened last and a hint that files can be dropped on the window. The size and position of the main window are remembered.
+- GUI: **File > Open Recent**, the files opened last (up to ten); the welcome screen has the buttons **Open Session...** and **Open Recent** (the same drop-down menu) and a hint that files can be dropped on the window. The size and position of the main window are remembered.
 - GUI: several files opened together (from *Open Session...* or dropped on the window) are loaded in the background, with a window that shows the progress (*Opening 2 of 5: ...*) and can cancel the files not yet opened; each session appears as soon as it is loaded, the status bar says how many were opened and in how long, and the files that could not be opened are listed in one message. They were loaded one after the other with the window frozen and no sign of progress.
 - GUI: a status bar. On the left, how the last recipe went: its name, time, the change of the number of components and the warnings (a recipe that succeeded said nothing; the dialog of the warnings stays). On the right, the position of the mouse, which was at the end of the toolbar: it stays visible when the toolbar is hidden. The System Inspector has the same status line, with the position in the velocity plot (now written as in the main window: `Δv = -12.0 km/s, ƒ = 0.500, z = 2.355300`).
 - System Inspector: keys in the table, `Return` refits and `Delete` (or `Backspace`) deletes the selected components; Undo and Redo work in the inspector too. The keys are shown in the menu of the table.

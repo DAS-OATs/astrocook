@@ -305,7 +305,7 @@ def test_welcome_view(empty):
     texts = [label.text() for label in page.findChildren(QLabel)]
     assert "You can also drop files on this window." in texts
     assert empty.empty_open_button.text() == "Open Session..."
-    assert empty.empty_recent_title.isHidden() == (not empty._recent_files())
+    assert empty.empty_recent_button.isEnabled() == bool(empty._recent_files())
     assert not empty.session_collapse_button.isVisible()
     assert not empty.plot_controls_collapse_button.isVisible()
     assert not empty.left_sidebar_widget.isVisible() and not empty.right_sidebar_widget.isVisible()
@@ -314,9 +314,8 @@ def test_welcome_view(empty):
 def test_recent_files(empty, tmp_path):
     # File > Open Recent and the list of the empty window, from the settings;
     # the files that no longer exist left out, the most recent first
-    from PySide6.QtWidgets import QPushButton
     empty._clear_recent_files()
-    assert empty.empty_recent_title.isHidden()
+    assert not empty.empty_recent_button.isEnabled()
     files = []
     for name in ("a.fits", "b.acs2", "c.fits"):
         path = tmp_path / name
@@ -334,13 +333,11 @@ def test_recent_files(empty, tmp_path):
     empty.open_files = opened.append
     empty.recent_menu.actions()[0].trigger()
     assert opened == [[files[0]]]
-    empty._refresh_recent_list()
-    layout = empty.empty_recent_layout
-    buttons = [layout.itemAt(i).widget() for i in range(layout.count())]
-    assert not empty.empty_recent_title.isHidden()
-    assert [b.text() for b in buttons] == ["a.fits", "b.acs2"]
-    assert all(isinstance(b, QPushButton) for b in buttons)
-    assert buttons[0].toolTip() == files[0]
+    # The Open Recent button of the welcome screen: the same drop-down menu
+    # (Guido)
+    assert empty.empty_recent_button.isEnabled()
+    assert empty.empty_recent_button.menu() is empty.recent_menu
+    assert empty.recent_menu.actions()[0].toolTip() == files[0]
     empty._clear_recent_files()
     empty._rebuild_recent_menu()
     assert [a.text() for a in empty.recent_menu.actions()][0] == "No Recent Files"
