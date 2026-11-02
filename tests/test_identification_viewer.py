@@ -8,8 +8,8 @@ import pytest
 from PySide6.QtCore import Qt
 
 from astrocook.gui.data_inspector import format_value
-from astrocook.gui.identification_viewer_dialog import (COLUMNS, IdentificationViewerDialog,
-                                                        group_multiplets)
+from astrocook.gui.identification_viewer_dialog import (ASSUMED_LYA, COLUMNS,
+                                                        IdentificationViewerDialog, doublet_rows)
 
 from test_acs2_round_trip import rich_session  # noqa: F401 (fixture)
 
@@ -31,89 +31,80 @@ def _cell(dlg, row, name):
     return dlg.table.item(row, COLUMNS.index(name)).text()
 
 
-def test_one_row_per_identified_region(dialog, rich_session):  # noqa: F811
-    table = dialog.table
-    assert table.isVisible() or not dialog.results_edit.isVisible()
-    assert [table.horizontalHeaderItem(c).text() for c in range(table.columnCount())] == COLUMNS
-    assert table.rowCount() == 2  # region 3 has no candidates
-    assert "Found <b>3</b>" in dialog.summary_label.text()
-    assert _cell(dialog, 0, "Regions") == "1" and _cell(dialog, 0, "Identification") == "CIV"
-    assert _cell(dialog, 0, "Score") == "0.90"
-    assert _cell(dialog, 0, "Other candidates") == "SiIV (0.40)"
-    # The range of the region (abs_ids: 100 pixels each) and its redshift
-    x = rich_session.spec.x.value
-    assert float(_cell(dialog, 0, "λ from (nm)")) == pytest.approx(x[100], abs=1e-3)
-    assert float(_cell(dialog, 0, "λ to (nm)")) == pytest.approx(x[199], abs=1e-3)
-    assert _cell(dialog, 0, "z") != ""
-    assert _cell(dialog, 1, "Identification") == "MgII"
+class _Spec:
+    """A spectrum with only an x axis in nm, for doublet_rows."""
+
+    def __init__(self, x_nm):
+        import astropy.units as au
+        self.x = x_nm * au.nm
 
 
-def _row(region, series, z, score=0.9, xmin=500.0, xmax=500.1, others=""):
-    return {"region": region, "series": series, "z": z, "score": score,
-            "xmin": xmin, "xmax": xmax, "others": others}
+def _doublet_case(z=2.0, z2=None, score=0.9, score2=None):
+    """Regions 1 (CIV_1548) and 2 (CIV_1550) at z (and z2), 3 a forest
+    region with the default Ly_a."""
+    from astrocook.core.atomic_data import xem_d
+    import astropy.units as au
+    x = np.linspace(360.0, 480.0, 120001)
+    regions = np.zeros(len(x), dtype=int)
+    for region, line, zz in ((1, "CIV_1548", z), (2, "CIV_1550", z2 or z), (3, "Ly_a", 2.1)):
+        centre = xem_d[line].to_value(au.nm) * (1 + zz)
+        regions[np.abs(x - centre) < 0.02] = region
+    ident = {1: [["CIV_1548", score]], 2: [["CIV_1550", score2 or score]], 3: [["Ly_a", 0.0]]}
+    return _Spec(x), ident, regions
 
 
-def test_members_of_a_multiplet_are_one_row():
-    # The members of a doublet at one redshift: one identification, seen
-    # together (Guido); a line of its own stays alone
-    z = 2.0
-    dz = 5.0 * (1 + z) / 299792.458  # 5 km/s
-    rows = group_multiplets([
-        _row(6, "CIV_1548", z, 0.91, 464.4, 464.5, "SiIV_1393 (0.30)"),
-        _row(8, "CIV_1550", z + dz, 0.89, 465.2, 465.3, "CIV_1548 (0.20)"),
-        _row(9, "Ly_a", 2.5, 0.7)])
-    assert len(rows) == 2
+def test_one_row_per_doublet():
+    # As the recipe identifies: the doublet of a pair of regions, its
+    # redshift range the envelope of both, its redshift the middle (Guido)
+    spec, ident, regions = _doublet_case()
+    rows = doublet_rows(spec, ident, regions)
+    assert [r["series"] for r in rows] == ["CIV", ASSUMED_LYA]
     civ = rows[0]
-    assert civ["regions"] == [6, 8] and civ["series"] == "CIV"
-    assert civ["transitions"] == "CIV_1548, CIV_1550"
-    assert civ["score"] == pytest.approx(0.90)
-    assert (civ["xmin"], civ["xmax"]) == (464.4, 465.3)  # both regions
-    assert civ["others"] == "SiIV_1393 (0.30)"  # not its own members
-    assert rows[1]["regions"] == [9] and rows[1]["transitions"] == "Ly_a"
+    assert civ["regions"] == [1, 2] and civ["score"] == pytest.approx(0.9)
+    assert civ["zmin"] < 2.0 < civ["zmax"]
+    assert civ["z"] == pytest.approx(0.5 * (civ["zmin"] + civ["zmax"]))
+    assert civ["xmin"] < 464.5 and civ["xmax"] > 465.2  # both regions, for the zoom
+    # The forest region that no doublet identified: Ly_a assumed, no score
+    assert rows[1]["regions"] == [3] and np.isnan(rows[1]["score"])
 
 
-def test_close_systems_are_not_merged():
-    # Each transition once per row: two CIV systems 10 km/s apart are two
-    # rows; members farther than MULTIPLET_DV_KMS are two rows too
-    z = 2.0
-    dv = lambda kms: kms * (1 + z) / 299792.458  # noqa: E731
-    rows = group_multiplets([_row(1, "CIV_1548", z), _row(2, "CIV_1548", z + dv(10)),
-                             _row(3, "CIV_1550", z + dv(2)), _row(4, "CIV_1550", z + dv(12))])
-    assert sorted(r["regions"] for r in rows) == [[1, 3], [2, 4]]
-    rows = group_multiplets([_row(1, "CIV_1548", z), _row(2, "CIV_1550", z + dv(100))])
-    assert len(rows) == 2
+def test_pairs_need_overlap_and_the_same_score():
+    # Regions at redshifts that do not overlap, or with different scores
+    # (two different pairs), are not a doublet
+    spec, ident, regions = _doublet_case(z2=2.01)
+    assert all(len(r["regions"]) == 1 for r in doublet_rows(spec, ident, regions))
+    spec, ident, regions = _doublet_case(score=0.9, score2=0.8)
+    assert all(len(r["regions"]) == 1 for r in doublet_rows(spec, ident, regions))
 
 
-def test_the_table_groups_the_members(qtbot, rich_session):  # noqa: F811
-    x = rich_session.spec.x.value
+def test_a_region_in_two_pairs():
+    # As region 106 of the test session: two rows, one per pair
+    spec, ident, regions = _doublet_case()
+    ident[1].append(["CIV_1548", 0.7])
+    ident[4] = [["CIV_1550", 0.7]]
+    regions[np.where(regions == 2)[0] + 5] = 4  # a second region overlapping
+    rows = [r for r in doublet_rows(spec, ident, regions) if r["series"] == "CIV"]
+    assert sorted(r["regions"] for r in rows) == [[1, 2], [1, 4]]
+
+
+def test_the_table(qtbot, rich_session):  # noqa: F811
+    # The table on a session, its columns and the click on a row
     meta = rich_session.spec._data.meta
-    meta["region_identifications"] = json.dumps(
-        {"1": [["CIV_1548", 0.9]], "2": [["CIV_1550", 0.9]]})
+    meta["region_identifications"] = json.dumps({"1": [["CIV", 0.9]], "2": [["Ly_a", 0.0]]})
     zooms = []
     dlg = IdentificationViewerDialog(rich_session.spec, "rich",
                                      zoom_to=lambda a, b: zooms.append((a, b)))
     qtbot.addWidget(dlg)
-    # The regions are at their own redshifts in this synthetic spectrum:
-    # grouped only if close, else one row each
-    assert dlg.table.rowCount() in (1, 2)
-    dlg.table.selectRow(0)
-    assert zooms and zooms[0][0] < x[100]
-
-
-def test_sorted_by_number(dialog):
-    table = dialog.table
-    table.sortItems(COLUMNS.index("Score"), Qt.SortOrder.DescendingOrder)
-    assert [table.item(r, 0).text() for r in range(2)] == ["1", "2"]
-    table.sortItems(COLUMNS.index("Score"), Qt.SortOrder.AscendingOrder)
-    assert [table.item(r, 0).text() for r in range(2)] == ["2", "1"]
-
-
-def test_a_row_shows_its_region(dialog, rich_session):  # noqa: F811
-    dialog.table.selectRow(0)
-    assert len(dialog.zooms) == 1
-    xmin, xmax = dialog.zooms[0]
+    table = dlg.table
+    assert [table.horizontalHeaderItem(c).text() for c in range(table.columnCount())] == COLUMNS
+    assert table.rowCount() == 2
+    assert _cell(dlg, 1, "Identification") == ASSUMED_LYA and _cell(dlg, 1, "Score") == ""
+    assert "doublets found" in dlg.summary_label.text()
+    table.sortItems(COLUMNS.index("Regions"), Qt.SortOrder.DescendingOrder)
+    assert _cell(dlg, 0, "Regions") == "2"
+    table.selectRow(1)  # region 1 after sorting
     x = rich_session.spec.x.value
-    assert xmin < x[100] and xmax > x[199]
+    assert zooms and zooms[-1][0] < x[100] and zooms[-1][1] > x[199]
 
 
 def test_no_identifications(qtbot, rich_session):  # noqa: F811

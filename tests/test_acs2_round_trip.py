@@ -243,4 +243,5 @@ def test_identification_viewer_after_round_trip(qtbot, rich_session, tmp_path,
     dialog = IdentificationViewerDialog(session.spec, "rich")
     qtbot.addWidget(dialog)
     assert "Error" not in dialog.summary_label.text()
-    assert "Found <b>" in dialog.summary_label.text()
+    assert "absorbed regions" in dialog.summary_label.text()  # a table since phase 5-bis
+    assert dialog.table.rowCount() == 1

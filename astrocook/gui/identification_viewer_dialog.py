@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView, QDialog, QDialogButtonBox, QLabel, QTableWidget, QTableWidgetItem,
     QTextEdit, QVBoxLayout
 )
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 if TYPE_CHECKING:
@@ -15,72 +15,82 @@ if TYPE_CHECKING:
 
 
 #: The columns of the table of the identifications
-COLUMNS = ["Regions", "Identification", "Transitions", "z", "Score", "\u03bb from (nm)",
-           "\u03bb to (nm)", "Other candidates"]
+COLUMNS = ["Regions", "Identification", "z (mean)", "z min", "z max", "Score"]
 
-#: The regions identified as members of the same multiplet (e.g. CIV_1548
-#: and CIV_1550) are one row when their redshifts differ by less than this
-#: (km/s): measured at the deepest pixel of each region, the members of one
-#: system differ by a few km/s (pixels, blends). Each transition at most once
-#: per row, so that two close systems are not merged
-MULTIPLET_DV_KMS = 20.0
+#: The label of a region of the forest that no doublet identified: the
+#: recipe assigns it to Ly_a with score 0, it is not an identification
+ASSUMED_LYA = "Ly_a (assumed)"
+
 C_KMS = 299792.458
+#: Tolerance (km/s) on the overlap of the redshift ranges of the two regions
+#: of a doublet: the recipe finds the pairs on a shifted map of the regions,
+#: interpolated to the nearest pixel
+PAIR_TOLERANCE_KMS = 10.0
 
 
-def multiplet_of(series: str) -> Optional[str]:
-    """The multiplet of a transition (e.g. 'CIV' for 'CIV_1548'), the name
-    itself for a multiplet, None for a line of its own (e.g. 'Ly_a')."""
-    if series in STANDARD_MULTIPLETS:
-        return series
+def _z_range(x_nm, region_map, region, transition):
+    """The redshifts of the first and last pixel of a region, for a
+    transition."""
+    indices = np.where(region_map == region)[0]
+    if transition in STANDARD_MULTIPLETS:  # a multiplet (older sessions): its first line
+        transition = STANDARD_MULTIPLETS[transition][0]
+    if not indices.size or transition not in xem_d:
+        return None
+    rest = xem_d[transition].to_value(au.nm)
+    return x_nm[indices[0]] / rest - 1.0, x_nm[indices[-1]] / rest - 1.0
+
+
+def doublet_rows(spec, ident_dict, region_map) -> List[dict]:
+    """The identifications as the recipe makes them (Guido): one row per
+    doublet found, i.e. per pair of regions whose redshift ranges overlap
+    for the two lines of the doublet, with the same score (the score of
+    the pair, given to both regions); the redshift range is the envelope
+    of the two regions, the redshift its middle. A region can be in more
+    than one pair. The regions of the forest that no doublet identified
+    are Ly_a with score 0 in the recipe: shown as assumed, without a score.
+    The pairs are found again from the candidates stored per region (the
+    recipe does not store the pairs)."""
+    x_nm = spec.x.to_value(au.nm)
+    rows, paired = [], set()
     for name, members in STANDARD_MULTIPLETS.items():
-        if series in members:
-            return name
-    return None
-
-
-def group_multiplets(rows: List[dict]) -> List[dict]:
-    """The rows of the members of one multiplet at one redshift merged into
-    one (Guido: the members are one identification, and seen together they
-    are easier to confirm): its regions, the transitions found, the mean
-    redshift and score, the range of all the regions."""
-    groups = []  # [multiplet, [rows]]
-    singles = []
-    for row in sorted(rows, key=lambda r: (np.nan_to_num(r["z"], nan=np.inf), r["region"])):
-        name = multiplet_of(row["series"])
-        if name is None or not np.isfinite(row["z"]):
-            singles.append(row)
+        if len(members) != 2:
             continue
-        for group_name, members in groups:
-            if group_name != name or any(m["series"] == row["series"] for m in members):
+        first, second = members
+        with_first = [(r, sc) for r, cands in ident_dict.items() for n, sc in cands if n == first]
+        with_second = [(r, sc) for r, cands in ident_dict.items() for n, sc in cands if n == second]
+        for r1, s1 in with_first:
+            z1 = _z_range(x_nm, region_map, r1, first)
+            for r2, s2 in with_second:
+                if r2 == r1 or abs(float(s1) - float(s2)) > 1e-9:
+                    continue
+                z2 = _z_range(x_nm, region_map, r2, second)
+                if z1 is None or z2 is None:
+                    continue
+                tol = PAIR_TOLERANCE_KMS / C_KMS * (1.0 + z1[0])
+                if min(z1[1], z2[1]) < max(z1[0], z2[0]) - tol:
+                    continue
+                zmin, zmax = min(z1[0], z2[0]), max(z1[1], z2[1])
+                indices = np.where((region_map == r1) | (region_map == r2))[0]
+                rows.append({"region": min(r1, r2), "regions": sorted((r1, r2)),
+                             "series": name, "score": float(s1),
+                             "z": 0.5 * (zmin + zmax), "zmin": zmin, "zmax": zmax,
+                             "xmin": float(x_nm[indices[0]]), "xmax": float(x_nm[indices[-1]])})
+                paired.update(((r1, first), (r2, second)))
+    for region, cands in ident_dict.items():
+        for n, sc in cands:
+            if (region, n) in paired:
                 continue
-            z0 = members[0]["z"]
-            if abs(row["z"] - z0) * C_KMS / (1 + z0) <= MULTIPLET_DV_KMS:
-                members.append(row)
-                break
-        else:
-            groups.append([name, [row]])
-    merged = [dict(row, regions=[row["region"]], transitions=row["series"]) for row in singles]
-    for name, members in groups:
-        if len(members) == 1:
-            row = members[0]
-            merged.append(dict(row, regions=[row["region"]], transitions=row["series"]))
-            continue
-        found = {m["series"] for m in members}
-        others = []
-        for m in members:
-            others += [o for o in m["others"].split(", ") if o and o.split(" (")[0] not in found]
-        merged.append({
-            "region": min(m["region"] for m in members),
-            "regions": sorted(m["region"] for m in members),
-            "series": name,
-            "transitions": ", ".join(sorted(found)),
-            "z": float(np.mean([m["z"] for m in members])),
-            "score": float(np.mean([m["score"] for m in members])),
-            "xmin": float(np.nanmin([m["xmin"] for m in members])),
-            "xmax": float(np.nanmax([m["xmax"] for m in members])),
-            "others": ", ".join(dict.fromkeys(others)),
-        })
-    return sorted(merged, key=lambda r: r["region"])
+            assumed = n == "Ly_a" and float(sc) == 0.0
+            zr = _z_range(x_nm, region_map, region, n)
+            indices = np.where(region_map == region)[0]
+            if zr is None or not indices.size:
+                continue
+            rows.append({"region": region, "regions": [region],
+                         "series": ASSUMED_LYA if assumed else n,
+                         "score": np.nan if assumed else float(sc),
+                         "z": 0.5 * (zr[0] + zr[1]), "zmin": zr[0], "zmax": zr[1],
+                         "xmin": float(x_nm[indices[0]]), "xmax": float(x_nm[indices[-1]])})
+    return sorted(rows, key=lambda r: (r["region"], r["series"]))
 
 
 class _NumberItem(QTableWidgetItem):
@@ -114,6 +124,7 @@ class IdentificationViewerDialog(QDialog):
 
         # 1. Summary Label
         self.summary_label = QLabel("Parsing identification results...")
+        self.summary_label.setWordWrap(True)
         self.layout.addWidget(self.summary_label)
 
         # 2. The table of the regions
@@ -124,7 +135,7 @@ class IdentificationViewerDialog(QDialog):
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setAlternatingRowColors(True)
-        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setStretchLastSection(False)
         self.table.itemSelectionChanged.connect(self._on_row_selected)
         self.layout.addWidget(self.table)
         # Kept for the errors and the hint when there is nothing to show
@@ -140,7 +151,7 @@ class IdentificationViewerDialog(QDialog):
 
         self._regions = {}  # row region ID -> (xmin, xmax) in nm
         self._populate_results(spec)
-        self.resize(760, 480)
+        self.resize(620, 520)
 
     def _show_text(self, text: str):
         self.table.setVisible(False)
@@ -177,41 +188,19 @@ class IdentificationViewerDialog(QDialog):
                 ident_dict_raw = json_string
             ident_dict = {int(float(k)): v for k, v in ident_dict_raw.items()}
 
-            rows = group_multiplets(self._rows(spec, ident_dict, region_map))
+            rows = doublet_rows(spec, ident_dict, region_map) if region_map is not None else []
+            pairs = sum(1 for r in rows if len(r["regions"]) == 2)
             self.summary_label.setText(
-                f"Found <b>{len(ident_dict)}</b> identified absorption regions; "
-                "the members of a multiplet are one row. "
-                "Click a row to show its regions in the main plot.")
+                f"<b>{pairs}</b> doublets found, in {len(ident_dict)} absorbed regions; "
+                "the other regions of the forest are assumed Ly_a. The redshift is the "
+                "middle of the range of the regions. Click a row to show its regions in "
+                "the main plot.")
             self._fill_table(rows)
 
         except Exception as e:
             logging.error(f"Failed to parse identifications JSON: {e}")
             self.summary_label.setText("Error parsing metadata.")
             self._show_text(f"# Error:\n{e}\n\n# Raw Data:\n{json_string}")
-
-    def _rows(self, spec, ident_dict, region_map) -> List[dict]:
-        """One row per region: its best identification and its redshift
-        (at the deepest pixel of the region), its score, its range and the
-        other candidates."""
-        rows = []
-        x_nm = spec.x.to_value(au.nm)
-        for region_id, candidates in sorted(ident_dict.items()):
-            if not candidates:
-                continue
-            series_name, score = candidates[0]
-            row = {"region": region_id, "series": series_name, "score": float(score),
-                   "z": np.nan, "xmin": np.nan, "xmax": np.nan,
-                   "others": ", ".join(f"{name} ({float(sc):.2f})" for name, sc in candidates[1:])}
-            if region_map is not None:
-                indices = np.where(region_map == region_id)[0]
-                if indices.size:
-                    row["xmin"], row["xmax"] = float(x_nm[indices[0]]), float(x_nm[indices[-1]])
-                    ref_trans = self._get_ref_transition(series_name)
-                    if ref_trans and ref_trans in xem_d:
-                        center = indices[np.argmin(spec.y.value[indices])]
-                        row["z"] = x_nm[center] / xem_d[ref_trans].to_value(au.nm) - 1.0
-            rows.append(row)
-        return rows
 
     def _fill_table(self, rows: List[dict]):
         self.table.setSortingEnabled(False)
@@ -222,17 +211,16 @@ class IdentificationViewerDialog(QDialog):
                                value if np.isfinite(value) else -np.inf)
 
         for r, row in enumerate(rows):
-            regions = _NumberItem(", ".join(str(r) for r in row["regions"]), row["region"])
+            regions = _NumberItem(", ".join(str(region) for region in row["regions"]),
+                                  row["region"])
             items = [regions, QTableWidgetItem(row["series"]),
-                     QTableWidgetItem(row["transitions"]),
-                     number(row["z"], "{:.5f}"), number(row["score"], "{:.2f}"),
-                     number(row["xmin"], "{:.3f}"), number(row["xmax"], "{:.3f}"),
-                     QTableWidgetItem(row["others"])]
+                     number(row["z"], "{:.5f}"), number(row["zmin"], "{:.5f}"),
+                     number(row["zmax"], "{:.5f}"), number(row["score"], "{:.2f}")]
             for c, item in enumerate(items):
-                if c < len(items) - 1:
-                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(r, c, item)
-            self._regions[row["region"]] = (row["xmin"], row["xmax"])
+            self._regions[r] = (row["xmin"], row["xmax"])
+            regions.setData(Qt.ItemDataRole.UserRole, r)
         self.table.setSortingEnabled(True)
         self.table.sortItems(0, Qt.SortOrder.AscendingOrder)
         self.table.resizeColumnsToContents()
@@ -243,8 +231,8 @@ class IdentificationViewerDialog(QDialog):
         rows = self.table.selectionModel().selectedRows()
         if not rows or self.zoom_to is None:
             return
-        region = self.table.item(rows[0].row(), 0).value
-        xmin, xmax = self._regions.get(region, (np.nan, np.nan))
+        key = self.table.item(rows[0].row(), 0).data(Qt.ItemDataRole.UserRole)
+        xmin, xmax = self._regions.get(key, (np.nan, np.nan))
         if np.isfinite(xmin) and np.isfinite(xmax):
             pad = max(0.5 * (xmax - xmin), 0.05)
             self.zoom_to(xmin - pad, xmax + pad)
@@ -260,54 +248,3 @@ class IdentificationViewerDialog(QDialog):
         except Exception:
             pass
         return None
-
-    def _invert_identifications(self, 
-                                spec: 'SpectrumV2', 
-                                ident_dict: Dict[int, List[Tuple[str, float]]], 
-                                region_map: np.ndarray) -> Dict[str, set]:
-        """
-        Inverts the region-based dict to a transition-based dict of redshifts.
-        {1: [('CIV', 0.9)]}  =>  {'CIV': {2.12345}}
-        """
-        inverted_map = {}
-        if region_map is None:
-             logging.warning("Cannot invert identifications, region_map is None.")
-             return {}
-             
-        x_nm = spec.x.to_value(au.nm)
-        
-        for region_id, id_list in ident_dict.items():
-            if not id_list:
-                continue
-                
-            # Use the *top* identification for this region
-            series_name, score = id_list[0]
-            
-            # Find the center of this region to get its redshift
-            try:
-                region_indices = np.where(region_map == region_id)[0]
-                if not region_indices.size:
-                    continue
-                
-                # Get the reference transition wavelength
-                ref_trans = self._get_ref_transition(series_name)
-                if not ref_trans or ref_trans not in xem_d:
-                    logging.warning(f"Could not find ref_trans for '{series_name}'")
-                    continue
-                
-                xem_nm = xem_d[ref_trans].to_value(au.nm)
-                
-                # Find the pixel with max absorption (min flux) in this region
-                region_flux = spec.y.value[region_indices]
-                center_idx = region_indices[np.argmin(region_flux)]
-                
-                z_peak = (x_nm[center_idx] / xem_nm) - 1.0
-                
-                if series_name not in inverted_map:
-                    inverted_map[series_name] = set()
-                inverted_map[series_name].add(z_peak)
-
-            except Exception as e:
-                logging.warning(f"Could not invert region {region_id} for {series_name}: {e}")
-                
-        return inverted_map

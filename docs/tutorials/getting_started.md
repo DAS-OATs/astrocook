@@ -182,7 +182,7 @@ The **View** menu also provides access to specialized analysis windows:
 
 * **View Session Log**: Opens the Session Log (see above).
 * **View System Inspector**: Opens the advanced interface for analyzing absorption lines. *See the [Absorption Systems](#system-inspector) tutorial for a full guide.*
-* **View Identifications**: Opens a table of the absorbed regions identified by *Identify Absorption Lines* or by the automatic pipelines: for each region its best identification, its redshift, the score, its wavelength range and the other candidates. The members of a multiplet at the same redshift (e.g. CIV 1548 and 1550) are one row, which lists its regions and transitions. Click a column header to sort, and a row to show its regions together in the main plot, with the flux axis fitted to them.
+* **View Identifications**: Opens a table of the identifications made by *Identify Absorption Lines* or by the automatic pipelines, as they are made: one row per doublet found (e.g. CIV), i.e. per pair of absorbed regions whose separation matches the doublet and whose optical depths agree with it (the score, the $R^2$ of the comparison). Its redshift range is that of the two regions, its redshift the middle of it. A region can be in more than one pair. The regions of the Lyman-α forest that no doublet identified are listed as *Ly_a (assumed)*, without a score: the recipe assigns them to Lyα, it does not identify them. Click a column header to sort, and a row to show its regions together in the main plot, with the flux axis fitted to them.
 * **View Script Console**: Opens a Python console for running custom scripts on the current session data.
 
 ### Saving and Closing
