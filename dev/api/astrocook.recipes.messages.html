@@ -545,8 +545,13 @@
 <p>Messages logged by the recipes.</p>
 <p>Messages shared by several recipes are defined here once, so that the
 same situation is always reported with the same words in the session log.</p>
-<p>The texts taken from V1 (<code class="docutils literal notranslate"><span class="pre">astrocook.legacy.message</span></code>) are unchanged, so
-that the log of a session does not change with the move to V2.</p>
+<p>The texts taken from V1 (<code class="docutils literal notranslate"><span class="pre">astrocook.legacy.message</span></code>) were kept unchanged
+with the move to V2; phase 6 reviews them with the others, by the rule of
+the log messages (<code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>, phase 6): DEBUG for the development,
+INFO for what an operation did, WARNING when the result needs a check or
+something was done instead of what was asked, ERROR when there is no
+result; English sentences without prefixes, values with their units. The
+session log records the recipes and their parameters, not these texts.</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.messages.msg_param_fail">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_param_fail</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;I</span> <span class="pre">can't</span> <span class="pre">understand</span> <span class="pre">the</span> <span class="pre">values</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameters.</span> <span class="pre">Please</span> <span class="pre">try</span> <span class="pre">again.&quot;</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_param_fail" title="Link to this definition">#</a></dt>
