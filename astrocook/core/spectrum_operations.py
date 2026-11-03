@@ -1,6 +1,8 @@
 from astropy import units as au
 from astropy.constants import c as c_light
 import logging
+import warnings
+
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
 from scipy.interpolate import interp1d
@@ -687,9 +689,13 @@ def compute_auto_fudge(
     with np.errstate(invalid='ignore'):
         residuals = y_valid - model_valid
     
-    # Use Median to be robust against non-Gaussian outliers
-    avg_residual = np.nanmedian(residuals)
-    avg_model = np.nanmedian(model_valid)
+    # Use Median to be robust against non-Gaussian outliers (a model of NaN
+    # only is handled below: without the warning of numpy, phase 6)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="All-NaN slice encountered",
+                                category=RuntimeWarning)
+        avg_residual = np.nanmedian(residuals)
+        avg_model = np.nanmedian(model_valid)
     
     if avg_model == 0 or np.isnan(avg_model): 
         return 1.0

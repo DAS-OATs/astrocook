@@ -1,4 +1,5 @@
 from astropy import units as au
+from astropy.io import fits
 from astropy.table import Table, Column
 import dataclasses
 import json
@@ -8,6 +9,7 @@ import os
 import stat
 import tarfile
 import tempfile
+import warnings
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 # --- V2 Imports ---
@@ -270,6 +272,46 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
 
     return json.dumps(meta_dict, indent=2, cls=NumpyEncoder)
 
+def _fits_meta(meta: dict) -> dict:
+    """The metadata that a FITS header can hold (phase 6, PR 7).
+
+    - The keywords of the FITS structure (``NAXIS``, ``TTYPEn``, ``TFORMn``...,
+      found in the metadata of the V1 archives, which keep the first lines
+      of their headers) are left out: astropy rebuilds them from the table,
+      and it ignored those of the metadata with one warning each, at every
+      save.
+    - A dictionary cannot be written in a header: astropy skipped it with
+      a warning of its own; it is left out with a WARNING that says what is
+      lost (the Bayesian samples, findings register F28).
+    """
+    from astropy.io.fits.connect import REMOVE_KEYWORDS, is_column_keyword
+    kept = {}
+    for key, value in meta.items():
+        if is_column_keyword(key.upper()) or key.upper() in REMOVE_KEYWORDS:
+            continue
+        if isinstance(value, dict):
+            if key == 'bayesian_results':
+                logger.warning("The samples of the Bayesian fit are not saved in the "
+                               "archive (the FITS header cannot hold them): the fitted "
+                               "values and their errors are.")
+            else:
+                logger.warning(f"The metadata '{key}' (a dictionary) cannot be saved "
+                               "in the archive.")
+            continue
+        kept[key] = value
+    return kept
+
+
+def _write_fits_table(table: Table, path: str) -> None:
+    """Write a table of the archive, without the warnings that only say that
+    a long keyword is written as a HIERARCH card (e.g. ``series_map_json``:
+    the standard way to hold it, read back as it was)."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=r"Keyword name .* a HIERARCH card will be created",
+                                category=fits.verify.VerifyWarning)
+        table.write(path, format='fits', overwrite=True)
+
+
 def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
     t = Table()
     t['x'] = Column(spec_data.x.values, unit=spec_data.x.unit)
@@ -279,7 +321,7 @@ def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
     t['dy'] = Column(spec_data.dy.values, unit=spec_data.dy.unit)
     for name, data_col in spec_data.aux_cols.items():
         t[name] = Column(data_col.values, unit=data_col.unit)
-    t.meta.update(spec_data.meta)
+    t.meta.update(_fits_meta(spec_data.meta))
 
     # Strip massive lists before FITS creation
     t.meta.pop('region_identifications', None)
@@ -333,7 +375,7 @@ def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
     t['chi2'].unit = au.dimensionless_unscaled
     t['resol'].unit = au.dimensionless_unscaled
 
-    t.meta.update(systs_data.meta)
+    t.meta.update(_fits_meta(systs_data.meta))
     return t
 
 def _write_replacing(final_path: str, add_members) -> None:
@@ -377,14 +419,14 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
         spec_fname = f"{base_name}_spec.fits"
         spec_path_temp = os.path.join(temp_dir, spec_fname)
         spec_table = _convert_spec_data_to_table(session_v2_final.spec._data)
-        spec_table.write(spec_path_temp, format='fits', overwrite=True)
+        _write_fits_table(spec_table, spec_path_temp)
         
         systs_fname = None
         if session_v2_final.systs and session_v2_final.systs.components:
             systs_fname = f"{base_name}_systs.fits"
             systs_path_temp = os.path.join(temp_dir, systs_fname)
             systs_table = _convert_syst_list_to_table(session_v2_final.systs._data)
-            systs_table.write(systs_path_temp, format='fits', overwrite=True)
+            _write_fits_table(systs_table, systs_path_temp)
 
         meta_fname = f"{base_name}_meta.json"
         meta_path_temp = os.path.join(temp_dir, meta_fname)
@@ -400,13 +442,13 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
             spec_orig_fname = f"{base_name}_spec_orig.fits"
             spec_orig_path_temp = os.path.join(temp_dir, spec_orig_fname)
             spec_orig_table = _convert_spec_data_to_table(session_v2_initial.spec._data)
-            spec_orig_table.write(spec_orig_path_temp, format='fits', overwrite=True)
+            _write_fits_table(spec_orig_table, spec_orig_path_temp)
 
             if session_v2_initial.systs and session_v2_initial.systs.components:
                 systs_orig_fname = f"{base_name}_systs_orig.fits"
                 systs_orig_path_temp = os.path.join(temp_dir, systs_orig_fname)
                 systs_orig_table = _convert_syst_list_to_table(session_v2_initial.systs._data)
-                systs_orig_table.write(systs_orig_path_temp, format='fits', overwrite=True)
+                _write_fits_table(systs_orig_table, systs_orig_path_temp)
 
         final_path = file_path if file_path.lower().endswith(('.acs2', '.tar.gz')) else file_path + '.acs2'
 
