@@ -1,8 +1,9 @@
 """The recipes log the same message on parameters they cannot parse.
 
-Characterization test for phase 3: the message comes from
-``astrocook.legacy.message`` in V1 and must not change when it moves into
-the V2 code. One recipe per module, each with a non-numeric parameter.
+Characterization test for phase 3: the message came from
+``astrocook.legacy.message`` in V1 and was kept when it moved into the V2
+code; phase 6 rewrote it by the rule of the log messages (``ROADMAP.md``).
+One recipe per module, each with a non-numeric parameter.
 """
 import logging
 
@@ -10,7 +11,7 @@ import pytest
 
 from test_recipes_edit_flux import _session
 
-MSG = "I can't understand the values of the parameters. Please try again."
+MSG = "The values of the parameters cannot be read: check them and run the recipe again."
 
 
 @pytest.mark.parametrize("recipe, kwargs", [

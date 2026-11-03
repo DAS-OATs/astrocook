@@ -15,5 +15,19 @@ session log records the recipes and their parameters, not these texts.
 #: Logged (at the ``ERROR`` level) when a recipe cannot convert its
 #: parameters, given as strings by the GUI dialogs, to the expected types;
 #: the recipe then returns 0 instead of a new session.
-msg_param_fail = ("I can't understand the values of the parameters. "
-                  "Please try again.")
+msg_param_fail = ("The values of the parameters cannot be read: check them "
+                  "and run the recipe again.")
+
+#: Logged (``INFO``) when a recipe that needs a continuum estimates it first
+#: with the automatic continuum, because the spectrum has none.
+msg_continuum_estimated = ("There is no continuum: it is estimated first, as "
+                           "with Auto-estimate Continuum.")
+
+#: Logged (``ERROR``) when a recipe names a session that is not open; format
+#: with ``name``.
+msg_session_not_found = "There is no open session named '{name}'."
+
+#: Logged (``WARNING`` or ``ERROR``) when a recipe needs the emission
+#: redshift and it is not set.
+msg_z_em_unset = ("The emission redshift (z_em) is not set: set it with "
+                  "Edit > Set Properties.")

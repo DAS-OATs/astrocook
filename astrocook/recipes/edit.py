@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
-from astrocook.recipes.messages import msg_param_fail
+from astrocook.recipes.messages import msg_param_fail, msg_session_not_found
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -244,7 +244,8 @@ class RecipeEditV2:
             # If running in script without GUI, we can't resolve aliases easily 
             # unless we passed the objects directly. For now, assume GUI context or fail gracefully.
             if alias_map:
-                logger.warning("GUI context missing: Cannot resolve multi-session aliases.")
+                logger.warning("Other sessions can be named in an expression only in the GUI: "
+                               "the aliases are not resolved.")
             return expression, {}
 
         for alias, full_name in alias_map.items():
@@ -255,7 +256,8 @@ class RecipeEditV2:
                     found = True
                     break
             if not found:
-                logger.warning(f"Could not find session '{full_name}' for alias '{alias}'.")
+                logger.warning(msg_session_not_found.format(name=full_name)
+                               + f" The alias '{alias}' is not resolved.")
 
         # 2. Delegate to Core (Business Logic)
         return self._session.spec.prepare_expression_context(expression, resolved_specs)
@@ -287,7 +289,7 @@ class RecipeEditV2:
                 raise ValueError(f"Could not parse pixel width from '{resol_str}'")
             
             pix_fwhm = float(match.group(1))
-            logger.info(f"Estimating Resolution (R) assuming {pix_fwhm:.1f} pixel FWHM...")
+            logger.debug(f"Estimating the resolution for a FWHM of {pix_fwhm:.1f} pixels.")
             
             # 1. Get raw x array
             x_vals = self._session.spec.x.value
@@ -304,14 +306,17 @@ class RecipeEditV2:
                     fwhm_wave = pix_fwhm * dx
                     estimated_R = mid_x / fwhm_wave
                     
-                    logger.warning(f"  -> Estimated R ~ {estimated_R:.0f} (at {mid_x:.1f}). "
-                                    f"This is an approximation assuming constant sampling.")
+                    logger.warning(f"Resolution estimated from the sampling: R = {estimated_R:.0f} "
+                                   f"at {mid_x:.1f}, for a FWHM of {pix_fwhm:.1f} pixels "
+                                   "(an approximation: the sampling is taken as constant).")
                     return estimated_R
                 else:
-                    logger.warning("Cannot estimate resolution: invalid grid spacing or wavelength.")
+                    logger.warning("The resolution cannot be estimated (the wavelengths or their "
+                                   "spacing are not positive): it is not changed.")
                     return 0.0
             else:
-                logger.warning("Cannot estimate resolution: spectrum too short.")
+                logger.warning("The resolution cannot be estimated (fewer than two pixels): "
+                               "it is not changed.")
                 return 0.0
                 
         # Fallback: Try standard float conversion
@@ -376,24 +381,20 @@ class RecipeEditV2:
         new_name = name if name != '_current_' else self._session.name
         new_object = object if object != '_current_' else current_meta.get('OBJECT', '')
         
-        try:
-            # 3. Apply changes via SpectrumV2.with_properties
-            new_spec = self._session.spec.with_properties(
-                z_em=z_em_f, 
-                resol=resol_f,
-                object_name=new_object,
-                overwrite_resol_col=overwrite_resol_col 
-            )
-            
-            # 4. Handle Session Name (Lives on the Session wrapper)
-            new_session = self._session.with_new_spectrum(new_spec)
-            if new_name:
-                new_session.name = new_name
-            
-            return new_session
-            
-        except Exception as e:
-            raise e
+        # 3. Apply changes via SpectrumV2.with_properties
+        new_spec = self._session.spec.with_properties(
+            z_em=z_em_f, 
+            resol=resol_f,
+            object_name=new_object,
+            overwrite_resol_col=overwrite_resol_col 
+        )
+
+        # 4. Handle Session Name (Lives on the Session wrapper)
+        new_session = self._session.with_new_spectrum(new_spec)
+        if new_name:
+            new_session.name = new_name
+
+        return new_session
 
     def x_convert(self, z_ref: str = '_current_', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
@@ -498,7 +499,7 @@ class RecipeEditV2:
         target_col = self._translate_ui_names(target_col.strip())
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("Expression cannot be empty.")
+            logger.error("The expression is empty.")
             return 0
         try:
             # 1. Prepare multi-session vars
@@ -545,7 +546,7 @@ class RecipeEditV2:
         target_col = self._translate_ui_names(target_col.strip())
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("Expression cannot be empty.")
+            logger.error("The expression is empty.")
             return 0
         try:
             # 1. Prepare multi-session vars
@@ -612,7 +613,7 @@ class RecipeEditV2:
             return self._session.with_new_spectrum(new_spec_v2)
             
         except Exception as e:
-            logger.error(f"Failed during smooth_column: {e}", exc_info=True)
+            logger.error(f"Could not smooth the column '{target_col}': {e}", exc_info=True)
             return 0
         
     def import_systems(self, source_session: str, append: bool = True, refit: bool = False) -> 'SessionV2':
@@ -651,12 +652,12 @@ class RecipeEditV2:
                     break
         
         if not target_hist:
-            logger.error(f"Session '{source_session}' not found.")
+            logger.error(msg_session_not_found.format(name=source_session))
             return self._session
 
         source_systs = target_hist.current_state.systs
         if not source_systs or not source_systs.components:
-            logger.warning(f"Source session '{source_session}' has no systems.")
+            logger.warning(f"The session '{source_session}' has no systems: nothing is imported.")
             return self._session
 
         return self._merge_imported_systems(source_systs, do_append, do_refit,
@@ -686,19 +687,20 @@ class RecipeEditV2:
                 
                 skipped = len(source_systs.components) - len(filtered_source_systs.components)
                 if skipped > 0:
-                    logger.info(f"Skipped {skipped} systems outside spectral range.")
+                    logger.warning(f"{skipped} systems outside the spectrum are not imported.")
                     
                 source_systs = filtered_source_systs 
                 
-            except Exception as e:
-                logger.warning(f"Could not filter systems by range: {e}")
+            except (ValueError, TypeError, KeyError) as e:
+                logger.warning(f"The systems could not be filtered by the range of the "
+                               f"spectrum ({e}): all of them are imported.")
 
         if not source_systs.components:
-            logger.warning("No systems fell within the target spectral range.")
+            logger.warning("No systems fall within the spectrum: nothing is imported.")
             return self._session
 
         # 4. Merge
-        logger.info(f"Importing {len(source_systs.components)} systems from {label}...")
+        logger.info(f"Importing {len(source_systs.components)} systems from {label}.")
         new_systs = base_systs.merge(source_systs, copy_uuids=False)
         
         # Create intermediate session with imported (but unfitted) systems
@@ -706,7 +708,7 @@ class RecipeEditV2:
 
         # 5. Optional Refit
         if do_refit:
-            logger.info("Refitting imported systems...")
+            logger.info("Refitting the imported systems.")
             try:
                 # Local import to avoid circular dependency
                 from astrocook.recipes.absorbers import RecipeAbsorbersV2
@@ -769,7 +771,8 @@ class RecipeEditV2:
 
         try:
             table = ap_ascii.read(file_path, guess=True)
-        except Exception as e:
+        except (OSError, ValueError) as e:
+            # ValueError covers the table errors of astropy and the decoding
             logger.error(f"Could not read '{file_path}': {e}")
             return 0
         missing = [c for c in ('series', 'z') if c not in table.colnames]
@@ -800,7 +803,7 @@ class RecipeEditV2:
             except (TypeError, ValueError) as e:
                 logger.warning(f"Row {i + 1} of '{file_path}' skipped: {e}")
         if not comps:
-            logger.warning(f"No valid systems in '{file_path}'.")
+            logger.warning(f"No valid systems in '{file_path}': nothing is imported.")
             return self._session
 
         source_systs = SystemListV2(SystemListDataV2(components=comps))
@@ -836,7 +839,7 @@ class RecipeEditV2:
         if 'lines' in target_list or 'systems' in target_list:
             # Re-initialize empty
             new_systs = SystemListV2(SystemListDataV2())
-            logger.info("Marked system list for deletion.")
+            logger.info("The systems are removed.")
             # Remove keywords from list to avoid trying to delete them as columns
             target_list = [t for t in target_list if t not in ['lines', 'systems']]
 
@@ -871,7 +874,7 @@ class RecipeEditV2:
         """
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("Expression cannot be empty.")
+            logger.error("The expression is empty.")
             return 0
             
         # 1. Prepare multi-session vars (re-using our existing helper!)
@@ -897,7 +900,7 @@ class RecipeEditV2:
             filtered_count = len(new_systs.components)
             
             if original_count != filtered_count:
-                logger.info(f"Split: Filtered out {original_count - filtered_count} systems outside the new range.")
+                logger.info(f"{original_count - filtered_count} systems outside the new range removed.")
         
         # 4. Return a NEW SessionV2 instance (GUI handles branching)
         return self._session.with_new_spectrum(new_spec_v2).with_new_system_list(new_systs)
@@ -940,7 +943,7 @@ class RecipeEditV2:
                 
                 # Build expression
                 expression = f"(λ > {v_min:.4f}) & (λ < {v_max:.4f})"
-                logger.info(f"Extracting '{reg}': {expression} (z_em={self._session.spec._data.z_em:.4f})")
+                logger.info(f"Extracting {reg} ({expression}, z_em = {self._session.spec._data.z_em:.4f}).")
                 
                 # Create the split session
                 new_session = self.split(expression=expression)
@@ -951,10 +954,9 @@ class RecipeEditV2:
                 
                 results.append(new_session)
                 
-            except ValueError as e:
-                logger.error(f"Skipping region '{reg}': {e}")
-            except Exception as e:
-                logger.error(f"Failed to extract '{reg}': {e}", exc_info=True)
+            except (ValueError, KeyError, TypeError) as e:
+                # The other regions are extracted; with none, the recipe fails
+                logger.warning(f"The region {reg} could not be extracted ({e}): it is skipped.")
 
         if not results:
             return 0 # Return failure code if nothing worked
@@ -1011,10 +1013,11 @@ class RecipeEditV2:
                             found = True
                             break
                     if not found:
-                        logger.warning(f"trim_common: Session '{name}' not found in GUI history.")
+                        logger.warning(msg_session_not_found.format(name=name))
             
             if len(resolved_others_specs) != len(trans_list_others):
-                logger.error(f"Mismatch: Found {len(resolved_others_specs)} sessions but {len(trans_list_others)} transitions provided.")
+                logger.error(f"There are {len(resolved_others_specs)} sessions and "
+                             f"{len(trans_list_others)} transitions: give one transition per session.")
                 return 0
                 
             # 3. Delegate Calculation to Core (SSOT)
@@ -1028,16 +1031,16 @@ class RecipeEditV2:
             )
             
             if not split_expression:
-                logger.warning("trim_common: No overlap found or invalid inputs.")
+                logger.warning("The sessions have no range in common: nothing is trimmed.")
                 return self._session
 
-            logger.info(f"Applying intersection trim: {split_expression}")
+            logger.info(f"Trimming to the range in common: {split_expression}.")
             
             # 4. Execute Split
             return self.split(split_expression)
 
         except Exception as e:
-            logger.error(f"trim_common failed: {e}", exc_info=True)
+            logger.error(f"Could not trim the sessions to their common range: {e}", exc_info=True)
             return 0
     
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
@@ -1065,7 +1068,7 @@ class RecipeEditV2:
         from astrocook.core.session import SessionV2 
 
         if not other_sessions:
-            logger.warning("No sessions provided to stitch.")
+            logger.warning("No sessions to stitch.")
             return self._session
 
         # 1. Resolve Inputs (GUI/Script Logic)
@@ -1085,12 +1088,12 @@ class RecipeEditV2:
                 if found:
                     resolved_specs.append(found.spec)
                 else:
-                    logger.warning(f"Stitch: Could not find loaded session named '{item}'. Skipping.")
+                    logger.warning(msg_session_not_found.format(name=item) + " It is skipped.")
             else:
-                logger.warning(f"Stitch: Invalid item type {type(item)}. Skipping.")
+                logger.warning(f"An item of type {type(item).__name__} cannot be stitched: it is skipped.")
 
         if not resolved_specs:
-            logger.error("No valid sessions found to stitch.")
+            logger.error("There are no valid sessions to stitch.")
             return self._session
 
         try:
@@ -1104,18 +1107,19 @@ class RecipeEditV2:
                 x_val = new_spec.x.value
                 y_val = new_spec.y.value
                 if not (np.all(np.isfinite(x_val)) and np.all(np.isfinite(y_val))):
-                    logger.info("Stitch: Cleaning up NaNs to fix plot display...")
+                    logger.debug("Removing the pixels with NaN values.")
                     # Filter: Keep rows where X and Y are finite
                     # Note: We rely on the core's split expression evaluator
                     new_spec = new_spec.split("isfinite(x) & isfinite(y)")
-            except Exception as clean_err:
-                logger.warning(f"Stitch cleanup warning: {clean_err}")
+            except (ValueError, KeyError, TypeError) as clean_err:
+                logger.warning(f"The pixels with NaN values could not be removed "
+                               f"({clean_err}): they are kept.")
             
             # 3. Return New Session
             return self._session.with_new_spectrum(new_spec)
             
         except Exception as e:
-            logger.error(f"Stitch failed: {e}", exc_info=True)
+            logger.error(f"Could not stitch the sessions: {e}", exc_info=True)
             return 0
 
     def equalize_and_stitch(self, other_sessions: str, stitch_wavelengths: str, 
@@ -1158,17 +1162,17 @@ class RecipeEditV2:
         # 1. Parse Input Lists
         others_list = [s.strip() for s in other_sessions.split(',') if s.strip()]
         if not others_list:
-            logger.error("No other sessions provided.")
+            logger.error("No other sessions to stitch.")
             return 0
             
         try:
             cuts = [float(c.strip()) for c in stitch_wavelengths.split(',')]
         except ValueError:
-            logger.error("Invalid stitch_wavelengths. Must be numbers separated by commas.")
+            logger.error("The stitch wavelengths must be numbers separated by commas.")
             return 0
 
         if len(cuts) != len(others_list):
-            logger.error(f"Need exactly {len(others_list)} cut-off wavelengths.")
+            logger.error(f"Give {len(others_list)} stitch wavelengths, one per other session.")
             return 0
 
         # Parse Manual Factors
@@ -1206,7 +1210,7 @@ class RecipeEditV2:
                         found = True
                         break
                 if not found:
-                    logger.error(f"Session '{name}' not found.")
+                    logger.error(msg_session_not_found.format(name=name))
                     return 0
         
         if len(resolved_others) != len(others_list):
@@ -1228,7 +1232,7 @@ class RecipeEditV2:
         processed_parts = []
         
         # First (Bluest) Part: x <= first_cut
-        logger.info(f"Base arm ({ordered_names[0]}): keeping data x <= {cuts[0]}")
+        logger.info(f"{ordered_names[0]}: kept up to {cuts[0]}.")
         first_part = anchor_spec.split(f"x <= {cuts[0]}")
         processed_parts.append(first_part)
     
@@ -1241,12 +1245,12 @@ class RecipeEditV2:
             
             # --- A. Equalization ---
             if factors:
-                logger.info(f"Arm {i+1} ({arm_name}): Applying manual factor {factors[i]:.4f}")
+                logger.info(f"{arm_name}: scaled by {factors[i]:.4f} (factor given).")
                 equalized_spec = other_spec.scale_flux(factors[i])
             else:
                 if eq_ranges:
                     vmin, vmax = eq_ranges[i]
-                    logger.info(f"Arm {i+1} ({arm_name}): Calculating equalization in range {vmin}-{vmax} nm")
+                    logger.debug(f"{arm_name}: equalizing between {vmin} and {vmax} nm.")
                     ref_overlap = current_reference_full.split(f"(x >= {vmin}) & (x <= {vmax})")
                     other_overlap = other_spec.split(f"(x >= {vmin}) & (x <= {vmax})")
                     
@@ -1257,29 +1261,30 @@ class RecipeEditV2:
                             other_overlap.x.value, other_overlap.y.value, order=0
                         )
                         scalar_factor = np.nanmedian(scale_model)
-                        logger.info(f"Arm {i+1} ({arm_name}): Calculated factor = {scalar_factor:.4f}")
+                        logger.info(f"{arm_name}: scaled by {scalar_factor:.4f} (between {vmin} and {vmax} nm).")
                         equalized_spec = other_spec.scale_flux(scalar_factor)
                     else:
-                        logger.warning(f"Arm {i+1} ({arm_name}): Not enough overlap. Falling back to global auto.")
+                        logger.warning(f"{arm_name}: not enough pixels between {vmin} and {vmax} nm: "
+                                       "equalized on the whole overlap instead.")
                         equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
                 else:
-                    logger.info(f"Arm {i+1} ({arm_name}): Calculating global auto equalization")
+                    logger.debug(f"{arm_name}: equalizing on the whole overlap.")
                     equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
             
             # --- B. Apply Split Logic ---
             if i < len(cuts) - 1:
                 next_cut = cuts[i+1]
-                logger.info(f"Arm {i+1} ({arm_name}): keeping data {current_cut} < x <= {next_cut}")
+                logger.info(f"{arm_name}: kept from {current_cut} to {next_cut}.")
                 part = equalized_spec.split(f"(x > {current_cut}) & (x <= {next_cut})")
             else:
-                logger.info(f"Arm {i+1} ({arm_name}): keeping data x > {current_cut}")
+                logger.info(f"{arm_name}: kept from {current_cut}.")
                 part = equalized_spec.split(f"x > {current_cut}")
             
             processed_parts.append(part)
             current_reference_full = current_reference_full.stitch([equalized_spec], sort=True)
     
         # 5. Final Stitch
-        logger.info("Stitching processed arms together...")
+        logger.debug("Stitching the parts together.")
         final_spec = processed_parts[0].stitch(processed_parts[1:], sort=True)
         
         new_name = "Stitched_" + "_".join(ordered_names)
@@ -1326,7 +1331,7 @@ class RecipeEditV2:
         
         names_list = [n.strip() for n in session_names.split(',') if n.strip()]
         if not names_list:
-            logger.warning("Coadd: No sessions selected.")
+            logger.warning("No sessions to combine.")
             return 0
 
         # 1. Resolve Session Objects
@@ -1342,7 +1347,7 @@ class RecipeEditV2:
                         break
         
         if not resolved_specs:
-            logger.error("Coadd: No valid sessions found.")
+            logger.error("There are no valid sessions to combine.")
             return 0
 
         # 2. Parse Parameters
@@ -1359,7 +1364,7 @@ class RecipeEditV2:
             base_spec = resolved_specs[0]
             others = resolved_specs[1:]
             
-            logger.info(f"Co-adding {len(resolved_specs)} sessions onto {dx_q} grid...")
+            logger.info(f"Combining {len(resolved_specs)} sessions on a grid of step {dx_q}.")
             
             new_spec = base_spec.coadd(
                 others=others,
@@ -1374,5 +1379,5 @@ class RecipeEditV2:
             return self._session.with_new_spectrum(new_spec)
 
         except Exception as e:
-            logger.error(f"Coadd failed: {e}", exc_info=True)
+            logger.error(f"Could not combine the sessions: {e}", exc_info=True)
             return 0

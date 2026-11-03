@@ -105,7 +105,7 @@ class RecipeFileV2:
             return saved_any
 
         except Exception as e:
-            logger.error(f"Export failed: {e}")
+            logger.error(f"Could not export the data: {e}", exc_info=True)
             return False
         
     def export_ascii_outputs(self, targets: str) -> List[str]:
@@ -203,9 +203,9 @@ class RecipeFileV2:
                 new_spec = new_spec.update_column(col_name, values)
                 imported_cols.append(col_name)
 
-            logger.info(f"Imported columns from ASCII: {', '.join(imported_cols)}")
+            logger.info(f"Columns imported: {', '.join(imported_cols)}.")
             return self._session.with_new_spectrum(new_spec)
 
         except Exception as e:
-            logger.error(f"Import from ASCII failed: {e}")
+            logger.error(f"Could not import the columns: {e}", exc_info=True)
             return 0
