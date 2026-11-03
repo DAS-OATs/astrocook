@@ -73,8 +73,8 @@ Current version: 2.3.0. Python ≥3.12.
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`), in parallel with
   `pytest -n auto` (pytest-xdist, ~3 minutes instead of ~7; the CI does
-  so); coverage with `pytest --cov=astrocook` (82%, the GUI 84%, the core
-  90%, after phase 5-bis): before changing production code, add
+  so); coverage with `pytest --cov=astrocook` (84%, the GUI 84%, the core
+  91%, after phase 6): before changing production code, add
   characterization tests for the behaviour involved.
 - Warnings are errors in the tests (`filterwarnings = ["error"]` in
   `pyproject.toml`, phase 6): a test that expects a warning says so
@@ -131,7 +131,7 @@ Current version: 2.3.0. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5 and 5-bis done (October-November 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis and 6 done (October-November 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -176,7 +176,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 9. phase 5-bis – GUI look and ergonomics (the open proposals of the GUI
    review, agreed one by one) (done);
 10. release 2.3.0 (done);
-11. phase 6 – error handling;
+11. phase 6 – error handling (done);
 12. phase 6-bis – recipe API (typed parameters, structured results,
     exceptions), from the report of the MCP pilot; with F12 (moved from
     phase 5);
@@ -294,24 +294,25 @@ mock benchmark unchanged (the *Accuracy* page as for 2.2.0); numbers
 change only in the calibration (F69, F70) and in the errors of linked
 parameters (#630).
 
-Phase 6 in progress (error handling; `ROADMAP.md`, phase 6): plan of the
-phase, inventory of the 189 broad `except` clauses (kept up to date by
-`tests/test_broad_excepts.py`) and rule of the log messages in PR 1;
-found F94 (data loss when a save fails, fixed in PR 2) and F95;
-loggers per module (`logger = logging.getLogger(__name__)` in every
-module, no call of `logging.info(...)` and the like: a test checks it),
-with F96, in PR 3; the rows N and R of core, fitting and io and their
-messages in PR 4a (found F97), the rows D (decided with Guido) in PR 4b:
-core, fitting and io keep only the two boundaries of
-`load_session_from_file`; the rows N, R and B of the recipes and their
-messages in PR 5a (found F98), their rows D in PR 5b; the prerequisites
-of the fits in PR 5c (F99), with the scheme of the prerequisites for
-6-bis (one per way of use: MCP, GUI, scripts; `ROADMAP.md`, phase 6-bis);
-the rows N and C of the GUI and its messages in PR 6a (exceptions in
-`gui/errors.py`; `V1LogArtifact` removed), its rows B and D and a hook
-for unexpected errors in PR 6b (`install_excepthook`, from the launcher):
-47 clauses left, all boundaries; the warnings of the libraries in PR 7
-(the fast suite without warnings); then the closing of the phase. Work in
+Phase 6 done (November 2026, PRs #691-#701; `ROADMAP.md`, phase 6,
+"Result of the phase"): the broad `except` clauses 189 → 47, all
+boundaries (`tests/test_broad_excepts.py` holds the count per file); the
+others narrowed (in the GUI to `DATA_ERRORS`, `QT_ERRORS` of
+`gui/errors.py`) or removed: an error is logged once, where it is caught,
+with its context; the fallbacks that went on with a result that looked
+valid (F95, 24 rows, each decided with Guido) stop with their reason.
+One logger per module (#566) and one rule for the messages of the whole
+package (`ROADMAP.md`, phase 6, "Rule of the log messages"), shared
+messages in `recipes/messages.py`; a hook shows the unexpected errors of
+the GUI in a dialog (`install_excepthook`); the fast suite without
+warnings, and warnings are errors in the tests. Fixed F94 (data loss when
+a save fails), F95, F96, F98, F99; F97 open (fix proposed). For 6-bis: the
+scheme of the prerequisites of the recipes (MCP, GUI, scripts), the lists
+of the GUI to the registry, the flag `not_fitted`. The snapshots and the
+mock benchmark unchanged.
+
+Next: phase 6-bis (recipe API; `ROADMAP.md`, phase 6-bis), starting from
+the scheme of the prerequisites, to be refined with Guido. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
