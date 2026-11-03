@@ -480,7 +480,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_MULTIPLETS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LINK_ERRORS</span><span class="p">,</span> <span class="n">LINK_FUNCTIONS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">,</span> <span class="n">msg_param_fail</span><span class="p">,</span>
+                                       <span class="n">msg_session_not_found</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
@@ -827,7 +829,7 @@
         <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
             <span class="k">break</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refining fit after removing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> lines narrower than </span><span class="si">{</span><span class="n">min_b</span><span class="si">}</span><span class="s2"> km/s removed; refitting the others."</span><span class="p">)</span>
         <span class="n">trimmed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="n">uuids</span><span class="p">))</span>
         <span class="n">refitted</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">trimmed</span><span class="p">)</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="o">**</span><span class="n">refit_kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">refitted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -835,7 +837,7 @@
         <span class="n">session</span> <span class="o">=</span> <span class="n">refitted</span>
     <span class="n">uuids</span> <span class="o">=</span> <span class="n">narrow</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">uuids</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> narrow lines left by the last refit."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> lines still narrower than </span><span class="si">{</span><span class="n">min_b</span><span class="si">}</span><span class="s2"> km/s after the last refit removed."</span><span class="p">)</span>
         <span class="n">session</span> <span class="o">=</span> <span class="n">_without_components</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">session</span>
 
@@ -963,7 +965,7 @@
 <span class="sd">            or 0 on failure.</span>
 <span class="sd">        """</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Initializing component search (</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Searching for components (region: </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         
         <span class="c1"># --- 1. PREPARE REGION MASK ---</span>
         <span class="c1"># We create a temporary session with a restricted mask to force identify_lines</span>
@@ -979,7 +981,7 @@
         <span class="c1"># --- 0. FORCE MASK REGENERATION ---</span>
         <span class="c1"># Always generate a fresh mask to ensure it matches current z_em/flux state.</span>
         <span class="c1"># This prevents "stale mask" bugs when running recipes sequentially.</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Generating fresh '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">'..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finding the absorbed regions (column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">')."</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
             <span class="n">rec_cont</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session_current</span><span class="p">)</span>
@@ -990,7 +992,7 @@
                 <span class="n">template</span><span class="o">=</span><span class="s2">"False"</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mask generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find the absorbed regions: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="n">kept_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_mask</span> <span class="k">if</span> <span class="n">user_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                      <span class="k">else</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">])</span>
@@ -1027,7 +1029,7 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Region masking skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         
         <span class="c1"># --- 2. IDENTIFY (using the masked session) ---</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Step 1/3: Scanning spectrum for candidate pairs..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Identifying the doublets (step 1 of 3)."</span><span class="p">)</span>
         
         <span class="c1"># Capture the OLD abs_ids before they are overwritten</span>
         <span class="n">old_abs_ids</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1076,11 +1078,11 @@
         <span class="n">z_map_json</span> <span class="o">=</span> <span class="n">spec_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'z_map_json'</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"components_auto: No candidates found."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No candidates found: no components are added."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="c1"># --- 3. POPULATE ---</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Step 2/3: Creating component models..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Adding the components (step 2 of 3)."</span><span class="p">)</span>
         <span class="n">rec_step2</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">session_step1</span><span class="p">)</span>
         <span class="n">session_step2</span> <span class="o">=</span> <span class="n">rec_step2</span><span class="o">.</span><span class="n">populate_from_identification</span><span class="p">(</span>
             <span class="n">region_id_col</span><span class="o">=</span><span class="s1">'abs_ids'</span><span class="p">,</span>
@@ -1092,7 +1094,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
         <span class="c1"># --- 4. REFIT ALL ---</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Step 3/3: Re-fitting all systems..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting the components (step 3 of 3)."</span><span class="p">)</span>
         <span class="n">rec_step3</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
         <span class="n">final_session</span> <span class="o">=</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span>
             <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span>
@@ -1107,7 +1109,7 @@
         <span class="c1"># Handle the case where refit_all returns 0 (Empty/Clean)</span>
         <span class="c1"># Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)</span>
         <span class="k">if</span> <span class="n">final_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refit skipped (no components to fit). Returning clean state."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No components to fit: the refit is skipped."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
 
         <span class="c1"># Check for stop request on the valid final session</span>
@@ -1115,7 +1117,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
         <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Component pipeline complete."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Component pipeline complete."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">with_kept_mask</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span></div>
 
 
@@ -1194,7 +1196,7 @@
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the forest model.</span>
 <span class="sd">        """</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Initializing Lyman-alpha forest analysis..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting the Lyman-alpha forest."</span><span class="p">)</span>
         
         <span class="c1"># 1. Run Pipeline (FORCE region='lya_forest')</span>
         <span class="n">final_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_auto</span><span class="p">(</span>
@@ -1212,7 +1214,7 @@
         <span class="c1"># removed and the rest refitted, MIN_B_ROUNDS times; those still</span>
         <span class="c1"># narrower after the last refit are removed without a refit (#517)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Analysing line shapes to remove interlopers..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing the lines narrower than </span><span class="si">{</span><span class="n">min_b</span><span class="si">}</span><span class="s2"> km/s (interlopers)."</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">min_b_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
@@ -1259,7 +1261,7 @@
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with Lyman series systems.</span>
 <span class="sd">        """</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting 'forest_auto' pipeline..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting the Lyman series in the forest."</span><span class="p">)</span>
         
         <span class="c1"># 1. IDENTIFY 'Ly_a' lines</span>
         <span class="c1"># (We can use components_auto logic, but we need to intercept the map before populate)</span>
@@ -1356,10 +1358,10 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"metals_auto: No existing systems to check."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"There are no systems to search metals at: nothing is added."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"metals_auto: Checking </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ion_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> ions for existing systems..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Searching </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ion_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> ions at the redshifts of the systems."</span><span class="p">)</span>
         
         <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         <span class="c1"># Optimization: Group components by Z</span>
@@ -1406,7 +1408,7 @@
                         <span class="k">if</span> <span class="n">fitted_comp</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="mf">2.0</span><span class="p">:</span> <span class="n">keep</span> <span class="o">=</span> <span class="kc">False</span>
                         
                         <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Found </span><span class="si">{</span><span class="n">ion</span><span class="si">}</span><span class="s2"> at z=</span><span class="si">{</span><span class="n">z_val</span><span class="si">}</span><span class="s2"> (logN=</span><span class="si">{</span><span class="n">fitted_comp</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="n">ion</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">z_val</span><span class="si">}</span><span class="s2"> (logN = </span><span class="si">{</span><span class="n">fitted_comp</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
                             <span class="n">running_systs</span> <span class="o">=</span> <span class="n">fitted_systs</span>
                             <span class="n">count_added</span> <span class="o">+=</span> <span class="mi">1</span>
                             <span class="n">existing_series</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ion</span><span class="p">)</span> 
@@ -1414,12 +1416,12 @@
                     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Fit failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">count_added</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"metals_auto: Added </span><span class="si">{</span><span class="n">count_added</span><span class="si">}</span><span class="s2"> new systems."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Added </span><span class="si">{</span><span class="n">count_added</span><span class="si">}</span><span class="s2"> metal components."</span><span class="p">)</span>
             <span class="c1"># The values the pipeline always used, before the defaults of</span>
             <span class="c1"># refit_all were aligned with the GUI (#573)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'0'</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"metals_auto: No new metals found."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No metals found."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">current_session</span></div>
 
 
@@ -1488,7 +1490,7 @@
             
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during identify_lines: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not identify the lines: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
     
@@ -1521,7 +1523,8 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">series_map_json</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">z_map_json</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"populate_from_identification: Missing maps."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"There is no identification to build the components from: "</span>
+                         <span class="s2">"run Identify Lines first."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">try</span><span class="p">:</span>
@@ -1529,8 +1532,9 @@
             <span class="n">z_map</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">z_map_json</span><span class="p">)</span>
             <span class="n">series_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
             <span class="n">z_map</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"populate_from_identification: Failed to deserialize maps: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># ValueError covers json.JSONDecodeError</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The identification cannot be read: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="n">running_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span>
@@ -1538,12 +1542,12 @@
 
         <span class="c1"># 1. Trigger Continuum if needed</span>
         <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Flux not normalized. Triggering continuum estimate..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
             <span class="n">cont_sess</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
             <span class="n">spec</span> <span class="o">=</span> <span class="n">cont_sess</span><span class="o">.</span><span class="n">spec</span> 
         
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Populating </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components from the identification."</span><span class="p">)</span>
 
         <span class="c1"># 2. Iterate and Build</span>
         <span class="k">for</span> <span class="n">sys_id</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">series_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
@@ -1619,7 +1623,7 @@
             
             <span class="c1"># 2. Register globally so the Fitter can find it</span>
             <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series</span><span class="p">]</span> <span class="o">=</span> <span class="n">members</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Registered custom multiplet: '</span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2">' -&gt; </span><span class="si">{</span><span class="n">members</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Custom multiplet </span><span class="si">{</span><span class="n">series</span><span class="si">}</span><span class="s2"> added (</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">members</span><span class="p">)</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1634,11 +1638,11 @@
             <span class="n">temp_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
             
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Auto-fitting new component </span><span class="si">{</span><span class="n">added_comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting the new </span><span class="si">{</span><span class="n">added_comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> component."</span><span class="p">)</span>
             <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">fit_component</span><span class="p">(</span><span class="n">added_comp</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">z_win_f</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">final_session</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed add_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not add the component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
 
         
 <div class="viewcode-block" id="RecipeAbsorbersV2.update_component">
@@ -1686,7 +1690,7 @@
             <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">update_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="o">**</span><span class="n">changes</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed update_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not update the component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
 
         
 <div class="viewcode-block" id="RecipeAbsorbersV2.update_components">
@@ -1740,7 +1744,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed update_components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not update the components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -1780,8 +1784,8 @@
             <span class="c1"># components anyway and drop the model column, which would still</span>
             <span class="c1"># include them.</span>
             <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"delete_component: no continuum, the model is not "</span>
-                                <span class="s2">"recomputed (the 'model' column is removed)."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"There is no continuum: the model is not recomputed, and "</span>
+                               <span class="s2">"its column is removed."</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'model'</span><span class="p">):</span>
                     <span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">remove_columns</span><span class="p">([</span><span class="s1">'model'</span><span class="p">])</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
@@ -1833,13 +1837,13 @@
                         <span class="k">break</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">sibling_session</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sibling session '</span><span class="si">{</span><span class="n">sibling_name</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sibling_name</span><span class="p">))</span>
                 <span class="k">return</span> <span class="mf">0.0</span>
             
             <span class="n">z_found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">detect_doublet_z</span><span class="p">(</span>
                 <span class="n">sibling_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">,</span> <span class="n">trans_sibling</span>
             <span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Detected anchor at z=</span><span class="si">{</span><span class="n">z_found</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Anchor redshift: z = </span><span class="si">{</span><span class="n">z_found</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">z_found</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1888,7 +1892,7 @@
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Flux not normalized and no continuum. Triggering estimate_auto..."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
                     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
                     <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
                     <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
@@ -1900,7 +1904,7 @@
             
             <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">if</span> <span class="s2">"stopped"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fit stopped by user. Reverting to pre-fit state."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"The fit was stopped: the components are as before it."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="c1"># Return the session as it was before fitting started</span>
                 <span class="k">raise</span> <span class="n">e</span> <span class="c1"># Re-raise if it's a real error</span>
             
@@ -1913,7 +1917,7 @@
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed fit_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not fit the component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
 
         
 <div class="viewcode-block" id="RecipeAbsorbersV2.update_constraint">
@@ -1951,7 +1955,6 @@
             <span class="p">)</span>
             
             <span class="k">if</span> <span class="n">expression</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_free</span><span class="p">:</span>
-                <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
                 <span class="k">class</span><span class="w"> </span><span class="nc">CompProxy</span><span class="p">:</span>
                     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span>
                     <span class="nd">@property</span>
@@ -1964,19 +1967,24 @@
                     <span class="k">def</span><span class="w"> </span><span class="nf">btur</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">btur</span>
 
                 <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">CompProxy</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
-                <span class="n">eval_globals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'p'</span><span class="p">:</span> <span class="n">comp_map</span><span class="p">,</span> <span class="s1">'np'</span><span class="p">:</span> <span class="n">np</span><span class="p">,</span> <span class="s1">'sqrt'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">,</span> <span class="s1">'log'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">}</span>
+                <span class="c1"># The functions of the fit (F98: 'sqrt' was offered here and</span>
+                <span class="c1"># not by the fit, which then ignored such a link)</span>
+                <span class="n">eval_globals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'p'</span><span class="p">:</span> <span class="n">comp_map</span><span class="p">,</span> <span class="o">**</span><span class="n">LINK_FUNCTIONS</span><span class="p">}</span>
                 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">new_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">eval_globals</span><span class="p">))</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Link established. Auto-updating </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Linked: </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> set to </span><span class="si">{</span><span class="n">new_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                     <span class="n">new_systs</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">update_component</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">new_val</span><span class="p">})</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not auto-update linked value: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">LINK_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># The link is checked by SystemListV2.update_constraint:</span>
+                    <span class="c1"># this should not happen (phase 6)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The linked </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> could not be computed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): it "</span>
+                                   <span class="s2">"keeps its value until the next fit."</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed update_constraint: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not set the constraint: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -2064,7 +2072,7 @@
         
         <span class="c1"># 1. Add Primary (The Anchor)</span>
         <span class="n">primary_series</span> <span class="o">=</span> <span class="n">series_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding Primary: </span><span class="si">{</span><span class="n">primary_series</span><span class="si">}</span><span class="s2"> at z=</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="n">primary_series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         
         <span class="c1"># Use existing add_component recipe logic to handle creation</span>
         <span class="c1"># (This handles empty list creation etc.)</span>
@@ -2085,7 +2093,7 @@
         <span class="n">secondary_uuids</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">s_name</span> <span class="ow">in</span> <span class="n">series_names</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding Linked: </span><span class="si">{</span><span class="n">s_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="n">s_name</span><span class="si">}</span><span class="s2">, linked to it."</span><span class="p">)</span>
             <span class="n">new_systs</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">s_name</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">logN</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
             <span class="n">sec_uuid</span> <span class="o">=</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">uuid</span>
             <span class="n">secondary_uuids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sec_uuid</span><span class="p">)</span>
@@ -2101,7 +2109,7 @@
         <span class="n">temp_session</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
         <span class="n">temp_recipe</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">temp_session</span><span class="p">)</span>
         
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting linked system group..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting the linked components."</span><span class="p">)</span>
         <span class="c1"># Fit centered on Primary</span>
         <span class="n">final_session</span> <span class="o">=</span> <span class="n">temp_recipe</span><span class="o">.</span><span class="n">fit_component</span><span class="p">(</span><span class="n">primary_uuid</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">z_window_kms</span><span class="p">))</span>
         
@@ -2159,7 +2167,7 @@
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
             <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Flux not normalized and no continuum. Triggering estimate_auto..."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
                 <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
                 <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
@@ -2189,7 +2197,7 @@
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
                         
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"optimize_system failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not optimize the system: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
              <span class="k">return</span> <span class="mi">0</span></div>
 
     
@@ -2240,16 +2248,16 @@
                 <span class="n">b_fitter</span> <span class="o">=</span> <span class="n">BayesianVoigtFitter</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
                 
                 <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running Nested Sampling (nlive=</span><span class="si">{</span><span class="n">nlive_i</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running nested sampling (nlive=</span><span class="si">{</span><span class="n">nlive_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
                     <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">nlive</span><span class="o">=</span><span class="n">nlive_i</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC (nsteps=</span><span class="si">{</span><span class="n">nsteps_i</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC (nsteps=</span><span class="si">{</span><span class="n">nsteps_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
                     <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">nsteps</span><span class="o">=</span><span class="n">nsteps_i</span><span class="p">)</span>
 
                 <span class="c1"># Never overwrite the components with non-finite values</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">'medians'</span><span class="p">])):</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"fit_bayesian: the sampler returned non-finite "</span>
-                                  <span class="s2">"parameters; components left unchanged."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The sampler returned non-finite parameters: the "</span>
+                                 <span class="s2">"components are not changed."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="mi">0</span>
 
                 <span class="c1"># 1. Update component parameters with medians</span>
@@ -2287,7 +2295,7 @@
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">final_systs</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed fit_bayesian: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not run the Bayesian fit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.refit_all">
@@ -2342,7 +2350,7 @@
             <span class="n">logN_max_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_logN</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"refit_all: No components to fit."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"There are no components to fit."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
 
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
@@ -2354,7 +2362,7 @@
             <span class="c1"># If selected_uuids is provided (e.g., from 'Refit Selected' in UI),</span>
             <span class="c1"># we fit the entire connected group once instead of looping.</span>
             <span class="k">if</span> <span class="n">selected_uuids</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refitting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">selected_uuids</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refitting </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_uuids</span><span class="p">)</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">selected_uuids</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                 
                 <span class="c1"># Use our new spatial-index-powered grouping logic</span>
                 <span class="n">combined_active_set</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">(</span>
@@ -2378,7 +2386,7 @@
                                 <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">combined_active_set</span><span class="p">])</span>
                     <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Consolidated fit failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not fit the selected components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="k">return</span> <span class="mi">0</span>
             <span class="c1"># --- END NEW CONSOLIDATED LOGIC ---</span>
 
@@ -2391,7 +2399,7 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">obs_min_limit</span><span class="p">,</span> <span class="n">obs_max_limit</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
                     <span class="n">use_region_filter</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refit restricted to </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">obs_min_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">obs_max_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refit limited to </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">obs_min_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">obs_max_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not apply region limit '</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">'. Fitting all."</span><span class="p">)</span>
 
@@ -2430,7 +2438,7 @@
                     <span class="n">uuids_in_region</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids_in_region</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No components found in the specified region to fit."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There are no components to fit in </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">current_session</span>
 
             <span class="c1"># --- 2. BUILD WORK UNITS (Grouping Step) ---</span>
@@ -2484,7 +2492,7 @@
                     <span class="n">todo_uuids</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
 
             <span class="n">total_units</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">work_units</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Preparing to fit </span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2"> absorption systems..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting </span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2"> groups of components."</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
 
             <span class="c1"># 2. Sequential Local Fit Loop</span>
@@ -2497,7 +2505,7 @@
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">target_uuids</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">work_units</span><span class="p">):</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Refit All: Stop requested. Aborting."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The refit was stopped."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>  <span class="c1"># Return original state (revert)</span>
             
                 <span class="n">pct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_units</span><span class="p">)</span>
@@ -2508,9 +2516,9 @@
                     <span class="k">if</span> <span class="n">peek_comp</span><span class="p">:</span>
                         <span class="n">series_str</span> <span class="o">=</span> <span class="n">peek_comp</span><span class="o">.</span><span class="n">series</span>
                         <span class="n">z_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">peek_comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting System </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">series_str</span><span class="si">}</span><span class="s2"> at z=</span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting group </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">series_str</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting Group </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting group </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">target_uuids</span><span class="p">:</span> <span class="k">continue</span>
                 
@@ -2580,7 +2588,7 @@
             <span class="k">return</span> <span class="n">current_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">final_systs</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"refit_all failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not refit the components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
         
@@ -2607,8 +2615,10 @@
                 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">evaluated</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
                         <span class="n">updated</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not recompute the uncertainties of a group: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The errors of a fit (ValueError covers LinAlgError)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The uncertainties of a group could not be recomputed at "</span>
+                               <span class="sa">f</span><span class="s2">"the final parameters (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): it keeps those of its fit."</span><span class="p">)</span>
         <span class="n">comps</span> <span class="o">=</span> <span class="p">[</span><span class="n">updated</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span>
 
@@ -2658,7 +2668,7 @@
             <span class="n">lim_b_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
             <span class="n">use_combined</span> <span class="o">=</span> <span class="p">(</span><span class="n">combined_check</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"true"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Invalid parameters for clean_negligible."</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">);</span> <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
         
@@ -2666,13 +2676,13 @@
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="c1"># 1. Unphysically Narrow (Noise spikes) -&gt; Always Remove</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="n">lim_b_min</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too narrow (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> removed: b = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s, too narrow."</span><span class="p">)</span>
                 <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="c1"># 2. Too Weak (Negligible)</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="o">&lt;</span> <span class="n">lim_N</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too weak (logN=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> removed: logN = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, too weak."</span><span class="p">)</span>
                 <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
                 <span class="k">continue</span>
 
@@ -2682,19 +2692,20 @@
                     <span class="c1"># Only remove if ALSO weak (e.g. logN &lt; 13.0)</span>
                     <span class="c1"># This protects strong, broad features (like DLA wings or broad OVI)</span>
                     <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="o">&lt;</span> <span class="mf">13.0</span><span class="p">:</span> 
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Broad &amp; Weak (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> removed: b = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s and "</span>
+                                     <span class="sa">f</span><span class="s2">"logN = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, broad and weak."</span><span class="p">)</span>
                         <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Unconditional removal</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Flagged </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> (z=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">): Too broad (b=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> removed: b = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s, too broad."</span><span class="p">)</span>
                     <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">to_remove</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span><span class="si">}</span><span class="s2"> outlier components..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span><span class="si">}</span><span class="s2"> components removed (too narrow, weak or broad)."</span><span class="p">)</span>
             <span class="c1"># Use existing delete method which handles model updates</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuids</span><span class="o">=</span><span class="n">to_remove</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No outliers found."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No components to remove."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span></div>
 </div>
 
