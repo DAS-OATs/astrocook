@@ -113,6 +113,20 @@ testpaths = [
 markers = [
     "slow: long tests, skipped unless pytest is run with --run-slow",
 ]
+# Every warning raised during a test is an error (phase 6, agreed with
+# Guido): the suite gave 123 warnings, which nobody read. A test that
+# expects a warning says so (pytest.warns, or warnings.catch_warnings with
+# a local filter). When a new release of a dependency brings a warning,
+# fix the code, or add an "ignore" entry below with its reason; never a
+# global filter in the package.
+filterwarnings = [
+    "error",
+    # The verbatim copy of V1 (tests/reference/v1, not to be edited) has an
+    # invalid escape sequence in a docstring ("\Delta"): Python warns when it
+    # compiles the file, so only without a cached .pyc, as in the CI. The
+    # module of a warning of the compiler is the path of the file
+    "ignore:invalid escape sequence:SyntaxWarning:.*reference.v1.cookbook_continuum_old",
+]
 
 [tool.ruff]
 # The verbatim copy of the V1 code for the parity tests and the V1 docs

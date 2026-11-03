@@ -7,6 +7,8 @@ row several times): the values of the model and the fit of the columns must
 not change. The table moved to ``gui/inspector_table.py`` later in phase 5
 (split of the GUI), with tests for the editing of a cell and the proxy.
 """
+import warnings
+
 import pytest
 from PySide6.QtCore import QModelIndex, Qt
 
@@ -172,12 +174,17 @@ def test_proxy_filters(filled, proxy):
     proxy.set_flagged_only(True)
     assert _ids(proxy) == [1.0, 2.0]  # the components with flags
     proxy.set_flagged_only(False)
-    proxy.set_allowed_uuids({c3.uuid})
-    assert _ids(proxy) == [1.0, 2.0, 3.0]  # the group filter is off
-    proxy.set_group_filter_enabled(True)
-    assert _ids(proxy) == [3.0]
-    proxy.set_allowed_uuids({c1.uuid, c3.uuid})
-    assert _ids(proxy) == [1.0, 3.0]
+    # begin/endFilterChange, not the deprecated invalidateFilter (phase 6)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        proxy.set_allowed_uuids({c3.uuid})
+        assert _ids(proxy) == [1.0, 2.0, 3.0]  # the group filter is off
+        proxy.set_group_filter_enabled(True)
+        assert _ids(proxy) == [3.0]
+        proxy.set_allowed_uuids({c1.uuid, c3.uuid})
+        assert _ids(proxy) == [1.0, 3.0]
+        proxy.set_group_filter_enabled(False)
+        assert _ids(proxy) == [1.0, 2.0, 3.0]
 
 
 def test_proxy_sorts_numbers_and_text(filled, proxy):

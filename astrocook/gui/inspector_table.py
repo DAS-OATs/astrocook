@@ -404,18 +404,23 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
         self.invalidate()
 
     def set_group_filter_enabled(self, enabled: bool):
+        # begin/endFilterChange: invalidateFilter() is deprecated since Qt
+        # 6.10 (the minimum version of PySide6 in pyproject.toml)
+        self.beginFilterChange()
         self.group_filtering_enabled = enabled
-        self.invalidateFilter()
+        self.endFilterChange()
         
     def set_allowed_uuids(self, uuids: set):
         """Updates the list of visible UUIDs (Fluid Group)."""
         # Break recursion: If the group hasn't changed, do nothing.
         if self.allowed_uuids == uuids: return
-        self.allowed_uuids = uuids
-
         # Only re-filter if the checkbox is actually checked
         if self.group_filtering_enabled:
-            self.invalidateFilter()
+            self.beginFilterChange()
+            self.allowed_uuids = uuids
+            self.endFilterChange()
+        else:
+            self.allowed_uuids = uuids
 
     def filterAcceptsRow(self, source_row, source_parent):
         comp = self.sourceModel().get_component_at(source_row)
