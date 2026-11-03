@@ -735,7 +735,8 @@
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
                         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span> <span class="n">final_key</span> <span class="o">=</span> <span class="n">val</span>
-                    <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">MemoryError</span><span class="p">,</span> <span class="ne">RecursionError</span><span class="p">):</span>
+                        <span class="k">pass</span>  <span class="c1"># not a literal: the key is kept as it is</span>
                 
                 <span class="c1"># Fix Stringified Ints in Tuples ("123", 'z')</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -771,7 +772,7 @@
 
             <span class="n">clean_parsed</span> <span class="o">=</span> <span class="n">sanitized_parsed</span>
             <span class="n">constraints_dirty</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"SystemListV2: Sanitized legacy constraints and populated clean map."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Old constraints converted to the current format."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dirty</span> <span class="ow">or</span> <span class="n">constraints_dirty</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -919,12 +920,14 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># Restore exactly the previous set (no further expansion)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="n">original_active</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"fitting_context cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Forcing reset to None."</span><span class="p">)</span>
-                <span class="c1"># Fail-safe: Unlock everything to prevent persistent 'Frozen' state</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># A failure here would leave the components outside the</span>
+                <span class="c1"># group frozen for the next fits</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the active components after the fit "</span>
+                             <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): all the components are made active."</span><span class="p">)</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">set_active_components</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
                     <span class="c1"># Last resort: direct attribute clear</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_active_uuids</span> <span class="o">=</span> <span class="kc">None</span></div>
 
@@ -953,7 +956,7 @@
 <span class="sd">            A new instance populated with the identified components.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="n">region_id_col</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"add_components: '</span><span class="si">{</span><span class="n">region_id_col</span><span class="si">}</span><span class="s2">' not in spectrum. No components added."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no column '</span><span class="si">{</span><span class="n">region_id_col</span><span class="si">}</span><span class="s2">': no components are added."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="n">new_components</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
@@ -961,7 +964,7 @@
         <span class="k">if</span> <span class="n">new_components</span><span class="p">:</span>
             <span class="n">next_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_components</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Populating SystemList with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components from the identified regions."</span><span class="p">)</span>
         
         <span class="k">for</span> <span class="n">rid</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">series_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">rid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">z_map</span><span class="p">:</span> <span class="k">continue</span>
@@ -1085,7 +1088,7 @@
                 <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> not found for update."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no component </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2">: nothing is updated."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_components</span><span class="p">)</span>
@@ -1273,7 +1276,8 @@
                         <span class="n">to_reset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">u_src</span><span class="p">,</span> <span class="n">p_name</span> <span class="ow">in</span> <span class="n">to_reset</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing broken link from </span><span class="si">{</span><span class="n">u_src</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">p_name</span><span class="si">}</span><span class="s2"> (target deleted)."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The link of </span><span class="si">{</span><span class="n">p_name</span><span class="si">}</span><span class="s2"> of component </span><span class="si">{</span><span class="n">u_src</span><span class="si">}</span><span class="s2"> pointed to a "</span>
+                        <span class="s2">"deleted component: the parameter is now free."</span><span class="p">)</span>
             <span class="c1"># Reset to Free</span>
             <span class="n">clean_constr</span> <span class="o">=</span> <span class="n">ParameterConstraintV2</span><span class="p">(</span><span class="n">is_free</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_uuid</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
             
@@ -1550,7 +1554,8 @@
         <span class="n">static_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dv_arr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">z_window_kms</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">static_mask</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"optimize_hierarchy: Window contains no valid data."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No valid pixels around the component: the system is "</span>
+                           <span class="s2">"not optimized."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span>
 
         <span class="c1"># [FIX] Initialize Taboo Mask (Rejected Pixels)</span>
@@ -1584,9 +1589,9 @@
                 <span class="k">return</span> <span class="n">aic</span><span class="p">,</span> <span class="n">new_systs</span>
 
         <span class="c1"># 3. Baseline Fit</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Optimizing </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2"> hierarchy..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Optimizing the components of </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">best_aic</span><span class="p">,</span> <span class="n">best_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">current_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">])</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Baseline AIC: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AIC of the starting model: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         
         <span class="n">current_systs</span> <span class="o">=</span> <span class="n">best_systs</span>
         <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1609,7 +1614,8 @@
             <span class="n">min_val</span> <span class="o">=</span> <span class="n">sigma_resid</span><span class="p">[</span><span class="n">min_idx</span><span class="p">]</span>
             
             <span class="k">if</span> <span class="n">min_val</span> <span class="o">&gt;</span> <span class="o">-</span><span class="n">threshold_sigma</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Converged. Max resid </span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s &gt; </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No residual deeper than </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2"> sigma "</span>
+                            <span class="sa">f</span><span class="s2">"(the deepest is </span><span class="si">{</span><span class="o">-</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma): done."</span><span class="p">)</span>
                 <span class="k">break</span>
                 
             <span class="c1"># C. Create Candidate</span>
@@ -1625,13 +1631,15 @@
                         <span class="n">too_close</span> <span class="o">=</span> <span class="kc">True</span><span class="p">;</span> <span class="k">break</span>
             
             <span class="k">if</span> <span class="n">too_close</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate too close (</span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> &lt; </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2"> km/s). Masking and retrying."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: candidate </span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s from a "</span>
+                             <span class="sa">f</span><span class="s2">"component (less than </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2"> km/s): masked."</span><span class="p">)</span>
                 <span class="c1"># [FIX] Mask this spot and CONTINUE (Do not Break!)</span>
                 <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">6</span><span class="p">))</span>
                 <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">continue</span> 
 
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iter </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: Candidate at </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> (Sigma=</span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: candidate at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> "</span>
+                         <span class="sa">f</span><span class="s2">"(residual </span><span class="si">{</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma)."</span><span class="p">)</span>
             
             <span class="c1"># E. Add &amp; Fit</span>
             <span class="n">cand_systs</span> <span class="o">=</span> <span class="n">best_systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="o">=</span><span class="n">series_name</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z_new</span><span class="p">,</span> <span class="n">logN</span><span class="o">=</span><span class="mf">13.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">15.0</span><span class="p">)</span>
@@ -1642,12 +1650,14 @@
             <span class="c1"># F. Compare</span>
             <span class="n">delta</span> <span class="o">=</span> <span class="n">trial_aic</span> <span class="o">-</span> <span class="n">best_aic</span>
             <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">aic_penalty</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Accepted. AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (Delta: </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component added at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">: AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> "</span>
+                            <span class="sa">f</span><span class="s2">"to </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                 <span class="n">best_aic</span> <span class="o">=</span> <span class="n">trial_aic</span>
                 <span class="n">best_systs</span> <span class="o">=</span> <span class="n">trial_systs</span>
                 <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Rejected. AIC Delta </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Candidate at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> rejected: AIC changes by "</span>
+                             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
                 <span class="n">trials_without_imp</span> <span class="o">+=</span> <span class="mi">1</span>
                 
                 <span class="c1"># [FIX] Mask this spot so we don't loop forever</span>
@@ -1655,7 +1665,7 @@
                 <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             
             <span class="k">if</span> <span class="n">trials_without_imp</span> <span class="o">&gt;=</span> <span class="n">patience</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Patience exhausted."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patience</span><span class="si">}</span><span class="s2"> candidates in a row rejected: done."</span><span class="p">)</span>
                 <span class="k">break</span>
         
         <span class="k">return</span> <span class="n">best_systs</span></div>
@@ -1706,7 +1716,8 @@
         <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart clean: Removed </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components in region </span><span class="si">{</span><span class="n">obs_min</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">obs_max</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components removed between </span><span class="si">{</span><span class="n">obs_min</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> "</span>
+                    <span class="sa">f</span><span class="s2">"and </span><span class="si">{</span><span class="n">obs_max</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">surviving_comps</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 
@@ -1739,7 +1750,7 @@
         <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
             
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Filtered </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> components removed."</span><span class="p">)</span>
         <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">valid_comps</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data</span><span class="p">)</span></div>
 

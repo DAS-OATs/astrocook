@@ -640,7 +640,8 @@
                         <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span> <span class="o">=</span> <span class="n">parts</span>
                         <span class="k">if</span> <span class="n">p0</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span> <span class="n">p0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p0</span><span class="p">)</span>
                         <span class="n">final_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
-                <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>  <span class="c1"># e.g. a digit int() does not read: the key is kept</span>
 
             <span class="c1"># Handle Stringified Integers in Tuple</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>

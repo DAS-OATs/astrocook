@@ -961,7 +961,7 @@
         <span class="k">if</span> <span class="n">old_cont_vals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">new_cont_vals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_model_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
             
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Re-normalizing 'model' column to new 'cont'..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Renormalizing the model to the new continuum."</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Get old normalized profile</span>
             <span class="n">normalized_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
@@ -972,7 +972,7 @@
             <span class="p">)</span>
             <span class="c1"># 2. Recalculate model against *new* continuum</span>
             <span class="n">new_model_values</span> <span class="o">=</span> <span class="n">new_cont_vals</span> <span class="o">*</span> <span class="n">normalized_model</span>
-            
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model renormalized to the new continuum."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span>
                 <span class="n">values</span><span class="o">=</span><span class="n">new_model_values</span><span class="p">,</span>
                 <span class="n">unit</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Use old model's unit</span>
@@ -1000,7 +1000,8 @@
         <span class="k">if</span> <span class="s1">'cont_no_telluric'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
             
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Old spectrum with 'cont_no_telluric': it becomes 'cont', so "</span>
+                    <span class="s2">"that the telluric transmission is not counted twice."</span><span class="p">)</span>
         
         <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
         
@@ -1142,9 +1143,10 @@
                 <span class="k">del</span> <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">actual_key</span><span class="p">]</span>
                 <span class="n">removed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actual_key</span><span class="p">)</span> <span class="c1"># Log the exact key removed</span>
             <span class="k">elif</span> <span class="n">clean_col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">]:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot delete core column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' is a core column and "</span>
+                               <span class="s2">"cannot be removed."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' to remove."</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">removed</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>

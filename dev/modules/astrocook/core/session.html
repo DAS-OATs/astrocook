@@ -548,7 +548,11 @@
         <span class="k">if</span> <span class="n">format_name</span> <span class="o">==</span> <span class="s1">'auto'</span> <span class="ow">or</span> <span class="n">format_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">format_name</span> <span class="o">=</span> <span class="n">detect_file_format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The detection is a heuristic: the generic loader reports</span>
+                <span class="c1"># its own error if it cannot read the file either</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The format of </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2"> was not recognized "</span>
+                             <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): it is read as a generic spectrum."</span><span class="p">)</span>
                 <span class="n">format_name</span> <span class="o">=</span> <span class="s1">'generic_spectrum'</span>
 
         <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
@@ -557,7 +561,8 @@
                 <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"V2 Loader failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+                             <span class="sa">f</span><span class="s2">"as </span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
 
     <span class="c1"># --- 2. ARCHIVE &amp; LEGACY HANDLING ---</span>
@@ -643,12 +648,14 @@
                 <span class="n">session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
                     <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_history_json'</span><span class="p">))</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the session log: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the session log (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): "</span>
+                               <span class="s2">"the session is opened with an empty log."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">session</span>
 
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> 
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Load failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="mi">0</span> 
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not open </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                     <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="c1"># Cleanup temp files</span>
         <span class="k">if</span> <span class="n">archive_manager</span><span class="p">:</span> <span class="n">archive_manager</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
@@ -770,17 +777,13 @@
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new SessionV2 instance, or 0 on failure.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">session</span> <span class="o">=</span> <span class="n">load_session_from_file</span><span class="p">(</span>
-                <span class="n">archive_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> 
-                <span class="n">gui_context</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> 
-                <span class="n">format_name</span><span class="o">=</span><span class="n">format_name</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">session</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FATAL I/O ERROR: Failed to load and orchestrate session from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="c1"># load_session_from_file reports its own failures and returns 0</span>
+        <span class="k">return</span> <span class="n">load_session_from_file</span><span class="p">(</span>
+            <span class="n">archive_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">gui_context</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span>
+            <span class="n">format_name</span><span class="o">=</span><span class="n">format_name</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SessionV2.with_new_spectrum">
@@ -889,7 +892,7 @@
             <span class="n">session_v2_initial</span><span class="o">=</span><span class="n">initial_session</span><span class="p">,</span>
             <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span>
         <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"V2 Session state saved successfully to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session saved to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 
