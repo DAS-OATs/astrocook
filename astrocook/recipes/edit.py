@@ -515,7 +515,8 @@ class RecipeEditV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during apply_expression: {e}", exc_info=True)
+            logger.error(f"Could not apply the expression '{expression}': {e}",
+                         exc_info=True)
             return 0 
             
     def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
@@ -561,7 +562,8 @@ class RecipeEditV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during mask_expression: {e}", exc_info=True)
+            logger.error(f"Could not apply the mask expression '{expression}': {e}",
+                         exc_info=True)
             return 0
 
     def smooth_column(self, target_col: str = 'dF', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':

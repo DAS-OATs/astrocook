@@ -142,7 +142,7 @@ class ContinuumMixin:
             # Normalize the working flux to flatten the emission peak
             valid = y_interp > 0
             y_fit[valid] = y_fit[valid] / y_interp[valid]
-            logger.info("Applied QSO template for continuum fitting.")
+            logger.info("The continuum is fitted to the flux divided by the QSO template.")
         # ---------------------------------------------
 
         # 2. Step A: Interpolate (Raw Guess)
@@ -164,12 +164,12 @@ class ContinuumMixin:
                 mask_abs=mask_abs,
                 cont_model=cont_raw
             )
-            logger.info(f"Auto-fudge calculated: {applied_fudge:.4f}")
+            logger.info(f"Fudge factor from the data: {applied_fudge:.4f}.")
         else:
             try:
                 applied_fudge = float(fudge)
             except (ValueError, TypeError):
-                logger.warning(f"Invalid fudge '{fudge}', defaulting to 1.0")
+                logger.warning(f"The fudge '{fudge}' is not a number: 1.0 is used.")
 
         cont_fudged = cont_raw * applied_fudge
         
@@ -219,7 +219,6 @@ class ContinuumMixin:
             )
             if new_model_col:
                 new_aux_cols['model'] = new_model_col
-                logger.info("Model column re-normalized to new continuum (incorporating tellurics).")
 
         # 7. Create New Data Core
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
@@ -292,11 +291,12 @@ class ContinuumMixin:
         # 1. Validation (Safe for numpy arrays)
         # Check for None first, then length. Avoid "if not knots_x" on arrays.
         if knots_x is None or len(knots_x) == 0:
-            logger.warning("Invalid knots provided (empty).")
+            logger.warning("No knots: the continuum is not changed.")
             return self
             
         if len(knots_x) != len(knots_y):
-            logger.warning(f"Knots length mismatch: x({len(knots_x)}) != y({len(knots_y)})")
+            logger.warning(f"The knots have {len(knots_x)} wavelengths and "
+                           f"{len(knots_y)} fluxes: the continuum is not changed.")
             return self
 
         # 2. Create Spline
@@ -338,7 +338,6 @@ class ContinuumMixin:
                 new_aux['model'] = new_model_data_col
                 new_data = dataclasses.replace(new_spec._data, aux_cols=new_aux)
                 new_spec = self.__class__(new_data, new_spec.history)
-                logger.info("Model renormalized to match new continuum.")
 
         # 5. History
         new_spec.history.append("Updated continuum from knots")

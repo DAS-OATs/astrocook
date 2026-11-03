@@ -159,7 +159,8 @@ class VoigtModelConstraintV2:
                         p0, p1 = parts
                         if p0.isdigit(): p0 = int(p0)
                         final_key = (p0, p1)
-                except: pass
+                except ValueError:
+                    pass  # e.g. a digit int() does not read: the key is kept
 
             # Handle Stringified Integers in Tuple
             if isinstance(final_key, tuple):

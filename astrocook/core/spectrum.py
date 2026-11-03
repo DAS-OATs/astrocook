@@ -465,7 +465,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         if old_cont_vals is None or new_cont_vals is None or old_model_col is None:
             return None
             
-        logger.info("Re-normalizing 'model' column to new 'cont'...")
+        logger.debug("Renormalizing the model to the new continuum.")
         try:
             # 1. Get old normalized profile
             normalized_model = np.divide(
@@ -476,7 +476,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             )
             # 2. Recalculate model against *new* continuum
             new_model_values = new_cont_vals * normalized_model
-            
+            logger.info("Model renormalized to the new continuum.")
             return DataColumnV2(
                 values=new_model_values,
                 unit=old_model_col.unit, # Use old model's unit
@@ -502,7 +502,8 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         if 'cont_no_telluric' not in self._data.aux_cols:
             return self
             
-        logger.info("Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting.")
+        logger.info("Old spectrum with 'cont_no_telluric': it becomes 'cont', so "
+                    "that the telluric transmission is not counted twice.")
         
         new_aux_cols = deepcopy(self._data.aux_cols)
         
@@ -635,9 +636,10 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
                 del new_aux_cols[actual_key]
                 removed.append(actual_key) # Log the exact key removed
             elif clean_col in ['x', 'y', 'dy', 'xmin', 'xmax']:
-                logger.warning(f"Cannot delete core column '{clean_col}'.")
+                logger.warning(f"The column '{clean_col}' is a core column and "
+                               "cannot be removed.")
             else:
-                logger.warning(f"Column '{clean_col}' not found.")
+                logger.warning(f"There is no column '{clean_col}' to remove.")
         
         if not removed:
             return self

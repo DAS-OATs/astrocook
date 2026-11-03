@@ -2,6 +2,7 @@
 
 ### Changed
 - Each module of Astrocook logs with its own logger, named after the module (`astrocook.recipes.absorbers`, `astrocook.fitting.voigt_fitter`, ...), instead of the root logger: a script can choose the level of Astrocook's messages, or of a part of it, alone (`logging.getLogger("astrocook").setLevel(logging.INFO)`; see *Seeing Astrocook's Messages* in the scripting tutorial). The messages themselves and what the GUI shows do not change.
+- The messages of the core, the fit and the loaders follow one rule (phase 6): English sentences without the name of the function in front, values with their units, and the level by what the user needs: INFO for what an operation did, WARNING when the result needs a check or something was done instead of what was asked, ERROR when there is no result, DEBUG for the internal steps (e.g. the candidates tried by *Optimize System*, which were WARNING or INFO, are now DEBUG; its accepted components stay INFO). An error is logged once, where it is caught, with its context (e.g. *Could not read bad.fits as astrocook_fits: ...*, or the expression that could not be evaluated), instead of two or three times along the way.
 
 ### Fixed
 - A script that ran a recipe before configuring logging could no longer configure it (F96): the first message of the recipe set up Python's logging with its defaults, so a later `logging.basicConfig(level=logging.INFO)` was ignored. A script that configures nothing still sees the warnings and errors, now without the `WARNING:root:` prefix.

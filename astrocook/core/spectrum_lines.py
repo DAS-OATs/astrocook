@@ -83,7 +83,7 @@ class LinesMixin:
         # 2. Call pure function
         region_map, num_regions = detect_regions(abs_mask, min_pix=min_pix)
         
-        logger.info(f"Detected {num_regions} absorption regions (min_pix={min_pix}).")
+        logger.info(f"{num_regions} absorbed regions of at least {min_pix} pixels.")
 
         # 3. Create new DataColumnV2 for the IDs
         # We use a dimensionless unit for IDs
@@ -149,36 +149,29 @@ class LinesMixin:
         # Import SciPy signal processing tools
         from scipy.signal import find_peaks, peak_widths
         
-        logger.info("identify_lines (De-blending): Starting identification...")
+        logger.debug("Identifying the absorbed regions.")
 
         # 1. Silently create abs_mask if it doesn't exist
         if not spec.has_aux_column(mask_col):
-            logger.info(f"Mask '{mask_col}' not found. Running 'find_absorbed' with defaults.")
-            try:
-                spec = spec.find_absorbed(
-                    smooth_len_lya=5000.0 * au.km/au.s,
-                    smooth_len_out=400.0 * au.km/au.s,
-                    kappa=2.0,
-                    template=False
-                )
-            except Exception as e:
-                logger.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
-                raise e
+            logger.info(f"There is no column '{mask_col}': the absorbed regions are "
+                        "found with find_absorbed and its defaults.")
+            spec = spec.find_absorbed(
+                smooth_len_lya=5000.0 * au.km/au.s,
+                smooth_len_out=400.0 * au.km/au.s,
+                kappa=2.0,
+                template=False
+            )
         
         # 2. Get Merged Regions
-        try:
-            mask_data = spec.get_column(mask_col).value
-            if mask_data.dtype.kind != 'b':
-                 mask_data = mask_data.astype(bool)
-            
-            region_id_map_raw, num_raw = detect_regions(mask_data, min_pix_region)
-            region_id_map_merged, num_merged = merge_regions_by_velocity(
-                region_id_map_raw, spec.x, spec._data.z_em, merge_dv
-            )
-            logger.info(f"identify_lines: {num_merged} regions remain after merging.")
-        except Exception as e:
-            logger.error(f"Failed to detect or merge absorption regions: {e}", exc_info=True)
-            raise e
+        mask_data = spec.get_column(mask_col).value
+        if mask_data.dtype.kind != 'b':
+             mask_data = mask_data.astype(bool)
+
+        region_id_map_raw, num_raw = detect_regions(mask_data, min_pix_region)
+        region_id_map_merged, num_merged = merge_regions_by_velocity(
+            region_id_map_raw, spec.x, spec._data.z_em, merge_dv
+        )
+        logger.debug(f"{num_merged} regions after merging.")
 
         # Define AOD profile
         cont = spec.cont.value if spec.cont is not None else np.ones_like(spec.y.value)
@@ -281,7 +274,7 @@ class LinesMixin:
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
                     reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True)]
 
-        logger.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
+        logger.info(f"{len(reliable_ids)} regions identified (before deblending).")
 
         # --- 6. Save results with SMART DE-BLENDING ---
         

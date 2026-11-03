@@ -33,7 +33,8 @@ class SessionHistory:
         """Returns the currently active SessionV2 state."""
         if 0 <= self.current_index < len(self.states):
             return self.states[self.current_index]
-        logger.error("History index out of bounds!")
+        logger.error(f"The index of the session history ({self.current_index}) is "
+                     f"out of range: the last of its {len(self.states)} states is used.")
         return self.states[-1] if self.states else None # Fallback
 
     @property
@@ -62,7 +63,7 @@ class SessionHistory:
         
         # 2. Ensure the new state has the correct log manager reference
         if not hasattr(new_state, 'log_manager') or new_state.log_manager is not self.log_manager:
-            logger.warning("SessionHistory.add_state: New state had incorrect log reference. Forcibly linking.")
+            logger.debug("The new state is linked to the log of its history.")
             new_state.log_manager = self.log_manager
 
         # 3. Append the new state

@@ -43,7 +43,8 @@ def _register_custom_multiplets(components: List[ComponentDataV2]):
             
             # Register globally
             STANDARD_MULTIPLETS[series] = members
-            logger.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
+            logger.info(f"Custom multiplet of the session added: {series} "
+                        f"({', '.join(members)}).")
 
 def load_and_migrate_structure(archive_root, structure_name, gui_context, format_name, spec_file_path=None, v2_metadata=None):
     """
@@ -422,12 +423,10 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
 
         _write_replacing(final_path, add_members)
 
-        logger.info(f"V2 archive created successfully at: {final_path}")
+        # The caller (SessionV2.save) logs the save; a failure goes to its
+        # caller, which reports it once
+        logger.debug(f"Archive written: {final_path}")
 
-    except Exception as e:
-        logger.error(f"FATAL: V2 archive creation failed: {e}")
-        raise
-        
     finally:
         if temp_dir and os.path.exists(temp_dir):
             import shutil

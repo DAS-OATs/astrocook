@@ -125,7 +125,7 @@ def test_fit_continuum_with_an_invalid_fudge(caplog):
     spec = _spec()
     with caplog.at_level(logging.WARNING):
         new = spec.fit_continuum("bad", 0.0)
-    assert "Invalid fudge 'bad', defaulting to 1.0" in caplog.text
+    assert "The fudge 'bad' is not a number: 1.0 is used." in caplog.text
     np.testing.assert_array_equal(new.get_column("cont").value,
                                   spec.fit_continuum(1.0, 0.0).get_column("cont").value)
 

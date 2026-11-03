@@ -1445,9 +1445,12 @@ an item to discuss.
   tests of what reaches the log window of the GUI and the MCP server first
   (F96 fixed with it);
   then one PR per package, each with its `except` clauses and its
-  messages: (4) core, fitting, io; (5) recipes; (6) GUI, with a hook
-  that shows an unexpected error to the user; (7) the warnings of the
-  libraries. The rows marked D are reviewed with Guido before their PR.
+  messages: (4) core, fitting, io, in two PRs (agreed with Guido): (4a)
+  the rows N and R and the messages, no change of behaviour; (4b) the
+  rows D, as decided with Guido (below); (5) recipes; (6) GUI, with a
+  hook that shows an unexpected error to the user; (7) the warnings of
+  the libraries. The rows marked D are reviewed with Guido before their
+  PR.
   The rule of the messages agreed with Guido as proposed (November 2026).
 - *Numbers.* The phase does not change the results: the snapshots and
   the fast suite cover each PR; the slow tests run in the CI job after
@@ -1494,8 +1497,37 @@ Action proposed for each clause:
 | launcher (`_run_astrocook.py`) | 3 | 1 | – | – | – | 4 |
 | **Total** | **78** | **49** | **17** | **21** | **24** | **189** |
 
-The lines are those of `a5b506a`; the function identifies the clause
-when the lines move.
+Done: the rows N and R of core, fitting and io (35, PR 4a), row D of
+`save_archive_v2` (F94, PR 2). The lines are those of `a5b506a`; the
+function identifies the clause when the lines move.
+
+**Rows D of core, fitting and io** (reviewed with Guido, November 2026;
+applied in PR 4b, each with a test that reproduces the failure):
+- *A result that looks valid: the error reaches the recipe* (which logs
+  it and gives no new session): `smooth_spectrum` (it returned the
+  unsmoothed array), `merge_regions_by_velocity` (the regions unmerged),
+  `_find_kinematic_doublet_candidates` (no candidates for the whole
+  multiplet), `_renormalize_model` (it can fail only by a bug);
+  `update_continuum_from_knots` raises a `ValueError` with a clear
+  message (two knots at the same wavelength, the likely cause), shown by
+  the GUI, instead of returning the spectrum unchanged.
+- *A reasonable fallback, narrowed*: `rate_doublet_candidate` keeps the
+  score 0 ("not a doublet") for a candidate that cannot be rated, only
+  for the expected errors, at DEBUG (a WARNING with traceback for each
+  candidate before); the others reach the recipe.
+- *Data loss: fail at once*: the fallback constraint model of
+  `SystemListV2` removed (with an empty model a save wrote the archive
+  without links and frozen parameters, with `None` the save crashed);
+  an unreadable V1 system list makes the opening of the `.acs` fail with
+  its message (it opened the session without systems, and a save in
+  `.acs2` then lost them), as for the V2 archives (Guido's choice
+  between failing and opening with a warning shown to the user).
+- *Links*: `update_constraint` refuses a link that does not compile or
+  names a component that does not exist, with an error shown to the
+  user; an old archive with such a link still opens, with an ERROR that
+  says the parameter is kept frozen at its value (`SyntaxError` only);
+  a link that fails to evaluate during a fit makes the fit fail with
+  its message instead of keeping the old value silently.
 
 <details>
 <summary>The 189 clauses</summary>
@@ -1506,35 +1538,35 @@ when the lines move.
 | `_run_astrocook.py` | 106 | `main` | `Exception` | N | window icon |
 | `_run_astrocook.py` | 153 | `main` | `Exception` | N | splash screen |
 | `_run_astrocook.py` | 207 | `main` | `Exception` | B | files given on the command line |
-| `core/session.py` | 74 | `load_session_from_file` | `Exception` | N | format detection, falls back to `generic_spectrum` |
+| `core/session.py` | 74 | `load_session_from_file` | `Exception` | N: done | format detection, falls back to `generic_spectrum` |
 | `core/session.py` | 82 | `load_session_from_file` | `Exception` | B | V2 loader, returns 0 (6-bis: exception) |
 | `core/session.py` | 172 | `load_session_from_file` | `Exception` | B | archive or spectrum loading, returns 0 (6-bis: exception) |
-| `core/session.py` | 296 | `SessionV2.open_new` | `Exception` | R | wraps `load_session_from_file`, which already catches and logs |
+| `core/session.py` | 296 | `SessionV2.open_new` | `Exception` | R: done | wraps `load_session_from_file`, which already catches and logs |
 | `core/spectrum.py` | 483 | `SpectrumV2._renormalize_model` | `Exception` | D | model left against the old continuum, with a WARNING |
-| `core/spectrum_combine.py` | 205 | `CombineMixin.rebin` | `Exception` | N | aux column dropped by `rebin`, with a WARNING |
+| `core/spectrum_combine.py` | 205 | `CombineMixin.rebin` | `Exception` | N: done | aux column dropped by `rebin`, with a WARNING |
 | `core/spectrum_continuum.py` | 312 | `ContinuumMixin.update_continuum_from_knots` | `Exception` | D | continuum from knots: returns the spectrum unchanged, the edit is lost (ERROR only) |
-| `core/spectrum_expressions.py` | 155 | `prepare_expression_context.replacer` | `Exception` | N | re-raised as `ValueError`: add `from e` |
-| `core/spectrum_expressions.py` | 194 | `ExpressionsMixin.apply_expression` | `Exception` | R | log and re-raise: the expression goes in the exception message |
-| `core/spectrum_expressions.py` | 283 | `ExpressionsMixin.mask_expression` | `Exception` | R | log and re-raise: the expression goes in the exception message |
-| `core/spectrum_expressions.py` | 420 | `ExpressionsMixin.split` | `Exception` | R | log and re-raise: the expression goes in the exception message |
-| `core/spectrum_flux.py` | 200 | `FluxMixin.smooth` | `Exception` | N | aux column left unsmoothed, with a WARNING |
-| `core/spectrum_flux.py` | 321 | `FluxMixin.calibrate` | `Exception` | R | log and re-raise |
-| `core/spectrum_lines.py` | 162 | `LinesMixin.identify_lines` | `Exception` | R | log and re-raise; the recipe logs the traceback again |
-| `core/spectrum_lines.py` | 177 | `LinesMixin.identify_lines` | `Exception` | R | log and re-raise; the recipe logs the traceback again |
+| `core/spectrum_expressions.py` | 155 | `prepare_expression_context.replacer` | `Exception` | N: done | re-raised as `ValueError`: add `from e` |
+| `core/spectrum_expressions.py` | 194 | `ExpressionsMixin.apply_expression` | `Exception` | R: done | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_expressions.py` | 283 | `ExpressionsMixin.mask_expression` | `Exception` | R: done | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_expressions.py` | 420 | `ExpressionsMixin.split` | `Exception` | R: done | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_flux.py` | 200 | `FluxMixin.smooth` | `Exception` | N: done | aux column left unsmoothed, with a WARNING |
+| `core/spectrum_flux.py` | 321 | `FluxMixin.calibrate` | `Exception` | R: done | log and re-raise |
+| `core/spectrum_lines.py` | 162 | `LinesMixin.identify_lines` | `Exception` | R: done | log and re-raise; the recipe logs the traceback again |
+| `core/spectrum_lines.py` | 177 | `LinesMixin.identify_lines` | `Exception` | R: done | log and re-raise; the recipe logs the traceback again |
 | `core/spectrum_operations.py` | 150 | `smooth_spectrum` | `Exception` | D | `smooth_spectrum` returns the unsmoothed array (ERROR only) |
-| `core/spectrum_operations.py` | 795 | `fit_powerlaw_to_regions` | `Exception` | R | log and re-raise |
+| `core/spectrum_operations.py` | 795 | `fit_powerlaw_to_regions` | `Exception` | R: done | log and re-raise |
 | `core/spectrum_operations.py` | 851 | `merge_regions_by_velocity` | `Exception` | D | regions returned unmerged (ERROR only) |
 | `core/spectrum_operations.py` | 1022 | `_find_kinematic_doublet_candidates` | `Exception` | D | no doublet candidates for the multiplet (ERROR only) |
 | `core/spectrum_operations.py` | 1140 | `rate_doublet_candidate` | `Exception` | D | candidate rated 0 (WARNING only) |
-| `core/system_list.py` | 249 | `SystemListV2._ensure_clean_data` | bare | N | `literal_eval` of a key (bare `except`) |
+| `core/system_list.py` | 249 | `SystemListV2._ensure_clean_data` | bare | N: done | `literal_eval` of a key (bare `except`) |
 | `core/system_list.py` | 298 | `SystemListV2._initialize_constraint_model` | `Exception` | D | empty fallback constraint model: links and frozen parameters lost (ERROR only) |
 | `core/system_list.py` | 306 | `SystemListV2._initialize_constraint_model` | `Exception` | D | empty fallback constraint model: links and frozen parameters lost (ERROR only) |
-| `core/system_list.py` | 431 | `SystemListV2.fitting_context` | `Exception` | N | restore of the active components after a fit |
-| `core/system_list.py` | 436 | `SystemListV2.fitting_context` | `Exception` | N | restore of the active components after a fit |
-| `fitting/bayesian_fitter.py` | 108 | `BayesianVoigtFitter.ln_likelihood` | `Exception` | N | likelihood −inf for a model that cannot be evaluated: catch the numerical errors only |
-| `fitting/voigt_fitter.py` | 414 | `VoigtFitterV2.evaluate_uncertainties` | `Exception` | N | uncertainties set to NaN when the covariance fails |
-| `fitting/voigt_fitter.py` | 940 | `VoigtFitterV2.fit` | `Exception` | N | uncertainties set to NaN when the covariance fails |
-| `fitting/voigt_model.py` | 160 | `VoigtModelConstraintV2._sanitize_data_structures` | bare | N | parsing of a key (bare `except`) |
+| `core/system_list.py` | 431 | `SystemListV2.fitting_context` | `Exception` | N: done | restore of the active components after a fit |
+| `core/system_list.py` | 436 | `SystemListV2.fitting_context` | `Exception` | N: done | restore of the active components after a fit |
+| `fitting/bayesian_fitter.py` | 108 | `BayesianVoigtFitter.ln_likelihood` | `Exception` | N: done | likelihood −inf for a model that cannot be evaluated: catch the numerical errors only |
+| `fitting/voigt_fitter.py` | 414 | `VoigtFitterV2.evaluate_uncertainties` | `Exception` | N: done | uncertainties set to NaN when the covariance fails |
+| `fitting/voigt_fitter.py` | 940 | `VoigtFitterV2.fit` | `Exception` | N: done | uncertainties set to NaN when the covariance fails |
+| `fitting/voigt_model.py` | 160 | `VoigtModelConstraintV2._sanitize_data_structures` | bare | N: done | parsing of a key (bare `except`) |
 | `fitting/voigt_model.py` | 260 | `VoigtModelConstraintV2._compile_links` | `Exception` | D | a link that does not compile is skipped (ERROR only) |
 | `fitting/voigt_model.py` | 351 | `VoigtModelConstraintV2.map_p_free_to_full` | `Exception` | D | a link that fails to evaluate keeps the old value, silently, at every model evaluation |
 | `gui/about_dialog.py` | 41 | `AboutDialog.__init__` | `Exception` | N | logo or icon |
@@ -1628,22 +1660,22 @@ when the lines move.
 | `gui/script_dialog.py` | 63 | `ScriptDialog.run_script` | `Exception` | B | script console (`exec`) |
 | `io/adapter.py` | 106 | `load_and_migrate_structure` | `Exception` | D | unreadable V1 system list: the session opens with no systems (ERROR only) |
 | `io/adapter.py` | 376 | `save_archive_v2` | `Exception` | D: done | original data not written, the save goes on and fails later (F94): removed, a failure of the original data stops the save (phase 6, F94 PR) |
-| `io/adapter.py` | 390 | `save_archive_v2` | `Exception` | R | log and re-raise; the GUI shows the error |
-| `io/loaders.py` | 121 | `detect_file_format` | `Exception` | N | format detection from the first lines |
-| `io/loaders.py` | 221 | `load_astrocook_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 286 | `load_pypeit_coadd` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 310 | `load_pypeit_spec1d_multi` | bare | N | order number from the HDU name, 0 if missing (bare `except`) |
-| `io/loaders.py` | 385 | `load_pypeit_spec1d_multi` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 440 | `load_pypeit_stack` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 504 | `load_pypeit_tellmodel` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 544 | `load_simple_csv` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 599 | `load_ascii_telluric_model` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 642 | `load_ascii_with_resvel_header` | `Exception` | N | non-numeric header line skipped |
-| `io/loaders.py` | 699 | `load_ascii_with_resvel_header` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 813 | `load_espresso_s2d_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 906 | `load_xshooter_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/loaders.py` | 1006 | `load_generic_spectrum` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
-| `io/v1_archive.py` | 67 | `V1ArchiveManager.unpack` | `Exception` | N | `.acs` archive that cannot be unpacked |
+| `io/adapter.py` | 390 | `save_archive_v2` | `Exception` | R: done | log and re-raise; the GUI shows the error |
+| `io/loaders.py` | 121 | `detect_file_format` | `Exception` | N: done | format detection from the first lines |
+| `io/loaders.py` | 221 | `load_astrocook_fits` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 286 | `load_pypeit_coadd` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 310 | `load_pypeit_spec1d_multi` | bare | N: done | order number from the HDU name, 0 if missing (bare `except`) |
+| `io/loaders.py` | 385 | `load_pypeit_spec1d_multi` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 440 | `load_pypeit_stack` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 504 | `load_pypeit_tellmodel` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 544 | `load_simple_csv` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 599 | `load_ascii_telluric_model` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 642 | `load_ascii_with_resvel_header` | `Exception` | N: done | non-numeric header line skipped |
+| `io/loaders.py` | 699 | `load_ascii_with_resvel_header` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 813 | `load_espresso_s2d_fits` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 906 | `load_xshooter_fits` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 1006 | `load_generic_spectrum` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
+| `io/v1_archive.py` | 67 | `V1ArchiveManager.unpack` | `Exception` | N: done | `.acs` archive that cannot be unpacked |
 | `mcp_server/errors.py` | 85 | `run_recipe` | `Exception` | B | a tool call: the exception becomes a `ToolError` |
 | `recipes/absorbers.py` | 507 | `RecipeAbsorbersV2.components_auto` | `Exception` | B | `components_auto`, mask step |
 | `recipes/absorbers.py` | 530 | `RecipeAbsorbersV2.components_auto` | `Exception` | D | `components_auto`: old systems of the region not removed, the pipeline goes on (WARNING only) |
@@ -1981,8 +2013,9 @@ Exception: anything that loses user data or crashes is reported at once.
 | F92 | main plot (redshift cursor) | While the redshift cursor follows the mouse over the plot, the card of the plot controls fades (`CardFader`, opacity 0.35 while the mouse is away), and the redshift written in its box is hard to read. Reported by Guido in phase 5-bis | GUI | `test_cursor_label` | fixed in phase 5-bis (PR of the text pass; Guido chose the first of three options: the redshift on the plot, the card kept opaque, the redshift next to λ and F in the toolbar): the redshift written at the top of the first line of the cursor in view, blitted with the lines |
 | F93 | `identify_lines` (identifications) | The identification is by doublets only: two absorbed regions are a candidate when they overlap once one is shifted by the separation of the doublet in velocity (the ratio of the wavelengths), and the pair is accepted when the R^2 of F_1 = F_2^gamma (gamma from f and lambda of the two lines) is above 0.5 (metals only redward of Ly_a). Three things found while rebuilding the Identifications window: (1) the pairs are not stored: each region keeps only its candidates ([transition, score]), and the window finds the pairs again from the overlap of the redshift ranges and the shared score; (2) the multiplets with more than two lines (FeII, SiII, NI, ...) are never searched, only those with exactly two members; (3) the regions of the forest that no doublet identified are labelled Ly_a with score 0, an assignment and not an identification (lya_auto calls the recipe with "Ly_a" alone, not a doublet, so all its regions are so labelled). Found in phase 5-bis | behaviour | `test_identification_viewer.py` (the window) | to be discussed in phase 7 (identification, Guido's algorithmic choices): store the pairs with their redshift and score; the window shows the doublets as the recipe finds them and the assumed Ly_a as such |
 | F94 | `save_archive_v2` (saving a session) | The `.acs2` archive is written directly over the target file: `tarfile.open(final_path, 'w:gz')` truncates it before its members are added, so a save that fails while the archive is being written leaves a partial archive (or an empty file) in place of the previous one, and the previous session is lost. One way to get there: if writing the original data (`session_v2_initial`) fails, the broad `except` logs an ERROR and goes on with the name of a file that does not exist, and `tar.add` then fails; reproduced in phase 6 (PR 1) by making the conversion of the original spectrum raise: the save raises `FileNotFoundError`, and the target file, an existing archive, is replaced by one with the current spectrum, systems and metadata only. Data loss, with a low probability (a failure while writing). Found in phase 6 while making the inventory of the broad except clauses | data loss, error handling | — | `test_save_archive.py` | fixed in phase 6 (PR after the inventory, agreed with Guido): the archive is written to a temporary file in the same folder and replaces the target only when complete (`os.replace`; symbolic links followed, permissions of the file replaced kept), and a failure of the original data stops the save before the target is touched |
-| F95 | fallbacks after a failure (24 places) | After a failure, the code goes on with a result that looks valid and says so only in the log, or not at all: e.g. a link of a constraint that fails to evaluate keeps its old value silently at every evaluation of the model (`VoigtModelConstraintV2.map_p_free_to_full`); `smooth_spectrum` returns the unsmoothed array; `update_continuum_from_knots` returns the spectrum unchanged, so the edit of the continuum is lost; `delete_component` returns the unchanged session, which the GUI takes as a success; the entry of a recipe in the session log is dropped silently if `add_entry` fails; in the pipelines, a cleanup or a fit that fails is skipped with a WARNING (`lya_auto`, `forest_auto`, `refit_all`) or a DEBUG line (`metals_auto`). Found in phase 6 (PR 1) | error handling, behaviour | — | open: the rows D of the inventory of phase 6, reviewed with Guido one by one before the PR of their package |
+| F95 | fallbacks after a failure (24 places) | After a failure, the code goes on with a result that looks valid and says so only in the log, or not at all: e.g. a link of a constraint that fails to evaluate keeps its old value silently at every evaluation of the model (`VoigtModelConstraintV2.map_p_free_to_full`); `smooth_spectrum` returns the unsmoothed array; `update_continuum_from_knots` returns the spectrum unchanged, so the edit of the continuum is lost; `delete_component` returns the unchanged session, which the GUI takes as a success; the entry of a recipe in the session log is dropped silently if `add_entry` fails; in the pipelines, a cleanup or a fit that fails is skipped with a WARNING (`lya_auto`, `forest_auto`, `refit_all`) or a DEBUG line (`metals_auto`). Found in phase 6 (PR 1); in PR 4a, without a broad `except`, also `fit_continuum` (an ERROR and the spectrum returned unchanged when fewer than two pixels are unabsorbed) and `update_continuum_from_knots` (a WARNING and the spectrum unchanged without knots) | error handling, behaviour | — | open: the rows D of the inventory of phase 6, reviewed with Guido one by one before the PR of their package; those of core, fitting and io decided (phase 6, "Rows D of core, fitting and io") |
 | F96 | logging (scripts) | The package logged with the module-level functions of `logging` (`logging.warning(...)`), which call `logging.basicConfig()` when the root logger has no handler: the first message of a recipe in a script that had not configured logging yet configured it (level WARNING, format `WARNING:root:...`), and the script's own `basicConfig(level=logging.INFO)` called afterwards did nothing, so its level and format were ignored. Found in phase 6 (PR 3) while writing the characterization tests of the loggers per module | behaviour | `test_script_can_configure_logging_after_a_recipe` (regression) | fixed in phase 6 (PR 3): the loggers per module (#566) do not configure the root logger; a script that configures nothing still sees the warnings (Python's last-resort handler), without the `WARNING:root:` prefix |
+| F97 | `detect_file_format` (loaders) | The detection of an ASCII format reads the first 10 lines with `next(f)`, which raises `StopIteration` for a file with fewer lines: the exception was caught by a broad `except`, and a `.csv` file of fewer than 10 lines is read as a generic spectrum instead of a CSV table (by the generic loader, which may then fail on it). Found in phase 6 (PR 4a) while narrowing the clause | behaviour | `test_short_csv_is_read_as_a_generic_spectrum` (characterization) | open: kept as it is in PR 4a (the clause narrowed to `OSError` and `StopIteration`); proposed fix: read at most 10 lines (`itertools.islice`) |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -2412,6 +2445,6 @@ review); each of its decisions goes into the log.
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
-| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3) |
+| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3, #693); rows D of core, fitting and io decided; rows N and R of core, fitting and io, their messages by the rule (PR 4a), found F97 |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
