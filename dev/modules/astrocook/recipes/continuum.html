@@ -480,6 +480,8 @@
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="c1"># --- Schemas for the Continuum Menu ---</span>
 <span class="n">CONTINUUM_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"estimate_auto"</span><span class="p">:</span> <span class="p">{</span>
@@ -631,14 +633,14 @@
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="c1"># Read z_em from session</span>
             <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">if</span> <span class="n">z_em_f</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' first."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' first."</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Finding absorbed regions..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Finding absorbed regions..."</span><span class="p">)</span>
             <span class="c1"># 1. Call the first API method</span>
             <span class="n">spec_with_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
                 <span class="n">smooth_len_lya</span><span class="o">=</span><span class="n">smooth_len_lya_q</span><span class="p">,</span>
@@ -647,7 +649,7 @@
                 <span class="n">template</span><span class="o">=</span><span class="n">template_b</span>
             <span class="p">)</span>
             
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Fitting continuum to mask..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Auto-continuum: Fitting continuum to mask..."</span><span class="p">)</span>
             <span class="n">spec_with_cont</span> <span class="o">=</span> <span class="n">spec_with_mask</span><span class="o">.</span><span class="n">fit_continuum</span><span class="p">(</span>
                 <span class="n">fudge</span><span class="o">=</span><span class="n">fudge_f</span><span class="p">,</span>
                 <span class="n">smooth_std_kms</span><span class="o">=</span><span class="n">smooth_std_f</span><span class="p">,</span>
@@ -659,7 +661,7 @@
             <span class="c1"># 3. Return the final new state</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec_with_cont</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during estimate_auto: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during estimate_auto: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -701,11 +703,11 @@
             <span class="n">template_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
             <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="c1"># Read z_em from session</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="n">z_em_f</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' before continuum fitting."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"z_em is 0.0. Run 'Edit &gt; Set Properties' before continuum fitting."</span><span class="p">)</span>
             <span class="c1"># We don't stop, as the operation function handles z_em=0.0</span>
             
         <span class="k">try</span><span class="p">:</span>
@@ -717,7 +719,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during find_absorbed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during find_absorbed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -768,7 +770,7 @@
                 <span class="n">fudge_arg</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fudge</span><span class="p">)</span>
                 
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">try</span><span class="p">:</span>
@@ -781,7 +783,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_continuum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_continuum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
         
@@ -812,7 +814,7 @@
 <span class="sd">            column added/updated, or 0 on failure.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Cannot fit power-law: Emission Redshift (z_em) is 0.0. "</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Cannot fit power-law: Emission Redshift (z_em) is 0.0. "</span>
                           <span class="s2">"Run 'Edit &gt; Set Properties' first."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
@@ -825,7 +827,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_powerlaw: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during fit_powerlaw: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
     

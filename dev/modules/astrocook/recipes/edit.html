@@ -484,6 +484,8 @@
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="n">EDIT_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"set_properties"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Set session properties."</span><span class="p">,</span>
@@ -720,7 +722,7 @@
             <span class="c1"># If running in script without GUI, we can't resolve aliases easily </span>
             <span class="c1"># unless we passed the objects directly. For now, assume GUI context or fail gracefully.</span>
             <span class="k">if</span> <span class="n">alias_map</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"GUI context missing: Cannot resolve multi-session aliases."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"GUI context missing: Cannot resolve multi-session aliases."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">expression</span><span class="p">,</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">full_name</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -731,7 +733,7 @@
                     <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find session '</span><span class="si">{</span><span class="n">full_name</span><span class="si">}</span><span class="s2">' for alias '</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find session '</span><span class="si">{</span><span class="n">full_name</span><span class="si">}</span><span class="s2">' for alias '</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 
         <span class="c1"># 2. Delegate to Core (Business Logic)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">prepare_expression_context</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">resolved_specs</span><span class="p">)</span>
@@ -763,7 +765,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not parse pixel width from '</span><span class="si">{</span><span class="n">resol_str</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
             
             <span class="n">pix_fwhm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimating Resolution (R) assuming </span><span class="si">{</span><span class="n">pix_fwhm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> pixel FWHM..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimating Resolution (R) assuming </span><span class="si">{</span><span class="n">pix_fwhm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> pixel FWHM..."</span><span class="p">)</span>
             
             <span class="c1"># 1. Get raw x array</span>
             <span class="n">x_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
@@ -780,14 +782,14 @@
                     <span class="n">fwhm_wave</span> <span class="o">=</span> <span class="n">pix_fwhm</span> <span class="o">*</span> <span class="n">dx</span>
                     <span class="n">estimated_R</span> <span class="o">=</span> <span class="n">mid_x</span> <span class="o">/</span> <span class="n">fwhm_wave</span>
                     
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Estimated R ~ </span><span class="si">{</span><span class="n">estimated_R</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (at </span><span class="si">{</span><span class="n">mid_x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">). "</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Estimated R ~ </span><span class="si">{</span><span class="n">estimated_R</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> (at </span><span class="si">{</span><span class="n">mid_x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">). "</span>
                                     <span class="sa">f</span><span class="s2">"This is an approximation assuming constant sampling."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="n">estimated_R</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Cannot estimate resolution: invalid grid spacing or wavelength."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Cannot estimate resolution: invalid grid spacing or wavelength."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="mf">0.0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Cannot estimate resolution: spectrum too short."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Cannot estimate resolution: spectrum too short."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mf">0.0</span>
                 
         <span class="c1"># Fallback: Try standard float conversion</span>
@@ -844,7 +846,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_resolution_string</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># 2. Handle text inputs</span>
@@ -905,14 +907,14 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">z_ref_float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_ref</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">try</span><span class="p">:</span>
             <span class="n">xunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span> <span class="c1"># Returning 0 prevents crashing and triggers V1 logging</span>
 
         <span class="c1"># 1. Get the new SpectrumV2 instance (the immutable operation)</span>
@@ -946,7 +948,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">yunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">yunit</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span> 
 
         <span class="c1"># 1. Execute the immutable V2 operation</span>
@@ -985,14 +987,14 @@
         <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Prepare multi-session vars</span>
             <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_expression_contexts</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Original expression: '</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final expression: '</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Original expression: '</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final expression: '</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="c1"># 2. Call the API with the prepared data</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">apply_expression</span><span class="p">(</span>
@@ -1002,7 +1004,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during apply_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during apply_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span> </div>
 
             
@@ -1034,14 +1036,14 @@
         <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Prepare multi-session vars</span>
             <span class="n">final_expression</span><span class="p">,</span> <span class="n">extra_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_expression_contexts</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Original expression: '</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final expression: '</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Original expression: '</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final expression: '</span><span class="si">{</span><span class="n">final_expression</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extra vars: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">extra_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             
             <span class="c1"># 2. Call the API with the prepared data</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_expression</span><span class="p">(</span>
@@ -1051,7 +1053,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during mask_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during mask_expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -1087,7 +1089,7 @@
             <span class="c1"># --- ADD THIS LINE ---</span>
             <span class="n">renorm_model_b</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">renorm_model</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'True'</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">try</span><span class="p">:</span>
@@ -1103,7 +1105,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during smooth_column: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed during smooth_column: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
         
@@ -1145,12 +1147,12 @@
                     <span class="k">break</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">target_hist</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="n">source_systs</span> <span class="o">=</span> <span class="n">target_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">systs</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">source_systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Source session '</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">' has no systems."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Source session '</span><span class="si">{</span><span class="n">source_session</span><span class="si">}</span><span class="s2">' has no systems."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_imported_systems</span><span class="p">(</span><span class="n">source_systs</span><span class="p">,</span> <span class="n">do_append</span><span class="p">,</span> <span class="n">do_refit</span><span class="p">,</span>
@@ -1181,19 +1183,19 @@
                 
                 <span class="n">skipped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">skipped</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> systems outside spectral range."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipped </span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> systems outside spectral range."</span><span class="p">)</span>
                     
                 <span class="n">source_systs</span> <span class="o">=</span> <span class="n">filtered_source_systs</span> 
                 
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not filter systems by range: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not filter systems by range: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No systems fell within the target spectral range."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No systems fell within the target spectral range."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="c1"># 4. Merge</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Importing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems from </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Importing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span><span class="si">}</span><span class="s2"> systems from </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
         <span class="n">new_systs</span> <span class="o">=</span> <span class="n">base_systs</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">source_systs</span><span class="p">,</span> <span class="n">copy_uuids</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         
         <span class="c1"># Create intermediate session with imported (but unfitted) systems</span>
@@ -1201,7 +1203,7 @@
 
         <span class="c1"># 5. Optional Refit</span>
         <span class="k">if</span> <span class="n">do_refit</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refitting imported systems..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refitting imported systems..."</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># Local import to avoid circular dependency</span>
                 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
@@ -1219,10 +1221,10 @@
                 <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">refitted_session</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Refit failed. Returning imported systems without fitting."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Refit failed. Returning imported systems without fitting."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="n">intermediate_session</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error during import auto-refit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error during import auto-refit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">intermediate_session</span>
 
         <span class="c1"># Return unfitted result</span>
@@ -1267,11 +1269,11 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">table</span> <span class="o">=</span> <span class="n">ap_ascii</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">guess</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'series'</span><span class="p">,</span> <span class="s1">'z'</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">' lacks the column(s) </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">' lacks the column(s) </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
@@ -1295,9 +1297,9 @@
                     <span class="n">dlogN</span><span class="o">=</span><span class="n">value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">'dlogN'</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">b</span><span class="o">=</span><span class="n">value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>
                     <span class="n">db</span><span class="o">=</span><span class="n">value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">'db'</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">btur</span><span class="o">=</span><span class="n">value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">'btur'</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)))</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Row </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> of '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">' skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Row </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> of '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">' skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">comps</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No valid systems in '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No valid systems in '</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="n">source_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span>
@@ -1336,7 +1338,7 @@
         <span class="k">if</span> <span class="s1">'lines'</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="ow">or</span> <span class="s1">'systems'</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
             <span class="c1"># Re-initialize empty</span>
             <span class="n">new_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Marked system list for deletion."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Marked system list for deletion."</span><span class="p">)</span>
             <span class="c1"># Remove keywords from list to avoid trying to delete them as columns</span>
             <span class="n">target_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_list</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'lines'</span><span class="p">,</span> <span class="s1">'systems'</span><span class="p">]]</span>
 
@@ -1374,7 +1376,7 @@
 <span class="sd">        """</span>
         <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">expression</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">expression</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Expression cannot be empty."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="c1"># 1. Prepare multi-session vars (re-using our existing helper!)</span>
@@ -1400,7 +1402,7 @@
             <span class="n">filtered_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">original_count</span> <span class="o">!=</span> <span class="n">filtered_count</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Split: Filtered out </span><span class="si">{</span><span class="n">original_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">filtered_count</span><span class="si">}</span><span class="s2"> systems outside the new range."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Split: Filtered out </span><span class="si">{</span><span class="n">original_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">filtered_count</span><span class="si">}</span><span class="s2"> systems outside the new range."</span><span class="p">)</span>
         
         <span class="c1"># 4. Return a NEW SessionV2 instance (GUI handles branching)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span></div>
@@ -1446,7 +1448,7 @@
                 
                 <span class="c1"># Build expression</span>
                 <span class="n">expression</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(λ &gt; </span><span class="si">{</span><span class="n">v_min</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">) &amp; (λ &lt; </span><span class="si">{</span><span class="n">v_max</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)"</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2"> (z_em=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2"> (z_em=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
                 
                 <span class="c1"># Create the split session</span>
                 <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expression</span><span class="p">)</span>
@@ -1458,9 +1460,9 @@
                 <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_session</span><span class="p">)</span>
                 
             <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping region '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Skipping region '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to extract '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to extract '</span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span> <span class="c1"># Return failure code if nothing worked</span>
@@ -1520,10 +1522,10 @@
                             <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
                             <span class="k">break</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"trim_common: Session '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found in GUI history."</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"trim_common: Session '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found in GUI history."</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mismatch: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">)</span><span class="si">}</span><span class="s2"> transitions provided."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mismatch: Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_others_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">trans_list_others</span><span class="p">)</span><span class="si">}</span><span class="s2"> transitions provided."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
                 
             <span class="c1"># 3. Delegate Calculation to Core (SSOT)</span>
@@ -1537,16 +1539,16 @@
             <span class="p">)</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">split_expression</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"trim_common: No overlap found or invalid inputs."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"trim_common: No overlap found or invalid inputs."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Applying intersection trim: </span><span class="si">{</span><span class="n">split_expression</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Applying intersection trim: </span><span class="si">{</span><span class="n">split_expression</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             
             <span class="c1"># 4. Execute Split</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split_expression</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"trim_common failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"trim_common failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
     
@@ -1577,7 +1579,7 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">other_sessions</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No sessions provided to stitch."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No sessions provided to stitch."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="c1"># 1. Resolve Inputs (GUI/Script Logic)</span>
@@ -1597,12 +1599,12 @@
                 <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
                     <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch: Could not find loaded session named '</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">'. Skipping."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch: Could not find loaded session named '</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">'. Skipping."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch: Invalid item type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">. Skipping."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch: Invalid item type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">. Skipping."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No valid sessions found to stitch."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No valid sessions found to stitch."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -1616,18 +1618,18 @@
                 <span class="n">x_val</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
                 <span class="n">y_val</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x_val</span><span class="p">))</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">y_val</span><span class="p">))):</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stitch: Cleaning up NaNs to fix plot display..."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stitch: Cleaning up NaNs to fix plot display..."</span><span class="p">)</span>
                     <span class="c1"># Filter: Keep rows where X and Y are finite</span>
                     <span class="c1"># Note: We rely on the core's split expression evaluator</span>
                     <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"isfinite(x) &amp; isfinite(y)"</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">clean_err</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch cleanup warning: </span><span class="si">{</span><span class="n">clean_err</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch cleanup warning: </span><span class="si">{</span><span class="n">clean_err</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             
             <span class="c1"># 3. Return New Session</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Stitch failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -1673,17 +1675,17 @@
         <span class="c1"># 1. Parse Input Lists</span>
         <span class="n">others_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">other_sessions</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">others_list</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No other sessions provided."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No other sessions provided."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
             
         <span class="k">try</span><span class="p">:</span>
             <span class="n">cuts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">stitch_wavelengths</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)]</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Invalid stitch_wavelengths. Must be numbers separated by commas."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Invalid stitch_wavelengths. Must be numbers separated by commas."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Need exactly </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> cut-off wavelengths."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Need exactly </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> cut-off wavelengths."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># Parse Manual Factors</span>
@@ -1692,10 +1694,10 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">manual_factors</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> manual factors, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span><span class="si">}</span><span class="s2">. Falling back to 'auto'."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> manual factors, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span><span class="si">}</span><span class="s2">. Falling back to 'auto'."</span><span class="p">)</span>
                     <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid manual_factors. Falling back to 'auto'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid manual_factors. Falling back to 'auto'."</span><span class="p">)</span>
 
         <span class="c1"># Parse Equalize Ranges</span>
         <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1705,10 +1707,10 @@
                     <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'-'</span><span class="p">))</span>
                     <span class="n">eq_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">))</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eq_ranges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> equalize ranges. Falling back to 'auto'."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> equalize ranges. Falling back to 'auto'."</span><span class="p">)</span>
                     <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid equalize_ranges format. Use 'min-max, min-max'. Falling back to 'auto'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid equalize_ranges format. Use 'min-max, min-max'. Falling back to 'auto'."</span><span class="p">)</span>
 
         <span class="c1"># 2. Resolve GUI Sessions</span>
         <span class="n">resolved_others</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1721,7 +1723,7 @@
                         <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="k">break</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
                     <span class="k">return</span> <span class="mi">0</span>
         
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resolved_others</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
@@ -1743,7 +1745,7 @@
         <span class="n">processed_parts</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="c1"># First (Bluest) Part: x &lt;= first_cut</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Base arm (</span><span class="si">{</span><span class="n">ordered_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">): keeping data x &lt;= </span><span class="si">{</span><span class="n">cuts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Base arm (</span><span class="si">{</span><span class="n">ordered_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">): keeping data x &lt;= </span><span class="si">{</span><span class="n">cuts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">first_part</span> <span class="o">=</span> <span class="n">anchor_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"x &lt;= </span><span class="si">{</span><span class="n">cuts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">processed_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">first_part</span><span class="p">)</span>
     
@@ -1756,12 +1758,12 @@
             
             <span class="c1"># --- A. Equalization ---</span>
             <span class="k">if</span> <span class="n">factors</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Applying manual factor </span><span class="si">{</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Applying manual factor </span><span class="si">{</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">eq_ranges</span><span class="p">:</span>
                     <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">eq_ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating equalization in range </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2"> nm"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating equalization in range </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2"> nm"</span><span class="p">)</span>
                     <span class="n">ref_overlap</span> <span class="o">=</span> <span class="n">current_reference_full</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(x &gt;= </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
                     <span class="n">other_overlap</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(x &gt;= </span><span class="si">{</span><span class="n">vmin</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">vmax</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
                     
@@ -1772,29 +1774,29 @@
                             <span class="n">other_overlap</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">other_overlap</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span>
                         <span class="p">)</span>
                         <span class="n">scalar_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">scale_model</span><span class="p">)</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculated factor = </span><span class="si">{</span><span class="n">scalar_factor</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculated factor = </span><span class="si">{</span><span class="n">scalar_factor</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                         <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">scale_flux</span><span class="p">(</span><span class="n">scalar_factor</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Not enough overlap. Falling back to global auto."</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Not enough overlap. Falling back to global auto."</span><span class="p">)</span>
                         <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span><span class="n">current_reference_full</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating global auto equalization"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): Calculating global auto equalization"</span><span class="p">)</span>
                     <span class="n">equalized_spec</span> <span class="o">=</span> <span class="n">other_spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span><span class="n">current_reference_full</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             
             <span class="c1"># --- B. Apply Split Logic ---</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cuts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">next_cut</span> <span class="o">=</span> <span class="n">cuts</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2"> &lt; x &lt;= </span><span class="si">{</span><span class="n">next_cut</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2"> &lt; x &lt;= </span><span class="si">{</span><span class="n">next_cut</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">part</span> <span class="o">=</span> <span class="n">equalized_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"(x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">) &amp; (x &lt;= </span><span class="si">{</span><span class="n">next_cut</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Arm </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">arm_name</span><span class="si">}</span><span class="s2">): keeping data x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">part</span> <span class="o">=</span> <span class="n">equalized_spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">"x &gt; </span><span class="si">{</span><span class="n">current_cut</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             
             <span class="n">processed_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
             <span class="n">current_reference_full</span> <span class="o">=</span> <span class="n">current_reference_full</span><span class="o">.</span><span class="n">stitch</span><span class="p">([</span><span class="n">equalized_spec</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     
         <span class="c1"># 5. Final Stitch</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stitching processed arms together..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Stitching processed arms together..."</span><span class="p">)</span>
         <span class="n">final_spec</span> <span class="o">=</span> <span class="n">processed_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">processed_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         
         <span class="n">new_name</span> <span class="o">=</span> <span class="s2">"Stitched_"</span> <span class="o">+</span> <span class="s2">"_"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ordered_names</span><span class="p">)</span>
@@ -1844,7 +1846,7 @@
         
         <span class="n">names_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">session_names</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">names_list</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Coadd: No sessions selected."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Coadd: No sessions selected."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># 1. Resolve Session Objects</span>
@@ -1860,7 +1862,7 @@
                         <span class="k">break</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Coadd: No valid sessions found."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Coadd: No valid sessions found."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># 2. Parse Parameters</span>
@@ -1877,7 +1879,7 @@
             <span class="n">base_spec</span> <span class="o">=</span> <span class="n">resolved_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">others</span> <span class="o">=</span> <span class="n">resolved_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
             
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Co-adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions onto </span><span class="si">{</span><span class="n">dx_q</span><span class="si">}</span><span class="s2"> grid..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Co-adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions onto </span><span class="si">{</span><span class="n">dx_q</span><span class="si">}</span><span class="s2"> grid..."</span><span class="p">)</span>
             
             <span class="n">new_spec</span> <span class="o">=</span> <span class="n">base_spec</span><span class="o">.</span><span class="n">coadd</span><span class="p">(</span>
                 <span class="n">others</span><span class="o">=</span><span class="n">others</span><span class="p">,</span>
@@ -1892,7 +1894,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Coadd failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Coadd failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 

@@ -486,6 +486,8 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">dynesty</span> <span class="o">=</span> <span class="kc">None</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="c1"># emcee, dynesty and corner are optional dependencies (extra "bayes")</span>
 <span class="n">BAYES_INSTALL_HINT</span> <span class="o">=</span> <span class="s1">'pip install "astrocook[bayes]"'</span>
 
@@ -701,7 +703,7 @@
         
         <span class="n">sampler</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">EnsembleSampler</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_posterior</span><span class="p">)</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC: </span><span class="si">{</span><span class="n">nwalkers</span><span class="si">}</span><span class="s2"> walkers, </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2"> steps..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC: </span><span class="si">{</span><span class="n">nwalkers</span><span class="si">}</span><span class="s2"> walkers, </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2"> steps..."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
             <span class="c1"># We use manual iteration instead of run_mcmc to pipe progress to the GUI via logging</span>
             <span class="c1"># Astrocook's RecipeProgressDialog looks for '&gt;&gt; PROGRESS: X' messages</span>
@@ -712,9 +714,9 @@
                 <span class="c1"># Update GUI every 1% or at least every step</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="n">update_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">pct</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="n">nsteps</span><span class="p">)</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt; PROGRESS: </span><span class="si">{</span><span class="n">pct</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&gt;&gt; PROGRESS: </span><span class="si">{</span><span class="n">pct</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 100"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 100"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sampler</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         
@@ -769,7 +771,7 @@
 
         <span class="n">dsampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ln_likelihood</span><span class="p">,</span> <span class="n">prior_transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">nlive</span><span class="o">=</span><span class="n">nlive</span><span class="p">)</span>
         
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running Nested Sampling (nlive=</span><span class="si">{</span><span class="n">nlive</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running Nested Sampling (nlive=</span><span class="si">{</span><span class="n">nlive</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
             <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -784,13 +786,13 @@
                         <span class="n">dlogz</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># fallback for some old dynesty versions</span>
                     
                     <span class="k">if</span> <span class="n">dlogz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested Iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | dLogZ: </span><span class="si">{</span><span class="n">dlogz</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">target_dlogz</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested Iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | dLogZ: </span><span class="si">{</span><span class="n">dlogz</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">target_dlogz</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested Iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested Iter </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
                     <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             
             <span class="c1"># Finalize remaining live points</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Adding final live points..."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Adding final live points..."</span><span class="p">)</span>
             <span class="n">dsampler</span><span class="o">.</span><span class="n">add_live_points</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dsampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">print_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>

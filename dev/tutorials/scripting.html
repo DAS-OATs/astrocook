@@ -564,6 +564,16 @@ these lines at the start of the script:</p>
 </pre></div>
 </div>
 <p>The GUI shows them anyway.</p>
+<p>Each module of Astrocook has its own logger, named after the module
+(<code class="docutils literal notranslate"><span class="pre">astrocook.recipes.absorbers</span></code>, <code class="docutils literal notranslate"><span class="pre">astrocook.fitting.voigt_fitter</span></code>, …), so
+the level can be chosen for a part of the package alone. For example, to
+see the progress of Astrocook without that of the other libraries, or to
+hide the messages of the fits:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">()</span>                                    <span class="c1"># warnings and errors</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"astrocook"</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>     <span class="c1"># all of Astrocook</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"astrocook.fitting"</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 </section>
 
