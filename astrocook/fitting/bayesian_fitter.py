@@ -107,7 +107,9 @@ class BayesianVoigtFitter:
                         penalty_chi2 += (5.0 * (b_val - 50.0))**2
             
             return -0.5 * (np.sum(resid**2) + penalty_chi2)
-        except Exception:
+        except (ValueError, ArithmeticError):
+            # A model that cannot be evaluated has zero likelihood: the
+            # sampler moves on (ValueError covers np.linalg.LinAlgError)
             return -np.inf
 
     def ln_prior(self, p_free: np.ndarray) -> float:
@@ -211,7 +213,7 @@ class BayesianVoigtFitter:
         
         sampler = emcee.EnsembleSampler(nwalkers, self.ndim, self.ln_posterior)
         
-        logger.info(f"Running MCMC: {nwalkers} walkers, {nsteps} steps...")
+        logger.info(f"Sampling with emcee: {nwalkers} walkers, {nsteps} steps.")
         if progress:
             # We use manual iteration instead of run_mcmc to pipe progress to the GUI via logging
             # Astrocook's RecipeProgressDialog looks for '>> PROGRESS: X' messages
@@ -276,7 +278,7 @@ class BayesianVoigtFitter:
 
         dsampler = dynesty.NestedSampler(self.ln_likelihood, prior_transform, self.ndim, nlive=nlive)
         
-        logger.info(f"Running Nested Sampling (nlive={nlive})...")
+        logger.info(f"Nested sampling with dynesty: {nlive} live points.")
         if progress:
             import time
             last_log_time = time.time()
@@ -291,13 +293,14 @@ class BayesianVoigtFitter:
                         dlogz = res[-1]  # fallback for some old dynesty versions
                     
                     if dlogz is not None:
-                        logger.info(f"Nested Iter {i} | dLogZ: {dlogz:.2f} > {target_dlogz}")
+                        logger.info(f"Nested sampling, iteration {i}: dlogZ {dlogz:.2f} "
+                                    f"(target {target_dlogz}).")
                     else:
-                        logger.info(f"Nested Iter {i}...")
+                        logger.info(f"Nested sampling, iteration {i}.")
                     last_log_time = time.time()
             
             # Finalize remaining live points
-            logger.info("Adding final live points...")
+            logger.debug("Adding the final live points.")
             dsampler.add_live_points()
         else:
             dsampler.run_nested(print_progress=False)

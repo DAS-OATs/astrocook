@@ -204,10 +204,12 @@ class CombineMixin:
                     # (If it is None, get_resampled_column already warned us, so we just drop it)
                     # --- *** END FIX 2 *** ---
 
-                except Exception as e:
-                    logger.warning(f"Failed to interpolate aux col '{name}' during rebin: {e}. Dropping.")
+                except (ValueError, TypeError, KeyError) as e:
+                    logger.warning(f"The column '{name}' could not be rebinned "
+                                   f"({e}): it is dropped.")
             else:
-                logger.warning(f"Cannot rebin non-numerical aux col '{name}'. Dropping.")
+                logger.warning(f"The column '{name}' is not numerical and cannot "
+                               "be rebinned: it is dropped.")
         # --- *** END FIX *** ---
 
         # Create a copy of the metadata to avoid modifying the original session
@@ -327,7 +329,7 @@ class CombineMixin:
         for i, spec in enumerate(all_specs):
             # A. Flux Scaling (Skip for self/index 0)
             if i > 0 and equalize_order >= 0:
-                logger.info(f"  Scaling spectrum {i} to reference...")
+                logger.debug(f"Scaling spectrum {i} to the reference.")
                 # Compute scaling in original frame
                 scale_model = compute_flux_scaling(
                     ref_x, ref_y, 
@@ -369,8 +371,8 @@ class CombineMixin:
         track_resolution = (resol_sources_count == len(all_specs))
 
         if resol_sources_count > 0 and not track_resolution:
-            logger.warning("Coadd: Resolution mismatch! Some input spectra are missing resolution data. "
-                            "Resolution tracking has been disabled for this co-add.")
+            logger.warning("Some of the spectra to combine have no resolution: "
+                           "the combined spectrum has no resolution column.")
 
         # 3. Concatenate (The "Manual Stitch")
         flat_x = np.concatenate(big_x_list)
@@ -420,7 +422,7 @@ class CombineMixin:
         # 7. Convert Back to Original Unit (e.g. nm)
         # We transform the result back to the domain of the input data
         if not reb_x.unit.is_equivalent(original_x_unit):
-            logger.info(f"  Converting result back to {original_x_unit}...")
+            logger.debug(f"Converting the result back to {original_x_unit}.")
             final_x = convert_axis_velocity(reb_x, z_em, original_x_unit)
             final_xmin = convert_axis_velocity(reb_xmin, z_em, original_x_unit)
             final_xmax = convert_axis_velocity(reb_xmax, z_em, original_x_unit)
@@ -500,7 +502,8 @@ class CombineMixin:
                 else:
                     aux_cols_new[name] = new_data_col
             else:
-                logger.warning(f"Cannot resample non-numerical column '{name}', it will be dropped.")
+                logger.warning(f"The column '{name}' is not numerical and cannot "
+                               "be resampled: it is dropped.")
         new_data_core = SpectrumDataV2(
             x=x_col, xmin=xmin_col, xmax=xmax_col, 
             y=y_col_new, 

@@ -293,7 +293,8 @@ phase, inventory of the 189 broad `except` clauses (kept up to date by
 found F94 (data loss when a save fails, fixed in PR 2) and F95;
 loggers per module (`logger = logging.getLogger(__name__)` in every
 module, no call of `logging.info(...)` and the like: a test checks it),
-with F96, in PR 3. Work in
+with F96, in PR 3; the rows N and R of core, fitting and io and their
+messages in PR 4a (found F97), the rows D (decided with Guido) in PR 4b. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

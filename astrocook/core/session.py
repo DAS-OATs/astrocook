@@ -73,7 +73,11 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if format_name == 'auto' or format_name is None:
             try:
                 format_name = detect_file_format(archive_path)
-            except Exception:
+            except (OSError, ValueError, KeyError, AttributeError, TypeError) as e:
+                # The detection is a heuristic: the generic loader reports
+                # its own error if it cannot read the file either
+                logger.debug(f"The format of {archive_path} was not recognized "
+                             f"({e}): it is read as a generic spectrum.")
                 format_name = 'generic_spectrum'
 
         v2_loader = get_loader(format_name)
@@ -82,7 +86,8 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                 spec_data = v2_loader(archive_path)
                 return SessionV2(name=name, gui=gui_context, spec=SpectrumV2(data=spec_data))
             except Exception as e:
-                logger.error(f"V2 Loader failed: {e}")
+                logger.error(f"Could not read {os.path.basename(archive_path)} "
+                             f"as {format_name}: {e}", exc_info=True)
                 return 0
 
     # --- 2. ARCHIVE & LEGACY HANDLING ---
@@ -168,12 +173,14 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                 session.log_manager = HistoryLogV2.from_dict(
                     v2_metadata.get('log_history_json'))
             except (KeyError, TypeError, AttributeError) as e:
-                logger.warning(f"Could not restore the session log: {e}")
+                logger.warning(f"Could not restore the session log ({e}): "
+                               "the session is opened with an empty log.")
         return session
 
-    except Exception as e: 
-        logger.error(f"Load failed: {e}", exc_info=True)
-        return 0 
+    except Exception as e:
+        logger.error(f"Could not open {os.path.basename(archive_path)}: {e}",
+                     exc_info=True)
+        return 0
     finally:
         # Cleanup temp files
         if archive_manager: archive_manager.cleanup()
@@ -287,17 +294,13 @@ class SessionV2:
         SessionV2 or int
             A new SessionV2 instance, or 0 on failure.
         """
-        try:
-            session = load_session_from_file(
-                archive_path=file_path,
-                name=name, 
-                gui_context=gui_context, 
-                format_name=format_name
-            )
-            return session
-        except Exception as e:
-            logger.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
-            return 0
+        # load_session_from_file reports its own failures and returns 0
+        return load_session_from_file(
+            archive_path=file_path,
+            name=name,
+            gui_context=gui_context,
+            format_name=format_name
+        )
 
     def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
         """
@@ -397,5 +400,5 @@ class SessionV2:
             session_v2_initial=initial_session,
             file_path=file_path
         )
-        logger.info(f"V2 Session state saved successfully to {file_path}.")
+        logger.info(f"Session saved to {file_path}.")
         return 0

@@ -192,4 +192,5 @@ def test_flux_columns_with_a_flux_without_unit(spec):
 def test_calibrate_with_invalid_magnitudes(spec, caplog):
     with caplog.at_level(logging.ERROR), pytest.raises(ValueError, match="Invalid format"):
         spec.calibrate("SDSS_g 17.5")
-    assert "Calibration failed" in caplog.text
+    # Not logged here: the recipe logs it, once (phase 6)
+    assert caplog.text == ""

@@ -199,8 +199,9 @@ class FluxMixin:
                         new_aux_cols[col_name] = DataColumnV2(
                             new_vals, old_col.unit, old_col.description
                         )
-                except Exception as e:
-                    logger.warning(f"Failed to smooth aux col '{col_name}': {e}")
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"The column '{col_name}' could not be smoothed "
+                                   f"({e}): it is kept as it was.")
         
         # --- RE-NORMALIZATION BLOCK HAS BEEN REMOVED ---
 
@@ -316,13 +317,9 @@ class FluxMixin:
             A new instance with calibrated flux.
         """
         # 1. Get the pure numerical correction curve
-        try:
-            correction_curve = generate_calibration_curve(
-                self.x, self.y, magnitudes
-            )
-        except Exception as e:
-            logger.error(f"Calibration failed: {e}")
-            raise e
+        correction_curve = generate_calibration_curve(
+            self.x, self.y, magnitudes
+        )
 
         # 2. Define standard physical unit
         new_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)

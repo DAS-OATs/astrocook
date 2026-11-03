@@ -413,8 +413,11 @@ class VoigtFitterV2:
         try:
             errors, red_chi2, cov = self._scaled_errors(r0, jac)
             linked_errors = self._linked_errors(p0, cov)
-        except Exception as e:
-            logger.warning(f"Error calc failed: {e}")
+        except (ValueError, ArithmeticError, KeyError, TypeError) as e:
+            # ValueError covers np.linalg.LinAlgError; KeyError and
+            # TypeError come from the expression of a link
+            logger.warning(f"The uncertainties could not be computed ({e}): the "
+                           "components keep their previous uncertainties.")
             return self._system_list
         is_free_mask = self._constraints._param_map['is_free']
         full_errors = np.full(len(is_free_mask), np.nan)
@@ -647,7 +650,8 @@ class VoigtFitterV2:
             if is_free_mask[base_idx + 2]:
                 idx_b = free_idx_map[base_idx + 2]
                 p_refined[idx_b] = b_guess
-            logger.info(f"Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
+            logger.debug(f"Initial guess: z = {new_z:.5f}, logN = {logN_guess:.2f}, "
+                         f"b = {b_guess:.1f} km/s.")
         return p_refined
 
     def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray,
@@ -709,7 +713,8 @@ class VoigtFitterV2:
             indices = np.where(self._fit_mask)[0]
             self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
         else:
-            logger.warning("Fit mask is empty! Falling back to full valid mask.")
+            logger.warning("No valid pixels around the components to fit: the whole "
+                           "spectrum is used.")
             self._sl = slice(None)
             self._fit_mask = self._valid_mask.copy()
 
@@ -939,8 +944,9 @@ class VoigtFitterV2:
             p_free_errors, red_chi2, cov = self._scaled_errors(res.fun, res.jac)
             linked_errors = self._linked_errors(res.x, cov)
             logger.debug(f"Errors calculated: {p_free_errors}")
-        except Exception as e:
-            logger.warning(f"Error calc failed: {e}")
+        except (ValueError, ArithmeticError, KeyError, TypeError) as e:
+            # The components with NaN errors are listed in a warning below
+            logger.debug(f"The uncertainties could not be computed: {e}")
             p_free_errors = np.zeros_like(res.x)
             p_free_errors[:] = np.nan
             linked_errors = {idx: np.nan for idx, _ in self._constraints._compiled_links}

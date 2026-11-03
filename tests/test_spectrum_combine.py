@@ -70,7 +70,7 @@ def test_rebin_drops_the_masks(caplog):
     assert np.isfinite(cont).sum() > 0.9 * cont.size  # NaN only beyond the edges
     np.testing.assert_allclose(cont[np.isfinite(cont)], 1.0)
     assert not new.has_aux_column("abs_mask")
-    assert "Failed to interpolate aux col 'abs_mask'" in caplog.text
+    assert "The column 'abs_mask' could not be rebinned" in caplog.text
 
 
 # --- coadd --------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def test_coadd_without_resolution_everywhere(caplog):
     b = _spec(505.0, 515.0)
     with caplog.at_level(logging.WARNING):
         new = a.coadd([b], None, None, 0.05 * au.nm, equalize_order=-1)
-    assert "Resolution mismatch" in caplog.text
+    assert "have no resolution" in caplog.text
     assert "plot_style" not in new.meta and new.meta["ORIGIN"] == "coadd"
     assert new.x.value.min() < 500.5 and new.x.value.max() > 514.5
 
@@ -100,7 +100,7 @@ def test_resample_drops_the_masks(caplog):
     np.testing.assert_array_equal(new.x.value, grid.x.value)
     np.testing.assert_allclose(new.y.value, 1.0 + 0.01 * (grid.x.value - 500.0), rtol=1e-12)
     assert new.has_aux_column("cont") and not new.has_aux_column("abs_mask")
-    assert "Cannot resample non-numerical column 'abs_mask'" in caplog.text
+    assert "The column 'abs_mask' is not numerical and cannot be resampled" in caplog.text
 
 
 def test_resampled_column():

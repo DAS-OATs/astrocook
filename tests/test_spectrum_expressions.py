@@ -87,7 +87,8 @@ def test_split_errors(caplog):
     spec = _spec()
     with caplog.at_level(logging.ERROR), pytest.raises(TypeError, match="boolean"):
         spec.split("x * 2")
-    assert "Numexpr evaluation failed for split" in caplog.text
+    # Not logged here: the caller logs it, once (phase 6)
+    assert caplog.text == ""
     with pytest.raises(ValueError, match="empty spectrum"):
         spec.split("x > 1000")
 
@@ -106,7 +107,7 @@ def test_mask_region_without_the_mask(caplog):
     spec = _spec()
     with caplog.at_level(logging.WARNING):
         assert spec.mask_region("abs_mask", 502.0 * au.nm, 508.0 * au.nm) is spec
-    assert "Mask column 'abs_mask' not found" in caplog.text
+    assert "There is no column 'abs_mask'" in caplog.text
 
 
 def test_region_bounds():

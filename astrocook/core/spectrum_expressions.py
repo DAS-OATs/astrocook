@@ -154,9 +154,9 @@ class ExpressionsMixin:
                 
                 extra_vars[safe_var_name] = resampled
                 return safe_var_name
-            except Exception as e:
+            except (ValueError, TypeError, KeyError) as e:
                 # We raise here to stop the process if a variable is invalid
-                raise ValueError(f"Failed to resample {alias}.{col_name}: {e}")
+                raise ValueError(f"Failed to resample {alias}.{col_name}: {e}") from e
 
         final_expr = regex.sub(replacer, expression)
         return final_expr, extra_vars
@@ -188,14 +188,11 @@ class ExpressionsMixin:
         if extra_vars:
             local_dict.update(extra_vars)
 
-        try:
-            # 2. Evaluate the expression
-            new_values = ne.evaluate(expression, 
-                                     global_dict=_NE_GLOBAL_DICT,  # <<< *** PASS GLOBALS ***
-                                     local_dict=local_dict)       # <<< PASS LOCALS
-        except Exception as e:
-            logger.error(f"Numexpr evaluation failed for expression: '{expression}'")
-            raise e # Re-raise for the recipe to catch
+        # 2. Evaluate the expression (an error goes to the recipe, which
+        #    logs it with the expression)
+        new_values = ne.evaluate(expression,
+                                 global_dict=_NE_GLOBAL_DICT,
+                                 local_dict=local_dict)
 
         # 3. Determine the unit for the new column
         target_unit = au.dimensionless_unscaled
@@ -275,16 +272,13 @@ class ExpressionsMixin:
             
         target_q = all_cols[target_col]
 
-        try:
-            # 3. Evaluate the boolean expression to get the mask
-            mask_indices = ne.evaluate(expression, 
-                                       global_dict=_NE_GLOBAL_DICT,  # <<< *** PASS GLOBALS ***
-                                       local_dict=local_dict)       # <<< PASS LOCALS
-            if mask_indices.dtype != bool:
-                raise TypeError("Mask expression did not return a boolean array.")
-        except Exception as e:
-            logger.error(f"Numexpr evaluation failed for mask expression: '{expression}'")
-            raise e # Re-raise for the recipe to catch
+        # 3. Evaluate the boolean expression to get the mask (an error goes
+        #    to the recipe, which logs it with the expression)
+        mask_indices = ne.evaluate(expression,
+                                   global_dict=_NE_GLOBAL_DICT,
+                                   local_dict=local_dict)
+        if mask_indices.dtype != bool:
+            raise TypeError("Mask expression did not return a boolean array.")
             
         # ... (rest of the method is unchanged) ...
         # 4. Create new data array
@@ -412,16 +406,13 @@ class ExpressionsMixin:
         if extra_vars:
             local_dict.update(extra_vars)
 
-        try:
-            # 2. Evaluate expression to get a boolean mask
-            mask = ne.evaluate(expression, 
-                               global_dict=_NE_GLOBAL_DICT,
-                               local_dict=local_dict)
-            if mask.dtype.kind != 'b':
-                 raise TypeError("Split expression must return a boolean mask.")
-        except Exception as e:
-            logger.error(f"Numexpr evaluation failed for split: '{expression}'")
-            raise e
+        # 2. Evaluate expression to get a boolean mask (an error goes to
+        #    the caller)
+        mask = ne.evaluate(expression,
+                           global_dict=_NE_GLOBAL_DICT,
+                           local_dict=local_dict)
+        if mask.dtype.kind != 'b':
+            raise TypeError("Split expression must return a boolean mask.")
 
         # 3. Check if the resulting spectrum would be empty
         if np.sum(mask) == 0:
@@ -471,7 +462,7 @@ class ExpressionsMixin:
         """
         col = self.get_column(mask_col)
         if col is None:
-            logger.warning(f"Mask column '{mask_col}' not found.")
+            logger.warning(f"There is no column '{mask_col}': the mask is not changed.")
             return self
 
         # Work in Angstroms for consistency

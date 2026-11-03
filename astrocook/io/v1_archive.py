@@ -56,7 +56,7 @@ class V1ArchiveManager:
     def unpack(self):
         """Unpacks the .acs (tar.gz) archive into a temporary directory."""
         if not self.acs_path.lower().endswith(('.acs', '.tar.gz')):
-            logger.error(f"File is not a recognized V1 archive: {self.acs_path}")
+            logger.error(f"{self.acs_path} is not a V1 archive (.acs).")
             return None
 
         try:
@@ -66,8 +66,8 @@ class V1ArchiveManager:
                 # temp_dir (absolute paths, "..", links), F35
                 tar.extractall(path=self.temp_dir, filter="data")
             return self.temp_dir
-        except Exception as e:
-            logger.error(f"Failed to unpack .acs archive {self.acs_path}: {e}")
+        except (tarfile.TarError, OSError, EOFError) as e:
+            logger.error(f"Could not unpack {self.acs_path}: {e}")
             self.cleanup()
             return None
 
@@ -308,5 +308,5 @@ def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict
                 'expression': expression
             }
 
-    logger.info(f"Parsed {len(parsed_constraints)} constraints from FITS header metadata.")
+    logger.info(f"{len(parsed_constraints)} constraints read from the V1 archive.")
     return parsed_constraints

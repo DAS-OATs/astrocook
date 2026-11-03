@@ -53,13 +53,12 @@ def _to_flam(x: au.Quantity, y: au.Quantity):
         wave_aa = x.to(au.Angstrom)
         # Ensure Y is a flux density
         flux_flam = y.to(FLAM, equivalencies=au.spectral_density(wave_aa))
-    except au.UnitConversionError as e:
+    except au.UnitConversionError:
         # If units are missing/arbitrary, we can't do rigorous photometry
         if y.unit == au.dimensionless_unscaled:
-             logger.warning("Spectrum has arbitrary units. Assuming erg/cm2/s/A for calculation.")
+             logger.warning("The flux has no unit: it is taken in erg/cm2/s/Å.")
              flux_flam = y.value * FLAM
         else:
-             logger.error(f"Photometry failed: incompatible units.\n{e}")
              raise
     return wave_aa, flux_flam
 
@@ -138,7 +137,8 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
         current_mag = _ab_mag(np.abs(_mean_fnu_jy(wave_aa, flux_flam, filter_name)))
         
         if np.isnan(current_mag):
-             logger.warning(f"Could not calculate mag for {filter_name}, skipping.")
+             logger.warning(f"The magnitude in {filter_name} cannot be computed from "
+                            "the spectrum: the band is skipped.")
              continue
              
         # Factor = 10^(-0.4 * (target - current))
@@ -146,7 +146,7 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
         
         lambda_eff = STANDARD_FILTERS[filter_name][0]
         bands.append((lambda_eff, filter_name, target_mag, factor))
-        logger.info(f"Calibration point: {filter_name} (@{lambda_eff:.0f}nm) factor={factor:.3e}")
+        logger.debug(f"Band {filter_name} ({lambda_eff:.0f} nm): factor {factor:.3e}.")
 
     if not bands:
         raise RuntimeError("Could not determine any valid scale factors.")
@@ -184,5 +184,5 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
                         "magnitudes are only approximately reached.")
         factors = single
     for b, f in zip(bands, factors):
-        logger.info(f"Calibration curve at {b[1]} (@{b[0]:.0f}nm): {f:.3e}")
+        logger.info(f"Calibration in {b[1]} ({b[0]:.0f} nm): factor {f:.3e}.")
     return np.interp(x_nm, waves, factors)

@@ -248,7 +248,8 @@ class SystemListV2:
                     try:
                         val = ast.literal_eval(k)
                         if isinstance(val, tuple): final_key = val
-                    except: pass
+                    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+                        pass  # not a literal: the key is kept as it is
                 
                 # Fix Stringified Ints in Tuples ("123", 'z')
                 if isinstance(final_key, tuple) and len(final_key) == 2:
@@ -284,7 +285,7 @@ class SystemListV2:
 
             clean_parsed = sanitized_parsed
             constraints_dirty = True
-            logger.info("SystemListV2: Sanitized legacy constraints and populated clean map.")
+            logger.debug("Old constraints converted to the current format.")
 
         if dirty or constraints_dirty:
             self._data = dataclasses.replace(
@@ -430,12 +431,14 @@ class SystemListV2:
             try:
                 # Restore exactly the previous set (no further expansion)
                 self.constraint_model.set_active_components(original_active, group_depth=0)
-            except Exception as e:
-                logger.error(f"fitting_context cleanup failed: {e}. Forcing reset to None.")
-                # Fail-safe: Unlock everything to prevent persistent 'Frozen' state
+            except (KeyError, ValueError, TypeError, AttributeError, IndexError) as e:
+                # A failure here would leave the components outside the
+                # group frozen for the next fits
+                logger.error(f"Could not restore the active components after the fit "
+                             f"({e}): all the components are made active.")
                 try:
                     self.constraint_model.set_active_components(None)
-                except Exception:
+                except (KeyError, ValueError, TypeError, AttributeError, IndexError):
                     # Last resort: direct attribute clear
                     self.constraint_model._active_uuids = None
 
@@ -461,7 +464,7 @@ class SystemListV2:
             A new instance populated with the identified components.
         """
         if not spec.has_aux_column(region_id_col):
-            logger.warning(f"add_components: '{region_id_col}' not in spectrum. No components added.")
+            logger.warning(f"There is no column '{region_id_col}': no components are added.")
             return self
 
         new_components = list(self._data.components)
@@ -469,7 +472,7 @@ class SystemListV2:
         if new_components:
             next_id = max(c.id for c in new_components) + 1
 
-        logger.info(f"Populating SystemList with {len(series_map)} components...")
+        logger.info(f"Adding {len(series_map)} components from the identified regions.")
         
         for rid, series in series_map.items():
             if rid not in z_map: continue
@@ -584,7 +587,7 @@ class SystemListV2:
                 new_components.append(c)
         
         if not found:
-            logger.warning(f"Component {uuid} not found for update.")
+            logger.warning(f"There is no component {uuid}: nothing is updated.")
             return self
 
         new_data = dataclasses.replace(self._data, components=new_components)
@@ -763,7 +766,8 @@ class SystemListV2:
                         to_reset.append((u_src, p_name))
 
         for u_src, p_name in to_reset:
-            logger.info(f"Removing broken link from {u_src}.{p_name} (target deleted).")
+            logger.info(f"The link of {p_name} of component {u_src} pointed to a "
+                        "deleted component: the parameter is now free.")
             # Reset to Free
             clean_constr = ParameterConstraintV2(is_free=True, expression=None, target_uuid=None)
             
@@ -1031,7 +1035,8 @@ class SystemListV2:
         static_mask = (np.abs(dv_arr) < z_window_kms) & np.isfinite(spec.y.value) & (spec.dy.value > 0)
         
         if np.sum(static_mask) == 0:
-            logger.warning("optimize_hierarchy: Window contains no valid data.")
+            logger.warning("No valid pixels around the component: the system is "
+                           "not optimized.")
             return self
 
         # [FIX] Initialize Taboo Mask (Rejected Pixels)
@@ -1065,9 +1070,9 @@ class SystemListV2:
                 return aic, new_systs
 
         # 3. Baseline Fit
-        logger.info(f"Optimizing {series_name} hierarchy...")
+        logger.debug(f"Optimizing the components of {series_name}.")
         best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
-        logger.info(f"Baseline AIC: {best_aic:.1f}")
+        logger.info(f"AIC of the starting model: {best_aic:.1f}.")
         
         current_systs = best_systs
         trials_without_imp = 0
@@ -1090,7 +1095,8 @@ class SystemListV2:
             min_val = sigma_resid[min_idx]
             
             if min_val > -threshold_sigma:
-                logger.info(f"Converged. Max resid {min_val:.1f}s > {threshold_sigma}")
+                logger.info(f"No residual deeper than {threshold_sigma} sigma "
+                            f"(the deepest is {-min_val:.1f} sigma): done.")
                 break
                 
             # C. Create Candidate
@@ -1106,13 +1112,15 @@ class SystemListV2:
                         too_close = True; break
             
             if too_close:
-                logger.warning(f"Iter {i+1}: Candidate too close ({dv_sep:.1f} < {min_dv} km/s). Masking and retrying.")
+                logger.debug(f"Iteration {i+1}: candidate {dv_sep:.1f} km/s from a "
+                             f"component (less than {min_dv} km/s): masked.")
                 # [FIX] Mask this spot and CONTINUE (Do not Break!)
                 sl = slice(max(0, min_idx-5), min(len(spec.x.value), min_idx+6))
                 rejected_mask[sl] = True
                 continue 
 
-            logger.info(f"Iter {i+1}: Candidate at {z_new:.5f} (Sigma={min_val:.1f})")
+            logger.debug(f"Iteration {i+1}: candidate at z = {z_new:.5f} "
+                         f"(residual {min_val:.1f} sigma).")
             
             # E. Add & Fit
             cand_systs = best_systs.add_component(series=series_name, z=z_new, logN=13.0, b=15.0)
@@ -1123,12 +1131,14 @@ class SystemListV2:
             # F. Compare
             delta = trial_aic - best_aic
             if delta < -aic_penalty:
-                logger.info(f"  -> Accepted. AIC {best_aic:.1f} -> {trial_aic:.1f} (Delta: {delta:.1f})")
+                logger.info(f"Component added at z = {z_new:.5f}: AIC {best_aic:.1f} "
+                            f"to {trial_aic:.1f}.")
                 best_aic = trial_aic
                 best_systs = trial_systs
                 trials_without_imp = 0
             else:
-                logger.info(f"  -> Rejected. AIC Delta {delta:.1f}")
+                logger.debug(f"Candidate at z = {z_new:.5f} rejected: AIC changes by "
+                             f"{delta:.1f}.")
                 trials_without_imp += 1
                 
                 # [FIX] Mask this spot so we don't loop forever
@@ -1136,7 +1146,7 @@ class SystemListV2:
                 rejected_mask[sl] = True
             
             if trials_without_imp >= patience:
-                logger.info("Patience exhausted.")
+                logger.info(f"{patience} candidates in a row rejected: done.")
                 break
         
         return best_systs
@@ -1184,7 +1194,8 @@ class SystemListV2:
         if deleted_count == 0:
             return self
 
-        logger.info(f"Smart clean: Removed {deleted_count} components in region {obs_min:.1f}-{obs_max:.1f}")
+        logger.info(f"{deleted_count} components removed between {obs_min:.1f} "
+                    f"and {obs_max:.1f}.")
         new_data = dataclasses.replace(self._data, components=surviving_comps)
         return SystemListV2(new_data)
 
@@ -1214,7 +1225,7 @@ class SystemListV2:
         if deleted_count == 0:
             return self
             
-        logger.info(f"Filtered {deleted_count} components.")
+        logger.info(f"{deleted_count} components removed.")
         new_data = dataclasses.replace(self._data, components=valid_comps)
         return SystemListV2(new_data)
     
