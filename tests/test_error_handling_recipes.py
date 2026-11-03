@@ -181,3 +181,76 @@ def test_trim_common_without_a_common_range_fails(caplog):
     with caplog.at_level(logging.ERROR):
         assert session.edit.trim_common("far", "2.97", "CIV_1548", "Ly_a") == 0
     assert "The sessions have no range in common: nothing is trimmed." in _errors(caplog)
+
+
+# --- PR 5c: the prerequisites of the fits ---------------------------------------------
+# The continuum estimated first when missing (and said so), its failure
+# handled; a fit without a resolution said at WARNING (it was at DEBUG).
+
+import numpy as np  # noqa: E402
+import astropy.units as au  # noqa: E402
+
+import astrocook.recipes.continuum as continuum  # noqa: E402
+from astrocook.recipes.messages import (msg_continuum_estimated,  # noqa: E402
+                                        msg_no_resolution)
+
+FIT_RECIPES = {
+    "refit_all": lambda s, uuid: s.absorbers.refit_all(),
+    "fit_component": lambda s, uuid: s.absorbers.fit_component(uuid),
+    "optimize_system": lambda s, uuid: s.absorbers.optimize_system(uuid, max_components="1"),
+}
+
+
+def _without_continuum():
+    # A physical flux (median far from 1): without 'cont' there is no norm
+    spec = _spec(scale=100.0).remove_columns(["cont", "model"])
+    assert spec.norm is None
+    session = _session(spec, systs=_systs(("CIV", 2.97, 13.6, 12.0)))
+    return session, session.systs.components[0].uuid
+
+
+@pytest.mark.parametrize("name", FIT_RECIPES)
+def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplog):
+    # The 0 of the failed estimate went on as the session: "'int' object has
+    # no attribute 'systs'"
+    session, uuid = _without_continuum()
+    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", lambda self: 0)
+    with caplog.at_level(logging.INFO):
+        assert FIT_RECIPES[name](session, uuid) == 0
+    messages = [r.getMessage() for r in caplog.records]
+    assert msg_continuum_estimated in messages
+    assert "The continuum could not be estimated: the recipe is not run." in messages
+    assert not any("'int' object" in m for m in messages)
+
+
+def test_failed_estimate_of_the_continuum_stops_populate(monkeypatch):
+    session, _ = _without_continuum()
+    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", lambda self: 0)
+    assert session.absorbers.populate_from_identification(
+        series_map_json='{"1": "CIV"}', z_map_json='{"1": 2.97}') == 0
+
+
+def test_refit_all_says_it_estimates_the_continuum(caplog):
+    # It estimated it without saying so
+    session, _ = _without_continuum()
+    with caplog.at_level(logging.INFO):
+        assert session.absorbers.refit_all() != 0
+    assert msg_continuum_estimated in [r.getMessage() for r in caplog.records]
+
+
+@pytest.mark.parametrize("name", FIT_RECIPES)
+def test_fit_without_a_resolution_is_a_warning(name, caplog):
+    session, (uuid, _) = _two()
+    with caplog.at_level(logging.WARNING):
+        FIT_RECIPES[name](session, uuid)
+    assert msg_no_resolution in _warnings(caplog)
+
+
+def test_fit_with_a_resolution_has_no_such_warning(caplog):
+    session, (uuid, _) = _two()
+    spec = session.spec.update_column("resol", np.full(session.spec.x.size, 45000.0),
+                                      unit=au.dimensionless_unscaled)
+    session = session.with_new_spectrum(spec)
+    with caplog.at_level(logging.WARNING):
+        session.absorbers.refit_all()
+    assert msg_no_resolution not in _warnings(caplog)
