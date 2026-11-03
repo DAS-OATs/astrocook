@@ -468,21 +468,18 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 pass
             self.identification_viewer_dialog = None
 
-        try:
-            dialog = IdentificationViewerDialog(
-                spec_to_view,
-                session_name,
-                self,
-                zoom_to=self._zoom_main_plot,
-            )
-            self.identification_viewer_dialog = dialog
-            dialog.finished.connect(
-                lambda: self._on_identification_viewer_closed() 
-            )
-            dialog.show()
-            logger.debug(f"Creating new identification viewer for {session_name}")
-        except Exception as e:
-            logger.error(f"Failed to launch identification viewer: {e}", exc_info=True)
+        dialog = IdentificationViewerDialog(
+            spec_to_view,
+            session_name,
+            self,
+            zoom_to=self._zoom_main_plot,
+        )
+        self.identification_viewer_dialog = dialog
+        dialog.finished.connect(
+            lambda: self._on_identification_viewer_closed() 
+        )
+        dialog.show()
+        logger.debug(f"Creating new identification viewer for {session_name}")
 
     def _zoom_main_plot(self, xmin: float, xmax: float):
         """Show a range of wavelengths (nm) in the main plot (a region of
@@ -602,7 +599,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 plt.show()
             
         except Exception as e:
-            logger.error(f"Failed to create debug plot: {e}", exc_info=True)
+            logger.error(f"Could not draw the debug plot: {e}", exc_info=True)
         
 
     def open_inspector_on_component(self, uuid: str):

@@ -270,7 +270,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                         self.draw_animated() # Use blitting redraw
 
             except Exception as e:
-                logger.error(f"Error during cursor hover update: {e}", exc_info=True)
+                logger.error(f"Could not update the redshift cursor: {e}", exc_info=True)
         # else:
             # Optional: Clear coordinate display if outside axes or cursor off?
             # Toolbar should handle clearing coordinate display by default.

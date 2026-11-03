@@ -44,21 +44,18 @@ class MainScriptsMixin:
             logger.debug(f"Activating existing log scripter for {session_name}")
             return
 
-        try:
-            dialog = LogScripterDialog(
-                log_object_to_view, 
-                session_name, 
-                self, 
-                self.recipe_category_map # Pass the map
-            )
-            self.log_scripter_dialog = dialog
-            dialog.finished.connect(
-                lambda: self._on_log_scripter_closed() 
-            )
-            dialog.show()
-            logger.debug(f"Creating new single log scripter for {session_name}")
-        except Exception as e:
-            logger.error(f"Failed to launch log scripter: {e}", exc_info=True)
+        dialog = LogScripterDialog(
+            log_object_to_view, 
+            session_name, 
+            self, 
+            self.recipe_category_map # Pass the map
+        )
+        self.log_scripter_dialog = dialog
+        dialog.finished.connect(
+            lambda: self._on_log_scripter_closed() 
+        )
+        dialog.show()
+        logger.debug(f"Creating new single log scripter for {session_name}")
 
     def _on_log_scripter_closed(self):
         """

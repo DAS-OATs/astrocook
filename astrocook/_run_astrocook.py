@@ -43,7 +43,7 @@ class AstroCookApp(QApplication):
         # Intercept the specific macOS event
         if event.type() == QEvent.FileOpen:
             file_path = event.file()
-            logger.info(f"MacOS FileOpen Event received: {file_path}")
+            logger.debug(f"macOS file-open event: {file_path}.")
             
             # If the main window isn't ready, queue it
             if not self.activeWindow():
@@ -68,6 +68,11 @@ def main():
     app = QApplication.instance()
     if not app:
         app = AstroCookApp(sys.argv)
+    # The errors that nothing handles (in the slots, the timers) are logged
+    # with their traceback and shown in a dialog, not only on the terminal
+    # (phase 6)
+    from astrocook.gui.errors import install_excepthook
+    install_excepthook()
     # pyplot (the debug plots of the main window) on Qt, now that the
     # QApplication exists; the GUI modules do not set it at import (F7)
     import matplotlib
@@ -99,14 +104,16 @@ def main():
                 
                 if image:
                     NSApplication.sharedApplication().setApplicationIconImage_(image)
-                    logger.info(f"Dev Dock Icon set to: {icon_name}")
+                    logger.debug(f"Dock icon: {icon_name}.")
             except ImportError:
                 pass
             except Exception as e:
-                logger.warning(f"Failed to set Dock icon: {e}")
+                # A boundary (B): pyobjc on macOS, outside Astrocook; a
+                # cosmetic step must not stop the start of the application
+                logger.debug(f"Dock icon not set: {e}", exc_info=True)
 
-    except Exception as e:
-        logger.warning(f"Could not set app icon: {e}")
+    except OSError as e:
+        logger.debug(f"Application icon not set: {e}")
 
     import time
     min_splash_duration = 1.0  # Durata minima in secondi
@@ -150,12 +157,12 @@ def main():
             
             time.sleep(1.5)
         else:
-            logger.warning("Logo pixmap is null.")
-            
-    except Exception as e:
-        logger.warning(f"Could not load splash screen: {e}")
+            logger.debug("Logo of the splash screen not found.")
 
-    logger.info("Importing heavy modules...")
+    except OSError as e:
+        logger.debug(f"Splash screen not shown: {e}")
+
+    logger.debug("Importing the modules of the GUI.")
     
     from astrocook.core.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
@@ -202,12 +209,15 @@ def main():
                 
                 if new_sess and new_sess != 0:
                     loaded_sessions.append(new_sess)
-                    logger.info(f"Successfully loaded: {name}")
+                    logger.info(f"Opened {real_path}.")
                 else:
-                    logger.error(f"Failed to load: {real_path}")
+                    # load_session_from_file logged why
+                    logger.debug(f"{real_path} not opened.")
 
             except Exception as e:
-                logger.error(f"Error loading {real_path}: {e}")
+                # A boundary (B): one file that cannot be opened does not
+                # stop the others, nor the start of the application
+                logger.error(f"Could not open {real_path}: {e}", exc_info=True)
 
     # 6. GUI Startup
     if splash:

@@ -249,3 +249,16 @@ def test_save_with_no_current_session_in_the_list(editing, caplog):
     assert viewer._plotted_state is history.current_state
     assert selection.currentIndex().row() == window.session_histories.index(history)
     assert window.undo_action.isEnabled()
+
+
+def test_unexpected_error_of_the_save_is_not_swallowed(editing, monkeypatch):
+    # Only the errors of the knots (ValueError) are shown as "not saved"
+    # (phase 6); another one is a bug, which reaches the hook of the GUI
+    window = editing
+    recipes = type(window.active_history.current_state.continuum)
+
+    def broken(self, **params):
+        raise KeyError("bug")
+    monkeypatch.setattr(recipes, "update_from_knots", broken)
+    with pytest.raises(KeyError):
+        window._toggle_continuum_editor()

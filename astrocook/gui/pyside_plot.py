@@ -961,7 +961,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         except (ValueError, AttributeError) as e:
             logger.debug(f"Cursor lines not drawn: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error drawing cursor: {e}", exc_info=True)
+            logger.error(f"Could not draw the redshift cursor: {e}", exc_info=True)
 
     # --- Parts of plot_spectrum: swatches, axes and limits ---
 

@@ -108,7 +108,7 @@ class RecipeWorker(QRunnable):
                 return
 
             if not new_session_state or new_session_state == 0:
-                raise ValueError("Recipe failed to execute (returned 0). Check logs.")
+                raise ValueError(f"{self.recipe_name} did not give a result: the reason is in the log.")
             
             # 4. Success!
             self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
@@ -123,7 +123,7 @@ class RecipeWorker(QRunnable):
             
             if is_user_error:
                 # Case A: User Error. Log mildly, send NO traceback.
-                logger.warning(f"Recipe '{self.recipe_name}' aborted: {e}")
+                logger.warning(f"{self.recipe_name} stopped: {e}")
                 
                 # Signal: (Title, Message, Traceback)
                 self.signals.error.emit((
@@ -133,7 +133,7 @@ class RecipeWorker(QRunnable):
                 ))
             else:
                 # Case B: Real Bug. Log severely, send FULL traceback.
-                logger.error(f"RecipeWorker crashed on {self.recipe_name}: {e}", exc_info=True)
+                logger.error(f"Unexpected error in {self.recipe_name}: {e}", exc_info=True)
                 
                 self.signals.error.emit((
                     f"Recipe Error: {self.recipe_name}", # Scary title
@@ -251,7 +251,7 @@ class ScriptWorker(QRunnable):
         except Exception as e:
             # 5. Failure! Emit the error
             line_info = f"line {i+1}: {line}" if 'i' in locals() else "N/A"
-            logger.error(f"ScriptWorker: Failed on {line_info}\nError: {e}", exc_info=True)
+            logger.error(f"The script failed at {line_info}: {e}", exc_info=True)
             self.signals.error.emit((i+1, line, str(e)))
 
 class SessionLoadSignals(QObject):
@@ -294,6 +294,6 @@ class SessionLoadWorker(QRunnable):
                 self.signals.loaded.emit(i, path, session)
             except Exception as e:
                 failed += 1
-                logger.error(f"Failed to load {path}: {e}")
+                logger.error(f"Could not open {path}: {e}", exc_info=not isinstance(e, ValueError))
                 self.signals.failed.emit(i, path, str(e))
         self.signals.done.emit(loaded, failed, self._cancelled)

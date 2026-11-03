@@ -221,6 +221,12 @@ If you have manipulated your exported `_spec.csv` data externally, you can bring
 * Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.
 * **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
 
+## 6. When Something Goes Wrong
+
+A recipe that cannot run says why: in the status bar, in a dialog, and in the log written to the terminal (or to the window of the long recipes). A recipe that gives a result but has something to say about it (a parameter at a bound, a step done with its defaults) lists its warnings at the end.
+
+An error that Astrocook does not expect is a bug. It is shown in an **Unexpected Error** dialog with the message; **Show Details...** opens the traceback, which you can copy and attach to an issue on [GitHub](https://github.com/DAS-OATs/astrocook/issues). Astrocook goes on after it, but the action that failed was not completed.
+
 ## What's Next?
 
 Now that you are comfortable with the interface, you are ready to manipulate your data. Check out the [Editing Data](editing_data.md) tutorial to learn how to clean up your spectra.
