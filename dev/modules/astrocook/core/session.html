@@ -477,7 +477,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_archive</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span>
@@ -488,14 +488,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFluxV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
+    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Define the type for the log manager</span>
-<span class="n">LogManager</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span><span class="p">]</span>
+<span class="n">LogManager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span>
 
 <div class="viewcode-block" id="load_session_from_file">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>

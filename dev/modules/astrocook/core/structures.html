@@ -501,7 +501,10 @@
 <span class="sd">    log_history_json : Any</span>
 <span class="sd">        The serialized log object (either a V2 dict or V1 JSON format).</span>
 <span class="sd">    log_type : str</span>
-<span class="sd">        Type of log stored: ``'v2'``, ``'v1_artifact'``, or ``'v1_legacy'``.</span>
+<span class="sd">        Type of log stored: ``'v2'`` (the only one read back), or</span>
+<span class="sd">        ``'unknown'`` when the session had no log. Older archives may carry</span>
+<span class="sd">        ``'v1_artifact'`` (a wrapper of V1 logs that was never created,</span>
+<span class="sd">        removed in phase 6) or ``'v1_legacy'``: their log is not restored.</span>
 <span class="sd">        Defaults to ``'v1_legacy'``.</span>
 <span class="sd">    component_uuids : list of str</span>
 <span class="sd">        An ordered list of all component UUIDs in the session.</span>
@@ -520,7 +523,7 @@
     <span class="c1"># Improved Session History/Log</span>
     <span class="c1"># Stores the serialized log object (either a V2 dict or V1 JSON)</span>
     <span class="n">log_history_json</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span> <span class="c1"># Changed default</span>
-    <span class="c1"># Stores the type ('v2', 'v1_artifact', 'v1_legacy')</span>
+    <span class="c1"># Stores the type ('v2'; older archives: 'v1_artifact', 'v1_legacy')</span>
     <span class="n">log_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"v1_legacy"</span> <span class="c1"># Default to old V1 log</span>
     
     <span class="c1"># Stores a list of all component UUIDs in the order they appear</span>
@@ -973,32 +976,6 @@
 
 
 <span class="c1"># --- V1 Compatibility Wrapper ---</span>
-
-<div class="viewcode-block" id="V1LogArtifact">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.V1LogArtifact">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">V1LogArtifact</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    A read-only wrapper for legacy V1 logs.</span>
-
-<span class="sd">    Used to display the history of a session loaded from a V1 archive</span>
-<span class="sd">    without converting it to the full V2 structure.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    v1_log_json : dict</span>
-<span class="sd">        The raw JSON dictionary from the V1 archive.</span>
-<span class="sd">    """</span>
-<div class="viewcode-block" id="V1LogArtifact.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.V1LogArtifact.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v1_log_json</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">v1_json</span> <span class="o">=</span> <span class="n">v1_log_json</span></div>
-
-    
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_v2_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Return False, indicating this is a legacy V1 log wrapper."""</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
 </pre></div>
 
                 </article>
