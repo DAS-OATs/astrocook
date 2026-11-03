@@ -842,6 +842,37 @@
     <span class="k">return</span> <span class="n">session</span>
 
 
+<span class="c1">#: The errors of a fit that does not converge or cannot be evaluated</span>
+<span class="c1">#: (ValueError covers np.linalg.LinAlgError and a start outside the bounds)</span>
+<span class="n">FIT_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_warn_cleaning_failed</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The cleaning of the narrow lines failed: say what the result keeps."""</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span>
+             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="o">==</span> <span class="n">series</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span> <span class="o">&lt;</span> <span class="n">min_b</span><span class="p">)</span> <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">systs</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The lines narrower than </span><span class="si">{</span><span class="n">min_b</span><span class="si">}</span><span class="s2"> km/s could not be removed "</span>
+                   <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> of them are in the result."</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Traceback of the cleaning:"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">error</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_region_is_valid</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Log an ERROR and return False if ``region_limit`` cannot be used.</span>
+
+<span class="sd">    An unknown region (or ``z_em`` not set) used to be skipped with a</span>
+<span class="sd">    WARNING, and the pipeline or the refit worked on the whole spectrum</span>
+<span class="sd">    (phase 6).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">region_limit</span> <span class="o">==</span> <span class="s2">"None"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The region '</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">' cannot be used: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_drop_negligible</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The automatic pipelines remove the components that end at the lower</span>
 <span class="sd">    bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb</span>
@@ -966,7 +997,9 @@
 <span class="sd">        """</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 0"</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Searching for components (region: </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
-        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_region_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">region_limit</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
         <span class="c1"># --- 1. PREPARE REGION MASK ---</span>
         <span class="c1"># We create a temporary session with a restricted mask to force identify_lines</span>
         <span class="c1"># to ignore specific regions.</span>
@@ -1005,28 +1038,22 @@
         
         <span class="c1"># --- 0.5 SMART CLEAN (Refactored) ---</span>
         <span class="k">if</span> <span class="n">region_limit</span> <span class="o">!=</span> <span class="s2">"None"</span> <span class="ow">and</span> <span class="n">session_current</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">spec</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span>
-                <span class="c1"># Get bounds as Quantities</span>
-                <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
-                
-                <span class="c1"># Delegate logic to SystemListV2</span>
-                <span class="n">new_systs</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">remove_in_region</span><span class="p">(</span><span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">)</span>
-                <span class="n">session_current</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
-                    
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart clean failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span>
+            <span class="c1"># Get bounds as Quantities</span>
+            <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
+
+            <span class="c1"># Delegate logic to SystemListV2</span>
+            <span class="n">new_systs</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">remove_in_region</span><span class="p">(</span><span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">)</span>
+            <span class="n">session_current</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
         
         <span class="c1"># --- 1. PREPARE REGION MASK ---</span>
         <span class="n">target_mask_col</span> <span class="o">=</span> <span class="n">mask_col</span>
         <span class="k">if</span> <span class="n">region_limit</span> <span class="o">!=</span> <span class="s2">"None"</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
-                <span class="c1"># Public API Call (Logic moved to Core)</span>
-                <span class="n">new_spec</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_region</span><span class="p">(</span><span class="n">mask_col</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">)</span>
-                <span class="n">session_current</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Region masking skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="c1"># (Checked at the start: it was skipped with a WARNING, and the</span>
+            <span class="c1"># pipeline worked on the whole spectrum, phase 6)</span>
+            <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_region</span><span class="p">(</span><span class="n">mask_col</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">)</span>
+            <span class="n">session_current</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
         
         <span class="c1"># --- 2. IDENTIFY (using the masked session) ---</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Identifying the doublets (step 1 of 3)."</span><span class="p">)</span>
@@ -1055,23 +1082,19 @@
 
         <span class="c1"># --- 2.5 MERGE IDENTIFICATION IDs ---</span>
         <span class="k">if</span> <span class="n">old_abs_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># The regions of the earlier steps are kept, the new ones fill</span>
-                <span class="c1"># the gaps with shifted IDs; the identifications of the</span>
-                <span class="c1"># regions are merged in the same way (F90: they kept the</span>
-                <span class="c1"># unshifted IDs of the last step only, and pointed to the</span>
-                <span class="c1"># wrong regions)</span>
-                <span class="n">final_ids</span><span class="p">,</span> <span class="n">merged_ident</span> <span class="o">=</span> <span class="n">merge_region_ids</span><span class="p">(</span>
-                    <span class="n">old_abs_ids</span><span class="p">,</span> <span class="n">old_ident</span><span class="p">,</span>
-                    <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                    <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'region_identifications'</span><span class="p">))</span>
-                <span class="n">final_spec</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">,</span> <span class="n">final_ids</span><span class="p">)</span>
-                <span class="n">final_spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'region_identifications'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                    <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">merged_ident</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
-                <span class="n">session_step1</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">final_spec</span><span class="p">)</span>
-                
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to merge abs_ids: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="c1"># The regions of the earlier steps are kept, the new ones fill</span>
+            <span class="c1"># the gaps with shifted IDs; the identifications of the</span>
+            <span class="c1"># regions are merged in the same way (F90: they kept the</span>
+            <span class="c1"># unshifted IDs of the last step only, and pointed to the</span>
+            <span class="c1"># wrong regions)</span>
+            <span class="n">final_ids</span><span class="p">,</span> <span class="n">merged_ident</span> <span class="o">=</span> <span class="n">merge_region_ids</span><span class="p">(</span>
+                <span class="n">old_abs_ids</span><span class="p">,</span> <span class="n">old_ident</span><span class="p">,</span>
+                <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'region_identifications'</span><span class="p">))</span>
+            <span class="n">final_spec</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="s1">'abs_ids'</span><span class="p">,</span> <span class="n">final_ids</span><span class="p">)</span>
+            <span class="n">final_spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'region_identifications'</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">merged_ident</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+            <span class="n">session_step1</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">final_spec</span><span class="p">)</span>
 
         <span class="n">spec_meta</span> <span class="o">=</span> <span class="n">session_step1</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
         <span class="n">series_map_json</span> <span class="o">=</span> <span class="n">spec_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'series_map_json'</span><span class="p">)</span>
@@ -1218,14 +1241,20 @@
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">min_b_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
-
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">final_session</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">final_session</span>
+        <span class="c1"># A boundary of the step (B, Guido's choice, phase 6): the result of</span>
+        <span class="c1"># the pipeline is kept if the cleaning fails, with a WARNING</span>
+        <span class="k">try</span><span class="p">:</span>
             <span class="n">final_session</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="s1">'Ly_a'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span>
                 <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
                 <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">))</span>
-            <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
-
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lya_auto cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_warn_cleaning_failed</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="s1">'Ly_a'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">final_session</span></div>
 
@@ -1309,9 +1338,15 @@
         <span class="c1"># The Lyman systems narrower than min_b are removed as in lya_auto</span>
         <span class="c1"># (F65: before, min_b was taken and not used)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">fitted</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="s1">'Lyman'</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">),</span> <span class="n">refit_kwargs</span><span class="p">)</span>
+            <span class="n">min_b_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_b</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="c1"># A boundary of the step, as in lya_auto (phase 6)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fitted</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="s1">'Lyman'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="n">refit_kwargs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"forest_auto cleanup failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_warn_cleaning_failed</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="s1">'Lyman'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">fitted</span><span class="p">)</span></div>
 
 
@@ -1375,7 +1410,8 @@
         
         <span class="n">running_systs</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span>
         <span class="n">count_added</span> <span class="o">=</span> <span class="mi">0</span>
-        
+        <span class="n">failed_trials</span> <span class="o">=</span> <span class="mi">0</span>
+
         <span class="k">for</span> <span class="n">z_val</span><span class="p">,</span> <span class="n">comps</span> <span class="ow">in</span> <span class="n">systems_by_z</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">existing_series</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">}</span>
             
@@ -1412,9 +1448,15 @@
                             <span class="n">running_systs</span> <span class="o">=</span> <span class="n">fitted_systs</span>
                             <span class="n">count_added</span> <span class="o">+=</span> <span class="mi">1</span>
                             <span class="n">existing_series</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ion</span><span class="p">)</span> 
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Fit failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">FIT_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># A trial that cannot be fitted is a candidate rejected;</span>
+                    <span class="c1"># the other errors reach the recipe (phase 6)</span>
+                    <span class="n">failed_trials</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The trial fit of </span><span class="si">{</span><span class="n">ion</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">z_val</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">failed_trials</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">failed_trials</span><span class="si">}</span><span class="s2"> trial fit</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">failed_trials</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> "</span>
+                           <span class="s2">"failed: those candidates were not added."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">count_added</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Added </span><span class="si">{</span><span class="n">count_added</span><span class="si">}</span><span class="s2"> metal components."</span><span class="p">)</span>
             <span class="c1"># The values the pipeline always used, before the defaults of</span>
@@ -1800,8 +1842,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed delete_component: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span></div>
+            <span class="c1"># 0 as the other recipes: the session unchanged looked like a</span>
+            <span class="c1"># success to the GUI (phase 6)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not delete the components: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="RecipeAbsorbersV2.detect_anchor">
@@ -1847,7 +1891,8 @@
             <span class="k">return</span> <span class="n">z_found</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"detect_anchor failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="c1"># A boundary (B): 0.0 is the failure of the recipe convention</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not detect the anchor redshift: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="mf">0.0</span></div>
 
 
@@ -2396,12 +2441,12 @@
             <span class="n">use_region_filter</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="k">if</span> <span class="n">region_limit</span> <span class="o">!=</span> <span class="s2">"None"</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">obs_min_limit</span><span class="p">,</span> <span class="n">obs_max_limit</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
-                    <span class="n">use_region_filter</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refit limited to </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">obs_min_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">obs_max_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not apply region limit '</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">'. Fitting all."</span><span class="p">)</span>
+                <span class="c1"># (It fitted the whole spectrum, with a WARNING, phase 6)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">_region_is_valid</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">region_limit</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+                <span class="n">obs_min_limit</span><span class="p">,</span> <span class="n">obs_max_limit</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
+                <span class="n">use_region_filter</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Refit limited to </span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">obs_min_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">obs_max_limit</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
 
             <span class="c1"># --- 1. IDENTIFY VALID COMPONENTS (Filtering Step) ---</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
@@ -2502,6 +2547,7 @@
             <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 
+            <span class="n">failed_units</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">target_uuids</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">work_units</span><span class="p">):</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span>
@@ -2550,8 +2596,18 @@
                         <span class="k">if</span> <span class="n">fitted_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">target_uuids</span><span class="p">:</span>
                             <span class="n">updated_components_map</span><span class="p">[</span><span class="n">fitted_comp</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">fitted_comp</span>
                             
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fit failed for unit </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">FIT_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># The group keeps its values; reported once below, the</span>
+                    <span class="c1"># other errors reach the recipe (phase 6)</span>
+                    <span class="n">failed_units</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">target_comps</span><span class="p">))</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The fit of group </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">failed_units</span><span class="p">:</span>
+                <span class="n">listed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">failed_units</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+                <span class="n">more</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failed_units</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">10</span><span class="si">}</span><span class="s2"> more"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">failed_units</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">""</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failed_units</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">total_units</span><span class="si">}</span><span class="s2"> groups could not be "</span>
+                               <span class="sa">f</span><span class="s2">"fitted (z = </span><span class="si">{</span><span class="n">listed</span><span class="si">}{</span><span class="n">more</span><span class="si">}</span><span class="s2">): their components keep "</span>
+                               <span class="s2">"their previous values."</span><span class="p">)</span>
 
             <span class="c1"># 3. Batch Merge</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 100"</span><span class="p">)</span>

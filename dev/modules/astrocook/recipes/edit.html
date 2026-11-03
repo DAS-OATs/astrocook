@@ -1150,8 +1150,9 @@
                     <span class="k">break</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">target_hist</span><span class="p">:</span>
+            <span class="c1"># (It returned the session unchanged, which looked like a success)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">source_session</span><span class="p">))</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+            <span class="k">return</span> <span class="mi">0</span>
 
         <span class="n">source_systs</span> <span class="o">=</span> <span class="n">target_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">systs</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">source_systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
@@ -1208,28 +1209,25 @@
         <span class="c1"># 5. Optional Refit</span>
         <span class="k">if</span> <span class="n">do_refit</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Refitting the imported systems."</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Local import to avoid circular dependency</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
-                
-                <span class="c1"># Wrap the intermediate session in the Absorbers recipe</span>
-                <span class="n">rec_abs</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">intermediate_session</span><span class="p">)</span>
-                
-                <span class="c1"># Run refit_all</span>
-                <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
-                <span class="c1"># or expose them as advanced params in the schema.</span>
-                <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
-                <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                                     <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
-                
-                <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">refitted_session</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Refit failed. Returning imported systems without fitting."</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">intermediate_session</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error during import auto-refit: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">intermediate_session</span>
+            <span class="c1"># Local import to avoid circular dependency</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
+
+            <span class="c1"># Wrap the intermediate session in the Absorbers recipe</span>
+            <span class="n">rec_abs</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="n">intermediate_session</span><span class="p">)</span>
+
+            <span class="c1"># Run refit_all</span>
+            <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
+            <span class="c1"># or expose them as advanced params in the schema.</span>
+            <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
+            <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                 <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">refitted_session</span>
+            <span class="c1"># The import stays (Guido's choice, phase 6); refit_all has</span>
+            <span class="c1"># logged why it failed</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The imported systems could not be refitted: they keep "</span>
+                           <span class="s2">"their imported values."</span><span class="p">)</span>
 
         <span class="c1"># Return unfitted result</span>
         <span class="k">return</span> <span class="n">intermediate_session</span>
@@ -1544,8 +1542,9 @@
             <span class="p">)</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">split_expression</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The sessions have no range in common: nothing is trimmed."</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+                <span class="c1"># (A WARNING and the session unchanged, phase 6)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The sessions have no range in common: nothing is trimmed."</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Trimming to the range in common: </span><span class="si">{</span><span class="n">split_expression</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
             
@@ -1584,8 +1583,9 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">other_sessions</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No sessions to stitch."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+            <span class="c1"># (A WARNING and the session unchanged, phase 6)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No sessions to stitch."</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># 1. Resolve Inputs (GUI/Script Logic)</span>
         <span class="n">resolved_specs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1609,8 +1609,9 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"An item of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be stitched: it is skipped."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_specs</span><span class="p">:</span>
+            <span class="c1"># (An ERROR and the session unchanged, phase 6)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"There are no valid sessions to stitch."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+            <span class="k">return</span> <span class="mi">0</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 2. Delegate Data Manipulation to Core</span>
@@ -1696,14 +1697,19 @@
 
         <span class="c1"># Parse Manual Factors</span>
         <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Factors or ranges that cannot be read make the recipe fail: they</span>
+        <span class="c1"># were replaced by 'auto', with a WARNING (phase 6)</span>
         <span class="k">if</span> <span class="n">manual_factors</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">'auto'</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">manual_factors</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> manual factors, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span><span class="si">}</span><span class="s2">. Falling back to 'auto'."</span><span class="p">)</span>
-                    <span class="n">factors</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid manual_factors. Falling back to 'auto'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The manual factors must be numbers separated by commas, "</span>
+                             <span class="s2">"or 'auto'."</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Give </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> manual factors, one per other "</span>
+                             <span class="sa">f</span><span class="s2">"session (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">factors</span><span class="p">)</span><span class="si">}</span><span class="s2"> given)."</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># Parse Equalize Ranges</span>
         <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1712,11 +1718,14 @@
                 <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">equalize_ranges</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">):</span>
                     <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'-'</span><span class="p">))</span>
                     <span class="n">eq_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">))</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eq_ranges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> equalize ranges. Falling back to 'auto'."</span><span class="p">)</span>
-                    <span class="n">eq_ranges</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid equalize_ranges format. Use 'min-max, min-max'. Falling back to 'auto'."</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The equalize ranges must be written 'min-max, min-max' "</span>
+                             <span class="s2">"(in nm), or 'auto'."</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eq_ranges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Give </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">others_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> equalize ranges, one per other "</span>
+                             <span class="sa">f</span><span class="s2">"session (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">eq_ranges</span><span class="p">)</span><span class="si">}</span><span class="s2"> given)."</span><span class="p">)</span>
+                <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># 2. Resolve GUI Sessions</span>
         <span class="n">resolved_others</span> <span class="o">=</span> <span class="p">[]</span>
