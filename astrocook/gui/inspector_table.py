@@ -214,7 +214,7 @@ class SystemTableModel(QAbstractTableModel):
             val = getattr(comp, attr, 0)
             if val is None: return -np.inf
             try: return float(val)
-            except: return str(val)
+            except (TypeError, ValueError): return str(val)
 
         # 1. Background: the parameter at a bound of the fit (amber), the
         # ID of a component without uncertainties (red), #517; then the

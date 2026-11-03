@@ -600,7 +600,7 @@ class MainMenusMixin:
         if self.active_history:
             self._launch_log_scripter(self.active_history)
         else:
-            logger.warning("View Log called with no active history.")
+            logger.debug("View Log without an active session.")
 
     def _on_view_script_console(self):
         """Launches the Script Console dialog."""
@@ -618,7 +618,7 @@ class MainMenusMixin:
         if self.active_history:
             self._launch_identification_viewer(self.active_history)
         else:
-            logger.warning("View Identifications called with no active history.")
+            logger.debug("View Identifications without an active session.")
 
     def _on_export_requested(self):
         """Launches the selection dialog first."""

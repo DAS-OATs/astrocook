@@ -509,9 +509,10 @@ def test_close_several_sessions(qtbot, two, monkeypatch):
 
 
 def test_close_without_a_session(empty, caplog):
-    with caplog.at_level(logging.WARNING):
+    # Nothing to close: logged at DEBUG (phase 6)
+    with caplog.at_level(logging.DEBUG, logger="astrocook.gui.main_sessions"):
         empty._on_close_session_requested()
-    assert "Close request with no session specified or active." in caplog.text
+    assert "Close without a session." in caplog.text
 
 
 def test_close_the_active_session_in_the_middle(qtbot, two):

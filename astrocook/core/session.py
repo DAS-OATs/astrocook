@@ -4,7 +4,7 @@ import os
 import shutil
 import tarfile 
 import tempfile
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.v1_archive import V1ArchiveManager
@@ -15,14 +15,14 @@ from astrocook.recipes.file import RecipeFileV2
 from astrocook.recipes.flux import RecipeFluxV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
-    SystemListDataV2, HistoryLogV2, V1LogArtifact
+    SystemListDataV2, HistoryLogV2
 )
 from astrocook.core.system_list import SystemListV2
 
 logger = logging.getLogger(__name__)
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact]
+LogManager = HistoryLogV2
 
 def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
     """

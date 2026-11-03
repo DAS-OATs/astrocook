@@ -300,7 +300,10 @@ core, fitting and io keep only the two boundaries of
 messages in PR 5a (found F98), their rows D in PR 5b; the prerequisites
 of the fits in PR 5c (F99), with the scheme of the prerequisites for
 6-bis (one per way of use: MCP, GUI, scripts; `ROADMAP.md`, phase 6-bis);
-next the GUI (PR 6), then the warnings of the libraries (PR 7). Work in
+the rows N and C of the GUI and its messages in PR 6a (exceptions in
+`gui/errors.py`; `V1LogArtifact` removed), its rows B and D and a hook
+for unexpected errors in PR 6b; then the warnings of the libraries
+(PR 7). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

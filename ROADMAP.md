@@ -1448,9 +1448,10 @@ an item to discuss.
   messages: (4) core, fitting, io, in two PRs (agreed with Guido): (4a)
   the rows N and R and the messages, no change of behaviour; (4b) the
   rows D, as decided with Guido (below); (5) recipes, in the same way:
-  (5a) the rows N, R and B and the messages, (5b) the rows D; (6) GUI, with a
-  hook that shows an unexpected error to the user; (7) the warnings of
-  the libraries. The rows marked D are reviewed with Guido before their
+  (5a) the rows N, R and B and the messages, (5b) the rows D; (6) GUI, in
+  two PRs (agreed with Guido): (6a) the rows N and C and the messages,
+  no change of behaviour, (6b) the rows B and D and a hook that shows an
+  unexpected error to the user; (7) the warnings of the libraries. The rows marked D are reviewed with Guido before their
   PR.
   The rule of the messages agreed with Guido as proposed (November 2026).
 - *Numbers.* The phase does not change the results: the snapshots and
@@ -1505,7 +1506,14 @@ the rows N, R and B of the recipes (36, PR 5a, #696: the B rows logged
 once, with the traceback, by the rule), their rows D (10, PR 5b): of the
 recipes, 4 clauses of `absorbers.py` and 2 of `edit.py` removed or
 narrowed, 4 kept as boundaries (the cleaning of `lya_auto` and
-`forest_auto`, `delete_component`, `detect_anchor`). The lines are those of `a5b506a`; the
+`forest_auto`, `delete_component`, `detect_anchor`); the rows N and C of
+the GUI (70, PR 6a): narrowed to the exceptions of `gui/errors.py`
+(`DATA_ERRORS`, the errors of the data shown; `QT_ERRORS`, those of the
+Qt and matplotlib objects already gone or not ready) or to the specific
+ones (a missing file, a series that cannot be parsed); where a missing
+column was caught as the `AttributeError` of `None.value`, the check is
+explicit; with them, the fallback of the matplotlib style, which applied
+`'fast'` again in the `except` (it would fail again). The lines are those of `a5b506a`; the
 function identifies the clause when the lines move.
 
 **Rows D of core, fitting and io** (reviewed with Guido, November 2026;
@@ -1551,6 +1559,21 @@ applied in PR 4b, each with a test that reproduces the failure, in
   spectrum unchanged; the continuum editor of the GUI shows it in a
   dialog (the knots edited are lost, as before: keeping the editor
   open on a failure is for the PR of the GUI).
+
+**Rows D of the GUI and the hook** (reviewed with Guido, November 2026;
+applied in PR 6b): the two `except Exception: pass` around the entries of
+the session log in `_process_recipe_result` removed (`add_entry` only
+appends to a list: an error there is a bug, which reaches the boundary of
+`_process_recipe_result` and its dialog; the entry written before the new
+state is applied, so that the log and the state stay together; a failure
+dropped the entry silently while the result was applied, and the replay
+diverged); the refresh of the Log Scripter in a clause of its own (C,
+`RuntimeError`); a log manager that is not a `HistoryLogV2` an ERROR
+instead of a silent skip. `V1LogArtifact` (a wrapper of V1 logs that was
+never created) removed in PR 6a (Guido). The hook: a `sys.excepthook`
+installed by the launcher (PySide6 calls it for the exceptions not
+handled in the slots) logs the error with its traceback and shows a
+dialog with the message and a *Details* button with the traceback.
 
 **Rows D of the recipes** (reviewed with Guido, November 2026; applied in
 PR 5b, each with a test):
@@ -1636,94 +1659,94 @@ PR 5b, each with a test):
 | `fitting/voigt_model.py` | 160 | `VoigtModelConstraintV2._sanitize_data_structures` | bare | N: done | parsing of a key (bare `except`) |
 | `fitting/voigt_model.py` | 260 | `VoigtModelConstraintV2._compile_links` | `Exception` | D: done | a link that does not compile is skipped (ERROR only) |
 | `fitting/voigt_model.py` | 351 | `VoigtModelConstraintV2.map_p_free_to_full` | `Exception` | D: done | a link that fails to evaluate keeps the old value, silently, at every model evaluation |
-| `gui/about_dialog.py` | 41 | `AboutDialog.__init__` | `Exception` | N | logo or icon |
-| `gui/continuum_controls.py` | 97 | `ContinuumControlsMixin._toggle_continuum_editor` | bare | C | removal of a matplotlib artist |
+| `gui/about_dialog.py` | 41 | `AboutDialog.__init__` | `Exception` | N: done | logo or icon |
+| `gui/continuum_controls.py` | 97 | `ContinuumControlsMixin._toggle_continuum_editor` | bare | C: done | removal of a matplotlib artist |
 | `gui/continuum_controls.py` | 201 | `ContinuumControlsMixin._toggle_continuum_editor` | `Exception` | B | saving the edited continuum: ERROR in the log only, the user should see it |
-| `gui/continuum_editor.py` | 210 | `ContinuumEditorMixin._remove_editor_artists` | bare | C | removal of a matplotlib artist |
-| `gui/continuum_editor.py` | 215 | `ContinuumEditorMixin._remove_editor_artists` | bare | C | removal of a matplotlib artist |
-| `gui/continuum_editor.py` | 344 | `ContinuumEditorMixin.refresh_edit_layer` | `Exception` | N | refresh of the editor layer (DEBUG) |
-| `gui/data_inspector.py` | 223 | `DataInspectorDialog._populate_range` | bare | N | value of a column (bare `except`) |
-| `gui/identification_viewer_dialog.py` | 185 | `IdentificationViewerDialog._populate_results` | `Exception` | N | `abs_ids` column |
-| `gui/identification_viewer_dialog.py` | 211 | `IdentificationViewerDialog._populate_results` | `Exception` | N | JSON of the identifications, shown in the dialog |
-| `gui/identification_viewer_dialog.py` | 267 | `IdentificationViewerDialog._get_ref_transition` | `Exception` | N | `trans_parse` of a series |
-| `gui/inspector_table.py` | 217 | `SystemTableModel.data` | bare | N | cell value as a number (bare `except`, hot path) |
-| `gui/log_scripter_dialog.py` | 193 | `LogScripterDialog._populate_v1_script` | `Exception` | N | V1 log JSON |
-| `gui/log_scripter_dialog.py` | 290 | `LogScripterDialog._on_save_log` | `Exception` | N | saving the log: `OSError`, shown in a dialog |
-| `gui/log_scripter_dialog.py` | 313 | `LogScripterDialog._on_insert_recipe` | `Exception` | N | recipe menu and template of the log scripter |
-| `gui/log_scripter_dialog.py` | 342 | `LogScripterDialog._insert_template` | `Exception` | N | recipe menu and template of the log scripter |
-| `gui/main_panels.py` | 189 | `MainPanelsMixin._setup_empty_view` | `Exception` | N | logo or icon |
-| `gui/main_panels.py` | 754 | `MainPanelsMixin._update_limit_boxes_from_plot` | `Exception` | N | limit boxes from the plot |
-| `gui/main_panels.py` | 784 | `MainPanelsMixin._force_restack_floating_widgets` | `Exception` | N | re-stacking of the floating widgets |
-| `gui/main_recipes.py` | 160 | `MainRecipesMixin._launch_recipe_dialog` | `Exception` | C | reset of the plot toolbar |
+| `gui/continuum_editor.py` | 210 | `ContinuumEditorMixin._remove_editor_artists` | bare | C: done | removal of a matplotlib artist |
+| `gui/continuum_editor.py` | 215 | `ContinuumEditorMixin._remove_editor_artists` | bare | C: done | removal of a matplotlib artist |
+| `gui/continuum_editor.py` | 344 | `ContinuumEditorMixin.refresh_edit_layer` | `Exception` | N: done | refresh of the editor layer (DEBUG) |
+| `gui/data_inspector.py` | 223 | `DataInspectorDialog._populate_range` | bare | N: done | value of a column (bare `except`) |
+| `gui/identification_viewer_dialog.py` | 185 | `IdentificationViewerDialog._populate_results` | `Exception` | N: done | `abs_ids` column |
+| `gui/identification_viewer_dialog.py` | 211 | `IdentificationViewerDialog._populate_results` | `Exception` | N: done | JSON of the identifications, shown in the dialog |
+| `gui/identification_viewer_dialog.py` | 267 | `IdentificationViewerDialog._get_ref_transition` | `Exception` | N: done | `trans_parse` of a series |
+| `gui/inspector_table.py` | 217 | `SystemTableModel.data` | bare | N: done | cell value as a number (bare `except`, hot path) |
+| `gui/log_scripter_dialog.py` | 193 | `LogScripterDialog._populate_v1_script` | `Exception` | N: done | V1 log JSON |
+| `gui/log_scripter_dialog.py` | 290 | `LogScripterDialog._on_save_log` | `Exception` | N: done | saving the log: `OSError`, shown in a dialog |
+| `gui/log_scripter_dialog.py` | 313 | `LogScripterDialog._on_insert_recipe` | `Exception` | N: done | recipe menu and template of the log scripter |
+| `gui/log_scripter_dialog.py` | 342 | `LogScripterDialog._insert_template` | `Exception` | N: done | recipe menu and template of the log scripter |
+| `gui/main_panels.py` | 189 | `MainPanelsMixin._setup_empty_view` | `Exception` | N: done | logo or icon |
+| `gui/main_panels.py` | 754 | `MainPanelsMixin._update_limit_boxes_from_plot` | `Exception` | N: done | limit boxes from the plot |
+| `gui/main_panels.py` | 784 | `MainPanelsMixin._force_restack_floating_widgets` | `Exception` | N: done | re-stacking of the floating widgets |
+| `gui/main_recipes.py` | 160 | `MainRecipesMixin._launch_recipe_dialog` | `Exception` | C: done | reset of the plot toolbar |
 | `gui/main_recipes.py` | 273 | `MainRecipesMixin._on_recipe_requested` | `Exception` | B | export from the dialog: ERROR in the log only |
 | `gui/main_recipes.py` | 497 | `MainRecipesMixin._process_recipe_result` | `Exception` | D | the entry of a recipe in the session log is lost silently |
 | `gui/main_recipes.py` | 542 | `MainRecipesMixin._process_recipe_result` | `Exception` | D | the entry of a recipe in the session log is lost silently |
 | `gui/main_recipes.py` | 627 | `MainRecipesMixin._process_recipe_result` | `Exception` | B | processing of a recipe result, shown in a dialog |
-| `gui/main_recipes.py` | 711 | `MainRecipesMixin._cleanup_progress_ui` | `Exception` | C | closing of the progress dialog and of its log bridge |
-| `gui/main_recipes.py` | 810 | `MainRecipesMixin.launch_split_from_current_view` | `Exception` | N | plot limits for Split |
-| `gui/main_recipes.py` | 844 | `_safely_close_progress_dialog._destroy` | bare | C | closing of the progress dialog and of its log bridge |
-| `gui/main_recipes.py` | 853 | `_safely_close_progress_dialog._destroy` | `Exception` | C | closing of the progress dialog and of its log bridge |
+| `gui/main_recipes.py` | 711 | `MainRecipesMixin._cleanup_progress_ui` | `Exception` | C: done | closing of the progress dialog and of its log bridge |
+| `gui/main_recipes.py` | 810 | `MainRecipesMixin.launch_split_from_current_view` | `Exception` | N: done | plot limits for Split |
+| `gui/main_recipes.py` | 844 | `_safely_close_progress_dialog._destroy` | bare | C: done | closing of the progress dialog and of its log bridge |
+| `gui/main_recipes.py` | 853 | `_safely_close_progress_dialog._destroy` | `Exception` | C: done | closing of the progress dialog and of its log bridge |
 | `gui/main_scripts.py` | 57 | `MainScriptsMixin._launch_log_scripter` | `Exception` | B | opening of the log scripter |
-| `gui/main_scripts.py` | 71 | `MainScriptsMixin._on_log_scripter_closed` | `Exception` | C | re-raising of the side buttons |
-| `gui/main_scripts.py` | 98 | `MainScriptsMixin.run_script` | `Exception` | C | reset of the plot toolbar |
-| `gui/main_sessions.py` | 99 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N | copy of the session log for a branch: aborts with a dialog |
-| `gui/main_sessions.py` | 201 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N | refresh of the log scripter |
-| `gui/main_sessions.py` | 314 | `MainSessionsMixin._update_view_for_session` | `Exception` | N | aux column combobox |
-| `gui/main_sessions.py` | 364 | `MainSessionsMixin._update_view_for_session` | `Exception` | N | selection in the session list |
+| `gui/main_scripts.py` | 71 | `MainScriptsMixin._on_log_scripter_closed` | `Exception` | C: done | re-raising of the side buttons |
+| `gui/main_scripts.py` | 98 | `MainScriptsMixin.run_script` | `Exception` | C: done | reset of the plot toolbar |
+| `gui/main_sessions.py` | 99 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N: done | copy of the session log for a branch: aborts with a dialog |
+| `gui/main_sessions.py` | 201 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N: done | refresh of the log scripter |
+| `gui/main_sessions.py` | 314 | `MainSessionsMixin._update_view_for_session` | `Exception` | N: done | aux column combobox |
+| `gui/main_sessions.py` | 364 | `MainSessionsMixin._update_view_for_session` | `Exception` | N: done | selection in the session list |
 | `gui/main_sessions.py` | 400 | `MainSessionsMixin._on_session_switched` | `Exception` | B | Qt slot (session switched, renamed) |
-| `gui/main_sessions.py` | 823 | `MainSessionsMixin._on_session_info` | bare | N | S/N and chi2 of the info panel |
-| `gui/main_sessions.py` | 898 | `MainSessionsMixin._on_session_info` | `Exception` | N | S/N and chi2 of the info panel |
+| `gui/main_sessions.py` | 823 | `MainSessionsMixin._on_session_info` | bare | N: done | S/N and chi2 of the info panel |
+| `gui/main_sessions.py` | 898 | `MainSessionsMixin._on_session_info` | `Exception` | N: done | S/N and chi2 of the info panel |
 | `gui/main_sessions.py` | 1021 | `MainSessionsMixin._on_session_name_changed` | `Exception` | B | Qt slot (session switched, renamed) |
 | `gui/main_sessions.py` | 1069 | `MainSessionsMixin._save_session` | `Exception` | B | saving or opening a session, shown in a dialog |
 | `gui/main_sessions.py` | 1186 | `MainSessionsMixin.open_session_from_path` | `Exception` | B | saving or opening a session, shown in a dialog |
-| `gui/main_window.py` | 124 | `MainWindowV2.__init__` | `Exception` | N | logo or icon |
-| `gui/main_window.py` | 249 | `MainWindowV2._apply_styles` | `Exception` | N | palette query, fallback colours |
-| `gui/main_window.py` | 369 | `MainWindowV2._show_custom_message` | `Exception` | N | icon of a message box |
-| `gui/main_window.py` | 463 | `MainWindowV2._launch_identification_viewer` | `Exception` | C | closing of a previous dialog |
+| `gui/main_window.py` | 124 | `MainWindowV2.__init__` | `Exception` | N: done | logo or icon |
+| `gui/main_window.py` | 249 | `MainWindowV2._apply_styles` | `Exception` | N: done | palette query, fallback colours |
+| `gui/main_window.py` | 369 | `MainWindowV2._show_custom_message` | `Exception` | N: done | icon of a message box |
+| `gui/main_window.py` | 463 | `MainWindowV2._launch_identification_viewer` | `Exception` | C: done | closing of a previous dialog |
 | `gui/main_window.py` | 480 | `MainWindowV2._launch_identification_viewer` | `Exception` | B | opening of the identifications window |
-| `gui/main_window.py` | 506 | `MainWindowV2._flux_limits_in` | `Exception` | N | x axis in nm for the flux limits |
+| `gui/main_window.py` | 506 | `MainWindowV2._flux_limits_in` | `Exception` | N: done | x axis in nm for the flux limits |
 | `gui/main_window.py` | 600 | `MainWindowV2._on_debug_plot_requested` | `Exception` | B | debug plot |
-| `gui/plot_canvas.py` | 48 | `MatplotlibCanvas.__init__` | `Exception` | N | matplotlib style (the message still names `scienceplots`) |
-| `gui/plot_canvas.py` | 149 | `MatplotlibCanvas._capture_background` | `Exception` | N | background copy for blitting |
-| `gui/plot_canvas.py` | 155 | `MatplotlibCanvas._capture_background` | `Exception` | C | disconnection of a matplotlib callback |
-| `gui/plot_canvas.py` | 171 | `MatplotlibCanvas.draw_animated` | `Exception` | N | blitting |
-| `gui/plot_canvas.py` | 181 | `MatplotlibCanvas.draw_animated` | `Exception` | N | blitting |
+| `gui/plot_canvas.py` | 48 | `MatplotlibCanvas.__init__` | `Exception` | N: done | matplotlib style (the message still names `scienceplots`) |
+| `gui/plot_canvas.py` | 149 | `MatplotlibCanvas._capture_background` | `Exception` | N: done | background copy for blitting |
+| `gui/plot_canvas.py` | 155 | `MatplotlibCanvas._capture_background` | `Exception` | C: done | disconnection of a matplotlib callback |
+| `gui/plot_canvas.py` | 171 | `MatplotlibCanvas.draw_animated` | `Exception` | N: done | blitting |
+| `gui/plot_canvas.py` | 181 | `MatplotlibCanvas.draw_animated` | `Exception` | N: done | blitting |
 | `gui/plot_canvas.py` | 268 | `MatplotlibCanvas.on_motion` | `Exception` | B | mouse motion slot |
-| `gui/plot_canvas.py` | 303 | `MatplotlibCanvas.cleanup_selection` | `Exception` | C | removal of a matplotlib artist |
-| `gui/plot_mouse.py` | 108 | `PlotMouseMixin.get_cursor_line_positions_at_z` | `Exception` | N | `trans_parse` of a series |
-| `gui/plot_mouse.py` | 144 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N | `trans_parse` of a series |
-| `gui/plot_mouse.py` | 162 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N | redshift from the cursor position |
-| `gui/plot_mouse.py` | 272 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N | data tooltip |
-| `gui/plot_mouse.py` | 298 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N | data tooltip |
-| `gui/plot_mouse.py` | 662 | `PlotMouseMixin._open_data_inspector` | `Exception` | C | closing of a previous dialog |
-| `gui/plot_style.py` | 189 | `z_convert_inverse` | `Exception` | N | inverse redshift conversion of the axis |
-| `gui/plot_style.py` | 200 | `get_color_cycle` | `Exception` | N | colour map, fallback |
-| `gui/plot_style.py` | 206 | `get_color_cycle` | `Exception` | N | colour map, fallback |
-| `gui/plot_style.py` | 237 | `decimate_y_min_max` | `Exception` | N | decimation for plotting |
-| `gui/plot_style.py` | 263 | `decimate_x_for_min_max` | `Exception` | N | decimation for plotting |
-| `gui/pyside_plot.py` | 416 | `SpectrumPlotWidget._connect_background_capture` | `Exception` | C | disconnection of a matplotlib callback |
-| `gui/pyside_plot.py` | 431 | `SpectrumPlotWidget._was_zoomed` | `Exception` | N | zoom state |
-| `gui/pyside_plot.py` | 440 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C | disconnection of a matplotlib callback |
-| `gui/pyside_plot.py` | 443 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C | disconnection of a matplotlib callback |
-| `gui/pyside_plot.py` | 449 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | N | limit callbacks |
-| `gui/pyside_plot.py` | 531 | `SpectrumPlotWidget._plot_arrays` | `Exception` | N | error column of the S/N view, fallback to `dy` |
-| `gui/pyside_plot.py` | 570 | `SpectrumPlotWidget._slice_to_view` | `Exception` | N | zoom slice |
-| `gui/pyside_plot.py` | 635 | `SpectrumPlotWidget._plot_other_sessions` | bare | N | S/N of the other sessions (bare `except`) |
-| `gui/pyside_plot.py` | 807 | `SpectrumPlotWidget._plot_aux_column` | `Exception` | N | aux column |
-| `gui/pyside_plot.py` | 853 | `SpectrumPlotWidget._plot_systems` | `Exception` | N | series of a system that `trans_parse` cannot read: not drawn, silently |
-| `gui/pyside_plot.py` | 878 | `SpectrumPlotWidget._plot_systems` | `Exception` | N | ticks of the systems in velocity |
+| `gui/plot_canvas.py` | 303 | `MatplotlibCanvas.cleanup_selection` | `Exception` | C: done | removal of a matplotlib artist |
+| `gui/plot_mouse.py` | 108 | `PlotMouseMixin.get_cursor_line_positions_at_z` | `Exception` | N: done | `trans_parse` of a series |
+| `gui/plot_mouse.py` | 144 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N: done | `trans_parse` of a series |
+| `gui/plot_mouse.py` | 162 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N: done | redshift from the cursor position |
+| `gui/plot_mouse.py` | 272 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N: done | data tooltip |
+| `gui/plot_mouse.py` | 298 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N: done | data tooltip |
+| `gui/plot_mouse.py` | 662 | `PlotMouseMixin._open_data_inspector` | `Exception` | C: done | closing of a previous dialog |
+| `gui/plot_style.py` | 189 | `z_convert_inverse` | `Exception` | N: done | inverse redshift conversion of the axis |
+| `gui/plot_style.py` | 200 | `get_color_cycle` | `Exception` | N: done | colour map, fallback |
+| `gui/plot_style.py` | 206 | `get_color_cycle` | `Exception` | N: done | colour map, fallback |
+| `gui/plot_style.py` | 237 | `decimate_y_min_max` | `Exception` | N: done | decimation for plotting |
+| `gui/plot_style.py` | 263 | `decimate_x_for_min_max` | `Exception` | N: done | decimation for plotting |
+| `gui/pyside_plot.py` | 416 | `SpectrumPlotWidget._connect_background_capture` | `Exception` | C: done | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 431 | `SpectrumPlotWidget._was_zoomed` | `Exception` | N: done | zoom state |
+| `gui/pyside_plot.py` | 440 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C: done | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 443 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C: done | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 449 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | N: done | limit callbacks |
+| `gui/pyside_plot.py` | 531 | `SpectrumPlotWidget._plot_arrays` | `Exception` | N: done | error column of the S/N view, fallback to `dy` |
+| `gui/pyside_plot.py` | 570 | `SpectrumPlotWidget._slice_to_view` | `Exception` | N: done | zoom slice |
+| `gui/pyside_plot.py` | 635 | `SpectrumPlotWidget._plot_other_sessions` | bare | N: done | S/N of the other sessions (bare `except`) |
+| `gui/pyside_plot.py` | 807 | `SpectrumPlotWidget._plot_aux_column` | `Exception` | N: done | aux column |
+| `gui/pyside_plot.py` | 853 | `SpectrumPlotWidget._plot_systems` | `Exception` | N: done | series of a system that `trans_parse` cannot read: not drawn, silently |
+| `gui/pyside_plot.py` | 878 | `SpectrumPlotWidget._plot_systems` | `Exception` | N: done | ticks of the systems in velocity |
 | `gui/pyside_plot.py` | 951 | `SpectrumPlotWidget._plot_cursor` | `Exception` | B | redshift cursor |
-| `gui/pyside_plot.py` | 1103 | `SpectrumPlotWidget._plot_emission_lines` | `Exception` | N | emission line labels |
-| `gui/pyside_plot.py` | 1155 | `SpectrumPlotWidget._draw_isomag_grid` | bare | C | removal of a matplotlib artist |
-| `gui/pyside_plot.py` | 1221 | `SpectrumPlotWidget._draw_isomag_grid` | `Exception` | N | iso-magnitude grid |
+| `gui/pyside_plot.py` | 1103 | `SpectrumPlotWidget._plot_emission_lines` | `Exception` | N: done | emission line labels |
+| `gui/pyside_plot.py` | 1155 | `SpectrumPlotWidget._draw_isomag_grid` | bare | C: done | removal of a matplotlib artist |
+| `gui/pyside_plot.py` | 1221 | `SpectrumPlotWidget._draw_isomag_grid` | `Exception` | N: done | iso-magnitude grid |
 | `gui/qt_workers.py` | 114 | `RecipeWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
 | `gui/qt_workers.py` | 249 | `ScriptWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
 | `gui/qt_workers.py` | 293 | `SessionLoadWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
-| `gui/recipe_dialog.py` | 45 | `RecipeDialog.__init__` | `Exception` | N | schema of the recipe |
-| `gui/recipe_dialog.py` | 111 | `RecipeDialog._get_available_columns` | `Exception` | N | columns offered in the dialog |
-| `gui/recipe_dialog.py` | 551 | `RecipeDialog._check_oversample` | `Exception` | N | oversampling warning |
+| `gui/recipe_dialog.py` | 45 | `RecipeDialog.__init__` | `Exception` | N: done | schema of the recipe |
+| `gui/recipe_dialog.py` | 111 | `RecipeDialog._get_available_columns` | `Exception` | N: done | columns offered in the dialog |
+| `gui/recipe_dialog.py` | 551 | `RecipeDialog._check_oversample` | `Exception` | N: done | oversampling warning |
 | `gui/recipe_dialog.py` | 597 | `RecipeDialog.accept` | `Exception` | B | reading the parameters of the dialog, shown in a dialog |
-| `gui/recipe_dialog.py` | 618 | `RecipeDialog._show_help` | `Exception` | N | opening of the help page |
+| `gui/recipe_dialog.py` | 618 | `RecipeDialog._show_help` | `Exception` | N: done | opening of the help page |
 | `gui/script_dialog.py` | 63 | `ScriptDialog.run_script` | `Exception` | B | script console (`exec`) |
 | `io/adapter.py` | 106 | `load_and_migrate_structure` | `Exception` | D: done | unreadable V1 system list: the session opens with no systems (ERROR only) |
 | `io/adapter.py` | 376 | `save_archive_v2` | `Exception` | D: done | original data not written, the save goes on and fails later (F94): removed, a failure of the original data stops the save (phase 6, F94 PR) |
@@ -2571,6 +2594,6 @@ review); each of its decisions goes into the log.
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
-| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3, #693); rows D of core, fitting and io decided; rows N and R of core, fitting and io, their messages by the rule (PR 4a, #694), found F97; rows D of core, fitting and io (PR 4b, #695); rows D of the recipes decided; rows N, R and B of the recipes and their messages (PR 5a, #696), found F98; rows D of the recipes (PR 5b, #697); prerequisites of the fits (PR 5c), the scheme of the prerequisites for 6-bis |
+| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3, #693); rows D of core, fitting and io decided; rows N and R of core, fitting and io, their messages by the rule (PR 4a, #694), found F97; rows D of core, fitting and io (PR 4b, #695); rows D of the recipes decided; rows N, R and B of the recipes and their messages (PR 5a, #696), found F98; rows D of the recipes (PR 5b, #697); prerequisites of the fits (PR 5c, #698), the scheme of the prerequisites for 6-bis; rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a) |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |

@@ -29,6 +29,8 @@ from astrocook.core.structures import HistoryLogV2
 from .qt_workers import SessionLoadWorker
 from .theme import FOCUS_BORDER, palette_hex
 
+from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
+import copy
 logger = logging.getLogger(__name__)
 
 
@@ -79,14 +81,14 @@ class MainSessionsMixin:
         Operates on the currently active SessionHistory.
         """
         if not isinstance(new_session, SessionV2):
-            logger.error("update_gui_session_state received invalid session.")
+            logger.error("The new state of the session is not valid: the view is not updated.")
             return
             
         # ** Use the active_history as the target for the update **
         target_history = self.active_history
         
         if target_history is None:
-            logger.error("Cannot update state: No active session history.")
+            logger.error("There is no active session: the result is not shown.")
             return # Should not happen if a session is loaded
 
         # Ensure the new state also points to the real GUI
@@ -98,12 +100,12 @@ class MainSessionsMixin:
             source_log_manager = target_history.log_manager
             try:
                 new_log_copy = deepcopy(source_log_manager)
-            except Exception as e:
-                logger.error(f"Standard deepcopy failed on log manager: {e}")
+            except (TypeError, copy.Error, RecursionError) as e:
+                logger.error(f"The session log could not be copied for the new session: {e}")
                 new_log_copy = None
 
             if new_log_copy is None:
-                logger.error("Failed to copy the session log for branching, aborting.")
+                logger.error("The new session is not created: its log could not be copied.")
                 QMessageBox.critical(self, "Branching Error", "Could not copy session log state.")
                 return
 
@@ -200,8 +202,8 @@ class MainSessionsMixin:
             if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
                 try:
                     self.log_scripter_dialog.refresh()
-                except Exception as e:
-                    logger.error(f"Failed to refresh log viewer: {e}")
+                except QT_ERRORS as e:
+                    logger.debug(f"Log window not refreshed: {e}")
 
             try:
                 active_list_index = self.session_histories.index(target_history)
@@ -313,8 +315,8 @@ class MainSessionsMixin:
                      target_index = idx
             self.aux_col_combo.setCurrentIndex(target_index)
         
-        except Exception as e:
-            logger.warning(f"Failed to update Aux Column combobox: {e}")
+        except DATA_ERRORS as e:
+            logger.debug(f"List of the auxiliary columns not updated: {e}")
         finally:
             self.aux_col_combo.blockSignals(False)
         # --- *** END NEW *** ---
@@ -363,8 +365,8 @@ class MainSessionsMixin:
                     selection_model = self.session_list_view.selectionModel()
                     selection_flag = QItemSelectionModel.SelectionFlag.ClearAndSelect
                     selection_model.setCurrentIndex(q_model_index, selection_flag)
-                except Exception as e:
-                    logger.warning(f"Could not select session index {list_index_to_select} in list view: {e}")
+                except QT_ERRORS as e:
+                    logger.debug(f"Session {list_index_to_select} not selected in the list: {e}")
 
         self.left_sidebar_widget.raise_()
         self.right_sidebar_widget.raise_()
@@ -398,7 +400,7 @@ class MainSessionsMixin:
                     # This can happen if user undid then clicked the list item again.
                     self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
             else:
-                 logger.warning(f"Invalid index {new_history_list_index} clicked.")
+                 logger.debug(f"Index {new_history_list_index} clicked out of the list.")
         except Exception as e:
             logger.error(f"Error switching session via list click: {e}")
 
@@ -822,7 +824,7 @@ class MainSessionsMixin:
                 valid_snr = snr_arr[(spec.y.value > 0) & (spec.dy.value > 0)]
                 if len(valid_snr) > 0:
                     snr_str = f"{np.nanmedian(valid_snr):.2f}"
-            except: pass
+            except DATA_ERRORS: pass
 
             # --- Step Detection Logic ---
             if len(x_vals) > 1:
@@ -897,8 +899,8 @@ class MainSessionsMixin:
                         # Fallback if z_em is not set
                         c_glob = np.sum(chi2_array) / len(chi2_array)
                         chi2_html = f"<tr><td>Reduced χ²:</td><td>{c_glob:.2f}</td></tr>"
-            except Exception as e:
-                logger.warning(f"Could not calculate chi-squared for info panel: {e}")
+            except DATA_ERRORS as e:
+                logger.debug(f"Chi-squared of the information panel not computed: {e}")
 
         stats_html = (
             "<p style='margin-bottom: 5px;'><b>Statistics:</b></p>"
@@ -993,7 +995,7 @@ class MainSessionsMixin:
             current_internal_name = history_item.current_state.name
             
             if new_name and new_name != current_internal_name:
-                logger.info(f"Sidebar rename: '{current_internal_name}' -> '{new_name}'.")
+                logger.info(f"Session '{current_internal_name}' renamed '{new_name}'.")
                 
                 # --- [FIX START] Hybrid Update ---
                 
@@ -1059,14 +1061,14 @@ class MainSessionsMixin:
             # --- Save the directory for next time ---
             settings.setValue("last_working_dir", os.path.dirname(file_name))
 
-            logger.info(f"Saving session to: {file_name}")
+            logger.debug(f"Saving the session to {file_name}.")
             try:
                 # Pass *both* sessions to the save method
                 session_to_save_final.save(
                     file_path=file_name,
                     initial_session=session_to_save_initial
                 )
-                logger.info("Session saved successfully.")
+                logger.debug("Session saved.")
                 return True # Indicate success
             except Exception as e:
                 logger.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
@@ -1084,7 +1086,7 @@ class MainSessionsMixin:
             history_to_close = self.active_history
 
         if not history_to_close:
-            logger.warning("Close request with no session specified or active.")
+            logger.debug("Close without a session.")
             return
 
         session_name = history_to_close.display_name
@@ -1121,10 +1123,10 @@ class MainSessionsMixin:
         try:
             row_to_remove = self.session_histories.index(history_to_close)
         except ValueError:
-            logger.error(f"Could not find session {history_to_close.display_name} to close.")
+            logger.error(f"There is no session {history_to_close.display_name} to close.")
             return
             
-        logger.info(f"Closing session: {history_to_close.display_name}")
+        logger.info(f"Session {history_to_close.display_name} closed.")
 
         # Remove from list
         self.session_histories.pop(row_to_remove)
@@ -1167,10 +1169,10 @@ class MainSessionsMixin:
         Used by macOS FileOpen events and Drag & Drop.
         """
         if not os.path.exists(file_path):
-            logger.error(f"Cannot open file: {file_path} does not exist.")
+            logger.error(f"Cannot open {file_path}: the file does not exist.")
             return
 
-        logger.info(f"Direct load requested for: {file_path}")
+        logger.debug(f"Opening {file_path}.")
         
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -1182,7 +1184,7 @@ class MainSessionsMixin:
                 # The window may have been empty: update the interface
                 self._update_ui_state(is_valid_session=True)
             else:
-                logger.error("Session load returned failure.")
+                logger.debug("The session could not be loaded (the reason is logged above).")
                 QMessageBox.warning(self, "Load Error", "Failed to load session.")
 
         except Exception as e:

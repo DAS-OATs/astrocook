@@ -25,6 +25,7 @@ from .data_inspector import DataInspectorDialog
 from .main_recipes import region_expression
 from .plot_style import SELECTION_STYLE, z_convert_inverse
 
+from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -54,11 +55,11 @@ class PlotMouseMixin:
             # or zoom, which would switch the selection off again
             self.toolbar.deactivate_tools()
             self._is_selecting_region = True
-            logger.info("Region selection mode ACTIVE.")
+            logger.debug("Region selection on.")
             self.setCursor(Qt.CrossCursor)
         else:
             self._is_selecting_region = False
-            logger.info("Region selection mode DEACTIVATED.")
+            logger.debug("Region selection off.")
             self.setCursor(Qt.ArrowCursor)
             # Clean up any half-drawn selection
             self.canvas.cleanup_selection()
@@ -107,7 +108,7 @@ class PlotMouseMixin:
                 # 2. Try the V1 series syntax
                 try:
                     transitions = trans_parse(series_str)
-                except Exception:
+                except (KeyError, IndexError):
                     pass
                         
                 # 3. Fallback for single lines
@@ -121,7 +122,7 @@ class PlotMouseMixin:
                     x_plot_nm = (1 + z_cursor) * xem_nm # This is the data coordinate
                     positions.append(x_plot_nm)
         except (ValueError, AttributeError, ImportError) as e:
-            logger.warning(f"Could not calculate cursor positions: {e}")
+            logger.debug(f"Positions of the cursor not computed: {e}")
             return []
         return positions
     
@@ -143,7 +144,7 @@ class PlotMouseMixin:
                 # 2. Try the V1 series syntax
                 try:
                     transitions = trans_parse(series_str)
-                except Exception:
+                except (KeyError, IndexError):
                     pass
 
                 # 3. Fallback for single lines
@@ -161,8 +162,8 @@ class PlotMouseMixin:
             if ref_xem_nm is None: return None
 
             return z_convert_inverse(mouse_x_nm, ref_xem_nm)
-        except Exception as e:
-            logger.error(f"Error calculating Z from X: {e}")
+        except DATA_ERRORS as e:
+            logger.debug(f"Redshift of the cursor not computed: {e}")
             return None
 
     def show_data_tooltip(self, event):
@@ -271,7 +272,7 @@ class PlotMouseMixin:
                 else:
                     region_id_val = 0
 
-            except Exception:
+            except DATA_ERRORS:
                 pass
 
         # --- 4. Data Points (Zoom Check) ---
@@ -297,7 +298,7 @@ class PlotMouseMixin:
                     v_xmin = spec.xmin.value[idx] if hasattr(spec.xmin, 'value') else spec.xmin[idx]
                     v_xmax = spec.xmax.value[idx] if hasattr(spec.xmax, 'value') else spec.xmax[idx]
                     d_lambda_val = v_xmax - v_xmin
-                except Exception:
+                except DATA_ERRORS:
                     pass
 
             # Pre-calculate Continuum Value
@@ -649,7 +650,7 @@ class PlotMouseMixin:
             self.canvas.selection_artist = self.canvas.axes.axvspan(
                 xmin, xmax, **SELECTION_STYLE)
             self.canvas.draw_idle()
-            logger.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
+            logger.info(f"Region selected: from {xmin:.4f} to {xmax:.4f}.")
             if self.main_window:
                 self._region_menu(xmin, xmax).exec(QCursor.pos())
             self.canvas.cleanup_selection()
@@ -661,7 +662,7 @@ class PlotMouseMixin:
         if hasattr(self, '_data_inspector_dialog') and self._data_inspector_dialog is not None:
             try:
                 self._data_inspector_dialog.close()
-            except Exception:
+            except QT_ERRORS:
                 pass
         
         # 2. Create and Store Reference

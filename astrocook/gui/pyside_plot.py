@@ -30,6 +30,7 @@ from .plot_style import (ERROR_COLOR, STRONG_EMISSION_LINES,
 from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
+from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
 
 #: When more pixels than this are in view, they are decimated (min-max) to
@@ -415,7 +416,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # Disconnect any previous connection first
         if self.canvas.draw_event_cid is not None:
             try: self.canvas.mpl_disconnect(self.canvas.draw_event_cid)
-            except Exception: pass # Ignore if already disconnected
+            except QT_ERRORS: pass # Ignore if already disconnected
         self.canvas.draw_event_cid = self.canvas.mpl_connect('draw_event', self.canvas._capture_background)
 
     @staticmethod
@@ -430,7 +431,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 if all(isinstance(v,(int,float)) for v in previous_xlim+previous_ylim) and \
                     previous_xlim[0] != previous_xlim[1] and previous_ylim[0] != previous_ylim[1]:
                     was_zoomed = True
-        except Exception: pass # Ignore if axes not ready
+        except DATA_ERRORS: pass # Ignore if axes not ready
         return was_zoomed
 
     def _reconnect_limit_callbacks(self):
@@ -439,17 +440,17 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # Disconnect previous first, just in case
         if self.canvas.xlim_cid is not None:
             try: self.canvas.axes.callbacks.disconnect(self.canvas.xlim_cid)
-            except Exception: pass
+            except QT_ERRORS: pass
         if self.canvas.ylim_cid is not None:
             try: self.canvas.axes.callbacks.disconnect(self.canvas.ylim_cid)
-            except Exception: pass
+            except QT_ERRORS: pass
         # Reconnect
         try:
             self.canvas.xlim_cid = self.canvas.axes.callbacks.connect('xlim_changed', self.canvas.on_lim_changed)
             self.canvas.ylim_cid = self.canvas.axes.callbacks.connect('ylim_changed', self.canvas.on_lim_changed)
             logger.debug("Reconnected limit change callbacks in plot_spectrum.")
-        except Exception as e:
-            logger.error(f"Failed to reconnect limit callbacks: {e}")
+        except QT_ERRORS as e:
+            logger.debug(f"Limit callbacks not reconnected: {e}")
 
     def _read_view(self, spec, selected_snr_col, was_zoomed, force_autoscale,
                    previous_xlim, previous_ylim) -> '_PlotView':
@@ -504,7 +505,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             logger.debug("Cache miss for normalized data. Computing...")
             raw = self._raw_plot_arrays(full, view)
             if raw.norm is None:
-                logger.warning("Normalize checked, but continuum data is missing.")
+                logger.warning("There is no continuum: the flux is shown without normalization.")
                 return raw
             norm = raw.norm
             arrays = _PlotArrays(
@@ -529,9 +530,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     full_error_data = full.dy
                 else:
                     # This path is for 'running_std', 'norm_err', etc.
-                    full_error_data = spec.get_column(error_col_name).value
-            except Exception as e:
-                logger.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
+                    error_col = spec.get_column(error_col_name)
+                    if error_col is None:
+                        raise KeyError(f"no column '{error_col_name}'")
+                    full_error_data = error_col.value
+            except DATA_ERRORS as e:
+                logger.warning(f"The error column '{error_col_name}' cannot be used for the S/N ({e}): dy is used.")
                 full_error_data = full.dy # Fallback
                 self.main_window.snr_col_combo.setCurrentIndex(0) # Reset combo
             error = full_error_data
@@ -569,8 +573,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 view.final_slice = slice(idx_start, idx_end)
                 return arrays.sliced(view.final_slice)
             logger.debug("Zoom slice is empty, plotting full data.")
-        except Exception as e:
-            logger.warning(f"Failed to apply zoom slice: {e}")
+        except DATA_ERRORS as e:
+            logger.debug(f"Zoom slice not applied: {e}")
         return arrays
 
     def _decimate(self, arrays: '_PlotArrays', view: '_PlotView', source: int) -> '_PlotArrays':
@@ -631,10 +635,16 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             elif view.is_snr:
                 try:
                     err_col = view.snr_col
-                    err_data = ghost_dy if err_col == 'dy' else ghost_state.spec.get_column(err_col).value
+                    if err_col == 'dy':
+                        err_data = ghost_dy
+                    else:
+                        ghost_err = ghost_state.spec.get_column(err_col)
+                        if ghost_err is None:
+                            raise KeyError(f"no column '{err_col}'")
+                        err_data = ghost_err.value
                     ghost_y = _divide(ghost_y, err_data)
                     ghost_dy = np.ones_like(ghost_y)
-                except: pass
+                except DATA_ERRORS: pass
 
             # 2. Slice ghost data to current zoom to save rendering time
             if view.was_zoomed and not view.force_autoscale:
@@ -668,7 +678,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if not self.main_window.error_checkbox.isChecked():
             return
         if arrays.dx is None or arrays.dy is None:
-            logger.warning("Skipping error plot because dy_data is None.")
+            logger.debug("No error to plot.")
             return
         x_data, y_data, dx_data, dy_data = arrays.x, arrays.y, arrays.dx, arrays.dy
         label = '1-sigma error'
@@ -806,8 +816,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                                 step='mid' if not view.use_decimation else None,
                                 rasterized=True)
 
-        except Exception as e:
-            logger.warning(f"Could not plot auxiliary column '{aux_col_to_plot}': {e}")
+        except DATA_ERRORS as e:
+            logger.warning(f"The column '{aux_col_to_plot}' cannot be plotted: {e}")
 
     def _plot_systems(self, ax, spec, systs):
         """A tick at the bottom for each transition of each component in
@@ -852,7 +862,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 # 2. Try the V1 series syntax (e.g., "CIV_1548,CIV_1550")
                 try:
                     transitions = trans_parse(comp.series)
-                except Exception:
+                except (KeyError, IndexError):
                     pass # Will be caught by logging below
 
                 # 3. Fallback for single lines (e.g., "Ly_a")
@@ -860,7 +870,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     transitions = [comp.series]
 
             if not transitions:
-                logger.warning(f"Could not parse series '{comp.series}' for system plot.")
+                logger.debug(f"Series '{comp.series}' not read: its ticks are not drawn.")
 
             # Check if this component is highlighted
             is_highlighted = comp.uuid in self._highlighted_uuids
@@ -872,12 +882,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     ticks.append((comp, t, is_highlighted))
                     obs_nm.append((1 + z) * rest_nm[t])
                 else:
-                    logger.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
+                    logger.debug(f"Transition '{t}' of '{comp.series}' not in the atomic data: no tick.")
 
         try:
             x_ticks = convert_axis_velocity(np.array(obs_nm, dtype=float) * au.nm,
                                             zem, spec.x.unit).value
-        except Exception:
+        except DATA_ERRORS:
             ticks, x_ticks = [], []
 
         for (comp, t, is_highlighted), x_plot in zip(ticks, x_ticks):
@@ -949,7 +959,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 self.canvas.update_cursor_label(z_cursor, cursor_x_positions)
             logger.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
         except (ValueError, AttributeError) as e:
-            logger.warning(f"Could not draw cursor lines: {e}")
+            logger.debug(f"Cursor lines not drawn: {e}")
         except Exception as e:
             logger.error(f"Unexpected error drawing cursor: {e}", exc_info=True)
 
@@ -1102,7 +1112,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                                       edgecolor='none', pad=1.0))
                     ax.axvline(obs_nm, color=color, alpha=alpha_line, lw=1.0, ls=':')
 
-            except Exception:
+            except DATA_ERRORS:
                 continue # Skip lines with incompatible units (rare)
 
     @staticmethod
@@ -1154,7 +1164,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # 1. Clear old artists first
         for artist in self.isomag_artists:
             try: artist.remove()
-            except: pass
+            except QT_ERRORS: pass
         self.isomag_artists = []
 
         if not self._show_isomag_grid:
@@ -1220,8 +1230,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     self.isomag_artists.append(lbl)
                 # ----------------------------------------------------
 
-        except Exception as e:
-            logger.error(f"Error drawing iso-mag grid: {e}")
+        except DATA_ERRORS as e:
+            logger.warning(f"The iso-magnitude grid cannot be drawn: {e}")
 
         # 5. RESTORE LIMITS
         self.canvas.axes.set_xlim(current_xlim)

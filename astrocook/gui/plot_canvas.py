@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QToolTip
 
 from .plot_style import SELECTION_STYLE
 
+from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -47,9 +48,10 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         try:
             #plt.style.use(['science', 'fast'])
             matplotlib.style.use('fast')
-        except Exception as e:
-            logger.warning(f"Could not apply 'scienceplots': {e}. Using default.")
-            matplotlib.style.use('fast')
+        except OSError as e:
+            # (It used 'fast' again, which would fail again)
+            logger.warning(f"The matplotlib style 'fast' is not available ({e}): the "
+                           "default style is used.")
 
         fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
         self.axes = fig.add_subplot(111)
@@ -148,13 +150,13 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             if self.background is None and self.figure.get_size_inches().any():
                 if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
                     self.background = self.copy_from_bbox(self.blit_box())
-        except Exception as e:
-            logger.error(f"Failed during background copy: {e}")
+        except QT_ERRORS as e:
+            logger.debug(f"Background for blitting not copied: {e}")
             self.background = None
         finally:
             if self.draw_event_cid is not None:
                 try: self.mpl_disconnect(self.draw_event_cid)
-                except Exception: pass
+                except QT_ERRORS: pass
                 self.draw_event_cid = None
                  
     def draw_animated(self):
@@ -170,7 +172,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         drawn_artists = []
         for artist in self.cursor_artists:
             try: self.axes.draw_artist(artist); drawn_artists.append(artist)
-            except Exception as e: logger.error(f"Error drawing anim artist {artist}: {e}")
+            except QT_ERRORS as e: logger.debug(f"Animated artist {artist} not drawn: {e}")
         if getattr(self.plot_widget, '_edit_mode_active', False):
             if hasattr(self.plot_widget, 'knot_artist') and self.plot_widget.knot_artist:
                 self.axes.draw_artist(self.plot_widget.knot_artist)
@@ -180,7 +182,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.axes.draw_artist(self.cursor_label)
         if drawn_artists:
             try: self.blit(self.blit_box())
-            except Exception as e: logger.error(f"Blitting failed: {e}"); self.draw_idle()
+            except QT_ERRORS as e: logger.debug(f"Blitting failed ({e}): full redraw."); self.draw_idle()
 
 
     def on_motion(self, event):
@@ -258,7 +260,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                     # Ensure artists exist and match count
                     if not self.cursor_artists or len(new_x_positions) != len(self.cursor_artists):
                         # Force a full redraw if artists are missing/mismatched
-                        logger.warning("Cursor artists missing or mismatched on motion. Forcing full redraw.")
+                        logger.debug("Cursor artists missing or mismatched: full redraw.")
                         self.plot_widget.plot_spectrum(session_state=session_state) # Recreate artists
                     else:
                         # Update existing artists
@@ -302,6 +304,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         if self.selection_artist:
             try:
                 self.selection_artist.remove()
-            except Exception: pass # Might already be gone
+            except QT_ERRORS: pass # Might already be gone
             self.selection_artist = None
             self.draw_idle()

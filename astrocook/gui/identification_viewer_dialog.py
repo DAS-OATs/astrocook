@@ -182,10 +182,7 @@ class IdentificationViewerDialog(QDialog):
 
         region_map = None
         if spec.has_aux_column('abs_ids'):
-            try:
-                region_map = spec.get_column('abs_ids').value
-            except Exception as e:
-                logger.warning(f"Could not read 'abs_ids': {e}")
+            region_map = spec.get_column('abs_ids').value
 
         if not json_string:
             self.summary_label.setText("No identifications found in session metadata.")
@@ -210,8 +207,8 @@ class IdentificationViewerDialog(QDialog):
                 "the main plot.")
             self._fill_table(rows)
 
-        except Exception as e:
-            logger.error(f"Failed to parse identifications JSON: {e}")
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
+            logger.error(f"The identifications cannot be read: {e}")
             self.summary_label.setText("Error parsing metadata.")
             self._show_text(f"# Error:\n{e}\n\n# Raw Data:\n{json_string}")
 
@@ -266,6 +263,6 @@ class IdentificationViewerDialog(QDialog):
             return series_name
         try:
             return trans_parse(series_name)[0] # V1 series syntax
-        except Exception:
+        except (KeyError, IndexError):
             pass
         return None

@@ -26,7 +26,10 @@ class SessionMetadataV2:
     log_history_json : Any
         The serialized log object (either a V2 dict or V1 JSON format).
     log_type : str
-        Type of log stored: ``'v2'``, ``'v1_artifact'``, or ``'v1_legacy'``.
+        Type of log stored: ``'v2'`` (the only one read back), or
+        ``'unknown'`` when the session had no log. Older archives may carry
+        ``'v1_artifact'`` (a wrapper of V1 logs that was never created,
+        removed in phase 6) or ``'v1_legacy'``: their log is not restored.
         Defaults to ``'v1_legacy'``.
     component_uuids : list of str
         An ordered list of all component UUIDs in the session.
@@ -45,7 +48,7 @@ class SessionMetadataV2:
     # Improved Session History/Log
     # Stores the serialized log object (either a V2 dict or V1 JSON)
     log_history_json: Any = field(default_factory=dict) # Changed default
-    # Stores the type ('v2', 'v1_artifact', 'v1_legacy')
+    # Stores the type ('v2'; older archives: 'v1_artifact', 'v1_legacy')
     log_type: str = "v1_legacy" # Default to old V1 log
     
     # Stores a list of all component UUIDs in the order they appear
@@ -455,23 +458,3 @@ class HistoryLogV2:
         return log
 
 # --- V1 Compatibility Wrapper ---
-
-class V1LogArtifact:
-    """
-    A read-only wrapper for legacy V1 logs.
-
-    Used to display the history of a session loaded from a V1 archive
-    without converting it to the full V2 structure.
-
-    Parameters
-    ----------
-    v1_log_json : dict
-        The raw JSON dictionary from the V1 archive.
-    """
-    def __init__(self, v1_log_json: dict):
-        self.v1_json = v1_log_json
-    
-    @property
-    def is_v2_log(self) -> bool:
-        """Return False, indicating this is a legacy V1 log wrapper."""
-        return False

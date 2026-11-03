@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QMenu
 )
 from PySide6.QtGui import QFontDatabase, QKeySequence, QTextCursor
-from typing import TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Optional
 
 # --- V2 Imports ---
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
@@ -12,7 +12,7 @@ from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
-from astrocook.core.structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.structures import HistoryLogV2
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
@@ -29,7 +29,7 @@ ALL_SCHEMAS = {
 }
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact]
+LogManager = HistoryLogV2
 
 
 class LogScripterDialog(QDialog):
@@ -149,17 +149,11 @@ class LogScripterDialog(QDialog):
             self.scripter_edit.setPlainText("# No log available.")
             return
 
-        # --- *** START V2/V1 LOGIC *** ---
-        if hasattr(self.log_object, 'is_v2_log') and self.log_object.is_v2_log:
+        if isinstance(self.log_object, HistoryLogV2):
             self._populate_v2_script()
-        
-        elif hasattr(self.log_object, 'is_v2_log') and not self.log_object.is_v2_log:
-            self._populate_v1_script(self.log_object.v1_json)
-            
         else:
             self.scripter_edit.setPlainText(f"# Error: Unknown log object type: {type(self.log_object)}")
-            logger.error(f"LogScripterDialog: Unknown log object type: {type(self.log_object)}")
-        # --- *** END V2/V1 LOGIC *** ---
+            logger.error(f"The log of the session has an unknown type: {type(self.log_object).__name__}.")
         
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
 
@@ -188,31 +182,6 @@ class LogScripterDialog(QDialog):
 
         self.scripter_edit.setPlainText("\n".join(script_lines))
 
-    def _populate_v1_script(self, v1_json: dict):
-        """Populates the scripter from a V1 log JSON dictionary."""
-        try:
-            commands = v1_json.get('set_menu', [])
-        except Exception as e:
-            logger.error(f"Failed to parse V1 log JSON: {e}")
-            self.scripter_edit.setPlainText("# Error: Could not parse V1 log.")
-            return
-
-        if not commands:
-            self.scripter_edit.setPlainText("# V1 Log is empty.")
-            return
-            
-        script_lines = []
-        for cmd in commands:
-            if cmd.get('recipe') == '_refresh':
-                continue
-            rec = cmd.get('recipe', 'N/A')
-            params_dict = cmd.get('params', {})
-            params_str = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" 
-                                   for k, v in params_dict.items())
-            line = f"{rec}({params_str})"
-            script_lines.append(line)
-        
-        self.scripter_edit.setPlainText("\n".join(script_lines))
 
     def refresh(self):
         """
@@ -288,9 +257,9 @@ class LogScripterDialog(QDialog):
                 # To save as JSON, we'd have to parse the text.
                 with open(file_name, 'w') as f:
                     f.write(text_content)
-                logger.info(f"Log scripter content saved to {file_name}")
-            except Exception as e:
-                logger.error(f"Failed to save log file: {e}")
+                logger.info(f"Log saved to {file_name}.")
+            except (OSError, UnicodeError) as e:
+                logger.error(f"Could not save the log to {file_name}: {e}")
                 QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
 
     def _on_insert_recipe(self):
@@ -312,8 +281,8 @@ class LogScripterDialog(QDialog):
                         action = category_menu.addAction(recipe_name)
                         action.triggered.connect(lambda checked=False, c=category, n=recipe_name: self._insert_template(c, n))
 
-        except Exception as e:
-            logger.error(f"Failed to build recipe insert menu: {e}")
+        except (KeyError, TypeError) as e:
+            logger.error(f"Could not build the menu of the recipes: {e}")
             action = menu.addAction("Error building menu")
             action.setEnabled(False)
 
@@ -341,7 +310,7 @@ class LogScripterDialog(QDialog):
                     params.append(f"{p['name']}={default_val}")
                 params_str = ", ".join(params)
                 
-        except Exception:
+        except (KeyError, TypeError):
             pass 
             
         template = f"{recipe_name}({params_str})\n"

@@ -64,7 +64,7 @@ class RecipeWorker(QRunnable):
 
     def stop(self):
         """Thread-safe method to request a stop."""
-        logger.info(f"Stopping recipe '{self.recipe_name}'...")
+        logger.info(f"Stopping {self.recipe_name}.")
         self._is_stopped = True
         
         # Inject the stop flag into the session object so recipes can see it
@@ -74,7 +74,7 @@ class RecipeWorker(QRunnable):
     def run(self):
         """The main work. This runs on the background thread."""
         try:
-            logger.info(f"RecipeWorker: Running {self.category}.{self.recipe_name}")
+            logger.debug(f"Running {self.category}.{self.recipe_name}.")
 
             # Reset stop flag on session start
             self.session._stop_flag = False
@@ -96,7 +96,7 @@ class RecipeWorker(QRunnable):
             new_session_state = recipe_method(**self.params)
 
             if self._is_stopped or getattr(self.session, '_stop_flag', False):
-                logger.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
+                logger.warning(f"{self.recipe_name} was stopped.")
                 
                 # Use the returned session (likely the original one) or fallback
                 result_session = new_session_state if new_session_state else self.session
@@ -173,7 +173,7 @@ class ScriptWorker(QRunnable):
     def run(self):
         """The main work. This runs on the background thread."""
         try:
-            logger.info("ScriptWorker: Starting script run...")
+            logger.debug("Script worker started.")
 
             # 1. Create a new history to build into
             new_log = HistoryLogV2()

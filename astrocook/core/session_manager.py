@@ -1,14 +1,14 @@
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 # --- V2 Imports ---
 from astrocook.core.session import SessionV2
-from astrocook.core.structures import HistoryLogV2, V1LogArtifact
+from astrocook.core.structures import HistoryLogV2
 
 logger = logging.getLogger(__name__)
 
 # Define the type for the log manager
-LogManager = Union[HistoryLogV2, V1LogArtifact]
+LogManager = HistoryLogV2
 
 class SessionHistory:
     """Manages the list of states and current index for one session lineage."""
@@ -16,7 +16,7 @@ class SessionHistory:
     def __init__(self, initial_state: SessionV2, log_object: LogManager):
         if not isinstance(initial_state, SessionV2):
             raise TypeError("SessionHistory must be initialized with a SessionV2 object.")
-        if not isinstance(log_object, (HistoryLogV2, V1LogArtifact)):
+        if not isinstance(log_object, HistoryLogV2):
              raise TypeError(f"SessionHistory initialized with invalid log object: {type(log_object)}")
         
         self.states: List[SessionV2] = [initial_state]

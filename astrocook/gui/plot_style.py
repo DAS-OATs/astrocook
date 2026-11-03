@@ -15,6 +15,7 @@ import numpy as np
 
 from .theme import SELECTION
 
+from astrocook.gui.errors import DATA_ERRORS
 logger = logging.getLogger(__name__)
 
 #: The error of the flux (band, line or bars), in every plot
@@ -188,7 +189,7 @@ def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
     try:
         z = (x_plot_nm / xem_nm) - 1.0 # Simple calculation
         return z
-    except Exception as e:
+    except DATA_ERRORS as e:
         logger.debug(f"Inverse z conversion failed: {e}")
         return None
 
@@ -199,14 +200,14 @@ def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
         try:
             cmap_obj = matplotlib.colormaps.get_cmap(cmap)
             return [cmap_obj(i / n) for i in range(n)]
-        except Exception as e:
-            logger.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
+        except (ValueError, KeyError) as e:
+            logger.warning(f"There is no colour map '{cmap}' ({e}): {fallback_cmap} is used.")
     try:
         colors = matplotlib.rcParams['axes.prop_cycle'].by_key()['color']
 
         return [colors[i % len(colors)] for i in range(n)]
-    except Exception as e:
-        logger.warning(f"Could not get color cycle: {e}. Using fallback.")
+    except (KeyError, ValueError, TypeError) as e:
+        logger.debug(f"Colour cycle not read ({e}): {fallback_cmap} is used.")
         cmap = matplotlib.colormaps.get_cmap(fallback_cmap)
         return [cmap(i / n) for i in range(n)]
 
@@ -236,8 +237,8 @@ def decimate_y_min_max(y: np.ndarray, factor: int) -> np.ndarray:
         
         # 4. Interleave
         return np.stack((y_mins, y_maxs), axis=1).ravel()
-    except Exception as e:
-        logger.warning(f"y-axis decimation failed: {e}")
+    except DATA_ERRORS as e:
+        logger.debug(f"Flux not decimated ({e}): all the points are drawn.")
         return y # Return original on failure
         
 def decimate_x_for_min_max(x: np.ndarray, factor: int) -> np.ndarray:
@@ -262,6 +263,6 @@ def decimate_x_for_min_max(x: np.ndarray, factor: int) -> np.ndarray:
         
         # 4. Interleave
         return np.stack((x_starts, x_ends), axis=1).ravel()
-    except Exception as e:
-        logger.warning(f"x-axis decimation failed: {e}")
+    except DATA_ERRORS as e:
+        logger.debug(f"Wavelengths not decimated ({e}): all the points are drawn.")
         return x # Return original on failure
