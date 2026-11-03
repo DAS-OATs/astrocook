@@ -5,6 +5,7 @@ import json
 import logging
 import numpy as np
 import os
+import stat
 import tarfile
 import tempfile
 from typing import Dict, List, Optional, TYPE_CHECKING
@@ -335,7 +336,38 @@ def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
     t.meta.update(systs_data.meta)
     return t
 
-# ... (save_archive_v2 remains same) ...
+def _write_replacing(final_path: str, add_members) -> None:
+    """Write a gzipped tar archive to ``final_path`` without truncating it first.
+
+    The archive is written to a temporary file in the same folder and
+    replaces ``final_path`` only when complete (``os.replace``, atomic on
+    the same file system), so a failure while writing leaves the previous
+    file as it was and no temporary file behind (F94). A symbolic link is
+    followed, as ``open()`` would; the permissions are those of the file
+    replaced, or those of a new file (``0o666`` less the umask; the
+    temporary file is created ``0o600``).
+    """
+    real_path = os.path.realpath(final_path)
+    folder = os.path.dirname(real_path)
+    fd, temp_path = tempfile.mkstemp(dir=folder, prefix='.', suffix='.acs2.tmp')
+    try:
+        with os.fdopen(fd, 'wb') as f:
+            with tarfile.open(fileobj=f, mode='w:gz') as tar:
+                add_members(tar)
+        if os.path.exists(real_path):
+            mode = stat.S_IMODE(os.stat(real_path).st_mode)
+        else:
+            umask = os.umask(0)
+            os.umask(umask)
+            mode = 0o666 & ~umask
+        os.chmod(temp_path, mode)
+        os.replace(temp_path, real_path)
+    finally:
+        # After a failure (even KeyboardInterrupt), not after the replace
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
 def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional['SessionV2'], file_path: str):
     temp_dir = None
     try:
@@ -362,29 +394,31 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
         spec_orig_fname = None
         systs_orig_fname = None
         if session_v2_initial:
-            try:
-                spec_orig_fname = f"{base_name}_spec_orig.fits"
-                spec_orig_path_temp = os.path.join(temp_dir, spec_orig_fname)
-                spec_orig_table = _convert_spec_data_to_table(session_v2_initial.spec._data)
-                spec_orig_table.write(spec_orig_path_temp, format='fits', overwrite=True)
+            # A failure here stops the save, before the target is touched
+            # (F94): it used to be logged and the save went on, then failed
+            # on the missing file after the target had been truncated
+            spec_orig_fname = f"{base_name}_spec_orig.fits"
+            spec_orig_path_temp = os.path.join(temp_dir, spec_orig_fname)
+            spec_orig_table = _convert_spec_data_to_table(session_v2_initial.spec._data)
+            spec_orig_table.write(spec_orig_path_temp, format='fits', overwrite=True)
 
-                if session_v2_initial.systs and session_v2_initial.systs.components:
-                    systs_orig_fname = f"{base_name}_systs_orig.fits"
-                    systs_orig_path_temp = os.path.join(temp_dir, systs_orig_fname)
-                    systs_orig_table = _convert_syst_list_to_table(session_v2_initial.systs._data)
-                    systs_orig_table.write(systs_orig_path_temp, format='fits', overwrite=True)
-            except Exception as e:
-                logging.error(f"Failed to save original data: {e}")
-            
+            if session_v2_initial.systs and session_v2_initial.systs.components:
+                systs_orig_fname = f"{base_name}_systs_orig.fits"
+                systs_orig_path_temp = os.path.join(temp_dir, systs_orig_fname)
+                systs_orig_table = _convert_syst_list_to_table(session_v2_initial.systs._data)
+                systs_orig_table.write(systs_orig_path_temp, format='fits', overwrite=True)
+
         final_path = file_path if file_path.lower().endswith(('.acs2', '.tar.gz')) else file_path + '.acs2'
-        
-        with tarfile.open(final_path, 'w:gz') as tar:
+
+        def add_members(tar):
             tar.add(spec_path_temp, arcname=spec_fname)
             if systs_fname: tar.add(systs_path_temp, arcname=systs_fname)
             tar.add(meta_path_temp, arcname=meta_fname)
             if spec_orig_fname: tar.add(spec_orig_path_temp, arcname=spec_orig_fname)
             if systs_orig_fname: tar.add(systs_orig_path_temp, arcname=systs_orig_fname)
-            
+
+        _write_replacing(final_path, add_members)
+
         logging.info(f"V2 archive created successfully at: {final_path}")
 
     except Exception as e:

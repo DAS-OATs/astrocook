@@ -54,7 +54,7 @@ BROAD_EXCEPTS = {
     "astrocook/gui/qt_workers.py": 3,
     "astrocook/gui/recipe_dialog.py": 5,
     "astrocook/gui/script_dialog.py": 1,
-    "astrocook/io/adapter.py": 3,
+    "astrocook/io/adapter.py": 2,
     "astrocook/io/loaders.py": 14,
     "astrocook/io/v1_archive.py": 1,
     "astrocook/mcp_server/errors.py": 1,

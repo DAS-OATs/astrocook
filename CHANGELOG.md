@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Fixed
+- Saving a session no longer risks losing the file it replaces (F94). The `.acs2` archive was written directly over the existing file, which was emptied first: if the save failed while writing (e.g. a full disk, or an error in the original data of the session), the previous archive was left partial or empty. The archive is now written to a temporary file in the same folder and replaces the old one only when complete; a failed save leaves the old file as it was, and the error is shown as before. An error in the original data now stops the save at once: it was logged and the save went on, to fail later with a confusing "No such file or directory".
+
 ## [2.3.0] - 2026-11-02
 
 Phases 5 and 5-bis of the consolidation: a faster GUI, split into smaller modules, and a review of its look and ergonomics (dark mode, a status bar, a floating toolbar, colour-blind safe plot colours, recent files, files opened in the background, clearer texts and windows). **The results of fitting, identification and the automatic pipelines do not change**: the results on the benchmark of synthetic spectra are those of 2.2.0 (documentation page *Accuracy*). Three fixes change numbers elsewhere: *Flux > Flux Calibrate* with two or more magnitudes now reaches them (it missed them by ~0.1 mag, F70); the flux methods scale, calibrate and smooth the same columns (the power-law continuum `cont_pl` is now scaled and smoothed with the flux, the telluric transmission is no longer calibrated, F69); linked parameters get an uncertainty propagated through the link instead of 0 (#630). Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).

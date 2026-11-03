@@ -290,7 +290,7 @@ parameters (#630).
 Phase 6 in progress (error handling; `ROADMAP.md`, phase 6): plan of the
 phase, inventory of the 189 broad `except` clauses (kept up to date by
 `tests/test_broad_excepts.py`) and rule of the log messages in PR 1;
-found F94 (data loss when a save fails) and F95. Work in
+found F94 (data loss when a save fails, fixed in PR 2) and F95. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
