@@ -2063,6 +2063,10 @@ phases 6-bis and 7 agreed): phase 4 (validation first) →
 2.2.0 → phase 5 → phase 6 → phase 6-bis → full MCP server → phase 7.
 Revised at the start of phase 5 (October 2026): phase 5 → phase 5-bis →
 2.3.0 → phase 6 → phase 6-bis → full MCP server → phase 7.
+Revised at the end of phase 6 (November 2026, Guido): phase 6 → 2.4.0 →
+phase 6-bis → full MCP server → phase 7 (the fix of a data loss, F94, and
+the changed behaviour on failures, published before 6-bis changes the
+interface of the recipes).
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
 PyPI go into the first release after INAF answers: 2.1.1 if the answer
@@ -2112,6 +2116,17 @@ publishes the docs of the tag at the root of the website.
   A stable point before phases 6 and 6-bis, which change the interface
   of the recipes. Published on GitHub with the macOS app; not on PyPI
   (INAF has not answered yet, #549).
+- **2.4.0, after phase 6 (November 2026):** error handling: the broad
+  except clauses 189 → 47, all boundaries; the fallbacks that went on with
+  a result that looked valid stop with their reason (F95); one logger per
+  module and one rule for the messages (#566); the hook for unexpected
+  errors in the GUI; F94 (data loss when a save failed), F96-F100. The
+  results of fitting, identification and the pipelines unchanged (the
+  *Accuracy* page as for 2.2.0); the release notes state the changed
+  behaviour on failures. A minor version, not 2.3.1, because the
+  behaviour changes (Guido agreed). A stable point before phase 6-bis.
+  Published on GitHub with the macOS app; not on PyPI (INAF has not
+  answered yet, #549).
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*

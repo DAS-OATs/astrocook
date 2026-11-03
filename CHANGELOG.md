@@ -1,4 +1,6 @@
-## [Unreleased]
+## [2.4.0] - 2026-11-03
+
+Phase 6 of the consolidation: error handling. Astrocook now says when something goes wrong, instead of going on with a result that looked valid: a recipe that cannot do what was asked stops with its reason (in the status bar, a dialog and the log), a bug in the GUI is shown in a dialog with its details, and the messages of the log follow one rule. **The results of fitting, identification and the automatic pipelines do not change** when nothing goes wrong: the results on the benchmark of synthetic spectra are those of 2.2.0 and 2.3.0 (documentation page *Accuracy*). What changes is the behaviour on failures, listed under "Fixed": some operations that returned a result (often the input unchanged) after an error now fail with the reason, for example *Auto-fit Ly-alpha Forest* without the emission redshift, or a V1 archive whose systems cannot be read. One fix prevents a data loss: a failed save no longer replaces the archive with a partial one (F94). Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).
 
 ### Added
 - GUI: an error that nothing handled (a bug) is shown in a dialog, with the message and, under *Details*, the traceback to attach to a report; it was written only to the terminal, and the action stopped without a sign. Astrocook goes on after it.
