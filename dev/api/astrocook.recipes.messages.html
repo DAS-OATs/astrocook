@@ -568,6 +568,13 @@ with the automatic continuum, because the spectrum has none.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_no_resolution">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_no_resolution</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">spectrum</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">resolution:</span> <span class="pre">the</span> <span class="pre">profiles</span> <span class="pre">are</span> <span class="pre">fitted</span> <span class="pre">without</span> <span class="pre">the</span> <span class="pre">instrumental</span> <span class="pre">broadening,</span> <span class="pre">so</span> <span class="pre">b</span> <span class="pre">includes</span> <span class="pre">it.</span> <span class="pre">Set</span> <span class="pre">the</span> <span class="pre">resolution</span> <span class="pre">with</span> <span class="pre">Edit</span> <span class="pre">&gt;</span> <span class="pre">Set</span> <span class="pre">Properties.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_no_resolution" title="Link to this definition">#</a></dt>
+<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">WARNING</span></code>) when a fit runs on a spectrum without a resolution:
+the profiles are not convolved with the instrumental profile.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.messages.msg_session_not_found">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_session_not_found</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;There</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">open</span> <span class="pre">session</span> <span class="pre">named</span> <span class="pre">'{name}'.&quot;</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_session_not_found" title="Link to this definition">#</a></dt>
 <dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">ERROR</span></code>) when a recipe names a session that is not open; format
@@ -632,6 +639,7 @@ redshift and it is not set.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_param_fail"><code class="docutils literal notranslate"><span class="pre">msg_param_fail</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_continuum_estimated"><code class="docutils literal notranslate"><span class="pre">msg_continuum_estimated</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_no_resolution"><code class="docutils literal notranslate"><span class="pre">msg_no_resolution</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_session_not_found"><code class="docutils literal notranslate"><span class="pre">msg_session_not_found</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_z_em_unset"><code class="docutils literal notranslate"><span class="pre">msg_z_em_unset</span></code></a></li>
 </ul>

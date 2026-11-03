@@ -481,8 +481,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LINK_ERRORS</span><span class="p">,</span> <span class="n">LINK_FUNCTIONS</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">,</span> <span class="n">msg_param_fail</span><span class="p">,</span>
-                                       <span class="n">msg_session_not_found</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">,</span> <span class="n">msg_no_resolution</span><span class="p">,</span>
+                                       <span class="n">msg_param_fail</span><span class="p">,</span> <span class="n">msg_session_not_found</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
@@ -845,6 +845,32 @@
 <span class="c1">#: The errors of a fit that does not converge or cannot be evaluated</span>
 <span class="c1">#: (ValueError covers np.linalg.LinAlgError and a start outside the bounds)</span>
 <span class="n">FIT_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_with_continuum</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The session with a continuum: estimated first with the automatic</span>
+<span class="sd">    continuum when there is none (and said so), or 0 if that fails.</span>
+
+<span class="sd">    Before phase 6 the 0 of a failed estimate went on as the session, and</span>
+<span class="sd">    the recipe failed with "'int' object has no attribute 'systs'".</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
+    <span class="n">estimated</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">estimated</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The continuum could not be estimated: the recipe is not run."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">estimated</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_warn_if_unconvolved</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""WARNING when a fit runs without a resolution (it was at DEBUG only,</span>
+<span class="sd">    in the fitter): the profiles are not convolved, so b includes the</span>
+<span class="sd">    instrumental broadening."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolution_summary</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">resolution_summary</span><span class="p">(</span><span class="n">spec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg_no_resolution</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_cleaning_failed</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
@@ -1397,6 +1423,7 @@
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Searching </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ion_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> ions at the redshifts of the systems."</span><span class="p">)</span>
+        <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
         
         <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         <span class="c1"># Optimization: Group components by Z</span>
@@ -1583,11 +1610,10 @@
         <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
 
         <span class="c1"># 1. Trigger Continuum if needed</span>
-        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-            <span class="n">cont_sess</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
-            <span class="n">spec</span> <span class="o">=</span> <span class="n">cont_sess</span><span class="o">.</span><span class="n">spec</span> 
+        <span class="n">cont_sess</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cont_sess</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">cont_sess</span><span class="o">.</span><span class="n">spec</span>
         
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components from the identification."</span><span class="p">)</span>
 
@@ -1936,11 +1962,10 @@
             <span class="k">def</span><span class="w"> </span><span class="nf">check_stop</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">()</span>
 
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
-                    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-                    <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
-                    <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+                <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">current_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+                <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
                 <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
                                                            <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
@@ -2211,11 +2236,10 @@
 
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-            <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-                <span class="n">cont_rec</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
-                <span class="n">current_session</span> <span class="o">=</span> <span class="n">cont_rec</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+            <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
             <span class="n">new_systs</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">optimize_hierarchy</span><span class="p">(</span>
                 <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span>
@@ -2287,6 +2311,7 @@
             
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>
             <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
+            <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
                                                        <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
@@ -2398,10 +2423,11 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"There are no components to fit."</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
 
-            <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
-            <span class="k">if</span> <span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-                <span class="n">current_session</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
+            <span class="c1"># (It estimated the continuum without saying so, phase 6)</span>
+            <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_session</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
             <span class="c1"># --- START NEW CONSOLIDATED LOGIC FOR BETA.4 ---</span>
             <span class="c1"># If selected_uuids is provided (e.g., from 'Refit Selected' in UI),</span>
