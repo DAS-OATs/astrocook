@@ -483,6 +483,39 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="c1">#: Functions available to the expressions of the links, with ``p`` (the</span>
+<span class="c1">#: components by UUID, e.g. ``p['uuid'].z``)</span>
+<span class="n">LINK_FUNCTIONS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'np'</span><span class="p">:</span> <span class="n">np</span><span class="p">,</span> <span class="s1">'log'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">,</span> <span class="s1">'ln'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">}</span>
+
+<span class="c1">#: Errors of an expression that cannot be evaluated: a component that does</span>
+<span class="c1">#: not exist (KeyError), an unknown name (NameError), a parameter that does</span>
+<span class="c1">#: not exist (AttributeError), a wrong operation (TypeError, ValueError,</span>
+<span class="c1">#: ArithmeticError)</span>
+<span class="n">LINK_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span>
+               <span class="ne">ArithmeticError</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ComponentProxy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``p['uuid']`` in a link: the parameters of a component in ``p_full``."""</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'_arr'</span><span class="p">,</span> <span class="s1">'_idx'</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="o">=</span> <span class="n">arr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="n">idx</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logN</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">btur</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="VoigtModelConstraintV2">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_model.html#astrocook.fitting.voigt_model.VoigtModelConstraintV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VoigtModelConstraintV2</span><span class="p">:</span>
@@ -732,17 +765,27 @@
             
             <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">p_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">constraint</span><span class="o">.</span><span class="n">is_free</span> <span class="ow">and</span> <span class="n">constraint</span><span class="o">.</span><span class="n">expression</span><span class="p">:</span>
-                    <span class="c1"># Determine target index in p_full</span>
+                    <span class="c1"># A link that does not compile or cannot be evaluated</span>
+                    <span class="c1"># (e.g. in an old archive: update_constraint refuses</span>
+                    <span class="c1"># them) is left out, and the parameter stays frozen at</span>
+                    <span class="c1"># its value; at evaluation the compiled links do not</span>
+                    <span class="c1"># fail silently any more (phase 6)</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">param_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
-                        <span class="n">target_idx</span> <span class="o">=</span> <span class="n">comp_idx</span> <span class="o">+</span> <span class="n">param_offset</span>
-                        
-                        <span class="c1"># Compile expression</span>
-                        <span class="c1"># We use 'p' as the dictionary of components, e.g. p['uuid'].b</span>
+                        <span class="n">target_idx</span> <span class="o">=</span> <span class="n">comp_idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
                         <span class="n">code</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">constraint</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"&lt;link </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&gt;"</span><span class="p">,</span> <span class="s1">'eval'</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_links</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">target_idx</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
-                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to compile link for </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link_globals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_initial_p_vector</span><span class="p">)))</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">SyntaxError</span><span class="p">,)</span> <span class="o">+</span> <span class="n">LINK_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The link of </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> of component </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> "</span>
+                                     <span class="sa">f</span><span class="s2">"('</span><span class="si">{</span><span class="n">constraint</span><span class="o">.</span><span class="n">expression</span><span class="si">}</span><span class="s2">') cannot be evaluated "</span>
+                                     <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): the parameter is kept "</span>
+                                     <span class="s2">"frozen at its value."</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_links</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">target_idx</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_link_globals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p_full</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The names of the expressions of the links, for ``p_full``."""</span>
+        <span class="n">p_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">u</span><span class="p">:</span> <span class="n">_ComponentProxy</span><span class="p">(</span><span class="n">p_full</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uuid_to_idx</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'p'</span><span class="p">:</span> <span class="n">p_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">LINK_FUNCTIONS</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_convert_v1_to_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v1_state</span><span class="p">,</span> <span class="n">v1_id_map</span><span class="p">,</span> <span class="n">effective_is_free</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="n">expr</span> <span class="o">=</span> <span class="n">v1_state</span><span class="p">[</span><span class="s1">'expression'</span><span class="p">]</span>
@@ -798,44 +841,15 @@
         <span class="n">p_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_p_vector</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">p_full</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]]</span> <span class="o">=</span> <span class="n">p_free_fitted</span>
         
-        <span class="c1"># 2. Evaluate Links</span>
+        <span class="c1"># 2. Evaluate Links (the links are checked when compiled: an error</span>
+        <span class="c1">#    here reaches the fit, instead of keeping the old value</span>
+        <span class="c1">#    silently, phase 6)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_links</span><span class="p">:</span>
-            <span class="c1"># Create a lightweight context for 'p["uuid"].param' access</span>
-            <span class="c1"># We map p['uuid'] to a proxy object that reads from p_full</span>
-            
-            <span class="k">class</span><span class="w"> </span><span class="nc">ComponentProxy</span><span class="p">:</span>
-                <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'_arr'</span><span class="p">,</span> <span class="s1">'_idx'</span><span class="p">)</span>
-                <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="o">=</span> <span class="n">arr</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="n">idx</span>
-                <span class="nd">@property</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="p">]</span>
-                <span class="nd">@property</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">logN</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
-                <span class="nd">@property</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
-                <span class="nd">@property</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">btur</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_idx</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span>
-
-            <span class="c1"># Create the 'p' dictionary</span>
-            <span class="c1"># Note: uuid_to_idx is computed in _refresh_state</span>
-            <span class="n">p_dict</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">u</span><span class="p">:</span> <span class="n">ComponentProxy</span><span class="p">(</span><span class="n">p_full</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> 
-                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_uuid_to_idx</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="p">}</span>
-            
-            <span class="c1"># Common math functions for expressions</span>
-            <span class="n">eval_globals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'p'</span><span class="p">:</span> <span class="n">p_dict</span><span class="p">,</span> <span class="s1">'np'</span><span class="p">:</span> <span class="n">np</span><span class="p">,</span> <span class="s1">'log'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">,</span> <span class="s1">'ln'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">}</span>
-            
-            <span class="c1"># Execute compiled expressions</span>
             <span class="c1"># Note: If chains exist (A-&gt;B-&gt;C), we might need multiple passes or topological sort.</span>
             <span class="c1"># For now, we assume standard depth-1 links or ordered calculation.</span>
+            <span class="n">eval_globals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_link_globals</span><span class="p">(</span><span class="n">p_full</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compiled_links</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">eval_globals</span><span class="p">)</span>
-                    <span class="n">p_full</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="k">pass</span> <span class="c1"># Keep initial value if evaluation fails</span>
+                <span class="n">p_full</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">eval_globals</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">p_full</span></div>
 

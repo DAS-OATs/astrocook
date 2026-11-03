@@ -962,25 +962,21 @@
             <span class="k">return</span> <span class="kc">None</span>
             
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Renormalizing the model to the new continuum."</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Get old normalized profile</span>
-            <span class="n">normalized_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
-                <span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-                <span class="n">old_cont_vals</span><span class="p">,</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-                <span class="n">where</span><span class="o">=</span><span class="n">old_cont_vals</span> <span class="o">!=</span> <span class="mi">0</span>
-            <span class="p">)</span>
-            <span class="c1"># 2. Recalculate model against *new* continuum</span>
-            <span class="n">new_model_values</span> <span class="o">=</span> <span class="n">new_cont_vals</span> <span class="o">*</span> <span class="n">normalized_model</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model renormalized to the new continuum."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-                <span class="n">values</span><span class="o">=</span><span class="n">new_model_values</span><span class="p">,</span>
-                <span class="n">unit</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Use old model's unit</span>
-                <span class="n">description</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">description</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to renormalize model column: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># 1. Get old normalized profile</span>
+        <span class="n">normalized_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
+            <span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">old_cont_vals</span><span class="p">,</span>
+            <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+            <span class="n">where</span><span class="o">=</span><span class="n">old_cont_vals</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="c1"># 2. Recalculate model against *new* continuum</span>
+        <span class="n">new_model_values</span> <span class="o">=</span> <span class="n">new_cont_vals</span> <span class="o">*</span> <span class="n">normalized_model</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model renormalized to the new continuum."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">new_model_values</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Use old model's unit</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">description</span>
+        <span class="p">)</span>
     
 <div class="viewcode-block" id="SpectrumV2.sanitize_legacy_tellurics">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics">[docs]</a>
