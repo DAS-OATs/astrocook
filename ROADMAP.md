@@ -1425,6 +1425,309 @@ Then release 2.3.0 (see "Releases"; released in November 2026).
 Broad `except` clauses, case by case: specific exception, explicit log, or
 an item to discuss.
 
+**Plan of the phase** (agreed with Guido, November 2026):
+- *Scope.* The broad `except` clauses (inventory below); #566 (loggers
+  per module, the messages shared by several recipes in
+  `recipes/messages.py`); the log messages rationalized, levels and
+  texts, by the rule below (Guido's question at the start of the phase:
+  done here and not in 6-bis, because the move to loggers per module
+  touches every logging call anyway, and 6-bis then finds the warnings
+  that matter for a result already identified); the cosmetic warnings of
+  the libraries filtered (the `VerifyWarning` of astropy on the
+  `resol_fwhm` keyword at every save, section 4.2). Left to phase 6-bis:
+  exceptions instead of `return 0` in the recipes, the structured
+  warnings with a code in the result of a recipe, the log of the values
+  actually used (#573).
+- *Order*, one PR at a time: (1) the inventory, a test that keeps it
+  up to date, the rule of the messages (no change of behaviour); (2) the
+  loggers per module, with characterization tests of what reaches the
+  log window of the GUI and the MCP server first; then one PR per
+  package, each with its `except` clauses and its messages: (3) core,
+  fitting, io; (4) recipes; (5) GUI, with a hook that shows an
+  unexpected error to the user; (6) the warnings of the libraries. The
+  rows marked D are reviewed with Guido before their PR.
+- *Numbers.* The phase does not change the results: the snapshots and
+  the fast suite cover each PR; the slow tests run in the CI job after
+  the merge. A fallback that changes a result (rows D) is a finding,
+  fixed only with Guido's agreement and with a regression test.
+
+**Inventory of the broad except clauses** (PR 1, master after release
+2.3.0, `a5b506a`): 189 clauses in `astrocook/` that catch every
+exception (12 bare `except:`, 177 `except Exception`, none with
+`BaseException`), found by walking the syntax tree.
+`tests/test_broad_excepts.py` holds their number per file: a new broad
+clause fails the test, and a PR that removes or narrows one lowers the
+count there and marks its row here as done. Ruff's `BLE001` was
+considered and not used: it does not report a clause that re-raises or
+logs with `exc_info=True`, so it misses 59 of the 189 (the entry points
+of the recipes among them).
+
+Action proposed for each clause:
+- **N** – narrow: catch only the exceptions the code expects; the
+  behaviour does not change.
+- **B** – boundary: a recipe entry point, a worker thread, a Qt slot, a
+  tool of the MCP server, where an unexpected error must not stop the
+  application: stays broad, logged once with the traceback
+  (`exc_info=True`) and, in the GUI, shown to the user; the `return 0` of
+  the recipes becomes an exception in phase 6-bis.
+- **C** – cleanup: removing a matplotlib artist, disconnecting a callback,
+  closing a dialog, where a failure is expected and harmless: narrowed and
+  kept silent, with a comment.
+- **R** – remove: the clause adds nothing (`raise e`, or a log line
+  before a re-raise, so the same error is logged twice, the second time
+  by the caller); the context goes into the exception message.
+- **D** – discuss: after a failure the code goes on with a result that
+  looks valid (unchanged data, an empty list, a 0, a step skipped) and
+  says so only in the log, or not at all (F95).
+
+| Package | N | B | C | R | D | Total |
+|---|---|---|---|---|---|---|
+| `core` | 7 | 2 | – | 8 | 8 | 25 |
+| `fitting` | 4 | – | – | – | 2 | 6 |
+| `io` | 4 | – | – | 12 | 2 | 18 |
+| `recipes` | 7 | 28 | – | 1 | 10 | 46 |
+| `gui` | 53 | 17 | 17 | – | 2 | 89 |
+| `mcp_server` | – | 1 | – | – | – | 1 |
+| launcher (`_run_astrocook.py`) | 3 | 1 | – | – | – | 4 |
+| **Total** | **78** | **49** | **17** | **21** | **24** | **189** |
+
+The lines are those of `a5b506a`; the function identifies the clause
+when the lines move.
+
+<details>
+<summary>The 189 clauses</summary>
+
+| File | Line | Function | Catches | Action | What it does |
+|---|---|---|---|---|---|
+| `_run_astrocook.py` | 103 | `main` | `Exception` | N | Dock icon (macOS, `AppKit`) |
+| `_run_astrocook.py` | 106 | `main` | `Exception` | N | window icon |
+| `_run_astrocook.py` | 153 | `main` | `Exception` | N | splash screen |
+| `_run_astrocook.py` | 207 | `main` | `Exception` | B | files given on the command line |
+| `core/session.py` | 74 | `load_session_from_file` | `Exception` | N | format detection, falls back to `generic_spectrum` |
+| `core/session.py` | 82 | `load_session_from_file` | `Exception` | B | V2 loader, returns 0 (6-bis: exception) |
+| `core/session.py` | 172 | `load_session_from_file` | `Exception` | B | archive or spectrum loading, returns 0 (6-bis: exception) |
+| `core/session.py` | 296 | `SessionV2.open_new` | `Exception` | R | wraps `load_session_from_file`, which already catches and logs |
+| `core/spectrum.py` | 483 | `SpectrumV2._renormalize_model` | `Exception` | D | model left against the old continuum, with a WARNING |
+| `core/spectrum_combine.py` | 205 | `CombineMixin.rebin` | `Exception` | N | aux column dropped by `rebin`, with a WARNING |
+| `core/spectrum_continuum.py` | 312 | `ContinuumMixin.update_continuum_from_knots` | `Exception` | D | continuum from knots: returns the spectrum unchanged, the edit is lost (ERROR only) |
+| `core/spectrum_expressions.py` | 155 | `prepare_expression_context.replacer` | `Exception` | N | re-raised as `ValueError`: add `from e` |
+| `core/spectrum_expressions.py` | 194 | `ExpressionsMixin.apply_expression` | `Exception` | R | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_expressions.py` | 283 | `ExpressionsMixin.mask_expression` | `Exception` | R | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_expressions.py` | 420 | `ExpressionsMixin.split` | `Exception` | R | log and re-raise: the expression goes in the exception message |
+| `core/spectrum_flux.py` | 200 | `FluxMixin.smooth` | `Exception` | N | aux column left unsmoothed, with a WARNING |
+| `core/spectrum_flux.py` | 321 | `FluxMixin.calibrate` | `Exception` | R | log and re-raise |
+| `core/spectrum_lines.py` | 162 | `LinesMixin.identify_lines` | `Exception` | R | log and re-raise; the recipe logs the traceback again |
+| `core/spectrum_lines.py` | 177 | `LinesMixin.identify_lines` | `Exception` | R | log and re-raise; the recipe logs the traceback again |
+| `core/spectrum_operations.py` | 150 | `smooth_spectrum` | `Exception` | D | `smooth_spectrum` returns the unsmoothed array (ERROR only) |
+| `core/spectrum_operations.py` | 795 | `fit_powerlaw_to_regions` | `Exception` | R | log and re-raise |
+| `core/spectrum_operations.py` | 851 | `merge_regions_by_velocity` | `Exception` | D | regions returned unmerged (ERROR only) |
+| `core/spectrum_operations.py` | 1022 | `_find_kinematic_doublet_candidates` | `Exception` | D | no doublet candidates for the multiplet (ERROR only) |
+| `core/spectrum_operations.py` | 1140 | `rate_doublet_candidate` | `Exception` | D | candidate rated 0 (WARNING only) |
+| `core/system_list.py` | 249 | `SystemListV2._ensure_clean_data` | bare | N | `literal_eval` of a key (bare `except`) |
+| `core/system_list.py` | 298 | `SystemListV2._initialize_constraint_model` | `Exception` | D | empty fallback constraint model: links and frozen parameters lost (ERROR only) |
+| `core/system_list.py` | 306 | `SystemListV2._initialize_constraint_model` | `Exception` | D | empty fallback constraint model: links and frozen parameters lost (ERROR only) |
+| `core/system_list.py` | 431 | `SystemListV2.fitting_context` | `Exception` | N | restore of the active components after a fit |
+| `core/system_list.py` | 436 | `SystemListV2.fitting_context` | `Exception` | N | restore of the active components after a fit |
+| `fitting/bayesian_fitter.py` | 108 | `BayesianVoigtFitter.ln_likelihood` | `Exception` | N | likelihood −inf for a model that cannot be evaluated: catch the numerical errors only |
+| `fitting/voigt_fitter.py` | 414 | `VoigtFitterV2.evaluate_uncertainties` | `Exception` | N | uncertainties set to NaN when the covariance fails |
+| `fitting/voigt_fitter.py` | 940 | `VoigtFitterV2.fit` | `Exception` | N | uncertainties set to NaN when the covariance fails |
+| `fitting/voigt_model.py` | 160 | `VoigtModelConstraintV2._sanitize_data_structures` | bare | N | parsing of a key (bare `except`) |
+| `fitting/voigt_model.py` | 260 | `VoigtModelConstraintV2._compile_links` | `Exception` | D | a link that does not compile is skipped (ERROR only) |
+| `fitting/voigt_model.py` | 351 | `VoigtModelConstraintV2.map_p_free_to_full` | `Exception` | D | a link that fails to evaluate keeps the old value, silently, at every model evaluation |
+| `gui/about_dialog.py` | 41 | `AboutDialog.__init__` | `Exception` | N | logo or icon |
+| `gui/continuum_controls.py` | 97 | `ContinuumControlsMixin._toggle_continuum_editor` | bare | C | removal of a matplotlib artist |
+| `gui/continuum_controls.py` | 201 | `ContinuumControlsMixin._toggle_continuum_editor` | `Exception` | B | saving the edited continuum: ERROR in the log only, the user should see it |
+| `gui/continuum_editor.py` | 210 | `ContinuumEditorMixin._remove_editor_artists` | bare | C | removal of a matplotlib artist |
+| `gui/continuum_editor.py` | 215 | `ContinuumEditorMixin._remove_editor_artists` | bare | C | removal of a matplotlib artist |
+| `gui/continuum_editor.py` | 344 | `ContinuumEditorMixin.refresh_edit_layer` | `Exception` | N | refresh of the editor layer (DEBUG) |
+| `gui/data_inspector.py` | 223 | `DataInspectorDialog._populate_range` | bare | N | value of a column (bare `except`) |
+| `gui/identification_viewer_dialog.py` | 185 | `IdentificationViewerDialog._populate_results` | `Exception` | N | `abs_ids` column |
+| `gui/identification_viewer_dialog.py` | 211 | `IdentificationViewerDialog._populate_results` | `Exception` | N | JSON of the identifications, shown in the dialog |
+| `gui/identification_viewer_dialog.py` | 267 | `IdentificationViewerDialog._get_ref_transition` | `Exception` | N | `trans_parse` of a series |
+| `gui/inspector_table.py` | 217 | `SystemTableModel.data` | bare | N | cell value as a number (bare `except`, hot path) |
+| `gui/log_scripter_dialog.py` | 193 | `LogScripterDialog._populate_v1_script` | `Exception` | N | V1 log JSON |
+| `gui/log_scripter_dialog.py` | 290 | `LogScripterDialog._on_save_log` | `Exception` | N | saving the log: `OSError`, shown in a dialog |
+| `gui/log_scripter_dialog.py` | 313 | `LogScripterDialog._on_insert_recipe` | `Exception` | N | recipe menu and template of the log scripter |
+| `gui/log_scripter_dialog.py` | 342 | `LogScripterDialog._insert_template` | `Exception` | N | recipe menu and template of the log scripter |
+| `gui/main_panels.py` | 189 | `MainPanelsMixin._setup_empty_view` | `Exception` | N | logo or icon |
+| `gui/main_panels.py` | 754 | `MainPanelsMixin._update_limit_boxes_from_plot` | `Exception` | N | limit boxes from the plot |
+| `gui/main_panels.py` | 784 | `MainPanelsMixin._force_restack_floating_widgets` | `Exception` | N | re-stacking of the floating widgets |
+| `gui/main_recipes.py` | 160 | `MainRecipesMixin._launch_recipe_dialog` | `Exception` | C | reset of the plot toolbar |
+| `gui/main_recipes.py` | 273 | `MainRecipesMixin._on_recipe_requested` | `Exception` | B | export from the dialog: ERROR in the log only |
+| `gui/main_recipes.py` | 497 | `MainRecipesMixin._process_recipe_result` | `Exception` | D | the entry of a recipe in the session log is lost silently |
+| `gui/main_recipes.py` | 542 | `MainRecipesMixin._process_recipe_result` | `Exception` | D | the entry of a recipe in the session log is lost silently |
+| `gui/main_recipes.py` | 627 | `MainRecipesMixin._process_recipe_result` | `Exception` | B | processing of a recipe result, shown in a dialog |
+| `gui/main_recipes.py` | 711 | `MainRecipesMixin._cleanup_progress_ui` | `Exception` | C | closing of the progress dialog and of its log bridge |
+| `gui/main_recipes.py` | 810 | `MainRecipesMixin.launch_split_from_current_view` | `Exception` | N | plot limits for Split |
+| `gui/main_recipes.py` | 844 | `_safely_close_progress_dialog._destroy` | bare | C | closing of the progress dialog and of its log bridge |
+| `gui/main_recipes.py` | 853 | `_safely_close_progress_dialog._destroy` | `Exception` | C | closing of the progress dialog and of its log bridge |
+| `gui/main_scripts.py` | 57 | `MainScriptsMixin._launch_log_scripter` | `Exception` | B | opening of the log scripter |
+| `gui/main_scripts.py` | 71 | `MainScriptsMixin._on_log_scripter_closed` | `Exception` | C | re-raising of the side buttons |
+| `gui/main_scripts.py` | 98 | `MainScriptsMixin.run_script` | `Exception` | C | reset of the plot toolbar |
+| `gui/main_sessions.py` | 99 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N | copy of the session log for a branch: aborts with a dialog |
+| `gui/main_sessions.py` | 201 | `MainSessionsMixin.update_gui_session_state` | `Exception` | N | refresh of the log scripter |
+| `gui/main_sessions.py` | 314 | `MainSessionsMixin._update_view_for_session` | `Exception` | N | aux column combobox |
+| `gui/main_sessions.py` | 364 | `MainSessionsMixin._update_view_for_session` | `Exception` | N | selection in the session list |
+| `gui/main_sessions.py` | 400 | `MainSessionsMixin._on_session_switched` | `Exception` | B | Qt slot (session switched, renamed) |
+| `gui/main_sessions.py` | 823 | `MainSessionsMixin._on_session_info` | bare | N | S/N and chi2 of the info panel |
+| `gui/main_sessions.py` | 898 | `MainSessionsMixin._on_session_info` | `Exception` | N | S/N and chi2 of the info panel |
+| `gui/main_sessions.py` | 1021 | `MainSessionsMixin._on_session_name_changed` | `Exception` | B | Qt slot (session switched, renamed) |
+| `gui/main_sessions.py` | 1069 | `MainSessionsMixin._save_session` | `Exception` | B | saving or opening a session, shown in a dialog |
+| `gui/main_sessions.py` | 1186 | `MainSessionsMixin.open_session_from_path` | `Exception` | B | saving or opening a session, shown in a dialog |
+| `gui/main_window.py` | 124 | `MainWindowV2.__init__` | `Exception` | N | logo or icon |
+| `gui/main_window.py` | 249 | `MainWindowV2._apply_styles` | `Exception` | N | palette query, fallback colours |
+| `gui/main_window.py` | 369 | `MainWindowV2._show_custom_message` | `Exception` | N | icon of a message box |
+| `gui/main_window.py` | 463 | `MainWindowV2._launch_identification_viewer` | `Exception` | C | closing of a previous dialog |
+| `gui/main_window.py` | 480 | `MainWindowV2._launch_identification_viewer` | `Exception` | B | opening of the identifications window |
+| `gui/main_window.py` | 506 | `MainWindowV2._flux_limits_in` | `Exception` | N | x axis in nm for the flux limits |
+| `gui/main_window.py` | 600 | `MainWindowV2._on_debug_plot_requested` | `Exception` | B | debug plot |
+| `gui/plot_canvas.py` | 48 | `MatplotlibCanvas.__init__` | `Exception` | N | matplotlib style (the message still names `scienceplots`) |
+| `gui/plot_canvas.py` | 149 | `MatplotlibCanvas._capture_background` | `Exception` | N | background copy for blitting |
+| `gui/plot_canvas.py` | 155 | `MatplotlibCanvas._capture_background` | `Exception` | C | disconnection of a matplotlib callback |
+| `gui/plot_canvas.py` | 171 | `MatplotlibCanvas.draw_animated` | `Exception` | N | blitting |
+| `gui/plot_canvas.py` | 181 | `MatplotlibCanvas.draw_animated` | `Exception` | N | blitting |
+| `gui/plot_canvas.py` | 268 | `MatplotlibCanvas.on_motion` | `Exception` | B | mouse motion slot |
+| `gui/plot_canvas.py` | 303 | `MatplotlibCanvas.cleanup_selection` | `Exception` | C | removal of a matplotlib artist |
+| `gui/plot_mouse.py` | 108 | `PlotMouseMixin.get_cursor_line_positions_at_z` | `Exception` | N | `trans_parse` of a series |
+| `gui/plot_mouse.py` | 144 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N | `trans_parse` of a series |
+| `gui/plot_mouse.py` | 162 | `PlotMouseMixin.calculate_z_from_x` | `Exception` | N | redshift from the cursor position |
+| `gui/plot_mouse.py` | 272 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N | data tooltip |
+| `gui/plot_mouse.py` | 298 | `PlotMouseMixin.show_data_tooltip` | `Exception` | N | data tooltip |
+| `gui/plot_mouse.py` | 662 | `PlotMouseMixin._open_data_inspector` | `Exception` | C | closing of a previous dialog |
+| `gui/plot_style.py` | 189 | `z_convert_inverse` | `Exception` | N | inverse redshift conversion of the axis |
+| `gui/plot_style.py` | 200 | `get_color_cycle` | `Exception` | N | colour map, fallback |
+| `gui/plot_style.py` | 206 | `get_color_cycle` | `Exception` | N | colour map, fallback |
+| `gui/plot_style.py` | 237 | `decimate_y_min_max` | `Exception` | N | decimation for plotting |
+| `gui/plot_style.py` | 263 | `decimate_x_for_min_max` | `Exception` | N | decimation for plotting |
+| `gui/pyside_plot.py` | 416 | `SpectrumPlotWidget._connect_background_capture` | `Exception` | C | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 431 | `SpectrumPlotWidget._was_zoomed` | `Exception` | N | zoom state |
+| `gui/pyside_plot.py` | 440 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 443 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | C | disconnection of a matplotlib callback |
+| `gui/pyside_plot.py` | 449 | `SpectrumPlotWidget._reconnect_limit_callbacks` | `Exception` | N | limit callbacks |
+| `gui/pyside_plot.py` | 531 | `SpectrumPlotWidget._plot_arrays` | `Exception` | N | error column of the S/N view, fallback to `dy` |
+| `gui/pyside_plot.py` | 570 | `SpectrumPlotWidget._slice_to_view` | `Exception` | N | zoom slice |
+| `gui/pyside_plot.py` | 635 | `SpectrumPlotWidget._plot_other_sessions` | bare | N | S/N of the other sessions (bare `except`) |
+| `gui/pyside_plot.py` | 807 | `SpectrumPlotWidget._plot_aux_column` | `Exception` | N | aux column |
+| `gui/pyside_plot.py` | 853 | `SpectrumPlotWidget._plot_systems` | `Exception` | N | series of a system that `trans_parse` cannot read: not drawn, silently |
+| `gui/pyside_plot.py` | 878 | `SpectrumPlotWidget._plot_systems` | `Exception` | N | ticks of the systems in velocity |
+| `gui/pyside_plot.py` | 951 | `SpectrumPlotWidget._plot_cursor` | `Exception` | B | redshift cursor |
+| `gui/pyside_plot.py` | 1103 | `SpectrumPlotWidget._plot_emission_lines` | `Exception` | N | emission line labels |
+| `gui/pyside_plot.py` | 1155 | `SpectrumPlotWidget._draw_isomag_grid` | bare | C | removal of a matplotlib artist |
+| `gui/pyside_plot.py` | 1221 | `SpectrumPlotWidget._draw_isomag_grid` | `Exception` | N | iso-magnitude grid |
+| `gui/qt_workers.py` | 114 | `RecipeWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
+| `gui/qt_workers.py` | 249 | `ScriptWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
+| `gui/qt_workers.py` | 293 | `SessionLoadWorker.run` | `Exception` | B | worker thread (recipe, script, session loading) |
+| `gui/recipe_dialog.py` | 45 | `RecipeDialog.__init__` | `Exception` | N | schema of the recipe |
+| `gui/recipe_dialog.py` | 111 | `RecipeDialog._get_available_columns` | `Exception` | N | columns offered in the dialog |
+| `gui/recipe_dialog.py` | 551 | `RecipeDialog._check_oversample` | `Exception` | N | oversampling warning |
+| `gui/recipe_dialog.py` | 597 | `RecipeDialog.accept` | `Exception` | B | reading the parameters of the dialog, shown in a dialog |
+| `gui/recipe_dialog.py` | 618 | `RecipeDialog._show_help` | `Exception` | N | opening of the help page |
+| `gui/script_dialog.py` | 63 | `ScriptDialog.run_script` | `Exception` | B | script console (`exec`) |
+| `io/adapter.py` | 106 | `load_and_migrate_structure` | `Exception` | D | unreadable V1 system list: the session opens with no systems (ERROR only) |
+| `io/adapter.py` | 376 | `save_archive_v2` | `Exception` | D | original data not written, the save goes on and fails later (F94) |
+| `io/adapter.py` | 390 | `save_archive_v2` | `Exception` | R | log and re-raise; the GUI shows the error |
+| `io/loaders.py` | 121 | `detect_file_format` | `Exception` | N | format detection from the first lines |
+| `io/loaders.py` | 221 | `load_astrocook_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 286 | `load_pypeit_coadd` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 310 | `load_pypeit_spec1d_multi` | bare | N | order number from the HDU name, 0 if missing (bare `except`) |
+| `io/loaders.py` | 385 | `load_pypeit_spec1d_multi` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 440 | `load_pypeit_stack` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 504 | `load_pypeit_tellmodel` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 544 | `load_simple_csv` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 599 | `load_ascii_telluric_model` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 642 | `load_ascii_with_resvel_header` | `Exception` | N | non-numeric header line skipped |
+| `io/loaders.py` | 699 | `load_ascii_with_resvel_header` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 813 | `load_espresso_s2d_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 906 | `load_xshooter_fits` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/loaders.py` | 1006 | `load_generic_spectrum` | `Exception` | R | log and re-raise; `load_session_from_file` logs again |
+| `io/v1_archive.py` | 67 | `V1ArchiveManager.unpack` | `Exception` | N | `.acs` archive that cannot be unpacked |
+| `mcp_server/errors.py` | 85 | `run_recipe` | `Exception` | B | a tool call: the exception becomes a `ToolError` |
+| `recipes/absorbers.py` | 507 | `RecipeAbsorbersV2.components_auto` | `Exception` | B | `components_auto`, mask step |
+| `recipes/absorbers.py` | 530 | `RecipeAbsorbersV2.components_auto` | `Exception` | D | `components_auto`: old systems of the region not removed, the pipeline goes on (WARNING only) |
+| `recipes/absorbers.py` | 586 | `RecipeAbsorbersV2.components_auto` | `Exception` | D | `components_auto`: `abs_ids` not merged (WARNING only) |
+| `recipes/absorbers.py` | 734 | `RecipeAbsorbersV2.lya_auto` | `Exception` | D | `lya_auto`: cleanup of the narrow components skipped (WARNING only) |
+| `recipes/absorbers.py` | 817 | `RecipeAbsorbersV2.forest_auto` | `Exception` | D | `forest_auto`: cleanup of the narrow components skipped (WARNING only) |
+| `recipes/absorbers.py` | 916 | `RecipeAbsorbersV2.metals_auto` | `Exception` | D | `metals_auto`: a failed trial fit logged at DEBUG only |
+| `recipes/absorbers.py` | 990 | `RecipeAbsorbersV2.identify_lines` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1029 | `RecipeAbsorbersV2.populate_from_identification` | `Exception` | N | JSON of the identification maps, returns 0 |
+| `recipes/absorbers.py` | 1134 | `RecipeAbsorbersV2.add_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1179 | `RecipeAbsorbersV2.update_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1230 | `RecipeAbsorbersV2.update_components` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1283 | `RecipeAbsorbersV2.delete_component` | `Exception` | D | `delete_component` returns the unchanged session: a failure looks like a success |
+| `recipes/absorbers.py` | 1327 | `RecipeAbsorbersV2.detect_anchor` | `Exception` | D | `detect_anchor` returns 0.0 on failure |
+| `recipes/absorbers.py` | 1394 | `RecipeAbsorbersV2.fit_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1449 | `RecipeAbsorbersV2.update_constraint` | `Exception` | N | auto-update of a linked value |
+| `recipes/absorbers.py` | 1454 | `RecipeAbsorbersV2.update_constraint` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1658 | `RecipeAbsorbersV2.optimize_system` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1753 | `RecipeAbsorbersV2.fit_bayesian` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1841 | `RecipeAbsorbersV2.refit_all` | `Exception` | B | `refit_all`, consolidated fit, returns 0 |
+| `recipes/absorbers.py` | 2006 | `RecipeAbsorbersV2.refit_all` | `Exception` | D | `refit_all`: a group whose fit fails is left unfitted (WARNING only) |
+| `recipes/absorbers.py` | 2043 | `RecipeAbsorbersV2.refit_all` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 2070 | `RecipeAbsorbersV2._final_uncertainties` | `Exception` | N | final uncertainties of a group |
+| `recipes/continuum.py` | 181 | `RecipeContinuumV2.estimate_auto` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 236 | `RecipeContinuumV2.find_absorbed` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 297 | `RecipeContinuumV2.fit_continuum` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 338 | `RecipeContinuumV2.fit_powerlaw` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 393 | `RecipeEditV2.set_properties` | `Exception` | R | `except Exception as e: raise e` |
+| `recipes/edit.py` | 515 | `RecipeEditV2.apply_expression` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 561 | `RecipeEditV2.mask_expression` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 610 | `RecipeEditV2.smooth_column` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 689 | `RecipeEditV2._merge_imported_systems` | `Exception` | N | imported systems filtered by range |
+| `recipes/edit.py` | 725 | `RecipeEditV2._merge_imported_systems` | `Exception` | D | import of systems: the automatic refit fails, the unfitted systems are returned (ERROR only) |
+| `recipes/edit.py` | 768 | `RecipeEditV2.import_systems_ascii` | `Exception` | N | ASCII table of systems that cannot be read |
+| `recipes/edit.py` | 952 | `RecipeEditV2.extract_preset` | `Exception` | N | `extract_preset`: a region that cannot be extracted is skipped |
+| `recipes/edit.py` | 1035 | `RecipeEditV2.trim_common` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1107 | `RecipeEditV2.stitch` | `Exception` | N | `stitch`: cleanup of the NaNs |
+| `recipes/edit.py` | 1113 | `RecipeEditV2.stitch` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1191 | `RecipeEditV2.equalize_and_stitch` | `Exception` | D | `equalize_and_stitch`: invalid ranges replaced by `auto` (WARNING only) |
+| `recipes/edit.py` | 1372 | `RecipeEditV2.coadd` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/file.py` | 105 | `RecipeFileV2.export_ascii` | `Exception` | B | `export_ascii`, returns False |
+| `recipes/file.py` | 207 | `RecipeFileV2.import_ascii` | `Exception` | B | `import_ascii`, returns 0 |
+| `recipes/flux.py` | 143 | `RecipeFluxV2.calculate_running_std` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 177 | `RecipeFluxV2.smooth` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 290 | `RecipeFluxV2.equalize` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 341 | `RecipeFluxV2.resample` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 369 | `RecipeFluxV2.calibrate_from_magnitudes` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+
+</details>
+
+**Rule of the log messages** (proposed in PR 1, to be agreed with Guido;
+applied package by package from PR 3):
+- *Levels.*
+  - DEBUG: for the development (internal steps, intermediate values);
+    never needed by the user.
+  - INFO: what the user wants to read in the log window: what an
+    operation did, with the numbers that describe its result ("Fitted 12
+    components in 3 groups"); a few lines per recipe, not one per
+    iteration.
+  - WARNING: the operation gave its result, but the result needs a
+    check, or something was done instead of what was asked (a value
+    replaced by a default, a column dropped, a step skipped); the message
+    says what was done instead.
+  - ERROR: the operation did not give its result; the message says why
+    and, when it can, what to do.
+- *One log per error.* An unexpected exception is logged once, where it
+  is caught at a boundary (rows B), with the traceback; the code below
+  does not log and re-raise (rows R), it puts the context in the
+  exception message (`raise ValueError(...) from e`).
+- *Texts.* Sentences in English, starting with a capital letter; no
+  prefixes with the name of the function or of the step (`"rebin: "`,
+  `"Auto-continuum: "`, `"Split: "`): the logger of the module tells
+  where a message comes from; no arrows, banners or indentation inside
+  the message (`"  -> Estimated R ~ ..."`, `"--- Executing ---"`); values
+  with their units, parameters with the names of the dialogs; f-strings
+  are fine.
+- *The same situation, the same words.* A message used by more than one
+  module, or a situation reported in several places (a missing
+  continuum, `z_em` not set, a session not found), is defined once in
+  `recipes/messages.py` (#566).
+- *Library warnings.* A cosmetic warning of a library is silenced where
+  it is raised (`warnings.catch_warnings`), never with a global filter.
+
+The texts taken from V1 (`recipes/messages.py`) change too where they do
+not follow the rule: the log of a session records the recipes and their
+parameters, which the replay reads; the messages are not stored in it.
+
 ### Phase 6-bis – Recipe API
 Agreed with Guido at the start of the MCP pilot (October 2026). The
 interface of the recipes redesigned once, for the GUI, the scripts and
@@ -1674,6 +1977,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F91 | main plot (redshift cursor) | The lines of the redshift cursor are blitted over the pixels of the plot kept after a full draw (`SpectrumPlotCanvas.background`), captured once and renewed only when the plot is rebuilt or its limits change: when the plot was resized (e.g. *View > Show Toolbar*, the window resized) the cursor restored the old pixels, with the old size, over the new plot. Reported by Guido in phase 5-bis | GUI | `test_cursor_after_a_resize` | fixed in phase 5-bis (PR of the review bugs): the pixels are captured again at the redraw after each resize |
 | F92 | main plot (redshift cursor) | While the redshift cursor follows the mouse over the plot, the card of the plot controls fades (`CardFader`, opacity 0.35 while the mouse is away), and the redshift written in its box is hard to read. Reported by Guido in phase 5-bis | GUI | `test_cursor_label` | fixed in phase 5-bis (PR of the text pass; Guido chose the first of three options: the redshift on the plot, the card kept opaque, the redshift next to λ and F in the toolbar): the redshift written at the top of the first line of the cursor in view, blitted with the lines |
 | F93 | `identify_lines` (identifications) | The identification is by doublets only: two absorbed regions are a candidate when they overlap once one is shifted by the separation of the doublet in velocity (the ratio of the wavelengths), and the pair is accepted when the R^2 of F_1 = F_2^gamma (gamma from f and lambda of the two lines) is above 0.5 (metals only redward of Ly_a). Three things found while rebuilding the Identifications window: (1) the pairs are not stored: each region keeps only its candidates ([transition, score]), and the window finds the pairs again from the overlap of the redshift ranges and the shared score; (2) the multiplets with more than two lines (FeII, SiII, NI, ...) are never searched, only those with exactly two members; (3) the regions of the forest that no doublet identified are labelled Ly_a with score 0, an assignment and not an identification (lya_auto calls the recipe with "Ly_a" alone, not a doublet, so all its regions are so labelled). Found in phase 5-bis | behaviour | `test_identification_viewer.py` (the window) | to be discussed in phase 7 (identification, Guido's algorithmic choices): store the pairs with their redshift and score; the window shows the doublets as the recipe finds them and the assumed Ly_a as such |
+| F94 | `save_archive_v2` (saving a session) | The `.acs2` archive is written directly over the target file: `tarfile.open(final_path, 'w:gz')` truncates it before its members are added, so a save that fails while the archive is being written leaves a partial archive (or an empty file) in place of the previous one, and the previous session is lost. One way to get there: if writing the original data (`session_v2_initial`) fails, the broad `except` logs an ERROR and goes on with the name of a file that does not exist, and `tar.add` then fails; reproduced in phase 6 (PR 1) by making the conversion of the original spectrum raise: the save raises `FileNotFoundError`, and the target file, an existing archive, is replaced by one with the current spectrum, systems and metadata only. Data loss, with a low probability (a failure while writing). Found in phase 6 while making the inventory of the broad except clauses | data loss, error handling | — | open: reported to Guido; proposed fix: write the archive to a temporary file in the same folder and replace the target only when it is complete (`os.replace`), and let a failure of the original data stop the save before the target is touched |
+| F95 | fallbacks after a failure (24 places) | After a failure, the code goes on with a result that looks valid and says so only in the log, or not at all: e.g. a link of a constraint that fails to evaluate keeps its old value silently at every evaluation of the model (`VoigtModelConstraintV2.map_p_free_to_full`); `smooth_spectrum` returns the unsmoothed array; `update_continuum_from_knots` returns the spectrum unchanged, so the edit of the continuum is lost; `delete_component` returns the unchanged session, which the GUI takes as a success; the entry of a recipe in the session log is dropped silently if `add_entry` fails; in the pipelines, a cleanup or a fit that fails is skipped with a WARNING (`lya_auto`, `forest_auto`, `refit_all`) or a DEBUG line (`metals_auto`). Found in phase 6 (PR 1) | error handling, behaviour | — | open: the rows D of the inventory of phase 6, reviewed with Guido one by one before the PR of their package |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -2103,6 +2408,6 @@ review); each of its decisions goes into the log.
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
-| 6 – Error handling | not started |
+| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1); found F94, F95 |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
