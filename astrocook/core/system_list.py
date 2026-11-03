@@ -7,7 +7,7 @@ import numpy as np
 import ast
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
-from astrocook.fitting.voigt_model import VoigtModelConstraintV2
+from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS, VoigtModelConstraintV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 
@@ -296,18 +296,10 @@ class SystemListV2:
             )
 
     def _initialize_constraint_model(self):
-        try:
-            self.constraint_model = VoigtModelConstraintV2(self)
-        except Exception as e:
-            logger.error(f"Failed to initialize VoigtModelConstraintV2: {e}", exc_info=True)
-            try:
-                logger.warning("Creating fallback empty constraint model.")
-                dummy_systs = SystemListV2.__new__(SystemListV2)
-                dummy_systs._data = SystemListDataV2()
-                dummy_systs.components = []
-                self.constraint_model = VoigtModelConstraintV2(dummy_systs)
-            except Exception:
-                self.constraint_model = None
+        # A failure reaches the caller: an empty fallback model lost the
+        # links and the frozen parameters at the next save (the archive
+        # reads them from here), and None made the save crash (phase 6)
+        self.constraint_model = VoigtModelConstraintV2(self)
 
     @property
     def components(self) -> List[ComponentDataV2]:
@@ -632,6 +624,26 @@ class SystemListV2:
         return SystemListV2(new_data)
     
 
+    def _check_link(self, uuid: str, param: str, expression: str) -> None:
+        """Raise ``ValueError`` if the expression of a link cannot be evaluated.
+
+        It is evaluated with the current values of the components, as the
+        fit evaluates it (``VoigtModelConstraintV2.map_p_free_to_full``).
+        """
+        class _Params:
+            __slots__ = ('z', 'logN', 'b', 'btur')
+
+            def __init__(self, c):
+                self.z, self.logN, self.b, self.btur = c.z, c.logN, c.b, c.btur
+
+        p = {c.uuid: _Params(c) for c in self.components}
+        try:
+            code = compile(expression, f"<link {uuid}.{param}>", 'eval')
+            float(eval(code, {'p': p, **LINK_FUNCTIONS}))
+        except (SyntaxError,) + LINK_ERRORS as e:
+            raise ValueError(f"The link of {param} ('{expression}') cannot be "
+                             f"evaluated ({type(e).__name__}: {e}).") from e
+
     def update_constraint(self, uuid: str, param: str, 
                           is_free: Optional[bool] = None,
                           expression: Optional[str] = None,
@@ -696,6 +708,11 @@ class SystemListV2:
             new_free = is_free if is_free is not None else base_constraint.is_free
             new_expr = expression if expression is not None else base_constraint.expression
             new_tgt = target_uuid if target_uuid is not None else base_constraint.target_uuid
+
+        if not new_free and expression:
+            # A new link is checked here, so that a wrong one is refused
+            # with a message instead of freezing the parameter (phase 6)
+            self._check_link(uuid, param, expression)
 
         new_constraint = dataclasses.replace(base_constraint, is_free=new_free, expression=new_expr, target_uuid=new_tgt)
 

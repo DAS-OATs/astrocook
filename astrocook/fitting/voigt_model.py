@@ -10,6 +10,39 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+#: Functions available to the expressions of the links, with ``p`` (the
+#: components by UUID, e.g. ``p['uuid'].z``)
+LINK_FUNCTIONS = {'np': np, 'log': np.log10, 'ln': np.log}
+
+#: Errors of an expression that cannot be evaluated: a component that does
+#: not exist (KeyError), an unknown name (NameError), a parameter that does
+#: not exist (AttributeError), a wrong operation (TypeError, ValueError,
+#: ArithmeticError)
+LINK_ERRORS = (KeyError, NameError, AttributeError, TypeError, ValueError,
+               ArithmeticError)
+
+
+class _ComponentProxy:
+    """``p['uuid']`` in a link: the parameters of a component in ``p_full``."""
+    __slots__ = ('_arr', '_idx')
+
+    def __init__(self, arr, idx):
+        self._arr = arr
+        self._idx = idx
+
+    @property
+    def z(self): return self._arr[self._idx]
+
+    @property
+    def logN(self): return self._arr[self._idx+1]
+
+    @property
+    def b(self): return self._arr[self._idx+2]
+
+    @property
+    def btur(self): return self._arr[self._idx+3]
+
+
 class VoigtModelConstraintV2:
     """
     Manages parameter constraints and vector mapping for Voigt fitting.
@@ -251,17 +284,27 @@ class VoigtModelConstraintV2:
             
             for param, constraint in p_map.items():
                 if not constraint.is_free and constraint.expression:
-                    # Determine target index in p_full
+                    # A link that does not compile or cannot be evaluated
+                    # (e.g. in an old archive: update_constraint refuses
+                    # them) is left out, and the parameter stays frozen at
+                    # its value; at evaluation the compiled links do not
+                    # fail silently any more (phase 6)
                     try:
-                        param_offset = self.PARAMETER_ORDER.index(param)
-                        target_idx = comp_idx + param_offset
-                        
-                        # Compile expression
-                        # We use 'p' as the dictionary of components, e.g. p['uuid'].b
+                        target_idx = comp_idx + self.PARAMETER_ORDER.index(param)
                         code = compile(constraint.expression, f"<link {uuid}.{param}>", 'eval')
-                        self._compiled_links.append((target_idx, code))
-                    except Exception as e:
-                        logger.error(f"Failed to compile link for {uuid}.{param}: {e}")
+                        float(eval(code, self._link_globals(self._initial_p_vector)))
+                    except (SyntaxError,) + LINK_ERRORS as e:
+                        logger.error(f"The link of {param} of component {uuid} "
+                                     f"('{constraint.expression}') cannot be evaluated "
+                                     f"({type(e).__name__}: {e}): the parameter is kept "
+                                     "frozen at its value.")
+                        continue
+                    self._compiled_links.append((target_idx, code))
+
+    def _link_globals(self, p_full: np.ndarray) -> Dict[str, Any]:
+        """The names of the expressions of the links, for ``p_full``."""
+        p_dict = {u: _ComponentProxy(p_full, i) for u, i in self._uuid_to_idx.items()}
+        return {'p': p_dict, **LINK_FUNCTIONS}
 
     def _convert_v1_to_v2(self, v1_state, v1_id_map, effective_is_free: bool):
         expr = v1_state['expression']
@@ -315,44 +358,15 @@ class VoigtModelConstraintV2:
         p_full = self._initial_p_vector.copy()
         p_full[self._param_map['is_free']] = p_free_fitted
         
-        # 2. Evaluate Links
+        # 2. Evaluate Links (the links are checked when compiled: an error
+        #    here reaches the fit, instead of keeping the old value
+        #    silently, phase 6)
         if self._compiled_links:
-            # Create a lightweight context for 'p["uuid"].param' access
-            # We map p['uuid'] to a proxy object that reads from p_full
-            
-            class ComponentProxy:
-                __slots__ = ('_arr', '_idx')
-                def __init__(self, arr, idx):
-                    self._arr = arr
-                    self._idx = idx
-                @property
-                def z(self): return self._arr[self._idx]
-                @property
-                def logN(self): return self._arr[self._idx+1]
-                @property
-                def b(self): return self._arr[self._idx+2]
-                @property
-                def btur(self): return self._arr[self._idx+3]
-
-            # Create the 'p' dictionary
-            # Note: uuid_to_idx is computed in _refresh_state
-            p_dict = {
-                u: ComponentProxy(p_full, i) 
-                for u, i in self._uuid_to_idx.items()
-            }
-            
-            # Common math functions for expressions
-            eval_globals = {'p': p_dict, 'np': np, 'log': np.log10, 'ln': np.log}
-            
-            # Execute compiled expressions
             # Note: If chains exist (A->B->C), we might need multiple passes or topological sort.
             # For now, we assume standard depth-1 links or ordered calculation.
+            eval_globals = self._link_globals(p_full)
             for target_idx, code in self._compiled_links:
-                try:
-                    val = eval(code, eval_globals)
-                    p_full[target_idx] = float(val)
-                except Exception:
-                    pass # Keep initial value if evaluation fails
+                p_full[target_idx] = float(eval(code, eval_globals))
 
         return p_full
     

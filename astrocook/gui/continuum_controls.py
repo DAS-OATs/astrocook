@@ -201,7 +201,11 @@ class ContinuumControlsMixin:
                             self._update_view_for_session(new_session, set_current_list_item=True)
                             
                 except Exception as e:
+                    # E.g. two knots at the same wavelength (phase 6): the
+                    # user is told, not only the log
                     logger.error(f"Failed to save continuum: {e}")
+                    QMessageBox.warning(self, "Continuum Not Saved",
+                                        f"The continuum could not be saved:\n{e}")
 
     def _on_stride_change(self):
         # 1. Safety Check: If plot_viewer doesn't exist yet (during startup), do nothing.

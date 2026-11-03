@@ -195,9 +195,14 @@ def test_failed_save_is_logged(editing, monkeypatch, caplog):
     def fail(self, **params):
         raise ValueError("bad knots")
     monkeypatch.setattr(recipes, "update_from_knots", fail)
+    warned = []
+    monkeypatch.setattr(QMessageBox, "warning",
+                        staticmethod(lambda *a: warned.append(a[2])))
     with caplog.at_level(logging.ERROR):
         window.edit_cont_button.click()
     assert "Failed to save continuum: bad knots" in caplog.text
+    # Shown to the user too (phase 6)
+    assert warned == ["The continuum could not be saved:\nbad knots"]
 
 
 @pytest.mark.parametrize("answer", ["Save", "Discard", "Cancel"])

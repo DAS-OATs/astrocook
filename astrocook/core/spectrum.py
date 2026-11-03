@@ -466,25 +466,21 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             return None
             
         logger.debug("Renormalizing the model to the new continuum.")
-        try:
-            # 1. Get old normalized profile
-            normalized_model = np.divide(
-                old_model_col.values,
-                old_cont_vals,
-                out=np.ones_like(old_model_col.values),
-                where=old_cont_vals != 0
-            )
-            # 2. Recalculate model against *new* continuum
-            new_model_values = new_cont_vals * normalized_model
-            logger.info("Model renormalized to the new continuum.")
-            return DataColumnV2(
-                values=new_model_values,
-                unit=old_model_col.unit, # Use old model's unit
-                description=old_model_col.description
-            )
-        except Exception as e:
-            logger.warning(f"Failed to renormalize model column: {e}")
-            return None
+        # 1. Get old normalized profile
+        normalized_model = np.divide(
+            old_model_col.values,
+            old_cont_vals,
+            out=np.ones_like(old_model_col.values),
+            where=old_cont_vals != 0
+        )
+        # 2. Recalculate model against *new* continuum
+        new_model_values = new_cont_vals * normalized_model
+        logger.info("Model renormalized to the new continuum.")
+        return DataColumnV2(
+            values=new_model_values,
+            unit=old_model_col.unit, # Use old model's unit
+            description=old_model_col.description
+        )
     
     def sanitize_legacy_tellurics(self) -> 'SpectrumV2':
         """

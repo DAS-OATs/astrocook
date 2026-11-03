@@ -78,18 +78,24 @@ def test_knots_with_a_model_and_no_continuum_keep_the_model():
                                       spec.get_column("model").value)
 
 
-@pytest.mark.parametrize("knots_x, knots_y", [([], []), (None, None),
-                                              ([500.0, 510.0], [2.0])])
-def test_invalid_knots_return_the_spectrum(knots_x, knots_y):
-    spec = _spec()
-    assert spec.update_continuum_from_knots(knots_x, knots_y) is spec
+# Invalid knots raise a ValueError with a message (phase 6, F95): they
+# returned the spectrum unchanged, and the edit of the continuum was lost
+@pytest.mark.parametrize("knots_x, knots_y, message", [
+    ([], [], "no knots"), (None, None, "no knots"),
+    ([500.0, 510.0], [2.0], "2 wavelengths and 1 fluxes"),
+    ([500.0], [2.0], "At least two knots"),
+    ([500.0, 500.0], [1.0, 2.0], "Two knots have the same wavelength"),
+])
+def test_invalid_knots_raise(knots_x, knots_y, message):
+    with pytest.raises(ValueError, match=message):
+        _spec().update_continuum_from_knots(knots_x, knots_y)
 
 
-def test_knots_that_break_the_spline_return_the_spectrum(caplog):
+def test_unsorted_knots_build_the_same_continuum():
     spec = _spec()
-    with caplog.at_level(logging.ERROR):
-        assert spec.update_continuum_from_knots([500.0, 500.0], [1.0, 2.0]) is spec
-    assert "Failed to generate spline" in caplog.text
+    a = spec.update_continuum_from_knots([500.0, 505.0, 510.0], [2.0, 2.1, 2.2])
+    b = spec.update_continuum_from_knots([510.0, 500.0, 505.0], [2.2, 2.0, 2.1])
+    np.testing.assert_array_equal(a.get_column("cont").value, b.get_column("cont").value)
 
 
 # --- fit_continuum -------------------------------------------------------------
@@ -116,9 +122,10 @@ def test_fit_continuum_with_everything_absorbed(caplog):
     spec = _spec()
     spec = spec.update_column("abs_mask", np.ones(spec.x.size, dtype=bool),
                               unit=au.dimensionless_unscaled)
-    with caplog.at_level(logging.ERROR):
-        assert spec.fit_continuum(1.0, 0.0) is spec
-    assert "< 2 unabsorbed points" in caplog.text
+    # It reaches the recipe (phase 6, F95): the spectrum was returned
+    # unchanged, with an ERROR in the log only
+    with pytest.raises(ValueError, match="fewer than 2 unabsorbed pixels"):
+        spec.fit_continuum(1.0, 0.0)
 
 
 def test_fit_continuum_with_an_invalid_fudge(caplog):
