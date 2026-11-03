@@ -525,6 +525,8 @@
 <li><p>when the removal of the narrow lines at the end of the forest pipelines fails, the result is kept, as before, and the warning now says how many narrow lines it still contains; when the refit of imported systems fails, the import is kept with a warning that says so.</p></li>
 </ul>
 </li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file of numbers only (wavelength, flux, error, without a line of names on top) did not open (F100): the first line was taken as the names of the columns, which had to be <code class="docutils literal notranslate"><span class="pre">col1</span></code>, <code class="docutils literal notranslate"><span class="pre">col2</span></code>, <code class="docutils literal notranslate"><span class="pre">col3</span></code>. The first three columns are now read by position, with or without a header of any names; <em>Getting Started</em> says how a CSV file is read.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file of fewer than 10 lines did not open (F97): the detection of the format stopped at the end of the file and sent it to the loader of FITS files, which failed with “No SIMPLE card found”.</p></li>
 <li><p>A script that ran a recipe before configuring logging could no longer configure it (F96): the first message of the recipe set up Python’s logging with its defaults, so a later <code class="docutils literal notranslate"><span class="pre">logging.basicConfig(level=logging.INFO)</span></code> was ignored. A script that configures nothing still sees the warnings and errors, now without the <code class="docutils literal notranslate"><span class="pre">WARNING:root:</span></code> prefix.</p></li>
 </ul>
 </section>
