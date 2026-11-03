@@ -306,7 +306,7 @@ package (`ROADMAP.md`, phase 6, "Rule of the log messages"), shared
 messages in `recipes/messages.py`; a hook shows the unexpected errors of
 the GUI in a dialog (`install_excepthook`); the fast suite without
 warnings, and warnings are errors in the tests. Fixed F94 (data loss when
-a save fails), F95, F96, F98, F99; F97 open (fix proposed). For 6-bis: the
+a save fails), F95, F96, F98, F99; F97 and F100 right after the phase. For 6-bis: the
 scheme of the prerequisites of the recipes (MCP, GUI, scripts), the lists
 of the GUI to the registry, the flag `not_fitted`. The snapshots and the
 mock benchmark unchanged.

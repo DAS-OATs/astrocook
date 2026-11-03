@@ -47,14 +47,17 @@ def test_corrupted_v1_archive(tmp_path, caplog):
     assert "Could not unpack" in caplog.text
 
 
-def test_short_csv_is_read_as_a_generic_spectrum(tmp_path):
-    # F97 (characterization): the detection reads the first 10 lines, so a
-    # CSV file with fewer lines is not recognized as CSV
+def test_short_csv_is_read_as_csv(tmp_path):
+    # F97 (regression): the detection read the first 10 lines with next(), so
+    # a CSV file with fewer lines went to the generic loader, which reads FITS
+    # only, and did not open
     short = tmp_path / "short.csv"
-    short.write_text("500.0,1.0,0.1\n501.0,1.0,0.1\n")
-    assert detect_file_format(str(short)) == "generic_spectrum"
+    short.write_text("col1,col2,col3\n500.0,1.0,0.1\n501.0,1.0,0.1\n")
+    assert detect_file_format(str(short)) == "simple_csv"
+    session = load_session_from_file(str(short), "short", None, "auto")
+    assert session != 0 and len(session.spec.x) == 2
     long = tmp_path / "long.csv"
-    long.write_text("".join(f"{500 + i}.0,1.0,0.1\n" for i in range(12)))
+    long.write_text("col1,col2,col3\n" + "".join(f"{500 + i}.0,1.0,0.1\n" for i in range(12)))
     assert detect_file_format(str(long)) == "simple_csv"
 
 

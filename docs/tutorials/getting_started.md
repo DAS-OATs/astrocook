@@ -4,7 +4,7 @@ Welcome to Astrocook V2! This guide will walk you through the basics of the inte
 
 ## 1. Loading a Spectrum
 
-Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`).
+Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file is read as three columns, by position: wavelength (nm), flux and its error (erg cm⁻² s⁻¹ Å⁻¹), with or without a line of names on top; further columns are ignored.
 
 1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons **Open Session...** and **Open Recent** (a drop-down menu of the files you opened last).
 2.  Click **Open Session...**, or select **File > Open Session...** in the menu bar (or press `Ctrl+O` / `Cmd+O`). **File > Open Recent** lists the files opened last; you can also drop files on the window.
