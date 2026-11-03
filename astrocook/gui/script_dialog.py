@@ -1,9 +1,13 @@
+import logging
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, 
                                QPushButton, QSplitter)
 from .scripting import AppController
 from .theme import CONSOLE_BACKGROUND, CONSOLE_TEXT
+
+logger = logging.getLogger(__name__)
 
 class ScriptDialog(QDialog):
     def __init__(self, main_window):
@@ -61,4 +65,7 @@ class ScriptDialog(QDialog):
             exec(script, {}, local_scope)
             self.append_log("--- Done ---")
         except Exception as e:
+            # The boundary of the console (B): the error of the user's code
+            # is shown in it, the traceback is at DEBUG
             self.append_log(f"Error: {e}")
+            logger.debug("Traceback of the script console:", exc_info=True)

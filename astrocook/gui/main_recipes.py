@@ -29,6 +29,19 @@ from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
+def _add_log_entry(history, recipe_name: str, params: dict) -> None:
+    """Record a recipe in the log of a session history (phase 6).
+
+    A log manager that is not a ``HistoryLogV2`` cannot happen today: it is an
+    ERROR, instead of the silent skip of before.
+    """
+    if isinstance(history.log_manager, HistoryLogV2):
+        history.log_manager.add_entry(recipe_name, params)
+    else:
+        logger.error(f"The log of the session has an unknown type "
+                     f"({type(history.log_manager).__name__}): {recipe_name} is not recorded.")
+
+
 def region_expression(xmin: float, xmax: float) -> str:
     """The expression on λ (the x of the data, nm) that selects a region."""
     return f"(λ > {xmin:.4f}) & (λ < {xmax:.4f})"
@@ -256,25 +269,26 @@ class MainRecipesMixin:
                 if ret != QMessageBox.StandardButton.Yes: return
         
             # 4. EXECUTION
-            try:
-                saved = self.active_history.current_state.file.export_ascii(
-                    targets=raw_targets, 
-                    path=folder, 
-                    prefix=filename_prefix
+            saved = self.active_history.current_state.file.export_ascii(
+                targets=raw_targets, 
+                path=folder, 
+                prefix=filename_prefix
+            )
+
+            if saved:
+                files_created = []
+                if has_spec: files_created.append(f"• {filename_prefix}_spec.csv")
+                if has_systems: files_created.append(f"• {filename_prefix}_systems.csv")
+
+                self._show_custom_message(
+                    title="Export Complete",
+                    header="Data exported successfully",
+                    text=f"Saved in {folder}:\n\n" + "\n".join(files_created)
                 )
-                
-                if saved:
-                    files_created = []
-                    if has_spec: files_created.append(f"• {filename_prefix}_spec.csv")
-                    if has_systems: files_created.append(f"• {filename_prefix}_systems.csv")
-                    
-                    self._show_custom_message(
-                        title="Export Complete",
-                        header="Data exported successfully",
-                        text=f"Saved in {folder}:\n\n" + "\n".join(files_created)
-                    )
-            except Exception as e:
-                logger.error(f"Export failed: {e}")
+            else:
+                # export_ascii logged why (nothing was shown, phase 6)
+                QMessageBox.warning(self, "Export Failed",
+                                    "The data could not be exported: the reason is in the log.")
             return
 
         # --- [NEW] GUI-Thread Pre-checks ---
@@ -493,11 +507,11 @@ class MainRecipesMixin:
                 branching = is_branching_recipe(recipe_name)
                 params_to_log = params.copy()
                 params_to_log.pop('alias_map', None)
-                try:
-                    if (i == 0 and not branching
-                            and isinstance(original_parent_history.log_manager, HistoryLogV2)):
-                        original_parent_history.log_manager.add_entry(recipe_name, params_to_log)
-                except Exception: pass
+                # Written before the new state is applied (an error here, a
+                # bug, reaches the boundary below: the log and the state stay
+                # together; it was dropped silently, and the replay diverged)
+                if i == 0 and not branching:
+                    _add_log_entry(original_parent_history, recipe_name, params_to_log)
 
                 # --- 3. IDENTIFY LINES LOGIC ---
                 auto_show_col = None
@@ -534,15 +548,16 @@ class MainRecipesMixin:
                     force_autoscale=should_autoscale
                 )
 
+                # The branch exists only now: its entry follows its creation
                 branch_history = self.active_history
-                try:
-                    if (branching and branch_history is not original_parent_history
-                            and isinstance(branch_history.log_manager, HistoryLogV2)):
-                        branch_history.log_manager.add_entry(recipe_name, params_to_log)
-                        if (self.log_scripter_dialog and self.log_scripter_dialog.isVisible()
-                                and self.log_scripter_dialog.log_object is branch_history.log_manager):
+                if branching and branch_history is not original_parent_history:
+                    _add_log_entry(branch_history, recipe_name, params_to_log)
+                    if (self.log_scripter_dialog and self.log_scripter_dialog.isVisible()
+                            and self.log_scripter_dialog.log_object is branch_history.log_manager):
+                        try:
                             self.log_scripter_dialog.refresh()
-                except Exception: pass
+                        except QT_ERRORS as e:
+                            logger.debug(f"Log window not refreshed: {e}")
 
             # After loop, the *last* created session will be active (set by update_gui_session_state).
             # This is usually the desired behavior.
@@ -628,8 +643,9 @@ class MainRecipesMixin:
                     ))
 
         except Exception as e:
-            logger.error(f"Failed to process recipe result: {e}", exc_info=True)
-            QMessageBox.critical(self, "GUI Error", f"Failed to update GUI:\n{e}")
+            # The boundary of the update of the GUI after a recipe (B)
+            logger.error(f"Could not show the result of the recipe: {e}", exc_info=True)
+            QMessageBox.critical(self, "GUI Error", f"Could not show the result of the recipe:\n{e}")
 
         finally:
             QApplication.restoreOverrideCursor()

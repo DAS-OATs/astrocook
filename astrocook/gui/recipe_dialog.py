@@ -585,21 +585,16 @@ class RecipeDialog(QDialog):
             super().reject(); return
 
         params_to_pass = {}
-        try:
-            for param_name, widget in self.input_widgets.items():
-                if isinstance(widget, QLineEdit):
-                    text = widget.text()
-                    if param_name in self._current_params and not text.strip():
-                        text = "_current_"   # empty: keep the current value (F63)
-                    params_to_pass[param_name] = text
-                elif isinstance(widget, QCheckBox):
-                    params_to_pass[param_name] = str(widget.isChecked())
-                elif isinstance(widget, QComboBox):
-                    params_to_pass[param_name] = widget.currentText() 
-        except Exception as e:
-            logger.error(f"Error gathering parameters: {e}")
-            QMessageBox.critical(self, "Parameter Error", f"Could not read parameters:\n{e}")
-            return 
+        for param_name, widget in self.input_widgets.items():
+            if isinstance(widget, QLineEdit):
+                text = widget.text()
+                if param_name in self._current_params and not text.strip():
+                    text = "_current_"   # empty: keep the current value (F63)
+                params_to_pass[param_name] = text
+            elif isinstance(widget, QCheckBox):
+                params_to_pass[param_name] = str(widget.isChecked())
+            elif isinstance(widget, QComboBox):
+                params_to_pass[param_name] = widget.currentText() 
 
         self.recipe_requested.emit(
             self.recipe_category,

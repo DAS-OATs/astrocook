@@ -375,34 +375,31 @@ class MainSessionsMixin:
 
     def _on_session_switched(self, index):
         """Sets the active SessionHistory manager when the list view is clicked."""
-        try:
-            new_history_list_index = index.row()
-            if 0 <= new_history_list_index < len(self.session_histories):
-                new_active_history = self.session_histories[new_history_list_index]
-                if self.active_history != new_active_history:
-                    # Only switch if user confirms discarding edits
-                    if not self._confirm_discard_continuum_edits():
-                        # Re-select the old item in the list visually
-                        self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
-                        return
+        new_history_list_index = index.row()
+        if 0 <= new_history_list_index < len(self.session_histories):
+            new_active_history = self.session_histories[new_history_list_index]
+            if self.active_history != new_active_history:
+                # Only switch if user confirms discarding edits
+                if not self._confirm_discard_continuum_edits():
+                    # Re-select the old item in the list visually
+                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
+                    return
 
-                    logger.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
-                    self.active_history = new_active_history
-                    # Show the state pointed to by the NEW active history's index
-                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False, force_autoscale=False)
-                    self._update_undo_redo_actions()
+                logger.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
+                self.active_history = new_active_history
+                # Show the state pointed to by the NEW active history's index
+                self._update_view_for_session(self.active_history.current_state, set_current_list_item=False, force_autoscale=False)
+                self._update_undo_redo_actions()
 
-                    # Update the log viewer if it's open
-                    if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
-                        self.log_scripter_dialog.set_log_object(self.active_history.log_manager)
-                else:
-                    # Clicked on the already active session, maybe ensure view reflects current index?
-                    # This can happen if user undid then clicked the list item again.
-                    self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+                # Update the log viewer if it's open
+                if self.log_scripter_dialog and self.log_scripter_dialog.isVisible():
+                    self.log_scripter_dialog.set_log_object(self.active_history.log_manager)
             else:
-                 logger.debug(f"Index {new_history_list_index} clicked out of the list.")
-        except Exception as e:
-            logger.error(f"Error switching session via list click: {e}")
+                # Clicked on the already active session, maybe ensure view reflects current index?
+                # This can happen if user undid then clicked the list item again.
+                self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
+        else:
+             logger.debug(f"Index {new_history_list_index} clicked out of the list.")
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
@@ -985,45 +982,42 @@ class MainSessionsMixin:
         if not (0 <= row < len(self.session_histories)):
             return
             
-        try:
-            history_item = self.session_histories[row]
-            
-            # 1. Get the new name from the Qt Model (user input)
-            new_name = self.session_model.data(index_top_left, Qt.ItemDataRole.DisplayRole)
-            
-            # 2. Check against the INTERNAL session state name
-            current_internal_name = history_item.current_state.name
-            
-            if new_name and new_name != current_internal_name:
-                logger.info(f"Session '{current_internal_name}' renamed '{new_name}'.")
-                
-                # --- [FIX START] Hybrid Update ---
-                
-                # A. Update the wrapper IMMEDIATELY.
-                # This ensures if you open the Info window 1ms later, it shows the new name.
-                history_item.display_name = new_name
-                
-                # B. Switch active history if needed (recipe runs on active)
-                if self.active_history != history_item:
-                    self.active_history = history_item
-                
-                # C. Trigger recipe to sync the internal SessionV2 state and Log.
-                params = {
-                    'name': new_name,
-                    'object': '_current_',
-                    'z_em': '_current_',
-                    'resol': '_current_'
-                }
-                self._on_recipe_requested("edit", "set_properties", params, {})
-                
-                # --- [FIX END] ---
+        history_item = self.session_histories[row]
 
-            elif new_name != history_item.display_name:
-                # Sync wrapper if model changed but internal state matched (rare edge case)
-                history_item.display_name = new_name
+        # 1. Get the new name from the Qt Model (user input)
+        new_name = self.session_model.data(index_top_left, Qt.ItemDataRole.DisplayRole)
 
-        except Exception as e:
-            logger.error(f"Error during in-place session rename: {e}")
+        # 2. Check against the INTERNAL session state name
+        current_internal_name = history_item.current_state.name
+
+        if new_name and new_name != current_internal_name:
+            logger.info(f"Session '{current_internal_name}' renamed '{new_name}'.")
+
+            # --- [FIX START] Hybrid Update ---
+
+            # A. Update the wrapper IMMEDIATELY.
+            # This ensures if you open the Info window 1ms later, it shows the new name.
+            history_item.display_name = new_name
+
+            # B. Switch active history if needed (recipe runs on active)
+            if self.active_history != history_item:
+                self.active_history = history_item
+
+            # C. Trigger recipe to sync the internal SessionV2 state and Log.
+            params = {
+                'name': new_name,
+                'object': '_current_',
+                'z_em': '_current_',
+                'resol': '_current_'
+            }
+            self._on_recipe_requested("edit", "set_properties", params, {})
+
+            # --- [FIX END] ---
+
+        elif new_name != history_item.display_name:
+            # Sync wrapper if model changed but internal state matched (rare edge case)
+            history_item.display_name = new_name
+
 
     def _on_save_session_context(self, history_item: SessionHistory):
         """
@@ -1071,7 +1065,7 @@ class MainSessionsMixin:
                 logger.debug("Session saved.")
                 return True # Indicate success
             except Exception as e:
-                logger.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
+                logger.error(f"Could not save the session to {file_name}: {e}", exc_info=True)
                 QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
                 return False
         return False
@@ -1188,7 +1182,8 @@ class MainSessionsMixin:
                 QMessageBox.warning(self, "Load Error", "Failed to load session.")
 
         except Exception as e:
-            logger.error(f"Failed to load file direct: {e}")
+            # The boundary of the opening of a file (B)
+            logger.error(f"Could not open {file_path}: {e}", exc_info=True)
             QMessageBox.critical(self, "Error Loading File", f"Could not load {file_path}:\n{e}")
         finally:
             QApplication.restoreOverrideCursor()
