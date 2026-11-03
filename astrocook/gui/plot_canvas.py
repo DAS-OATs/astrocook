@@ -15,6 +15,8 @@ from PySide6.QtWidgets import QToolTip
 
 from .plot_style import SELECTION_STYLE
 
+logger = logging.getLogger(__name__)
+
 
 def _snap_layout_to_pixels(fig):
     """Round the positions of the axes laid out by the constrained layout
@@ -46,7 +48,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             #plt.style.use(['science', 'fast'])
             matplotlib.style.use('fast')
         except Exception as e:
-            logging.warning(f"Could not apply 'scienceplots': {e}. Using default.")
+            logger.warning(f"Could not apply 'scienceplots': {e}. Using default.")
             matplotlib.style.use('fast')
 
         fig = Figure(figsize=(width, height), dpi=dpi, constrained_layout=True)
@@ -94,7 +96,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     def on_lim_changed(self, axes):
         """Callback: Invalidate background and schedule a full redraw."""
         if self.background is not None and self.plot_widget: # Check for plot_widget
-            logging.debug(f"Limits changed ({axes.get_label()}): Invalidating background & scheduling plot_spectrum.")
+            logger.debug(f"Limits changed ({axes.get_label()}): Invalidating background & scheduling plot_spectrum.")
             self.background = None # Invalidate background cache
 
             # Get the current state to pass to the scheduled plot call
@@ -147,7 +149,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 if self.axes.bbox.width > 0 and self.axes.bbox.height > 0:
                     self.background = self.copy_from_bbox(self.blit_box())
         except Exception as e:
-            logging.error(f"Failed during background copy: {e}")
+            logger.error(f"Failed during background copy: {e}")
             self.background = None
         finally:
             if self.draw_event_cid is not None:
@@ -168,7 +170,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
         drawn_artists = []
         for artist in self.cursor_artists:
             try: self.axes.draw_artist(artist); drawn_artists.append(artist)
-            except Exception as e: logging.error(f"Error drawing anim artist {artist}: {e}")
+            except Exception as e: logger.error(f"Error drawing anim artist {artist}: {e}")
         if getattr(self.plot_widget, '_edit_mode_active', False):
             if hasattr(self.plot_widget, 'knot_artist') and self.plot_widget.knot_artist:
                 self.axes.draw_artist(self.plot_widget.knot_artist)
@@ -178,7 +180,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             self.axes.draw_artist(self.cursor_label)
         if drawn_artists:
             try: self.blit(self.blit_box())
-            except Exception as e: logging.error(f"Blitting failed: {e}"); self.draw_idle()
+            except Exception as e: logger.error(f"Blitting failed: {e}"); self.draw_idle()
 
 
     def on_motion(self, event):
@@ -230,7 +232,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                 session_state = main_window.active_history.current_state
 
             if not session_state or not session_state.spec:
-                logging.debug(
+                logger.debug(
                     "on_motion: No active session state or spec. Skipping.")
                 return  # Can't do conversions without a spec
             
@@ -256,7 +258,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                     # Ensure artists exist and match count
                     if not self.cursor_artists or len(new_x_positions) != len(self.cursor_artists):
                         # Force a full redraw if artists are missing/mismatched
-                        logging.warning("Cursor artists missing or mismatched on motion. Forcing full redraw.")
+                        logger.warning("Cursor artists missing or mismatched on motion. Forcing full redraw.")
                         self.plot_widget.plot_spectrum(session_state=session_state) # Recreate artists
                     else:
                         # Update existing artists
@@ -266,7 +268,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                         self.draw_animated() # Use blitting redraw
 
             except Exception as e:
-                logging.error(f"Error during cursor hover update: {e}", exc_info=True)
+                logger.error(f"Error during cursor hover update: {e}", exc_info=True)
         # else:
             # Optional: Clear coordinate display if outside axes or cursor off?
             # Toolbar should handle clearing coordinate display by default.

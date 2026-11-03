@@ -9,6 +9,8 @@ from typing import Callable, Dict, Optional, Tuple
 # Import V2 structures from the core
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
 
+logger = logging.getLogger(__name__)
+
 # --- The Registry ---
 _LOADER_REGISTRY: Dict[str, Callable] = {}
 
@@ -219,7 +221,7 @@ def load_astrocook_fits(file_path: str, **kwargs) -> SpectrumDataV2:
         )
 
     except Exception as e:
-        logging.error(f"Failed to load Astrocook FITS: {e}")
+        logger.error(f"Failed to load Astrocook FITS: {e}")
         raise
 
 @register_loader("pypeit_coadd")
@@ -284,7 +286,7 @@ def load_pypeit_coadd(file_path: str, **kwargs) -> SpectrumDataV2:
             meta=meta
         )
     except Exception as e:
-        logging.error(f"Failed to load PypeIt Coadd: {e}")
+        logger.error(f"Failed to load PypeIt Coadd: {e}")
         raise
 
 @register_loader("pypeit_spec1d_multi")
@@ -383,7 +385,7 @@ def load_pypeit_spec1d_multi(file_path: str, **kwargs) -> SpectrumDataV2:
         )
 
     except Exception as e:
-        logging.error(f"Failed to load PypeIt spec1d Multi-Order: {e}")
+        logger.error(f"Failed to load PypeIt spec1d Multi-Order: {e}")
         raise
 
 @register_loader("pypeit_stack")
@@ -438,7 +440,7 @@ def load_pypeit_stack(file_path: str, **kwargs) -> SpectrumDataV2:
             meta=meta
         )
     except Exception as e:
-        logging.error(f"Failed to load PypeIt Stack: {e}")
+        logger.error(f"Failed to load PypeIt Stack: {e}")
         raise
 
 @register_loader("pypeit_tellmodel")
@@ -502,7 +504,7 @@ def load_pypeit_tellmodel(file_path: str, **kwargs) -> SpectrumDataV2:
             )
 
     except Exception as e:
-        logging.error(f"Failed to load PypeIt Telluric Model: {e}")
+        logger.error(f"Failed to load PypeIt Telluric Model: {e}")
         raise
 
 @register_loader("simple_csv")
@@ -542,7 +544,7 @@ def load_simple_csv(file_path: str, **kwargs) -> SpectrumDataV2:
         )
         
     except Exception as e:
-        logging.error(f"Failed to load CSV: {e}")
+        logger.error(f"Failed to load CSV: {e}")
         raise
 
 @register_loader("ascii_telluric_model")
@@ -597,7 +599,7 @@ def load_ascii_telluric_model(file_path: str, **kwargs) -> SpectrumDataV2:
         )
 
     except Exception as e:
-        logging.error(f"Failed to load ASCII model: {e}")
+        logger.error(f"Failed to load ASCII model: {e}")
         raise
 
 @register_loader("ascii_resvel_header")
@@ -649,7 +651,7 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
             raise ValueError(f"No numeric data found in {file_path}")
             
         if total_points % 3 != 0:
-            logging.warning(f"Data length ({total_points}) is not divisible by 3. Truncating excess.")
+            logger.warning(f"Data length ({total_points}) is not divisible by 3. Truncating excess.")
             valid_len = (total_points // 3) * 3
             all_values = all_values[:valid_len]
 
@@ -663,11 +665,11 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
         # Heuristic: If median > 500, it's almost certainly Angstroms (UV/Optical)
         # Lya is 1215 A (121.5 nm). 
         if np.median(x) > 500:
-            logging.info("Detected Angstroms (median > 500). Converting to nm.")
+            logger.info("Detected Angstroms (median > 500). Converting to nm.")
             x = x / 10.0
             x_unit = au.nm
         else:
-            logging.info("Assuming nm (median < 500).")
+            logger.info("Assuming nm (median < 500).")
             x_unit = au.nm
 
         y_unit = au.dimensionless_unscaled
@@ -687,7 +689,7 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
             # The column only, in km/s (#526)
             resol_arr = np.full_like(x, final_resol)
             aux_cols['resol'] = DataColumnV2(resol_arr, au.km/au.s, "Resolution (FWHM km/s)")
-            logging.info(f"Loaded {len(x)} points. Resolution FWHM: {final_resol} km/s (R~{c_kms / final_resol:.0f})")
+            logger.info(f"Loaded {len(x)} points. Resolution FWHM: {final_resol} km/s (R~{c_kms / final_resol:.0f})")
 
         return SpectrumDataV2(
             x=x_col, xmin=xmin_col, xmax=xmax_col,
@@ -697,7 +699,7 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumDataV2:
         )
 
     except Exception as e:
-        logging.error(f"Failed to load ASCII Resvel file: {e}")
+        logger.error(f"Failed to load ASCII Resvel file: {e}")
         raise
 
 @register_loader("espresso_s2d_fits")
@@ -811,7 +813,7 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             )
 
     except Exception as e:
-        logging.error(f"Failed to load ESPRESSO S2D: {e}")
+        logger.error(f"Failed to load ESPRESSO S2D: {e}")
         raise
     
 @register_loader("xshooter_fits")
@@ -904,7 +906,7 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumDataV2:
             )
 
     except Exception as e:
-        logging.error(f"Failed to load X-Shooter FITS: {e}")
+        logger.error(f"Failed to load X-Shooter FITS: {e}")
         raise
 
 @register_loader("generic_spectrum")
@@ -1004,5 +1006,5 @@ def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumDataV2:
             )
 
     except Exception as e:
-        logging.error(f"Failed to load Generic FITS: {e}")
+        logger.error(f"Failed to load Generic FITS: {e}")
         raise

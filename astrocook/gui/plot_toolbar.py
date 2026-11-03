@@ -20,6 +20,8 @@ import qtawesome as qta
 from .floating_cards import CARD_WIDTH, CardFader
 from .theme import ACCENT
 
+logger = logging.getLogger(__name__)
+
 #: The icon of each tool (Material Design 6, outlined)
 #: The tab that shows or hides the floating toolbar, as those of the cards
 TAB_SIZE = 28
@@ -332,7 +334,7 @@ class AstrocookToolbar(NavigationToolbar):
         """ Overrides the default 'home' to reset to the *current*
             data state, respecting normalization.
         """
-        logging.debug("Custom 'Home' button pressed.")
+        logger.debug("Custom 'Home' button pressed.")
         if self.viewer_parent and self.viewer_parent.main_window:
             session_state = None
             if self.viewer_parent.main_window.active_history:

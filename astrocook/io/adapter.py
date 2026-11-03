@@ -22,6 +22,9 @@ from astrocook.core.structures import (
 )
 from astrocook.core.spectrum import SpectrumV2 
 from astrocook.core.system_list import SystemListV2
+
+logger = logging.getLogger(__name__)
+
 # --- V1 Imports ---
 
 # --- Helper for Multiplet Registration ---
@@ -40,7 +43,7 @@ def _register_custom_multiplets(components: List[ComponentDataV2]):
             
             # Register globally
             STANDARD_MULTIPLETS[series] = members
-            logging.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
+            logger.info(f"Auto-registered loaded custom multiplet: '{series}' -> {members}")
 
 def load_and_migrate_structure(archive_root, structure_name, gui_context, format_name, spec_file_path=None, v2_metadata=None):
     """
@@ -105,7 +108,7 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
         try:
             migrated_data = read_v1_system_list(path_to_load)
         except Exception as e:
-            logging.error(f"Could not read the V1 system list {path_to_load}: {e}")
+            logger.error(f"Could not read the V1 system list {path_to_load}: {e}")
             return SystemListV2(data=SystemListDataV2())
         # [FIX] Register custom multiplets found in V1 data
         if migrated_data.components:
@@ -419,10 +422,10 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
 
         _write_replacing(final_path, add_members)
 
-        logging.info(f"V2 archive created successfully at: {final_path}")
+        logger.info(f"V2 archive created successfully at: {final_path}")
 
     except Exception as e:
-        logging.error(f"FATAL: V2 archive creation failed: {e}")
+        logger.error(f"FATAL: V2 archive creation failed: {e}")
         raise
         
     finally:

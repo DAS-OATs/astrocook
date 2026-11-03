@@ -15,6 +15,8 @@ import numpy as np
 
 from .theme import SELECTION
 
+logger = logging.getLogger(__name__)
+
 #: The error of the flux (band, line or bars), in every plot
 ERROR_COLOR = '#aaaaaa'
 
@@ -187,7 +189,7 @@ def z_convert_inverse(x_plot_nm, xem_nm): # <<< Removed zem_spec, x_unit
         z = (x_plot_nm / xem_nm) - 1.0 # Simple calculation
         return z
     except Exception as e:
-        logging.debug(f"Inverse z conversion failed: {e}")
+        logger.debug(f"Inverse z conversion failed: {e}")
         return None
 
 # --- Helper to get colors ---
@@ -198,13 +200,13 @@ def get_color_cycle(n=10, cmap=None, fallback_cmap='tab20'):
             cmap_obj = matplotlib.colormaps.get_cmap(cmap)
             return [cmap_obj(i / n) for i in range(n)]
         except Exception as e:
-            logging.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
+            logger.warning(f"Could not get specified colormap '{cmap}': {e}. Using fallback.")
     try:
         colors = matplotlib.rcParams['axes.prop_cycle'].by_key()['color']
 
         return [colors[i % len(colors)] for i in range(n)]
     except Exception as e:
-        logging.warning(f"Could not get color cycle: {e}. Using fallback.")
+        logger.warning(f"Could not get color cycle: {e}. Using fallback.")
         cmap = matplotlib.colormaps.get_cmap(fallback_cmap)
         return [cmap(i / n) for i in range(n)]
 
@@ -235,7 +237,7 @@ def decimate_y_min_max(y: np.ndarray, factor: int) -> np.ndarray:
         # 4. Interleave
         return np.stack((y_mins, y_maxs), axis=1).ravel()
     except Exception as e:
-        logging.warning(f"y-axis decimation failed: {e}")
+        logger.warning(f"y-axis decimation failed: {e}")
         return y # Return original on failure
         
 def decimate_x_for_min_max(x: np.ndarray, factor: int) -> np.ndarray:
@@ -261,5 +263,5 @@ def decimate_x_for_min_max(x: np.ndarray, factor: int) -> np.ndarray:
         # 4. Interleave
         return np.stack((x_starts, x_ends), axis=1).ravel()
     except Exception as e:
-        logging.warning(f"x-axis decimation failed: {e}")
+        logger.warning(f"x-axis decimation failed: {e}")
         return x # Return original on failure

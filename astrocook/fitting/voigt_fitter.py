@@ -14,6 +14,8 @@ from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import ComponentDataV2
 from astrocook.core.system_list import SystemListV2
 
+logger = logging.getLogger(__name__)
+
 #: A line is evaluated only where its optical depth exceeds this (#526)
 TAU_CUT = 1e-6
 
@@ -153,13 +155,13 @@ class VoigtFitterV2:
         finite = r_pix[np.isfinite(r_pix)]
         if finite.size == r_pix.size and finite.size and np.all(finite == finite[0]):
             self._global_resol_val = float(finite[0])
-            logging.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f}")
+            logger.debug(f"VoigtFitter: Global R={self._global_resol_val:.0f}")
         elif finite.size:
             self._resol_column = r_pix
             self._use_variable_resolution = True
-            logging.debug(f"VoigtFitter: Variable resolution, median R={np.median(finite):.0f}")
+            logger.debug(f"VoigtFitter: Variable resolution, median R={np.median(finite):.0f}")
         else:
-            logging.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
+            logger.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
         # Placeholders
         self._fit_mask = None
@@ -412,7 +414,7 @@ class VoigtFitterV2:
             errors, red_chi2, cov = self._scaled_errors(r0, jac)
             linked_errors = self._linked_errors(p0, cov)
         except Exception as e:
-            logging.warning(f"Error calc failed: {e}")
+            logger.warning(f"Error calc failed: {e}")
             return self._system_list
         is_free_mask = self._constraints._param_map['is_free']
         full_errors = np.full(len(is_free_mask), np.nan)
@@ -645,7 +647,7 @@ class VoigtFitterV2:
             if is_free_mask[base_idx + 2]:
                 idx_b = free_idx_map[base_idx + 2]
                 p_refined[idx_b] = b_guess
-            logging.info(f"Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
+            logger.info(f"Smart Guess: z={new_z:.5f}, logN={logN_guess:.2f}, b={b_guess:.1f}")
         return p_refined
 
     def _voigt_optical_depth_vectorized(self, wave_grid_ang: np.ndarray,
@@ -707,7 +709,7 @@ class VoigtFitterV2:
             indices = np.where(self._fit_mask)[0]
             self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
         else:
-            logging.warning("Fit mask is empty! Falling back to full valid mask.")
+            logger.warning("Fit mask is empty! Falling back to full valid mask.")
             self._sl = slice(None)
             self._fit_mask = self._valid_mask.copy()
 
@@ -718,10 +720,10 @@ class VoigtFitterV2:
         
         #logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
         if np.sum(self._fit_mask_calc) == 0:
-            logging.debug("FIT MASK IS EMPTY!")
+            logger.debug("FIT MASK IS EMPTY!")
             # Debug: what are we searching for?
             for idx, comp in enumerate(active_components):
-                logging.debug(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
+                logger.debug(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
         
         if self._use_variable_resolution and self._resol_column is not None:
             self._resol_calc = self._resol_column[self._sl]
@@ -936,9 +938,9 @@ class VoigtFitterV2:
         try:
             p_free_errors, red_chi2, cov = self._scaled_errors(res.fun, res.jac)
             linked_errors = self._linked_errors(res.x, cov)
-            logging.debug(f"Errors calculated: {p_free_errors}")
+            logger.debug(f"Errors calculated: {p_free_errors}")
         except Exception as e:
-            logging.warning(f"Error calc failed: {e}")
+            logger.warning(f"Error calc failed: {e}")
             p_free_errors = np.zeros_like(res.x)
             p_free_errors[:] = np.nan
             linked_errors = {idx: np.nan for idx, _ in self._constraints._compiled_links}
@@ -1023,7 +1025,7 @@ class VoigtFitterV2:
         if nan_errors:
             listed = ", ".join(f"{c.series} at z = {c.z:.5f}" for c in nan_errors[:10])
             more = f" and {len(nan_errors) - 10} more" if len(nan_errors) > 10 else ""
-            logging.warning(
+            logger.warning(
                 f"Uncertainties could not be computed (ill-conditioned fit) for "
                 f"{len(nan_errors)} component(s): {listed}{more}. "
                 f"Their errors are NaN; consider refitting or freezing parameters.")
@@ -1059,7 +1061,7 @@ class VoigtFitterV2:
         
         final_model_flux = final_model_norm * self._norm
 
-        logging.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
+        logger.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
         return new_system_list, final_model_flux, res
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:

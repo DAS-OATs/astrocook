@@ -8,6 +8,8 @@ from astrocook.core.structures import ParameterConstraintV2
 if TYPE_CHECKING:
     from astrocook.core.system_list import SystemListV2
 
+logger = logging.getLogger(__name__)
+
 class VoigtModelConstraintV2:
     """
     Manages parameter constraints and vector mapping for Voigt fitting.
@@ -56,7 +58,7 @@ class VoigtModelConstraintV2:
         
         self._refresh_state()
         
-        logging.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
+        logger.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
     def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2,
                               spec=None):
@@ -97,7 +99,7 @@ class VoigtModelConstraintV2:
             # in the forest)
             self._active_uuids = self._system_list.get_connected_group(
                 target_uuids, max_depth=group_depth, spec=spec)
-            logging.debug(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
+            logger.debug(f"Fluid Group: {len(target_uuids)} targets -> {len(self._active_uuids)} active components.")
         
         self._refresh_state()
 
@@ -258,7 +260,7 @@ class VoigtModelConstraintV2:
                         code = compile(constraint.expression, f"<link {uuid}.{param}>", 'eval')
                         self._compiled_links.append((target_idx, code))
                     except Exception as e:
-                        logging.error(f"Failed to compile link for {uuid}.{param}: {e}")
+                        logger.error(f"Failed to compile link for {uuid}.{param}: {e}")
 
     def _convert_v1_to_v2(self, v1_state, v1_id_map, effective_is_free: bool):
         expr = v1_state['expression']

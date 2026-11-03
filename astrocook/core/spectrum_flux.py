@@ -19,6 +19,8 @@ from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 # The auxiliary columns that the flux methods change along with y and dy
 # (findings register F69). Chosen by name, not by unit: many loaders give
 # the flux no unit, and then the unit cannot tell a continuum from a
@@ -186,7 +188,7 @@ class FluxMixin:
                 try:
                     old_col = new_aux_cols[col_name]
                     if old_col.values.dtype.kind in 'fiu':
-                        logging.debug(f"Smoothing auxiliary column: {col_name}")
+                        logger.debug(f"Smoothing auxiliary column: {col_name}")
                         new_vals = smooth_spectrum(
                             self._data.x.quantity,
                             old_col.values,
@@ -198,7 +200,7 @@ class FluxMixin:
                             new_vals, old_col.unit, old_col.description
                         )
                 except Exception as e:
-                    logging.warning(f"Failed to smooth aux col '{col_name}': {e}")
+                    logger.warning(f"Failed to smooth aux col '{col_name}': {e}")
         
         # --- RE-NORMALIZATION BLOCK HAS BEEN REMOVED ---
 
@@ -319,7 +321,7 @@ class FluxMixin:
                 self.x, self.y, magnitudes
             )
         except Exception as e:
-            logging.error(f"Calibration failed: {e}")
+            logger.error(f"Calibration failed: {e}")
             raise e
 
         # 2. Define standard physical unit

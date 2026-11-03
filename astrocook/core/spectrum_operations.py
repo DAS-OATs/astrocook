@@ -15,6 +15,8 @@ from astrocook.core.debug_hooks import request_debug_plot
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 # We assume 'xem' (the Ly-alpha rest wavelength) is accessible here for the custom equivalency
 # You must ensure this global is either imported or defined here (Technical Debt).
 XEM_LYA = 121.567 * au.nm 
@@ -148,7 +150,7 @@ def smooth_spectrum(
             # 4. Apply the filter
             y_final = gaussian_filter1d(y, smooth_std_pix)
         except Exception as e:
-            logging.error(f"Failed to calculate smoothing in km/s: {e}. Returning unsmoothed array.")
+            logger.error(f"Failed to calculate smoothing in km/s: {e}. Returning unsmoothed array.")
             return y
     else:
         # No smoothing requested
@@ -454,7 +456,7 @@ def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
     window_size = 2 * h + 1
     if window_size > len(y):
-        logging.warning(f"Running mean window ({window_size}) is larger than array ({len(y)}), returning array mean.")
+        logger.warning(f"Running mean window ({window_size}) is larger than array ({len(y)}), returning array mean.")
         return np.full_like(y, np.mean(y))
         
     # Use 'same' mode to keep array length, symmetric padding
@@ -467,7 +469,7 @@ def running_std(y: np.ndarray, h: int) -> np.ndarray:
     """
     window_size = 2 * h + 1
     if window_size > len(y):
-        logging.warning(f"Window ({window_size}) larger than array ({len(y)}), returning overall std.")
+        logger.warning(f"Window ({window_size}) larger than array ({len(y)}), returning overall std.")
         return np.full_like(y, np.nanstd(y))
         
     kernel = np.ones(window_size) / window_size
@@ -569,7 +571,7 @@ def find_absorbed_regions(
     
     # Define Ly-alpha proximity
     if z_em == 0.0:
-        logging.warning("z_em is 0.0. Using 'smooth_len_out' for all regions.")
+        logger.warning("z_em is 0.0. Using 'smooth_len_out' for all regions.")
         lya_prox_nm = -np.inf * au.nm
     else:
         lya_obs = (121.567 * au.nm) * (1 + z_em) 
@@ -648,14 +650,14 @@ def find_absorbed_regions(
         mask_spike = new_spike
         
         if np.sum(is_outlier) == 0 and not spikes_changed:
-            logging.info(f"Clipping converged after {i+1} iterations.")
+            logger.info(f"Clipping converged after {i+1} iterations.")
             break
         
         mask_clipped = mask_clipped | is_outlier 
         mask_unabs = mask_unabs & ~is_outlier
         
         if i == maxiter - 1:
-            logging.warning(f"Clipping did not converge after {maxiter} iterations.")
+            logger.warning(f"Clipping did not converge after {maxiter} iterations.")
 
     return ~mask_unabs | mask_spike
 
@@ -781,19 +783,19 @@ def fit_powerlaw_to_regions(
             mask = mask & ~is_outlier # Keep only points that were good AND are not new outliers
             n_new = np.sum(mask)
             
-            logging.debug(f"Power-law iter {i+1}: slope={slope:.3f}, clipped {n_old - n_new} points.")
+            logger.debug(f"Power-law iter {i+1}: slope={slope:.3f}, clipped {n_old - n_new} points.")
             
             if n_new == n_old:
                 break # Converged
 
-        logging.info(f"Power-law fit converged: slope={slope:.3f}, intercept={intercept:.3f}, used {np.sum(mask)}/{len(x_sel)} points.")
+        logger.info(f"Power-law fit converged: slope={slope:.3f}, intercept={intercept:.3f}, used {np.sum(mask)}/{len(x_sel)} points.")
         
         # 3. Generate final model over the FULL x-axis
         y_pl = (10**intercept) * (x**slope)
         return y_pl
         
     except Exception as e:
-        logging.error(f"Failed to fit power-law: {e}")
+        logger.error(f"Failed to fit power-law: {e}")
         raise
 
 def detect_regions(
@@ -849,7 +851,7 @@ def merge_regions_by_velocity(
         # 1. Get velocity axis
         x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
     except Exception as e:
-        logging.error(f"Cannot merge regions: failed to convert x-axis to km/s: {e}")
+        logger.error(f"Cannot merge regions: failed to convert x-axis to km/s: {e}")
         num_regions = len(np.unique(region_map)) - 1
         return region_map, num_regions # Return original
 
@@ -895,7 +897,7 @@ def merge_regions_by_velocity(
             info['indices'][1] = max(info['indices'][1], idx_end)
 
     if not region_info:
-        logging.debug("merge_regions: No regions found to merge.")
+        logger.debug("merge_regions: No regions found to merge.")
         return region_map, 0
 
     # 4. Sort regions by starting velocity
@@ -944,7 +946,7 @@ def merge_regions_by_velocity(
     # min/max indices (e.g., gaps we just filled).
     final_map, final_num_regions = detect_regions(merged_map > 0, min_pix=1)
 
-    logging.info(f"Merged {len(sorted_regions)} regions into {final_num_regions} (dv={merge_dv} km/s).")
+    logger.info(f"Merged {len(sorted_regions)} regions into {final_num_regions} (dv={merge_dv} km/s).")
     
     return final_map, final_num_regions
 
@@ -1020,7 +1022,7 @@ def _find_kinematic_doublet_candidates(
         return candidates
         
     except Exception as e:
-        logging.error(f"Failed kinematic check for {multiplet_name}: {e}", exc_info=True)
+        logger.error(f"Failed kinematic check for {multiplet_name}: {e}", exc_info=True)
         return []
 
 def rate_doublet_candidate(
@@ -1138,5 +1140,5 @@ def rate_doublet_candidate(
         return max(0.0, r2_score)
 
     except Exception as e:
-        logging.warning(f"Failed to rate {multiplet_name} at z={z_test}: {e}", exc_info=True)
+        logger.warning(f"Failed to rate {multiplet_name} at z={z_test}: {e}", exc_info=True)
         return 0.0

@@ -24,6 +24,8 @@ from .velocity_plot import VelocityPlotWidget
 from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND, TOOLTIP_BORDER,
                     TOOLTIP_TEXT, status_bar_style)
 
+logger = logging.getLogger(__name__)
+
 
 #: The tooltip of the fits disabled without a continuum
 NO_CONTINUUM_TIP = "Needs a continuum (Continuum > Auto-estimate Continuum...)"
@@ -450,7 +452,7 @@ class SystemInspector(QWidget):
         try:
             z_target = float(self.z_in.text())
             self.vel_plot.set_center_redshift(z_target)
-        except ValueError as e: logging.error(f"Error applying z: {e}")
+        except ValueError as e: logger.error(f"Error applying z: {e}")
 
     def _on_group_toggled(self, checked):
         self.proxy_model.set_group_filter_enabled(checked)
@@ -906,7 +908,7 @@ class SystemInspector(QWidget):
             uuid_list = [c.uuid for c in comps]
             
             # Log the action
-            logging.info(f"Triggering Bayesian {engine.upper()} fit for {len(uuid_list)} components...")
+            logger.info(f"Triggering Bayesian {engine.upper()} fit for {len(uuid_list)} components...")
             
             self.main_window._on_recipe_requested(
                 "absorbers", "fit_bayesian", 

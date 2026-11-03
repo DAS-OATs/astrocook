@@ -8,6 +8,8 @@ from astrocook.recipes.messages import msg_param_fail
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2 
 
+logger = logging.getLogger(__name__)
+
 FLUX_RECIPES_SCHEMAS = {
     "calculate_running_std": {
         "brief": "Calculate running standard deviation.",
@@ -126,7 +128,7 @@ class RecipeFluxV2:
                 window_pix_i += 1
                 
         except ValueError:
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
             
         try:
@@ -141,7 +143,7 @@ class RecipeFluxV2:
             return self._session.with_new_spectrum(new_spec_v2)
             
         except Exception as e:
-            logging.error(f"Failed during calculate_running_std: {e}", exc_info=True)
+            logger.error(f"Failed during calculate_running_std: {e}", exc_info=True)
             return 0
 
     def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
@@ -166,7 +168,7 @@ class RecipeFluxV2:
         try:
             sigma_kms_f = float(sigma_kms)
         except ValueError:
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
 
         try:
@@ -175,7 +177,7 @@ class RecipeFluxV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during smooth: {e}", exc_info=True)
+            logger.error(f"Failed during smooth: {e}", exc_info=True)
             return 0
 
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
@@ -233,13 +235,13 @@ class RecipeFluxV2:
         except (ValueError, TypeError):
             # Replicates V1 error handling path to avoid crash in the GUI context;
             # return 0 like the other recipes (findings register F23)
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
 
         # The V1 normalization was never applied in V2 and is not offered
         # any more (F37, #560): say so instead of ignoring it silently
         if str(norm) == 'True':
-            logging.warning("rebin: 'norm' is ignored, the rebinned spectrum is "
+            logger.warning("rebin: 'norm' is ignored, the rebinned spectrum is "
                             "not normalized; use the normalized view of the "
                             "plot, or apply_expression with y/cont.")
 
@@ -272,7 +274,7 @@ class RecipeFluxV2:
             A new session with the scaled flux. Returns ``0`` (int) on failure.
         """
         if reference_session in ['None', '']:
-            logging.error("No reference session selected.")
+            logger.error("No reference session selected.")
             return 0
         try:
             order_i = int(order)
@@ -288,7 +290,7 @@ class RecipeFluxV2:
             )
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
-            logging.error(f"Equalize failed: {e}")
+            logger.error(f"Equalize failed: {e}")
             return 0
     
     def resample(self, target_session: str = 'None') -> 'SessionV2':
@@ -311,7 +313,7 @@ class RecipeFluxV2:
             or 0 on failure.
         """
         if target_session == 'None' or target_session == '':
-            logging.error("No target session was selected for resampling.")
+            logger.error("No target session was selected for resampling.")
             return 0
 
         try:
@@ -339,7 +341,7 @@ class RecipeFluxV2:
             return self._session.with_new_spectrum(new_spec_v2)
             
         except Exception as e:
-            logging.error(f"Failed during resample: {e}", exc_info=True)
+            logger.error(f"Failed during resample: {e}", exc_info=True)
             return 0
         
     def calibrate_from_magnitudes(self, magnitudes: str = "SDSS_r=17.0") -> 'SessionV2':
@@ -368,5 +370,5 @@ class RecipeFluxV2:
             
         except Exception as e:
             # Standard error logging for the worker
-            logging.error(f"Failed during calibrate_from_magnitudes: {e}", exc_info=True)
+            logger.error(f"Failed during calibrate_from_magnitudes: {e}", exc_info=True)
             return 0

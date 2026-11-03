@@ -8,6 +8,8 @@ as the GUI signal did when nothing was connected to it.
 import logging
 from typing import Callable, Optional
 
+logger = logging.getLogger(__name__)
+
 _debug_plot_handler: Optional[Callable[[dict], None]] = None
 
 
@@ -27,6 +29,6 @@ def set_debug_plot_handler(handler: Optional[Callable[[dict], None]]) -> None:
 def request_debug_plot(plot_data: dict) -> None:
     """Pass ``plot_data`` to the debug plot handler, if one is set."""
     if _debug_plot_handler is None:
-        logging.debug(f"No handler for the debug plot: {plot_data.get('title', '')}")
+        logger.debug(f"No handler for the debug plot: {plot_data.get('title', '')}")
         return
     _debug_plot_handler(plot_data)

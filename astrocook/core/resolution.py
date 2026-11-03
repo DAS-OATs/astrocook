@@ -22,6 +22,8 @@ from typing import Optional, Tuple
 import astropy.units as au
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 C_KMS = 299792.458
 
 #: Legacy rule: a resolution below this value was taken as a FWHM in km/s,
@@ -121,7 +123,7 @@ def migrate_resolution(data):
             unit = au.Unit(col.unit) if col.unit is not None else au.dimensionless_unscaled
             if (unit == au.dimensionless_unscaled
                     and np.median(values[valid]) < LEGACY_KMS_THRESHOLD):
-                logging.info("Resolution column read as FWHM in km/s "
+                logger.info("Resolution column read as FWHM in km/s "
                              "(dimensionless, median below %g).",
                              LEGACY_KMS_THRESHOLD)
                 aux = dict(data.aux_cols)
@@ -217,7 +219,7 @@ def migrate_component_resolutions(systs, spec):
     if not changed:
         return systs
     if n_cleared or n_converted:
-        logging.info("Component resolutions: %d stamped by an earlier fit cleared "
+        logger.info("Component resolutions: %d stamped by an earlier fit cleared "
                      "(they follow the spectrum now), %d converted from km/s to R.",
                      n_cleared, n_converted)
     return systs.__class__(dataclasses.replace(systs._data, components=components))

@@ -577,3 +577,13 @@ def test_stdio_console_script(mock_archive):
         ("session_open", {"path": str(mock_archive)}))
     assert {t.name for t in tools} == TOOLS
     assert not opened.is_error
+
+
+def test_run_recipe_returns_the_warnings_of_a_recipe():
+    # The collector is on the root logger; the warning is logged by
+    # recipes/flux.py (characterization for the loggers per module, phase 6)
+    from test_recipes_edit_flux import _spec
+    session = SessionV2("s", None, spec=_spec())
+    result, warnings = run_recipe("rebin", session.flux.rebin, norm="True")
+    assert isinstance(result, SessionV2)
+    assert len(warnings) == 1 and "'norm' is ignored" in warnings[0]

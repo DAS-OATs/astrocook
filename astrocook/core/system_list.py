@@ -14,6 +14,8 @@ from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 def get_all_w_rest(series_name: str) -> List[float]:
     """
     Returns a list of rest wavelengths in Angstroms for a given series name.
@@ -233,7 +235,7 @@ class SystemListV2:
             # Use the clean rebuilt map
             clean_parsed = new_parsed
             constraints_dirty = True
-            logging.debug("SystemListV2: Hydrated constraints from clean JSON map.")
+            logger.debug("SystemListV2: Hydrated constraints from clean JSON map.")
         
         # 3. Legacy Fallback: If V2 map empty, Sanitize Parsed Map & Populate V2
         elif clean_parsed:
@@ -282,7 +284,7 @@ class SystemListV2:
 
             clean_parsed = sanitized_parsed
             constraints_dirty = True
-            logging.info("SystemListV2: Sanitized legacy constraints and populated clean map.")
+            logger.info("SystemListV2: Sanitized legacy constraints and populated clean map.")
 
         if dirty or constraints_dirty:
             self._data = dataclasses.replace(
@@ -296,9 +298,9 @@ class SystemListV2:
         try:
             self.constraint_model = VoigtModelConstraintV2(self)
         except Exception as e:
-            logging.error(f"Failed to initialize VoigtModelConstraintV2: {e}", exc_info=True)
+            logger.error(f"Failed to initialize VoigtModelConstraintV2: {e}", exc_info=True)
             try:
-                logging.warning("Creating fallback empty constraint model.")
+                logger.warning("Creating fallback empty constraint model.")
                 dummy_systs = SystemListV2.__new__(SystemListV2)
                 dummy_systs._data = SystemListDataV2()
                 dummy_systs.components = []
@@ -429,7 +431,7 @@ class SystemListV2:
                 # Restore exactly the previous set (no further expansion)
                 self.constraint_model.set_active_components(original_active, group_depth=0)
             except Exception as e:
-                logging.error(f"fitting_context cleanup failed: {e}. Forcing reset to None.")
+                logger.error(f"fitting_context cleanup failed: {e}. Forcing reset to None.")
                 # Fail-safe: Unlock everything to prevent persistent 'Frozen' state
                 try:
                     self.constraint_model.set_active_components(None)
@@ -459,7 +461,7 @@ class SystemListV2:
             A new instance populated with the identified components.
         """
         if not spec.has_aux_column(region_id_col):
-            logging.warning(f"add_components: '{region_id_col}' not in spectrum. No components added.")
+            logger.warning(f"add_components: '{region_id_col}' not in spectrum. No components added.")
             return self
 
         new_components = list(self._data.components)
@@ -467,7 +469,7 @@ class SystemListV2:
         if new_components:
             next_id = max(c.id for c in new_components) + 1
 
-        logging.info(f"Populating SystemList with {len(series_map)} components...")
+        logger.info(f"Populating SystemList with {len(series_map)} components...")
         
         for rid, series in series_map.items():
             if rid not in z_map: continue
@@ -582,7 +584,7 @@ class SystemListV2:
                 new_components.append(c)
         
         if not found:
-            logging.warning(f"Component {uuid} not found for update.")
+            logger.warning(f"Component {uuid} not found for update.")
             return self
 
         new_data = dataclasses.replace(self._data, components=new_components)
@@ -761,7 +763,7 @@ class SystemListV2:
                         to_reset.append((u_src, p_name))
 
         for u_src, p_name in to_reset:
-            logging.info(f"Removing broken link from {u_src}.{p_name} (target deleted).")
+            logger.info(f"Removing broken link from {u_src}.{p_name} (target deleted).")
             # Reset to Free
             clean_constr = ParameterConstraintV2(is_free=True, expression=None, target_uuid=None)
             
@@ -1029,7 +1031,7 @@ class SystemListV2:
         static_mask = (np.abs(dv_arr) < z_window_kms) & np.isfinite(spec.y.value) & (spec.dy.value > 0)
         
         if np.sum(static_mask) == 0:
-            logging.warning("optimize_hierarchy: Window contains no valid data.")
+            logger.warning("optimize_hierarchy: Window contains no valid data.")
             return self
 
         # [FIX] Initialize Taboo Mask (Rejected Pixels)
@@ -1063,9 +1065,9 @@ class SystemListV2:
                 return aic, new_systs
 
         # 3. Baseline Fit
-        logging.info(f"Optimizing {series_name} hierarchy...")
+        logger.info(f"Optimizing {series_name} hierarchy...")
         best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
-        logging.info(f"Baseline AIC: {best_aic:.1f}")
+        logger.info(f"Baseline AIC: {best_aic:.1f}")
         
         current_systs = best_systs
         trials_without_imp = 0
@@ -1088,7 +1090,7 @@ class SystemListV2:
             min_val = sigma_resid[min_idx]
             
             if min_val > -threshold_sigma:
-                logging.info(f"Converged. Max resid {min_val:.1f}s > {threshold_sigma}")
+                logger.info(f"Converged. Max resid {min_val:.1f}s > {threshold_sigma}")
                 break
                 
             # C. Create Candidate
@@ -1104,13 +1106,13 @@ class SystemListV2:
                         too_close = True; break
             
             if too_close:
-                logging.warning(f"Iter {i+1}: Candidate too close ({dv_sep:.1f} < {min_dv} km/s). Masking and retrying.")
+                logger.warning(f"Iter {i+1}: Candidate too close ({dv_sep:.1f} < {min_dv} km/s). Masking and retrying.")
                 # [FIX] Mask this spot and CONTINUE (Do not Break!)
                 sl = slice(max(0, min_idx-5), min(len(spec.x.value), min_idx+6))
                 rejected_mask[sl] = True
                 continue 
 
-            logging.info(f"Iter {i+1}: Candidate at {z_new:.5f} (Sigma={min_val:.1f})")
+            logger.info(f"Iter {i+1}: Candidate at {z_new:.5f} (Sigma={min_val:.1f})")
             
             # E. Add & Fit
             cand_systs = best_systs.add_component(series=series_name, z=z_new, logN=13.0, b=15.0)
@@ -1121,12 +1123,12 @@ class SystemListV2:
             # F. Compare
             delta = trial_aic - best_aic
             if delta < -aic_penalty:
-                logging.info(f"  -> Accepted. AIC {best_aic:.1f} -> {trial_aic:.1f} (Delta: {delta:.1f})")
+                logger.info(f"  -> Accepted. AIC {best_aic:.1f} -> {trial_aic:.1f} (Delta: {delta:.1f})")
                 best_aic = trial_aic
                 best_systs = trial_systs
                 trials_without_imp = 0
             else:
-                logging.info(f"  -> Rejected. AIC Delta {delta:.1f}")
+                logger.info(f"  -> Rejected. AIC Delta {delta:.1f}")
                 trials_without_imp += 1
                 
                 # [FIX] Mask this spot so we don't loop forever
@@ -1134,7 +1136,7 @@ class SystemListV2:
                 rejected_mask[sl] = True
             
             if trials_without_imp >= patience:
-                logging.info("Patience exhausted.")
+                logger.info("Patience exhausted.")
                 break
         
         return best_systs
@@ -1182,7 +1184,7 @@ class SystemListV2:
         if deleted_count == 0:
             return self
 
-        logging.info(f"Smart clean: Removed {deleted_count} components in region {obs_min:.1f}-{obs_max:.1f}")
+        logger.info(f"Smart clean: Removed {deleted_count} components in region {obs_min:.1f}-{obs_max:.1f}")
         new_data = dataclasses.replace(self._data, components=surviving_comps)
         return SystemListV2(new_data)
 
@@ -1212,7 +1214,7 @@ class SystemListV2:
         if deleted_count == 0:
             return self
             
-        logging.info(f"Filtered {deleted_count} components.")
+        logger.info(f"Filtered {deleted_count} components.")
         new_data = dataclasses.replace(self._data, components=valid_comps)
         return SystemListV2(new_data)
     

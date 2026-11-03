@@ -10,6 +10,8 @@ of ``SpectrumPlotWidget``, which drives it from its mouse handlers
 import logging
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 
 class ContinuumEditorMixin:
     """The continuum editor of ``SpectrumPlotWidget``.
@@ -120,7 +122,7 @@ class ContinuumEditorMixin:
         if not self._edit_mode_active:
             return
 
-        logging.info("Continuum edit cancelled.")
+        logger.info("Continuum edit cancelled.")
         
         # 1. Stop the editor state without saving data
         self._edit_mode_active = False
@@ -286,7 +288,7 @@ class ContinuumEditorMixin:
         if not self._edit_mode_active or not self.main_window.active_history: 
             return
 
-        logging.info(f"Resetting continuum to original data with stride {stride_kms:.0f} km/s.")
+        logger.info(f"Resetting continuum to original data with stride {stride_kms:.0f} km/s.")
 
         # 1. Clear any 'dragging' backups
         self._stride_backup_x = None
@@ -342,4 +344,4 @@ class ContinuumEditorMixin:
             self.canvas.draw_animated()
             
         except Exception as e:
-            logging.debug(f"Failed to refresh edit layer: {e}")
+            logger.debug(f"Failed to refresh edit layer: {e}")

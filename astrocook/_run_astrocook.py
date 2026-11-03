@@ -10,6 +10,8 @@ from PySide6.QtWidgets import QApplication, QSplashScreen
 from PySide6.QtGui import QPixmap, QColor, QPainter, QIcon
 from PySide6.QtCore import Qt, QEvent, Signal
 
+logger = logging.getLogger(__name__)
+
 def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base_path = Path(sys._MEIPASS)
@@ -41,7 +43,7 @@ class AstroCookApp(QApplication):
         # Intercept the specific macOS event
         if event.type() == QEvent.FileOpen:
             file_path = event.file()
-            logging.info(f"MacOS FileOpen Event received: {file_path}")
+            logger.info(f"MacOS FileOpen Event received: {file_path}")
             
             # If the main window isn't ready, queue it
             if not self.activeWindow():
@@ -97,14 +99,14 @@ def main():
                 
                 if image:
                     NSApplication.sharedApplication().setApplicationIconImage_(image)
-                    logging.info(f"Dev Dock Icon set to: {icon_name}")
+                    logger.info(f"Dev Dock Icon set to: {icon_name}")
             except ImportError:
                 pass
             except Exception as e:
-                logging.warning(f"Failed to set Dock icon: {e}")
+                logger.warning(f"Failed to set Dock icon: {e}")
 
     except Exception as e:
-        logging.warning(f"Could not set app icon: {e}")
+        logger.warning(f"Could not set app icon: {e}")
 
     import time
     min_splash_duration = 1.0  # Durata minima in secondi
@@ -148,12 +150,12 @@ def main():
             
             time.sleep(1.5)
         else:
-            logging.warning("Logo pixmap is null.")
+            logger.warning("Logo pixmap is null.")
             
     except Exception as e:
-        logging.warning(f"Could not load splash screen: {e}")
+        logger.warning(f"Could not load splash screen: {e}")
 
-    logging.info("Importing heavy modules...")
+    logger.info("Importing heavy modules...")
     
     from astrocook.core.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
@@ -200,12 +202,12 @@ def main():
                 
                 if new_sess and new_sess != 0:
                     loaded_sessions.append(new_sess)
-                    logging.info(f"Successfully loaded: {name}")
+                    logger.info(f"Successfully loaded: {name}")
                 else:
-                    logging.error(f"Failed to load: {real_path}")
+                    logger.error(f"Failed to load: {real_path}")
 
             except Exception as e:
-                logging.error(f"Error loading {real_path}: {e}")
+                logger.error(f"Error loading {real_path}: {e}")
 
     # 6. GUI Startup
     if splash:

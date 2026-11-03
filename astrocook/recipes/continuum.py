@@ -7,6 +7,8 @@ from astrocook.recipes.messages import msg_param_fail
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
+logger = logging.getLogger(__name__)
+
 # --- Schemas for the Continuum Menu ---
 CONTINUUM_RECIPES_SCHEMAS = {
     "estimate_auto": {
@@ -151,14 +153,14 @@ class RecipeContinuumV2:
             z_em_f = self._session.spec._data.z_em # Read z_em from session
             renorm_model_b = str(renorm_model) == 'True'
         except ValueError:
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
             
         if z_em_f == 0.0:
-            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
+            logger.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
 
         try:
-            logging.info("Auto-continuum: Finding absorbed regions...")
+            logger.info("Auto-continuum: Finding absorbed regions...")
             # 1. Call the first API method
             spec_with_mask = self._session.spec.find_absorbed(
                 smooth_len_lya=smooth_len_lya_q,
@@ -167,7 +169,7 @@ class RecipeContinuumV2:
                 template=template_b
             )
             
-            logging.info("Auto-continuum: Fitting continuum to mask...")
+            logger.info("Auto-continuum: Fitting continuum to mask...")
             spec_with_cont = spec_with_mask.fit_continuum(
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
@@ -179,7 +181,7 @@ class RecipeContinuumV2:
             # 3. Return the final new state
             return self._session.with_new_spectrum(spec_with_cont)
         except Exception as e:
-            logging.error(f"Failed during estimate_auto: {e}", exc_info=True)
+            logger.error(f"Failed during estimate_auto: {e}", exc_info=True)
             return 0
 
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
@@ -218,11 +220,11 @@ class RecipeContinuumV2:
             template_b = str(template) == 'True'
             z_em_f = self._session.spec._data.z_em # Read z_em from session
         except ValueError:
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
 
         if z_em_f == 0.0:
-            logging.warning("z_em is 0.0. Run 'Edit > Set Properties' before continuum fitting.")
+            logger.warning("z_em is 0.0. Run 'Edit > Set Properties' before continuum fitting.")
             # We don't stop, as the operation function handles z_em=0.0
             
         try:
@@ -234,7 +236,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during find_absorbed: {e}", exc_info=True)
+            logger.error(f"Failed during find_absorbed: {e}", exc_info=True)
             return 0
 
     def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: str = '800.0', 
@@ -282,7 +284,7 @@ class RecipeContinuumV2:
                 fudge_arg = float(fudge)
                 
         except ValueError:
-            logging.error(msg_param_fail)
+            logger.error(msg_param_fail)
             return 0
         
         try:
@@ -295,7 +297,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during fit_continuum: {e}", exc_info=True)
+            logger.error(f"Failed during fit_continuum: {e}", exc_info=True)
             return 0
         
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
@@ -323,7 +325,7 @@ class RecipeContinuumV2:
             column added/updated, or 0 on failure.
         """
         if self._session.spec._data.z_em == 0.0:
-            logging.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "
+            logger.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "
                           "Run 'Edit > Set Properties' first.")
             return 0
             
@@ -336,7 +338,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logging.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
+            logger.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
             return 0
     
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':

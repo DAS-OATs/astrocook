@@ -15,6 +15,8 @@ from astrocook.core.session_manager import SessionHistory
 from .log_scripter_dialog import LogScripterDialog
 from .qt_workers import ScriptWorker
 
+logger = logging.getLogger(__name__)
+
 
 class MainScriptsMixin:
     """The scripts of ``MainWindowV2``.
@@ -38,7 +40,7 @@ class MainScriptsMixin:
             self.log_scripter_dialog.setWindowTitle(f"Session Log: {session_name}")
             self.log_scripter_dialog.raise_()
             self.log_scripter_dialog.activateWindow()
-            logging.debug(f"Activating existing log scripter for {session_name}")
+            logger.debug(f"Activating existing log scripter for {session_name}")
             return
 
         try:
@@ -53,9 +55,9 @@ class MainScriptsMixin:
                 lambda: self._on_log_scripter_closed() 
             )
             dialog.show()
-            logging.debug(f"Creating new single log scripter for {session_name}")
+            logger.debug(f"Creating new single log scripter for {session_name}")
         except Exception as e:
-            logging.error(f"Failed to launch log scripter: {e}", exc_info=True)
+            logger.error(f"Failed to launch log scripter: {e}", exc_info=True)
 
     def _on_log_scripter_closed(self):
         """
@@ -63,13 +65,13 @@ class MainScriptsMixin:
         Cleans up the reference.
         """
         self.log_scripter_dialog = None
-        logging.debug("Single log scripter closed, reference removed.")
+        logger.debug("Single log scripter closed, reference removed.")
         
         try:
             self.session_collapse_button.raise_()
             self.plot_controls_collapse_button.raise_()
         except Exception as e:
-            logging.warning(f"Could not re-raise buttons: {e}")
+            logger.warning(f"Could not re-raise buttons: {e}")
 
     def run_script(self, script_text: str):
         """
@@ -96,10 +98,10 @@ class MainScriptsMixin:
             try:
                 self.plot_viewer.toolbar.deactivate_tools()
             except Exception as e:
-                logging.warning(f"Could not reset toolbar state: {e}")
+                logger.warning(f"Could not reset toolbar state: {e}")
         # --- *** END FIX 1 *** ---
 
-        logging.info("Starting script run...")
+        logger.info("Starting script run...")
 
         # 2. Get the original, pristine state
         initial_state = self.active_history.states[0]
@@ -137,7 +139,7 @@ class MainScriptsMixin:
         
         self._safely_close_progress_dialog()
             
-        logging.error(f"Failed to run script line {line_num}: {line}\nError: {error_msg}")
+        logger.error(f"Failed to run script line {line_num}: {line}\nError: {error_msg}")
         QMessageBox.critical(
             self, 
             "Script Error",
@@ -164,13 +166,13 @@ class MainScriptsMixin:
                 self.active_history = new_history
                 self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)
             except ValueError:
-                logging.error("Could not find old history to replace. Appending new history.")
+                logger.error("Could not find old history to replace. Appending new history.")
                 self.session_histories.append(new_history)
                 self.active_history = new_history
                 self.session_model.setStringList([h.display_name for h in self.session_histories])
 
             # 2. Refresh everything
-            logging.info("Script run completed successfully.")
+            logger.info("Script run completed successfully.")
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
             self._update_undo_redo_actions()
             if self.log_scripter_dialog:

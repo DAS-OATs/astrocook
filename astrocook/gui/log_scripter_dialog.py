@@ -17,6 +17,8 @@ from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
 
+logger = logging.getLogger(__name__)
+
 ALL_SCHEMAS = {
     'absorbers': ABSORBERS_RECIPES_SCHEMAS,
     'continuum': CONTINUUM_RECIPES_SCHEMAS,
@@ -156,7 +158,7 @@ class LogScripterDialog(QDialog):
             
         else:
             self.scripter_edit.setPlainText(f"# Error: Unknown log object type: {type(self.log_object)}")
-            logging.error(f"LogScripterDialog: Unknown log object type: {type(self.log_object)}")
+            logger.error(f"LogScripterDialog: Unknown log object type: {type(self.log_object)}")
         # --- *** END V2/V1 LOGIC *** ---
         
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
@@ -191,7 +193,7 @@ class LogScripterDialog(QDialog):
         try:
             commands = v1_json.get('set_menu', [])
         except Exception as e:
-            logging.error(f"Failed to parse V1 log JSON: {e}")
+            logger.error(f"Failed to parse V1 log JSON: {e}")
             self.scripter_edit.setPlainText("# Error: Could not parse V1 log.")
             return
 
@@ -216,7 +218,7 @@ class LogScripterDialog(QDialog):
         """
         Public method to clear and re-populate the log list.
         """
-        logging.debug(f"Refreshing LogScripterDialog for {self.windowTitle()}")
+        logger.debug(f"Refreshing LogScripterDialog for {self.windowTitle()}")
         self._populate_scripter()
         self._update_button_state()
         
@@ -286,9 +288,9 @@ class LogScripterDialog(QDialog):
                 # To save as JSON, we'd have to parse the text.
                 with open(file_name, 'w') as f:
                     f.write(text_content)
-                logging.info(f"Log scripter content saved to {file_name}")
+                logger.info(f"Log scripter content saved to {file_name}")
             except Exception as e:
-                logging.error(f"Failed to save log file: {e}")
+                logger.error(f"Failed to save log file: {e}")
                 QMessageBox.critical(self, "Save Error", f"Could not save file:\n{e}")
 
     def _on_insert_recipe(self):
@@ -311,7 +313,7 @@ class LogScripterDialog(QDialog):
                         action.triggered.connect(lambda checked=False, c=category, n=recipe_name: self._insert_template(c, n))
 
         except Exception as e:
-            logging.error(f"Failed to build recipe insert menu: {e}")
+            logger.error(f"Failed to build recipe insert menu: {e}")
             action = menu.addAction("Error building menu")
             action.setEnabled(False)
 

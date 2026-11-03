@@ -36,6 +36,9 @@ from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+
+logger = logging.getLogger(__name__)
+
 RECIPE_CATEGORY_MAP = {}
 for name in ABSORBERS_RECIPES_SCHEMAS:
     RECIPE_CATEGORY_MAP[name] = 'absorbers'
@@ -85,7 +88,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # Initialize threadpool and progress dialog
         self.thread_pool = QThreadPool()
-        logging.info(f"Main thread pool started with {self.thread_pool.maxThreadCount()} threads.")
+        logger.info(f"Main thread pool started with {self.thread_pool.maxThreadCount()} threads.")
         self.progress_dialog: Optional[QProgressDialog] = None
 
         # ** Initialize animation attributes to None **
@@ -122,7 +125,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             self.setWindowIcon(QIcon(icon_path))
         except Exception as e:
-            logging.warning(f"Could not set window icon: {e}")
+            logger.warning(f"Could not set window icon: {e}")
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
@@ -247,7 +250,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             button_fg = palette.color(palette.ColorRole.ButtonText).name()
             text_color = palette.color(palette.ColorRole.Text).name()
         except Exception as e:
-            logging.warning(f"Could not query palette: {e}. Using fallback colors.")
+            logger.warning(f"Could not query palette: {e}. Using fallback colors.")
             sidebar_r, sidebar_g, sidebar_b = 224, 224, 224 # RGB for #E0E0E0
             sidebar_a = 0.9
             sidebar_bg="#E0E0E0"; item_selected_bg="#808080"; item_selected_text="#FFFFFF";
@@ -476,9 +479,9 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 lambda: self._on_identification_viewer_closed() 
             )
             dialog.show()
-            logging.debug(f"Creating new identification viewer for {session_name}")
+            logger.debug(f"Creating new identification viewer for {session_name}")
         except Exception as e:
-            logging.error(f"Failed to launch identification viewer: {e}", exc_info=True)
+            logger.error(f"Failed to launch identification viewer: {e}", exc_info=True)
 
     def _zoom_main_plot(self, xmin: float, xmax: float):
         """Show a range of wavelengths (nm) in the main plot (a region of
@@ -534,7 +537,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         Slot called when the IdentificationViewerDialog is closed.
         """
         self.identification_viewer_dialog = None
-        logging.debug("Identification viewer closed, reference removed.")
+        logger.debug("Identification viewer closed, reference removed.")
 
     def _on_debug_plot_requested(self, plot_data: dict):
         """
@@ -544,7 +547,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         try:
             import matplotlib.pyplot as plt
             
-            logging.info(f"Received debug plot request: {plot_data.get('title', 'Debug Plot')}")
+            logger.info(f"Received debug plot request: {plot_data.get('title', 'Debug Plot')}")
             
             # --- OPTIMIZATION PLOT TYPE ---
             if plot_data.get('type') == 'optimization_step':
@@ -598,7 +601,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 plt.show()
             
         except Exception as e:
-            logging.error(f"Failed to create debug plot: {e}", exc_info=True)
+            logger.error(f"Failed to create debug plot: {e}", exc_info=True)
         
 
     def open_inspector_on_component(self, uuid: str):

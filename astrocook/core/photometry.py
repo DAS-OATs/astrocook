@@ -5,6 +5,8 @@ import astropy.units as au
 import logging
 from scipy.integrate import trapezoid
 
+logger = logging.getLogger(__name__)
+
 # --- Approximate Standard Filter Definitions ---
 # Format: 'Name': (Central Wavelength in nm, FWHM in nm)
 STANDARD_FILTERS = {
@@ -54,10 +56,10 @@ def _to_flam(x: au.Quantity, y: au.Quantity):
     except au.UnitConversionError as e:
         # If units are missing/arbitrary, we can't do rigorous photometry
         if y.unit == au.dimensionless_unscaled:
-             logging.warning("Spectrum has arbitrary units. Assuming erg/cm2/s/A for calculation.")
+             logger.warning("Spectrum has arbitrary units. Assuming erg/cm2/s/A for calculation.")
              flux_flam = y.value * FLAM
         else:
-             logging.error(f"Photometry failed: incompatible units.\n{e}")
+             logger.error(f"Photometry failed: incompatible units.\n{e}")
              raise
     return wave_aa, flux_flam
 
@@ -136,7 +138,7 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
         current_mag = _ab_mag(np.abs(_mean_fnu_jy(wave_aa, flux_flam, filter_name)))
         
         if np.isnan(current_mag):
-             logging.warning(f"Could not calculate mag for {filter_name}, skipping.")
+             logger.warning(f"Could not calculate mag for {filter_name}, skipping.")
              continue
              
         # Factor = 10^(-0.4 * (target - current))
@@ -144,7 +146,7 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
         
         lambda_eff = STANDARD_FILTERS[filter_name][0]
         bands.append((lambda_eff, filter_name, target_mag, factor))
-        logging.info(f"Calibration point: {filter_name} (@{lambda_eff:.0f}nm) factor={factor:.3e}")
+        logger.info(f"Calibration point: {filter_name} (@{lambda_eff:.0f}nm) factor={factor:.3e}")
 
     if not bands:
         raise RuntimeError("Could not determine any valid scale factors.")
@@ -177,10 +179,10 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
     if factors is None or not np.all(np.isfinite(factors)) or np.any(factors <= 0):
         # E.g. the same filter twice, or targets that only a curve with
         # negative values would reach: the factors of the bands alone
-        logging.warning("The magnitudes cannot be matched together by a positive "
+        logger.warning("The magnitudes cannot be matched together by a positive "
                         "curve: the factor of each band is used alone, and the "
                         "magnitudes are only approximately reached.")
         factors = single
     for b, f in zip(bands, factors):
-        logging.info(f"Calibration curve at {b[1]} (@{b[0]:.0f}nm): {f:.3e}")
+        logger.info(f"Calibration curve at {b[1]} (@{b[0]:.0f}nm): {f:.3e}")
     return np.interp(x_nm, waves, factors)

@@ -5,6 +5,8 @@ import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class SessionMetadataV2:
@@ -367,7 +369,7 @@ class HistoryLogV2:
         """
         # 1. Truncate stale future history
         if self.current_index < len(self.entries) - 1:
-            logging.debug(f"Truncating V2 log from index {self.current_index + 1}")
+            logger.debug(f"Truncating V2 log from index {self.current_index + 1}")
             del self.entries[self.current_index + 1:]
         
         # 2. Add the new entry
@@ -376,7 +378,7 @@ class HistoryLogV2:
         
         # 3. Update the index to point to the new entry
         self.current_index = len(self.entries) - 1
-        logging.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
+        logger.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
 
     def undo(self) -> bool:
         """
@@ -391,7 +393,7 @@ class HistoryLogV2:
         """
         if self.current_index > -1:
             self.current_index -= 1
-            logging.debug(f"Log index undone to {self.current_index}")
+            logger.debug(f"Log index undone to {self.current_index}")
             return True
         return False
 
@@ -406,7 +408,7 @@ class HistoryLogV2:
         """
         if self.current_index < len(self.entries) - 1:
             self.current_index += 1
-            logging.debug(f"Log index redone to {self.current_index}")
+            logger.debug(f"Log index redone to {self.current_index}")
             return True
         return False
 

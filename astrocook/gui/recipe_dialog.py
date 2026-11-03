@@ -12,6 +12,8 @@ from astrocook.core.utils import get_recipe_schema
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
                     INPUT_BORDER, WARNING, themed)
 
+logger = logging.getLogger(__name__)
+
 class RecipeDialog(QDialog):
     """
     A dynamic dialog box for configuring and running Astrocook V2 recipes.
@@ -43,7 +45,7 @@ class RecipeDialog(QDialog):
         try:
             self.schema = get_recipe_schema(recipe_category, recipe_name)
         except Exception as e:
-            logging.error(f"Failed to get schema for {recipe_category}.{recipe_name}: {e}")
+            logger.error(f"Failed to get schema for {recipe_category}.{recipe_name}: {e}")
             self.schema = None 
 
         self._apply_styles()
@@ -595,7 +597,7 @@ class RecipeDialog(QDialog):
                 elif isinstance(widget, QComboBox):
                     params_to_pass[param_name] = widget.currentText() 
         except Exception as e:
-            logging.error(f"Error gathering parameters: {e}")
+            logger.error(f"Error gathering parameters: {e}")
             QMessageBox.critical(self, "Parameter Error", f"Could not read parameters:\n{e}")
             return 
 
