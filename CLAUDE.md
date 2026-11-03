@@ -76,6 +76,13 @@ Current version: 2.3.0. Python ≥3.12.
   so); coverage with `pytest --cov=astrocook` (82%, the GUI 84%, the core
   90%, after phase 5-bis): before changing production code, add
   characterization tests for the behaviour involved.
+- Warnings are errors in the tests (`filterwarnings = ["error"]` in
+  `pyproject.toml`, phase 6): a test that expects a warning says so
+  (`pytest.warns`, or `warnings.catch_warnings` with a local filter); a
+  warning that a new release of a dependency brings is fixed in the code,
+  or ignored by its own entry in `filterwarnings`, with its reason; in the
+  package, a cosmetic warning of a library is silenced where it is raised,
+  never with a global filter.
 - Numerical snapshots: `tests/snapshots/*.npz`, compared by the `snapshot`
   fixture (`tests/conftest.py`). Regenerate only for an intended change
   (`pytest --update-snapshots`) and say so in the PR.

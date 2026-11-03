@@ -1546,8 +1546,13 @@ is raised or removed at its source:
   since 6.10 (the minimum of PySide6), replaced by
   `beginFilterChange`/`endFilterChange`; the `All-NaN slice` of
   `compute_auto_fudge`, a case already handled (silenced there).
-  The suite could then turn the warnings into errors, so that a new one is
-  seen at once (to be decided with Guido). The lines are those of `a5b506a`; the
+  The suite then turns the warnings into errors (`filterwarnings =
+  ["error"]` in `pyproject.toml`, Guido's choice among three: all of them,
+  only those of the code of Astrocook, only the deprecations), so that a
+  new one is seen at once: a test that expects a warning says so
+  (`pytest.warns`, or `warnings.catch_warnings` with a local filter); a
+  warning brought by a new release of a dependency is fixed in the code or
+  ignored by an entry of its own, with its reason. The lines are those of `a5b506a`; the
 function identifies the clause when the lines move.
 
 **Rows D of core, fitting and io** (reviewed with Guido, November 2026;
