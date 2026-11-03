@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.3.0 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.4.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=c3c8ae58"></script>
+    <script src="../../../static/documentation_options.js?v=4d935f96"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.3.0" />
+  <meta name="docsearch:version" content="2.4.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -487,6 +487,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="c1">#: A line is evaluated only where its optical depth exceeds this (#526)</span>
 <span class="n">TAU_CUT</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
@@ -633,13 +635,13 @@
         <span class="n">finite</span> <span class="o">=</span> <span class="n">r_pix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_pix</span><span class="p">)]</span>
         <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_pix</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">finite</span> <span class="o">==</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Global R=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="n">r_pix</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution, median R=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"VoigtFitter: Variable resolution, median R=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">finite</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
 
         <span class="c1"># Placeholders</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="kc">None</span>
@@ -894,8 +896,11 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
             <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error calc failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># ValueError covers np.linalg.LinAlgError; KeyError and</span>
+            <span class="c1"># TypeError come from the expression of a link</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The uncertainties could not be computed (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): the "</span>
+                           <span class="s2">"components keep their previous uncertainties."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span>
         <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
         <span class="n">full_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
@@ -1129,7 +1134,8 @@
             <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]:</span>
                 <span class="n">idx_b</span> <span class="o">=</span> <span class="n">free_idx_map</span><span class="p">[</span><span class="n">base_idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
                 <span class="n">p_refined</span><span class="p">[</span><span class="n">idx_b</span><span class="p">]</span> <span class="o">=</span> <span class="n">b_guess</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Smart Guess: z=</span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN=</span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Initial guess: z = </span><span class="si">{</span><span class="n">new_z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, logN = </span><span class="si">{</span><span class="n">logN_guess</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, "</span>
+                         <span class="sa">f</span><span class="s2">"b = </span><span class="si">{</span><span class="n">b_guess</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">p_refined</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_voigt_optical_depth_vectorized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave_grid_ang</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -1193,7 +1199,8 @@
             <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">-</span> <span class="mi">50</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">+</span> <span class="mi">51</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Fit mask is empty! Falling back to full valid mask."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No valid pixels around the components to fit: the whole "</span>
+                           <span class="s2">"spectrum is used."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
@@ -1204,10 +1211,10 @@
         
         <span class="c1">#logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"FIT MASK IS EMPTY!"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"FIT MASK IS EMPTY!"</span><span class="p">)</span>
             <span class="c1"># Debug: what are we searching for?</span>
             <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">active_components</span><span class="p">):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Comp </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: z=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, series=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Comp </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: z=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, series=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
@@ -1428,9 +1435,10 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">p_free_errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">jac</span><span class="p">)</span>
             <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Errors calculated: </span><span class="si">{</span><span class="n">p_free_errors</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error calc failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Errors calculated: </span><span class="si">{</span><span class="n">p_free_errors</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># The components with NaN errors are listed in a warning below</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The uncertainties could not be computed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">p_free_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
             <span class="n">p_free_errors</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
             <span class="n">linked_errors</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_compiled_links</span><span class="p">}</span>
@@ -1515,7 +1523,7 @@
         <span class="k">if</span> <span class="n">nan_errors</span><span class="p">:</span>
             <span class="n">listed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">nan_errors</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
             <span class="n">more</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nan_errors</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">10</span><span class="si">}</span><span class="s2"> more"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nan_errors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="s2">""</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Uncertainties could not be computed (ill-conditioned fit) for "</span>
                 <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nan_errors</span><span class="p">)</span><span class="si">}</span><span class="s2"> component(s): </span><span class="si">{</span><span class="n">listed</span><span class="si">}{</span><span class="n">more</span><span class="si">}</span><span class="s2">. "</span>
                 <span class="sa">f</span><span class="s2">"Their errors are NaN; consider refitting or freezing parameters."</span><span class="p">)</span>
@@ -1551,7 +1559,7 @@
         
         <span class="n">final_model_flux</span> <span class="o">=</span> <span class="n">final_model_norm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fit complete. Reduced chi2 (constraining pixels): </span><span class="si">{</span><span class="n">red_chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fit complete. Reduced chi2 (constraining pixels): </span><span class="si">{</span><span class="n">red_chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_system_list</span><span class="p">,</span> <span class="n">final_model_flux</span><span class="p">,</span> <span class="n">res</span></div>
 
 

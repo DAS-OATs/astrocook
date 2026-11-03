@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.spectrum &#8212; Astrocook 2.3.0 documentation</title>
+    <title>astrocook.core.spectrum &#8212; Astrocook 2.4.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=c3c8ae58"></script>
+    <script src="../../../static/documentation_options.js?v=4d935f96"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.3.0" />
+  <meta name="docsearch:version" content="2.4.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -488,6 +488,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">FluxMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinesMixin</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="TableAdapterV2">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.TableAdapterV2">[docs]</a>
@@ -581,9 +583,9 @@
         <span class="n">inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span> <span class="o">&lt;=</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="n">xmax</span><span class="p">)</span>
     <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">xmax</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">inside</span><span class="p">[</span><span class="n">finite</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mf">0.9</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Pixel edges without a unit: read in the unit of x (</span><span class="si">%s</span><span class="s2">)."</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Pixel edges without a unit: read in the unit of x (</span><span class="si">%s</span><span class="s2">)."</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Pixel edges without a unit and not around x: recomputed "</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Pixel edges without a unit and not around x: recomputed "</span>
                         <span class="s2">"halfway between the pixels."</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">mid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -934,7 +936,7 @@
             <span class="n">finite</span> <span class="o">=</span> <span class="n">current</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">current</span><span class="p">)]</span>
             <span class="n">variable</span> <span class="o">=</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">finite</span><span class="p">,</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">variable</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite_resol_col</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The spectrum has a resolution that varies with "</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The spectrum has a resolution that varies with "</span>
                                 <span class="s2">"wavelength: kept (R=</span><span class="si">%g</span><span class="s2"> not applied; set "</span>
                                 <span class="s2">"overwrite_resol_col to replace it)."</span><span class="p">,</span> <span class="n">resol</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -959,26 +961,22 @@
         <span class="k">if</span> <span class="n">old_cont_vals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">new_cont_vals</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old_model_col</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
             
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Re-normalizing 'model' column to new 'cont'..."</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Get old normalized profile</span>
-            <span class="n">normalized_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
-                <span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-                <span class="n">old_cont_vals</span><span class="p">,</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-                <span class="n">where</span><span class="o">=</span><span class="n">old_cont_vals</span> <span class="o">!=</span> <span class="mi">0</span>
-            <span class="p">)</span>
-            <span class="c1"># 2. Recalculate model against *new* continuum</span>
-            <span class="n">new_model_values</span> <span class="o">=</span> <span class="n">new_cont_vals</span> <span class="o">*</span> <span class="n">normalized_model</span>
-            
-            <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span>
-                <span class="n">values</span><span class="o">=</span><span class="n">new_model_values</span><span class="p">,</span>
-                <span class="n">unit</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Use old model's unit</span>
-                <span class="n">description</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">description</span>
-            <span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to renormalize model column: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Renormalizing the model to the new continuum."</span><span class="p">)</span>
+        <span class="c1"># 1. Get old normalized profile</span>
+        <span class="n">normalized_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span>
+            <span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">old_cont_vals</span><span class="p">,</span>
+            <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+            <span class="n">where</span><span class="o">=</span><span class="n">old_cont_vals</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="c1"># 2. Recalculate model against *new* continuum</span>
+        <span class="n">new_model_values</span> <span class="o">=</span> <span class="n">new_cont_vals</span> <span class="o">*</span> <span class="n">normalized_model</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Model renormalized to the new continuum."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DataColumnV2</span><span class="p">(</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">new_model_values</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="c1"># Use old model's unit</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">old_model_col</span><span class="o">.</span><span class="n">description</span>
+        <span class="p">)</span>
     
 <div class="viewcode-block" id="SpectrumV2.sanitize_legacy_tellurics">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics">[docs]</a>
@@ -998,7 +996,8 @@
         <span class="k">if</span> <span class="s1">'cont_no_telluric'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
             
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Old spectrum with 'cont_no_telluric': it becomes 'cont', so "</span>
+                    <span class="s2">"that the telluric transmission is not counted twice."</span><span class="p">)</span>
         
         <span class="n">new_aux_cols</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
         
@@ -1140,9 +1139,10 @@
                 <span class="k">del</span> <span class="n">new_aux_cols</span><span class="p">[</span><span class="n">actual_key</span><span class="p">]</span>
                 <span class="n">removed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actual_key</span><span class="p">)</span> <span class="c1"># Log the exact key removed</span>
             <span class="k">elif</span> <span class="n">clean_col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">]:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot delete core column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' is a core column and "</span>
+                               <span class="s2">"cannot be removed."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' not found."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no column '</span><span class="si">{</span><span class="n">clean_col</span><span class="si">}</span><span class="s2">' to remove."</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">removed</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>

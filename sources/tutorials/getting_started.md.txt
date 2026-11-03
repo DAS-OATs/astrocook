@@ -4,7 +4,7 @@ Welcome to Astrocook V2! This guide will walk you through the basics of the inte
 
 ## 1. Loading a Spectrum
 
-Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`).
+Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file is read as three columns, by position: wavelength (nm), flux and its error (erg cm⁻² s⁻¹ Å⁻¹), with or without a line of names on top; further columns are ignored.
 
 1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons **Open Session...** and **Open Recent** (a drop-down menu of the files you opened last).
 2.  Click **Open Session...**, or select **File > Open Session...** in the menu bar (or press `Ctrl+O` / `Cmd+O`). **File > Open Recent** lists the files opened last; you can also drop files on the window.
@@ -220,6 +220,12 @@ You can choose to export entire structures or pick individual columns. The sugge
 If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
 * Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.
 * **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
+
+## 6. When Something Goes Wrong
+
+A recipe that cannot run says why: in the status bar, in a dialog, and in the log written to the terminal (or to the window of the long recipes). A recipe that gives a result but has something to say about it (a parameter at a bound, a step done with its defaults) lists its warnings at the end.
+
+An error that Astrocook does not expect is a bug. It is shown in an **Unexpected Error** dialog with the message; **Show Details...** opens the traceback, which you can copy and attach to an issue on [GitHub](https://github.com/DAS-OATs/astrocook/issues). Astrocook goes on after it, but the action that failed was not completed.
 
 ## What's Next?
 

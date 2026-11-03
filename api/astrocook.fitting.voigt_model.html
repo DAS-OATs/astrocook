@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting.voigt_model module &#8212; Astrocook 2.3.0 documentation</title>
+    <title>astrocook.fitting.voigt_model module &#8212; Astrocook 2.4.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=c3c8ae58"></script>
+    <script src="../static/documentation_options.js?v=4d935f96"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.3.0" />
+  <meta name="docsearch:version" content="2.4.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -542,6 +542,27 @@
                   
   <section id="module-astrocook.fitting.voigt_model">
 <span id="astrocook-fitting-voigt-model-module"></span><h1>astrocook.fitting.voigt_model module<a class="headerlink" href="#module-astrocook.fitting.voigt_model" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_model.LINK_FUNCTIONS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_model.</span></span><span class="sig-name descname"><span class="pre">LINK_FUNCTIONS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'ln':</span> <span class="pre">&lt;ufunc</span> <span class="pre">'log'&gt;,</span> <span class="pre">'log':</span> <span class="pre">&lt;ufunc</span> <span class="pre">'log10'&gt;,</span> <span class="pre">'np':</span> <span class="pre">&lt;module</span> <span class="pre">'numpy'</span> <span class="pre">from</span> <span class="pre">'/opt/hostedtoolcache/Python/3.13.17/x64/lib/python3.13/site-packages/numpy/__init__.py'&gt;}</span></span><a class="headerlink" href="#astrocook.fitting.voigt_model.LINK_FUNCTIONS" title="Link to this definition">#</a></dt>
+<dd><p>Functions available to the expressions of the links, with <code class="docutils literal notranslate"><span class="pre">p</span></code> (the
+components by UUID, e.g. <code class="docutils literal notranslate"><span class="pre">p['uuid'].z</span></code>)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_model.LINK_ERRORS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_model.</span></span><span class="sig-name descname"><span class="pre">LINK_ERRORS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;class</span> <span class="pre">'KeyError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'NameError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'AttributeError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'TypeError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ValueError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ArithmeticError'&gt;)</span></span><a class="headerlink" href="#astrocook.fitting.voigt_model.LINK_ERRORS" title="Link to this definition">#</a></dt>
+<dd><p>a component that does
+not exist (KeyError), an unknown name (NameError), a parameter that does
+not exist (AttributeError), a wrong operation (TypeError, ValueError,
+ArithmeticError)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Errors of an expression that cannot be evaluated</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_model.VoigtModelConstraintV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.voigt_model.</span></span><span class="sig-name descname"><span class="pre">VoigtModelConstraintV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/voigt_model.html#VoigtModelConstraintV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2" title="Link to this definition">#</a></dt>
@@ -584,6 +605,11 @@ and which are “frozen” based on user selection and grouping logic.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.voigt_model.VoigtModelConstraintV2.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/voigt_model.html#VoigtModelConstraintV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.voigt_model.VoigtModelConstraintV2.v2_constraints_by_uuid">
+<span class="sig-name descname"><span class="pre">v2_constraints_by_uuid</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2" title="astrocook.core.structures.ParameterConstraintV2"><span class="pre">ParameterConstraintV2</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.v2_constraints_by_uuid" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -732,11 +758,14 @@ Used primarily for visualization (e.g., Corner Plots).</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.LINK_FUNCTIONS"><code class="docutils literal notranslate"><span class="pre">LINK_FUNCTIONS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.LINK_ERRORS"><code class="docutils literal notranslate"><span class="pre">LINK_ERRORS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.PARAMETER_ORDER"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.PARAMETER_ORDER</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.V1_ID_REGEX"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.V1_ID_REGEX</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.DEFAULT_BOUNDS"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.DEFAULT_BOUNDS</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.v2_constraints_by_uuid"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.v2_constraints_by_uuid</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.set_active_components"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.set_active_components()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.p_free_vector"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.p_free_vector</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.voigt_model.VoigtModelConstraintV2.map_p_free_to_full"><code class="docutils literal notranslate"><span class="pre">VoigtModelConstraintV2.map_p_free_to_full()</span></code></a></li>

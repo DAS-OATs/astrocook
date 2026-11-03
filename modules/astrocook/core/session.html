@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.session &#8212; Astrocook 2.3.0 documentation</title>
+    <title>astrocook.core.session &#8212; Astrocook 2.4.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=c3c8ae58"></script>
+    <script src="../../../static/documentation_options.js?v=4d935f96"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.3.0" />
+  <meta name="docsearch:version" content="2.4.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -477,7 +477,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_archive</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span>
@@ -488,12 +488,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFluxV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span>
+    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="c1"># Define the type for the log manager</span>
-<span class="n">LogManager</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">HistoryLogV2</span><span class="p">,</span> <span class="n">V1LogArtifact</span><span class="p">]</span>
+<span class="n">LogManager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span>
 
 <div class="viewcode-block" id="load_session_from_file">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>
@@ -546,7 +548,11 @@
         <span class="k">if</span> <span class="n">format_name</span> <span class="o">==</span> <span class="s1">'auto'</span> <span class="ow">or</span> <span class="n">format_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">format_name</span> <span class="o">=</span> <span class="n">detect_file_format</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The detection is a heuristic: the generic loader reports</span>
+                <span class="c1"># its own error if it cannot read the file either</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The format of </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2"> was not recognized "</span>
+                             <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): it is read as a generic spectrum."</span><span class="p">)</span>
                 <span class="n">format_name</span> <span class="o">=</span> <span class="s1">'generic_spectrum'</span>
 
         <span class="n">v2_loader</span> <span class="o">=</span> <span class="n">get_loader</span><span class="p">(</span><span class="n">format_name</span><span class="p">)</span>
@@ -555,13 +561,14 @@
                 <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"V2 Loader failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+                             <span class="sa">f</span><span class="s2">"as </span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">return</span> <span class="mi">0</span>
 
     <span class="c1"># --- 2. ARCHIVE &amp; LEGACY HANDLING ---</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">is_v2_archive</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unpacking V2 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unpacking V2 archive: </span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
             <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">archive_path</span><span class="p">,</span> <span class="s1">'r:gz'</span><span class="p">)</span> <span class="k">as</span> <span class="n">tar</span><span class="p">:</span>
                 <span class="c1"># "data" filter: refuse members that would land outside</span>
@@ -591,7 +598,7 @@
                 <span class="c1"># to the V1 reader, which replaced the spectrum with mock</span>
                 <span class="c1"># data); the metadata (constraints, log, identifications)</span>
                 <span class="c1"># are missing</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">archive_path</span><span class="si">}</span><span class="s2"> has no metadata file (_meta.json): the "</span>
                     <span class="s2">"spectrum and the systems are read, without constraints, "</span>
                     <span class="s2">"session log and identifications."</span><span class="p">)</span>
@@ -634,19 +641,21 @@
         <span class="k">if</span> <span class="n">v2_metadata</span><span class="p">:</span>
             <span class="c1"># Not recorded before 2.1 (F45)</span>
             <span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'astrocook_version'</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> was saved by Astrocook "</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> was saved by Astrocook "</span>
                          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'2.0.3 or earlier'</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span> <span class="ow">and</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_type'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'v2'</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
                     <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_history_json'</span><span class="p">))</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the session log: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the session log (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): "</span>
+                               <span class="s2">"the session is opened with an empty log."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">session</span>
 
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span> 
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Load failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="mi">0</span> 
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not open </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                     <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="c1"># Cleanup temp files</span>
         <span class="k">if</span> <span class="n">archive_manager</span><span class="p">:</span> <span class="n">archive_manager</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
@@ -720,7 +729,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_clicks</span> <span class="o">=</span> <span class="p">[]</span>  
         <span class="bp">self</span><span class="o">.</span><span class="n">_z_sel</span> <span class="o">=</span> <span class="mf">0.0</span>   
         <span class="bp">self</span><span class="o">.</span><span class="n">_series_sel</span> <span class="o">=</span> <span class="s1">'Ly_a'</span> 
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SessionV2 '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' initialized."</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SessionV2 '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' initialized."</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -768,17 +777,13 @@
 <span class="sd">        SessionV2 or int</span>
 <span class="sd">            A new SessionV2 instance, or 0 on failure.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">session</span> <span class="o">=</span> <span class="n">load_session_from_file</span><span class="p">(</span>
-                <span class="n">archive_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> 
-                <span class="n">gui_context</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> 
-                <span class="n">format_name</span><span class="o">=</span><span class="n">format_name</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">session</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FATAL I/O ERROR: Failed to load and orchestrate session from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="c1"># load_session_from_file reports its own failures and returns 0</span>
+        <span class="k">return</span> <span class="n">load_session_from_file</span><span class="p">(</span>
+            <span class="n">archive_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">gui_context</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span>
+            <span class="n">format_name</span><span class="o">=</span><span class="n">format_name</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SessionV2.with_new_spectrum">
@@ -887,7 +892,7 @@
             <span class="n">session_v2_initial</span><span class="o">=</span><span class="n">initial_session</span><span class="p">,</span>
             <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span>
         <span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"V2 Session state saved successfully to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session saved to </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.messages module &#8212; Astrocook 2.3.0 documentation</title>
+    <title>astrocook.recipes.messages module &#8212; Astrocook 2.4.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=c3c8ae58"></script>
+    <script src="../static/documentation_options.js?v=4d935f96"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.3.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.3.0" />
+  <meta name="docsearch:version" content="2.4.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -545,14 +545,47 @@
 <p>Messages logged by the recipes.</p>
 <p>Messages shared by several recipes are defined here once, so that the
 same situation is always reported with the same words in the session log.</p>
-<p>The texts taken from V1 (<code class="docutils literal notranslate"><span class="pre">astrocook.legacy.message</span></code>) are unchanged, so
-that the log of a session does not change with the move to V2.</p>
+<p>The texts taken from V1 (<code class="docutils literal notranslate"><span class="pre">astrocook.legacy.message</span></code>) were kept unchanged
+with the move to V2; phase 6 reviews them with the others, by the rule of
+the log messages (<code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>, phase 6): DEBUG for the development,
+INFO for what an operation did, WARNING when the result needs a check or
+something was done instead of what was asked, ERROR when there is no
+result; English sentences without prefixes, values with their units. The
+session log records the recipes and their parameters, not these texts.</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.messages.msg_param_fail">
-<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_param_fail</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;I</span> <span class="pre">can't</span> <span class="pre">understand</span> <span class="pre">the</span> <span class="pre">values</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameters.</span> <span class="pre">Please</span> <span class="pre">try</span> <span class="pre">again.&quot;</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_param_fail" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_param_fail</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">values</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameters</span> <span class="pre">cannot</span> <span class="pre">be</span> <span class="pre">read:</span> <span class="pre">check</span> <span class="pre">them</span> <span class="pre">and</span> <span class="pre">run</span> <span class="pre">the</span> <span class="pre">recipe</span> <span class="pre">again.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_param_fail" title="Link to this definition">#</a></dt>
 <dd><p>Logged (at the <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> level) when a recipe cannot convert its
 parameters, given as strings by the GUI dialogs, to the expected types;
 the recipe then returns 0 instead of a new session.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_continuum_estimated">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_continuum_estimated</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'There</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">continuum:</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">estimated</span> <span class="pre">first,</span> <span class="pre">as</span> <span class="pre">with</span> <span class="pre">Auto-estimate</span> <span class="pre">Continuum.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_continuum_estimated" title="Link to this definition">#</a></dt>
+<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">INFO</span></code>) when a recipe that needs a continuum estimates it first
+with the automatic continuum, because the spectrum has none.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_no_resolution">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_no_resolution</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">spectrum</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">resolution:</span> <span class="pre">the</span> <span class="pre">profiles</span> <span class="pre">are</span> <span class="pre">fitted</span> <span class="pre">without</span> <span class="pre">the</span> <span class="pre">instrumental</span> <span class="pre">broadening,</span> <span class="pre">so</span> <span class="pre">b</span> <span class="pre">includes</span> <span class="pre">it.</span> <span class="pre">Set</span> <span class="pre">the</span> <span class="pre">resolution</span> <span class="pre">with</span> <span class="pre">Edit</span> <span class="pre">&gt;</span> <span class="pre">Set</span> <span class="pre">Properties.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_no_resolution" title="Link to this definition">#</a></dt>
+<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">WARNING</span></code>) when a fit runs on a spectrum without a resolution:
+the profiles are not convolved with the instrumental profile.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_session_not_found">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_session_not_found</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;There</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">open</span> <span class="pre">session</span> <span class="pre">named</span> <span class="pre">'{name}'.&quot;</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_session_not_found" title="Link to this definition">#</a></dt>
+<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">ERROR</span></code>) when a recipe names a session that is not open; format
+with <code class="docutils literal notranslate"><span class="pre">name</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_z_em_unset">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_z_em_unset</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">emission</span> <span class="pre">redshift</span> <span class="pre">(z_em)</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">set:</span> <span class="pre">set</span> <span class="pre">it</span> <span class="pre">with</span> <span class="pre">Edit</span> <span class="pre">&gt;</span> <span class="pre">Set</span> <span class="pre">Properties.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_z_em_unset" title="Link to this definition">#</a></dt>
+<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">WARNING</span></code> or <code class="docutils literal notranslate"><span class="pre">ERROR</span></code>) when a recipe needs the emission
+redshift and it is not set.</p>
 </dd></dl>
 
 </section>
@@ -605,6 +638,10 @@ the recipe then returns 0 instead of a new session.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_param_fail"><code class="docutils literal notranslate"><span class="pre">msg_param_fail</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_continuum_estimated"><code class="docutils literal notranslate"><span class="pre">msg_continuum_estimated</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_no_resolution"><code class="docutils literal notranslate"><span class="pre">msg_no_resolution</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_session_not_found"><code class="docutils literal notranslate"><span class="pre">msg_session_not_found</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_z_em_unset"><code class="docutils literal notranslate"><span class="pre">msg_z_em_unset</span></code></a></li>
 </ul>
   </nav></div>
 
