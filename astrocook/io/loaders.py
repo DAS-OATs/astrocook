@@ -1,6 +1,7 @@
 from astropy.io import fits
 from astropy.table import Table
 import astropy.units as au
+import itertools
 import logging
 import numpy as np
 import re
@@ -115,14 +116,15 @@ def detect_file_format(file_path: str) -> str:
     # CSV/ASCII checks
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            head = [next(f) for _ in range(10)]
+            # At most 10 lines: a shorter file is read too (F97: next() raised
+            # StopIteration, and a CSV file of fewer than 10 lines went to the
+            # generic loader, which reads FITS only)
+            head = list(itertools.islice(f, 10))
         head_str = "".join(head).upper()
         if "TRANS_MOLECFIT" in head_str: return "ascii_telluric_model"
         if "RESVEL" in head_str: return "ascii_resvel_header"
         if path_lower.endswith('.csv'): return "simple_csv"
-    except (OSError, StopIteration):
-        # StopIteration: fewer than 10 lines, so a short CSV file is read
-        # as a generic spectrum (F97, kept for now)
+    except OSError:
         pass
 
     return "generic_spectrum"
@@ -490,17 +492,43 @@ def load_pypeit_tellmodel(file_path: str, **kwargs) -> SpectrumDataV2:
         )
 
 
+def _first_line_is_numeric(file_path: str) -> bool:
+    """True if the first line with data (not empty, not a comment) of a CSV
+    file holds numbers only, that is, the file has no header."""
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            try:
+                [float(v) for v in line.split(',')]
+            except ValueError:
+                return False
+            return True
+    return False
+
+
 @register_loader("simple_csv")
 def load_simple_csv(file_path: str, **kwargs) -> SpectrumDataV2:
     """
-    Example V2 Loader: Reads a 3-column CSV (wave, flux, err).
+    Loader of CSV files: the first three columns are x (nm), y and dy.
+
+    The file may have a header, with any names, or not (F100: the first line
+    was always taken as the names, and the columns asked for by the names
+    ``col1``, ``col2``, ``col3``, so a file of numbers only did not open).
+    The columns are taken by position.
     """
-    data = Table.read(file_path, format='ascii.csv')
+    if _first_line_is_numeric(file_path):
+        data = Table.read(file_path, format='ascii.no_header', delimiter=',',
+                          comment='#')
+    else:
+        data = Table.read(file_path, format='ascii.csv', comment='#')
+    if len(data.colnames) < 3:
+        raise ValueError(f"The file has {len(data.colnames)} columns: three are "
+                         "needed (x, y, dy).")
 
     # 1. Extract raw numpy arrays
-    x = data['col1'].data
-    y = data['col2'].data
-    dy = data['col3'].data
+    x, y, dy = (np.asarray(data[name], dtype=float) for name in data.colnames[:3])
 
     # 2. Define Units (You can pass these in kwargs if dynamic)
     x_unit = au.nm
