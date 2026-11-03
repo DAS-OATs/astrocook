@@ -23,6 +23,12 @@ msg_param_fail = ("The values of the parameters cannot be read: check them "
 msg_continuum_estimated = ("There is no continuum: it is estimated first, as "
                            "with Auto-estimate Continuum.")
 
+#: Logged (``WARNING``) when a fit runs on a spectrum without a resolution:
+#: the profiles are not convolved with the instrumental profile.
+msg_no_resolution = ("The spectrum has no resolution: the profiles are fitted "
+                     "without the instrumental broadening, so b includes it. Set "
+                     "the resolution with Edit > Set Properties.")
+
 #: Logged (``ERROR``) when a recipe names a session that is not open; format
 #: with ``name``.
 msg_session_not_found = "There is no open session named '{name}'."

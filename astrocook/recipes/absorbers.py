@@ -8,8 +8,8 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
-from astrocook.recipes.messages import (msg_continuum_estimated, msg_param_fail,
-                                       msg_session_not_found)
+from astrocook.recipes.messages import (msg_continuum_estimated, msg_no_resolution,
+                                       msg_param_fail, msg_session_not_found)
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -369,6 +369,32 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
 #: The errors of a fit that does not converge or cannot be evaluated
 #: (ValueError covers np.linalg.LinAlgError and a start outside the bounds)
 FIT_ERRORS = (ValueError, ArithmeticError)
+
+
+def _with_continuum(session):
+    """The session with a continuum: estimated first with the automatic
+    continuum when there is none (and said so), or 0 if that fails.
+
+    Before phase 6 the 0 of a failed estimate went on as the session, and
+    the recipe failed with "'int' object has no attribute 'systs'".
+    """
+    if session.spec.norm is not None:
+        return session
+    logger.info(msg_continuum_estimated)
+    from astrocook.recipes.continuum import RecipeContinuumV2
+    estimated = RecipeContinuumV2(session).estimate_auto()
+    if estimated == 0:
+        logger.error("The continuum could not be estimated: the recipe is not run.")
+    return estimated
+
+
+def _warn_if_unconvolved(spec) -> None:
+    """WARNING when a fit runs without a resolution (it was at DEBUG only,
+    in the fitter): the profiles are not convolved, so b includes the
+    instrumental broadening."""
+    from astrocook.core.resolution import resolution_summary
+    if not resolution_summary(spec)[0] > 0:
+        logger.warning(msg_no_resolution)
 
 
 def _warn_cleaning_failed(session, series: str, min_b: float, error: Exception):
@@ -902,6 +928,7 @@ class RecipeAbsorbersV2:
             return 0
 
         logger.info(f"Searching {len(ion_list)} ions at the redshifts of the systems.")
+        _warn_if_unconvolved(self._session.spec)
         
         current_session = self._session
         # Optimization: Group components by Z
@@ -1082,11 +1109,10 @@ class RecipeAbsorbersV2:
         spec = self._session.spec
 
         # 1. Trigger Continuum if needed
-        if spec.norm is None:
-            logger.info(msg_continuum_estimated)
-            from astrocook.recipes.continuum import RecipeContinuumV2
-            cont_sess = RecipeContinuumV2(self._session).estimate_auto()
-            spec = cont_sess.spec 
+        cont_sess = _with_continuum(self._session)
+        if cont_sess == 0:
+            return 0
+        spec = cont_sess.spec
         
         logger.info(f"Adding {len(series_map)} components from the identification.")
 
@@ -1417,11 +1443,10 @@ class RecipeAbsorbersV2:
             def check_stop(): return self._is_stop_requested()
 
             try:
-                if current_session.spec.norm is None:
-                    logger.info(msg_continuum_estimated)
-                    from astrocook.recipes.continuum import RecipeContinuumV2
-                    cont_rec = RecipeContinuumV2(current_session)
-                    current_session = cont_rec.estimate_auto()
+                current_session = _with_continuum(current_session)
+                if current_session == 0:
+                    return 0
+                _warn_if_unconvolved(current_session.spec)
 
                 with current_session.systs.fitting_context([uuid], group_depth=depth_i,
                                                            spec=current_session.spec):
@@ -1680,11 +1705,10 @@ class RecipeAbsorbersV2:
 
             current_session = self._session
 
-            if current_session.spec.norm is None:
-                logger.info(msg_continuum_estimated)
-                from astrocook.recipes.continuum import RecipeContinuumV2
-                cont_rec = RecipeContinuumV2(current_session)
-                current_session = cont_rec.estimate_auto()
+            current_session = _with_continuum(current_session)
+            if current_session == 0:
+                return 0
+            _warn_if_unconvolved(current_session.spec)
 
             new_systs = current_session.systs.optimize_hierarchy(
                 spec=current_session.spec,
@@ -1753,6 +1777,7 @@ class RecipeAbsorbersV2:
             
             if not self._session.systs: return 0
             current_session = self._session
+            _warn_if_unconvolved(current_session.spec)
 
             with current_session.systs.fitting_context(uuids, group_depth=depth_i,
                                                        spec=current_session.spec):
@@ -1861,10 +1886,11 @@ class RecipeAbsorbersV2:
                 logger.warning("There are no components to fit.")
                 return 0
 
-            current_session = self._session
-            if current_session.spec.norm is None:
-                from astrocook.recipes.continuum import RecipeContinuumV2
-                current_session = RecipeContinuumV2(current_session).estimate_auto()
+            # (It estimated the continuum without saying so, phase 6)
+            current_session = _with_continuum(self._session)
+            if current_session == 0:
+                return 0
+            _warn_if_unconvolved(current_session.spec)
 
             # --- START NEW CONSOLIDATED LOGIC FOR BETA.4 ---
             # If selected_uuids is provided (e.g., from 'Refit Selected' in UI),
