@@ -18,6 +18,8 @@ from astrocook.core.structures import DataColumnV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 
 class ContinuumMixin:
     """Estimate of the continuum: absorbed regions, interpolated or
@@ -140,7 +142,7 @@ class ContinuumMixin:
             # Normalize the working flux to flatten the emission peak
             valid = y_interp > 0
             y_fit[valid] = y_fit[valid] / y_interp[valid]
-            logging.info("Applied QSO template for continuum fitting.")
+            logger.info("Applied QSO template for continuum fitting.")
         # ---------------------------------------------
 
         # 2. Step A: Interpolate (Raw Guess)
@@ -151,7 +153,7 @@ class ContinuumMixin:
                 mask_abs=mask_abs
             )
         except ValueError as e:
-            logging.error(e)
+            logger.error(e)
             return self
 
         # 3. Step B: Auto-Fudge
@@ -162,12 +164,12 @@ class ContinuumMixin:
                 mask_abs=mask_abs,
                 cont_model=cont_raw
             )
-            logging.info(f"Auto-fudge calculated: {applied_fudge:.4f}")
+            logger.info(f"Auto-fudge calculated: {applied_fudge:.4f}")
         else:
             try:
                 applied_fudge = float(fudge)
             except (ValueError, TypeError):
-                logging.warning(f"Invalid fudge '{fudge}', defaulting to 1.0")
+                logger.warning(f"Invalid fudge '{fudge}', defaulting to 1.0")
 
         cont_fudged = cont_raw * applied_fudge
         
@@ -217,7 +219,7 @@ class ContinuumMixin:
             )
             if new_model_col:
                 new_aux_cols['model'] = new_model_col
-                logging.info("Model column re-normalized to new continuum (incorporating tellurics).")
+                logger.info("Model column re-normalized to new continuum (incorporating tellurics).")
 
         # 7. Create New Data Core
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
@@ -290,11 +292,11 @@ class ContinuumMixin:
         # 1. Validation (Safe for numpy arrays)
         # Check for None first, then length. Avoid "if not knots_x" on arrays.
         if knots_x is None or len(knots_x) == 0:
-            logging.warning("Invalid knots provided (empty).")
+            logger.warning("Invalid knots provided (empty).")
             return self
             
         if len(knots_x) != len(knots_y):
-            logging.warning(f"Knots length mismatch: x({len(knots_x)}) != y({len(knots_y)})")
+            logger.warning(f"Knots length mismatch: x({len(knots_x)}) != y({len(knots_y)})")
             return self
 
         # 2. Create Spline
@@ -310,7 +312,7 @@ class ContinuumMixin:
             x_axis = self.x.value
             new_cont = cs(x_axis)
         except Exception as e:
-            logging.error(f"Failed to generate spline from knots: {e}")
+            logger.error(f"Failed to generate spline from knots: {e}")
             return self
 
         # 3. Update 'cont' column
@@ -336,7 +338,7 @@ class ContinuumMixin:
                 new_aux['model'] = new_model_data_col
                 new_data = dataclasses.replace(new_spec._data, aux_cols=new_aux)
                 new_spec = self.__class__(new_data, new_spec.history)
-                logging.info("Model renormalized to match new continuum.")
+                logger.info("Model renormalized to match new continuum.")
 
         # 5. History
         new_spec.history.append("Updated continuum from knots")

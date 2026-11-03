@@ -14,6 +14,8 @@ from PySide6.QtWidgets import QMessageBox
 
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 
+logger = logging.getLogger(__name__)
+
 
 class ContinuumControlsMixin:
     """The controls of the continuum editor of ``MainWindowV2``.
@@ -184,7 +186,7 @@ class ContinuumControlsMixin:
                     new_session = current_session.continuum.update_from_knots(**params)
                     
                     self.active_history.add_state(new_session)
-                    logging.info("Continuum update saved to history.")
+                    logger.info("Continuum update saved to history.")
                     
                     # 5. FORCE REFRESH
                     if hasattr(self, 'session_list_view'):
@@ -199,7 +201,7 @@ class ContinuumControlsMixin:
                             self._update_view_for_session(new_session, set_current_list_item=True)
                             
                 except Exception as e:
-                    logging.error(f"Failed to save continuum: {e}")
+                    logger.error(f"Failed to save continuum: {e}")
 
     def _on_stride_change(self):
         # 1. Safety Check: If plot_viewer doesn't exist yet (during startup), do nothing.

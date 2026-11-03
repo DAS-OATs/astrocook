@@ -29,6 +29,8 @@ from astrocook.core.structures import HistoryLogV2
 from .qt_workers import SessionLoadWorker
 from .theme import FOCUS_BORDER, palette_hex
 
+logger = logging.getLogger(__name__)
+
 
 class SessionListModel(QStringListModel):
     """The names of the sessions, with the swatch of each other session
@@ -77,31 +79,31 @@ class MainSessionsMixin:
         Operates on the currently active SessionHistory.
         """
         if not isinstance(new_session, SessionV2):
-            logging.error("update_gui_session_state received invalid session.")
+            logger.error("update_gui_session_state received invalid session.")
             return
             
         # ** Use the active_history as the target for the update **
         target_history = self.active_history
         
         if target_history is None:
-            logging.error("Cannot update state: No active session history.")
+            logger.error("Cannot update state: No active session history.")
             return # Should not happen if a session is loaded
 
         # Ensure the new state also points to the real GUI
         new_session._gui = self
 
         if is_branching:
-            logging.debug("Branching: Creating new SessionHistory from current state.")
+            logger.debug("Branching: Creating new SessionHistory from current state.")
             # 1. Get the source log and copy it (HistoryLogV2 is safe to deepcopy)
             source_log_manager = target_history.log_manager
             try:
                 new_log_copy = deepcopy(source_log_manager)
             except Exception as e:
-                logging.error(f"Standard deepcopy failed on log manager: {e}")
+                logger.error(f"Standard deepcopy failed on log manager: {e}")
                 new_log_copy = None
 
             if new_log_copy is None:
-                logging.error("Failed to copy the session log for branching, aborting.")
+                logger.error("Failed to copy the session log for branching, aborting.")
                 QMessageBox.critical(self, "Branching Error", "Could not copy session log state.")
                 return
 
@@ -183,7 +185,7 @@ class MainSessionsMixin:
             )
 
         else: # Linear update
-            logging.debug("Linear update: Adding state to active SessionHistory.")
+            logger.debug("Linear update: Adding state to active SessionHistory.")
             # Add state to the *current* history manager
             target_history.add_state(new_session) # Handles truncation and index update
             # Update the name in the sidebar model *if* the active history corresponds to the last item
@@ -199,7 +201,7 @@ class MainSessionsMixin:
                 try:
                     self.log_scripter_dialog.refresh()
                 except Exception as e:
-                    logging.error(f"Failed to refresh log viewer: {e}")
+                    logger.error(f"Failed to refresh log viewer: {e}")
 
             try:
                 active_list_index = self.session_histories.index(target_history)
@@ -312,7 +314,7 @@ class MainSessionsMixin:
             self.aux_col_combo.setCurrentIndex(target_index)
         
         except Exception as e:
-            logging.warning(f"Failed to update Aux Column combobox: {e}")
+            logger.warning(f"Failed to update Aux Column combobox: {e}")
         finally:
             self.aux_col_combo.blockSignals(False)
         # --- *** END NEW *** ---
@@ -362,7 +364,7 @@ class MainSessionsMixin:
                     selection_flag = QItemSelectionModel.SelectionFlag.ClearAndSelect
                     selection_model.setCurrentIndex(q_model_index, selection_flag)
                 except Exception as e:
-                    logging.warning(f"Could not select session index {list_index_to_select} in list view: {e}")
+                    logger.warning(f"Could not select session index {list_index_to_select} in list view: {e}")
 
         self.left_sidebar_widget.raise_()
         self.right_sidebar_widget.raise_()
@@ -382,7 +384,7 @@ class MainSessionsMixin:
                         self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
                         return
 
-                    logging.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
+                    logger.debug(f"Session list clicked: Setting active history to index {new_history_list_index}")
                     self.active_history = new_active_history
                     # Show the state pointed to by the NEW active history's index
                     self._update_view_for_session(self.active_history.current_state, set_current_list_item=False, force_autoscale=False)
@@ -396,9 +398,9 @@ class MainSessionsMixin:
                     # This can happen if user undid then clicked the list item again.
                     self._update_view_for_session(self.active_history.current_state, set_current_list_item=False)
             else:
-                 logging.warning(f"Invalid index {new_history_list_index} clicked.")
+                 logger.warning(f"Invalid index {new_history_list_index} clicked.")
         except Exception as e:
-            logging.error(f"Error switching session via list click: {e}")
+            logger.error(f"Error switching session via list click: {e}")
 
     def _on_open_spectrum(self):
         """Launches the file dialog and initiates V2 loading."""
@@ -723,7 +725,7 @@ class MainSessionsMixin:
 
         # 3. Add to the GUI session histories
         self.add_session(new_state)
-        logging.info(f"Session '{current_state.name}' duplicated as '{new_name}'.")
+        logger.info(f"Session '{current_state.name}' duplicated as '{new_name}'.")
 
     def _on_close_multiple_sessions(self, rows: List[int]):
         """Closes multiple sessions, handling dirty checks for each."""
@@ -896,7 +898,7 @@ class MainSessionsMixin:
                         c_glob = np.sum(chi2_array) / len(chi2_array)
                         chi2_html = f"<tr><td>Reduced χ²:</td><td>{c_glob:.2f}</td></tr>"
             except Exception as e:
-                logging.warning(f"Could not calculate chi-squared for info panel: {e}")
+                logger.warning(f"Could not calculate chi-squared for info panel: {e}")
 
         stats_html = (
             "<p style='margin-bottom: 5px;'><b>Statistics:</b></p>"
@@ -991,7 +993,7 @@ class MainSessionsMixin:
             current_internal_name = history_item.current_state.name
             
             if new_name and new_name != current_internal_name:
-                logging.info(f"Sidebar rename: '{current_internal_name}' -> '{new_name}'.")
+                logger.info(f"Sidebar rename: '{current_internal_name}' -> '{new_name}'.")
                 
                 # --- [FIX START] Hybrid Update ---
                 
@@ -1019,7 +1021,7 @@ class MainSessionsMixin:
                 history_item.display_name = new_name
 
         except Exception as e:
-            logging.error(f"Error during in-place session rename: {e}")
+            logger.error(f"Error during in-place session rename: {e}")
 
     def _on_save_session_context(self, history_item: SessionHistory):
         """
@@ -1057,17 +1059,17 @@ class MainSessionsMixin:
             # --- Save the directory for next time ---
             settings.setValue("last_working_dir", os.path.dirname(file_name))
 
-            logging.info(f"Saving session to: {file_name}")
+            logger.info(f"Saving session to: {file_name}")
             try:
                 # Pass *both* sessions to the save method
                 session_to_save_final.save(
                     file_path=file_name,
                     initial_session=session_to_save_initial
                 )
-                logging.info("Session saved successfully.")
+                logger.info("Session saved successfully.")
                 return True # Indicate success
             except Exception as e:
-                logging.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
+                logger.error(f"Failed to save session to {file_name}: {e}", exc_info=True)
                 QMessageBox.critical(self, "Save Error", f"Could not save session:\n{e}")
                 return False
         return False
@@ -1082,7 +1084,7 @@ class MainSessionsMixin:
             history_to_close = self.active_history
 
         if not history_to_close:
-            logging.warning("Close request with no session specified or active.")
+            logger.warning("Close request with no session specified or active.")
             return
 
         session_name = history_to_close.display_name
@@ -1119,10 +1121,10 @@ class MainSessionsMixin:
         try:
             row_to_remove = self.session_histories.index(history_to_close)
         except ValueError:
-            logging.error(f"Could not find session {history_to_close.display_name} to close.")
+            logger.error(f"Could not find session {history_to_close.display_name} to close.")
             return
             
-        logging.info(f"Closing session: {history_to_close.display_name}")
+        logger.info(f"Closing session: {history_to_close.display_name}")
 
         # Remove from list
         self.session_histories.pop(row_to_remove)
@@ -1165,10 +1167,10 @@ class MainSessionsMixin:
         Used by macOS FileOpen events and Drag & Drop.
         """
         if not os.path.exists(file_path):
-            logging.error(f"Cannot open file: {file_path} does not exist.")
+            logger.error(f"Cannot open file: {file_path} does not exist.")
             return
 
-        logging.info(f"Direct load requested for: {file_path}")
+        logger.info(f"Direct load requested for: {file_path}")
         
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -1180,11 +1182,11 @@ class MainSessionsMixin:
                 # The window may have been empty: update the interface
                 self._update_ui_state(is_valid_session=True)
             else:
-                logging.error("Session load returned failure.")
+                logger.error("Session load returned failure.")
                 QMessageBox.warning(self, "Load Error", "Failed to load session.")
 
         except Exception as e:
-            logging.error(f"Failed to load file direct: {e}")
+            logger.error(f"Failed to load file direct: {e}")
             QMessageBox.critical(self, "Error Loading File", f"Could not load {file_path}:\n{e}")
         finally:
             QApplication.restoreOverrideCursor()

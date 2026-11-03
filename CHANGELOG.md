@@ -1,6 +1,10 @@
 ## [Unreleased]
 
+### Changed
+- Each module of Astrocook logs with its own logger, named after the module (`astrocook.recipes.absorbers`, `astrocook.fitting.voigt_fitter`, ...), instead of the root logger: a script can choose the level of Astrocook's messages, or of a part of it, alone (`logging.getLogger("astrocook").setLevel(logging.INFO)`; see *Seeing Astrocook's Messages* in the scripting tutorial). The messages themselves and what the GUI shows do not change.
+
 ### Fixed
+- A script that ran a recipe before configuring logging could no longer configure it (F96): the first message of the recipe set up Python's logging with its defaults, so a later `logging.basicConfig(level=logging.INFO)` was ignored. A script that configures nothing still sees the warnings and errors, now without the `WARNING:root:` prefix.
 - Saving a session no longer risks losing the file it replaces (F94). The `.acs2` archive was written directly over the existing file, which was emptied first: if the save failed while writing (e.g. a full disk, or an error in the original data of the session), the previous archive was left partial or empty. The archive is now written to a temporary file in the same folder and replaces the old one only when complete; a failed save leaves the old file as it was, and the error is shown as before. An error in the original data now stops the save at once: it was logged and the save went on, to fail later with a confusing "No such file or directory".
 
 ## [2.3.0] - 2026-11-02

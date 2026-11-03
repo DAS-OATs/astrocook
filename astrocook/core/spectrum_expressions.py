@@ -20,6 +20,8 @@ from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 _NE_GLOBAL_DICT = {
     'min': np.nanmin,
     'max': np.nanmax,
@@ -192,7 +194,7 @@ class ExpressionsMixin:
                                      global_dict=_NE_GLOBAL_DICT,  # <<< *** PASS GLOBALS ***
                                      local_dict=local_dict)       # <<< PASS LOCALS
         except Exception as e:
-            logging.error(f"Numexpr evaluation failed for expression: '{expression}'")
+            logger.error(f"Numexpr evaluation failed for expression: '{expression}'")
             raise e # Re-raise for the recipe to catch
 
         # 3. Determine the unit for the new column
@@ -201,15 +203,15 @@ class ExpressionsMixin:
         # If the result is a scalar (e.g., from median(y)),
         # we must broadcast it to the shape of the spectrum
         if not hasattr(new_values, "shape") or new_values.shape == ():
-            logging.debug("Expression result is a scalar, broadcasting to array.")
+            logger.debug("Expression result is a scalar, broadcasting to array.")
             # Use shape of 'x' as the reference
             new_values = np.full(self._data.x.values.shape, new_values)
 
         if target_col in all_cols:
             target_unit = all_cols[target_col].unit
-            logging.debug(f"Expression result will inherit unit '{target_unit}' from target '{target_col}'")
+            logger.debug(f"Expression result will inherit unit '{target_unit}' from target '{target_col}'")
         else:
-            logging.debug(f"Expression result for new column '{target_col}' will be dimensionless.")
+            logger.debug(f"Expression result for new column '{target_col}' will be dimensionless.")
 
         # 4. Create new SpectrumDataV2 using the immutable pattern
         core_cols = {
@@ -281,7 +283,7 @@ class ExpressionsMixin:
             if mask_indices.dtype != bool:
                 raise TypeError("Mask expression did not return a boolean array.")
         except Exception as e:
-            logging.error(f"Numexpr evaluation failed for mask expression: '{expression}'")
+            logger.error(f"Numexpr evaluation failed for mask expression: '{expression}'")
             raise e # Re-raise for the recipe to catch
             
         # ... (rest of the method is unchanged) ...
@@ -418,7 +420,7 @@ class ExpressionsMixin:
             if mask.dtype.kind != 'b':
                  raise TypeError("Split expression must return a boolean mask.")
         except Exception as e:
-            logging.error(f"Numexpr evaluation failed for split: '{expression}'")
+            logger.error(f"Numexpr evaluation failed for split: '{expression}'")
             raise e
 
         # 3. Check if the resulting spectrum would be empty
@@ -469,7 +471,7 @@ class ExpressionsMixin:
         """
         col = self.get_column(mask_col)
         if col is None:
-            logging.warning(f"Mask column '{mask_col}' not found.")
+            logger.warning(f"Mask column '{mask_col}' not found.")
             return self
 
         # Work in Angstroms for consistency

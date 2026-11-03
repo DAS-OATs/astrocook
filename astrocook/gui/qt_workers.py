@@ -16,6 +16,8 @@ from astrocook.core.structures import HistoryLogV2
 if TYPE_CHECKING:
     from .main_window import MainWindowV2
 
+logger = logging.getLogger(__name__)
+
 # Define a map of all known recipe modules
 ALL_SCHEMAS = {
     'file': FILE_RECIPES_SCHEMAS,
@@ -62,7 +64,7 @@ class RecipeWorker(QRunnable):
 
     def stop(self):
         """Thread-safe method to request a stop."""
-        logging.info(f"Stopping recipe '{self.recipe_name}'...")
+        logger.info(f"Stopping recipe '{self.recipe_name}'...")
         self._is_stopped = True
         
         # Inject the stop flag into the session object so recipes can see it
@@ -72,7 +74,7 @@ class RecipeWorker(QRunnable):
     def run(self):
         """The main work. This runs on the background thread."""
         try:
-            logging.info(f"RecipeWorker: Running {self.category}.{self.recipe_name}")
+            logger.info(f"RecipeWorker: Running {self.category}.{self.recipe_name}")
 
             # Reset stop flag on session start
             self.session._stop_flag = False
@@ -94,7 +96,7 @@ class RecipeWorker(QRunnable):
             new_session_state = recipe_method(**self.params)
 
             if self._is_stopped or getattr(self.session, '_stop_flag', False):
-                logging.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
+                logger.warning(f"Recipe '{self.recipe_name}' was stopped by user.")
                 
                 # Use the returned session (likely the original one) or fallback
                 result_session = new_session_state if new_session_state else self.session
@@ -121,7 +123,7 @@ class RecipeWorker(QRunnable):
             
             if is_user_error:
                 # Case A: User Error. Log mildly, send NO traceback.
-                logging.warning(f"Recipe '{self.recipe_name}' aborted: {e}")
+                logger.warning(f"Recipe '{self.recipe_name}' aborted: {e}")
                 
                 # Signal: (Title, Message, Traceback)
                 self.signals.error.emit((
@@ -131,7 +133,7 @@ class RecipeWorker(QRunnable):
                 ))
             else:
                 # Case B: Real Bug. Log severely, send FULL traceback.
-                logging.error(f"RecipeWorker crashed on {self.recipe_name}: {e}", exc_info=True)
+                logger.error(f"RecipeWorker crashed on {self.recipe_name}: {e}", exc_info=True)
                 
                 self.signals.error.emit((
                     f"Recipe Error: {self.recipe_name}", # Scary title
@@ -171,7 +173,7 @@ class ScriptWorker(QRunnable):
     def run(self):
         """The main work. This runs on the background thread."""
         try:
-            logging.info("ScriptWorker: Starting script run...")
+            logger.info("ScriptWorker: Starting script run...")
 
             # 1. Create a new history to build into
             new_log = HistoryLogV2()
@@ -249,7 +251,7 @@ class ScriptWorker(QRunnable):
         except Exception as e:
             # 5. Failure! Emit the error
             line_info = f"line {i+1}: {line}" if 'i' in locals() else "N/A"
-            logging.error(f"ScriptWorker: Failed on {line_info}\nError: {e}", exc_info=True)
+            logger.error(f"ScriptWorker: Failed on {line_info}\nError: {e}", exc_info=True)
             self.signals.error.emit((i+1, line, str(e)))
 
 class SessionLoadSignals(QObject):
@@ -292,6 +294,6 @@ class SessionLoadWorker(QRunnable):
                 self.signals.loaded.emit(i, path, session)
             except Exception as e:
                 failed += 1
-                logging.error(f"Failed to load {path}: {e}")
+                logger.error(f"Failed to load {path}: {e}")
                 self.signals.failed.emit(i, path, str(e))
         self.signals.done.emit(loaded, failed, self._cancelled)

@@ -63,3 +63,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 ```
 The GUI shows them anyway.
+
+Each module of Astrocook has its own logger, named after the module
+(`astrocook.recipes.absorbers`, `astrocook.fitting.voigt_fitter`, ...), so
+the level can be chosen for a part of the package alone. For example, to
+see the progress of Astrocook without that of the other libraries, or to
+hide the messages of the fits:
+```python
+logging.basicConfig()                                    # warnings and errors
+logging.getLogger("astrocook").setLevel(logging.INFO)     # all of Astrocook
+logging.getLogger("astrocook.fitting").setLevel(logging.WARNING)
+```

@@ -15,6 +15,8 @@ from astrocook.core.spectrum_expressions import ExpressionsMixin
 from astrocook.core.spectrum_flux import FluxMixin
 from astrocook.core.spectrum_lines import LinesMixin
 
+logger = logging.getLogger(__name__)
+
 
 class TableAdapterV2(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
@@ -102,9 +104,9 @@ def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
         inside = (xmin <= x) & (x <= xmax)
     finite = np.isfinite(x) & np.isfinite(xmin) & np.isfinite(xmax)
     if finite.any() and np.mean(inside[finite]) >= 0.9:
-        logging.info("Pixel edges without a unit: read in the unit of x (%s).", x_unit)
+        logger.info("Pixel edges without a unit: read in the unit of x (%s).", x_unit)
     else:
-        logging.warning("Pixel edges without a unit and not around x: recomputed "
+        logger.warning("Pixel edges without a unit and not around x: recomputed "
                         "halfway between the pixels.")
         if len(x) > 1:
             mid = 0.5 * (x[1:] + x[:-1])
@@ -439,7 +441,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             finite = current[np.isfinite(current)]
             variable = finite.size > 0 and not np.allclose(finite, finite[0], rtol=1e-6)
             if variable and not overwrite_resol_col:
-                logging.warning("The spectrum has a resolution that varies with "
+                logger.warning("The spectrum has a resolution that varies with "
                                 "wavelength: kept (R=%g not applied; set "
                                 "overwrite_resol_col to replace it).", resol)
             else:
@@ -463,7 +465,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         if old_cont_vals is None or new_cont_vals is None or old_model_col is None:
             return None
             
-        logging.info("Re-normalizing 'model' column to new 'cont'...")
+        logger.info("Re-normalizing 'model' column to new 'cont'...")
         try:
             # 1. Get old normalized profile
             normalized_model = np.divide(
@@ -481,7 +483,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
                 description=old_model_col.description
             )
         except Exception as e:
-            logging.warning(f"Failed to renormalize model column: {e}")
+            logger.warning(f"Failed to renormalize model column: {e}")
             return None
     
     def sanitize_legacy_tellurics(self) -> 'SpectrumV2':
@@ -500,7 +502,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         if 'cont_no_telluric' not in self._data.aux_cols:
             return self
             
-        logging.info("Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting.")
+        logger.info("Sanitizing legacy spectrum: Swapping 'cont_no_telluric' into 'cont' to fix double-counting.")
         
         new_aux_cols = deepcopy(self._data.aux_cols)
         
@@ -633,9 +635,9 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
                 del new_aux_cols[actual_key]
                 removed.append(actual_key) # Log the exact key removed
             elif clean_col in ['x', 'y', 'dy', 'xmin', 'xmax']:
-                logging.warning(f"Cannot delete core column '{clean_col}'.")
+                logger.warning(f"Cannot delete core column '{clean_col}'.")
             else:
-                logging.warning(f"Column '{clean_col}' not found.")
+                logger.warning(f"Column '{clean_col}' not found.")
         
         if not removed:
             return self

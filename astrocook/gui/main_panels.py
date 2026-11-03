@@ -28,6 +28,8 @@ from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLa
 from .pyside_plot import SpectrumPlotWidget
 from .theme import HINT_TEXT
 
+logger = logging.getLogger(__name__)
+
 # --- Constants for Sidebar Widths ---
 LEFT_SIDEBAR_WIDTH = CARD_WIDTH   # as the floating toolbar of the plot
 RIGHT_SIDEBAR_WIDTH = CARD_WIDTH
@@ -187,7 +189,7 @@ class MainPanelsMixin:
                 logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(logo_lbl)
         except Exception as e:
-            logging.warning(f"Could not load logo for empty view: {e}")
+            logger.warning(f"Could not load logo for empty view: {e}")
 
         layout.addSpacing(16)  # the logo has the name
 
@@ -686,7 +688,7 @@ class MainPanelsMixin:
             ymin = float(self.ymin_input.text())
             ymax = float(self.ymax_input.text())
         except ValueError:
-            logging.warning("Invalid custom limit values entered.")
+            logger.warning("Invalid custom limit values entered.")
             return # Ignore if values are not valid floats
             
         selected_unit = self.x_unit_combo.currentText()
@@ -702,13 +704,13 @@ class MainPanelsMixin:
             xmax_nm = display_xmax
 
         if xmax_nm <= xmin_nm or ymax <= ymin:
-            logging.warning("Invalid custom limit range (max <= min).")
+            logger.warning("Invalid custom limit range (max <= min).")
             return
         if self.log_y_checkbox.isChecked() and ymin <= 0:
             # A log scale needs a positive limit: Matplotlib would ignore it
             # with a warning (F78)
             ymin = self.plot_viewer.canvas.axes.get_ylim()[0]
-            logging.warning("With the logarithmic F scale the lower limit of F must "
+            logger.warning("With the logarithmic F scale the lower limit of F must "
                             f"be positive: kept at {ymin:.4g}.")
             if ymax <= ymin:
                 return
@@ -752,7 +754,7 @@ class MainPanelsMixin:
             self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
             
         except Exception as e:
-            logging.warning(f"Failed to update limit boxes: {e}")
+            logger.warning(f"Failed to update limit boxes: {e}")
         finally:
             # Always unblock signals
             self.xmin_input.blockSignals(False)
@@ -766,7 +768,7 @@ class MainPanelsMixin:
         This is the programmatic equivalent of the user manually
         resizing the window, which we know fixes the bug.
         """
-        logging.debug("QTimer: Forcing native resize event to fix widget stacking.")
+        logger.debug("QTimer: Forcing native resize event to fix widget stacking.")
         try:
             # 1. Get the current size
             current_size = self.size()
@@ -782,7 +784,7 @@ class MainPanelsMixin:
             # which will handle the final Z-stacking.
             
         except Exception as e:
-            logging.warning(f"Failed to force resize: {e}")
+            logger.warning(f"Failed to force resize: {e}")
 
     def _toggle_left_sidebar(self):
         """Animates the left sidebar overlay and its button together."""

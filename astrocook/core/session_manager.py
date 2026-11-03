@@ -5,6 +5,8 @@ from typing import List, Optional, Union
 from astrocook.core.session import SessionV2
 from astrocook.core.structures import HistoryLogV2, V1LogArtifact
 
+logger = logging.getLogger(__name__)
+
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact]
 
@@ -31,7 +33,7 @@ class SessionHistory:
         """Returns the currently active SessionV2 state."""
         if 0 <= self.current_index < len(self.states):
             return self.states[self.current_index]
-        logging.error("History index out of bounds!")
+        logger.error("History index out of bounds!")
         return self.states[-1] if self.states else None # Fallback
 
     @property
@@ -55,12 +57,12 @@ class SessionHistory:
         
         # 1. Truncate stale future states
         if self.current_index < len(self.states) - 1:
-            logging.debug(f"Truncating SessionHistory states from index {self.current_index + 1}")
+            logger.debug(f"Truncating SessionHistory states from index {self.current_index + 1}")
             del self.states[self.current_index + 1:]
         
         # 2. Ensure the new state has the correct log manager reference
         if not hasattr(new_state, 'log_manager') or new_state.log_manager is not self.log_manager:
-            logging.warning("SessionHistory.add_state: New state had incorrect log reference. Forcibly linking.")
+            logger.warning("SessionHistory.add_state: New state had incorrect log reference. Forcibly linking.")
             new_state.log_manager = self.log_manager
 
         # 3. Append the new state

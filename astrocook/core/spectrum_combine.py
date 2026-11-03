@@ -17,6 +17,8 @@ from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 
 class CombineMixin:
     """Stitching, rebinning, equalization, co-addition and resampling of
@@ -184,13 +186,13 @@ class CombineMixin:
 
             # --- *** FIX 1: Check if 'values' is None from a *previous* rebin *** ---
             if col_data.values is None:
-                logging.debug(f"Skipping aux col '{name}' as its data is None.")
+                logger.debug(f"Skipping aux col '{name}' as its data is None.")
                 continue
             # --- *** END FIX 1 *** ---
 
             if col_data.values.dtype.kind in 'fiub': # Check for float, int, unsigned, or bool
                 try:
-                    logging.debug(f"Rebin: Interpolating aux column '{name}'...")
+                    logger.debug(f"Rebin: Interpolating aux column '{name}'...")
                     interp_values = self.get_resampled_column(
                         name, 
                         x_final_nm 
@@ -203,9 +205,9 @@ class CombineMixin:
                     # --- *** END FIX 2 *** ---
 
                 except Exception as e:
-                    logging.warning(f"Failed to interpolate aux col '{name}' during rebin: {e}. Dropping.")
+                    logger.warning(f"Failed to interpolate aux col '{name}' during rebin: {e}. Dropping.")
             else:
-                logging.warning(f"Cannot rebin non-numerical aux col '{name}'. Dropping.")
+                logger.warning(f"Cannot rebin non-numerical aux col '{name}'. Dropping.")
         # --- *** END FIX *** ---
 
         # Create a copy of the metadata to avoid modifying the original session
@@ -325,7 +327,7 @@ class CombineMixin:
         for i, spec in enumerate(all_specs):
             # A. Flux Scaling (Skip for self/index 0)
             if i > 0 and equalize_order >= 0:
-                logging.info(f"  Scaling spectrum {i} to reference...")
+                logger.info(f"  Scaling spectrum {i} to reference...")
                 # Compute scaling in original frame
                 scale_model = compute_flux_scaling(
                     ref_x, ref_y, 
@@ -367,7 +369,7 @@ class CombineMixin:
         track_resolution = (resol_sources_count == len(all_specs))
 
         if resol_sources_count > 0 and not track_resolution:
-            logging.warning("Coadd: Resolution mismatch! Some input spectra are missing resolution data. "
+            logger.warning("Coadd: Resolution mismatch! Some input spectra are missing resolution data. "
                             "Resolution tracking has been disabled for this co-add.")
 
         # 3. Concatenate (The "Manual Stitch")
@@ -418,7 +420,7 @@ class CombineMixin:
         # 7. Convert Back to Original Unit (e.g. nm)
         # We transform the result back to the domain of the input data
         if not reb_x.unit.is_equivalent(original_x_unit):
-            logging.info(f"  Converting result back to {original_x_unit}...")
+            logger.info(f"  Converting result back to {original_x_unit}...")
             final_x = convert_axis_velocity(reb_x, z_em, original_x_unit)
             final_xmin = convert_axis_velocity(reb_xmin, z_em, original_x_unit)
             final_xmax = convert_axis_velocity(reb_xmax, z_em, original_x_unit)
@@ -487,7 +489,7 @@ class CombineMixin:
             if name in ('x', 'xmin', 'xmax'):
                 continue
             if col_q.dtype.kind in 'fiu': 
-                logging.debug(f"Resampling column '{name}'...")
+                logger.debug(f"Resampling column '{name}'...")
                 y_interp = np.interp(x_new, x_old, col_q.value,
                                      left=fill_value, right=fill_value)
                 new_data_col = DataColumnV2(y_interp, col_q.unit)
@@ -498,7 +500,7 @@ class CombineMixin:
                 else:
                     aux_cols_new[name] = new_data_col
             else:
-                logging.warning(f"Cannot resample non-numerical column '{name}', it will be dropped.")
+                logger.warning(f"Cannot resample non-numerical column '{name}', it will be dropped.")
         new_data_core = SpectrumDataV2(
             x=x_col, xmin=xmin_col, xmax=xmax_col, 
             y=y_col_new, 

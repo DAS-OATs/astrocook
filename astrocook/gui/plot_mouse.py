@@ -25,6 +25,8 @@ from .data_inspector import DataInspectorDialog
 from .main_recipes import region_expression
 from .plot_style import SELECTION_STYLE, z_convert_inverse
 
+logger = logging.getLogger(__name__)
+
 
 class PlotMouseMixin:
     """The mouse handlers and the tooltip of ``SpectrumPlotWidget``.
@@ -52,11 +54,11 @@ class PlotMouseMixin:
             # or zoom, which would switch the selection off again
             self.toolbar.deactivate_tools()
             self._is_selecting_region = True
-            logging.info("Region selection mode ACTIVE.")
+            logger.info("Region selection mode ACTIVE.")
             self.setCursor(Qt.CrossCursor)
         else:
             self._is_selecting_region = False
-            logging.info("Region selection mode DEACTIVATED.")
+            logger.info("Region selection mode DEACTIVATED.")
             self.setCursor(Qt.ArrowCursor)
             # Clean up any half-drawn selection
             self.canvas.cleanup_selection()
@@ -119,7 +121,7 @@ class PlotMouseMixin:
                     x_plot_nm = (1 + z_cursor) * xem_nm # This is the data coordinate
                     positions.append(x_plot_nm)
         except (ValueError, AttributeError, ImportError) as e:
-            logging.warning(f"Could not calculate cursor positions: {e}")
+            logger.warning(f"Could not calculate cursor positions: {e}")
             return []
         return positions
     
@@ -160,7 +162,7 @@ class PlotMouseMixin:
 
             return z_convert_inverse(mouse_x_nm, ref_xem_nm)
         except Exception as e:
-            logging.error(f"Error calculating Z from X: {e}")
+            logger.error(f"Error calculating Z from X: {e}")
             return None
 
     def show_data_tooltip(self, event):
@@ -647,7 +649,7 @@ class PlotMouseMixin:
             self.canvas.selection_artist = self.canvas.axes.axvspan(
                 xmin, xmax, **SELECTION_STYLE)
             self.canvas.draw_idle()
-            logging.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
+            logger.info(f"Region selected: {xmin:.4f} to {xmax:.4f}")
             if self.main_window:
                 self._region_menu(xmin, xmax).exec(QCursor.pos())
             self.canvas.cleanup_selection()

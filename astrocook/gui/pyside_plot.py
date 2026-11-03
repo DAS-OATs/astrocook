@@ -30,6 +30,8 @@ from .plot_style import (ERROR_COLOR, STRONG_EMISSION_LINES,
 from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
+logger = logging.getLogger(__name__)
+
 #: When more pixels than this are in view, they are decimated (min-max) to
 #: keep the plot fast (F76: at every plot, in the full view or in a wide
 #: zoom). 1 million (Guido, phase 5-bis; it was 2 million, and the comment
@@ -291,7 +293,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._invalidate_plot_caches(session_state, force_autoscale, selected_snr_col)
 
         if session_state is None:
-            logging.debug("plot_spectrum called with no session manager. Clearing plot.")
+            logger.debug("plot_spectrum called with no session manager. Clearing plot.")
             self.toolbar.set_select_enabled(False)
             ax = self.canvas.axes
             ax.clear()
@@ -398,11 +400,11 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
            ):
 
             if force_autoscale:
-                logging.debug("Home button pressed, invalidating plot caches.")
+                logger.debug("Home button pressed, invalidating plot caches.")
             elif current_data_id != self._cached_data_id:
-                logging.debug("Data change detected, invalidating ALL plot caches.")
+                logger.debug("Data change detected, invalidating ALL plot caches.")
             else:
-                logging.debug("SNR error column changed, invalidating plot caches.")
+                logger.debug("SNR error column changed, invalidating plot caches.")
 
             self._cached_data_id = current_data_id
             self._plot_cache = {}
@@ -420,7 +422,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
     def _was_zoomed(previous_xlim, previous_ylim, force_autoscale) -> bool:
         """Whether the limits of the previous plot are to be kept."""
         if force_autoscale:
-            logging.debug("Home button pressed: Forcing autoscale.")
+            logger.debug("Home button pressed: Forcing autoscale.")
             return False
         was_zoomed = False
         try:
@@ -445,9 +447,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         try:
             self.canvas.xlim_cid = self.canvas.axes.callbacks.connect('xlim_changed', self.canvas.on_lim_changed)
             self.canvas.ylim_cid = self.canvas.axes.callbacks.connect('ylim_changed', self.canvas.on_lim_changed)
-            logging.debug("Reconnected limit change callbacks in plot_spectrum.")
+            logger.debug("Reconnected limit change callbacks in plot_spectrum.")
         except Exception as e:
-            logging.error(f"Failed to reconnect limit callbacks: {e}")
+            logger.error(f"Failed to reconnect limit callbacks: {e}")
 
     def _read_view(self, spec, selected_snr_col, was_zoomed, force_autoscale,
                    previous_xlim, previous_ylim) -> '_PlotView':
@@ -470,7 +472,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         view.norm_state_changed = (view.is_norm_y != self._last_draw_norm_state) or \
                                   (view.is_snr != self._last_draw_snr_state)
         if view.norm_state_changed:
-            logging.debug(f"View state changed (Norm: {view.is_norm_y}, SNR: {view.is_snr})")
+            logger.debug(f"View state changed (Norm: {view.is_norm_y}, SNR: {view.is_snr})")
         # ** Update the stored state for the next draw **
         self._last_draw_norm_state = view.is_norm_y
         self._last_draw_snr_state = view.is_snr
@@ -484,9 +486,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         decimated: the decimation depends on the view (``_decimate``, F76)."""
         cached = self._plot_cache.get('raw')
         if cached is not None:
-            logging.debug("Using cached RAW plot data.")
+            logger.debug("Using cached RAW plot data.")
             return cached
-        logging.debug("Computing RAW plot data...")
+        logger.debug("Computing RAW plot data...")
         self._plot_cache['raw'] = full
         return full
 
@@ -497,12 +499,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if view.is_norm_y:
             cached = self._plot_cache.get('norm')
             if cached is not None:
-                logging.debug("Using cached NORMALIZED plot data.")
+                logger.debug("Using cached NORMALIZED plot data.")
                 return cached
-            logging.debug("Cache miss for normalized data. Computing...")
+            logger.debug("Cache miss for normalized data. Computing...")
             raw = self._raw_plot_arrays(full, view)
             if raw.norm is None:
-                logging.warning("Normalize checked, but continuum data is missing.")
+                logger.warning("Normalize checked, but continuum data is missing.")
                 return raw
             norm = raw.norm
             arrays = _PlotArrays(
@@ -514,9 +516,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if view.is_snr:
             cached = self._plot_cache.get('snr')
             if cached is not None:
-                logging.debug("Using cached SNR plot data.")
+                logger.debug("Using cached SNR plot data.")
                 return cached
-            logging.debug("Cache miss for SNR data. Computing...")
+            logger.debug("Cache miss for SNR data. Computing...")
             raw = self._raw_plot_arrays(full, view)
 
             # The ERROR array to use
@@ -529,7 +531,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     # This path is for 'running_std', 'norm_err', etc.
                     full_error_data = spec.get_column(error_col_name).value
             except Exception as e:
-                logging.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
+                logger.error(f"Could not get SNR error column '{error_col_name}': {e}. Falling back to 'dy'.")
                 full_error_data = full.dy # Fallback
                 self.main_window.snr_col_combo.setCurrentIndex(0) # Reset combo
             error = full_error_data
@@ -563,12 +565,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             idx_end = min(len(arrays.x), idx_end + buffer)
 
             if idx_end > idx_start:
-                logging.debug(f"Applying zoom-slice to plot data: {idx_end - idx_start} points")
+                logger.debug(f"Applying zoom-slice to plot data: {idx_end - idx_start} points")
                 view.final_slice = slice(idx_start, idx_end)
                 return arrays.sliced(view.final_slice)
-            logging.debug("Zoom slice is empty, plotting full data.")
+            logger.debug("Zoom slice is empty, plotting full data.")
         except Exception as e:
-            logging.warning(f"Failed to apply zoom slice: {e}")
+            logger.warning(f"Failed to apply zoom slice: {e}")
         return arrays
 
     def _decimate(self, arrays: '_PlotArrays', view: '_PlotView', source: int) -> '_PlotArrays':
@@ -584,7 +586,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         key = ('decimated', source, view.final_slice.start, view.final_slice.stop)
         cached = self._plot_cache.get(key)
         if cached is None:
-            logging.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}): "
+            logger.debug(f"Using Min-Max decimation (factor {DECIMATION_FACTOR}): "
                           f"{len(arrays.x)} points in view.")
             # Only the last view: the cuts of a pan would pile up
             for old in [k for k in self._plot_cache if k[0] == 'decimated']:
@@ -666,7 +668,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if not self.main_window.error_checkbox.isChecked():
             return
         if arrays.dx is None or arrays.dy is None:
-            logging.warning("Skipping error plot because dy_data is None.")
+            logger.warning("Skipping error plot because dy_data is None.")
             return
         x_data, y_data, dx_data, dy_data = arrays.x, arrays.y, arrays.dx, arrays.dy
         label = '1-sigma error'
@@ -730,7 +732,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     color='black', lw=0.8, label='Normalization', rasterized=True
                 )
             else:
-                logging.debug("Normalization requested but spec.norm is None.")
+                logger.debug("Normalization requested but spec.norm is None.")
 
         if self.main_window.model_checkbox.isChecked():
             if arrays.model is not None:
@@ -805,7 +807,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                                 rasterized=True)
 
         except Exception as e:
-            logging.warning(f"Could not plot auxiliary column '{aux_col_to_plot}': {e}")
+            logger.warning(f"Could not plot auxiliary column '{aux_col_to_plot}': {e}")
 
     def _plot_systems(self, ax, spec, systs):
         """A tick at the bottom for each transition of each component in
@@ -858,7 +860,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     transitions = [comp.series]
 
             if not transitions:
-                logging.warning(f"Could not parse series '{comp.series}' for system plot.")
+                logger.warning(f"Could not parse series '{comp.series}' for system plot.")
 
             # Check if this component is highlighted
             is_highlighted = comp.uuid in self._highlighted_uuids
@@ -870,7 +872,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     ticks.append((comp, t, is_highlighted))
                     obs_nm.append((1 + z) * rest_nm[t])
                 else:
-                    logging.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
+                    logger.warning(f"Transition '{t}' for series '{comp.series}' not found in xem_d.")
 
         try:
             x_ticks = convert_axis_velocity(np.array(obs_nm, dtype=float) * au.nm,
@@ -945,11 +947,11 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     transform=blended_transform_factory(ax.transData, ax.transAxes),
                     bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1.5))
                 self.canvas.update_cursor_label(z_cursor, cursor_x_positions)
-            logging.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
+            logger.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
         except (ValueError, AttributeError) as e:
-            logging.warning(f"Could not draw cursor lines: {e}")
+            logger.warning(f"Could not draw cursor lines: {e}")
         except Exception as e:
-            logging.error(f"Unexpected error drawing cursor: {e}", exc_info=True)
+            logger.error(f"Unexpected error drawing cursor: {e}", exc_info=True)
 
     # --- Parts of plot_spectrum: swatches, axes and limits ---
 
@@ -1114,20 +1116,20 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # --- X Limits ---
         # Priority: Autoscale if requested (e.g., by unit change)
         if view.was_zoomed and not view.force_autoscale:
-            logging.debug(f"Restoring previous X zoom: {view.previous_xlim}")
+            logger.debug(f"Restoring previous X zoom: {view.previous_xlim}")
             ax.set_xlim(view.previous_xlim)
         # Else (initial draw or zoomed out), let Matplotlib autoscale
         else:
-            logging.debug("Allowing default X autoscale.")
+            logger.debug("Allowing default X autoscale.")
             # No command needed, autoscale is default after clear()
 
         # --- Y Limits ---
         if view.norm_state_changed:
             if view.is_norm_y:
-                logging.debug("Normalization toggled ON: Setting default Y limits.")
+                logger.debug("Normalization toggled ON: Setting default Y limits.")
                 ax.set_ylim(NORM_YLIM_LOG if view.is_log_y else NORM_YLIM)
             else:
-                logging.debug("Normalization toggled OFF: Autoscaling Y.")
+                logger.debug("Normalization toggled OFF: Autoscaling Y.")
                 ax.autoscale(enable=True, axis='y')
         elif view.was_zoomed and not view.force_autoscale:
             ylim = view.previous_ylim
@@ -1137,11 +1139,11 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 else:
                     ax.autoscale(enable=True, axis='y')
             else:
-                logging.debug(f"Restoring previous Y zoom: {ylim}")
+                logger.debug(f"Restoring previous Y zoom: {ylim}")
                 ax.set_ylim(ylim)
         # Else (initial draw or zoomed out), let Matplotlib autoscale
         else:
-            logging.debug("Allowing default Y autoscale.")
+            logger.debug("Allowing default Y autoscale.")
 
     def _draw_isomag_grid(self):
         """
@@ -1219,7 +1221,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                 # ----------------------------------------------------
 
         except Exception as e:
-            logging.error(f"Error drawing iso-mag grid: {e}")
+            logger.error(f"Error drawing iso-mag grid: {e}")
 
         # 5. RESTORE LIMITS
         self.canvas.axes.set_xlim(current_xlim)

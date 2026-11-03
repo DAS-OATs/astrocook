@@ -18,6 +18,8 @@ from .system_inspector import SystemInspector
 from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
 from .theme import APPEARANCES, apply_appearance
 
+logger = logging.getLogger(__name__)
+
 #: The files opened last, in the settings (File > Open Recent, the empty window)
 RECENT_FILES_KEY = "recent_files"
 MAX_RECENT_FILES = 10
@@ -521,7 +523,7 @@ class MainMenusMixin:
             if self.active_history:
                 previous_state = self.active_history.undo()
                 if previous_state:
-                    logging.debug(f"Undo: Switched to state index {self.active_history.current_index}")
+                    logger.debug(f"Undo: Switched to state index {self.active_history.current_index}")
                     self._update_view_for_session(previous_state, set_current_list_item=False) 
                     self._update_undo_redo_actions()
 
@@ -531,9 +533,9 @@ class MainMenusMixin:
                     # --- END MODIFIED CHECK ---
                     QTimer.singleShot(0, self._force_restack_floating_widgets)
                 else:
-                    logging.debug("Undo: Already at oldest state for this session.")
+                    logger.debug("Undo: Already at oldest state for this session.")
             else:
-                 logging.debug("Undo: No active session.")
+                 logger.debug("Undo: No active session.")
         finally:
             QApplication.restoreOverrideCursor()
 
@@ -544,7 +546,7 @@ class MainMenusMixin:
             if self.active_history:
                 next_state = self.active_history.redo()
                 if next_state:
-                    logging.debug(f"Redo: Switched to state index {self.active_history.current_index}")
+                    logger.debug(f"Redo: Switched to state index {self.active_history.current_index}")
                     self._update_view_for_session(next_state, set_current_list_item=False)
                     self._update_undo_redo_actions()
 
@@ -554,9 +556,9 @@ class MainMenusMixin:
                     # --- END MODIFIED CHECK ---
                     QTimer.singleShot(0, self._force_restack_floating_widgets)
                 else:
-                    logging.debug("Redo: Already at newest state for this session.")
+                    logger.debug("Redo: Already at newest state for this session.")
             else:
-                 logging.debug("Redo: No active session.")
+                 logger.debug("Redo: No active session.")
         finally:
             QApplication.restoreOverrideCursor()
 
@@ -598,7 +600,7 @@ class MainMenusMixin:
         if self.active_history:
             self._launch_log_scripter(self.active_history)
         else:
-            logging.warning("View Log called with no active history.")
+            logger.warning("View Log called with no active history.")
 
     def _on_view_script_console(self):
         """Launches the Script Console dialog."""
@@ -616,7 +618,7 @@ class MainMenusMixin:
         if self.active_history:
             self._launch_identification_viewer(self.active_history)
         else:
-            logging.warning("View Identifications called with no active history.")
+            logger.warning("View Identifications called with no active history.")
 
     def _on_export_requested(self):
         """Launches the selection dialog first."""

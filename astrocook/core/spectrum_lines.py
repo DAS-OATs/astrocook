@@ -25,6 +25,8 @@ from astrocook.core.structures import DataColumnV2
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 #: Proximity margin of identify_lines (km/s): no candidate system beyond
 #: z_em by more than this. Absorbers associated with the quasar (outflows,
 #: infall) and the uncertainty of z_em from broad emission lines (up to
@@ -72,7 +74,7 @@ class LinesMixin:
             abs_mask = mask_data
         elif mask_data.dtype.kind in 'iu': # Integer or Unsigned Integer
             # It's likely 0/1 from a file load. Cast it.
-            logging.debug(f"Casting integer column '{mask_col}' to boolean mask.")
+            logger.debug(f"Casting integer column '{mask_col}' to boolean mask.")
             abs_mask = mask_data.astype(bool)
         else:
             # It's float or string, which is probably wrong for a mask.
@@ -81,7 +83,7 @@ class LinesMixin:
         # 2. Call pure function
         region_map, num_regions = detect_regions(abs_mask, min_pix=min_pix)
         
-        logging.info(f"Detected {num_regions} absorption regions (min_pix={min_pix}).")
+        logger.info(f"Detected {num_regions} absorption regions (min_pix={min_pix}).")
 
         # 3. Create new DataColumnV2 for the IDs
         # We use a dimensionless unit for IDs
@@ -147,11 +149,11 @@ class LinesMixin:
         # Import SciPy signal processing tools
         from scipy.signal import find_peaks, peak_widths
         
-        logging.info("identify_lines (De-blending): Starting identification...")
+        logger.info("identify_lines (De-blending): Starting identification...")
 
         # 1. Silently create abs_mask if it doesn't exist
         if not spec.has_aux_column(mask_col):
-            logging.info(f"Mask '{mask_col}' not found. Running 'find_absorbed' with defaults.")
+            logger.info(f"Mask '{mask_col}' not found. Running 'find_absorbed' with defaults.")
             try:
                 spec = spec.find_absorbed(
                     smooth_len_lya=5000.0 * au.km/au.s,
@@ -160,7 +162,7 @@ class LinesMixin:
                     template=False
                 )
             except Exception as e:
-                logging.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
+                logger.error(f"Failed to auto-generate absorbed mask: {e}", exc_info=True)
                 raise e
         
         # 2. Get Merged Regions
@@ -173,9 +175,9 @@ class LinesMixin:
             region_id_map_merged, num_merged = merge_regions_by_velocity(
                 region_id_map_raw, spec.x, spec._data.z_em, merge_dv
             )
-            logging.info(f"identify_lines: {num_merged} regions remain after merging.")
+            logger.info(f"identify_lines: {num_merged} regions remain after merging.")
         except Exception as e:
-            logging.error(f"Failed to detect or merge absorption regions: {e}", exc_info=True)
+            logger.error(f"Failed to detect or merge absorption regions: {e}", exc_info=True)
             raise e
 
         # Define AOD profile
@@ -279,7 +281,7 @@ class LinesMixin:
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
                     reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True)]
 
-        logging.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
+        logger.info(f"Finalized {len(reliable_ids)} identified regions (pre-deblending).")
 
         # --- 6. Save results with SMART DE-BLENDING ---
         

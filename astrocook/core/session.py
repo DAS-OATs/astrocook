@@ -19,6 +19,8 @@ from astrocook.core.structures import (
 )
 from astrocook.core.system_list import SystemListV2
 
+logger = logging.getLogger(__name__)
+
 # Define the type for the log manager
 LogManager = Union[HistoryLogV2, V1LogArtifact]
 
@@ -80,13 +82,13 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                 spec_data = v2_loader(archive_path)
                 return SessionV2(name=name, gui=gui_context, spec=SpectrumV2(data=spec_data))
             except Exception as e:
-                logging.error(f"V2 Loader failed: {e}")
+                logger.error(f"V2 Loader failed: {e}")
                 return 0
 
     # --- 2. ARCHIVE & LEGACY HANDLING ---
     try:
         if is_v2_archive:
-            logging.debug(f"Unpacking V2 archive: {archive_path}")
+            logger.debug(f"Unpacking V2 archive: {archive_path}")
             temp_dir = tempfile.mkdtemp()
             with tarfile.open(archive_path, 'r:gz') as tar:
                 # "data" filter: refuse members that would land outside
@@ -116,7 +118,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                 # to the V1 reader, which replaced the spectrum with mock
                 # data); the metadata (constraints, log, identifications)
                 # are missing
-                logging.warning(
+                logger.warning(
                     f"{archive_path} has no metadata file (_meta.json): the "
                     "spectrum and the systems are read, without constraints, "
                     "session log and identifications.")
@@ -159,18 +161,18 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if v2_metadata:
             # Not recorded before 2.1 (F45)
             session.saved_with_version = v2_metadata.get('astrocook_version')
-            logging.info(f"{os.path.basename(archive_path)} was saved by Astrocook "
+            logger.info(f"{os.path.basename(archive_path)} was saved by Astrocook "
                          f"{session.saved_with_version or '2.0.3 or earlier'}.")
         if v2_metadata and v2_metadata.get('log_type') == 'v2':
             try:
                 session.log_manager = HistoryLogV2.from_dict(
                     v2_metadata.get('log_history_json'))
             except (KeyError, TypeError, AttributeError) as e:
-                logging.warning(f"Could not restore the session log: {e}")
+                logger.warning(f"Could not restore the session log: {e}")
         return session
 
     except Exception as e: 
-        logging.error(f"Load failed: {e}", exc_info=True)
+        logger.error(f"Load failed: {e}", exc_info=True)
         return 0 
     finally:
         # Cleanup temp files
@@ -240,7 +242,7 @@ class SessionV2:
         self._clicks = []  
         self._z_sel = 0.0   
         self._series_sel = 'Ly_a' 
-        logging.debug(f"SessionV2 '{self.name}' initialized.")
+        logger.debug(f"SessionV2 '{self.name}' initialized.")
 
     def __getattr__(self, name):
         if hasattr(self.flux, name):
@@ -294,7 +296,7 @@ class SessionV2:
             )
             return session
         except Exception as e:
-            logging.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
+            logger.error(f"FATAL I/O ERROR: Failed to load and orchestrate session from {file_path}: {e}")
             return 0
 
     def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
@@ -395,5 +397,5 @@ class SessionV2:
             session_v2_initial=initial_session,
             file_path=file_path
         )
-        logging.info(f"V2 Session state saved successfully to {file_path}.")
+        logger.info(f"V2 Session state saved successfully to {file_path}.")
         return 0

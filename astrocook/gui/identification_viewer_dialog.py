@@ -14,6 +14,8 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
+logger = logging.getLogger(__name__)
+
 
 #: The columns of the table of the identifications
 COLUMNS = ["Regions", "Identification", "z (mean)", "z min", "z max", "Score", "Alternatives"]
@@ -183,7 +185,7 @@ class IdentificationViewerDialog(QDialog):
             try:
                 region_map = spec.get_column('abs_ids').value
             except Exception as e:
-                logging.warning(f"Could not read 'abs_ids': {e}")
+                logger.warning(f"Could not read 'abs_ids': {e}")
 
         if not json_string:
             self.summary_label.setText("No identifications found in session metadata.")
@@ -209,7 +211,7 @@ class IdentificationViewerDialog(QDialog):
             self._fill_table(rows)
 
         except Exception as e:
-            logging.error(f"Failed to parse identifications JSON: {e}")
+            logger.error(f"Failed to parse identifications JSON: {e}")
             self.summary_label.setText("Error parsing metadata.")
             self._show_text(f"# Error:\n{e}\n\n# Raw Data:\n{json_string}")
 

@@ -28,6 +28,8 @@ from astrocook.core.structures import (
     ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
 )
 
+logger = logging.getLogger(__name__)
+
 # Columns of the V1 spectrum table read as the core columns
 _SPEC_CORE = ['x', 'xmin', 'xmax', 'y', 'dy']
 # V1 placed these columns first, in this order, then the others in the
@@ -54,7 +56,7 @@ class V1ArchiveManager:
     def unpack(self):
         """Unpacks the .acs (tar.gz) archive into a temporary directory."""
         if not self.acs_path.lower().endswith(('.acs', '.tar.gz')):
-            logging.error(f"File is not a recognized V1 archive: {self.acs_path}")
+            logger.error(f"File is not a recognized V1 archive: {self.acs_path}")
             return None
 
         try:
@@ -65,7 +67,7 @@ class V1ArchiveManager:
                 tar.extractall(path=self.temp_dir, filter="data")
             return self.temp_dir
         except Exception as e:
-            logging.error(f"Failed to unpack .acs archive {self.acs_path}: {e}")
+            logger.error(f"Failed to unpack .acs archive {self.acs_path}: {e}")
             self.cleanup()
             return None
 
@@ -84,7 +86,7 @@ class V1ArchiveManager:
         if self.temp_dir and os.path.exists(self.temp_dir):
             import shutil
             shutil.rmtree(self.temp_dir)
-            logging.debug(f"Cleaned up temporary directory: {self.temp_dir}")
+            logger.debug(f"Cleaned up temporary directory: {self.temp_dir}")
 
 
 def _v1_meta(hdr: fits.Header) -> fits.Header:
@@ -235,7 +237,7 @@ def _translate_v1_links(parsed: Dict[Tuple[int, str], Dict[str, Any]],
                     expression)
                 constraint['target_uuid'] = id_to_uuid[ids[0]]
             else:
-                logging.warning(
+                logger.warning(
                     f"V1 constraint on component {comp_id} ({param} = "
                     f"{expression}) names a component that is not in the "
                     "list: not translated, the parameter stays frozen.")
@@ -306,5 +308,5 @@ def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict
                 'expression': expression
             }
 
-    logging.info(f"Parsed {len(parsed_constraints)} constraints from FITS header metadata.")
+    logger.info(f"Parsed {len(parsed_constraints)} constraints from FITS header metadata.")
     return parsed_constraints
