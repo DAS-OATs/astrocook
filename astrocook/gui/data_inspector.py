@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView,
                                QTableWidget, QTableWidgetItem, QVBoxLayout)
 from .theme import SELECTION
+from astrocook.gui.errors import DATA_ERRORS
 
 
 #: The columns of wavelength, written with a fixed number of decimals
@@ -220,7 +221,7 @@ class DataInspectorDialog(QDialog):
                         val = col_obj.value[data_idx] if col_obj is not None else np.nan
                         
                     val_str = format_value(col_name, val, col_obj)
-                except:
+                except DATA_ERRORS:
                     pass
 
                 item = QTableWidgetItem(val_str)

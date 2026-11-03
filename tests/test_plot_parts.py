@@ -579,3 +579,18 @@ def test_a_click_gives_the_plot_the_focus(qtbot, window):
     canvas.on_press(_event(canvas, "button_press_event", _x_inside(canvas, 0.5),
                            _y_inside(canvas), button=1))
     qtbot.waitUntil(lambda: canvas.hasFocus())
+
+
+def test_canvas_without_the_fast_style(qtbot, monkeypatch, caplog):
+    # The fallback applied 'fast' again, which would fail again (phase 6)
+    import logging
+    import matplotlib
+    from astrocook.gui import plot_canvas
+
+    def missing(style):
+        raise OSError(f"'{style}' not found")
+    monkeypatch.setattr(matplotlib.style, "use", missing)
+    with caplog.at_level(logging.WARNING):
+        canvas = plot_canvas.MatplotlibCanvas()
+    assert canvas.axes is not None
+    assert "The matplotlib style 'fast' is not available" in caplog.text

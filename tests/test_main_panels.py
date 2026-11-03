@@ -232,8 +232,8 @@ def test_invalid_limits_are_ignored(window, caplog):
     window.xmax_input.setText("500")
     window._on_set_custom_limits()
     assert (ax.get_xlim(), ax.get_ylim()) == before
-    assert "Invalid custom limit values entered." in caplog.text
-    assert "Invalid custom limit range (max <= min)." in caplog.text
+    assert "The limits of the plot must be numbers." in caplog.text
+    assert "The upper limits of the plot must be above the lower ones." in caplog.text
 
 
 # --- Sidebars ------------------------------------------------------------------------------

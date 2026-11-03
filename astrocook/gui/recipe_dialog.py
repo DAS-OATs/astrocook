@@ -44,8 +44,8 @@ class RecipeDialog(QDialog):
 
         try:
             self.schema = get_recipe_schema(recipe_category, recipe_name)
-        except Exception as e:
-            logger.error(f"Failed to get schema for {recipe_category}.{recipe_name}: {e}")
+        except NotImplementedError as e:
+            logger.error(f"There is no description of the recipe {recipe_category}.{recipe_name}: {e}")
             self.schema = None 
 
         self._apply_styles()
@@ -110,7 +110,7 @@ class RecipeDialog(QDialog):
                 'dy': 'dF'
             }
             return [pretty_mapping.get(c, c) for c in internal_cols]
-        except Exception:
+        except AttributeError:
             return []
             
     def _build_alias_map(self) -> dict:
@@ -550,7 +550,7 @@ class RecipeDialog(QDialog):
                 self.oversample_warning_label.setVisible(True)
             else:
                 self.oversample_warning_label.setVisible(False)
-        except Exception:
+        except (AttributeError, TypeError):
             self.oversample_warning_label.setVisible(False)
 
     def _current_value(self, param_name: str):
@@ -617,7 +617,7 @@ class RecipeDialog(QDialog):
             url = self.schema['url']
             try:
                 webbrowser.open(url) 
-            except Exception as e:
+            except (webbrowser.Error, OSError) as e:
                 QMessageBox.warning(self, "Help Error", f"Could not open help URL:\n{e}")
         else:
             QMessageBox.information(self, "No Help", "No documentation URL is available for this recipe.")

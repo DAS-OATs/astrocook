@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
 
+from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +97,7 @@ class ContinuumControlsMixin:
                 if hasattr(self, 'plot_viewer'):
                     for artist in self.plot_viewer.canvas.cursor_artists:
                         try: artist.remove()
-                        except: pass
+                        except QT_ERRORS: pass
                     self.plot_viewer.canvas.cursor_artists = []
                     if self.plot_viewer.canvas.cursor_label is not None:
                         self.plot_viewer.canvas.cursor_label.remove()
@@ -186,7 +187,7 @@ class ContinuumControlsMixin:
                     new_session = current_session.continuum.update_from_knots(**params)
                     
                     self.active_history.add_state(new_session)
-                    logger.info("Continuum update saved to history.")
+                    logger.info("Continuum saved from the knots.")
                     
                     # 5. FORCE REFRESH
                     if hasattr(self, 'session_list_view'):

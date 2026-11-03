@@ -37,6 +37,7 @@ from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
 from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
 from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 
+from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 RECIPE_CATEGORY_MAP = {}
@@ -88,7 +89,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # Initialize threadpool and progress dialog
         self.thread_pool = QThreadPool()
-        logger.info(f"Main thread pool started with {self.thread_pool.maxThreadCount()} threads.")
+        logger.debug(f"Thread pool with {self.thread_pool.maxThreadCount()} threads.")
         self.progress_dialog: Optional[QProgressDialog] = None
 
         # ** Initialize animation attributes to None **
@@ -124,8 +125,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         try:
             icon_path = resource_path(os.path.join("assets", "logo_3d_HR.png"))
             self.setWindowIcon(QIcon(icon_path))
-        except Exception as e:
-            logger.warning(f"Could not set window icon: {e}")
+        except OSError as e:
+            logger.debug(f"Window icon not set: {e}")
 
         # --- ** Central Widget is NOW the Stack ** ---
         self.central_stack = QStackedWidget()
@@ -249,8 +250,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             border_color = palette.color(palette.ColorRole.Mid).name()
             button_fg = palette.color(palette.ColorRole.ButtonText).name()
             text_color = palette.color(palette.ColorRole.Text).name()
-        except Exception as e:
-            logger.warning(f"Could not query palette: {e}. Using fallback colors.")
+        except QT_ERRORS as e:
+            logger.debug(f"Palette not read ({e}): fallback colours.")
             sidebar_r, sidebar_g, sidebar_b = 224, 224, 224 # RGB for #E0E0E0
             sidebar_a = 0.9
             sidebar_bg="#E0E0E0"; item_selected_bg="#808080"; item_selected_text="#FFFFFF";
@@ -369,7 +370,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 msg_box.setIconPixmap(pixmap)
-        except Exception:
+        except OSError:
             msg_box.setIcon(QMessageBox.Icon.Information)
 
         msg_box.setStandardButtons(buttons)
@@ -463,7 +464,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         if self.identification_viewer_dialog:
             try:
                 self.identification_viewer_dialog.close()
-            except Exception:
+            except QT_ERRORS:
                 pass
             self.identification_viewer_dialog = None
 
@@ -506,7 +507,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         spec = self.active_history.current_state.spec
         try:
             x = spec.x.to_value(au.nm)
-        except Exception:
+        except au.UnitsError:
             return None
         inside = (x >= xmin) & (x <= xmax)
         if not inside.any():
@@ -547,7 +548,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         try:
             import matplotlib.pyplot as plt
             
-            logger.info(f"Received debug plot request: {plot_data.get('title', 'Debug Plot')}")
+            logger.debug(f"Debug plot: {plot_data.get('title', 'Debug Plot')}.")
             
             # --- OPTIMIZATION PLOT TYPE ---
             if plot_data.get('type') == 'optimization_step':

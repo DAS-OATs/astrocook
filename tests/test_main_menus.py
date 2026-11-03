@@ -5,6 +5,7 @@ redo, the windows of the View menu, export and import, the documentation.
 Characterization tests written before the menus were moved to a mixin
 (phase 5, split of the GUI).
 """
+import logging
 import sys
 
 import pytest
@@ -214,10 +215,12 @@ def test_identifications(qtbot, window, monkeypatch):
 
 
 def test_view_without_a_session(empty, caplog):
-    empty._on_view_log()
-    empty._on_view_identifications()
-    assert "View Log called with no active history." in caplog.text
-    assert "View Identifications called with no active history." in caplog.text
+    # Nothing to show: logged at DEBUG (phase 6)
+    with caplog.at_level(logging.DEBUG, logger="astrocook.gui.main_menus"):
+        empty._on_view_log()
+        empty._on_view_identifications()
+    assert "View Log without an active session." in caplog.text
+    assert "View Identifications without an active session." in caplog.text
 
 
 # --- File and Help -----------------------------------------------------------------------------

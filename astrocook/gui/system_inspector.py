@@ -452,7 +452,7 @@ class SystemInspector(QWidget):
         try:
             z_target = float(self.z_in.text())
             self.vel_plot.set_center_redshift(z_target)
-        except ValueError as e: logger.error(f"Error applying z: {e}")
+        except ValueError: logger.warning(f"The redshift '{self.z_in.text()}' is not a number.")
 
     def _on_group_toggled(self, checked):
         self.proxy_model.set_group_filter_enabled(checked)
@@ -908,7 +908,7 @@ class SystemInspector(QWidget):
             uuid_list = [c.uuid for c in comps]
             
             # Log the action
-            logger.info(f"Triggering Bayesian {engine.upper()} fit for {len(uuid_list)} components...")
+            logger.info(f"Bayesian fit ({engine}) of {len(uuid_list)} components.")
             
             self.main_window._on_recipe_requested(
                 "absorbers", "fit_bayesian", 

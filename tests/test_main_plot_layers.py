@@ -192,14 +192,14 @@ def test_normalized(window, columns):
 def test_signal_to_noise(window, columns, caplog):
     spec = columns
     _set(window, snr_checkbox=True)
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.WARNING):
         ax = _replot(window)
     np.testing.assert_allclose(_lines(ax)["Spectrum"].get_ydata(), spec.y.value / spec.dy.value)
     assert ax.get_ylabel() == "Signal-to-Noise Ratio (F / dy)"
-    # The default "dF" of the box is dy: no error in the log (before, it was
+    # The default "dF" of the box is dy: no warning in the log (before, it was
     # looked up as a column, findings register F75), and the arrays are
     # cached for the next plot
-    assert "Could not get SNR error column" not in caplog.text
+    assert "cannot be used for the S/N" not in caplog.text
     assert window.plot_viewer._cached_snr_error_col == "dy"
     assert "snr" in window.plot_viewer._plot_cache
     window.snr_col_combo.blockSignals(True)
@@ -365,3 +365,19 @@ def test_decimation_of_long_spectra(window, monkeypatch):
     # A wide zoom (more pixels than the threshold): decimated again
     ax.set_xlim(601.0, 619.0)
     assert "Spectrum (decimated)" in _lines(_replot(window))
+
+
+def test_signal_to_noise_with_a_missing_error_column(window, columns, caplog):
+    # A column that does not exist: dy is used, with a WARNING (phase 6: the
+    # missing column was caught as the AttributeError of None.value)
+    spec = columns
+    _set(window, snr_checkbox=True)
+    window.snr_col_combo.blockSignals(True)
+    window.snr_col_combo.addItem("no_such_column")
+    window.snr_col_combo.setCurrentIndex(window.snr_col_combo.findText("no_such_column"))
+    window.snr_col_combo.blockSignals(False)
+    with caplog.at_level(logging.WARNING):
+        ax = _replot(window)
+    np.testing.assert_allclose(_lines(ax)["Spectrum"].get_ydata(), spec.y.value / spec.dy.value)
+    assert "The error column 'no_such_column' cannot be used for the S/N" in caplog.text
+    assert window.snr_col_combo.currentIndex() == 0

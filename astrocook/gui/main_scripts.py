@@ -15,6 +15,7 @@ from astrocook.core.session_manager import SessionHistory
 from .log_scripter_dialog import LogScripterDialog
 from .qt_workers import ScriptWorker
 
+from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -70,8 +71,8 @@ class MainScriptsMixin:
         try:
             self.session_collapse_button.raise_()
             self.plot_controls_collapse_button.raise_()
-        except Exception as e:
-            logger.warning(f"Could not re-raise buttons: {e}")
+        except QT_ERRORS as e:
+            logger.debug(f"Side buttons not raised: {e}")
 
     def run_script(self, script_text: str):
         """
@@ -97,11 +98,11 @@ class MainScriptsMixin:
         if self.plot_viewer and self.plot_viewer.toolbar:
             try:
                 self.plot_viewer.toolbar.deactivate_tools()
-            except Exception as e:
-                logger.warning(f"Could not reset toolbar state: {e}")
+            except QT_ERRORS as e:
+                logger.debug(f"Toolbar not reset: {e}")
         # --- *** END FIX 1 *** ---
 
-        logger.info("Starting script run...")
+        logger.info("Running the script.")
 
         # 2. Get the original, pristine state
         initial_state = self.active_history.states[0]
@@ -139,7 +140,7 @@ class MainScriptsMixin:
         
         self._safely_close_progress_dialog()
             
-        logger.error(f"Failed to run script line {line_num}: {line}\nError: {error_msg}")
+        logger.error(f"The script stopped at line {line_num} ({line}): {error_msg}")
         QMessageBox.critical(
             self, 
             "Script Error",
@@ -166,13 +167,13 @@ class MainScriptsMixin:
                 self.active_history = new_history
                 self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)
             except ValueError:
-                logger.error("Could not find old history to replace. Appending new history.")
+                logger.warning("The session of the script was not found: the result is added as a new session.")
                 self.session_histories.append(new_history)
                 self.active_history = new_history
                 self.session_model.setStringList([h.display_name for h in self.session_histories])
 
             # 2. Refresh everything
-            logger.info("Script run completed successfully.")
+            logger.info("Script done.")
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True)
             self._update_undo_redo_actions()
             if self.log_scripter_dialog:

@@ -18,7 +18,7 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,
-    HistoryLogV2, V1LogArtifact
+    HistoryLogV2
 )
 from astrocook.core.spectrum import SpectrumV2 
 from astrocook.core.system_list import SystemListV2
@@ -241,9 +241,6 @@ def _serialize_v2_metadata(session: 'SessionV2') -> str:
     if isinstance(log_manager_to_save, HistoryLogV2):
         log_history_data = log_manager_to_save.to_dict()
         log_type = "v2"
-    elif isinstance(log_manager_to_save, V1LogArtifact):
-        log_history_data = log_manager_to_save.v1_json
-        log_type = "v1_artifact"
     else:
         log_history_data = {}
     

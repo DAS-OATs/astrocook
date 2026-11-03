@@ -25,6 +25,7 @@ from .recipe_dialog import RecipeDialog
 from .recipe_progress import (LogSignalBridge, QtLogHandler, RecipeProgressDialog,
                               WarningCaptureHandler)
 
+from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -115,7 +116,7 @@ class MainRecipesMixin:
 
     def _set_pending_action(self, category, name, params, mode):
         """Stores the intended action to resume after properties are set."""
-        logger.info(f"Setting pending action: {name} ({mode})")
+        logger.debug(f"Pending recipe: {name} ({mode}).")
         self._pending_recipe_on_properties_set = {
             'category': category,
             'name': name,
@@ -159,9 +160,9 @@ class MainRecipesMixin:
         if self.plot_viewer and self.plot_viewer.toolbar:
             try:
                 self.plot_viewer.toolbar.deactivate_tools()
-            except Exception: pass
+            except QT_ERRORS: pass
 
-        logger.info(f"Launching dialog for recipe: {category}.{name}")
+        logger.debug(f"Opening the dialog of {category}.{name}.")
         
         current_state = self.active_history.current_state
         dialog = RecipeDialog(category, name, current_state, self) 
@@ -479,7 +480,7 @@ class MainRecipesMixin:
                 
                 # [SAFETY CHECK] If operation was cancelled
                 if getattr(new_session_state, '_stop_flag', False):
-                    logger.info("Operation cancelled. Reverting.")
+                    logger.info("The recipe was stopped: the session is as before it.")
                     if i == len(new_sessions) - 1: # Only update view on last one
                         self._update_view_for_session(self.active_history.current_state)
                     continue
@@ -582,7 +583,7 @@ class MainRecipesMixin:
                 
                 if is_checked:
                     self._suppress_refit_warning = True
-                    logger.info("User suppressed refit warnings for this session.")
+                    logger.debug("Refit warnings suppressed for this session.")
 
             # [NEW] Show Captured Warnings (if any)
             if hasattr(self, '_captured_warnings') and self._captured_warnings:
@@ -615,7 +616,7 @@ class MainRecipesMixin:
                 pending = self._pending_recipe_on_properties_set
                 self._pending_recipe_on_properties_set = None 
                 
-                logger.info(f"Resuming pending action: {pending['name']}")
+                logger.debug(f"Resuming the pending recipe {pending['name']}.")
                 
                 if pending['mode'] == 'dialog':
                     QTimer.singleShot(0, lambda: self._launch_recipe_dialog(
@@ -646,7 +647,7 @@ class MainRecipesMixin:
             self.active_recipe_dialog and 
             self.active_recipe_dialog.recipe_name == 'set_properties'):
             
-            logger.info("User cancelled 'set_properties', clearing pending recipe.")
+            logger.debug("Set Properties cancelled: the pending recipe is dropped.")
             self._pending_recipe_on_properties_set = None
 
         # We must set this to None so a new dialog can be opened,
@@ -710,8 +711,8 @@ class MainRecipesMixin:
             # 2. Close Dialog safely
             self._safely_close_progress_dialog()
             
-        except Exception as e:
-            logger.error(f"Error cleaning up progress UI: {e}")
+        except QT_ERRORS as e:
+            logger.debug(f"Progress dialog not closed cleanly ({e}): closed by force.")
             # Fallback: force close if something failed
             if self.progress_dialog:
                 self.progress_dialog.close()
@@ -729,7 +730,7 @@ class MainRecipesMixin:
         
         # [NEW] Check if operation was cancelled (returned same object or flagged)
         if getattr(new_session_state, '_stop_flag', False):
-            logger.info("Operation cancelled. Reverting to previous state.")
+            logger.info("The recipe was stopped: the session is as before it.")
             # Do NOT update history.
             # Just ensure GUI reflects the ACTIVE history state (which hasn't changed)
             self._update_view_for_session(self.active_history.current_state)
@@ -790,7 +791,7 @@ class MainRecipesMixin:
             # If user clicked Retry (mapped from "Try Again"), re-launch
             if ret == QMessageBox.StandardButton.Retry:
                 if self._last_attempted_recipe:
-                    logger.info("User clicked Retry, re-launching dialog.")
+                    logger.debug("Retry: the dialog is opened again.")
                     self._launch_recipe_dialog(
                         self._last_attempted_recipe['category'],
                         self._last_attempted_recipe['recipe_name']
@@ -809,8 +810,8 @@ class MainRecipesMixin:
         try:
             xlim_nm = self.plot_viewer.canvas.axes.get_xlim()
             xmin, xmax = xlim_nm[0], xlim_nm[1]
-        except Exception as e:
-            logger.error(f"Could not get plot limits: {e}")
+        except QT_ERRORS as e:
+            logger.error(f"The limits of the plot are not available: {e}")
             return
 
         self.launch_split_from_region(xmin, xmax)
@@ -820,7 +821,7 @@ class MainRecipesMixin:
         the unit of the data, nm): from the current view, or from a region
         selected with the Select tool of the main plot (F73)."""
         expression = region_expression(xmin, xmax)
-        logger.info(f"Splitting from region: {expression}")
+        logger.info(f"Splitting the region {expression}.")
         self._launch_recipe_dialog("edit", "split", initial_params={"expression": expression})
 
     def _safely_close_progress_dialog(self):
@@ -843,7 +844,7 @@ class MainRecipesMixin:
                 if hasattr(self, 'log_bridge') and self.log_bridge:
                     try:
                         self.log_bridge.new_log_message.disconnect(dialog_ref.update_log)
-                    except:
+                    except QT_ERRORS:
                         pass 
 
                 # 2. Hard Close
@@ -852,8 +853,8 @@ class MainRecipesMixin:
                 dialog_ref.close()              # Event close
                 dialog_ref.deleteLater()        # Memory cleanup
                 
-            except Exception as e:
-                logger.error(f"Error destroying dialog: {e}")
+            except QT_ERRORS as e:
+                logger.debug(f"Progress dialog not destroyed cleanly: {e}")
 
         # Execute on the next frame of the GUI loop (0ms delay)
         # This allows pending log signals to flush safely before we kill the receiver.

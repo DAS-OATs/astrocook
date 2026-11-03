@@ -38,7 +38,7 @@ class AboutDialog(QDialog):
                 logo_lbl.setPixmap(pixmap)
                 logo_lbl.setAlignment(Qt.AlignCenter)
                 layout.addWidget(logo_lbl)
-        except Exception: 
+        except OSError: 
             pass
 
         # --- Title & Version ---

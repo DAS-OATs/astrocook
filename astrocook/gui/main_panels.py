@@ -28,6 +28,7 @@ from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLa
 from .pyside_plot import SpectrumPlotWidget
 from .theme import HINT_TEXT
 
+from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
 
 # --- Constants for Sidebar Widths ---
@@ -188,8 +189,8 @@ class MainPanelsMixin:
                 logo_lbl.setPixmap(pixmap)
                 logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(logo_lbl)
-        except Exception as e:
-            logger.warning(f"Could not load logo for empty view: {e}")
+        except OSError as e:
+            logger.debug(f"Logo of the welcome screen not loaded: {e}")
 
         layout.addSpacing(16)  # the logo has the name
 
@@ -688,7 +689,7 @@ class MainPanelsMixin:
             ymin = float(self.ymin_input.text())
             ymax = float(self.ymax_input.text())
         except ValueError:
-            logger.warning("Invalid custom limit values entered.")
+            logger.warning("The limits of the plot must be numbers.")
             return # Ignore if values are not valid floats
             
         selected_unit = self.x_unit_combo.currentText()
@@ -704,7 +705,7 @@ class MainPanelsMixin:
             xmax_nm = display_xmax
 
         if xmax_nm <= xmin_nm or ymax <= ymin:
-            logger.warning("Invalid custom limit range (max <= min).")
+            logger.warning("The upper limits of the plot must be above the lower ones.")
             return
         if self.log_y_checkbox.isChecked() and ymin <= 0:
             # A log scale needs a positive limit: Matplotlib would ignore it
@@ -753,8 +754,8 @@ class MainPanelsMixin:
             self.ymin_input.setText(f"{ylim_plot[0]:.4g}")
             self.ymax_input.setText(f"{ylim_plot[1]:.4g}")
             
-        except Exception as e:
-            logger.warning(f"Failed to update limit boxes: {e}")
+        except DATA_ERRORS as e:
+            logger.debug(f"Limit boxes not updated: {e}")
         finally:
             # Always unblock signals
             self.xmin_input.blockSignals(False)
@@ -783,8 +784,8 @@ class MainPanelsMixin:
             # The resizeEvent itself will call _reposition_floating_widgets,
             # which will handle the final Z-stacking.
             
-        except Exception as e:
-            logger.warning(f"Failed to force resize: {e}")
+        except QT_ERRORS as e:
+            logger.debug(f"Floating widgets not restacked: {e}")
 
     def _toggle_left_sidebar(self):
         """Animates the left sidebar overlay and its button together."""

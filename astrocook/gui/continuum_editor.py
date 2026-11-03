@@ -10,6 +10,7 @@ of ``SpectrumPlotWidget``, which drives it from its mouse handlers
 import logging
 import numpy as np
 
+from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
@@ -122,7 +123,7 @@ class ContinuumEditorMixin:
         if not self._edit_mode_active:
             return
 
-        logger.info("Continuum edit cancelled.")
+        logger.info("The edit of the continuum is cancelled.")
         
         # 1. Stop the editor state without saving data
         self._edit_mode_active = False
@@ -209,12 +210,12 @@ class ContinuumEditorMixin:
         # 2. Remove from the Plot (Matplotlib Axes)
         if hasattr(self, 'knot_artist') and self.knot_artist:
             try: self.knot_artist.remove()
-            except: pass # Already removed or not attached
+            except QT_ERRORS: pass # Already removed or not attached
             self.knot_artist = None
 
         if hasattr(self, 'spline_artist') and self.spline_artist:
             try: self.spline_artist.remove()
-            except: pass
+            except QT_ERRORS: pass
             self.spline_artist = None
 
     def begin_stride_interaction(self):
@@ -288,7 +289,7 @@ class ContinuumEditorMixin:
         if not self._edit_mode_active or not self.main_window.active_history: 
             return
 
-        logger.info(f"Resetting continuum to original data with stride {stride_kms:.0f} km/s.")
+        logger.info(f"Knots reset on the data, one every {stride_kms:.0f} km/s.")
 
         # 1. Clear any 'dragging' backups
         self._stride_backup_x = None
@@ -343,5 +344,5 @@ class ContinuumEditorMixin:
             # 2. Request an animation frame update (this uses blitting if background is valid)
             self.canvas.draw_animated()
             
-        except Exception as e:
+        except DATA_ERRORS as e:
             logger.debug(f"Failed to refresh edit layer: {e}")
