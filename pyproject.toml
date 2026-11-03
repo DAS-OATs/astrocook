@@ -121,6 +121,11 @@ markers = [
 # global filter in the package.
 filterwarnings = [
     "error",
+    # The verbatim copy of V1 (tests/reference/v1, not to be edited) has an
+    # invalid escape sequence in a docstring ("\Delta"): Python warns when it
+    # compiles the file, so only without a cached .pyc, as in the CI. The
+    # module of a warning of the compiler is the path of the file
+    "ignore:invalid escape sequence:SyntaxWarning:.*reference.v1.cookbook_continuum_old",
 ]
 
 [tool.ruff]
