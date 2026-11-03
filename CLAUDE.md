@@ -297,7 +297,8 @@ with F96, in PR 3; the rows N and R of core, fitting and io and their
 messages in PR 4a (found F97), the rows D (decided with Guido) in PR 4b:
 core, fitting and io keep only the two boundaries of
 `load_session_from_file`; the rows N, R and B of the recipes and their
-messages in PR 5a (found F98), their rows D (decided) in PR 5b. Work in
+messages in PR 5a (found F98), their rows D in PR 5b; next the GUI
+(PR 6), then the warnings of the libraries (PR 7). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 

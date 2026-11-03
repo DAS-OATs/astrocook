@@ -652,8 +652,9 @@ class RecipeEditV2:
                     break
         
         if not target_hist:
+            # (It returned the session unchanged, which looked like a success)
             logger.error(msg_session_not_found.format(name=source_session))
-            return self._session
+            return 0
 
         source_systs = target_hist.current_state.systs
         if not source_systs or not source_systs.components:
@@ -709,28 +710,25 @@ class RecipeEditV2:
         # 5. Optional Refit
         if do_refit:
             logger.info("Refitting the imported systems.")
-            try:
-                # Local import to avoid circular dependency
-                from astrocook.recipes.absorbers import RecipeAbsorbersV2
-                
-                # Wrap the intermediate session in the Absorbers recipe
-                rec_abs = RecipeAbsorbersV2(intermediate_session)
-                
-                # Run refit_all
-                # You can tweak z_window_kms or max_nfev here if needed, 
-                # or expose them as advanced params in the schema.
-                # max_nfev as before the defaults were aligned with the GUI (#573)
-                refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1,
-                                                     max_nfev='100')
-                
-                if refitted_session != 0:
-                    return refitted_session
-                else:
-                    logger.warning("Refit failed. Returning imported systems without fitting.")
-                    return intermediate_session
-            except Exception as e:
-                logger.error(f"Error during import auto-refit: {e}")
-                return intermediate_session
+            # Local import to avoid circular dependency
+            from astrocook.recipes.absorbers import RecipeAbsorbersV2
+
+            # Wrap the intermediate session in the Absorbers recipe
+            rec_abs = RecipeAbsorbersV2(intermediate_session)
+
+            # Run refit_all
+            # You can tweak z_window_kms or max_nfev here if needed, 
+            # or expose them as advanced params in the schema.
+            # max_nfev as before the defaults were aligned with the GUI (#573)
+            refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1,
+                                                 max_nfev='100')
+
+            if refitted_session != 0:
+                return refitted_session
+            # The import stays (Guido's choice, phase 6); refit_all has
+            # logged why it failed
+            logger.warning("The imported systems could not be refitted: they keep "
+                           "their imported values.")
 
         # Return unfitted result
         return intermediate_session
@@ -1031,8 +1029,9 @@ class RecipeEditV2:
             )
             
             if not split_expression:
-                logger.warning("The sessions have no range in common: nothing is trimmed.")
-                return self._session
+                # (A WARNING and the session unchanged, phase 6)
+                logger.error("The sessions have no range in common: nothing is trimmed.")
+                return 0
 
             logger.info(f"Trimming to the range in common: {split_expression}.")
             
@@ -1068,8 +1067,9 @@ class RecipeEditV2:
         from astrocook.core.session import SessionV2 
 
         if not other_sessions:
-            logger.warning("No sessions to stitch.")
-            return self._session
+            # (A WARNING and the session unchanged, phase 6)
+            logger.error("No sessions to stitch.")
+            return 0
 
         # 1. Resolve Inputs (GUI/Script Logic)
         resolved_specs = []
@@ -1093,8 +1093,9 @@ class RecipeEditV2:
                 logger.warning(f"An item of type {type(item).__name__} cannot be stitched: it is skipped.")
 
         if not resolved_specs:
+            # (An ERROR and the session unchanged, phase 6)
             logger.error("There are no valid sessions to stitch.")
-            return self._session
+            return 0
 
         try:
             # 2. Delegate Data Manipulation to Core
@@ -1177,14 +1178,19 @@ class RecipeEditV2:
 
         # Parse Manual Factors
         factors = []
+        # Factors or ranges that cannot be read make the recipe fail: they
+        # were replaced by 'auto', with a WARNING (phase 6)
         if manual_factors.lower() != 'auto':
             try:
                 factors = [float(f.strip()) for f in manual_factors.split(',')]
-                if len(factors) != len(others_list):
-                    logger.warning(f"Expected {len(others_list)} manual factors, got {len(factors)}. Falling back to 'auto'.")
-                    factors = []
             except ValueError:
-                logger.warning("Invalid manual_factors. Falling back to 'auto'.")
+                logger.error("The manual factors must be numbers separated by commas, "
+                             "or 'auto'.")
+                return 0
+            if len(factors) != len(others_list):
+                logger.error(f"Give {len(others_list)} manual factors, one per other "
+                             f"session ({len(factors)} given).")
+                return 0
 
         # Parse Equalize Ranges
         eq_ranges = []
@@ -1193,11 +1199,14 @@ class RecipeEditV2:
                 for r in equalize_ranges.split(','):
                     vmin, vmax = map(float, r.split('-'))
                     eq_ranges.append((vmin, vmax))
-                if len(eq_ranges) != len(others_list):
-                    logger.warning(f"Expected {len(others_list)} equalize ranges. Falling back to 'auto'.")
-                    eq_ranges = []
-            except Exception:
-                logger.warning("Invalid equalize_ranges format. Use 'min-max, min-max'. Falling back to 'auto'.")
+            except ValueError:
+                logger.error("The equalize ranges must be written 'min-max, min-max' "
+                             "(in nm), or 'auto'.")
+                return 0
+            if len(eq_ranges) != len(others_list):
+                logger.error(f"Give {len(others_list)} equalize ranges, one per other "
+                             f"session ({len(eq_ranges)} given).")
+                return 0
 
         # 2. Resolve GUI Sessions
         resolved_others = []
