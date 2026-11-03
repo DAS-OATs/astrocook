@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
-from astrocook.recipes.messages import msg_param_fail
+from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
+from astrocook.recipes.messages import (msg_continuum_estimated, msg_param_fail,
+                                       msg_session_not_found)
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -351,7 +353,7 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
         uuids = narrow(session)
         if not uuids:
             break
-        logger.info(f"Refining fit after removing {len(uuids)} narrow lines...")
+        logger.info(f"{len(uuids)} lines narrower than {min_b} km/s removed; refitting the others.")
         trimmed = session.with_new_system_list(session.systs.delete_component(uuids=uuids))
         refitted = RecipeAbsorbersV2(trimmed).refit_all(**refit_kwargs)
         if refitted == 0:
@@ -359,7 +361,7 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
         session = refitted
     uuids = narrow(session)
     if uuids:
-        logger.info(f"Removed {len(uuids)} narrow lines left by the last refit.")
+        logger.info(f"{len(uuids)} lines still narrower than {min_b} km/s after the last refit removed.")
         session = _without_components(session, uuids)
     return session
 
@@ -480,7 +482,7 @@ class RecipeAbsorbersV2:
             or 0 on failure.
         """
         logger.info(">> PROGRESS: 0")
-        logger.info(f"Initializing component search ({region_limit})...")
+        logger.info(f"Searching for components (region: {region_limit}).")
         
         # --- 1. PREPARE REGION MASK ---
         # We create a temporary session with a restricted mask to force identify_lines
@@ -496,7 +498,7 @@ class RecipeAbsorbersV2:
         # --- 0. FORCE MASK REGENERATION ---
         # Always generate a fresh mask to ensure it matches current z_em/flux state.
         # This prevents "stale mask" bugs when running recipes sequentially.
-        logger.info(f"Generating fresh '{mask_col}'...")
+        logger.info(f"Finding the absorbed regions (column '{mask_col}').")
         try:
             from astrocook.recipes.continuum import RecipeContinuumV2
             rec_cont = RecipeContinuumV2(session_current)
@@ -507,7 +509,7 @@ class RecipeAbsorbersV2:
                 template="False"
             )
         except Exception as e:
-            logger.error(f"Mask generation failed: {e}")
+            logger.error(f"Could not find the absorbed regions: {e}", exc_info=True)
             return 0
         kept_mask = (user_mask if user_mask is not None
                      else session_current.spec._data.aux_cols[mask_col])
@@ -544,7 +546,7 @@ class RecipeAbsorbersV2:
                 logger.warning(f"Region masking skipped: {e}")
         
         # --- 2. IDENTIFY (using the masked session) ---
-        logger.info("Step 1/3: Scanning spectrum for candidate pairs...")
+        logger.info("Identifying the doublets (step 1 of 3).")
         
         # Capture the OLD abs_ids before they are overwritten
         old_abs_ids = None
@@ -593,11 +595,11 @@ class RecipeAbsorbersV2:
         z_map_json = spec_meta.get('z_map_json')
         
         if not series_map_json:
-            logger.warning("components_auto: No candidates found.")
+            logger.warning("No candidates found: no components are added.")
             return self._session
 
         # --- 3. POPULATE ---
-        logger.info("Step 2/3: Creating component models...")
+        logger.info("Adding the components (step 2 of 3).")
         rec_step2 = RecipeAbsorbersV2(session_step1)
         session_step2 = rec_step2.populate_from_identification(
             region_id_col='abs_ids',
@@ -609,7 +611,7 @@ class RecipeAbsorbersV2:
         if self._is_stop_requested(): return self._session
         
         # --- 4. REFIT ALL ---
-        logger.info("Step 3/3: Re-fitting all systems...")
+        logger.info("Fitting the components (step 3 of 3).")
         rec_step3 = RecipeAbsorbersV2(session_step2)
         final_session = rec_step3.refit_all(
             max_nfev='200',
@@ -624,7 +626,7 @@ class RecipeAbsorbersV2:
         # Handle the case where refit_all returns 0 (Empty/Clean)
         # Instead of crashing, we return the session from Step 2 (populated but empty/unfitted)
         if final_session == 0:
-            logger.info("Refit skipped (no components to fit). Returning clean state.")
+            logger.info("No components to fit: the refit is skipped.")
             return with_kept_mask(session_step2)
 
         # Check for stop request on the valid final session
@@ -632,7 +634,7 @@ class RecipeAbsorbersV2:
         if self._is_stop_requested(): return self._session
         
         final_session = _drop_negligible(final_session)
-        logger.info("Component pipeline complete.")
+        logger.debug("Component pipeline complete.")
         return with_kept_mask(final_session)
 
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
@@ -705,7 +707,7 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with the forest model.
         """
         logger.info(">> PROGRESS: 0")
-        logger.info("Initializing Lyman-alpha forest analysis...")
+        logger.info("Fitting the Lyman-alpha forest.")
         
         # 1. Run Pipeline (FORCE region='lya_forest')
         final_session = self.components_auto(
@@ -723,7 +725,7 @@ class RecipeAbsorbersV2:
         # removed and the rest refitted, MIN_B_ROUNDS times; those still
         # narrower after the last refit are removed without a refit (#517)
         logger.info(">> PROGRESS: 0")
-        logger.info("Analysing line shapes to remove interlopers...")
+        logger.info(f"Removing the lines narrower than {min_b} km/s (interlopers).")
         
         try:
             min_b_val = float(min_b)
@@ -767,7 +769,7 @@ class RecipeAbsorbersV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with Lyman series systems.
         """
-        logger.info("Starting 'forest_auto' pipeline...")
+        logger.info("Fitting the Lyman series in the forest.")
         
         # 1. IDENTIFY 'Ly_a' lines
         # (We can use components_auto logic, but we need to intercept the map before populate)
@@ -861,10 +863,10 @@ class RecipeAbsorbersV2:
         except ValueError: return 0
         
         if not self._session.systs or not self._session.systs.components:
-            logger.warning("metals_auto: No existing systems to check.")
+            logger.warning("There are no systems to search metals at: nothing is added.")
             return 0
 
-        logger.info(f"metals_auto: Checking {len(ion_list)} ions for existing systems...")
+        logger.info(f"Searching {len(ion_list)} ions at the redshifts of the systems.")
         
         current_session = self._session
         # Optimization: Group components by Z
@@ -911,7 +913,7 @@ class RecipeAbsorbersV2:
                         if fitted_comp.b < 2.0: keep = False
                         
                         if keep:
-                            logger.info(f"  -> Found {ion} at z={z_val} (logN={fitted_comp.logN:.2f})")
+                            logger.info(f"Found {ion} at z = {z_val} (logN = {fitted_comp.logN:.2f}).")
                             running_systs = fitted_systs
                             count_added += 1
                             existing_series.add(ion) 
@@ -919,12 +921,12 @@ class RecipeAbsorbersV2:
                     logger.debug(f"  Fit failed: {e}")
 
         if count_added > 0:
-            logger.info(f"metals_auto: Added {count_added} new systems.")
+            logger.info(f"Added {count_added} metal components.")
             # The values the pipeline always used, before the defaults of
             # refit_all were aligned with the GUI (#573)
             return self.refit_all(max_b=max_b, max_logN=max_logN, group_depth='0', max_nfev='100')
         else:
-            logger.info("metals_auto: No new metals found.")
+            logger.info("No metals found.")
             return current_session
 
     def identify_lines(self, 
@@ -990,7 +992,7 @@ class RecipeAbsorbersV2:
             
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during identify_lines: {e}", exc_info=True)
+            logger.error(f"Could not identify the lines: {e}", exc_info=True)
             return 0
     
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
@@ -1020,7 +1022,8 @@ class RecipeAbsorbersV2:
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
         if not series_map_json or not z_map_json:
-            logger.error("populate_from_identification: Missing maps.")
+            logger.error("There is no identification to build the components from: "
+                         "run Identify Lines first.")
             return 0
         
         try:
@@ -1028,8 +1031,9 @@ class RecipeAbsorbersV2:
             z_map = json.loads(z_map_json)
             series_map = {int(k): v for k, v in series_map.items()}
             z_map = {int(k): v for k, v in z_map.items()}
-        except Exception as e:
-            logger.error(f"populate_from_identification: Failed to deserialize maps: {e}")
+        except (ValueError, TypeError, AttributeError) as e:
+            # ValueError covers json.JSONDecodeError
+            logger.error(f"The identification cannot be read: {e}")
             return 0
 
         running_systs = self._session.systs
@@ -1037,12 +1041,12 @@ class RecipeAbsorbersV2:
 
         # 1. Trigger Continuum if needed
         if spec.norm is None:
-            logger.info("Flux not normalized. Triggering continuum estimate...")
+            logger.info(msg_continuum_estimated)
             from astrocook.recipes.continuum import RecipeContinuumV2
             cont_sess = RecipeContinuumV2(self._session).estimate_auto()
             spec = cont_sess.spec 
         
-        logger.info(f"Populating {len(series_map)} systems...")
+        logger.info(f"Adding {len(series_map)} components from the identification.")
 
         # 2. Iterate and Build
         for sys_id in sorted(series_map.keys()):
@@ -1115,7 +1119,7 @@ class RecipeAbsorbersV2:
             
             # 2. Register globally so the Fitter can find it
             STANDARD_MULTIPLETS[series] = members
-            logger.info(f"Registered custom multiplet: '{series}' -> {members}")
+            logger.info(f"Custom multiplet {series} added ({', '.join(members)}).")
         
         try:
             if self._session.systs is None:
@@ -1130,11 +1134,11 @@ class RecipeAbsorbersV2:
             temp_session = self._session.with_new_system_list(new_systs)
             temp_recipe = RecipeAbsorbersV2(temp_session)
             
-            logger.info(f"Auto-fitting new component {added_comp.series}...")
+            logger.info(f"Fitting the new {added_comp.series} component.")
             final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=str(z_win_f))
             return final_session
         except Exception as e:
-            logger.error(f"Failed add_component: {e}"); return 0
+            logger.error(f"Could not add the component: {e}", exc_info=True); return 0
         
     def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
                          b: str = 'None', btur: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
@@ -1179,7 +1183,7 @@ class RecipeAbsorbersV2:
             new_systs = self._session.systs.update_component(uuid, **changes)
             return self._session.with_new_system_list(new_systs)
         except Exception as e:
-            logger.error(f"Failed update_component: {e}"); return 0
+            logger.error(f"Could not update the component: {e}", exc_info=True); return 0
         
     def update_components(self, uuids: list, z: str = 'None', logN: str = 'None', 
                           b: str = 'None', btur: str = 'None',
@@ -1230,7 +1234,7 @@ class RecipeAbsorbersV2:
             return self._session.with_new_system_list(new_systs)
             
         except Exception as e:
-            logger.error(f"Failed update_components: {e}", exc_info=True)
+            logger.error(f"Could not update the components: {e}", exc_info=True)
             return 0
 
     def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
@@ -1267,8 +1271,8 @@ class RecipeAbsorbersV2:
             # components anyway and drop the model column, which would still
             # include them.
             if spec.norm is None:
-                logger.warning("delete_component: no continuum, the model is not "
-                                "recomputed (the 'model' column is removed).")
+                logger.warning("There is no continuum: the model is not recomputed, and "
+                               "its column is removed.")
                 if spec.has_aux_column('model'):
                     spec = spec.remove_columns(['model'])
                 return self._session.with_new_spectrum(spec).with_new_system_list(new_systs)
@@ -1317,13 +1321,13 @@ class RecipeAbsorbersV2:
                         break
             
             if not sibling_session:
-                logger.error(f"Sibling session '{sibling_name}' not found.")
+                logger.error(msg_session_not_found.format(name=sibling_name))
                 return 0.0
             
             z_found = self._session.spec.detect_doublet_z(
                 sibling_session.spec, trans_self, trans_sibling
             )
-            logger.info(f"Detected anchor at z={z_found:.5f}")
+            logger.info(f"Anchor redshift: z = {z_found:.5f}.")
             return z_found
             
         except Exception as e:
@@ -1369,7 +1373,7 @@ class RecipeAbsorbersV2:
 
             try:
                 if current_session.spec.norm is None:
-                    logger.info("Flux not normalized and no continuum. Triggering estimate_auto...")
+                    logger.info(msg_continuum_estimated)
                     from astrocook.recipes.continuum import RecipeContinuumV2
                     cont_rec = RecipeContinuumV2(current_session)
                     current_session = cont_rec.estimate_auto()
@@ -1381,7 +1385,7 @@ class RecipeAbsorbersV2:
             
             except RuntimeError as e:
                 if "stopped" in str(e):
-                    logger.info("Fit stopped by user. Reverting to pre-fit state.")
+                    logger.info("The fit was stopped: the components are as before it.")
                     return self._session # Return the session as it was before fitting started
                 raise e # Re-raise if it's a real error
             
@@ -1394,7 +1398,7 @@ class RecipeAbsorbersV2:
             return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
         except Exception as e:
-            logger.error(f"Failed fit_component: {e}", exc_info=True); return 0
+            logger.error(f"Could not fit the component: {e}", exc_info=True); return 0
         
     def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
                           expression: str = None, target_uuid: str = None) -> 'SessionV2':
@@ -1429,7 +1433,6 @@ class RecipeAbsorbersV2:
             )
             
             if expression and not is_free:
-                import numpy as np
                 class CompProxy:
                     def __init__(self, c): self.c = c
                     @property
@@ -1442,19 +1445,24 @@ class RecipeAbsorbersV2:
                     def btur(self): return self.c.btur
 
                 comp_map = {c.uuid: CompProxy(c) for c in new_systs.components}
-                eval_globals = {'p': comp_map, 'np': np, 'sqrt': np.sqrt, 'log': np.log10}
+                # The functions of the fit (F98: 'sqrt' was offered here and
+                # not by the fit, which then ignored such a link)
+                eval_globals = {'p': comp_map, **LINK_FUNCTIONS}
                 
                 try:
                     new_val = float(eval(expression, eval_globals))
-                    logger.info(f"Link established. Auto-updating {param} to {new_val:.4f}")
+                    logger.info(f"Linked: {param} set to {new_val:.4f}.")
                     new_systs = new_systs.update_component(uuid, **{param: new_val})
-                except Exception as e:
-                    logger.warning(f"Could not auto-update linked value: {e}")
+                except LINK_ERRORS as e:
+                    # The link is checked by SystemListV2.update_constraint:
+                    # this should not happen (phase 6)
+                    logger.warning(f"The linked {param} could not be computed ({e}): it "
+                                   "keeps its value until the next fit.")
 
             return self._session.with_new_system_list(new_systs)
             
         except Exception as e:
-            logger.error(f"Failed update_constraint: {e}", exc_info=True)
+            logger.error(f"Could not set the constraint: {e}", exc_info=True)
             return 0
 
     def update_constraints_column(self, param: str, is_free: bool) -> 'SessionV2':
@@ -1536,7 +1544,7 @@ class RecipeAbsorbersV2:
         
         # 1. Add Primary (The Anchor)
         primary_series = series_names[0]
-        logger.info(f"Adding Primary: {primary_series} at z={z:.5f}")
+        logger.info(f"Adding {primary_series} at z = {z:.5f}.")
         
         # Use existing add_component recipe logic to handle creation
         # (This handles empty list creation etc.)
@@ -1557,7 +1565,7 @@ class RecipeAbsorbersV2:
         secondary_uuids = []
         
         for s_name in series_names[1:]:
-            logger.info(f"Adding Linked: {s_name}")
+            logger.info(f"Adding {s_name}, linked to it.")
             new_systs = new_systs.add_component(s_name, z, logN, b)
             sec_uuid = new_systs.components[-1].uuid
             secondary_uuids.append(sec_uuid)
@@ -1573,7 +1581,7 @@ class RecipeAbsorbersV2:
         temp_session = current_session.with_new_system_list(new_systs)
         temp_recipe = RecipeAbsorbersV2(temp_session)
         
-        logger.info("Fitting linked system group...")
+        logger.info("Fitting the linked components.")
         # Fit centered on Primary
         final_session = temp_recipe.fit_component(primary_uuid, z_window_kms=str(z_window_kms))
         
@@ -1628,7 +1636,7 @@ class RecipeAbsorbersV2:
             current_session = self._session
 
             if current_session.spec.norm is None:
-                logger.info("Flux not normalized and no continuum. Triggering estimate_auto...")
+                logger.info(msg_continuum_estimated)
                 from astrocook.recipes.continuum import RecipeContinuumV2
                 cont_rec = RecipeContinuumV2(current_session)
                 current_session = cont_rec.estimate_auto()
@@ -1658,7 +1666,7 @@ class RecipeAbsorbersV2:
             return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
                         
         except Exception as e:
-             logger.error(f"optimize_system failed: {e}", exc_info=True)
+             logger.error(f"Could not optimize the system: {e}", exc_info=True)
              return 0
     
     def fit_bayesian(self, uuids: list[str] = None, engine: str = 'mcmc', 
@@ -1706,16 +1714,16 @@ class RecipeAbsorbersV2:
                 b_fitter = BayesianVoigtFitter(current_session.spec, current_session.systs)
                 
                 if engine.lower() == 'nested':
-                    logger.info(f"Running Nested Sampling (nlive={nlive_i})...")
+                    logger.debug(f"Running nested sampling (nlive={nlive_i}).")
                     res = b_fitter.run_nested(nlive=nlive_i)
                 else:
-                    logger.info(f"Running MCMC (nsteps={nsteps_i})...")
+                    logger.debug(f"Running MCMC (nsteps={nsteps_i}).")
                     res = b_fitter.run_mcmc(nsteps=nsteps_i)
 
                 # Never overwrite the components with non-finite values
                 if not np.all(np.isfinite(res['medians'])):
-                    logger.error("fit_bayesian: the sampler returned non-finite "
-                                  "parameters; components left unchanged.")
+                    logger.error("The sampler returned non-finite parameters: the "
+                                 "components are not changed.")
                     return 0
 
                 # 1. Update component parameters with medians
@@ -1753,7 +1761,7 @@ class RecipeAbsorbersV2:
             return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
 
         except Exception as e:
-            logger.error(f"Failed fit_bayesian: {e}", exc_info=True); return 0
+            logger.error(f"Could not run the Bayesian fit: {e}", exc_info=True); return 0
 
     def refit_all(self, max_nfev: str = '200', z_window_kms: str = '100.0', 
                   group_depth: str = '2', max_group_size: str = '20',
@@ -1805,7 +1813,7 @@ class RecipeAbsorbersV2:
             logN_max_f = float(max_logN)
 
             if not self._session.systs or not self._session.systs.components:
-                logger.warning("refit_all: No components to fit.")
+                logger.warning("There are no components to fit.")
                 return 0
 
             current_session = self._session
@@ -1817,7 +1825,7 @@ class RecipeAbsorbersV2:
             # If selected_uuids is provided (e.g., from 'Refit Selected' in UI),
             # we fit the entire connected group once instead of looping.
             if selected_uuids:
-                logger.info(f"Refitting {len(selected_uuids)} component{'s' if len(selected_uuids) > 1 else ''}...")
+                logger.info(f"Refitting {len(selected_uuids)} component{'s' if len(selected_uuids) > 1 else ''}.")
                 
                 # Use our new spatial-index-powered grouping logic
                 combined_active_set = current_session.systs.get_connected_group(
@@ -1841,7 +1849,7 @@ class RecipeAbsorbersV2:
                                 if c.uuid in combined_active_set])
                     return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
                 except Exception as e:
-                    logger.error(f"Consolidated fit failed: {e}")
+                    logger.error(f"Could not fit the selected components: {e}", exc_info=True)
                     return 0
             # --- END NEW CONSOLIDATED LOGIC ---
 
@@ -1854,7 +1862,7 @@ class RecipeAbsorbersV2:
                 try:
                     obs_min_limit, obs_max_limit = current_session.spec.get_region_bounds(region_limit)
                     use_region_filter = True
-                    logger.info(f"Refit restricted to {region_limit} ({obs_min_limit:.1f} - {obs_max_limit:.1f}).")
+                    logger.info(f"Refit limited to {region_limit} ({obs_min_limit:.1f} to {obs_max_limit:.1f}).")
                 except ValueError:
                     logger.warning(f"Could not apply region limit '{region_limit}'. Fitting all.")
 
@@ -1893,7 +1901,7 @@ class RecipeAbsorbersV2:
                     uuids_in_region.add(c.uuid)
 
             if not uuids_in_region:
-                logger.info("No components found in the specified region to fit.")
+                logger.info(f"There are no components to fit in {region_limit}.")
                 return current_session
 
             # --- 2. BUILD WORK UNITS (Grouping Step) ---
@@ -1947,7 +1955,7 @@ class RecipeAbsorbersV2:
                     todo_uuids.difference_update(group)
 
             total_units = len(work_units)
-            logger.info(f"Preparing to fit {total_units} absorption systems...")
+            logger.info(f"Fitting {total_units} groups of components.")
             logger.info(">> PROGRESS: 0")
 
             # 2. Sequential Local Fit Loop
@@ -1960,7 +1968,7 @@ class RecipeAbsorbersV2:
             for i, target_uuids in enumerate(work_units):
 
                 if self._is_stop_requested():
-                    logger.warning("Refit All: Stop requested. Aborting.")
+                    logger.warning("The refit was stopped.")
                     return self._session  # Return original state (revert)
             
                 pct = int(100 * (i + 1) / total_units)
@@ -1971,9 +1979,9 @@ class RecipeAbsorbersV2:
                     if peek_comp:
                         series_str = peek_comp.series
                         z_str = f"{peek_comp.z:.4f}"
-                        logger.info(f"Fitting System {i+1}/{total_units}: {series_str} at z={z_str}")
+                        logger.info(f"Fitting group {i+1} of {total_units}: {series_str} at z = {z_str}.")
                     else:
-                        logger.info(f"Fitting Group {i+1}/{total_units}...")
+                        logger.info(f"Fitting group {i+1} of {total_units}.")
 
                 if not target_uuids: continue
                 
@@ -2043,7 +2051,7 @@ class RecipeAbsorbersV2:
             return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
 
         except Exception as e:
-            logger.error(f"refit_all failed: {e}", exc_info=True)
+            logger.error(f"Could not refit the components: {e}", exc_info=True)
             return 0
         
     def _final_uncertainties(self, spec, systs, work_units, z_window_kms):
@@ -2069,8 +2077,10 @@ class RecipeAbsorbersV2:
                 for c in evaluated.components:
                     if c.uuid in target_uuids:
                         updated[c.uuid] = c
-            except Exception as e:
-                logger.warning(f"Could not recompute the uncertainties of a group: {e}")
+            except (ValueError, ArithmeticError, KeyError, TypeError) as e:
+                # The errors of a fit (ValueError covers LinAlgError)
+                logger.warning(f"The uncertainties of a group could not be recomputed at "
+                               f"the final parameters ({e}): it keeps those of its fit.")
         comps = [updated.get(c.uuid, c) for c in systs.components]
         return SystemListV2(dataclasses.replace(systs._data, components=comps))
 
@@ -2118,7 +2128,7 @@ class RecipeAbsorbersV2:
             lim_b_min = float(min_b)
             use_combined = (combined_check.lower() == "true")
         except ValueError:
-            logger.error("Invalid parameters for clean_negligible."); return 0
+            logger.error(msg_param_fail); return 0
 
         if not self._session.systs: return 0
         
@@ -2126,13 +2136,13 @@ class RecipeAbsorbersV2:
         for c in self._session.systs.components:
             # 1. Unphysically Narrow (Noise spikes) -> Always Remove
             if c.b < lim_b_min:
-                logger.info(f"Flagged {c.series} (z={c.z:.4f}): Too narrow (b={c.b:.1f})")
+                logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s, too narrow.")
                 to_remove.append(c.uuid)
                 continue
 
             # 2. Too Weak (Negligible)
             if c.logN < lim_N:
-                logger.info(f"Flagged {c.series} (z={c.z:.4f}): Too weak (logN={c.logN:.2f})")
+                logger.debug(f"{c.series} at z = {c.z:.4f} removed: logN = {c.logN:.2f}, too weak.")
                 to_remove.append(c.uuid)
                 continue
 
@@ -2142,17 +2152,18 @@ class RecipeAbsorbersV2:
                     # Only remove if ALSO weak (e.g. logN < 13.0)
                     # This protects strong, broad features (like DLA wings or broad OVI)
                     if c.logN < 13.0: 
-                        logger.info(f"Flagged {c.series} (z={c.z:.4f}): Broad & Weak (b={c.b:.1f}, logN={c.logN:.2f})")
+                        logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s and "
+                                     f"logN = {c.logN:.2f}, broad and weak.")
                         to_remove.append(c.uuid)
                 else:
                     # Unconditional removal
-                    logger.info(f"Flagged {c.series} (z={c.z:.4f}): Too broad (b={c.b:.1f})")
+                    logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s, too broad.")
                     to_remove.append(c.uuid)
 
         if to_remove:
-            logger.info(f"Removing {len(to_remove)} outlier components...")
+            logger.info(f"{len(to_remove)} components removed (too narrow, weak or broad).")
             # Use existing delete method which handles model updates
             return self.delete_component(uuids=to_remove)
         else:
-            logger.info("No outliers found.")
+            logger.info("No components to remove.")
             return self._session

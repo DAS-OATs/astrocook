@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING
 
-from astrocook.recipes.messages import msg_param_fail
+from astrocook.recipes.messages import msg_param_fail, msg_session_not_found
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2 
@@ -143,7 +143,7 @@ class RecipeFluxV2:
             return self._session.with_new_spectrum(new_spec_v2)
             
         except Exception as e:
-            logger.error(f"Failed during calculate_running_std: {e}", exc_info=True)
+            logger.error(f"Could not compute the running standard deviation: {e}", exc_info=True)
             return 0
 
     def smooth(self, sigma_kms: str = '100.0') -> 'SessionV2':
@@ -177,7 +177,7 @@ class RecipeFluxV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during smooth: {e}", exc_info=True)
+            logger.error(f"Could not smooth the spectrum: {e}", exc_info=True)
             return 0
 
     def rebin(self, xstart: str = 'None', xend: str = 'None', dx: str = '10.0', xunit: str = 'km/s',
@@ -241,9 +241,9 @@ class RecipeFluxV2:
         # The V1 normalization was never applied in V2 and is not offered
         # any more (F37, #560): say so instead of ignoring it silently
         if str(norm) == 'True':
-            logger.warning("rebin: 'norm' is ignored, the rebinned spectrum is "
-                            "not normalized; use the normalized view of the "
-                            "plot, or apply_expression with y/cont.")
+            logger.warning("The parameter 'norm' is ignored: the rebinned spectrum is "
+                           "not normalized (use the normalized view of the "
+                           "plot, or apply_expression with y/cont).")
 
         # 5. Execute the immutable V2 operation
         new_spec_v2 = self._session.spec.rebin(
@@ -274,7 +274,7 @@ class RecipeFluxV2:
             A new session with the scaled flux. Returns ``0`` (int) on failure.
         """
         if reference_session in ['None', '']:
-            logger.error("No reference session selected.")
+            logger.error("No reference session is selected.")
             return 0
         try:
             order_i = int(order)
@@ -283,14 +283,14 @@ class RecipeFluxV2:
                             if h.display_name == reference_session), None)
             
             if not ref_hist:
-                raise ValueError(f"Session '{reference_session}' not found.")
+                raise ValueError(msg_session_not_found.format(name=reference_session))
 
             new_spec = self._session.spec.equalize_to_reference(
                 ref_hist.current_state.spec, order=order_i
             )
             return self._session.with_new_spectrum(new_spec)
         except Exception as e:
-            logger.error(f"Equalize failed: {e}")
+            logger.error(f"Could not equalize the flux: {e}", exc_info=True)
             return 0
     
     def resample(self, target_session: str = 'None') -> 'SessionV2':
@@ -313,7 +313,7 @@ class RecipeFluxV2:
             or 0 on failure.
         """
         if target_session == 'None' or target_session == '':
-            logger.error("No target session was selected for resampling.")
+            logger.error("No target session is selected.")
             return 0
 
         try:
@@ -341,7 +341,7 @@ class RecipeFluxV2:
             return self._session.with_new_spectrum(new_spec_v2)
             
         except Exception as e:
-            logger.error(f"Failed during resample: {e}", exc_info=True)
+            logger.error(f"Could not resample the spectrum: {e}", exc_info=True)
             return 0
         
     def calibrate_from_magnitudes(self, magnitudes: str = "SDSS_r=17.0") -> 'SessionV2':
@@ -370,5 +370,5 @@ class RecipeFluxV2:
             
         except Exception as e:
             # Standard error logging for the worker
-            logger.error(f"Failed during calibrate_from_magnitudes: {e}", exc_info=True)
+            logger.error(f"Could not calibrate the flux: {e}", exc_info=True)
             return 0

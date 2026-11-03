@@ -2,7 +2,7 @@ import astropy.units as au
 import logging
 from typing import TYPE_CHECKING
 
-from astrocook.recipes.messages import msg_param_fail
+from astrocook.recipes.messages import msg_param_fail, msg_z_em_unset
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -157,10 +157,11 @@ class RecipeContinuumV2:
             return 0
             
         if z_em_f == 0.0:
-            logger.warning("z_em is 0.0. Run 'Edit > Set Properties' first.")
+            logger.warning(msg_z_em_unset + " The continuum of the Lyman-alpha forest "
+                           "is estimated as outside it.")
 
         try:
-            logger.info("Auto-continuum: Finding absorbed regions...")
+            logger.info("Finding the absorbed regions.")
             # 1. Call the first API method
             spec_with_mask = self._session.spec.find_absorbed(
                 smooth_len_lya=smooth_len_lya_q,
@@ -169,7 +170,7 @@ class RecipeContinuumV2:
                 template=template_b
             )
             
-            logger.info("Auto-continuum: Fitting continuum to mask...")
+            logger.info("Fitting the continuum to the unabsorbed pixels.")
             spec_with_cont = spec_with_mask.fit_continuum(
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
@@ -181,7 +182,7 @@ class RecipeContinuumV2:
             # 3. Return the final new state
             return self._session.with_new_spectrum(spec_with_cont)
         except Exception as e:
-            logger.error(f"Failed during estimate_auto: {e}", exc_info=True)
+            logger.error(f"Could not estimate the continuum: {e}", exc_info=True)
             return 0
 
     def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
@@ -224,7 +225,8 @@ class RecipeContinuumV2:
             return 0
 
         if z_em_f == 0.0:
-            logger.warning("z_em is 0.0. Run 'Edit > Set Properties' before continuum fitting.")
+            logger.warning(msg_z_em_unset + " The absorbed regions of the Lyman-alpha "
+                           "forest are found as outside it.")
             # We don't stop, as the operation function handles z_em=0.0
             
         try:
@@ -236,7 +238,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during find_absorbed: {e}", exc_info=True)
+            logger.error(f"Could not find the absorbed regions: {e}", exc_info=True)
             return 0
 
     def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: str = '800.0', 
@@ -297,7 +299,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during fit_continuum: {e}", exc_info=True)
+            logger.error(f"Could not fit the continuum: {e}", exc_info=True)
             return 0
         
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
@@ -325,8 +327,7 @@ class RecipeContinuumV2:
             column added/updated, or 0 on failure.
         """
         if self._session.spec._data.z_em == 0.0:
-            logger.error("Cannot fit power-law: Emission Redshift (z_em) is 0.0. "
-                          "Run 'Edit > Set Properties' first.")
+            logger.error(msg_z_em_unset + " The power law is fitted in rest-frame regions.")
             return 0
             
         try:
@@ -338,7 +339,7 @@ class RecipeContinuumV2:
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
-            logger.error(f"Failed during fit_powerlaw: {e}", exc_info=True)
+            logger.error(f"Could not fit the power-law continuum: {e}", exc_info=True)
             return 0
     
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':

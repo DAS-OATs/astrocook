@@ -125,7 +125,7 @@ def test_launcher_format_names_the_module():
         "import logging\n"
         "logging.basicConfig(level=logging.INFO, "
         "format='[%(levelname)s] %(module)s: %(message)s')\n" + _REBIN)
-    assert f"[WARNING] flux: rebin: {NORM_WARNING}" in stderr
+    assert f"[WARNING] flux: The parameter {NORM_WARNING}" in stderr
 
 
 def test_script_without_logging_configuration_sees_warnings():
@@ -146,7 +146,7 @@ def test_script_can_configure_logging_after_a_recipe():
         "logging.basicConfig(level=logging.INFO, "
         "format='[%(levelname)s] %(module)s: %(message)s')\n"
         + _REBIN)
-    assert f"[WARNING] flux: rebin: {NORM_WARNING}" in stderr
+    assert f"[WARNING] flux: The parameter {NORM_WARNING}" in stderr
 
 
 def test_records_name_their_module(root_records):

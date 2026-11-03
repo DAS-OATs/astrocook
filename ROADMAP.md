@@ -1447,7 +1447,8 @@ an item to discuss.
   then one PR per package, each with its `except` clauses and its
   messages: (4) core, fitting, io, in two PRs (agreed with Guido): (4a)
   the rows N and R and the messages, no change of behaviour; (4b) the
-  rows D, as decided with Guido (below); (5) recipes; (6) GUI, with a
+  rows D, as decided with Guido (below); (5) recipes, in the same way:
+  (5a) the rows N, R and B and the messages, (5b) the rows D; (6) GUI, with a
   hook that shows an unexpected error to the user; (7) the warnings of
   the libraries. The rows marked D are reviewed with Guido before their
   PR.
@@ -1499,7 +1500,9 @@ Action proposed for each clause:
 
 Done: the rows N and R of core, fitting and io (35, PR 4a, #694), their
 rows D (11, PR 4b), row D of `save_archive_v2` (F94, PR 2): core,
-fitting and io keep only the two boundaries of `load_session_from_file`. The lines are those of `a5b506a`; the
+fitting and io keep only the two boundaries of `load_session_from_file`;
+the rows N, R and B of the recipes (36, PR 5a: the B rows logged once,
+with the traceback, by the rule). The lines are those of `a5b506a`; the
 function identifies the clause when the lines move.
 
 **Rows D of core, fitting and io** (reviewed with Guido, November 2026;
@@ -1545,6 +1548,41 @@ applied in PR 4b, each with a test that reproduces the failure, in
   spectrum unchanged; the continuum editor of the GUI shows it in a
   dialog (the knots edited are lost, as before: keeping the editor
   open on a failure is for the PR of the GUI).
+
+**Rows D of the recipes** (reviewed with Guido, November 2026; applied in
+PR 5b, each with a test):
+- `components_auto`: `region_limit` checked at the start (an unknown
+  region makes the recipe fail with its message; it cleaned nothing and
+  then masked nothing, so the pipeline worked on the whole spectrum and
+  added duplicates); the `except` of the cleaning and of the merge of the
+  `abs_ids` removed (an error there is a bug). The same check of
+  `region_limit` in `refit_all` (it fitted the whole spectrum, with a
+  WARNING), found in PR 5a.
+- `lya_auto`, `forest_auto` (the cleaning of the lines narrower than
+  `min_b`, at the end of long pipelines): option (b), Guido's choice:
+  the result is kept, with a WARNING that says how many narrow lines it
+  still contains, the traceback at DEBUG; the clause becomes a boundary
+  (B) of the step.
+- `metals_auto`: only the numerical errors of a trial fit (`ValueError`,
+  `ArithmeticError`) reject the candidate; a WARNING at the end counts
+  the failed trial fits, when there are any; the other errors reach the
+  recipe.
+- `refit_all`: only the numerical errors of a group; one WARNING at the
+  end with the number of the groups that failed and their redshifts
+  (a flag `not_fitted` on their components: phase 6-bis, Guido).
+- `delete_component` returns 0 on a failure (it returned the session
+  unchanged, which the GUI took as a success); `detect_anchor` becomes
+  a boundary (B): its 0.0 is the failure of the recipe convention.
+- import of systems with a refit: option (b), Guido's choice: the
+  import stays, with a WARNING that the systems keep their imported
+  values when the refit fails; the broad `except` removed.
+- `equalize_and_stitch`: ranges or factors that cannot be read, or not
+  one per session, make the recipe fail with the message of the
+  parameters (they were replaced by `auto`, with a WARNING).
+- Found in PR 5a, for 5b (to be agreed): `import_systems` from a session
+  that is not open, `trim_common` without a common range and `stitch`
+  without sessions return the session unchanged, as `delete_component`
+  did (an ERROR or a WARNING only).
 
 <details>
 <summary>The 189 clauses</summary>
@@ -1694,52 +1732,52 @@ applied in PR 4b, each with a test that reproduces the failure, in
 | `io/loaders.py` | 1006 | `load_generic_spectrum` | `Exception` | R: done | log and re-raise; `load_session_from_file` logs again |
 | `io/v1_archive.py` | 67 | `V1ArchiveManager.unpack` | `Exception` | N: done | `.acs` archive that cannot be unpacked |
 | `mcp_server/errors.py` | 85 | `run_recipe` | `Exception` | B | a tool call: the exception becomes a `ToolError` |
-| `recipes/absorbers.py` | 507 | `RecipeAbsorbersV2.components_auto` | `Exception` | B | `components_auto`, mask step |
+| `recipes/absorbers.py` | 507 | `RecipeAbsorbersV2.components_auto` | `Exception` | B: done | `components_auto`, mask step |
 | `recipes/absorbers.py` | 530 | `RecipeAbsorbersV2.components_auto` | `Exception` | D | `components_auto`: old systems of the region not removed, the pipeline goes on (WARNING only) |
 | `recipes/absorbers.py` | 586 | `RecipeAbsorbersV2.components_auto` | `Exception` | D | `components_auto`: `abs_ids` not merged (WARNING only) |
 | `recipes/absorbers.py` | 734 | `RecipeAbsorbersV2.lya_auto` | `Exception` | D | `lya_auto`: cleanup of the narrow components skipped (WARNING only) |
 | `recipes/absorbers.py` | 817 | `RecipeAbsorbersV2.forest_auto` | `Exception` | D | `forest_auto`: cleanup of the narrow components skipped (WARNING only) |
 | `recipes/absorbers.py` | 916 | `RecipeAbsorbersV2.metals_auto` | `Exception` | D | `metals_auto`: a failed trial fit logged at DEBUG only |
-| `recipes/absorbers.py` | 990 | `RecipeAbsorbersV2.identify_lines` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1029 | `RecipeAbsorbersV2.populate_from_identification` | `Exception` | N | JSON of the identification maps, returns 0 |
-| `recipes/absorbers.py` | 1134 | `RecipeAbsorbersV2.add_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1179 | `RecipeAbsorbersV2.update_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1230 | `RecipeAbsorbersV2.update_components` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 990 | `RecipeAbsorbersV2.identify_lines` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1029 | `RecipeAbsorbersV2.populate_from_identification` | `Exception` | N: done | JSON of the identification maps, returns 0 |
+| `recipes/absorbers.py` | 1134 | `RecipeAbsorbersV2.add_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1179 | `RecipeAbsorbersV2.update_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1230 | `RecipeAbsorbersV2.update_components` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 1283 | `RecipeAbsorbersV2.delete_component` | `Exception` | D | `delete_component` returns the unchanged session: a failure looks like a success |
 | `recipes/absorbers.py` | 1327 | `RecipeAbsorbersV2.detect_anchor` | `Exception` | D | `detect_anchor` returns 0.0 on failure |
-| `recipes/absorbers.py` | 1394 | `RecipeAbsorbersV2.fit_component` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1449 | `RecipeAbsorbersV2.update_constraint` | `Exception` | N | auto-update of a linked value |
-| `recipes/absorbers.py` | 1454 | `RecipeAbsorbersV2.update_constraint` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1658 | `RecipeAbsorbersV2.optimize_system` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1753 | `RecipeAbsorbersV2.fit_bayesian` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1841 | `RecipeAbsorbersV2.refit_all` | `Exception` | B | `refit_all`, consolidated fit, returns 0 |
+| `recipes/absorbers.py` | 1394 | `RecipeAbsorbersV2.fit_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1449 | `RecipeAbsorbersV2.update_constraint` | `Exception` | N: done | auto-update of a linked value |
+| `recipes/absorbers.py` | 1454 | `RecipeAbsorbersV2.update_constraint` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1658 | `RecipeAbsorbersV2.optimize_system` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1753 | `RecipeAbsorbersV2.fit_bayesian` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1841 | `RecipeAbsorbersV2.refit_all` | `Exception` | B: done | `refit_all`, consolidated fit, returns 0 |
 | `recipes/absorbers.py` | 2006 | `RecipeAbsorbersV2.refit_all` | `Exception` | D | `refit_all`: a group whose fit fails is left unfitted (WARNING only) |
-| `recipes/absorbers.py` | 2043 | `RecipeAbsorbersV2.refit_all` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 2070 | `RecipeAbsorbersV2._final_uncertainties` | `Exception` | N | final uncertainties of a group |
-| `recipes/continuum.py` | 181 | `RecipeContinuumV2.estimate_auto` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 236 | `RecipeContinuumV2.find_absorbed` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 297 | `RecipeContinuumV2.fit_continuum` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 338 | `RecipeContinuumV2.fit_powerlaw` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 393 | `RecipeEditV2.set_properties` | `Exception` | R | `except Exception as e: raise e` |
-| `recipes/edit.py` | 515 | `RecipeEditV2.apply_expression` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 561 | `RecipeEditV2.mask_expression` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 610 | `RecipeEditV2.smooth_column` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 689 | `RecipeEditV2._merge_imported_systems` | `Exception` | N | imported systems filtered by range |
+| `recipes/absorbers.py` | 2043 | `RecipeAbsorbersV2.refit_all` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 2070 | `RecipeAbsorbersV2._final_uncertainties` | `Exception` | N: done | final uncertainties of a group |
+| `recipes/continuum.py` | 181 | `RecipeContinuumV2.estimate_auto` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 236 | `RecipeContinuumV2.find_absorbed` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 297 | `RecipeContinuumV2.fit_continuum` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 338 | `RecipeContinuumV2.fit_powerlaw` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 393 | `RecipeEditV2.set_properties` | `Exception` | R: done | `except Exception as e: raise e` |
+| `recipes/edit.py` | 515 | `RecipeEditV2.apply_expression` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 561 | `RecipeEditV2.mask_expression` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 610 | `RecipeEditV2.smooth_column` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 689 | `RecipeEditV2._merge_imported_systems` | `Exception` | N: done | imported systems filtered by range |
 | `recipes/edit.py` | 725 | `RecipeEditV2._merge_imported_systems` | `Exception` | D | import of systems: the automatic refit fails, the unfitted systems are returned (ERROR only) |
-| `recipes/edit.py` | 768 | `RecipeEditV2.import_systems_ascii` | `Exception` | N | ASCII table of systems that cannot be read |
-| `recipes/edit.py` | 952 | `RecipeEditV2.extract_preset` | `Exception` | N | `extract_preset`: a region that cannot be extracted is skipped |
-| `recipes/edit.py` | 1035 | `RecipeEditV2.trim_common` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 1107 | `RecipeEditV2.stitch` | `Exception` | N | `stitch`: cleanup of the NaNs |
-| `recipes/edit.py` | 1113 | `RecipeEditV2.stitch` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 768 | `RecipeEditV2.import_systems_ascii` | `Exception` | N: done | ASCII table of systems that cannot be read |
+| `recipes/edit.py` | 952 | `RecipeEditV2.extract_preset` | `Exception` | N: done | `extract_preset`: a region that cannot be extracted is skipped |
+| `recipes/edit.py` | 1035 | `RecipeEditV2.trim_common` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1107 | `RecipeEditV2.stitch` | `Exception` | N: done | `stitch`: cleanup of the NaNs |
+| `recipes/edit.py` | 1113 | `RecipeEditV2.stitch` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
 | `recipes/edit.py` | 1191 | `RecipeEditV2.equalize_and_stitch` | `Exception` | D | `equalize_and_stitch`: invalid ranges replaced by `auto` (WARNING only) |
-| `recipes/edit.py` | 1372 | `RecipeEditV2.coadd` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/file.py` | 105 | `RecipeFileV2.export_ascii` | `Exception` | B | `export_ascii`, returns False |
-| `recipes/file.py` | 207 | `RecipeFileV2.import_ascii` | `Exception` | B | `import_ascii`, returns 0 |
-| `recipes/flux.py` | 143 | `RecipeFluxV2.calculate_running_std` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 177 | `RecipeFluxV2.smooth` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 290 | `RecipeFluxV2.equalize` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 341 | `RecipeFluxV2.resample` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 369 | `RecipeFluxV2.calibrate_from_magnitudes` | `Exception` | B | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1372 | `RecipeEditV2.coadd` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/file.py` | 105 | `RecipeFileV2.export_ascii` | `Exception` | B: done | `export_ascii`, returns False |
+| `recipes/file.py` | 207 | `RecipeFileV2.import_ascii` | `Exception` | B: done | `import_ascii`, returns 0 |
+| `recipes/flux.py` | 143 | `RecipeFluxV2.calculate_running_std` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 177 | `RecipeFluxV2.smooth` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 290 | `RecipeFluxV2.equalize` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 341 | `RecipeFluxV2.resample` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 369 | `RecipeFluxV2.calibrate_from_magnitudes` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
 
 </details>
 
@@ -1758,6 +1796,10 @@ applied package by package from PR 4):
     says what was done instead.
   - ERROR: the operation did not give its result; the message says why
     and, when it can, what to do.
+  - Progress (PR 5a): the lines that the progress dialog of the long
+    recipes reads stay INFO, one per step or group ("Fitting group 3
+    of 120: CIV at z = 2.3406."): the dialog shows the last INFO as its
+    status; `>> PROGRESS: n` sets its bar.
 - *One log per error.* An unexpected exception is logged once, where it
   is caught at a boundary (rows B), with the traceback; the code below
   does not log and re-raise (rows R), it puts the context in the
@@ -2033,6 +2075,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F95 | fallbacks after a failure (24 places) | After a failure, the code goes on with a result that looks valid and says so only in the log, or not at all: e.g. a link of a constraint that fails to evaluate keeps its old value silently at every evaluation of the model (`VoigtModelConstraintV2.map_p_free_to_full`); `smooth_spectrum` returns the unsmoothed array; `update_continuum_from_knots` returns the spectrum unchanged, so the edit of the continuum is lost; `delete_component` returns the unchanged session, which the GUI takes as a success; the entry of a recipe in the session log is dropped silently if `add_entry` fails; in the pipelines, a cleanup or a fit that fails is skipped with a WARNING (`lya_auto`, `forest_auto`, `refit_all`) or a DEBUG line (`metals_auto`). Found in phase 6 (PR 1); in PR 4a, without a broad `except`, also `fit_continuum` (an ERROR and the spectrum returned unchanged when fewer than two pixels are unabsorbed) and `update_continuum_from_knots` (a WARNING and the spectrum unchanged without knots) | error handling, behaviour | — | open: the rows D of the inventory of phase 6, reviewed with Guido one by one before the PR of their package; those of core, fitting and io (with `fit_continuum` and the knots) fixed in PR 4b (phase 6, "Rows D of core, fitting and io"); the recipes (10) and the GUI (2) left |
 | F96 | logging (scripts) | The package logged with the module-level functions of `logging` (`logging.warning(...)`), which call `logging.basicConfig()` when the root logger has no handler: the first message of a recipe in a script that had not configured logging yet configured it (level WARNING, format `WARNING:root:...`), and the script's own `basicConfig(level=logging.INFO)` called afterwards did nothing, so its level and format were ignored. Found in phase 6 (PR 3) while writing the characterization tests of the loggers per module | behaviour | `test_script_can_configure_logging_after_a_recipe` (regression) | fixed in phase 6 (PR 3): the loggers per module (#566) do not configure the root logger; a script that configures nothing still sees the warnings (Python's last-resort handler), without the `WARNING:root:` prefix |
 | F97 | `detect_file_format` (loaders) | The detection of an ASCII format reads the first 10 lines with `next(f)`, which raises `StopIteration` for a file with fewer lines: the exception was caught by a broad `except`, and a `.csv` file of fewer than 10 lines is read as a generic spectrum instead of a CSV table (by the generic loader, which may then fail on it). Found in phase 6 (PR 4a) while narrowing the clause | behaviour | `test_short_csv_is_read_as_a_generic_spectrum` (characterization) | open: kept as it is in PR 4a (the clause narrowed to `OSError` and `StopIteration`); proposed fix: read at most 10 lines (`itertools.islice`) |
+| F98 | links (functions) | The functions offered to the expression of a link were not the same everywhere: the fit (`VoigtModelConstraintV2`) offered `np`, `log` (log10) and `ln`, the automatic update of the linked value in the `update_constraint` recipe `np`, `sqrt` and `log`. A link with `sqrt(...)` was accepted and set its value once, and was then skipped silently by every fit (the parameter stayed at that value); one with `ln(...)` was accepted with a WARNING. Since PR 4b the links are checked with the functions of the fit, so `sqrt` is refused; in PR 5a the update uses the same functions (`LINK_FUNCTIONS`). The System Inspector writes the thermal link of b with a number (the square root of the mass ratio), so only the links typed by hand were affected. Found in phase 6 (PR 5a) | behaviour | — | fixed in PR 5a (one set of functions); to be decided (Guido): add `sqrt` (and `exp`) to `LINK_FUNCTIONS` |
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals
@@ -2462,6 +2505,6 @@ review); each of its decisions goes into the log.
 | 4 – Scientific correctness (validation on mocks; #526, #517, #465, #518, #568, #573) | done (October 2026): plan agreed (#601); validation: mocks extended (#602), benchmark (#603), baseline (#604); found F56-F59; #573 done (#605: one default per parameter); #518 done (#606: fit window in the System Inspector); #568: wrong atomic values (#607), AlII, [NeIII], [NeV], TiII (#608), single table with sources and newer values, F39 (#609); F49: one candidate per doublet (#611); F55: candidates within 3000 km/s of z_em (#612); F50: the pipelines keep the mask of the user (#613); #465: robust automatic continuum (spikes, masked running mean, local S/N) (#614); #526 PR 1: resolution as a single column (#615); PR 2: the GUI on the same resolver (#616); PR 3: exact convolution with the LSF of each pixel (#617); F61: damping parameter (1 + z) too large (#619); F62: `max_logN` = 19 in the automatic pipelines (#624); PR 4: legacy sources no longer written, System Inspector profiles as the fitter (#625); #623: refit of sessions with pixel edges without a unit (regression of #617, #626); F14: blend threshold of the grouping from the instrumental FWHM (#618); #517 with F52 partly: flags of the fit (#627), cleanup of the pipelines (#628), GUI cues and F65 (#629); F63 (#631); result against the baseline in "Result of the phase" |
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
-| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3, #693); rows D of core, fitting and io decided; rows N and R of core, fitting and io, their messages by the rule (PR 4a, #694), found F97; rows D of core, fitting and io (PR 4b) |
+| 6 – Error handling | in progress (November 2026): plan of the phase, inventory of the broad except clauses, rule of the log messages (PR 1, #691); found F94, F95; F94 fixed (PR 2, #692); loggers per module, F96 fixed (PR 3, #693); rows D of core, fitting and io decided; rows N and R of core, fitting and io, their messages by the rule (PR 4a, #694), found F97; rows D of core, fitting and io (PR 4b, #695); rows D of the recipes decided; rows N, R and B of the recipes and their messages (PR 5a), found F98 |
 | 6-bis – Recipe API | not started |
 | 7 – Robust components | not started |
