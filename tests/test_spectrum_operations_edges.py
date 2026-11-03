@@ -122,7 +122,7 @@ def test_interpolate_continuum_with_two_points():
 
 def test_interpolate_continuum_with_one_point_raises():
     mask_abs = np.array([False, True, True])
-    with pytest.raises(ValueError, match="^Cannot fit continuum: < 2 unabsorbed points found.$"):
+    with pytest.raises(ValueError, match="^Cannot fit the continuum: fewer than 2 unabsorbed pixels.$"):
         interpolate_continuum_mask(np.arange(3.0), np.ones(3), mask_abs)
 
 

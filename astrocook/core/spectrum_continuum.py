@@ -146,15 +146,14 @@ class ContinuumMixin:
         # ---------------------------------------------
 
         # 2. Step A: Interpolate (Raw Guess)
-        try:
-            cont_raw = interpolate_continuum_mask(
-                x=self._data.x.values,
-                y=y_fit, # Use flattened flux
-                mask_abs=mask_abs
-            )
-        except ValueError as e:
-            logger.error(e)
-            return self
+        # A ValueError (fewer than two unabsorbed pixels) reaches the
+        # recipe: it returned the spectrum unchanged, with an ERROR in the
+        # log only (phase 6, F95)
+        cont_raw = interpolate_continuum_mask(
+            x=self._data.x.values,
+            y=y_fit, # Use flattened flux
+            mask_abs=mask_abs
+        )
 
         # 3. Step B: Auto-Fudge
         applied_fudge = 1.0
@@ -290,30 +289,31 @@ class ContinuumMixin:
         """
         # 1. Validation (Safe for numpy arrays)
         # Check for None first, then length. Avoid "if not knots_x" on arrays.
+        # (They returned the spectrum unchanged with a WARNING, and the edit
+        # of the continuum was lost; phase 6, F95)
         if knots_x is None or len(knots_x) == 0:
-            logger.warning("No knots: the continuum is not changed.")
-            return self
-            
+            raise ValueError("There are no knots to build the continuum from.")
+
         if len(knots_x) != len(knots_y):
-            logger.warning(f"The knots have {len(knots_x)} wavelengths and "
-                           f"{len(knots_y)} fluxes: the continuum is not changed.")
-            return self
+            raise ValueError(f"The knots have {len(knots_x)} wavelengths and "
+                             f"{len(knots_y)} fluxes.")
 
         # 2. Create Spline
-        try:
-            # Sort knots to prevent spline errors
-            knots_x_arr = np.array(knots_x)
-            knots_y_arr = np.array(knots_y)
-            sorter = np.argsort(knots_x_arr)
-            
-            cs = PchipInterpolator(knots_x_arr[sorter], knots_y_arr[sorter])
-            
-            # Evaluate on current grid
-            x_axis = self.x.value
-            new_cont = cs(x_axis)
-        except Exception as e:
-            logger.error(f"Failed to generate spline from knots: {e}")
-            return self
+        # (A failure returned the spectrum unchanged, with an ERROR in the log
+        # only: the edit was lost; phase 6, F95)
+        knots_x_arr = np.array(knots_x, dtype=float)
+        knots_y_arr = np.array(knots_y, dtype=float)
+        sorter = np.argsort(knots_x_arr)
+        knots_x_arr, knots_y_arr = knots_x_arr[sorter], knots_y_arr[sorter]
+        if len(knots_x_arr) < 2:
+            raise ValueError("At least two knots are needed to build the continuum.")
+        if np.any(np.diff(knots_x_arr) == 0):
+            raise ValueError("Two knots have the same wavelength: move or remove "
+                             "one of them.")
+        cs = PchipInterpolator(knots_x_arr, knots_y_arr)
+
+        # Evaluate on current grid
+        new_cont = cs(self.x.value)
 
         # 3. Update 'cont' column
         new_spec = self.update_column('cont', new_cont, description="Spline from manual knots")

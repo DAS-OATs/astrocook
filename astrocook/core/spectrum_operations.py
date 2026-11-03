@@ -139,19 +139,15 @@ def smooth_spectrum(
     # 1. Smooth the result (V1's _gauss_convolve logic)
     if sigma_kms > 0:
         # 2. Convert x-axis to km/s to get pixel size
-        try:
-            # We need the x-axis as a Quantity to convert it
-            x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
-            avg_dv = np.mean(np.gradient(x_kms))
-            
-            # 3. Convert smoothing std (km/s) to pixels
-            smooth_std_pix = sigma_kms / avg_dv
-            
-            # 4. Apply the filter
-            y_final = gaussian_filter1d(y, smooth_std_pix)
-        except Exception as e:
-            logger.error(f"Failed to calculate smoothing in km/s: {e}. Returning unsmoothed array.")
-            return y
+        # We need the x-axis as a Quantity to convert it
+        x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
+        avg_dv = np.mean(np.gradient(x_kms))
+
+        # 3. Convert smoothing std (km/s) to pixels
+        smooth_std_pix = sigma_kms / avg_dv
+
+        # 4. Apply the filter
+        y_final = gaussian_filter1d(y, smooth_std_pix)
     else:
         # No smoothing requested
         y_final = y
@@ -716,7 +712,7 @@ def interpolate_continuum_mask(
     y_unabs = y[mask_unabs]
     
     if len(x_unabs) < 2:
-        raise ValueError("Cannot fit continuum: < 2 unabsorbed points found.")
+        raise ValueError("Cannot fit the continuum: fewer than 2 unabsorbed pixels.")
         
     # Simple linear interpolation over the gaps
     cont_interp = np.interp(x, x_unabs, y_unabs)
@@ -849,13 +845,8 @@ def merge_regions_by_velocity(
         num_regions = len(np.unique(region_map)) - 1
         return region_map, num_regions
 
-    try:
-        # 1. Get velocity axis
-        x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
-    except Exception as e:
-        logger.error(f"Cannot merge regions: failed to convert x-axis to km/s: {e}")
-        num_regions = len(np.unique(region_map)) - 1
-        return region_map, num_regions # Return original
+    # 1. Get velocity axis
+    x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
 
     # 2. Find the start/end *indices* of each region
     # Find where the region ID changes
@@ -971,62 +962,57 @@ def _find_kinematic_doublet_candidates(
     if len(lines) < 2:
         return [] # Not a doublet
 
-    try:
-        # 1. Get velocity lags
-        lags_kms = get_multiplet_velocity_lags(multiplet_name)
-        secondary_line = lines[1]
-        dv_kms = lags_kms[secondary_line] # e.g., ~498 km/s for CIV
-        
-        # 2. Get x-axis in velocity space
-        x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
-        
-        # 3. Create a "shifted" region map
-        # Interpolate the region map onto an axis shifted by dv_kms
-        # We use 'nearest' to preserve integer region IDs
-        interp = interp1d(x_kms + dv_kms, region_map, kind='nearest', 
-                          bounds_error=False, fill_value=0)
-        shifted_map = interp(x_kms).astype(int)
-        
-        # 4. Find overlaps
-        # Find where both original and shifted maps have a *non-zero* region ID
-        overlap_mask = (region_map > 0) & (shifted_map > 0)
-        if not np.any(overlap_mask):
-            return []
-            
-        # 5. Get all (region_id, shifted_region_id) pairs
-        overlapping_pairs = np.unique(
-            np.stack((region_map[overlap_mask], shifted_map[overlap_mask])), 
-            axis=1
-        )
-        
-        # 6. For each unique pair, calculate the best-guess redshift
-        candidates = []
-        x_nm = x.to_value(au.nm)
-        secondary_wave_nm = xem_d[lines[1]].to_value(au.nm)
-        
-        for (rid_1, rid_2) in overlapping_pairs.T:
-            # Find the pixels corresponding to this specific overlap
-            pair_mask = (region_map == rid_1) & (shifted_map == rid_2)
-            
-            # Calculate the geometric mean of the x-range of this overlap
-            x_overlap_nm = x_nm[pair_mask]
-            if len(x_overlap_nm) == 0: continue
-            
-            x_min = np.min(x_overlap_nm)
-            x_max = np.max(x_overlap_nm)
-            x_center = np.sqrt(x_min * x_max) # Geometric mean is good for log-space
-            
-            # Calculate the z_test for this overlap
-            z_test = (x_center / secondary_wave_nm) - 1.0
-            
-            # Add (region_id_of_primary, z_test)
-            candidates.append((rid_1, rid_2, z_test))
+    # 1. Get velocity lags
+    lags_kms = get_multiplet_velocity_lags(multiplet_name)
+    secondary_line = lines[1]
+    dv_kms = lags_kms[secondary_line] # e.g., ~498 km/s for CIV
 
-        return candidates
-        
-    except Exception as e:
-        logger.error(f"Failed kinematic check for {multiplet_name}: {e}", exc_info=True)
+    # 2. Get x-axis in velocity space
+    x_kms = convert_axis_velocity(x, z_ref=z_ref, target_unit=au.km/au.s).value
+
+    # 3. Create a "shifted" region map
+    # Interpolate the region map onto an axis shifted by dv_kms
+    # We use 'nearest' to preserve integer region IDs
+    interp = interp1d(x_kms + dv_kms, region_map, kind='nearest', 
+                      bounds_error=False, fill_value=0)
+    shifted_map = interp(x_kms).astype(int)
+
+    # 4. Find overlaps
+    # Find where both original and shifted maps have a *non-zero* region ID
+    overlap_mask = (region_map > 0) & (shifted_map > 0)
+    if not np.any(overlap_mask):
         return []
+
+    # 5. Get all (region_id, shifted_region_id) pairs
+    overlapping_pairs = np.unique(
+        np.stack((region_map[overlap_mask], shifted_map[overlap_mask])), 
+        axis=1
+    )
+
+    # 6. For each unique pair, calculate the best-guess redshift
+    candidates = []
+    x_nm = x.to_value(au.nm)
+    secondary_wave_nm = xem_d[lines[1]].to_value(au.nm)
+
+    for (rid_1, rid_2) in overlapping_pairs.T:
+        # Find the pixels corresponding to this specific overlap
+        pair_mask = (region_map == rid_1) & (shifted_map == rid_2)
+
+        # Calculate the geometric mean of the x-range of this overlap
+        x_overlap_nm = x_nm[pair_mask]
+        if len(x_overlap_nm) == 0: continue
+
+        x_min = np.min(x_overlap_nm)
+        x_max = np.max(x_overlap_nm)
+        x_center = np.sqrt(x_min * x_max) # Geometric mean is good for log-space
+
+        # Calculate the z_test for this overlap
+        z_test = (x_center / secondary_wave_nm) - 1.0
+
+        # Add (region_id_of_primary, z_test)
+        candidates.append((rid_1, rid_2, z_test))
+
+    return candidates
 
 def rate_doublet_candidate(
     spectrum: 'SpectrumV2',
@@ -1142,6 +1128,9 @@ def rate_doublet_candidate(
 
         return max(0.0, r2_score)
 
-    except Exception as e:
-        logger.warning(f"Failed to rate {multiplet_name} at z={z_test}: {e}", exc_info=True)
+    except ValueError as e:
+        # A candidate that cannot be rated (too few pixels to interpolate)
+        # is not a doublet; the other errors reach the recipe (phase 6)
+        logger.debug(f"The {multiplet_name} candidate at z = {z_test:.5f} "
+                     f"cannot be rated ({e}): score 0.")
         return 0.0

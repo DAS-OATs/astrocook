@@ -106,11 +106,10 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
             # [FIX] Removed try/except. Fail loudly if V2 fails.
             return load_systs_data_v2_from_archive(path_to_load, v2_metadata)
 
-        try:
-            migrated_data = read_v1_system_list(path_to_load)
-        except Exception as e:
-            logger.error(f"Could not read the V1 system list {path_to_load}: {e}")
-            return SystemListV2(data=SystemListDataV2())
+        # A failure makes the opening fail, as for a V2 archive: the session
+        # opened without its systems, and a save in .acs2 lost them (Guido's
+        # choice, phase 6)
+        migrated_data = read_v1_system_list(path_to_load)
         # [FIX] Register custom multiplets found in V1 data
         if migrated_data.components:
             _register_custom_multiplets(migrated_data.components)
