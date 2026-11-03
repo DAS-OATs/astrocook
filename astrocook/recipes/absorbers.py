@@ -366,6 +366,37 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
     return session
 
 
+#: The errors of a fit that does not converge or cannot be evaluated
+#: (ValueError covers np.linalg.LinAlgError and a start outside the bounds)
+FIT_ERRORS = (ValueError, ArithmeticError)
+
+
+def _warn_cleaning_failed(session, series: str, min_b: float, error: Exception):
+    """The cleaning of the narrow lines failed: say what the result keeps."""
+    n = (sum(1 for c in session.systs.components
+             if c.series == series and c.b < min_b) if session.systs else 0)
+    logger.warning(f"The lines narrower than {min_b} km/s could not be removed "
+                   f"({type(error).__name__}: {error}): {n} of them are in the result.")
+    logger.debug("Traceback of the cleaning:", exc_info=error)
+
+
+def _region_is_valid(spec, region_limit: str) -> bool:
+    """Log an ERROR and return False if ``region_limit`` cannot be used.
+
+    An unknown region (or ``z_em`` not set) used to be skipped with a
+    WARNING, and the pipeline or the refit worked on the whole spectrum
+    (phase 6).
+    """
+    if region_limit == "None":
+        return True
+    try:
+        spec.get_region_bounds(region_limit)
+    except ValueError as e:
+        logger.error(f"The region '{region_limit}' cannot be used: {e}")
+        return False
+    return True
+
+
 def _drop_negligible(session):
     """The automatic pipelines remove the components that end at the lower
     bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb
@@ -483,7 +514,9 @@ class RecipeAbsorbersV2:
         """
         logger.info(">> PROGRESS: 0")
         logger.info(f"Searching for components (region: {region_limit}).")
-        
+        if not _region_is_valid(self._session.spec, region_limit):
+            return 0
+
         # --- 1. PREPARE REGION MASK ---
         # We create a temporary session with a restricted mask to force identify_lines
         # to ignore specific regions.
@@ -522,28 +555,22 @@ class RecipeAbsorbersV2:
         
         # --- 0.5 SMART CLEAN (Refactored) ---
         if region_limit != "None" and session_current.systs:
-            try:
-                spec = session_current.spec
-                # Get bounds as Quantities
-                obs_min, obs_max = spec.get_region_bounds(region_limit)
-                
-                # Delegate logic to SystemListV2
-                new_systs = session_current.systs.remove_in_region(obs_min, obs_max)
-                session_current = session_current.with_new_system_list(new_systs)
-                    
-            except Exception as e:
-                logger.warning(f"Smart clean failed: {e}")
+            spec = session_current.spec
+            # Get bounds as Quantities
+            obs_min, obs_max = spec.get_region_bounds(region_limit)
+
+            # Delegate logic to SystemListV2
+            new_systs = session_current.systs.remove_in_region(obs_min, obs_max)
+            session_current = session_current.with_new_system_list(new_systs)
         
         # --- 1. PREPARE REGION MASK ---
         target_mask_col = mask_col
         if region_limit != "None":
-            try:
-                obs_min, obs_max = session_current.spec.get_region_bounds(region_limit)
-                # Public API Call (Logic moved to Core)
-                new_spec = session_current.spec.mask_region(mask_col, obs_min, obs_max)
-                session_current = session_current.with_new_spectrum(new_spec)
-            except ValueError as e:
-                logger.warning(f"Region masking skipped: {e}")
+            # (Checked at the start: it was skipped with a WARNING, and the
+            # pipeline worked on the whole spectrum, phase 6)
+            obs_min, obs_max = session_current.spec.get_region_bounds(region_limit)
+            new_spec = session_current.spec.mask_region(mask_col, obs_min, obs_max)
+            session_current = session_current.with_new_spectrum(new_spec)
         
         # --- 2. IDENTIFY (using the masked session) ---
         logger.info("Identifying the doublets (step 1 of 3).")
@@ -572,23 +599,19 @@ class RecipeAbsorbersV2:
 
         # --- 2.5 MERGE IDENTIFICATION IDs ---
         if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
-            try:
-                # The regions of the earlier steps are kept, the new ones fill
-                # the gaps with shifted IDs; the identifications of the
-                # regions are merged in the same way (F90: they kept the
-                # unshifted IDs of the last step only, and pointed to the
-                # wrong regions)
-                final_ids, merged_ident = merge_region_ids(
-                    old_abs_ids, old_ident,
-                    session_step1.spec.get_column('abs_ids').value,
-                    session_step1.spec.meta.get('region_identifications'))
-                final_spec = session_step1.spec.update_column('abs_ids', final_ids)
-                final_spec._data.meta['region_identifications'] = json.dumps(
-                    {str(k): v for k, v in merged_ident.items()})
-                session_step1 = session_step1.with_new_spectrum(final_spec)
-                
-            except Exception as e:
-                logger.warning(f"Failed to merge abs_ids: {e}")
+            # The regions of the earlier steps are kept, the new ones fill
+            # the gaps with shifted IDs; the identifications of the
+            # regions are merged in the same way (F90: they kept the
+            # unshifted IDs of the last step only, and pointed to the
+            # wrong regions)
+            final_ids, merged_ident = merge_region_ids(
+                old_abs_ids, old_ident,
+                session_step1.spec.get_column('abs_ids').value,
+                session_step1.spec.meta.get('region_identifications'))
+            final_spec = session_step1.spec.update_column('abs_ids', final_ids)
+            final_spec._data.meta['region_identifications'] = json.dumps(
+                {str(k): v for k, v in merged_ident.items()})
+            session_step1 = session_step1.with_new_spectrum(final_spec)
 
         spec_meta = session_step1.spec.meta
         series_map_json = spec_meta.get('series_map_json')
@@ -729,14 +752,20 @@ class RecipeAbsorbersV2:
         
         try:
             min_b_val = float(min_b)
-
+        except ValueError:
+            logger.error(msg_param_fail)
+            return 0
+        if not final_session:
+            return final_session
+        # A boundary of the step (B, Guido's choice, phase 6): the result of
+        # the pipeline is kept if the cleaning fails, with a WARNING
+        try:
             final_session = _remove_narrow(final_session, 'Ly_a', min_b_val, dict(
                 max_nfev='200', z_window_kms=z_window_kms, group_depth='1',
                 max_group_size='25', max_b=max_b, max_logN=max_logN))
-            final_session = _drop_negligible(final_session)
-
         except Exception as e:
-            logger.warning(f"lya_auto cleanup failed: {e}", exc_info=True)
+            _warn_cleaning_failed(final_session, 'Ly_a', min_b_val, e)
+        final_session = _drop_negligible(final_session)
 
         return final_session
 
@@ -817,9 +846,15 @@ class RecipeAbsorbersV2:
         # The Lyman systems narrower than min_b are removed as in lya_auto
         # (F65: before, min_b was taken and not used)
         try:
-            fitted = _remove_narrow(fitted, 'Lyman', float(min_b), refit_kwargs)
+            min_b_val = float(min_b)
+        except ValueError:
+            logger.error(msg_param_fail)
+            return 0
+        # A boundary of the step, as in lya_auto (phase 6)
+        try:
+            fitted = _remove_narrow(fitted, 'Lyman', min_b_val, refit_kwargs)
         except Exception as e:
-            logger.warning(f"forest_auto cleanup failed: {e}", exc_info=True)
+            _warn_cleaning_failed(fitted, 'Lyman', min_b_val, e)
         return _drop_negligible(fitted)
 
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
@@ -880,7 +915,8 @@ class RecipeAbsorbersV2:
         
         running_systs = current_session.systs
         count_added = 0
-        
+        failed_trials = 0
+
         for z_val, comps in systems_by_z.items():
             existing_series = {c.series for c in comps}
             
@@ -917,9 +953,15 @@ class RecipeAbsorbersV2:
                             running_systs = fitted_systs
                             count_added += 1
                             existing_series.add(ion) 
-                except Exception as e:
-                    logger.debug(f"  Fit failed: {e}")
+                except FIT_ERRORS as e:
+                    # A trial that cannot be fitted is a candidate rejected;
+                    # the other errors reach the recipe (phase 6)
+                    failed_trials += 1
+                    logger.debug(f"The trial fit of {ion} at z = {z_val} failed: {e}")
 
+        if failed_trials:
+            logger.warning(f"{failed_trials} trial fit{'s' if failed_trials > 1 else ''} "
+                           "failed: those candidates were not added.")
         if count_added > 0:
             logger.info(f"Added {count_added} metal components.")
             # The values the pipeline always used, before the defaults of
@@ -1287,8 +1329,10 @@ class RecipeAbsorbersV2:
             return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
         except Exception as e:
-            logger.error(f"Failed delete_component: {e}", exc_info=True)
-            return self._session
+            # 0 as the other recipes: the session unchanged looked like a
+            # success to the GUI (phase 6)
+            logger.error(f"Could not delete the components: {e}", exc_info=True)
+            return 0
 
     def detect_anchor(self, sibling_name: str, trans_self: str, trans_sibling: str) -> float:
         """
@@ -1331,7 +1375,8 @@ class RecipeAbsorbersV2:
             return z_found
             
         except Exception as e:
-            logger.error(f"detect_anchor failed: {e}")
+            # A boundary (B): 0.0 is the failure of the recipe convention
+            logger.error(f"Could not detect the anchor redshift: {e}", exc_info=True)
             return 0.0
 
     def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
@@ -1859,12 +1904,12 @@ class RecipeAbsorbersV2:
             use_region_filter = False
 
             if region_limit != "None":
-                try:
-                    obs_min_limit, obs_max_limit = current_session.spec.get_region_bounds(region_limit)
-                    use_region_filter = True
-                    logger.info(f"Refit limited to {region_limit} ({obs_min_limit:.1f} to {obs_max_limit:.1f}).")
-                except ValueError:
-                    logger.warning(f"Could not apply region limit '{region_limit}'. Fitting all.")
+                # (It fitted the whole spectrum, with a WARNING, phase 6)
+                if not _region_is_valid(current_session.spec, region_limit):
+                    return 0
+                obs_min_limit, obs_max_limit = current_session.spec.get_region_bounds(region_limit)
+                use_region_filter = True
+                logger.info(f"Refit limited to {region_limit} ({obs_min_limit:.1f} to {obs_max_limit:.1f}).")
 
             # --- 1. IDENTIFY VALID COMPONENTS (Filtering Step) ---
             from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
@@ -1965,6 +2010,7 @@ class RecipeAbsorbersV2:
             import dataclasses
             from astrocook.core.system_list import SystemListV2
 
+            failed_units = []
             for i, target_uuids in enumerate(work_units):
 
                 if self._is_stop_requested():
@@ -2013,8 +2059,18 @@ class RecipeAbsorbersV2:
                         if fitted_comp.uuid in target_uuids:
                             updated_components_map[fitted_comp.uuid] = fitted_comp
                             
-                except Exception as e:
-                    logger.warning(f"Fit failed for unit {i}: {e}")
+                except FIT_ERRORS as e:
+                    # The group keeps its values; reported once below, the
+                    # other errors reach the recipe (phase 6)
+                    failed_units.append(min(c.z for c in target_comps))
+                    logger.debug(f"The fit of group {i + 1} failed: {e}")
+
+            if failed_units:
+                listed = ", ".join(f"{z:.5f}" for z in failed_units[:10])
+                more = f" and {len(failed_units) - 10} more" if len(failed_units) > 10 else ""
+                logger.warning(f"{len(failed_units)} of {total_units} groups could not be "
+                               f"fitted (z = {listed}{more}): their components keep "
+                               "their previous values.")
 
             # 3. Batch Merge
             logger.info(">> PROGRESS: 100")

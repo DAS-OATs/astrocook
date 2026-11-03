@@ -44,9 +44,9 @@ BROAD_EXCEPTS = {
     "astrocook/gui/recipe_dialog.py": 5,
     "astrocook/gui/script_dialog.py": 1,
     "astrocook/mcp_server/errors.py": 1,
-    "astrocook/recipes/absorbers.py": 19,
+    "astrocook/recipes/absorbers.py": 15,
     "astrocook/recipes/continuum.py": 4,
-    "astrocook/recipes/edit.py": 8,
+    "astrocook/recipes/edit.py": 6,
     "astrocook/recipes/file.py": 2,
     "astrocook/recipes/flux.py": 5,
 }

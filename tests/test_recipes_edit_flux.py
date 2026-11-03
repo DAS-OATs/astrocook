@@ -285,8 +285,12 @@ def test_import_systems(append, expected):
 def test_import_systems_nothing_to_import():
     session = _session(gui=_gui(empty=SimpleNamespace(systs=_systs()),
                                 far=SimpleNamespace(systs=_systs(3.5))))
-    for name in ("missing", "empty", "far"):
+    # Nothing to import: the session unchanged, with a WARNING
+    for name in ("empty", "far"):
         assert session.edit.import_systems(name) is session
+    # A session that is not open is a failure (phase 6: it returned the
+    # session unchanged, which looked like a success)
+    assert session.edit.import_systems("missing") == 0
 
 
 # --- Edit > Import systems from ASCII (#480) ------------------------------
@@ -330,8 +334,9 @@ def test_stitch():
         np.testing.assert_allclose(out.spec.x.value,
                                    np.concatenate([blue.x.value, red.x.value]))
     # Unknown names are skipped; nothing to stitch returns the same session
-    assert session.edit.stitch(["missing"]) is session
-    assert session.edit.stitch([]) is session
+    # Nothing to stitch is a failure (phase 6: the session unchanged)
+    assert session.edit.stitch(["missing"]) == 0
+    assert session.edit.stitch([]) == 0
 
 
 def test_stitch_overlap_asks_for_scatter_plot():
