@@ -9,10 +9,12 @@ fails, e.g. on a session that is not open). The
 cases whose outcome changed from 2.4.0 say what 2.4.0 did; every other
 case behaved the same. Decisions of Guido: 1 and 0 are booleans; an empty
 field is None only for a parameter whose default is None (an empty kappa
-of Rebin is an error, not "no clipping").
+of Rebin is an error, not "no clipping"); widths and thresholds positive
+and finite, and no infinity as a value (PR 2b).
 
-The recipes of Edit and Absorbers are added when they are typed (PR 2b,
-2c), each with its comparison with 2.4.0.
+The recipes of Edit are in ``test_recipe_inputs_edit.py``; those of
+Absorbers are added when they are typed (PR 2c), each with its comparison
+with 2.4.0.
 """
 import logging
 import warnings
@@ -30,7 +32,6 @@ REFUSED = "refused"  # by the conversion: 0, an error that names the parameter
 FAILS = "fails"  # converted, then the recipe fails (e.g. a session not open): 0
 RAISES = "raises"  # converted, then an exception leaves the recipe (PR 3 turns them into errors)
 NAN = float("nan")
-INF = float("inf")
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 CATEGORY = {"estimate_auto": "continuum", "find_absorbed": "continuum",
             "fit_continuum": "continuum", "fit_powerlaw": "continuum",
@@ -93,11 +94,11 @@ CASES = [
     ('estimate_auto', 'smooth_len_lya', 'None', REFUSED),
     ('estimate_auto', 'smooth_len_lya', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('estimate_auto', 'smooth_len_lya', 'nan', REFUSED),
-    ('estimate_auto', 'smooth_len_lya', 'inf', FAILS),
-    ('estimate_auto', 'smooth_len_lya', '-inf', FAILS),
+    ('estimate_auto', 'smooth_len_lya', 'inf', REFUSED),
+    ('estimate_auto', 'smooth_len_lya', '-inf', REFUSED),
     ('estimate_auto', 'smooth_len_lya', True, REFUSED),  # 2.4.0: accepted as 1
-    ('estimate_auto', 'smooth_len_lya', '-1', -1.0),
-    ('estimate_auto', 'smooth_len_lya', '0', 0.0),
+    ('estimate_auto', 'smooth_len_lya', '-1', REFUSED),  # 2.4.0: accepted
+    ('estimate_auto', 'smooth_len_lya', '0', REFUSED),  # 2.4.0: accepted
     ('estimate_auto', 'smooth_len_lya', '3,5', REFUSED),
     ('estimate_auto', 'smooth_len_out', '2.0', 2.0),
     ('estimate_auto', 'smooth_len_out', 2.0, 2.0),
@@ -109,11 +110,11 @@ CASES = [
     ('estimate_auto', 'smooth_len_out', 'None', REFUSED),
     ('estimate_auto', 'smooth_len_out', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('estimate_auto', 'smooth_len_out', 'nan', REFUSED),
-    ('estimate_auto', 'smooth_len_out', 'inf', FAILS),
-    ('estimate_auto', 'smooth_len_out', '-inf', FAILS),
+    ('estimate_auto', 'smooth_len_out', 'inf', REFUSED),
+    ('estimate_auto', 'smooth_len_out', '-inf', REFUSED),
     ('estimate_auto', 'smooth_len_out', True, REFUSED),  # 2.4.0: accepted as 1
-    ('estimate_auto', 'smooth_len_out', '-1', -1.0),
-    ('estimate_auto', 'smooth_len_out', '0', 0.0),
+    ('estimate_auto', 'smooth_len_out', '-1', REFUSED),  # 2.4.0: accepted
+    ('estimate_auto', 'smooth_len_out', '0', REFUSED),  # 2.4.0: accepted
     ('estimate_auto', 'smooth_len_out', '3,5', REFUSED),
     ('estimate_auto', 'kappa', '2.0', 2.0),
     ('estimate_auto', 'kappa', 2.0, 2.0),
@@ -125,11 +126,11 @@ CASES = [
     ('estimate_auto', 'kappa', 'None', REFUSED),
     ('estimate_auto', 'kappa', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('estimate_auto', 'kappa', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('estimate_auto', 'kappa', 'inf', INF),
-    ('estimate_auto', 'kappa', '-inf', FAILS),
+    ('estimate_auto', 'kappa', 'inf', REFUSED),  # 2.4.0: accepted as an infinity
+    ('estimate_auto', 'kappa', '-inf', REFUSED),
     ('estimate_auto', 'kappa', True, REFUSED),  # 2.4.0: accepted as 1
-    ('estimate_auto', 'kappa', '-1', -1.0),
-    ('estimate_auto', 'kappa', '0', 0.0),
+    ('estimate_auto', 'kappa', '-1', REFUSED),  # 2.4.0: accepted
+    ('estimate_auto', 'kappa', '0', REFUSED),  # 2.4.0: accepted
     ('estimate_auto', 'kappa', '3,5', REFUSED),
     ('estimate_auto', 'smooth_fwhm', '2.0', 2.0),
     ('estimate_auto', 'smooth_fwhm', 2.0, 2.0),
@@ -141,11 +142,11 @@ CASES = [
     ('estimate_auto', 'smooth_fwhm', 'None', REFUSED),
     ('estimate_auto', 'smooth_fwhm', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('estimate_auto', 'smooth_fwhm', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('estimate_auto', 'smooth_fwhm', 'inf', FAILS),
-    ('estimate_auto', 'smooth_fwhm', '-inf', -INF),
+    ('estimate_auto', 'smooth_fwhm', 'inf', REFUSED),
+    ('estimate_auto', 'smooth_fwhm', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('estimate_auto', 'smooth_fwhm', True, REFUSED),  # 2.4.0: accepted as 1
-    ('estimate_auto', 'smooth_fwhm', '-1', -1.0),
-    ('estimate_auto', 'smooth_fwhm', '0', 0.0),
+    ('estimate_auto', 'smooth_fwhm', '-1', REFUSED),  # 2.4.0: accepted
+    ('estimate_auto', 'smooth_fwhm', '0', REFUSED),  # 2.4.0: accepted
     ('estimate_auto', 'smooth_fwhm', '3,5', REFUSED),
     ('estimate_auto', 'template', 'True', True),
     ('estimate_auto', 'template', 'False', False),
@@ -195,11 +196,11 @@ CASES = [
     ('find_absorbed', 'smooth_len_lya', 'None', REFUSED),
     ('find_absorbed', 'smooth_len_lya', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('find_absorbed', 'smooth_len_lya', 'nan', REFUSED),
-    ('find_absorbed', 'smooth_len_lya', 'inf', FAILS),
-    ('find_absorbed', 'smooth_len_lya', '-inf', FAILS),
+    ('find_absorbed', 'smooth_len_lya', 'inf', REFUSED),
+    ('find_absorbed', 'smooth_len_lya', '-inf', REFUSED),
     ('find_absorbed', 'smooth_len_lya', True, REFUSED),  # 2.4.0: accepted as 1
-    ('find_absorbed', 'smooth_len_lya', '-1', -1.0),
-    ('find_absorbed', 'smooth_len_lya', '0', 0.0),
+    ('find_absorbed', 'smooth_len_lya', '-1', REFUSED),  # 2.4.0: accepted
+    ('find_absorbed', 'smooth_len_lya', '0', REFUSED),  # 2.4.0: accepted
     ('find_absorbed', 'smooth_len_lya', '3,5', REFUSED),
     ('find_absorbed', 'kappa', '2.0', 2.0),
     ('find_absorbed', 'kappa', 2.0, 2.0),
@@ -211,11 +212,11 @@ CASES = [
     ('find_absorbed', 'kappa', 'None', REFUSED),
     ('find_absorbed', 'kappa', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('find_absorbed', 'kappa', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('find_absorbed', 'kappa', 'inf', INF),
-    ('find_absorbed', 'kappa', '-inf', -INF),
+    ('find_absorbed', 'kappa', 'inf', REFUSED),  # 2.4.0: accepted as an infinity
+    ('find_absorbed', 'kappa', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('find_absorbed', 'kappa', True, REFUSED),  # 2.4.0: accepted as 1
-    ('find_absorbed', 'kappa', '-1', -1.0),
-    ('find_absorbed', 'kappa', '0', 0.0),
+    ('find_absorbed', 'kappa', '-1', REFUSED),  # 2.4.0: accepted
+    ('find_absorbed', 'kappa', '0', REFUSED),  # 2.4.0: accepted
     ('find_absorbed', 'kappa', '3,5', REFUSED),
     ('find_absorbed', 'template', 'True', True),
     ('find_absorbed', 'template', 'False', False),
@@ -242,11 +243,11 @@ CASES = [
     ('fit_continuum', 'smooth_fwhm', 'None', REFUSED),
     ('fit_continuum', 'smooth_fwhm', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('fit_continuum', 'smooth_fwhm', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('fit_continuum', 'smooth_fwhm', 'inf', FAILS),
-    ('fit_continuum', 'smooth_fwhm', '-inf', -INF),
+    ('fit_continuum', 'smooth_fwhm', 'inf', REFUSED),
+    ('fit_continuum', 'smooth_fwhm', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('fit_continuum', 'smooth_fwhm', True, REFUSED),  # 2.4.0: accepted as 1
-    ('fit_continuum', 'smooth_fwhm', '-1', -1.0),
-    ('fit_continuum', 'smooth_fwhm', '0', 0.0),
+    ('fit_continuum', 'smooth_fwhm', '-1', REFUSED),  # 2.4.0: accepted
+    ('fit_continuum', 'smooth_fwhm', '0', REFUSED),  # 2.4.0: accepted
     ('fit_continuum', 'smooth_fwhm', '3,5', REFUSED),
     ('fit_continuum', 'renorm_model', 'True', True),
     ('fit_continuum', 'renorm_model', 'False', False),
@@ -281,11 +282,11 @@ CASES = [
     ('fit_powerlaw', 'kappa', 'None', REFUSED),
     ('fit_powerlaw', 'kappa', None, REFUSED),
     ('fit_powerlaw', 'kappa', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('fit_powerlaw', 'kappa', 'inf', INF),
-    ('fit_powerlaw', 'kappa', '-inf', FAILS),
+    ('fit_powerlaw', 'kappa', 'inf', REFUSED),  # 2.4.0: accepted as an infinity
+    ('fit_powerlaw', 'kappa', '-inf', REFUSED),
     ('fit_powerlaw', 'kappa', True, REFUSED),  # 2.4.0: accepted as 1
-    ('fit_powerlaw', 'kappa', '-1', FAILS),
-    ('fit_powerlaw', 'kappa', '0', 0.0),
+    ('fit_powerlaw', 'kappa', '-1', REFUSED),
+    ('fit_powerlaw', 'kappa', '0', REFUSED),  # 2.4.0: accepted
     ('fit_powerlaw', 'kappa', '3,5', REFUSED),
     ('update_from_knots', 'renorm_model', 'True', True),
     ('update_from_knots', 'renorm_model', 'False', False),
@@ -306,13 +307,13 @@ CASES = [
     ('calculate_running_std', 'window_pix', 21, 21),
     ('calculate_running_std', 'window_pix', '21.0', REFUSED),
     ('calculate_running_std', 'window_pix', 21.0, 21),
-    ('calculate_running_std', 'window_pix', 21.5, REFUSED),  # 2.4.0: accepted as 21
+    ('calculate_running_std', 'window_pix', 21.5, REFUSED),  # 2.4.0: accepted, truncated
     ('calculate_running_std', 'window_pix', '', REFUSED),
     ('calculate_running_std', 'window_pix', 'abc', REFUSED),
     ('calculate_running_std', 'window_pix', True, REFUSED),  # 2.4.0: accepted as 1
     ('calculate_running_std', 'window_pix', False, REFUSED),  # 2.4.0: accepted as 0
-    ('calculate_running_std', 'window_pix', '-1', -1),
-    ('calculate_running_std', 'window_pix', '0', 0),
+    ('calculate_running_std', 'window_pix', '-1', REFUSED),  # 2.4.0: accepted
+    ('calculate_running_std', 'window_pix', '0', REFUSED),  # 2.4.0: accepted
     ('calculate_running_std', 'window_pix', '2', 2),
     ('calculate_running_std', 'window_pix', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('calculate_running_std', 'window_pix', 'None', REFUSED),
@@ -326,11 +327,11 @@ CASES = [
     ('smooth', 'sigma_kms', 'None', REFUSED),
     ('smooth', 'sigma_kms', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('smooth', 'sigma_kms', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('smooth', 'sigma_kms', 'inf', FAILS),
-    ('smooth', 'sigma_kms', '-inf', -INF),
+    ('smooth', 'sigma_kms', 'inf', REFUSED),
+    ('smooth', 'sigma_kms', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('smooth', 'sigma_kms', True, REFUSED),  # 2.4.0: accepted as 1
-    ('smooth', 'sigma_kms', '-1', -1.0),
-    ('smooth', 'sigma_kms', '0', 0.0),
+    ('smooth', 'sigma_kms', '-1', REFUSED),  # 2.4.0: accepted
+    ('smooth', 'sigma_kms', '0', REFUSED),  # 2.4.0: accepted
     ('smooth', 'sigma_kms', '3,5', REFUSED),
     ('rebin', 'xstart', '2.0', 2.0),
     ('rebin', 'xstart', 2.0, 2.0),
@@ -342,11 +343,11 @@ CASES = [
     ('rebin', 'xstart', 'None', None),
     ('rebin', 'xstart', None, None),  # 2.4.0: refused (0)
     ('rebin', 'xstart', 'nan', REFUSED),  # 2.4.0: crashed (ValueError)
-    ('rebin', 'xstart', 'inf', RAISES),  # ValueError
-    ('rebin', 'xstart', '-inf', RAISES),  # ValueError
+    ('rebin', 'xstart', 'inf', REFUSED),  # 2.4.0: crashed (ValueError)
+    ('rebin', 'xstart', '-inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xstart', True, REFUSED),  # 2.4.0: accepted as 1
-    ('rebin', 'xstart', '-1', RAISES),  # ValueError
-    ('rebin', 'xstart', '0', RAISES),  # ValueError
+    ('rebin', 'xstart', '-1', RAISES),
+    ('rebin', 'xstart', '0', RAISES),
     ('rebin', 'xstart', '3,5', REFUSED),
     ('rebin', 'xstart', '400', 400.0),
     ('rebin', 'xstart', 400, 400.0),
@@ -360,11 +361,11 @@ CASES = [
     ('rebin', 'xend', 'None', None),
     ('rebin', 'xend', None, None),  # 2.4.0: refused (0)
     ('rebin', 'xend', 'nan', REFUSED),  # 2.4.0: crashed (ValueError)
-    ('rebin', 'xend', 'inf', RAISES),  # ValueError
-    ('rebin', 'xend', '-inf', RAISES),  # ValueError
+    ('rebin', 'xend', 'inf', REFUSED),  # 2.4.0: crashed (ValueError)
+    ('rebin', 'xend', '-inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xend', True, REFUSED),  # 2.4.0: accepted as 1
-    ('rebin', 'xend', '-1', RAISES),  # ValueError
-    ('rebin', 'xend', '0', RAISES),  # ValueError
+    ('rebin', 'xend', '-1', RAISES),
+    ('rebin', 'xend', '0', RAISES),
     ('rebin', 'xend', '3,5', REFUSED),
     ('rebin', 'xend', '440', 440.0),
     ('rebin', 'xend', 440, 440.0),
@@ -375,8 +376,8 @@ CASES = [
     ('rebin', 'dx', 'None', REFUSED),
     ('rebin', 'dx', None, REFUSED),
     ('rebin', 'dx', 'abc', REFUSED),
-    ('rebin', 'dx', '0', RAISES),  # ValueError
-    ('rebin', 'dx', '-5', -5.0),
+    ('rebin', 'dx', '0', REFUSED),  # 2.4.0: crashed (ValueError)
+    ('rebin', 'dx', '-5', REFUSED),  # 2.4.0: accepted
     ('rebin', 'dx', True, REFUSED),  # 2.4.0: accepted as 1
     ('rebin', 'dx', 'nan', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'kappa', '2.0', 2.0),
@@ -389,11 +390,11 @@ CASES = [
     ('rebin', 'kappa', 'None', None),
     ('rebin', 'kappa', None, None),  # 2.4.0: refused (0)
     ('rebin', 'kappa', 'nan', REFUSED),  # 2.4.0: accepted as NaN
-    ('rebin', 'kappa', 'inf', INF),
-    ('rebin', 'kappa', '-inf', -INF),
+    ('rebin', 'kappa', 'inf', REFUSED),  # 2.4.0: accepted as an infinity
+    ('rebin', 'kappa', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('rebin', 'kappa', True, REFUSED),  # 2.4.0: accepted as 1
-    ('rebin', 'kappa', '-1', -1.0),
-    ('rebin', 'kappa', '0', 0.0),
+    ('rebin', 'kappa', '-1', REFUSED),  # 2.4.0: accepted
+    ('rebin', 'kappa', '0', REFUSED),  # 2.4.0: accepted
     ('rebin', 'kappa', '3,5', REFUSED),
     ('rebin', 'filling', '2.0', 2.0),
     ('rebin', 'filling', 2.0, 2.0),
@@ -405,8 +406,8 @@ CASES = [
     ('rebin', 'filling', 'None', REFUSED),
     ('rebin', 'filling', None, REFUSED),
     ('rebin', 'filling', 'nan', NAN),
-    ('rebin', 'filling', 'inf', INF),
-    ('rebin', 'filling', '-inf', -INF),
+    ('rebin', 'filling', 'inf', REFUSED),  # 2.4.0: accepted as an infinity
+    ('rebin', 'filling', '-inf', REFUSED),  # 2.4.0: accepted as an infinity
     ('rebin', 'filling', True, REFUSED),  # 2.4.0: accepted as 1
     ('rebin', 'filling', '-1', -1.0),
     ('rebin', 'filling', '0', 0.0),
@@ -414,14 +415,14 @@ CASES = [
     ('rebin', 'xunit', 'km/s', 'km/s'),
     ('rebin', 'xunit', 'nm', 'nm'),
     ('rebin', 'xunit', 'bogus', FAILS),
-    ('rebin', 'xunit', '', RAISES),  # UnitConversionError
+    ('rebin', 'xunit', '', RAISES),
     ('rebin', 'xunit', None, REFUSED),
-    ('rebin', 'xunit', 5, RAISES),  # UnitConversionError
+    ('rebin', 'xunit', 5, RAISES),
     ('equalize', 'order', '21', 21),
     ('equalize', 'order', 21, 21),
     ('equalize', 'order', '21.0', REFUSED),
     ('equalize', 'order', 21.0, 21),
-    ('equalize', 'order', 21.5, REFUSED),  # 2.4.0: accepted as 21
+    ('equalize', 'order', 21.5, REFUSED),  # 2.4.0: accepted, truncated
     ('equalize', 'order', '', REFUSED),
     ('equalize', 'order', 'abc', REFUSED),
     ('equalize', 'order', True, REFUSED),  # 2.4.0: accepted as 1
