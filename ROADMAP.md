@@ -2028,8 +2028,7 @@ the agents together, starting from the report of the MCP pilot (section
     lists of the GUI move to the registry here (Guido).
 The full MCP server (section 4) is generated from this API.
 
-**Plan of the phase** (proposed at its start, November 2026; decisions
-2-5 agreed with Guido, decision 1 being clarified):
+**Plan of the phase** (agreed with Guido at its start, November 2026):
 - *Starting point.* The registry is five dictionaries
   (`*_RECIPES_SCHEMAS`, 48 recipes: file 2, flux 6, continuum 5, edit 15,
   absorbers 20); a parameter has a Python type, a default and a short
@@ -2056,8 +2055,7 @@ The full MCP server (section 4) is generated from this API.
   driven by the registry. The scripts of the users and the tutorials
   (`s = s.continuum.estimate_auto(...)`) do not break.
 - *Decisions.*
-  1. What a recipe returns to a script (being clarified with Guido):
-     proposed, the methods keep returning the new session on success
+  1. What a recipe returns to a script (Guido): the methods keep returning the new session on success
      (for a branching recipe, the new session; for the others, the next
      state), failure becomes an exception instead of 0; one entry point
      from the registry, `run(session, "continuum.estimate_auto", ...)`,
@@ -2065,7 +2063,7 @@ The full MCP server (section 4) is generated from this API.
      with the rest of the structured result) and is used by the GUI, the
      MCP server and the scripts that want the full result. The
      alternative, the methods returning a `RecipeResult`, is cleaner but
-     breaks the scripts.
+     would break the scripts.
   2. Prerequisites in the scripts: the default policy `provide` (the
      providers run with their defaults, with a WARNING), so that the
      numbers do not change (Guido).
