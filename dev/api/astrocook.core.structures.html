@@ -457,6 +457,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -618,7 +619,7 @@ register F45).</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>values</strong> (<em>np.ndarray</em>) – The numerical data array.</p></li>
 <li><p><strong>unit</strong> (<em>astropy.units.Unit</em>) – The physical unit associated with the values.</p></li>
-<li><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – A short description of the column’s content.</p></li>
+<li><p><strong>description</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – A short description of the column’s content.</p></li>
 </ul>
 </dd>
 </dl>
@@ -737,11 +738,11 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <li><p><strong>y_values</strong> (<em>np.ndarray</em>) – Flux data.</p></li>
 <li><p><strong>y_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the y-axis (and dy).</p></li>
 <li><p><strong>dy_values</strong> (<em>np.ndarray</em>) – Error data.</p></li>
-<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
-<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
-<li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
-<li><p><strong>meta</strong> (<em>dict</em><em>, </em><em>optional</em>) – Metadata dictionary.</p></li>
-<li><p><strong>z_em</strong> (<em>float</em><em>, </em><em>optional</em>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
+<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
+<li><p><strong>meta</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Metadata dictionary.</p></li>
+<li><p><strong>z_em</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

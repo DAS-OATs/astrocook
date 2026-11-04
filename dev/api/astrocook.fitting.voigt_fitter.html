@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -663,18 +664,18 @@ and vectorized optical depth calculation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>max_nfev</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of function evaluations for the optimizer. Defaults to <code class="docutils literal notranslate"><span class="pre">2000</span></code>.</p></li>
-<li><p><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – Optimization method (e.g., <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>, <code class="docutils literal notranslate"><span class="pre">'lm'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>.</p></li>
-<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity window (km/s) around component centers to include in the fit mask.
+<li><p><strong>max_nfev</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Maximum number of function evaluations for the optimizer. Defaults to <code class="docutils literal notranslate"><span class="pre">2000</span></code>.</p></li>
+<li><p><strong>method</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Optimization method (e.g., <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>, <code class="docutils literal notranslate"><span class="pre">'lm'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'trf'</span></code>.</p></li>
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Velocity window (km/s) around component centers to include in the fit mask.
 Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
-<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Verbosity level for <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
-<li><p><strong>b_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Upper bound (km/s) on the free b parameters, tighter than the
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Verbosity level for <code class="docutils literal notranslate"><span class="pre">scipy.optimize.least_squares</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>b_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bound (km/s) on the free b parameters, tighter than the
 physical limit of the constraint model (300 km/s). Used by the
 automatic pipelines to keep the components from broadening into
 their neighbours; components that end at this bound may be broader
 and can be refitted without it. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> (no extra
 bound).</p></li>
-<li><p><strong>logN_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Upper bound on the free logN parameters, tighter than the
+<li><p><strong>logN_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bound on the free logN parameters, tighter than the
 physical limit of the constraint model (23). Used by the
 automatic pipelines (19): in saturated troughs a single
 component can otherwise fill the trough with its damping wings

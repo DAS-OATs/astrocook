@@ -479,6 +479,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
+
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
 
@@ -524,6 +526,7 @@
 
 <div class="viewcode-block" id="RecipeFileV2.export_ascii">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2.export_ascii">[docs]</a>
+    <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">export_ascii</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Export selected components of the session to ASCII/CSV files.</span>
@@ -646,6 +649,7 @@
 
 <div class="viewcode-block" id="RecipeFileV2.import_ascii">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2.import_ascii">[docs]</a>
+    <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">import_ascii</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import columns from an ASCII/CSV file into the current session.</span>

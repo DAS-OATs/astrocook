@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -584,7 +585,7 @@ and which are “frozen” based on user selection and grouping logic.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>system_list</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The system list containing the components to model.</p></li>
-<li><p><strong>constraints</strong> (<em>dict</em><em>, </em><em>optional</em>) – Initial constraints dictionary (legacy argument, usually handled internally).</p></li>
+<li><p><strong>constraints</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Initial constraints dictionary (legacy argument, usually handled internally).</p></li>
 </ul>
 </dd>
 </dl>
@@ -625,14 +626,14 @@ as “frozen” (fixed parameters) for the upcoming fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – The UUIDs of the components the user explicitly selected.
+<li><p><strong>target_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The UUIDs of the components the user explicitly selected.
 If <code class="docutils literal notranslate"><span class="pre">None</span></code>, ALL components are considered active.</p></li>
-<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse when finding connected components.
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – How many degrees of separation to traverse when finding connected components.
 - <code class="docutils literal notranslate"><span class="pre">0</span></code>: The targets only (neighbours frozen).
 - <code class="docutils literal notranslate"><span class="pre">1</span></code>: Direct neighbors/links only.
 - <code class="docutils literal notranslate"><span class="pre">2</span></code>: Neighbors of neighbors (Friends of Friends).
 Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
-<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><em>optional</em>) – The spectrum to be fitted: lines closer than its instrumental
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The spectrum to be fitted: lines closer than its instrumental
 FWHM are blended (findings register F14).</p></li>
 </ul>
 </dd>

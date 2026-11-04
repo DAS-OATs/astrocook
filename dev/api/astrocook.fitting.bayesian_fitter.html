@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -549,7 +550,7 @@
 <dd><p>Raise an ImportError naming the extra if the sampler is not installed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>engine</strong> (<em>{'mcmc'</em><em>, </em><em>'nested'}</em><em>, </em><em>optional</em>) – The sampling engine: <code class="docutils literal notranslate"><span class="pre">'mcmc'</span></code> needs <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, <code class="docutils literal notranslate"><span class="pre">'nested'</span></code> needs
+<dd class="field-odd"><p><strong>engine</strong> (<em>{'mcmc'</em><em>, </em><em>'nested'}</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The sampling engine: <code class="docutils literal notranslate"><span class="pre">'mcmc'</span></code> needs <code class="docutils literal notranslate"><span class="pre">emcee</span></code>, <code class="docutils literal notranslate"><span class="pre">'nested'</span></code> needs
 <code class="docutils literal notranslate"><span class="pre">dynesty</span></code>.</p>
 </dd>
 </dl>
@@ -568,7 +569,7 @@ using the exact same physical model, constraints, and data preparation.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectral data to fit.</p></li>
 <li><p><strong>systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The system list containing the components to model.</p></li>
-<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity window (km/s) around component centers to include in the fit mask.
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Velocity window (km/s) around component centers to include in the fit mask.
 Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 </ul>
 </dd>
@@ -644,12 +645,12 @@ posterior distribution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nwalkers</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of MCMC walkers. Defaults to <code class="docutils literal notranslate"><span class="pre">32</span></code>.</p></li>
-<li><p><strong>nsteps</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of sampling steps per walker. Defaults to <code class="docutils literal notranslate"><span class="pre">1000</span></code>.</p></li>
-<li><p><strong>burn_in</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of initial steps to discard as burn-in. Defaults to
+<li><p><strong>nwalkers</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of MCMC walkers. Defaults to <code class="docutils literal notranslate"><span class="pre">32</span></code>.</p></li>
+<li><p><strong>nsteps</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of sampling steps per walker. Defaults to <code class="docutils literal notranslate"><span class="pre">1000</span></code>.</p></li>
+<li><p><strong>burn_in</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of initial steps to discard as burn-in. Defaults to
 <code class="docutils literal notranslate"><span class="pre">min(200,</span> <span class="pre">nsteps</span> <span class="pre">//</span> <span class="pre">2)</span></code>, so that at least half of the chain is
 kept. Must be smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>.</p></li>
-<li><p><strong>progress</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, pipes progress percentage to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>progress</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, pipes progress percentage to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -681,8 +682,8 @@ and the Bayesian evidence (log-Z).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nlive</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of live points for the nested sampler. Defaults to <code class="docutils literal notranslate"><span class="pre">250</span></code>.</p></li>
-<li><p><strong>progress</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, pipes progress (dLogZ) to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>nlive</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of live points for the nested sampler. Defaults to <code class="docutils literal notranslate"><span class="pre">250</span></code>.</p></li>
+<li><p><strong>progress</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, pipes progress (dLogZ) to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

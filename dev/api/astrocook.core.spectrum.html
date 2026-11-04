@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -567,7 +568,7 @@ the primary data structure passed between Recipes and the GUI.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2"><em>SpectrumDataV2</em></a>) – The core data container holding the Astropy Quantities.</p></li>
-<li><p><strong>history</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of strings describing the modification history of this spectrum.</p></li>
+<li><p><strong>history</strong> (<em>list</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – A list of strings describing the modification history of this spectrum.</p></li>
 </ul>
 </dd>
 </dl>
@@ -713,10 +714,10 @@ for compatibility with GUI/V1 logic (like gui_table.py).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>z_em</strong> (<em>float</em>) – The emission redshift.</p></li>
-<li><p><strong>resol</strong> (<em>float</em><em>, </em><em>optional</em>) – Resolving power R; <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (the default) leaves the resolution
+<li><p><strong>resol</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Resolving power R; <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (the default) leaves the resolution
 unchanged.</p></li>
-<li><p><strong>object_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The object name (header keyword).</p></li>
-<li><p><strong>overwrite_resol_col</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a <code class="docutils literal notranslate"><span class="pre">resol</span></code> column that varies with wavelength is
+<li><p><strong>object_name</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The object name (header keyword).</p></li>
+<li><p><strong>overwrite_resol_col</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a <code class="docutils literal notranslate"><span class="pre">resol</span></code> column that varies with wavelength is
 replaced by a flat one at <code class="docutils literal notranslate"><span class="pre">resol</span></code>. If <code class="docutils literal notranslate"><span class="pre">False</span></code> (the default,
 #526) it is kept, and <code class="docutils literal notranslate"><span class="pre">resol</span></code> only replaces a flat column or
 creates a missing one.</p></li>
@@ -755,8 +756,8 @@ stored the intrinsic continuum.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the column to update (e.g., <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, <code class="docutils literal notranslate"><span class="pre">'model'</span></code>).</p></li>
 <li><p><strong>values</strong> (<em>np.ndarray</em>) – The numerical data for the column.</p></li>
-<li><p><strong>unit</strong> (<em>astropy.units.Unit</em><em>, </em><em>optional</em>) – The physical unit. If None, inherits from existing column or defaults to flux unit.</p></li>
-<li><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – Description of the column content.</p></li>
+<li><p><strong>unit</strong> (<em>astropy.units.Unit</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The physical unit. If None, inherits from existing column or defaults to flux unit.</p></li>
+<li><p><strong>description</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Description of the column content.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -814,7 +815,7 @@ mapping dictionaries) before saving the session to disk.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target_col</strong> (<em>str</em>) – The name of the column to create or overwrite.</p></li>
 <li><p><strong>expression</strong> (<em>str</em>) – A NumExpr-compatible string (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;y</span> <span class="pre">/</span> <span class="pre">cont&quot;</span></code>).</p></li>
-<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional variables to pass to the evaluation context.</p></li>
+<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Additional variables to pass to the evaluation context.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -900,11 +901,11 @@ converts the result back to the original wavelength unit.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>others</strong> (<em>list</em><em> of </em><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – List of spectra to add.</p></li>
-<li><p><strong>xstart</strong> (<em>Quantity</em><em>, </em><em>optional</em>) – Bounds of the new grid.</p></li>
-<li><p><strong>xend</strong> (<em>Quantity</em><em>, </em><em>optional</em>) – Bounds of the new grid.</p></li>
+<li><p><strong>xstart</strong> (<em>Quantity</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Bounds of the new grid.</p></li>
+<li><p><strong>xend</strong> (<em>Quantity</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Bounds of the new grid.</p></li>
 <li><p><strong>dx</strong> (<em>Quantity</em>) – Step size of the new grid.</p></li>
-<li><p><strong>kappa</strong> (<em>float</em><em>, </em><em>optional</em>) – Sigma clipping threshold. Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
-<li><p><strong>equalize_order</strong> (<em>int</em><em>, </em><em>optional</em>) – Polynomial order for flux scaling (-1=Off, 0=Scalar). Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Sigma clipping threshold. Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
+<li><p><strong>equalize_order</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Polynomial order for flux scaling (-1=Off, 0=Scalar). Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -924,8 +925,8 @@ converts the result back to the original wavelength unit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
-<li><p><strong>min_pix</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum pixels to form a region. Defaults to <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the mask column. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
+<li><p><strong>min_pix</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Minimum pixels to form a region. Defaults to <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -971,7 +972,7 @@ columns (y, dy, cont, model).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>reference_spec</strong> (<a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The reference spectrum object to match.</p></li>
-<li><p><strong>order</strong> (<em>int</em><em>, </em><em>optional</em>) – Polynomial order for the scaling model. <code class="docutils literal notranslate"><span class="pre">0</span></code> applies a constant
+<li><p><strong>order</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Polynomial order for the scaling model. <code class="docutils literal notranslate"><span class="pre">0</span></code> applies a constant
 scalar factor, <code class="docutils literal notranslate"><span class="pre">-1</span></code> applies a spline interpolation, <code class="docutils literal notranslate"><span class="pre">&gt;0</span></code> applies a
 polynomial of the given order. Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
 </ul>
@@ -1024,9 +1025,9 @@ V2 interpolates instead, so there is nothing to correct
 (findings register F3, accepted). The bias of the final
 smoothing is not corrected.</p></li>
 <li><p><strong>smooth_std_kms</strong> (<em>float</em>) – Smoothing width for the continuum spline in km/s.</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column to use. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, re-normalizes the ‘model’ column to the new continuum.</p></li>
-<li><p><strong>template</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses a QSO template to trace Lyman-alpha emission.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the mask column to use. Defaults to <code class="docutils literal notranslate"><span class="pre">'abs_mask'</span></code>.</p></li>
+<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, re-normalizes the ‘model’ column to the new continuum.</p></li>
+<li><p><strong>template</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, uses a QSO template to trace Lyman-alpha emission.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1046,7 +1047,7 @@ smoothing is not corrected.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>regions_str</strong> (<em>str</em>) – Comma-separated list of regions (e.g. <code class="docutils literal notranslate"><span class="pre">'128.0-129.0,</span> <span class="pre">131.5-132.5'</span></code>).</p></li>
-<li><p><strong>kappa</strong> (<em>float</em><em>, </em><em>optional</em>) – Sigma-clipping threshold. Defaults to <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p></li>
+<li><p><strong>kappa</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Sigma-clipping threshold. Defaults to <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1092,7 +1093,7 @@ Ly-alpha forest) based on the object’s emission redshift.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>col_name</strong> (<em>str</em>) – Name of the column to interpolate.</p></li>
 <li><p><strong>target_x_grid</strong> (<em>np.ndarray</em>) – Target grid in nanometers.</p></li>
-<li><p><strong>fill_value</strong> (<em>float</em><em>, </em><em>optional</em>) – Value to fill outside the interpolation range. Defaults to <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
+<li><p><strong>fill_value</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Value to fill outside the interpolation range. Defaults to <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1136,12 +1137,12 @@ stronger line, and no candidate lies beyond <code class="docutils literal notran
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>multiplet_list</strong> (<em>list</em><em> of </em><em>str</em>) – List of multiplets to search for.</p></li>
-<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the mask column.</p></li>
-<li><p><strong>min_pix_region</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum pixels for a region.</p></li>
-<li><p><strong>merge_dv</strong> (<em>float</em><em>, </em><em>optional</em>) – Velocity threshold for merging regions (km/s).</p></li>
-<li><p><strong>score_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – R^2 score threshold for identification.</p></li>
-<li><p><strong>bypass_scoring</strong> (<em>bool</em><em>, </em><em>optional</em>) – Accept all candidates if True.</p></li>
-<li><p><strong>debug_rating</strong> (<em>bool</em><em>, </em><em>optional</em>) – Show debug plots if True.</p></li>
+<li><p><strong>mask_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the mask column.</p></li>
+<li><p><strong>min_pix_region</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Minimum pixels for a region.</p></li>
+<li><p><strong>merge_dv</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Velocity threshold for merging regions (km/s).</p></li>
+<li><p><strong>score_threshold</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – R^2 score threshold for identification.</p></li>
+<li><p><strong>bypass_scoring</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Accept all candidates if True.</p></li>
+<li><p><strong>debug_rating</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Show debug plots if True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1162,7 +1163,7 @@ stronger line, and no candidate lies beyond <code class="docutils literal notran
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target_col</strong> (<em>str</em>) – The name of the column to mask.</p></li>
 <li><p><strong>expression</strong> (<em>str</em>) – A boolean expression (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;x</span> <span class="pre">&gt;</span> <span class="pre">500&quot;</span></code>). True values will be masked.</p></li>
-<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional context variables.</p></li>
+<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Additional context variables.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1248,10 +1249,10 @@ spectrum’s grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xstart</strong> (<em>Quantity</em><em>, </em><em>optional</em>) – Start wavelength. If None, uses data minimum.</p></li>
-<li><p><strong>xend</strong> (<em>Quantity</em><em>, </em><em>optional</em>) – End wavelength. If None, uses data maximum.</p></li>
+<li><p><strong>xstart</strong> (<em>Quantity</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Start wavelength. If None, uses data minimum.</p></li>
+<li><p><strong>xend</strong> (<em>Quantity</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – End wavelength. If None, uses data maximum.</p></li>
 <li><p><strong>dx</strong> (<em>Quantity</em>) – Step size (bin width). Can be wavelength or velocity.</p></li>
-<li><p><strong>kappa</strong> (<em>float</em><em>, </em><em>optional</em>) – Sigma clipping threshold for rejecting outliers in bins.</p></li>
+<li><p><strong>kappa</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Sigma clipping threshold for rejecting outliers in bins.</p></li>
 <li><p><strong>filling</strong> (<em>float</em>) – Value to fill gaps (default: NaN).</p></li>
 </ul>
 </dd>
@@ -1272,7 +1273,7 @@ spectrum’s grid.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target_grid_spec</strong> (<a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectrum whose grid defines the target wavelengths.</p></li>
-<li><p><strong>fill_value</strong> (<em>float</em><em>, </em><em>optional</em>) – Value to fill outside the interpolation range (default: NaN).</p></li>
+<li><p><strong>fill_value</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Value to fill outside the interpolation range (default: NaN).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1329,7 +1330,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target_col</strong> (<em>str</em>) – Name of the column to smooth.</p></li>
 <li><p><strong>sigma_kms</strong> (<em>float</em>) – Standard deviation of the Gaussian kernel in km/s.</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True and <code class="docutils literal notranslate"><span class="pre">target_col</span></code> is <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, the <code class="docutils literal notranslate"><span class="pre">'model'</span></code> column will be re-normalized.</p></li>
+<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True and <code class="docutils literal notranslate"><span class="pre">target_col</span></code> is <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, the <code class="docutils literal notranslate"><span class="pre">'model'</span></code> column will be re-normalized.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1349,7 +1350,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>expression</strong> (<em>str</em>) – A boolean expression defining the rows to keep (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;x</span> <span class="pre">&gt;</span> <span class="pre">121.6&quot;</span></code>).</p></li>
-<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional context variables.</p></li>
+<li><p><strong>extra_vars</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Additional context variables.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1370,7 +1371,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>other_specs</strong> (<em>list</em><em> of </em><a class="reference internal" href="#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – List of other spectrum objects to stitch.</p></li>
-<li><p><strong>sort</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, sorts the final arrays by wavelength. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>sort</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, sorts the final arrays by wavelength. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1391,7 +1392,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>knots_x</strong> (<em>list</em><em> of </em><em>float</em>) – X-coordinates of the knots.</p></li>
 <li><p><strong>knots_y</strong> (<em>list</em><em> of </em><em>float</em>) – Y-coordinates of the knots.</p></li>
-<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, re-normalizes the ‘model’ column.</p></li>
+<li><p><strong>renorm_model</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, re-normalizes the ‘model’ column.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

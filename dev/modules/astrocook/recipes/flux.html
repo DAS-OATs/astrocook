@@ -474,9 +474,10 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span><span class="p">,</span> <span class="n">msg_session_not_found</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
@@ -506,9 +507,9 @@
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Rebin spectrum."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Apply a new binning to a spectrum, with a constant bin size."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="c1"># CRITICAL: Use string "None" to represent the Python None object</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xstart"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Start wavelength (nm, None for auto)"</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xend"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"End wavelength (nm, None for auto)"</span><span class="p">},</span>
+            <span class="c1"># None (written 'None' in the dialog and the log): the data range</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xstart"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Start wavelength (nm, None for auto)"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xend"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"End wavelength (nm, None for auto)"</span><span class="p">},</span>
             
             <span class="c1"># CRITICAL: dx needs to be a number (10.0) but the V1 flow expects km/s unit conversion later.</span>
             <span class="c1"># We use the raw value here, and the adapter handles the unit.</span>
@@ -517,14 +518,14 @@
             <span class="c1"># Use string "km/s" for the unit input field</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xunit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"km/s"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Unit of wavelength or velocity"</span><span class="p">},</span>
             
-            <span class="c1"># Use string "None"</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"5.0"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma clipping threshold (None for off)"</span><span class="p">},</span>
+            <span class="c1"># None (written 'None'): no clipping</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sigma clipping threshold (None for off)"</span><span class="p">},</span>
             
             <span class="c1"># 'norm' (V1: return the normalized spectrum) is not offered: it</span>
             <span class="c1"># was never applied in V2 (findings register F37, #560)</span>
 
-            <span class="c1"># CRITICAL: Use string representation 'nan'</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"filling"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"nan"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Value to fill region without data"</span><span class="p">},</span> 
+            <span class="c1"># NaN (written 'nan') is the default</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"filling"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span> <span class="s2">"allow_nan"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Value to fill region without data"</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#rebin"</span>
     <span class="p">},</span>
@@ -574,10 +575,11 @@
 
 <div class="viewcode-block" id="RecipeFluxV2.calculate_running_std">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
-                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'y'</span><span class="p">,</span> 
-                              <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'running_std'</span><span class="p">,</span> 
-                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'21'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="nd">@typed_recipe</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'y'</span><span class="p">,</span>
+                              <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'running_std'</span><span class="p">,</span>
+                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">21</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate running standard deviation.</span>
 
@@ -592,8 +594,9 @@
 <span class="sd">        output_col : str, optional</span>
 <span class="sd">            Name of the new column to create (e.g., ``'running_std'``).</span>
 <span class="sd">            Defaults to ``'running_std'``.</span>
-<span class="sd">        window_pix : str, optional</span>
-<span class="sd">            Total window size in pixels (should be odd). Defaults to ``'21'``.</span>
+<span class="sd">        window_pix : int, optional</span>
+<span class="sd">            Total window size in pixels (should be odd: an even one is</span>
+<span class="sd">            increased by 1, and one below 3 is 3). Defaults to ``21``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -601,17 +604,10 @@
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,</span>
 <span class="sd">            or 0 on failure.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_pix</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="n">window_pix_i</span> <span class="o">=</span> <span class="mi">3</span>
-            <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
-                <span class="n">window_pix_i</span> <span class="o">+=</span> <span class="mi">1</span>
-                
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
-            
+        <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">window_pix</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
+            <span class="n">window_pix_i</span> <span class="o">+=</span> <span class="mi">1</span>
+
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># 1. Call the immutable V2 operation</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
@@ -630,7 +626,8 @@
 
 <div class="viewcode-block" id="RecipeFluxV2.smooth">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.smooth">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'100.0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="nd">@typed_recipe</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Smooth spectrum.</span>
 
@@ -640,8 +637,8 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        sigma_kms : str, optional</span>
-<span class="sd">            Standard deviation for Gaussian kernel in km/s. Defaults to ``'100.0'``.</span>
+<span class="sd">        sigma_kms : float, optional</span>
+<span class="sd">            Standard deviation for Gaussian kernel in km/s. Defaults to ``100.0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -650,14 +647,8 @@
 <span class="sd">            or 0 on failure.</span>
 <span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">sigma_kms_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma_kms</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
-
-        <span class="k">try</span><span class="p">:</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span>
-                <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms_f</span>
+                <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -667,8 +658,10 @@
 
 <div class="viewcode-block" id="RecipeFluxV2.rebin">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.rebin">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'10.0'</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span>
-              <span class="n">kappa</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'5.0'</span><span class="p">,</span> <span class="n">filling</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'nan'</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="nd">@typed_recipe</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+              <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Rebin spectrum.</span>
 
@@ -677,21 +670,21 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        xstart : str, optional</span>
-<span class="sd">            Start wavelength/velocity. ``'None'`` for auto (data minimum).</span>
-<span class="sd">            Defaults to ``'None'``.</span>
-<span class="sd">        xend : str, optional</span>
-<span class="sd">            End wavelength/velocity. ``'None'`` for auto (data maximum).</span>
-<span class="sd">            Defaults to ``'None'``.</span>
-<span class="sd">        dx : str, optional</span>
-<span class="sd">            Step size in x. Defaults to ``'10.0'``.</span>
+<span class="sd">        xstart : float or None, optional</span>
+<span class="sd">            Start wavelength (nm). None for auto (data minimum).</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        xend : float or None, optional</span>
+<span class="sd">            End wavelength (nm). None for auto (data maximum).</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        dx : float, optional</span>
+<span class="sd">            Step size in x. Defaults to ``10.0``.</span>
 <span class="sd">        xunit : str, optional</span>
 <span class="sd">            Unit of wavelength or velocity for the step size (e.g., ``'km/s'``, ``'nm'``).</span>
 <span class="sd">            Defaults to ``'km/s'``.</span>
-<span class="sd">        kappa : str, optional</span>
-<span class="sd">            Sigma clipping threshold for binning. ``'None'`` for off. Defaults to ``'5.0'``.</span>
-<span class="sd">        filling : str, optional</span>
-<span class="sd">            Value to fill regions without data. Defaults to ``'nan'``.</span>
+<span class="sd">        kappa : float or None, optional</span>
+<span class="sd">            Sigma clipping threshold for binning. None for off. Defaults to ``5.0``.</span>
+<span class="sd">        filling : float, optional</span>
+<span class="sd">            Value to fill regions without data. Defaults to NaN.</span>
 <span class="sd">        norm : str, optional</span>
 <span class="sd">            Ignored, kept so that scripts and logs written for V1 still run:</span>
 <span class="sd">            the rebinned spectrum is never normalized, and ``'True'`` only</span>
@@ -706,23 +699,14 @@
 <span class="sd">            or 0 on failure.</span>
 <span class="sd">        """</span>
 
-        <span class="c1"># 4. Perform Type Casting</span>
+        <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xstart</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">xend_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xend</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Type Casting based on string input</span>
-            <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xstart</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="n">xend_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">xend</span><span class="p">),</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xend</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
-            
             <span class="c1"># V1 logic from cookbook_flux.py uses the unit attached to xunit for dx</span>
-            <span class="n">dx_unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span> 
-            <span class="n">dx_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="n">dx_unit</span><span class="p">)</span> 
-
-            <span class="n">kappa_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kappa</span><span class="p">)</span> <span class="k">if</span> <span class="n">kappa</span> <span class="o">!=</span> <span class="s1">'None'</span> <span class="k">else</span> <span class="kc">None</span>
-            
-            <span class="n">filling_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">filling</span><span class="p">)</span> <span class="k">if</span> <span class="n">filling</span> <span class="o">!=</span> <span class="s1">'nan'</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">dx_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">))</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-            <span class="c1"># Replicates V1 error handling path to avoid crash in the GUI context;</span>
-            <span class="c1"># return 0 like the other recipes (findings register F23)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg_param_fail</span><span class="p">)</span>
+            <span class="c1"># Return 0 like the other recipes (findings register F23)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">msg_param_fail</span><span class="si">}</span><span class="s2"> xunit: </span><span class="si">{</span><span class="n">xunit</span><span class="si">!r}</span><span class="s2"> is not a unit."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="c1"># The V1 normalization was never applied in V2 and is not offered</span>
@@ -734,7 +718,7 @@
 
         <span class="c1"># 5. Execute the immutable V2 operation</span>
         <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span>
-            <span class="n">xstart</span><span class="o">=</span><span class="n">xstart_q</span><span class="p">,</span> <span class="n">xend</span><span class="o">=</span><span class="n">xend_q</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx_q</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa_f</span><span class="p">,</span> <span class="n">filling</span><span class="o">=</span><span class="n">filling_f</span>
+            <span class="n">xstart</span><span class="o">=</span><span class="n">xstart_q</span><span class="p">,</span> <span class="n">xend</span><span class="o">=</span><span class="n">xend_q</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx_q</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span> <span class="n">filling</span><span class="o">=</span><span class="n">filling</span>
         <span class="p">)</span>
         
         <span class="c1"># 6. Return a NEW SessionV2 instance (the new state)</span>
@@ -743,7 +727,8 @@
     
 <div class="viewcode-block" id="RecipeFluxV2.equalize">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.equalize">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'0'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="nd">@typed_recipe</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Equalize flux to a reference session.</span>
 
@@ -754,9 +739,9 @@
 <span class="sd">        ----------</span>
 <span class="sd">        reference_session : str, optional</span>
 <span class="sd">            The name of the reference session. Defaults to ``'None'``.</span>
-<span class="sd">        order : str, optional</span>
-<span class="sd">            The polynomial order for the scaling model (``'0'`` = scalar, ``'-1'`` = spline). </span>
-<span class="sd">            Defaults to ``'0'``.</span>
+<span class="sd">        order : int, optional</span>
+<span class="sd">            The polynomial order for the scaling model (``0`` = scalar, ``-1`` = spline).</span>
+<span class="sd">            Defaults to ``0``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -767,7 +752,6 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No reference session is selected."</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">order_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
             <span class="c1"># Find the reference session object via the GUI bridge</span>
             <span class="n">ref_hist</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span> 
                             <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">reference_session</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
@@ -776,7 +760,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">reference_session</span><span class="p">))</span>
 
             <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
-                <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order_i</span>
+                <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -786,6 +770,7 @@
     
 <div class="viewcode-block" id="RecipeFluxV2.resample">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.resample">[docs]</a>
+    <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resample on another grid.</span>
@@ -840,6 +825,7 @@
         
 <div class="viewcode-block" id="RecipeFluxV2.calibrate_from_magnitudes">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">[docs]</a>
+    <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flux calibrate (multi-band).</span>

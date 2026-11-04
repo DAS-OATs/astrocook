@@ -1,0 +1,7 @@
+astrocook.recipes.params module
+===============================
+
+.. automodule:: astrocook.recipes.params
+   :members:
+   :show-inheritance:
+   :undoc-members:

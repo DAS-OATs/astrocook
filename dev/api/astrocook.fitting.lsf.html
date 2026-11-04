@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -628,13 +629,13 @@ weights take n x K values, with K up to a few hundred samples per pixel
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>xmin_ang</strong> (<em>np.ndarray</em>) – Edges of the pixels (Angstrom), increasing.</p></li>
 <li><p><strong>xmax_ang</strong> (<em>np.ndarray</em>) – Edges of the pixels (Angstrom), increasing.</p></li>
-<li><p><strong>r_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Smallest and largest resolving power to be used: the fine grid
+<li><p><strong>r_min</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Smallest and largest resolving power to be used: the fine grid
 extends beyond the outer pixels by <code class="docutils literal notranslate"><span class="pre">KERNEL_SIGMAS</span></code> sigma of
 <code class="docutils literal notranslate"><span class="pre">r_min</span></code>, and its step follows the sigma of <code class="docutils literal notranslate"><span class="pre">r_max</span></code>.</p></li>
-<li><p><strong>r_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Smallest and largest resolving power to be used: the fine grid
+<li><p><strong>r_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Smallest and largest resolving power to be used: the fine grid
 extends beyond the outer pixels by <code class="docutils literal notranslate"><span class="pre">KERNEL_SIGMAS</span></code> sigma of
 <code class="docutils literal notranslate"><span class="pre">r_min</span></code>, and its step follows the sigma of <code class="docutils literal notranslate"><span class="pre">r_max</span></code>.</p></li>
-<li><p><strong>b_min</strong> (<em>float</em><em>, </em><em>optional</em>) – Doppler parameter (km/s) of the narrowest line in the pixels.</p></li>
+<li><p><strong>b_min</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Doppler parameter (km/s) of the narrowest line in the pixels.</p></li>
 <li><p><strong>cache</strong> (<em>bool</em>) – Keep the weights of each resolution, for the many calls of a fit.
 Without, the weights are computed at each call only for the pixels
 that have absorption within the reach of their kernel (the others

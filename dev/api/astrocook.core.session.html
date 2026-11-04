@@ -455,6 +455,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 </ul>
 </details></li>
@@ -623,7 +624,7 @@ archive, or if the archive does not record it (versions up to 2.0.3).</p>
 <dd><p>The container for identified absorption systems and Voigt profile components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, optional</p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, <a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional">optional</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -770,10 +771,10 @@ them.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_path</strong> (<em>str</em>) – The destination path. <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> is appended if missing.</p></li>
-<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><em>optional</em>) – The state of the session <em>before</em> any modifications, saved in the
+<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The state of the session <em>before</em> any modifications, saved in the
 archive so that it contains the original raw data for
 reproducibility.</p></li>
-<li><p><strong>models</strong> (<em>bool</em><em>, </em><em>optional</em>) – Unused; kept for backward compatibility of the signature.</p></li>
+<li><p><strong>models</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unused; kept for backward compatibility of the signature.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
