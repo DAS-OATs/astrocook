@@ -291,7 +291,7 @@ CASES = [
     ('import_systems_ascii', 'append', '', {'file_path': CSV}, REFUSED),  # 2.4.0: accepted as False
     ('import_systems_ascii', 'append', None, {'file_path': CSV}, REFUSED),  # 2.4.0: accepted as False
     ('import_systems_ascii', 'append', 'None', {'file_path': CSV}, REFUSED),  # 2.4.0: accepted as False
-    ('import_systems_ascii', 'file_path', CSV, {}, '/tmp/tmppxuozu7n/s.csv'),
+    ('import_systems_ascii', 'file_path', CSV, {}, CSV),
     ('import_systems_ascii', 'file_path', '/nonexistent.csv', {}, FAILS),
     ('import_systems_ascii', 'file_path', '', {}, FAILS),
     ('import_systems_ascii', 'file_path', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
