@@ -18,7 +18,7 @@ FLUX_RECIPES_SCHEMAS = {
         "params": [
             {"name": "input_col", "type": str, "default": "y", "doc": "Column to use for StdDev calculation (e.g., y)"},
             {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the new column to create (e.g., running_std)"},
-            {"name": "window_pix", "type": int, "default": 21, "doc": "Total window size in pixels (should be odd)"}
+            {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Total window size in pixels (should be odd)"}
         ],
         "url": "edit_cb.html#calculate_running_std" # Placeholder URL
     },
@@ -26,7 +26,7 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Smooth spectrum.",
         "details": "Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.",
         "params": [
-            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
+            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
         ],
         "url": "edit_cb.html#smooth" # Placeholder URL
     },
@@ -40,13 +40,13 @@ FLUX_RECIPES_SCHEMAS = {
             
             # CRITICAL: dx needs to be a number (10.0) but the V1 flow expects km/s unit conversion later.
             # We use the raw value here, and the adapter handles the unit.
-            {"name": "dx", "type": float, "default": 10.0, "doc": "Step in x"}, 
+            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step in x"}, 
             
             # Use string "km/s" for the unit input field
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
             
             # None (written 'None'): no clipping
-            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "doc": "Sigma clipping threshold (None for off)"},
+            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Sigma clipping threshold (None for off)"},
             
             # 'norm' (V1: return the normalized spectrum) is not offered: it
             # was never applied in V2 (findings register F37, #560)

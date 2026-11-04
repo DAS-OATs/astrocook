@@ -133,15 +133,14 @@ def test_open_unreadable_file_reports_the_logged_error(tmp_path):
     assert "no reason was logged" not in text
 
 
-def test_unphysical_properties_are_accepted(mock_archive):
-    # Characterization (F46): edit.set_properties does not check the
-    # values, and the server passes them on as they are. A resolution
-    # that is not positive leaves the resolution unchanged (#526)
-    result = call(build_server(), "session_open", path=str(mock_archive),
-                  z_em=-5, resol=-1)
-    spec = result.structured_content["spectrum"]
-    assert spec["z_em"] == -5 and spec["resol"] == pytest.approx(45000.0)
-    assert result.structured_content["warnings"] == []
+def test_unphysical_properties_are_refused(mock_archive):
+    # F46, fixed in phase 6-bis (PR 2b, Guido's bounds): z_em above -1 and
+    # finite, R positive; the agent gets the reason (they were accepted
+    # silently, and a resolution not positive left it unchanged)
+    result = call(build_server(), "session_open", path=str(mock_archive), z_em=-5)
+    assert "z_em: -5.0 is not above -1" in error_text(result)
+    result = call(build_server(), "session_open", path=str(mock_archive), resol=-1)
+    assert "resol: R must be positive and finite" in error_text(result)
 
 
 def test_unknown_session(mock_archive, tmp_path):
@@ -166,8 +165,11 @@ def test_save_round_trip(mock_archive, tmp_path):
     session = load_session_from_file(saved["path"], "saved", None, "auto")
     assert session.spec._data.z_em == pytest.approx(2.1)
     entries = session.log_manager.to_dict()["entries"]
+    # The values used, defaults included (phase 6-bis, #573 item 3)
     assert entries == [{"recipe_name": "set_properties",
-                        "params": {"z_em": "2.1"}}]
+                        "params": {"name": "_current_", "object": "_current_",
+                                   "z_em": 2.1, "resol": "_current_",
+                                   "overwrite_resol_col": False}}]
     assert session.saved_with_version == __version__
 
 

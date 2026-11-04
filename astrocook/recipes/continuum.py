@@ -17,11 +17,11 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "requires": ("z_em",),
         "details": "A single-click recipe that runs 'find_absorbed' and then 'fit_continuum' in sequence, based on the V1 'clip_flux' algorithm.",
         "params": [
-            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
-            {"name": "smooth_len_out", "type": float, "default": 400.0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
-            {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
+            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "gt": 0, "doc": "Smoothing length in Ly-a forest (km/s)"},
+            {"name": "smooth_len_out", "type": float, "default": 400.0, "gt": 0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
+            {"name": "kappa", "type": float, "default": 2.0, "gt": 0, "doc": "Sigma threshold for clipping"},
             {"name": "fudge", "type": str, "default": "auto", "doc": "Fudge factor. Use 'auto' or a float (e.g., '1.0')."}, 
-            {"name": "smooth_fwhm", "type": float, "default": 800.0, "doc": "Final Gaussian smoothing FWHM (km/s)"},
+            {"name": "smooth_fwhm", "type": float, "default": 800.0, "gt": 0, "doc": "Final Gaussian smoothing FWHM (km/s)"},
             {"name": "template", "type": bool, "default": False, "doc": "Use QSO template to trace Lyman-alpha emission"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
@@ -32,9 +32,9 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "requires": ("z_em",),
         "details": "Run the V1 'clip_flux' kappa-sigma algorithm (with Ly-a split) to create a 'mask_unabs' column.",
         "params": [
-            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
-            {"name": "smooth_len_out", "type": float, "default": 400.0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
-            {"name": "kappa", "type": float, "default": 2.0, "doc": "Sigma threshold for clipping"},
+            {"name": "smooth_len_lya", "type": float, "default": 5000.0, "gt": 0, "doc": "Smoothing length in Ly-a forest (km/s)"},
+            {"name": "smooth_len_out", "type": float, "default": 400.0, "gt": 0, "doc": "Smoothing length outside Ly-a forest (km/s)"},
+            {"name": "kappa", "type": float, "default": 2.0, "gt": 0, "doc": "Sigma threshold for clipping"},
             {"name": "template", "type": bool, "default": False, "doc": "Use QSO template (NOT IMPLEMENTED)"},
         ],
         "url": "continuum_cb.html#find_absorbed"
@@ -45,7 +45,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "params": [
             # CHANGED: type is now str, default is "auto"
             {"name": "fudge", "type": str, "default": "auto", "doc": "Fudge factor. Use 'auto' or a float (e.g., '1.0')."}, 
-            {"name": "smooth_fwhm", "type": float, "default": 800.0, "doc": "Final Gaussian smoothing FWHM (km/s)"},
+            {"name": "smooth_fwhm", "type": float, "default": 800.0, "gt": 0, "doc": "Final Gaussian smoothing FWHM (km/s)"},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column to use (True=Absorbed)"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Also re-normalize 'model'?", "gui_hidden": True},
         ],
@@ -57,7 +57,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "details": "Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates 'cont_pl' column.",
         "params": [
             {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"},
-            {"name": "kappa", "type": float, "default": 3.0, "doc": "Sigma threshold for clipping outliers"},
+            {"name": "kappa", "type": float, "default": 3.0, "gt": 0, "doc": "Sigma threshold for clipping outliers"},
         ],
         "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
     },

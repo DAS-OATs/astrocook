@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
+from astrocook.recipes.params import typed_recipe
 from astrocook.recipes.messages import msg_param_fail, msg_session_not_found
 
 if TYPE_CHECKING:
@@ -18,10 +19,12 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Set session properties.",
         "details": "Set core session properties like name, object, redshift, and resolution.",
         "params": [
-            {"name": "name", "type": str, "default": "_current_", "doc": "Session Name (display label)"},
-            {"name": "object", "type": str, "default": "_current_", "doc": "Object Name (header)"},
-            {"name": "z_em", "type": str, "default": "_current_", "doc": "Emission Redshift (z_em)"},
-            {"name": "resol", "type": str, "default": "_current_", "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"}, 
+            {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Session Name (display label)"},
+            {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Object Name (header)"},
+            # Above -1 (1 + z > 0) and finite (Guido, phase 6-bis, F46)
+            {"name": "z_em", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Emission Redshift (z_em)"},
+            # A number (R) or 'Npx', checked by the recipe: R > 0, N > 0
+            {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"}, 
             # Replace a resolution column that varies with wavelength by a
             # flat one; False (#526) keeps it. The GUI asks the user
             {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True}
@@ -32,7 +35,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Convert X axis.",
         "details": "Convert the x axis units and zero point to wavelength or velocity units.",
         "params": [
-            {"name": "z_ref", "type": float, "default": "_current_", "doc": "Reference redshift for velocity conversion (defaults to z_em)"},
+            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Reference redshift for velocity conversion (defaults to z_em)"},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
         ],
         "url": "edit_cb.html#convert-x-axis"
@@ -68,7 +71,7 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Apply a Gaussian filter to a single data column (e.g., 'dF' or 'snr').",
         "params": [
             {"name": "target_col", "type": str, "default": "dF", "doc": "Target column to smooth"},
-            {"name": "sigma_kms", "type": float, "default": 100.0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
+            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
             {"name": "renorm_model", "type": bool, "default": False, "doc": "If smoothing 'cont', also re-normalize 'model'?", "gui_hidden": True},
         ],
         "url": "edit_cb.html#smooth_column" # Placeholder URL
@@ -126,10 +129,10 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Trims the current session to the velocity range shared by a list of other sessions (intersection).",
         "params": [
             {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of other sessions"},
-            {"name": "z_target", "type": float, "default": "_current_", "doc": "Target redshift"},
+            {"name": "z_target", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Target redshift"},
             {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition for current session"},
             {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions for other sessions"},
-            {"name": "window_kms", "type": float, "default": 500.0, "doc": "Symmetric window width (km/s)"}
+            {"name": "window_kms", "type": float, "default": 500.0, "gt": 0, "doc": "Symmetric window width (km/s)"}
         ],
         "url": "edit_cb.html#trim_common"
     },
@@ -157,11 +160,11 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).",
         "params": [
             {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of sessions to co-add"},
-            {"name": "xstart", "type": str, "default": "None", "doc": "Start wavelength (nm, None for auto)"},
-            {"name": "xend", "type": str, "default": "None", "doc": "End wavelength (nm, None for auto)"},
-            {"name": "dx", "type": float, "default": 10.0, "doc": "Step size for the final grid"},
+            {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start wavelength (nm, None for auto)"},
+            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End wavelength (nm, None for auto)"},
+            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step size for the final grid"},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit for step size (km/s or nm)"},
-            {"name": "kappa", "type": str, "default": "5.0", "doc": "Sigma clipping threshold (None for off)"},
+            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Sigma clipping threshold (None for off)"},
             {"name": "equalize_order", "type": int, "default": 0, "doc": "Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)"},
         ],
         "url": "edit_cb.html#coadd"
@@ -295,6 +298,9 @@ class RecipeEditV2:
                 raise ValueError(f"Could not parse pixel width from '{resol_str}'")
             
             pix_fwhm = float(match.group(1))
+            if not (np.isfinite(pix_fwhm) and pix_fwhm > 0):
+                # '0px' gave an infinite R (Guido, phase 6-bis, F46)
+                raise ValueError(f"resol: the FWHM in pixels must be positive ('{resol_str}').")
             logger.debug(f"Estimating the resolution for a FWHM of {pix_fwhm:.1f} pixels.")
             
             # 1. Get raw x array
@@ -327,13 +333,20 @@ class RecipeEditV2:
                 
         # Fallback: Try standard float conversion
         try:
-            return float(clean_str)
+            resol_f = float(clean_str)
         except ValueError:
-            raise ValueError(f"Invalid resolution format: '{resol_str}'. Use a number (R) or 'Npx'.")
+            raise ValueError(f"resol: '{resol_str}' is not a number (R) or 'Npx'.") from None
+        if not (np.isfinite(resol_f) and resol_f > 0):
+            # 0, a negative R and NaN were taken as "no change", silently
+            # (Guido, phase 6-bis, F46): '_current_' is the way to say it
+            raise ValueError(f"resol: R must be positive and finite ('{resol_str}'); "
+                             "leave it empty to keep the current resolution.")
+        return resol_f
         
 
-    def set_properties(self, name: str = '_current_', object: str = '_current_', 
-                       z_em: str = '_current_', resol: str = '_current_',
+    @typed_recipe
+    def set_properties(self, name: str = '_current_', object: str = '_current_',
+                       z_em: Union[float, str] = '_current_', resol: str = '_current_',
                        overwrite_resol_col: bool = False) -> Optional['SessionV2']:
         """
         Set session properties.
@@ -347,11 +360,12 @@ class RecipeEditV2:
             The session Name (display label). Defaults to ``'_current_'`` (no change).
         object : str, optional
             The object Name (header target). Defaults to ``'_current_'`` (no change).
-        z_em : str, optional
-            Emission Redshift. Defaults to ``'_current_'`` (no change).
+        z_em : float or str, optional
+            Emission Redshift, above -1 and finite. Defaults to
+            ``'_current_'`` (no change).
         resol : str, optional
-            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``).
-            Defaults to ``'_current_'`` (no change).
+            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``),
+            positive and finite. Defaults to ``'_current_'`` (no change).
         overwrite_resol_col : bool, optional
             If ``True``, a ``resol`` column that varies with wavelength is
             replaced by a flat one at the new resolution; if ``False`` it is
@@ -376,8 +390,8 @@ class RecipeEditV2:
                 resol_f = 0.0  # leave the resolution as it is (#526)
             else:
                 resol_f = self._parse_resolution_string(str(resol))
-        except ValueError:
-            logger.error(msg_param_fail)
+        except ValueError as e:
+            logger.error(f"{msg_param_fail} {e}")
             return 0
 
         # 2. Handle text inputs
@@ -402,7 +416,8 @@ class RecipeEditV2:
 
         return new_session
 
-    def x_convert(self, z_ref: str = '_current_', xunit: str = 'km/s') -> Optional['SessionV2']:
+    @typed_recipe
+    def x_convert(self, z_ref: Union[float, str] = '_current_', xunit: str = 'km/s') -> Optional['SessionV2']:
         """
         Convert X axis.
 
@@ -411,9 +426,10 @@ class RecipeEditV2:
 
         Parameters
         ----------
-        z_ref : str, optional
-            Reference redshift for velocity conversion; ``'_current_'`` uses
-            the session's z_em. Defaults to ``'_current_'``, as the GUI.
+        z_ref : float or str, optional
+            Reference redshift for velocity conversion, above -1 and finite;
+            ``'_current_'`` uses the session's z_em. Defaults to
+            ``'_current_'``, as the GUI.
         xunit : str, optional
             Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).
             Defaults to ``'km/s'``.
@@ -428,11 +444,7 @@ class RecipeEditV2:
         if z_ref == '_current_':
             z_ref_float = self._session.spec._data.z_em
         else:
-            try:
-                z_ref_float = float(z_ref)
-            except ValueError:
-                logger.error(msg_param_fail)
-                return 0
+            z_ref_float = z_ref
             
         try:
             xunit_obj = au.Unit(xunit)
@@ -447,6 +459,7 @@ class RecipeEditV2:
         # 2. Return a NEW SessionV2 instance with the updated spectrum
         return self._session.with_new_spectrum(new_spec_v2) 
     
+    @typed_recipe
     def y_convert(self, yunit: str = 'erg/(nm s cm^2)') -> Optional['SessionV2']:
         """
         Convert Y axis units.
@@ -478,6 +491,7 @@ class RecipeEditV2:
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
     
+    @typed_recipe
     def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
         Apply expression to columns.
@@ -526,6 +540,7 @@ class RecipeEditV2:
                          exc_info=True)
             return 0 
             
+    @typed_recipe
     def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
         Mask column by expression.
@@ -573,7 +588,8 @@ class RecipeEditV2:
                          exc_info=True)
             return 0
 
-    def smooth_column(self, target_col: str = 'dF', sigma_kms: str = '100.0', renorm_model: str = 'False') -> 'SessionV2':
+    @typed_recipe
+    def smooth_column(self, target_col: str = 'dF', sigma_kms: float = 100.0, renorm_model: bool = False) -> 'SessionV2':
         """
         Smooth a single column.
 
@@ -584,11 +600,12 @@ class RecipeEditV2:
         ----------
         target_col : str, optional
             Target column to smooth. Defaults to ``'dF'``.
-        sigma_kms : str, optional
-            Standard deviation for Gaussian kernel (km/s). Defaults to ``'100.0'``.
-        renorm_model : str, optional
-            If ``'True'`` and smoothing ``'cont'``, the ``'model'`` column is
-            re-normalized. Defaults to ``'False'``.
+        sigma_kms : float, optional
+            Standard deviation for Gaussian kernel (km/s), positive.
+            Defaults to ``100.0``.
+        renorm_model : bool, optional
+            If ``True`` and smoothing ``'cont'``, the ``'model'`` column is
+            re-normalized. Defaults to ``False``.
 
         Returns
         -------
@@ -599,20 +616,11 @@ class RecipeEditV2:
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
         try:
-            sigma_kms_f = float(sigma_kms)
-            # --- ADD THIS LINE ---
-            renorm_model_b = str(renorm_model) == 'True'
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
-            
-        try:
             # 1. Call the immutable V2 operation
             new_spec_v2 = self._session.spec.smooth_column(
                 target_col=target_col,
-                sigma_kms=sigma_kms_f,
-                # --- ADD THIS ARGUMENT ---
-                renorm_model=renorm_model_b
+                sigma_kms=sigma_kms,
+                renorm_model=renorm_model
             )
             
             # 2. Return a NEW SessionV2 instance
@@ -622,6 +630,7 @@ class RecipeEditV2:
             logger.error(f"Could not smooth the column '{target_col}': {e}", exc_info=True)
             return 0
         
+    @typed_recipe
     def import_systems(self, source_session: str, append: bool = True, refit: bool = False) -> 'SessionV2':
         """
         Import systems from session.
@@ -646,8 +655,8 @@ class RecipeEditV2:
             A new :class:`~astrocook.core.session.SessionV2` with imported systems.
         """
 
-        do_append = str(append) == 'True'
-        do_refit = str(refit) == 'True'
+        do_append = append
+        do_refit = refit
 
         # 1. Find the source session
         target_hist = None
@@ -739,8 +748,9 @@ class RecipeEditV2:
         # Return unfitted result
         return intermediate_session
         
-    def import_systems_ascii(self, file_path: str, append: str = 'True',
-                             refit: str = 'False') -> 'SessionV2':
+    @typed_recipe
+    def import_systems_ascii(self, file_path: str, append: bool = True,
+                             refit: bool = False) -> 'SessionV2':
         """
         Import systems from an ASCII file (issue #480).
 
@@ -756,11 +766,11 @@ class RecipeEditV2:
         ----------
         file_path : str
             Path of the file.
-        append : str, optional
-            If ``'True'``, add to the existing systems; otherwise replace them.
-            Defaults to ``'True'``.
-        refit : str, optional
-            If ``'True'``, refit the systems after importing. Defaults to ``'False'``.
+        append : bool, optional
+            If ``True``, add to the existing systems; otherwise replace them.
+            Defaults to ``True``.
+        refit : bool, optional
+            If ``True``, refit the systems after importing. Defaults to ``False``.
 
         Returns
         -------
@@ -811,10 +821,10 @@ class RecipeEditV2:
             return self._session
 
         source_systs = SystemListV2(SystemListDataV2(components=comps))
-        return self._merge_imported_systems(source_systs, str(append) == 'True',
-                                            str(refit) == 'True',
+        return self._merge_imported_systems(source_systs, append, refit,
                                             label=f"'{file_path}'")
 
+    @typed_recipe
     def delete(self, targets: str) -> 'SessionV2':
         """
         Delete elements.
@@ -855,6 +865,7 @@ class RecipeEditV2:
             
         return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
     
+    @typed_recipe
     def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
         Split spectrum by expression.
@@ -909,6 +920,7 @@ class RecipeEditV2:
         # 4. Return a NEW SessionV2 instance (GUI handles branching)
         return self._session.with_new_spectrum(new_spec_v2).with_new_system_list(new_systs)
     
+    @typed_recipe
     def extract_preset(self, region: str = 'lya_forest') -> Union['SessionV2', List['SessionV2']]:
         """
         Extract region by preset.
@@ -971,8 +983,9 @@ class RecipeEditV2:
         
         return results
     
-    def trim_common(self, others_names: str, z_target: str, trans_self: str, 
-                    trans_others: str, window_kms: str = '500.0') -> 'SessionV2':
+    @typed_recipe
+    def trim_common(self, others_names: str, z_target: Union[float, str], trans_self: str,
+                    trans_others: str, window_kms: float = 500.0) -> 'SessionV2':
         """
         Trim to common velocity coverage.
 
@@ -984,14 +997,14 @@ class RecipeEditV2:
         ----------
         others_names : str
             Comma-separated names of other sessions.
-        z_target : str
-            Target redshift (float parsed from string).
+        z_target : float
+            Target redshift, above -1 and finite.
         trans_self : str
             Transition for current session (e.g. ``'Ly_a'``).
         trans_others : str
             Comma-separated transitions for other sessions.
-        window_kms : str, optional
-            Symmetric window width in km/s. Defaults to ``'500.0'``.
+        window_kms : float, optional
+            Symmetric window width in km/s, positive. Defaults to ``500.0``.
 
         Returns
         -------
@@ -1048,6 +1061,7 @@ class RecipeEditV2:
             logger.error(f"Could not trim the sessions to their common range: {e}", exc_info=True)
             return 0
     
+    @typed_recipe
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
         """
         Merge multiple sessions.
@@ -1129,6 +1143,7 @@ class RecipeEditV2:
             logger.error(f"Could not stitch the sessions: {e}", exc_info=True)
             return 0
 
+    @typed_recipe
     def equalize_and_stitch(self, other_sessions: str, stitch_wavelengths: str, 
                             equalize_ranges: str = 'auto', manual_factors: str = 'auto') -> 'SessionV2':
         """
@@ -1307,9 +1322,10 @@ class RecipeEditV2:
         new_session.name = new_name
         return new_session
         
-    def coadd(self, session_names: str, xstart: str = 'None', xend: str = 'None', 
-              dx: str = '10.0', xunit: str = 'km/s', kappa: str = '5.0', 
-              equalize_order: str = '0') -> Dict[str, Any]:
+    @typed_recipe
+    def coadd(self, session_names: str, xstart: Optional[float] = None,
+              xend: Optional[float] = None, dx: float = 10.0, xunit: str = 'km/s',
+              kappa: Optional[float] = 5.0, equalize_order: int = 0) -> Dict[str, Any]:
         """
         Co-add multiple sessions.
 
@@ -1321,21 +1337,21 @@ class RecipeEditV2:
         ----------
         session_names : str
             Comma-separated names of sessions to co-add.
-        xstart : str, optional
-            Start wavelength. ``'None'`` for auto. Defaults to ``'None'``.
-        xend : str, optional
-            End wavelength. ``'None'`` for auto. Defaults to ``'None'``.
-        dx : str, optional
-            Step size for the final grid. Defaults to ``'10.0'`` (km/s), as
+        xstart : float or None, optional
+            Start wavelength (nm). None for auto. Defaults to None.
+        xend : float or None, optional
+            End wavelength (nm). None for auto. Defaults to None.
+        dx : float, optional
+            Step size for the final grid, positive. Defaults to ``10.0`` (km/s), as
             the GUI: choose the native pixel size for high-resolution data
             (e.g. ~2.5 km/s for UVES, ~0.8 km/s for ESPRESSO).
         xunit : str, optional
             Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'km/s'``.
-        kappa : str, optional
-            Sigma clipping threshold. ``'None'`` for off. Defaults to ``'5.0'``.
-        equalize_order : str, optional
+        kappa : float or None, optional
+            Sigma clipping threshold, positive. None for off. Defaults to ``5.0``.
+        equalize_order : int, optional
             Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear).
-            Defaults to ``'0'``.
+            Defaults to ``0``.
 
         Returns
         -------
@@ -1367,12 +1383,12 @@ class RecipeEditV2:
 
         # 2. Parse Parameters
         try:
-            eq_order = int(equalize_order)
-            xstart_q = au.Quantity(float(xstart), au.nm) if xstart != 'None' else None
-            xend_q = au.Quantity(float(xend), au.nm) if xend != 'None' else None
+            eq_order = equalize_order
+            xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
+            xend_q = au.Quantity(xend, au.nm) if xend is not None else None
             dx_unit = au.Unit(xunit) 
-            dx_q = au.Quantity(float(dx), dx_unit) 
-            kappa_f = float(kappa) if kappa != 'None' else None
+            dx_q = au.Quantity(dx, dx_unit)
+            kappa_f = kappa
 
             # 3. Delegate to Core
             # We use the first spectrum in the list as the 'base' to call the method on.

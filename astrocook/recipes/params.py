@@ -121,8 +121,15 @@ def convert(param, value: Any) -> Any:
         return value if isinstance(value, str) else str(value)
     else:
         return value
-    if math.isnan(result) and not param.allow_nan:
+    if math.isnan(result):
+        if param.allow_nan:
+            return result
         raise InvalidParameter(f"{param.name}: {value!r} is not a number")
+    if math.isinf(result):
+        # Not a value of any parameter so far (Guido, phase 6-bis, PR 2b)
+        raise InvalidParameter(f"{param.name}: {value!r} is not a finite number")
+    if param.gt is not None and not result > param.gt:
+        raise InvalidParameter(f"{param.name}: {result} is not above {param.gt}")
     if param.min is not None and result < param.min:
         raise InvalidParameter(f"{param.name}: {result} is below {param.min}")
     if param.max is not None and result > param.max:

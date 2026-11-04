@@ -117,6 +117,8 @@ def test_typed_recipes_so_far():
             "update_from_knots", "calculate_running_std", "smooth", "rebin",
             "equalize", "resample", "calibrate_from_magnitudes", "export_ascii",
             "import_ascii"} <= TYPED_RECIPES
+    from astrocook.recipes.registry import RECIPES
+    assert set(RECIPES["edit"]) <= TYPED_RECIPES  # PR 2b
 
 
 def test_strings_and_typed_values_give_the_same_result():
@@ -165,7 +167,7 @@ def test_resolve_params_gives_the_values_used():
     # Passed but not declared: kept as passed
     assert resolve_params("rebin", {"norm": "False"})["norm"] == "False"
     # A recipe not typed yet: as passed
-    assert resolve_params("set_properties", {"z_em": "2.5"}) == {"z_em": "2.5"}
+    assert resolve_params("doublets_auto", {"max_b": "50"}) == {"max_b": "50"}
 
 
 def test_the_gui_logs_the_values_used():
