@@ -25,10 +25,13 @@ from astrocook.recipes.messages import msg_param_fail
 
 logger = logging.getLogger(__name__)
 
-#: The strings that mean "no value" for an optional parameter (``'None'``
-#: is what the dialogs and the log write for None; an empty field of a
-#: dialog is ``''``)
-NONE_STRINGS = ('None', '')
+#: The string that means "no value" for an optional parameter: what the
+#: dialogs and the log write for None. An empty field of a dialog (``''``)
+#: means None only for a parameter whose default is None (e.g. the start of
+#: *Rebin*: the range of the data); elsewhere it is an error, so that a field
+#: emptied by mistake does not switch an option off (Guido, phase 6-bis, PR
+#: 2a: an empty ``kappa`` of *Rebin* is not "no clipping")
+NONE_STRING = 'None'
 
 #: The names of the recipes whose parameters are typed (filled by
 #: :func:`typed_recipe`): the others still receive and log what is passed,
@@ -68,10 +71,13 @@ def _number(param, value, kind):
 def _boolean(param, value):
     if isinstance(value, bool):
         return value
-    if isinstance(value, str) and value.strip().lower() in ('true', 'false'):
+    # 1 and 0 too, which scripts often write (Guido, phase 6-bis, PR 2a)
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str) and value.strip().lower() in ('true', 'false', '1', '0'):
         # The dialogs and the log write 'True' and 'False'; some recipes
         # also read 'true' and 'false'
-        return value.strip().lower() == 'true'
+        return value.strip().lower() in ('true', '1')
     raise InvalidParameter(f"{param.name}: {value!r} is not True or False")
 
 
@@ -94,12 +100,13 @@ def convert(param, value: Any) -> Any:
     bounds; :class:`InvalidParameter` if it cannot be."""
     if isinstance(value, str) and value in param.keep:
         return value  # a special value, such as '_current_'
-    if value is None or (isinstance(value, str) and value.strip() in NONE_STRINGS
-                         and param.type is not str):
-        if param.optional:
-            return None
-        if value is None:
-            raise InvalidParameter(f"{param.name}: a value is needed")
+    if param.optional and param.type is not str and (
+            value is None or (isinstance(value, str) and (
+                value.strip() == NONE_STRING
+                or (value.strip() == '' and param.default is None)))):
+        return None
+    if value is None:
+        raise InvalidParameter(f"{param.name}: a value is needed")
     if param.type is float:
         result = _number(param, value, float)
     elif param.type is int:

@@ -66,7 +66,7 @@ def test_values_are_converted_to_their_type(type_, value, expected):
     (int, "3.5", "'3.5' is not an integer"),
     (int, 3.5, "3.5 is not an integer"),
     (bool, "yes", "'yes' is not True or False"),
-    (bool, 1, "1 is not True or False"),
+    (bool, 2, "2 is not True or False"),
     (list, "abc", "'abc' is not a list"),
 ])
 def test_values_that_cannot_be_converted_are_refused(type_, value, message):
@@ -78,7 +78,11 @@ def test_optional_none_nan_kept_and_bounds():
     optional = _p(float, optional=True)
     assert convert(optional, None) is None
     assert convert(optional, "None") is None
-    assert convert(optional, "") is None  # an empty field of a dialog
+    assert convert(optional, "") is None  # an empty field, default None
+    with pytest.raises(InvalidParameter, match="x: '' is not a number"):
+        # an empty field where the default is not None: an error (Guido)
+        convert(ParamSpec(name="x", type=float, doc="x", optional=True, _default=5.0), "")
+    assert convert(_p(bool), 1) is True and convert(_p(bool), "0") is False
     assert convert(optional, "4") == 4.0
     assert math.isnan(convert(_p(float, allow_nan=True), "nan"))
     assert convert(_p(float, keep=("_current_",)), "_current_") == "_current_"

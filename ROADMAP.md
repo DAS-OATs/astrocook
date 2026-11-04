@@ -2112,11 +2112,22 @@ The full MCP server (section 4) is generated from this API.
      `allow_nan`; `rebin` with `xstart`, `xend` and `kappa` optional and
      `filling` a number (NaN allowed). Booleans are read without regard
      to case (`'true'` was False for the recipes that compared with
-     `'True'`, True for the others); a boolean given as a string is no
-     longer truthy (`update_from_knots` renormalized the model with
-     `renorm_model='False'`; a float `fudge` failed with an
-     AttributeError). No bounds added yet: proposed to Guido
-     with 2b;
+     `'True'`, True for the others), and 1 and 0 are booleans (Guido); an
+     empty field is None only where the default is None (an empty `kappa`
+     of *Rebin* is an error, not "no clipping": Guido); a boolean given as
+     a string is no longer truthy (`update_from_knots` renormalized the
+     model with `renorm_model='False'`; a float `fudge` failed with an
+     AttributeError). No bounds added yet: proposed to Guido with 2b.
+     Coverage (Guido's question): the suite saw none of the changes on
+     wrong inputs, so a battery compares each typed recipe with 2.4.0 on
+     358 edge inputs (numbers as strings and typed, empty, None, NaN,
+     infinities, booleans written in other ways, unknown sessions and
+     units): identical on 284, the 74 changes all on invalid or edge
+     inputs (refused instead of read as False or 1, or of a crash; NaN
+     refused; `'true'`, `'1'` and 1 now True; an empty or None start and
+     end of *Rebin* now the data range). `tests/test_recipe_inputs.py`
+     holds the table, each change with what 2.4.0 did; 2b and 2c add
+     their recipes, with the comparison made before the code changes;
   3. *exceptions* (3a continuum, flux and file; 3b edit; 3c absorbers):
      `RecipeError`, with `InvalidParameter`, `MissingPrerequisite` and
      `RecipeFailed`; the `return 0` replaced and the callers adapted (the
