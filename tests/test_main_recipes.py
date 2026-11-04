@@ -334,7 +334,7 @@ def test_result_logged_once(ready):
                                    {"sigma_kms": "10", "alias_map": {}}))
     assert len(log.entries) == n + 1
     entry = log.entries[-1]
-    assert entry.recipe_name == "smooth" and entry.params == {"sigma_kms": "10"}
+    assert entry.recipe_name == "smooth" and entry.params == {"sigma_kms": 10.0}  # typed (6-bis)
 
 
 def test_branching_result_logged_in_the_branch(ready):
