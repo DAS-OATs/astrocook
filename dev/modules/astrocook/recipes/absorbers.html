@@ -520,6 +520,7 @@
     <span class="c1"># --- 2. WRAPPERS ---</span>
     <span class="s2">"doublets_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit metal doublets (Red Side)."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Wrapper for components_auto targeted at the red side (z &lt; z_em). Finds CIV, SiIV, MgII."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for."</span><span class="p">},</span>
@@ -532,6 +533,7 @@
     <span class="p">},</span>
     <span class="s2">"lya_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit Ly-alpha forest."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Wrapper for components_auto targeted at the forest. Includes interloper filtering."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lower threshold for single lines."</span><span class="p">},</span>
@@ -544,6 +546,7 @@
     <span class="p">},</span>
     <span class="s2">"forest_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit full Lyman series."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold for detection."</span><span class="p">},</span>
@@ -556,6 +559,7 @@
     <span class="p">},</span>
     <span class="s2">"metals_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Check for associated metals."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"ions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated list of ions to check."</span><span class="p">},</span>
@@ -568,6 +572,8 @@
     <span class="p">},</span>
     <span class="s2">"identify_lines"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Identify likely absorption systems."</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII,Ly_ab"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for (comma-separated)."</span><span class="p">},</span>
@@ -593,6 +599,7 @@
     <span class="p">},</span>
     <span class="s2">"add_component"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Add a single component."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds a new manual Voigt component at a specific redshift."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"series"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"Ly_a"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Transition or Multiplet name (e.g. 'CIV')"</span><span class="p">},</span>
@@ -649,6 +656,7 @@
     <span class="p">},</span>
     <span class="s2">"fit_component"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit component."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits the selected component (and its neighbors) using the Voigt engine."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Target Component UUID"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>

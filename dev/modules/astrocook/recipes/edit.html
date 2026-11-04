@@ -576,6 +576,7 @@
     <span class="p">},</span>
     <span class="s2">"split"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Split spectrum by expression."</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(λ &gt; 400) &amp; (λ &lt; 500)'."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"expression"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"(λ &gt; 400) &amp; (λ &lt; 500)"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Boolean expression to select data"</span><span class="p">}</span>
@@ -584,6 +585,8 @@
     <span class="p">},</span>
     <span class="s2">"extract_preset"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Extract region by preset."</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Extract a specific standard region (like the Ly-alpha forest) into a new session, based on the current emission redshift (z_em)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="c1"># We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'</span>
@@ -605,11 +608,13 @@
     <span class="p">},</span>
     <span class="s2">"stitch"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Merge multiple sessions"</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Usually called via script</span>
     <span class="p">},</span>
     <span class="s2">"equalize_and_stitch"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Equalize and stitch arms."</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Equalize flux levels and stitch multiple sessions at specific wavelengths."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"other_sessions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated names of other sessions (in blue-to-red order)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
@@ -621,6 +626,7 @@
     <span class="p">},</span>
     <span class="s2">"coadd"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Co-add multiple sessions."</span><span class="p">,</span>
+        <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"session_names"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated names of sessions to co-add"</span><span class="p">},</span>

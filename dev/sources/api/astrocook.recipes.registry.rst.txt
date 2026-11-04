@@ -1,0 +1,7 @@
+astrocook.recipes.registry module
+=================================
+
+.. automodule:: astrocook.recipes.registry
+   :members:
+   :show-inheritance:
+   :undoc-members:

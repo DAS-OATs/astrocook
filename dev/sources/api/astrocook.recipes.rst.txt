@@ -13,6 +13,7 @@ Submodules
    astrocook.recipes.file
    astrocook.recipes.flux
    astrocook.recipes.messages
+   astrocook.recipes.registry
 
 Module contents
 ---------------
