@@ -24,7 +24,6 @@ from astrocook.recipes.continuum import RecipeContinuumV2
 from astrocook.recipes.edit import RecipeEditV2
 from astrocook.recipes.file import RecipeFileV2
 from astrocook.recipes.flux import RecipeFluxV2
-from astrocook.recipes.params import TYPED_RECIPES
 from astrocook.recipes.registry import RECIPES
 
 CLASSES = {"absorbers": RecipeAbsorbersV2, "continuum": RecipeContinuumV2,
@@ -44,17 +43,6 @@ def _schema_parameters():
                 yield menu, recipe, param, CLASSES[menu]
 
 
-def _same(schema_default, signature_default, kind):
-    """The two defaults as the recipe would see them: the API takes
-    strings ('2.0', 'True'), the schema typed values."""
-    if kind in (int, float):
-        try:
-            return float(schema_default) == float(signature_default)
-        except (TypeError, ValueError):
-            pass
-    return str(schema_default) == str(signature_default)
-
-
 def _cases():
     for menu, recipe, param, cls in _schema_parameters():
         key = (menu, recipe, param.name)
@@ -72,16 +60,12 @@ def test_schema_default_is_the_signature_default(menu, recipe, param, cls):
     default = signature[param.name].default
     if default is inspect.Parameter.empty:
         return  # required by the API, pre-filled by the dialog
-    if recipe in TYPED_RECIPES:
-        # Typed signature (phase 6-bis, PR 2): the same value, not only the
-        # same string
-        both_nan = (isinstance(default, float) and isinstance(param.default, float)
-                    and math.isnan(default) and math.isnan(param.default))
-        assert both_nan or (default == param.default
-                            and type(default) is type(param.default)), (
-            f"GUI {param.default!r}, API {default!r}")
-        return
-    assert _same(param.default, default, param.type), (
+    # Typed signatures (phase 6-bis, PR 2): the same value, not only the
+    # same string
+    both_nan = (isinstance(default, float) and isinstance(param.default, float)
+                and math.isnan(default) and math.isnan(param.default))
+    assert both_nan or (default == param.default
+                        and type(default) is type(param.default)), (
         f"GUI {param.default!r}, API {default!r}")
 
 

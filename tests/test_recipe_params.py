@@ -3,9 +3,8 @@
 The parameters are converted once, by ``typed_recipe``, to the types of the
 registry: a recipe gives the same result with the strings of the dialogs
 and of the session log as with typed values, and the log records the values
-actually used (#573, item 3). Characterization of the conversion of the
-recipes typed so far (continuum, flux, file); the others follow in PR 2b
-and 2c.
+actually used (#573, item 3). The conversion itself; what each recipe does
+with each kind of input is in ``test_recipe_inputs*.py``.
 """
 import logging
 import math
@@ -18,7 +17,7 @@ import astropy.units as au
 from astrocook.core.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
-from astrocook.recipes.params import (InvalidParameter, TYPED_RECIPES, convert,
+from astrocook.recipes.params import (InvalidParameter, convert,
                                       resolve_params)
 from astrocook.recipes.registry import ParamSpec, get_recipe
 
@@ -87,6 +86,7 @@ def test_optional_none_nan_kept_and_bounds():
     assert math.isnan(convert(_p(float, allow_nan=True), "nan"))
     assert convert(_p(float, keep=("_current_",)), "_current_") == "_current_"
     assert convert(_p(str, optional=True), "None") is None
+    assert convert(_p(str, optional=True), None) is None  # PR 2c
     assert convert(_p(str), "None") == "None"  # a name, e.g. of a session
     bounded = _p(float, min=0.0, max=1.0)
     assert convert(bounded, "0.5") == 0.5
@@ -100,8 +100,6 @@ def test_registry_defaults_convert_to_themselves():
     """Every default of a typed recipe is a valid value of its parameter."""
     from astrocook.recipes.registry import all_recipes
     for spec in all_recipes():
-        if spec.name not in TYPED_RECIPES:
-            continue
         for p in spec.params:
             if p.default in ("", None) and not p.optional:
                 continue  # required by the API, pre-filled by the dialog
@@ -110,15 +108,16 @@ def test_registry_defaults_convert_to_themselves():
                 (spec.name, p.name)
 
 
-# --- The recipes typed in this PR ----------------------------------------
+# --- The recipes ------------------------------------------------------------
 
-def test_typed_recipes_so_far():
-    assert {"estimate_auto", "find_absorbed", "fit_continuum", "fit_powerlaw",
-            "update_from_knots", "calculate_running_std", "smooth", "rebin",
-            "equalize", "resample", "calibrate_from_magnitudes", "export_ascii",
-            "import_ascii"} <= TYPED_RECIPES
-    from astrocook.recipes.registry import RECIPES
-    assert set(RECIPES["edit"]) <= TYPED_RECIPES  # PR 2b
+def test_every_recipe_is_typed():
+    """Every recipe of the registry converts its parameters (phase 6-bis,
+    PR 2a-2c): a new recipe must be decorated with ``typed_recipe``."""
+    from astrocook.recipes.registry import all_recipes
+    from astrocook.core.session import SessionV2
+    for spec in all_recipes():
+        method = getattr(type(getattr(SessionV2("s", None), spec.category)), spec.name)
+        assert getattr(method, "typed_recipe", False), f"{spec.category}.{spec.name}"
 
 
 def test_strings_and_typed_values_give_the_same_result():
@@ -166,8 +165,9 @@ def test_resolve_params_gives_the_values_used():
     assert resolved["xunit"] == "km/s"
     # Passed but not declared: kept as passed
     assert resolve_params("rebin", {"norm": "False"})["norm"] == "False"
-    # A recipe not typed yet: as passed
-    assert resolve_params("doublets_auto", {"max_b": "50"}) == {"max_b": "50"}
+    # A name that is not a recipe: as passed
+    assert resolve_params("no_such_recipe", {"max_b": "50"}) == {"max_b": "50"}
+    assert resolve_params("doublets_auto", {"max_b": "50"})["max_b"] == 50.0
 
 
 def test_the_gui_logs_the_values_used():

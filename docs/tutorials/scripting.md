@@ -29,16 +29,21 @@ The recipes of the menus are grouped as in the GUI: `session.edit`,
 `session.file`. Each recipe returns a **new** session and leaves the
 original unchanged, so the steps can be chained:
 ```python
-smoothed = session.flux.smooth(sigma_kms="50.0")
+smoothed = session.flux.smooth(sigma_kms=50.0)
 ```
-The parameters are the same as in the recipe dialogs, and are given as
-strings, as typed in the dialogs. If a parameter cannot be understood, the
-recipe logs an error and returns `0` instead of a session, so check the
-result before going on:
+The parameters are the same as in the recipe dialogs. Give them with their
+types (numbers, `True` and `False`, `None` where a parameter can be left
+out, e.g. the start of *Rebin*), or as strings, as typed in the dialogs and
+written in the session log (`sigma_kms="50.0"`): they are converted before
+the recipe runs. A value that cannot be converted, or that has no physical
+meaning (a negative smoothing width, a redshift of -1 or below, a column
+density outside 10-23), stops the recipe: it logs an error that names the
+parameter and returns `0` instead of a session, so check the result before
+going on:
 ```python
 result = session.flux.smooth(sigma_kms="fifty")
 if result == 0:
-    print("The recipe failed")
+    print("The recipe failed")  # sigma_kms: 'fifty' is not a number
 ```
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).

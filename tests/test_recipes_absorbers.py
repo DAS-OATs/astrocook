@@ -368,10 +368,10 @@ def test_pipelines_bound_b_and_manual_fits_do_not():
     for name in ("components_auto", "doublets_auto", "lya_auto", "forest_auto",
                  "metals_auto"):
         sig = inspect.signature(getattr(RecipeAbsorbersV2, name))
-        assert sig.parameters["max_b"].default == "50.0", name
+        assert sig.parameters["max_b"].default == 50.0, name  # typed (6-bis)
         assert get_recipe("absorbers", name).param("max_b").default == 50.0, name
     sig = inspect.signature(RecipeAbsorbersV2.refit_all)
-    assert sig.parameters["max_b"].default == "300.0"
+    assert sig.parameters["max_b"].default == 300.0
     assert "max_b" not in inspect.signature(RecipeAbsorbersV2.fit_component).parameters
 
 

@@ -12,8 +12,8 @@ field is None only for a parameter whose default is None (an empty kappa
 of Rebin is an error, not "no clipping"); widths and thresholds positive
 and finite, and no infinity as a value (PR 2b).
 
-The recipes of Edit are in ``test_recipe_inputs_edit.py``; those of
-Absorbers are added when they are typed (PR 2c), each with its comparison
+The recipes of Edit are in ``test_recipe_inputs_edit.py``, those of
+Absorbers in ``test_recipe_inputs_absorbers.py``, each with its comparison
 with 2.4.0.
 """
 import logging
