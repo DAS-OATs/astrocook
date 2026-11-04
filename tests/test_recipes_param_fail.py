@@ -25,5 +25,6 @@ def test_bad_parameter_logs_message_and_returns_0(recipe, kwargs, caplog):
     method = getattr(getattr(_session(), group), name)
     with caplog.at_level(logging.ERROR):
         assert method(**kwargs) == 0
-    assert MSG in [r.getMessage() for r in caplog.records
-                   if r.levelno == logging.ERROR]
+    # The typed recipes (phase 6-bis, PR 2) add the parameter and its value
+    assert any(r.getMessage().startswith(MSG) for r in caplog.records
+               if r.levelno == logging.ERROR)

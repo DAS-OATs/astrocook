@@ -2095,7 +2095,39 @@ The full MCP server (section 4) is generated from this API.
      from string to type at the boundary (log, GUI, MCP); the values
      checked by the registry (bounds, allowed values; F46); the log
      records the values actually used (#573, item 3); replay of old
-     `.acs2` archives tested;
+     `.acs2` archives tested. In three PRs, as PR 3 (the bodies of the
+     recipes change with their types): 2a the conversion and the recipes
+     of continuum, flux and file; 2b edit, with F46 (the bounds of
+     `set_properties`); 2c absorbers, then the scripting tutorial (the
+     parameters typed or as strings). Done in 2a:
+     `recipes/params.py`, the decorator `typed_recipe` (the parameters
+     passed are converted to the types of the registry before the recipe
+     runs; a value that cannot be, or is out of its bounds, stops the
+     recipe with `msg_param_fail` and the reason, and 0 until PR 3; the
+     parameters that the registry does not declare pass unchanged) and
+     `resolve_params` (the values used, defaults included, written by the
+     GUI, the script worker and the MCP server into the log); new keys of a
+     parameter: `optional` (None is a value, `'None'` or an empty field in
+     a dialog), `keep` (special strings, e.g. `'_current_'`), `min`, `max`,
+     `allow_nan`; `rebin` with `xstart`, `xend` and `kappa` optional and
+     `filling` a number (NaN allowed). Booleans are read without regard
+     to case (`'true'` was False for the recipes that compared with
+     `'True'`, True for the others), and 1 and 0 are booleans (Guido); an
+     empty field is None only where the default is None (an empty `kappa`
+     of *Rebin* is an error, not "no clipping": Guido); a boolean given as
+     a string is no longer truthy (`update_from_knots` renormalized the
+     model with `renorm_model='False'`; a float `fudge` failed with an
+     AttributeError). No bounds added yet: proposed to Guido with 2b.
+     Coverage (Guido's question): the suite saw none of the changes on
+     wrong inputs, so a battery compares each typed recipe with 2.4.0 on
+     358 edge inputs (numbers as strings and typed, empty, None, NaN,
+     infinities, booleans written in other ways, unknown sessions and
+     units): identical on 284, the 74 changes all on invalid or edge
+     inputs (refused instead of read as False or 1, or of a crash; NaN
+     refused; `'true'`, `'1'` and 1 now True; an empty or None start and
+     end of *Rebin* now the data range). `tests/test_recipe_inputs.py`
+     holds the table, each change with what 2.4.0 did; 2b and 2c add
+     their recipes, with the comparison made before the code changes;
   3. *exceptions* (3a continuum, flux and file; 3b edit; 3c absorbers):
      `RecipeError`, with `InvalidParameter`, `MissingPrerequisite` and
      `RecipeFailed`; the `return 0` replaced and the callers adapted (the
@@ -2796,5 +2828,5 @@ review); each of its decisions goes into the log.
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
-| 6-bis – Recipe API | in progress (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1) |
+| 6-bis – Recipe API | in progress (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a) |
 | 7 – Robust components | not started |

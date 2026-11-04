@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes.params import resolve_params
 from astrocook.recipes.registry import find_recipe
 
 from .qt_workers import RecipeWorker
@@ -33,10 +34,11 @@ def _add_log_entry(history, recipe_name: str, params: dict) -> None:
     """Record a recipe in the log of a session history (phase 6).
 
     A log manager that is not a ``HistoryLogV2`` cannot happen today: it is an
-    ERROR, instead of the silent skip of before.
+    ERROR, instead of the silent skip of before. The entry holds the values
+    the recipe used, defaults included (phase 6-bis, #573 item 3).
     """
     if isinstance(history.log_manager, HistoryLogV2):
-        history.log_manager.add_entry(recipe_name, params)
+        history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params))
     else:
         logger.error(f"The log of the session has an unknown type "
                      f"({type(history.log_manager).__name__}): {recipe_name} is not recorded.")

@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from astrocook.recipes.messages import msg_param_fail, msg_z_em_unset
+from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -100,9 +101,10 @@ class RecipeContinuumV2:
         self._session = session_v2
         self._tag = 'cont' # V1 tag for this menu
 
-    def estimate_auto(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
-                      kappa: str = '2.0', fudge: str = 'auto', 
-                      smooth_fwhm: str = '800.0', template: str = 'False', renorm_model: str = 'True',
+    @typed_recipe
+    def estimate_auto(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
+                      kappa: float = 2.0, fudge: str = 'auto',
+                      smooth_fwhm: float = 800.0, template: bool = False, renorm_model: bool = True,
                       smooth_std: str = None) -> 'SessionV2':
         """
         Auto-estimate continuum (single-click).
@@ -112,29 +114,33 @@ class RecipeContinuumV2:
 
         Parameters
         ----------
-        smooth_len_lya : str, optional
+        smooth_len_lya : float, optional
             Smoothing length (km/s) for initial guess in the Ly-alpha forest.
-            Defaults to ``'5000.0'``.
-        smooth_len_out : str, optional
+            Defaults to ``5000.0``.
+        smooth_len_out : float, optional
             Smoothing length (km/s) for initial guess outside the forest.
-            Defaults to ``'400.0'``.
-        kappa : str, optional
-            Sigma threshold for finding absorption. Defaults to ``'2.0'``.
+            Defaults to ``400.0``.
+        kappa : float, optional
+            Sigma threshold for finding absorption. Defaults to ``2.0``.
         fudge : str, optional
             A multiplicative factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.
             If ``'auto'``, the factor is calculated to center the continuum residuals.
             Defaults to ``'auto'``, as the GUI (the same result as ``'1.0'``,
             see :meth:`fit_continuum`).
-        smooth_fwhm : str, optional
-            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.
+        smooth_fwhm : float, optional
+            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``800.0``.
         smooth_std : str, optional
             Deprecated: the standard deviation (km/s) used before; overrides
             ``smooth_fwhm`` when given. Defaults to ``None``.
-        template : str, optional
-            If ``'True'``, use a QSO template. Defaults to ``'False'``.
-        renorm_model : str, optional
-            If ``'True'``, re-normalize the 'model' column to match the new continuum.
-            Defaults to ``'True'``.
+        template : bool, optional
+            If ``True``, use a QSO template. Defaults to ``False``.
+        renorm_model : bool, optional
+            If ``True``, re-normalize the 'model' column to match the new continuum.
+            Defaults to ``True``.
+
+        The parameters can also be given as strings (``'5000.0'``,
+        ``'True'``), as the dialogs and the session log give them: they are
+        converted to their types before the recipe runs.
 
         Returns
         -------
@@ -142,19 +148,16 @@ class RecipeContinuumV2:
             A new :class:`~astrocook.core.session.SessionV2` with updated continuum
             and absorption mask, or 0 on failure.
         """
+        smooth_len_lya_q = smooth_len_lya * au.km/au.s
+        smooth_len_out_q = smooth_len_out * au.km/au.s
+        z_em_f = self._session.spec._data.z_em # Read z_em from session
         try:
-            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
-            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
-            kappa_f = float(kappa)
-            template_b = str(template) == 'True'
             # Allow 'auto' or parse float
             if fudge.lower() == 'auto':
                 fudge_f = 'auto'
             else:
                 fudge_f = float(fudge)
             smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)  # sigma, km/s
-            z_em_f = self._session.spec._data.z_em # Read z_em from session
-            renorm_model_b = str(renorm_model) == 'True'
         except ValueError:
             logger.error(msg_param_fail)
             return 0
@@ -169,8 +172,8 @@ class RecipeContinuumV2:
             spec_with_mask = self._session.spec.find_absorbed(
                 smooth_len_lya=smooth_len_lya_q,
                 smooth_len_out=smooth_len_out_q,
-                kappa=kappa_f,
-                template=template_b
+                kappa=kappa,
+                template=template
             )
             
             logger.info("Fitting the continuum to the unabsorbed pixels.")
@@ -178,8 +181,8 @@ class RecipeContinuumV2:
                 fudge=fudge_f,
                 smooth_std_kms=smooth_std_f,
                 mask_col='abs_mask',
-                renorm_model=renorm_model_b,
-                template=template_b
+                renorm_model=renorm_model,
+                template=template
             )
             
             # 3. Return the final new state
@@ -188,8 +191,9 @@ class RecipeContinuumV2:
             logger.error(f"Could not estimate the continuum: {e}", exc_info=True)
             return 0
 
-    def find_absorbed(self, smooth_len_lya: str = '5000.0', smooth_len_out: str = '400.0', 
-                        kappa: str = '2.0', template: str = 'False') -> 'SessionV2':
+    @typed_recipe
+    def find_absorbed(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
+                      kappa: float = 2.0, template: bool = False) -> 'SessionV2':
         """
         Find absorbed regions (V1 logic).
 
@@ -199,17 +203,17 @@ class RecipeContinuumV2:
 
         Parameters
         ----------
-        smooth_len_lya : str, optional
+        smooth_len_lya : float, optional
             Smoothing length (km/s) for initial guess in the Ly-alpha forest.
-            Defaults to ``'5000.0'``.
-        smooth_len_out : str, optional
+            Defaults to ``5000.0``.
+        smooth_len_out : float, optional
             Smoothing length (km/s) for initial guess outside the forest.
-            Defaults to ``'400.0'``.
-        kappa : str, optional
+            Defaults to ``400.0``.
+        kappa : float, optional
             Sigma threshold for clipping. Flux below ``mean - kappa * sigma`` is
-            considered absorbed. Defaults to ``'2.0'``.
-        template : str, optional
-            If ``'True'``, use a QSO template (Not Implemented). Defaults to ``'False'``.
+            considered absorbed. Defaults to ``2.0``.
+        template : bool, optional
+            If ``True``, use a QSO template (Not Implemented). Defaults to ``False``.
 
         Returns
         -------
@@ -217,15 +221,9 @@ class RecipeContinuumV2:
             A new :class:`~astrocook.core.session.SessionV2` with the ``abs_mask``
             column added/updated, or 0 on failure.
         """
-        try:
-            smooth_len_lya_q = float(smooth_len_lya) * au.km/au.s
-            smooth_len_out_q = float(smooth_len_out) * au.km/au.s
-            kappa_f = float(kappa)
-            template_b = str(template) == 'True'
-            z_em_f = self._session.spec._data.z_em # Read z_em from session
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
+        smooth_len_lya_q = smooth_len_lya * au.km/au.s
+        smooth_len_out_q = smooth_len_out * au.km/au.s
+        z_em_f = self._session.spec._data.z_em # Read z_em from session
 
         if z_em_f == 0.0:
             logger.warning(msg_z_em_unset + " The absorbed regions of the Lyman-alpha "
@@ -236,16 +234,17 @@ class RecipeContinuumV2:
             new_spec_v2 = self._session.spec.find_absorbed(
                 smooth_len_lya=smooth_len_lya_q,
                 smooth_len_out=smooth_len_out_q,
-                kappa=kappa_f,
-                template=template_b
+                kappa=kappa,
+                template=template
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logger.error(f"Could not find the absorbed regions: {e}", exc_info=True)
             return 0
 
-    def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: str = '800.0', 
-                      mask_col: str = 'abs_mask', renorm_model: str = 'True', template: str = 'False',
+    @typed_recipe
+    def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: float = 800.0,
+                      mask_col: str = 'abs_mask', renorm_model: bool = True, template: str = 'False',
                       smooth_std: str = None) -> 'SessionV2':
         """
         Fit continuum to mask (V1 logic).
@@ -259,15 +258,15 @@ class RecipeContinuumV2:
         fudge : str, optional
             Fudge factor. Can be a float (e.g., ``'1.0'``) or ``'auto'``.
             Defaults to ``'auto'``.
-        smooth_fwhm : str, optional
-            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``'800.0'``.
+        smooth_fwhm : float, optional
+            FWHM (km/s) of the final Gaussian smoothing. Defaults to ``800.0``.
         smooth_std : str, optional
             Deprecated: the standard deviation (km/s) used before; overrides
             ``smooth_fwhm`` when given. Defaults to ``None``.
         mask_col : str, optional
             Name of the mask column to use (True=Absorbed). Defaults to ``'abs_mask'``.
-        renorm_model : str, optional
-            If ``'True'``, re-normalize the 'model' column. Defaults to ``'True'``.
+        renorm_model : bool, optional
+            If ``True``, re-normalize the 'model' column. Defaults to ``True``.
         template : str, optional
             If ``'True'``, use a QSO template. Defaults to ``'False'``.
 
@@ -279,7 +278,6 @@ class RecipeContinuumV2:
         """
         try:
             smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)
-            renorm_model_b = str(renorm_model) == 'True'
             template_b = str(template) == 'True'
             
             # Allow 'auto' or parse float
@@ -297,7 +295,7 @@ class RecipeContinuumV2:
                 fudge=fudge_arg,
                 smooth_std_kms=smooth_std_f,
                 mask_col=mask_col,
-                renorm_model=renorm_model_b ,
+                renorm_model=renorm_model,
                 template=template_b
             )
             return self._session.with_new_spectrum(new_spec_v2)
@@ -305,8 +303,9 @@ class RecipeContinuumV2:
             logger.error(f"Could not fit the continuum: {e}", exc_info=True)
             return 0
         
+    @typed_recipe
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
-                     kappa: str = '3.0') -> 'SessionV2':
+                     kappa: float = 3.0) -> 'SessionV2':
         """
         Fit power-law continuum.
 
@@ -320,8 +319,8 @@ class RecipeContinuumV2:
             Comma-separated rest-frame wavelength regions (nm).
             Example: ``'128.0-129.0, 131.5-132.5'``.
             Defaults to ``'128.0-129.0, 131.5-132.5, 134.5-136.0'``.
-        kappa : str, optional
-            Sigma threshold for clipping outliers within regions. Defaults to ``'3.0'``.
+        kappa : float, optional
+            Sigma threshold for clipping outliers within regions. Defaults to ``3.0``.
 
         Returns
         -------
@@ -334,17 +333,16 @@ class RecipeContinuumV2:
             return 0
             
         try:
-            kappa_f = float(kappa) # Parse kappa
-
             new_spec_v2 = self._session.spec.fit_powerlaw(
                 regions_str=regions,
-                kappa=kappa_f
+                kappa=kappa
             )
             return self._session.with_new_spectrum(new_spec_v2)
         except Exception as e:
             logger.error(f"Could not fit the power-law continuum: {e}", exc_info=True)
             return 0
     
+    @typed_recipe
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':
         """
         Update continuum from manual knots.
