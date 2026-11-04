@@ -316,8 +316,9 @@ with the macOS app, not on PyPI (INAF has not answered, #549). The
 results on the mock benchmark unchanged (the *Accuracy* page as for
 2.2.0); the behaviour on failures changes (a minor version, not 2.3.1).
 
-Next: phase 6-bis (recipe API; `ROADMAP.md`, phase 6-bis), starting from
-the scheme of the prerequisites, to be refined with Guido. Work in
+Now: phase 6-bis (recipe API; `ROADMAP.md`, phase 6-bis, "Plan of the
+phase": PRs 0-8); the scheme of the prerequisites refined with Guido
+during PRs 1-3. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
