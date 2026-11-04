@@ -299,7 +299,9 @@ def test_continuum_is_logged_and_replays(forest_archive, tmp_path):
     saved = load_session_from_file(str(target), "cont", None, "auto")
     (entry,) = saved.log_manager.to_dict()["entries"]
     assert entry["recipe_name"] == "estimate_auto"
-    assert entry["params"]["kappa"] == "3.0"
+    # The values used, typed, defaults included (phase 6-bis, #573 item 3)
+    assert entry["params"]["kappa"] == 3.0
+    assert entry["params"]["renorm_model"] is True
     # The logged parameters give the same continuum when replayed
     original = load_session_from_file(str(forest_archive), "o", None, "auto")
     replayed = original.continuum.estimate_auto(**entry["params"])

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes.params import resolve_params
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2
@@ -226,7 +227,7 @@ class ScriptWorker(QRunnable):
                 # 3c. Success! Add to the new history
                 params_to_log = params_dict.copy()
                 params_to_log.pop('alias_map', None)
-                new_log.add_entry(recipe_name, params_to_log) 
+                new_log.add_entry(recipe_name, resolve_params(recipe_name, params_to_log))
 
                 new_history.add_state(new_session_state)
                 current_processing_state = new_session_state

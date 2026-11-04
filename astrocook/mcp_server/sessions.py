@@ -14,6 +14,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes.params import resolve_params
 
 
 class SessionStore:
@@ -65,7 +66,8 @@ class SessionStore:
               params: dict[str, Any]) -> SessionV2:
         """Record a recipe in the log and make its result the current state."""
         history = self.get(session_id)
-        history.log_manager.add_entry(recipe_name, params)
+        # The values the recipe used, defaults included (#573, item 3)
+        history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params))
         new_state.log_manager = history.log_manager
         history.add_state(new_state)
         return new_state

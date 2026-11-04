@@ -34,7 +34,11 @@ Keys of a recipe entry:
     this to the other prerequisites ("Prerequisites of the recipes").
 
 Keys of a parameter: ``name``, ``type``, ``default``, ``doc`` (optional,
-the name if missing), ``gui_hidden`` (not shown in the dialog).
+the name if missing), ``gui_hidden`` (not shown in the dialog), and for the
+conversion of its value (:mod:`astrocook.recipes.params`): ``optional``
+(None is a value: no value, or automatic), ``keep`` (special strings passed
+as they are, e.g. ``'_current_'``), ``min`` and ``max`` (bounds of a
+number), ``allow_nan`` (NaN is a value).
 """
 from __future__ import annotations
 
@@ -51,7 +55,8 @@ REQUIREMENTS = frozenset({'z_em', 'resolution'})
 
 _RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
                 'requires'}
-_PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden'}
+_PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
+               'min', 'max', 'allow_nan'}
 
 
 @dataclass(frozen=True)
@@ -65,6 +70,15 @@ class ParamSpec:
     doc: str
     #: Not shown in the dialog of the recipe
     gui_hidden: bool = False
+    #: None is a value (no value, or automatic)
+    optional: bool = False
+    #: Special strings passed as they are (e.g. ``'_current_'``)
+    keep: Tuple[str, ...] = ()
+    #: Bounds of a number (None: no bound)
+    min: Optional[float] = None
+    max: Optional[float] = None
+    #: NaN is a value of a number
+    allow_nan: bool = False
     _default: Any = field(default=None, repr=False)
 
     @property
@@ -114,6 +128,10 @@ def _param_spec(where: str, entry: Mapping[str, Any]) -> ParamSpec:
     return ParamSpec(name=entry['name'], type=entry['type'],
                      doc=entry.get('doc', entry['name']),
                      gui_hidden=bool(entry.get('gui_hidden', False)),
+                     optional=bool(entry.get('optional', False)),
+                     keep=tuple(entry.get('keep', ())),
+                     min=entry.get('min'), max=entry.get('max'),
+                     allow_nan=bool(entry.get('allow_nan', False)),
                      _default=copy.deepcopy(entry['default']))
 
 

@@ -178,7 +178,10 @@ class RecipeDialog(QDialog):
 
                 widget = None
                 
-                if param_type == str:
+                if param_type == str or (param_type in (int, float)
+                                         and (param.optional or param.allow_nan)):
+                    # A number that can be None or NaN: no validator, which
+                    # would not let the user write 'None' or 'nan'
                     widget = QLineEdit(param_default); widget.setMinimumWidth(200)
                 elif param_type == int:
                     widget = QLineEdit(param_default); widget.setValidator(QIntValidator()); widget.setMinimumWidth(200)

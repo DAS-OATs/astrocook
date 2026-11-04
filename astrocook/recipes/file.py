@@ -6,6 +6,8 @@ from astropy.io import ascii
 from astropy.table import Table
 from typing import TYPE_CHECKING, List
 
+from astrocook.recipes.params import typed_recipe
+
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
@@ -44,6 +46,7 @@ class RecipeFileV2:
         self._session = session_v2
         self._tag = 'cb'
 
+    @typed_recipe
     def export_ascii(self, targets: str, path: str, prefix: str) -> bool:
         """
         Export selected components of the session to ASCII/CSV files.
@@ -160,6 +163,7 @@ class RecipeFileV2:
         write_systems = bool(("systems" in target_list or syst_req) and self._session.systs)
         return spec_req, write_systems, syst_req, target_list
 
+    @typed_recipe
     def import_ascii(self, file_path: str) -> 'SessionV2':
         """
         Import columns from an ASCII/CSV file into the current session.
