@@ -30,28 +30,14 @@ from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, LogManager
 from astrocook.core.utils import resource_path # Import recipe helpers
 
-# --- *** RECIPE LOOKUP MAP *** ---
-from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
-from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
-from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.recipes.registry import all_recipes
 
 from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
 
-RECIPE_CATEGORY_MAP = {}
-for name in ABSORBERS_RECIPES_SCHEMAS:
-    RECIPE_CATEGORY_MAP[name] = 'absorbers'
-for name in CONTINUUM_RECIPES_SCHEMAS: 
-    RECIPE_CATEGORY_MAP[name] = 'continuum'
-for name in EDIT_RECIPES_SCHEMAS:
-    RECIPE_CATEGORY_MAP[name] = 'edit'
-for name in FILE_RECIPES_SCHEMAS:
-    RECIPE_CATEGORY_MAP[name] = 'file'
-for name in FLUX_RECIPES_SCHEMAS:
-    RECIPE_CATEGORY_MAP[name] = 'flux'
-# (Add other recipe categories here as they are created)
+#: The category of each recipe, by name (the log and the scripts name a
+#: recipe without its category)
+RECIPE_CATEGORY_MAP = {spec.name: spec.category for spec in all_recipes()}
 
 class MockV1GUIContext:
     """Provides the minimal methods expected by V1 loaders."""

@@ -47,6 +47,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     # --- 2. WRAPPERS ---
     "doublets_auto": {
         "brief": "Auto-fit metal doublets (Red Side).",
+        "requires": ("z_em", "resolution"),
         "details": "Wrapper for components_auto targeted at the red side (z < z_em). Finds CIV, SiIV, MgII.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
@@ -59,6 +60,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "lya_auto": {
         "brief": "Auto-fit Ly-alpha forest.",
+        "requires": ("z_em", "resolution"),
         "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
@@ -71,6 +73,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "forest_auto": {
         "brief": "Auto-fit full Lyman series.",
+        "requires": ("z_em", "resolution"),
         "details": "Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Threshold for detection."},
@@ -83,6 +86,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "metals_auto": {
         "brief": "Check for associated metals.",
+        "requires": ("z_em", "resolution"),
         "details": "Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated list of ions to check."},
@@ -95,6 +99,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "identify_lines": {
         "brief": "Identify likely absorption systems.",
+        "branching": True,
+        "requires": ("z_em", "resolution"),
         "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for (comma-separated)."},
@@ -120,6 +126,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "add_component": {
         "brief": "Add a single component.",
+        "requires": ("resolution",),
         "details": "Adds a new manual Voigt component at a specific redshift.",
         "params": [
             {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or Multiplet name (e.g. 'CIV')"},
@@ -176,6 +183,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "fit_component": {
         "brief": "Fit component.",
+        "requires": ("resolution",),
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},

@@ -8,7 +8,7 @@ from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 
 from astrocook.core.session import SessionV2
-from astrocook.core.utils import get_recipe_schema
+from astrocook.recipes.registry import get_recipe
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
                     INPUT_BORDER, WARNING, themed)
 
@@ -22,8 +22,12 @@ class RecipeDialog(QDialog):
     recipe_requested = Signal(str, str, dict, dict)
 
     def __init__(self, recipe_category: str, recipe_name: str,
-                 session: SessionV2, parent=None):
+                 session: SessionV2, parent=None, param_docs: dict = None):
+        """``param_docs`` replaces the descriptions of some parameters in
+        this dialog only (e.g. the number of values that Equalize and
+        Stitch expects); the registry is not changed (F79)."""
         super().__init__(parent)
+        self._param_docs = dict(param_docs or {})
         self.recipe_category = recipe_category
         self.recipe_name = recipe_name
         self.session = session
@@ -43,8 +47,8 @@ class RecipeDialog(QDialog):
         self.session_alias_map = self._build_alias_map()
 
         try:
-            self.schema = get_recipe_schema(recipe_category, recipe_name)
-        except NotImplementedError as e:
+            self.schema = get_recipe(recipe_category, recipe_name)
+        except KeyError as e:
             logger.error(f"There is no description of the recipe {recipe_category}.{recipe_name}: {e}")
             self.schema = None 
 
@@ -138,13 +142,13 @@ class RecipeDialog(QDialog):
             QTimer.singleShot(0, self.reject)
             return
 
-        self.setWindowTitle(f"Recipe: {self.schema.get('brief', self.recipe_name).rstrip('.')}")
+        self.setWindowTitle(f"Recipe: {self.schema.brief.rstrip('.')}")
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(15) 
 
         # 1. Description
-        if self.schema.get('details'):
-            desc_label = QLabel(self.schema['details'])
+        if self.schema.details:
+            desc_label = QLabel(self.schema.details)
             desc_label.setWordWrap(True)
             main_layout.addWidget(desc_label)
 
@@ -152,17 +156,17 @@ class RecipeDialog(QDialog):
         form_widget = QWidget()
         form_layout = QFormLayout(form_widget)
         
-        params = self.schema.get('params', [])
+        params = self.schema.params
         if not params:
             form_layout.addRow(QLabel("This recipe takes no parameters."))
         else:
             for param in params:
-                if param.get('gui_hidden', False): continue
+                if param.gui_hidden: continue
                 
-                param_name = param['name']
-                param_type = param['type']
-                param_doc = param.get('doc', param_name) 
-                param_default = str(param.get('default', '')) 
+                param_name = param.name
+                param_type = param.type
+                param_doc = self._param_docs.get(param_name, param.doc)
+                param_default = str(param.default)
 
                 is_current = param_default == "_current_"
                 current_hint = ""
@@ -181,7 +185,7 @@ class RecipeDialog(QDialog):
                 elif param_type == float:
                     widget = QLineEdit(param_default); val = QDoubleValidator(); val.setLocale(QLocale.C); widget.setValidator(val); widget.setMinimumWidth(200)
                 elif param_type == bool:
-                    def_c = param.get('default', False); 
+                    def_c = param.default
                     if isinstance(def_c, str): def_c = def_c.lower() == 'true'
                     widget = QCheckBox(); widget.setChecked(def_c); label.setText(""); widget.setText(f"{param_doc}")
                 else:
@@ -608,8 +612,8 @@ class RecipeDialog(QDialog):
         super().reject() 
 
     def _show_help(self):
-        if self.schema and self.schema.get('url'):
-            url = self.schema['url']
+        if self.schema and self.schema.url:
+            url = self.schema.url
             try:
                 webbrowser.open(url) 
             except (webbrowser.Error, OSError) as e:

@@ -654,17 +654,13 @@ class MainSessionsMixin:
         # Pluralization check
         val_word = "value" if n_minus_one == 1 else "values"
 
-        # 1. Dynamically inject the exact number into the Recipe Schema in memory
-        from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
-        params = EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]["params"]
-        
-        for p in params:
-            if p["name"] == "stitch_wavelengths":
-                p["doc"] = f"Comma-separated cut-offs (requires {n_minus_one} {val_word})."
-            elif p["name"] == "equalize_ranges":
-                p["doc"] = f"Overlap ranges 'min-max' (requires {n_minus_one} {val_word}) or 'auto'."
-            elif p["name"] == "manual_factors":
-                p["doc"] = f"Fixed multipliers (requires {n_minus_one} {val_word}) or 'auto'."
+        # The number of values expected, in the descriptions of this
+        # dialog only: the registry is not changed (F79)
+        param_docs = {
+            "stitch_wavelengths": f"Comma-separated cut-offs (requires {n_minus_one} {val_word}).",
+            "equalize_ranges": f"Overlap ranges 'min-max' (requires {n_minus_one} {val_word}) or 'auto'.",
+            "manual_factors": f"Fixed multipliers (requires {n_minus_one} {val_word}) or 'auto'.",
+        }
 
         others_str = ", ".join(others_names)
         
@@ -672,7 +668,7 @@ class MainSessionsMixin:
         self._hidden_stitch_sessions = others_str
 
         self._launch_recipe_dialog(
-            "edit", "equalize_and_stitch"
+            "edit", "equalize_and_stitch", param_docs=param_docs
         )
 
     def _on_coadd_requested(self, primary_history, others_names: List[str]):

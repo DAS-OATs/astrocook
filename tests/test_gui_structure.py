@@ -100,6 +100,9 @@ MAIN_WINDOW |= {'_load_session', 'open_files', '_open_files_in_background', '_re
                 '_save_window_geometry', '_refresh_recent_list', 'closeEvent'}
 #: ... and View > Plot Colours (phase 5-bis)
 MAIN_WINDOW |= {'_set_plot_colours'}
+#: ... without the lists of the recipes that need z_em or the resolution,
+#: now declared by each recipe in the registry (phase 6-bis, PR 1)
+MAIN_WINDOW -= {'_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM'}
 
 def _astrocook_classes(cls):
     return [c for c in cls.__mro__ if c.__module__.startswith("astrocook.")]

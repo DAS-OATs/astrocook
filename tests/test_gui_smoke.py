@@ -20,24 +20,15 @@ import pytest
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from astrocook.gui.main_window import MainWindowV2
-from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
-from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
-from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.recipes.registry import all_recipes, get_recipe
 
 # Small real archive (J0103-1305, 2156 pixels, 764 components), quick to load
 SESSION_FILE = Path(__file__).parent / "data" / "J0103-1305_metallines_lya_new_3.acs2"
 
-SCHEMAS = {"absorbers": ABSORBERS_RECIPES_SCHEMAS,
-           "continuum": CONTINUUM_RECIPES_SCHEMAS,
-           "edit": EDIT_RECIPES_SCHEMAS, "file": FILE_RECIPES_SCHEMAS,
-           "flux": FLUX_RECIPES_SCHEMAS}
 # Recipes with a dialog in the menus (the hidden ones are called by the
 # system inspector or by other recipes with their own parameters)
-DIALOG_RECIPES = [(cat, name) for cat, schemas in SCHEMAS.items()
-                  for name, schema in schemas.items()
-                  if not schema.get("gui_hidden")]
+DIALOG_RECIPES = [(spec.category, spec.name) for spec in all_recipes()
+                  if not spec.gui_hidden]
 
 
 @pytest.fixture
@@ -173,8 +164,7 @@ def test_recipe_dialog_builds(loaded, category, name):
     from astrocook.gui.recipe_dialog import RecipeDialog
     dialog = RecipeDialog(category, name, loaded.active_history.current_state, loaded)
     dialog.show()
-    visible = [p["name"] for p in SCHEMAS[category][name]["params"]
-               if not p.get("gui_hidden")]
+    visible = [p.name for p in get_recipe(category, name).params if not p.gui_hidden]
     assert set(visible) <= set(dialog.input_widgets)
     dialog.close()
 

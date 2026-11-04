@@ -65,6 +65,7 @@ FLUX_RECIPES_SCHEMAS = {
     },
     "resample": {
         "brief": "Resample on another grid.",
+        "branching": True,
         "details": "Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.",
         "params": [
             {"name": "target_session", "type": str, "default": "None", "doc": "Name of the session to use as the grid"}

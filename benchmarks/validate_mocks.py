@@ -187,12 +187,9 @@ def is_detectable(system, truth):
 def schema_params(menu, recipe):
     """The non-hidden parameters of a recipe with their GUI defaults, as
     strings (as the dialogs and the MCP server pass them)."""
-    from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-    from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-    schema = {"continuum": CONTINUUM_RECIPES_SCHEMAS,
-              "absorbers": ABSORBERS_RECIPES_SCHEMAS}[menu][recipe]
-    return {p["name"]: str(p["default"]) for p in schema["params"]
-            if not p.get("gui_hidden") and p["name"] != "debug_rating"}
+    from astrocook.recipes.registry import get_recipe
+    return {p.name: str(p.default) for p in get_recipe(menu, recipe).params
+            if not p.gui_hidden and p.name != "debug_rating"}
 
 
 def run_chain(spec):

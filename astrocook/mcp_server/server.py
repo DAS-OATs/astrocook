@@ -5,8 +5,8 @@ Each tool is named after what it calls: ``<menu>_<recipe>`` for a recipe,
 The docstrings of the tools are their descriptions for the model.
 
 The defaults and the parameter descriptions of the recipe tools are read
-from the recipe schemas (``*_RECIPES_SCHEMAS``, the ones the GUI dialogs
-use), so that the tools and the GUI share them (F40: the method
+from the recipe registry (:mod:`astrocook.recipes.registry`, the one the
+GUI dialogs use), so that the tools and the GUI share them (F40: the method
 signatures may differ). Parameters that need the GUI (debug plots) or
 the internals (column names) are left out.
 
@@ -28,8 +28,7 @@ from astrocook.mcp_server.outputs import (
     ContinuumInfo, FitInfo, IdentificationInfo, SaveResult, SessionInfo,
     continuum_summary, fit_summary, identification_summary, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
-from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from astrocook.recipes.registry import get_recipe
 
 INSTRUCTIONS = """\
 Astrocook analyses quasar spectra: continuum, identification of absorption
@@ -41,9 +40,6 @@ the server runs; give them absolute.
 """
 
 
-SCHEMAS = {"continuum": CONTINUUM_RECIPES_SCHEMAS,
-           "absorbers": ABSORBERS_RECIPES_SCHEMAS}
-
 SESSION_ID = Annotated[str, Field(description=(
     "Identifier returned by session_open."))]
 
@@ -52,28 +48,20 @@ def _resolve(path: str) -> Path:
     return Path(os.path.expanduser(path)).resolve()
 
 
-def _param(menu: str, recipe: str, name: str) -> dict:
-    """The schema entry of a recipe parameter."""
-    for p in SCHEMAS[menu][recipe]["params"]:
-        if p["name"] == name:
-            return p
-    raise KeyError(f"{menu}.{recipe} has no parameter {name}")
-
-
 def default(menu: str, recipe: str, name: str):
     """Default of a recipe parameter, as in the GUI dialog."""
-    return _param(menu, recipe, name)["default"]
+    return get_recipe(menu, recipe).param(name).default
 
 
 def doc(menu: str, recipe: str, name: str) -> str:
     """Description of a recipe parameter, as in the GUI dialog."""
-    return _param(menu, recipe, name)["doc"]
+    return get_recipe(menu, recipe).param(name).doc
 
 
 def description(menu: str, recipe: str, more: str) -> str:
     """Tool description: the recipe brief and details, then ``more``."""
-    schema = SCHEMAS[menu][recipe]
-    return f"{schema['brief']} {schema['details']}\n\n{more}"
+    spec = get_recipe(menu, recipe)
+    return f"{spec.brief} {spec.details}\n\n{more}"
 
 
 def build_server() -> MCPServer:
