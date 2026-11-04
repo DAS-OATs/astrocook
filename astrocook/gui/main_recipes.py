@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
-from astrocook.core.utils import get_recipe_schema, is_branching_recipe
+from astrocook.recipes.registry import find_recipe
 
 from .qt_workers import RecipeWorker
 from .recipe_dialog import RecipeDialog
@@ -57,33 +57,10 @@ class MainRecipesMixin:
     (``update_gui_session_state``, ``_update_view_for_session``).
     """
 
-    # --- DEFINE THE LIST OF RECIPES THAT NEED Z_EM ---
-    _RECIPES_REQUIRING_Z_EM = {
-        'fit_powerlaw', 
-        'estimate_auto', 
-        'find_absorbed',
-        'extract_preset',
-        'doublets_auto',
-        'lya_auto',
-        'forest_auto',
-        'metals_auto',
-        'identify_lines'
-    }
-
-    # Recipes that need Resolution info
-    _RECIPES_REQUIRING_RESOL = {
-        'fit_component',
-        'add_component',
-        'doublets_auto',
-        'lya_auto',
-        'forest_auto',
-        'metals_auto',
-        'identify_lines'  # Useful for matching linewidths
-    }
-
     def _check_and_handle_requirements(self, category, name, params=None, mode='dialog') -> bool:
         """
-        Centralized check for z_em and resolution.
+        Centralized check for z_em and resolution, as the registry
+        declares them (``RecipeSpec.requires``).
         Returns True if requirements are met.
         If not, prompts user, sets pending state, launches set_properties, and returns False.
         """
@@ -91,9 +68,11 @@ class MainRecipesMixin:
             return True # Let validation fail downstream if no session
 
         spec = self.active_history.current_state.spec
-        
+        recipe = find_recipe(name)
+        requires = recipe.requires if recipe else frozenset()
+
         # 1. Check z_em
-        if name in self._RECIPES_REQUIRING_Z_EM:
+        if 'z_em' in requires:
             if spec._data.z_em == 0.0:
                 ret = self._show_custom_message(
                     title="Emission Redshift Required",
@@ -108,7 +87,7 @@ class MainRecipesMixin:
                 return False
 
         # 2. Check Resolution
-        if name in self._RECIPES_REQUIRING_RESOL:
+        if 'resolution' in requires:
             # The resol column, the single source (#526)
             has_resol = resolution_summary(spec)[0] > 0
             
@@ -137,7 +116,8 @@ class MainRecipesMixin:
             'mode': mode
         }
 
-    def _launch_recipe_dialog(self, category, name, initial_params: dict = None):
+    def _launch_recipe_dialog(self, category, name, initial_params: dict = None,
+                              param_docs: dict = None):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
             return
@@ -178,7 +158,7 @@ class MainRecipesMixin:
         logger.debug(f"Opening the dialog of {category}.{name}.")
         
         current_state = self.active_history.current_state
-        dialog = RecipeDialog(category, name, current_state, self) 
+        dialog = RecipeDialog(category, name, current_state, self, param_docs=param_docs)
 
         if initial_params:
             for param_name, value in initial_params.items():
@@ -460,8 +440,9 @@ class MainRecipesMixin:
             return
         t0, category, _, n_before = started
         self._recipe_started = None
-        schema = get_recipe_schema(category, recipe_name) or {}
-        text = f"{schema.get('brief', recipe_name).rstrip('.')}: done in " \
+        recipe = find_recipe(recipe_name)
+        brief = recipe.brief if recipe else recipe_name
+        text = f"{brief.rstrip('.')}: done in " \
                f"{time.perf_counter() - t0:.1f} s"
         systs = getattr(new_state, 'systs', None)
         n_after = len(systs.components) if systs else 0
@@ -504,7 +485,8 @@ class MainRecipesMixin:
                 # recipe is logged in each new session it opens, after the
                 # branch has copied the parent log: the parent session does
                 # not change, so its log does not either (F41, #575)
-                branching = is_branching_recipe(recipe_name)
+                recipe = find_recipe(recipe_name)
+                branching = bool(recipe and recipe.branching)
                 params_to_log = params.copy()
                 params_to_log.pop('alias_map', None)
                 # Written before the new state is applied (an error here, a

@@ -3,12 +3,6 @@ import re
 from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
-# --- Import all schemas and the map ---
-from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
-from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
-from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
@@ -18,14 +12,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Define a map of all known recipe modules
-ALL_SCHEMAS = {
-    'file': FILE_RECIPES_SCHEMAS,
-    'edit': EDIT_RECIPES_SCHEMAS,
-    'flux': FLUX_RECIPES_SCHEMAS,
-    'continuum': CONTINUUM_RECIPES_SCHEMAS,
-    'absorbers': ABSORBERS_RECIPES_SCHEMAS
-}
 # Define the regex for parsing script lines
 SCRIPT_LINE_REGEX = re.compile(r'(\w+)\((.*)\)')
 

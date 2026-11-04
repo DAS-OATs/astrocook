@@ -84,30 +84,27 @@ def test_two_arms_two_cuts_is_rejected(arms):
 def test_gui_dialog_asks_for_one_cut_with_two_arms(qtbot, monkeypatch, tmp_path):
     # GUI side of #477: with two arms the dialog must ask for one value and
     # pass the other session itself (the field is hidden from the user)
-    import copy
     from astrocook.core.session_manager import SessionHistory
     from astrocook.core.structures import HistoryLogV2
-    import astrocook.recipes.edit as edit
+    from astrocook.recipes.registry import get_recipe
 
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    # The handler edits the recipe schema in place: restore it afterwards
-    monkeypatch.setattr(edit, "EDIT_RECIPES_SCHEMAS",
-                        copy.deepcopy(edit.EDIT_RECIPES_SCHEMAS))
     from astrocook.gui.main_window import MainWindowV2  # needs the QApplication
     window = MainWindowV2(None, None)
     qtbot.addWidget(window)
 
     vis = _arm(np.arange(900.0, 1020.0, 0.02), 1.0, seed=1)
     history = SessionHistory(SessionV2(name="VIS", gui=None, spec=vis), HistoryLogV2())
+    window.session_histories.append(history)
     monkeypatch.setattr(window, "_update_view_for_session", lambda *a, **k: None)
-    launched = []
-    monkeypatch.setattr(window, "_launch_recipe_dialog",
-                        lambda *a, **k: launched.append((a, k)))
 
     window._on_equalized_stitch_dialog_requested(history, ["NIR"])
 
-    assert launched and launched[0][0] == ("edit", "equalize_and_stitch")
+    dialog = window.active_recipe_dialog
+    assert dialog is not None and dialog.recipe_name == "equalize_and_stitch"
     assert window._hidden_stitch_sessions == "NIR"
-    docs = {p["name"]: p["doc"]
-            for p in edit.EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]["params"]}
-    assert "requires 1 value)" in docs["stitch_wavelengths"]
+    # The dialog says how many values it expects; the registry is unchanged (F79)
+    assert "requires 1 value)" in dialog.input_widgets["stitch_wavelengths"].toolTip()
+    assert "requires" not in get_recipe("edit", "equalize_and_stitch").param(
+        "stitch_wavelengths").doc
+    dialog.reject()

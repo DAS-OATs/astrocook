@@ -363,26 +363,22 @@ def test_stitch_and_coadd(two, monkeypatch):
 
 
 def test_equalize_and_stitch(two, monkeypatch):
-    from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
+    from astrocook.recipes.registry import get_recipe
     opened = []
     monkeypatch.setattr(two, "_launch_recipe_dialog",
-                        lambda cat, name, initial_params=None: opened.append((cat, name)))
-    params = EDIT_RECIPES_SCHEMAS["equalize_and_stitch"]["params"]
-    docs = {p["name"]: p["doc"] for p in params}
-    try:
-        two._on_equalized_stitch_dialog_requested(two.session_histories[0], ["b", "c"])
-        assert opened == [("edit", "equalize_and_stitch")]
-        assert two._hidden_stitch_sessions == "b, c"
-        # The documentation of the parameters is rewritten in the shared
-        # schema (findings register F79)
-        now = {p["name"]: p["doc"] for p in params}
-        assert now["stitch_wavelengths"] == "Comma-separated cut-offs (requires 2 values)."
-        two._on_equalized_stitch_dialog_requested(two.session_histories[0], ["b"])
-        now = {p["name"]: p["doc"] for p in params}
-        assert now["manual_factors"] == "Fixed multipliers (requires 1 value) or 'auto'."
-    finally:
-        for p in params:
-            p["doc"] = docs[p["name"]]
+                        lambda cat, name, initial_params=None, param_docs=None:
+                        opened.append((cat, name, param_docs)))
+    before = get_recipe("edit", "equalize_and_stitch")
+    two._on_equalized_stitch_dialog_requested(two.session_histories[0], ["b", "c"])
+    assert [o[:2] for o in opened] == [("edit", "equalize_and_stitch")]
+    assert two._hidden_stitch_sessions == "b, c"
+    # The number of values expected goes to the dialog alone; the registry
+    # is not changed (findings register F79)
+    assert opened[-1][2]["stitch_wavelengths"] == "Comma-separated cut-offs (requires 2 values)."
+    two._on_equalized_stitch_dialog_requested(two.session_histories[0], ["b"])
+    assert opened[-1][2]["manual_factors"] == "Fixed multipliers (requires 1 value) or 'auto'."
+    assert get_recipe("edit", "equalize_and_stitch") == before
+    assert "requires" not in before.param("stitch_wavelengths").doc
 
 
 # --- Session inspector -------------------------------------------------------------------------

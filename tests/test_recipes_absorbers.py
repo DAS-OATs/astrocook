@@ -363,13 +363,13 @@ def test_refit_all_max_b(one_civ):
 
 def test_pipelines_bound_b_and_manual_fits_do_not():
     import inspect
-    from astrocook.recipes.absorbers import RecipeAbsorbersV2, ABSORBERS_RECIPES_SCHEMAS
+    from astrocook.recipes.absorbers import RecipeAbsorbersV2
+    from astrocook.recipes.registry import get_recipe
     for name in ("components_auto", "doublets_auto", "lya_auto", "forest_auto",
                  "metals_auto"):
         sig = inspect.signature(getattr(RecipeAbsorbersV2, name))
         assert sig.parameters["max_b"].default == "50.0", name
-        schema = {p["name"]: p for p in ABSORBERS_RECIPES_SCHEMAS[name]["params"]}
-        assert schema["max_b"]["default"] == 50.0, name
+        assert get_recipe("absorbers", name).param("max_b").default == 50.0, name
     sig = inspect.signature(RecipeAbsorbersV2.refit_all)
     assert sig.parameters["max_b"].default == "300.0"
     assert "max_b" not in inspect.signature(RecipeAbsorbersV2.fit_component).parameters

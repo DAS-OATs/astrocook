@@ -23,7 +23,8 @@ from astrocook.core.structures import ComponentDataV2  # noqa: E402
 from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
 from astrocook.mcp_server import server as server_module  # noqa: E402
-from astrocook.mcp_server.server import SCHEMAS, build_server  # noqa: E402
+from astrocook.mcp_server.server import build_server  # noqa: E402
+from astrocook.recipes.registry import get_recipe  # noqa: E402
 from astrocook.core.spectrum import SpectrumV2  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
@@ -266,13 +267,14 @@ def test_recipe_tool_defaults_are_the_gui_defaults():
             "continuum_estimate_auto": ("continuum", "estimate_auto"),
             "absorbers_identify_lines": ("absorbers", "identify_lines"),
             "absorbers_doublets_auto": ("absorbers", "doublets_auto")}.items():
-        schema = {p["name"]: p for p in SCHEMAS[menu][recipe]["params"]}
+        spec = get_recipe(menu, recipe)
+        schema = {p.name: p for p in spec.params}
         props = tools[name].input_schema["properties"]
         for param, prop in props.items():
             if param in schema:
-                assert prop["default"] == schema[param]["default"], (name, param)
-                assert prop["description"] == schema[param]["doc"]
-        assert tools[name].description.startswith(SCHEMAS[menu][recipe]["brief"])
+                assert prop["default"] == schema[param].default, (name, param)
+                assert prop["description"] == schema[param].doc
+        assert tools[name].description.startswith(spec.brief)
 
 
 def test_continuum(forest_archive):

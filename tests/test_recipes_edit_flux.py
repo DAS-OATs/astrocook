@@ -392,8 +392,8 @@ def test_rebin_bad_input_returns_0(params):
 def test_rebin_does_not_offer_norm():
     # F37 (#560): 'norm' (V1: return the normalized spectrum) was offered by
     # the dialog but never applied; it is no longer offered
-    from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
-    params = [p["name"] for p in FLUX_RECIPES_SCHEMAS["rebin"]["params"]]
+    from astrocook.recipes.registry import get_recipe
+    params = [p.name for p in get_recipe("flux", "rebin").params]
     assert "norm" not in params
 
 

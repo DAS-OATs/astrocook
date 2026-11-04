@@ -103,6 +103,7 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "split": {
         "brief": "Split spectrum by expression.",
+        "branching": True,
         "details": "Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(λ > 400) & (λ < 500)'.",
         "params": [
             {"name": "expression", "type": str, "default": "(λ > 400) & (λ < 500)", "doc": "Boolean expression to select data"}
@@ -111,6 +112,8 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "extract_preset": {
         "brief": "Extract region by preset.",
+        "branching": True,
+        "requires": ("z_em",),
         "details": "Extract a specific standard region (like the Ly-alpha forest) into a new session, based on the current emission redshift (z_em).",
         "params": [
             # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
@@ -132,11 +135,13 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "stitch": {
         "brief": "Merge multiple sessions",
+        "branching": True,
         "params": [],
         "gui_hidden": True  # Usually called via script
     },
     "equalize_and_stitch": {
         "brief": "Equalize and stitch arms.",
+        "branching": True,
         "details": "Equalize flux levels and stitch multiple sessions at specific wavelengths.",
         "params": [
             {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of other sessions (in blue-to-red order).", "gui_hidden": True},
@@ -148,6 +153,7 @@ EDIT_RECIPES_SCHEMAS = {
     },
     "coadd": {
         "brief": "Co-add multiple sessions.",
+        "branching": True,
         "details": "Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).",
         "params": [
             {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of sessions to co-add"},

@@ -12,7 +12,7 @@ import logging
 import numpy as np
 from PySide6.QtWidgets import QMessageBox
 
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
+from astrocook.recipes.registry import get_recipe
 
 from astrocook.gui.errors import QT_ERRORS
 logger = logging.getLogger(__name__)
@@ -160,8 +160,7 @@ class ContinuumControlsMixin:
                 
                 # A. Fetch default params from Schema
                 # This ensures we respect the defaults defined in continuum.py
-                schema = CONTINUUM_RECIPES_SCHEMAS.get(recipe_name, {})
-                params = {p['name']: p['default'] for p in schema.get('params', [])}
+                params = get_recipe("continuum", recipe_name).defaults()
                 
                 # B. Inject our manual data
                 # (We keep these hidden in the schema so the dialog won't show huge lists)

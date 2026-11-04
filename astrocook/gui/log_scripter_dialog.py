@@ -7,11 +7,7 @@ from PySide6.QtGui import QFontDatabase, QKeySequence, QTextCursor
 from typing import TYPE_CHECKING, Optional
 
 # --- V2 Imports ---
-from astrocook.recipes.continuum import CONTINUUM_RECIPES_SCHEMAS
-from astrocook.recipes.absorbers import ABSORBERS_RECIPES_SCHEMAS
-from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
-from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
-from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
+from astrocook.recipes.registry import RECIPES
 from astrocook.core.structures import HistoryLogV2
 
 if TYPE_CHECKING:
@@ -19,14 +15,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-ALL_SCHEMAS = {
-    'absorbers': ABSORBERS_RECIPES_SCHEMAS,
-    'continuum': CONTINUUM_RECIPES_SCHEMAS,
-    'edit': EDIT_RECIPES_SCHEMAS,
-    'file': FILE_RECIPES_SCHEMAS,
-    'flux': FLUX_RECIPES_SCHEMAS
-    # Add new schema imports here
-}
 
 # Define the type for the log manager
 LogManager = HistoryLogV2
@@ -274,10 +262,10 @@ class LogScripterDialog(QDialog):
             # Loop in the defined order
             for category in category_order:
                 # Check if we have schemas for this category
-                if category in ALL_SCHEMAS:
+                if category in RECIPES:
                     category_menu = menu.addMenu(category.capitalize())
                     # Loop in the order defined in the schema file (which is preserved)
-                    for recipe_name in ALL_SCHEMAS[category].keys():
+                    for recipe_name in RECIPES[category].keys():
                         action = category_menu.addAction(recipe_name)
                         action.triggered.connect(lambda checked=False, c=category, n=recipe_name: self._insert_template(c, n))
 
@@ -296,18 +284,18 @@ class LogScripterDialog(QDialog):
         schema = None
         params_str = "..." 
         try:
-            if category in ALL_SCHEMAS and recipe_name in ALL_SCHEMAS[category]:
-                schema = ALL_SCHEMAS[category][recipe_name]
+            if category in RECIPES and recipe_name in RECIPES[category]:
+                schema = RECIPES[category][recipe_name]
             
-            if schema and 'params' in schema:
+            if schema and schema.params:
                 params = []
-                for p in schema['params']:
-                    default_val = p['default']
+                for p in schema.params:
+                    default_val = p.default
                     if isinstance(default_val, str) and default_val != "_current_":
                         default_val = f"'{default_val}'"
                     else:
                         default_val = str(default_val)
-                    params.append(f"{p['name']}={default_val}")
+                    params.append(f"{p.name}={default_val}")
                 params_str = ", ".join(params)
                 
         except (KeyError, TypeError):

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 CONTINUUM_RECIPES_SCHEMAS = {
     "estimate_auto": {
         "brief": "Auto-estimate continuum (single-click).",
+        "requires": ("z_em",),
         "details": "A single-click recipe that runs 'find_absorbed' and then 'fit_continuum' in sequence, based on the V1 'clip_flux' algorithm.",
         "params": [
             {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
@@ -27,6 +28,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
     },
     "find_absorbed": {
         "brief": "Find absorbed regions (V1 logic).",
+        "requires": ("z_em",),
         "details": "Run the V1 'clip_flux' kappa-sigma algorithm (with Ly-a split) to create a 'mask_unabs' column.",
         "params": [
             {"name": "smooth_len_lya", "type": float, "default": 5000.0, "doc": "Smoothing length in Ly-a forest (km/s)"},
@@ -50,6 +52,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
     },
     "fit_powerlaw": {
         "brief": "Fit power-law continuum.",
+        "requires": ("z_em",),
         "details": "Fit a power-law (linear in log-log space) to user-defined, unabsorbed rest-frame regions. Creates 'cont_pl' column.",
         "params": [
             {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame regions (nm), e.g., '128-129,131-132'"},
