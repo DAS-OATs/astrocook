@@ -3134,7 +3134,45 @@ review); each of its decisions goes into the log.
 
 ---
 
-## 6. Progress
+## 6. Papers
+
+Agreed with Guido (October-November 2026). The plan of the papers (which
+papers, journals, order, the structure and method of the reference paper)
+is in the private repository `DAS-OATs/astrocook-data`,
+`papers/plan.md`; here only what drives the development.
+
+**Reference paper (A, after phase 7).** Validation on mocks and an
+automatic re-analysis of the UVES Deep Spectrum of HE0940–1050, assisted
+by an agent through MCP, compared with the published VPFIT analysis
+(D'Odorico et al. 2016) and with a *synthetic twin* of the spectrum (a
+mock with the published components, on the grid, with the error
+spectrum, resolution and continuum of the real one).
+
+**Rule: the real spectrum of HE0940–1050 stays blind** until the version
+of the paper is frozen (after phase 7). Astrocook is developed and
+measured only on the mocks and on the twin, never on the real spectrum,
+so that it is not tuned on it; the analysis plan is written before the
+first run on it.
+
+**What the development owes to the paper:**
+
+| What | When |
+|---|---|
+| Twin: a mock from an arbitrary component list, on a given pixel grid, with a given error spectrum, resolution and continuum (`astrocook/mocks` has a uniform velocity grid, a power-law continuum and an error from the S/N today) | small, when the material of the published analysis arrives |
+| Import of a VPFIT model (fort.26 or the tables of a paper) into a `SystemListV2`, and its evaluation on a spectrum without fitting (chi2, residuals, AIC/BIC per system) | new, small |
+| Full MCP server, with the log of the decisions of the agent | phase 6-ter |
+| Emission model with an uncertainty; identification with alternatives and credibility | phase 7 |
+| Mock benchmark rerun with the frozen version | after phase 7 |
+
+The twin also gives phase 7 a realistic high-S/N development case, which
+the mocks of phase 4 do not cover.
+
+**Software paper (B, JOSS)**: as soon as the LICENSE arrives (#549); the
+recipe API is stable after phase 6-bis.
+
+---
+
+## 7. Progress
 
 | Phase | Status |
 |---|---|
