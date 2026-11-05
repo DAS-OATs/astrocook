@@ -211,8 +211,9 @@ CASES = [
     ('components_auto', 'base', 'region_limit', 'None', {}, 'None'),
     ('components_auto', 'base', 'region_limit', 'red_side', {}, 'red_side'),
     ('components_auto', 'base', 'region_limit', 'lya_forest', {}, 'lya_forest'),
-    ('components_auto', 'base', 'region_limit', 'nope', {}, FAILS),
-    ('components_auto', 'base', 'region_limit', '', {}, FAILS),
+    # Refused since phase 6-bis (PR 6c): a list of choices (they failed in the recipe)
+    ('components_auto', 'base', 'region_limit', 'nope', {}, REFUSED),
+    ('components_auto', 'base', 'region_limit', '', {}, REFUSED),
     ('components_auto', 'base', 'region_limit', None, {}, REFUSED),
     ('components_auto', 'base', 'multiplets', 'CIV', {}, 'CIV'),
     ('components_auto', 'base', 'multiplets', 'CIV,Ly_ab', {}, 'CIV,Ly_ab'),
@@ -821,8 +822,9 @@ CASES = [
     ('update_constraint', 'fitted', 'param', 'b', {'uuid': UUID, 'is_free': False}, 'b'),
     ('update_constraint', 'fitted', 'param', 'z', {'uuid': UUID, 'is_free': False}, 'z'),
     ('update_constraint', 'fitted', 'param', 'logN', {'uuid': UUID, 'is_free': False}, 'logN'),
-    ('update_constraint', 'fitted', 'param', 'nope', {'uuid': UUID, 'is_free': False}, 'nope'),
-    ('update_constraint', 'fitted', 'param', '', {'uuid': UUID, 'is_free': False}, ''),
+    # Refused since phase 6-bis (PR 6c): a constraint on no parameter was stored
+    ('update_constraint', 'fitted', 'param', 'nope', {'uuid': UUID, 'is_free': False}, REFUSED),
+    ('update_constraint', 'fitted', 'param', '', {'uuid': UUID, 'is_free': False}, REFUSED),
     ('update_constraint', 'fitted', 'param', None, {'uuid': UUID, 'is_free': False}, REFUSED),  # 2.4.0: accepted
     ('update_constraints_column', 'fitted', 'is_free', 'True', {'param': 'b'}, True),
     ('update_constraints_column', 'fitted', 'is_free', 'False', {'param': 'b'}, False),
@@ -840,8 +842,9 @@ CASES = [
     ('update_constraints_column', 'fitted', 'is_free', 'None', {'param': 'b'}, REFUSED),  # 2.4.0: accepted as False
     ('update_constraints_column', 'fitted', 'param', 'b', {'is_free': False}, 'b'),
     ('update_constraints_column', 'fitted', 'param', 'btur', {'is_free': False}, 'btur'),
-    ('update_constraints_column', 'fitted', 'param', 'nope', {'is_free': False}, 'nope'),
-    ('update_constraints_column', 'fitted', 'param', '', {'is_free': False}, ''),
+    # Refused since phase 6-bis (PR 6c): as update_constraint
+    ('update_constraints_column', 'fitted', 'param', 'nope', {'is_free': False}, REFUSED),
+    ('update_constraints_column', 'fitted', 'param', '', {'is_free': False}, REFUSED),
     ('update_constraints_column', 'fitted', 'param', None, {'is_free': False}, REFUSED),  # 2.4.0: accepted
     ('add_linked_system', 'fitted', 'z', '2.0', {'series_list': 'CIV,SiIV'}, 2.0),  # 2.4.0: crashed (ValueError)
     ('add_linked_system', 'fitted', 'z', 2.0, {'series_list': 'CIV,SiIV'}, 2.0),
@@ -1034,7 +1037,8 @@ CASES = [
     ('fit_bayesian', 'fitted', 'group_depth', '0', {'uuids': [UUID]}, ACCEPTED),
     ('fit_bayesian', 'fitted', 'group_depth', 2.5, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted, truncated
     ('fit_bayesian', 'fitted', 'group_depth', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
-    ('fit_bayesian', 'fitted', 'engine', '', {'uuids': [UUID]}, ACCEPTED),
+    # Refused since phase 6-bis (PR 6c): an unknown engine ran MCMC
+    ('fit_bayesian', 'fitted', 'engine', '', {'uuids': [UUID]}, REFUSED),
     ('fit_bayesian', 'fitted', 'engine', None, {'uuids': [UUID]}, REFUSED),
     ('refit_all', 'fitted', 'max_nfev', '2', {}, 2),
     ('refit_all', 'fitted', 'max_nfev', 2, {}, 2),
@@ -1126,8 +1130,9 @@ CASES = [
     ('refit_all', 'fitted', 'region_limit', 'None', {}, 'None'),
     ('refit_all', 'fitted', 'region_limit', 'red_side', {}, 'red_side'),
     ('refit_all', 'fitted', 'region_limit', 'lya_forest', {}, 'lya_forest'),
-    ('refit_all', 'fitted', 'region_limit', 'nope', {}, FAILS),
-    ('refit_all', 'fitted', 'region_limit', '', {}, FAILS),
+    # Refused since phase 6-bis (PR 6c): a list of choices (they failed in the recipe)
+    ('refit_all', 'fitted', 'region_limit', 'nope', {}, REFUSED),
+    ('refit_all', 'fitted', 'region_limit', '', {}, REFUSED),
     ('refit_all', 'fitted', 'region_limit', None, {}, REFUSED),
     ('refit_all', 'fitted', 'selected_uuids', [UUID], {}, [UUID]),
     ('refit_all', 'fitted', 'selected_uuids', LIST_AS_TEXT, {}, [UUID]),  # 2.4.0: accepted, the text not read as a list

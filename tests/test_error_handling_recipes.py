@@ -66,9 +66,12 @@ def _warnings(caplog):
 
 @pytest.mark.parametrize("recipe", ["components_auto", "refit_all"])
 def test_unknown_region_fails(recipe, caplog):
-    # It was skipped with a WARNING: the whole spectrum was used
+    # It was skipped with a WARNING: the whole spectrum was used; a
+    # RecipeFailed in phase 6, refused as a parameter since phase 6-bis
+    # (PR 6c: a list of choices)
+    from astrocook.recipes.errors import InvalidParameter
     session, _ = _two()
-    with pytest.raises(RecipeFailed, match="The region 'nowhere' cannot be used"):
+    with pytest.raises(InvalidParameter, match="region_limit: 'nowhere' is not one of"):
         getattr(session.absorbers, recipe)(region_limit="nowhere")
 
 
