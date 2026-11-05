@@ -2441,6 +2441,253 @@ as in the pilot (section 4.2). Plan of the phase to be agreed with Guido in
 its PR 0. The order matters little with the next phase: a parameter
 renamed later reaches the tools by the registry.
 
+**Plan of the phase** (agreed with Guido in PR 0, November 2026: the
+proposal of each decision below accepted; the options kept for the
+record):
+- *Starting point* (master after 2.5.0).
+  - The registry holds 48 recipes (file 2, edit 15, flux 6, continuum 5,
+    absorbers 20); 7 are branching (a new session), 8 hidden in the GUI
+    (`stitch`, `populate_from_identification`, `update_component`,
+    `fit_component`, `update_constraint`, `update_constraints_column`,
+    `add_linked_system`, `fit_bayesian`: called by other recipes or by
+    the System Inspector); 6 parameters are not offered to agents. Each
+    recipe declares what it requires (`z_em`, `resolution`,
+    `continuum`) and provides (`set_properties`: `z_em`, `resolution`;
+    `estimate_auto`, `fit_continuum`, `update_from_knots`: `continuum`).
+  - The server of the pilot (`astrocook/mcp_server/`, ~900 lines) has
+    five tools written by hand: `session_open`, `session_save`,
+    `continuum_estimate_auto`, `absorbers_identify_lines`,
+    `absorbers_doublets_auto`. Since 6-bis PR 8 they run through `run`
+    (the registry, typed parameters, `RecipeResult`), say what a session
+    lacks (`MissingPrerequisite`) and fill it only with
+    `provide_missing`; their outputs (`outputs.py`) are summaries
+    written per tool. `schemas.py` builds the JSON schema of the
+    parameters of any recipe from the registry, tested on all of them.
+  - Every session of the server is a `SessionHistory`, as in the GUI:
+    each recipe a state of its own and a log entry, the previous states
+    kept. No tool exposes them yet (no undo, no list of the states).
+  - The log entry (`LogEntryV2`) is the name of the recipe and its
+    parameters, with the values used (#573); what the recipe did is in
+    the `RecipeResult` (changes, warnings, steps provided, reasons of
+    the removals), not in the log.
+  - Progress: four recipes of the absorbers log `>> PROGRESS: n`, read
+    by the GUI (`gui/recipe_progress.py`); the server does not send
+    them.
+  - PySide6 and matplotlib are required dependencies of the package;
+    `core`, `recipes`, `fitting`, `io` and `mcp_server` import neither
+    (checked: no import of `PySide6`, `astrocook.gui` or `matplotlib`).
+    No Dockerfile in the repository (the V1 image removed in phase 3).
+- *Constraints.* No change of the recipes' numbers (the snapshots and
+  the mock benchmark unchanged in the whole phase; the slow tests left
+  to the CI job after the merge, the PRs touch the server, not the
+  pipelines). The pilot's tools keep working until their generated
+  replacements are in, with the same names (`<menu>_<recipe>`, agreed in
+  the pilot), so that the docs page *Using Astrocook from an AI Agent*
+  and the users' configurations stay valid. The server stays a thin
+  layer: what an agent needs and a recipe can give goes into the recipe
+  or `RecipeResult` (for the GUI and the scripts too), not into the
+  server.
+- *Principle: a server open to new recipes* (Guido, PR 0). Phase 7 and
+  the phases after it will add recipes, to cover more of the analysis
+  and give the agents more tools for practical problems: that is also
+  why the code was put on solid ground. A recipe added to the registry
+  reaches the server as a tool with no server code, as it reaches the
+  GUI's menus and dialogs:
+  - the tool, its schema and its description come from the registry
+    only; nothing in the server names a recipe, except the list of the
+    excluded ones, each with its reason;
+  - the output of a tool is built from `RecipeResult` only, in the same
+    way for every recipe: what is specific to a recipe (the score of a
+    candidate, the regions of the forest) reaches the agent through
+    `RecipeResult.extra`, filled by the recipe; the summaries of the
+    pilot written per tool (continuum, identification, fit) become
+    summaries chosen by what changed (the continuum column, the
+    components, the identification metadata), not by the name of the
+    recipe;
+  - a new prerequisite (something a recipe requires and another
+    provides) is declared in the registry and in the resolver
+    (`recipes/prerequisites.py`), and the tools say it without a change
+    of the server;
+  - the instructions of the server (what the client shows the model
+    first) list the menus and what they are for from the registry, not
+    by hand;
+  - a test adds a fake recipe to the registry and checks that the
+    server offers it, with its schema, runs it and returns its result;
+    another that every recipe of the registry is a tool or excluded with
+    a reason (a new recipe that is neither fails the test).
+  The number of tools grows with the recipes (some 55 at the end of this
+  phase, with those of the server). Clients show every tool to the
+  model, so many tools cost context and choice; the trials (PR 7)
+  measure it. If needed, a fallback that stays generated from the
+  registry: the tools grouped (a tool per menu with the recipe as a
+  parameter), or a few generic tools (`recipes_list`, `recipe_describe`,
+  `recipe_run`) next to the most used ones.
+  Where to add recipes: decision 6 below records the gaps the agents
+  meet (Guido, PR 0; section 4 had it for later).
+- *Decisions* (1-5 agreed with Guido in PR 0, as proposed; 6 and 7 asked
+  by Guido in PR 0, their design to be agreed in their PRs).
+  1. *Destructive recipes* (the lesson of the pilot: `doublets_auto`
+     removed 190 components, the agent protected the work only by
+     opening a second copy).
+     - (a) *Dry run*: every tool of a recipe takes `dry_run`; the recipe
+       runs on the current state, the result (what it would add, remove,
+       change) is returned and the state is not kept. Clear for the
+       agent, but it costs a second run to apply (minutes for the
+       pipelines), unless the server keeps the result of the dry run and
+       a tool applies it.
+     - (b) *History*: the server exposes the states it already keeps:
+       `session_history` (the states, each with its recipe and what it
+       changed), `session_undo`, `session_redo`, and `session_duplicate`
+       to branch. Nothing is lost, no recipe runs twice; the agent
+       must know that it can go back (said in the instructions of the
+       server and in the result of a recipe that removed components).
+     - (c) both: (b) always, (a) only for the recipes that remove
+       components.
+     Agreed: (b), with the result of every recipe listing what it
+     removed (already in `RecipeResult.changes`) and saying how to undo
+     it; (a) later if the trials ask for it.
+  2. *Docker image*.
+     - (a) A `Dockerfile` in the repository and a CI job that builds it
+       and runs the stdio test of the server inside it; the users build
+       it (`docker build`), the docs say how to register it in a client
+       (`docker run -i --rm -v <data>:/data ...`: the files of the user
+       reach the container only through a mounted folder).
+     - (b) As (a), and the image published on the GitHub Container
+       Registry (`ghcr.io/das-oats/astrocook`) by the release workflow,
+       one tag per release. The users only `docker pull`; but it is a
+       distribution of the software, like the macOS app, while the
+       LICENSE waits for INAF (#549).
+     Either way, the image: PySide6 is a required dependency (~0.7 GB installed
+     with its Qt libraries), useless without a display. Options: keep it
+     (simplest, a large image), or install the package without it in
+     the image (`pip install --no-deps` and the other dependencies
+     listed by hand, checked by the CI job), without changing the
+     dependencies of the package. Making the GUI an optional extra
+     (`astrocook[gui]`) would change the installation for every user: not
+     proposed in this phase. Agreed: (a) in this phase, without
+     PySide6 in the image; (b) with the first release after #549.
+  3. *Which recipes become tools.* Guido (6-bis, PR 6): as many as
+     possible, the basic ones too. Agreed: all 48, also the 8 hidden
+     in the GUI (`fit_component`, `update_component`, ... are exactly the
+     editing tools the agents of the pilot missed), except the ones a
+     test lists as excluded with a reason. By the same rule, the
+     candidates to exclude are offered: `update_from_knots` (section 4
+     called it interactive, but the knots are a parameter an agent can
+     give), `import_ascii` and `export_ascii` (they read and write files,
+     as `session_open` and `session_save`), `fit_bayesian` only when the
+     `[bayes]` extra is installed (its description says that it runs for
+     minutes or more). The list of exclusions starts empty.
+  4. *Agent decisions in the log* (section 4, item 3; Guido's trial: z_em
+     estimated from the Ly-a peak, R from the header, nowhere in the
+     log).
+     - (a) a `reason` parameter, optional, on every tool, stored with
+       the log entry of the recipe;
+     - (b) a tool `session_note(session_id, text)` that adds an entry
+       without a state (a note, skipped by the replay);
+     - (c) both.
+     Agreed: (c); (a) is where the agent states why it ran a recipe,
+     (b) where it records what it did outside the server. Either needs
+     a field of `LogEntryV2` (`reason`, and a kind for the notes), saved
+     in `.acs2` and shown in the GUI's log: old archives open as before
+     (the field absent).
+  5. *Natural-language log*: a function of the core (not of the server)
+     that writes the log of a session as text, from its entries, the
+     reasons and notes of decision 4 and the changes of each state
+     (compared as `RecipeResult` does); offered as a tool
+     (`session_methods`) and in the GUI (*File > Export Log as Text*?).
+     The text: one paragraph per step, with the references of the
+     algorithms (e.g. the atomic data of *Atomic Data*). How it reads is
+     Guido's to judge, on a draft in its PR. Agreed.
+  6. *Gaps of the collection of recipes* (Guido, PR 0: know where to
+     direct the work). A gap is something the analysis needed and no
+     recipe provided. Two sources:
+     - *declared by the agent*: a kind of note of decision 4
+       (`session_note(..., kind="gap")`: what was needed, what the agent
+       did instead, e.g. "z_em from the Ly-a peak, computed with Python
+       on the flux"; Guido's trial had several); the instructions of the
+       server ask the agent to declare a gap whenever it works outside
+       the tools;
+     - *seen by the server*: a prerequisite that no recipe provides (as
+       `z_em` today), a tool that failed on a valid request, a recipe
+       whose result the agent undid (decision 1: the next step after an
+       undo says why, if the agent gave a reason).
+     The gaps are saved with the session (its log, decision 4) and also
+     appended to a local file of the user (one line each, JSON: date,
+     version, kind, text, session), never sent anywhere; a command (and a
+     tool) summarizes them, grouped, as the input of the plan of a phase
+     (e.g. phase 7, phase 6-quater). Not stored: the data of the user
+     beyond the name of the session and the text the agent wrote.
+  7. *The GUI launched by the server* (Guido, PR 0: the user sees the
+     progress of the analysis as it happens). The GUI is a separate
+     process; options:
+     - (a) *snapshot*: a tool `gui_open(session_id)` saves the current
+       state to an archive and launches `astrocook <archive>`; the user
+       sees the state at that moment and asks again for a newer one;
+     - (b) *follow*: as (a), and the GUI follows the archive: the server
+       saves it after every recipe and the GUI reloads it (a file
+       watcher, `QFileSystemWatcher`; the GUI has none today), keeping
+       the view (range, zoom, the open System Inspector) where it can.
+       The followed session is read-only in the GUI (a banner says so;
+       a copy can be made to edit it), so that the user and the agent do
+       not change the same session at once;
+     - (c) *shared session*: the GUI talks to the server (a local
+       socket), the user's edits go back to the agent; the "review
+       bench" of section 4, item 4, in full, but a protocol between two
+       processes and the conflicts of two editors: not in this phase.
+     Proposal: (b). Not available in the Docker image (no display): the
+     tool says so. On macOS the app is launched as the trial did
+     (`open -a Astrocook`), elsewhere the `astrocook` command.
+- *PRs*, one at a time, each with characterization tests first:
+  0. this plan (docs only);
+  1. *generated tools*: one tool per recipe from the registry (schema
+     from `schemas.py`, description from `brief` and `details`),
+     calling `run`; the output from `RecipeResult` (summary, changes,
+     warnings, notes, steps provided, the new session of a branching
+     recipe under its own identifier); a test that every recipe is a
+     tool or listed as excluded with a reason, and the test of the fake
+     recipe (the principle above); the five tools of the pilot replaced,
+     their names kept, their extra summaries (continuum, identification,
+     fit) chosen by what changed, what `RecipeResult` lacks moved into
+     `extra` by the recipes; the instructions of the server from the
+     registry;
+  2. *sessions*: `session_list`, `session_describe` (the spectrum, the
+     columns, z_em, R, the continuum, the systems, the log),
+     `session_duplicate`, `session_close`, and decision 1
+     (`session_history`, `session_undo`, `session_redo`, or `dry_run`);
+  3. *inspection*: `components_list` (filters by series, z, flags;
+     with the fit group and the system, the pilot's question),
+     `spectrum_read` (the columns in a range, rebinned to a number of
+     points that fits a model's context), `spectrum_plot` (a PNG of a
+     range with the model, as MCP image content; matplotlib, already a
+     dependency);
+  4. *progress*: the `>> PROGRESS` lines of the recipes sent as MCP
+     progress notifications, and a message for the recipes that run
+     long without them;
+  5. *decisions in the log* (decision 4), the *gaps* (decision 6) and
+     the *natural-language log* (decision 5), perhaps in three PRs;
+  5-bis. *the GUI from the server* (decision 7): the tool, the file
+     watcher and the read-only followed session in the GUI (with the GUI
+     benchmark, `bench_gui.py`, and the screenshots of the scenes it
+     touches);
+  6. *Docker* (decision 2): the image, its CI job, the docs;
+  7. *trials* with fresh agents, as in section 4.2 (the mock archive
+     without its true continuum; J0103-1305; a request that needs the
+     editing tools), and a report in section 4, with the measure of the
+     number of tools (the principle above). Then *a real analysis*
+     (Guido, PR 0): Guido uses the server on a spectrum and a scientific
+     question of his own, as in the pilot but with the full server and
+     the GUI following it; the criterion of success: a result he would
+     sign after reviewing it in the GUI, and a log he could replay and
+     describe. What fails becomes a finding (for phase 7 or the server),
+     and the gaps recorded (decision 6) the first list of recipes to
+     add;
+  8. closing: the docs page *Using Astrocook from an AI Agent*
+     rewritten for the full server, the result of the phase.
+  Found along the way: the startup hook of the cloud sessions created
+  `.venv` without installing the package once (November 2026, at the
+  start of this phase); installing again by hand worked. To watch: if
+  it happens again, the hook needs a check that the import works.
+
 ### Phase 6-quater – Review of the recipe parameters
 Named after 2.5.0 (November 2026, Guido): the parameters and interfaces
 of the recipes reviewed recipe by recipe, adapted to each procedure (as
@@ -3091,6 +3338,35 @@ complete models**, with uncertainties and a reliability map, which also
 report the possible alternative identifications of the same feature, each
 with a parameter quantifying its credibility.
 
+### A collector of recipes, not an automatic fitter (principle)
+Agreed with Guido in phase 6-ter, PR 0 (November 2026), on his question:
+with a whole spectrum fitted in a single pass, does Astrocook risk turning
+from a collector of recipes into an automatic fitter? The risk is a
+monolithic module that takes a spectrum and returns a model: opaque (why
+this continuum, these components?), and absorbing the work while the
+recipes wither. Three rules keep the single pass a composition of
+recipes:
+1. every automatic step is a recipe, also offered on its own (in the
+   GUI, the scripts and the MCP server), as the pipelines of today
+   (`doublets_auto`, `forest_auto`) are made of recipes;
+2. every automatic decision goes into the log with its reason (which
+   alternative, by which criterion), so that the single pass opens step
+   by step in the GUI, replays, and can be corrected at any step;
+3. the automatic result is a starting point to review, not a final
+   answer: a collection of alternative models with their credibility
+   (the goal above), from which the astronomer chooses.
+The workflow of the final pass is not one for all spectra (Guido): it
+can differ from spectrum to spectrum, optimized for the object and for
+the observational parameters as the final spectrum reflects them
+(resolution, S/N, wavelength coverage, z_em and the extent of the forest,
+DLAs and BALs, tellurics). Whether it is chosen by rules from the
+spectrum or by an agent combining the recipes, the choice itself is
+logged with its reasons, so the result stays reproducible: the workflow
+of a spectrum is its log, and replays as such. A sequence of recipes
+that agents or users run again and again on similar spectra becomes a
+recipe of its own; the gaps the agents meet (phase 6-ter, decision 6)
+say which recipes are missing.
+
 ### Iterative loop (deterministic and reproducible)
 1. Initial continuum with uncertainty.
 2. Detection of absorbed regions and decomposition into independent blocks
@@ -3125,7 +3401,10 @@ First the robust components (phase 7: emission model and identification,
 measured on the benchmark of phase 4), then the loop.
 Pilot on metals outside the forest, then extension to the Lyα forest. The
 LLM agent stays at the margins (strategy in stuck cases, guidance during
-review); each of its decisions goes into the log.
+review); each of its decisions goes into the log. Revised in phase 6-ter,
+PR 0 (Guido): the agent may also choose the workflow of a spectrum (the
+principle above); the steps it runs stay recipes, logged with their
+reasons.
 
 ### Implications for the v2 work
 - The mock generator from phase 1 is the first core of the v3 test bench.
@@ -3152,6 +3431,6 @@ review); each of its decisions goes into the log.
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
 | 6-bis – Recipe API | done (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c, #712); structured result, `run` (PR 4a, #713); region and score of the candidates, `not_fitted`, the reasons of the removals (PR 4b, #714); F102, the notes of a result in the status bar and the log (PR 4c, #715); prerequisites, core and scripts, F103 (PR 5a, #716); the GUI asks for the continuum, F104 (PR 5b, #717); descriptions reviewed, F48, the parameters not for agents (PR 6a, #718); the dialogs with the longer texts (PR 6a-bis, #719); the mask and the margin on z_em of the pipelines (PR 6b, #720); the kinds of the parameters, F105 (PR 6c, #721); the custom multiplets without the global table, F12 (PR 7, #722); the MCP pilot on the new API, the generator of the schemas of the tools (PR 8); closing: result of the phase in "Result of the phase" |
-| 6-ter – Full MCP server | not started (next) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |
