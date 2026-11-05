@@ -67,6 +67,10 @@ def test_values_are_converted_to_their_type(type_, value, expected):
     (bool, "yes", "'yes' is not True or False"),
     (bool, 2, "2 is not True or False"),
     (list, "abc", "'abc' is not a list"),
+    # Values that are neither strings nor numbers (mutation testing, PR 4a)
+    (int, [1], r"\[1\] is not an integer"),
+    (float, [1.0], r"\[1.0\] is not a number"),
+    (list, 5, "5 is not a list"),
 ])
 def test_values_that_cannot_be_converted_are_refused(type_, value, message):
     with pytest.raises(InvalidParameter, match=f"x: {message}"):

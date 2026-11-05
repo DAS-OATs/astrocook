@@ -15,6 +15,8 @@ session log records (#573, item 3).
 from __future__ import annotations
 
 import ast
+import contextlib
+import contextvars
 import functools
 import inspect
 import logging
@@ -163,6 +165,30 @@ def resolve_params(name: str, params: Mapping[str, Any]) -> Dict[str, Any]:
 DATA_ERRORS = (ValueError, KeyError, OSError)
 
 
+class _Steps:
+    """The recipes run inside the one that :func:`collect_steps` watches."""
+
+    def __init__(self):
+        self.depth = 0
+        self.names: list = []
+
+
+_STEPS: contextvars.ContextVar = contextvars.ContextVar('astrocook_recipe_steps',
+                                                        default=None)
+
+
+@contextlib.contextmanager
+def collect_steps():
+    """Collect, as ``category.name``, the recipes that the next recipe runs
+    as its steps (phase 6-bis, PR 4: the ``steps`` of a RecipeResult)."""
+    steps = _Steps()
+    token = _STEPS.set(steps)
+    try:
+        yield steps.names
+    finally:
+        _STEPS.reset(token)
+
+
 def typed_recipe(method: Callable) -> Callable:
     """Decorator of a recipe method, its boundary.
 
@@ -183,6 +209,11 @@ def typed_recipe(method: Callable) -> Callable:
         from astrocook.recipes.registry import find_recipe
         spec = find_recipe(method.__name__)
         where = (spec.category, spec.name, spec.brief.rstrip('.'))
+        steps = _STEPS.get()
+        if steps is not None:
+            if steps.depth:
+                steps.names.append(f"{spec.category}.{spec.name}")
+            steps.depth += 1
         try:
             bound = signature.bind(self, *args, **kwargs)
             passed = {k: v for k, v in bound.arguments.items() if k != 'self'}
@@ -198,6 +229,9 @@ def typed_recipe(method: Callable) -> Callable:
         except Exception as e:
             e.add_note(f"In the recipe {spec.category}.{spec.name} ({where[2]}).")
             raise
+        finally:
+            if steps is not None:
+                steps.depth -= 1
 
     wrapper.typed_recipe = True  # checked by tests/test_recipe_params.py
     return wrapper

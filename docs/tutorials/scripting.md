@@ -54,6 +54,21 @@ doublets (Red Side) → Auto-detect and fit components → Refit all systems:
 ...*. A recipe with nothing to do (e.g. *Refit All* on a session without
 components) is not a failure: it gives the session back and logs a
 warning.
+
+To know what a recipe did, run it with `run`, which returns its whole
+result: the new session, what changed (the components added, removed and
+changed, the columns, the properties), the warnings, the recipes it ran as
+steps and the values of the parameters it used:
+```python
+from astrocook.recipes.result import run
+
+result = run(session, "absorbers.doublets_auto")
+print(result.summary)   # Auto-fit metal doublets (Red Side): 3 components added; ...
+for c in result.changes.components_added:
+    print(c.series, c.z, c.logN, c.b)
+print(result.warnings, result.steps)
+fitted = result.session
+```
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 

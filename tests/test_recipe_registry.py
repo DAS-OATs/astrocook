@@ -105,9 +105,9 @@ def test_param_lookup_and_defaults():
 def test_build_spec_rejects_unknown_keys_and_requirements():
     entry = {"brief": "A recipe.", "params": []}
     assert build_spec("edit", "r", entry).requires == frozenset()
-    with pytest.raises(ValueError, match="unknown keys"):
+    with pytest.raises(ValueError, match=r"^edit\.r: unknown keys \['branchng'\]"):
         build_spec("edit", "r", {**entry, "branchng": True})
-    with pytest.raises(ValueError, match="unknown keys"):
+    with pytest.raises(ValueError, match=r"^edit\.r: unknown keys \['dok'\]"):
         build_spec("edit", "r", {**entry, "params": [
             {"name": "x", "type": int, "default": 0, "dok": "x"}]})
     with pytest.raises(ValueError, match="unknown requirements"):
@@ -125,3 +125,41 @@ def test_schema_dictionaries_read_only_by_the_registry():
                      if "_RECIPES_SCHEMAS" in path.read_text(encoding="utf-8")
                      and path.parent.name != "recipes")
     assert readers == []
+
+
+def test_the_registry_built_again_is_the_same():
+    # The registry is built at import; built again here, every key of every
+    # entry must give the same spec (mutation testing, phase 6-bis PR 4a:
+    # the code that runs only at import was not checked by any test)
+    rebuilt = registry._build()
+    assert list(rebuilt) == list(RECIPES)
+    for category in RECIPES:
+        assert list(rebuilt[category]) == list(RECIPES[category])
+        for name, spec in RECIPES[category].items():
+            assert repr(rebuilt[category][name]) == repr(spec), f"{category}.{name}"
+            assert ([repr(p.default) for p in rebuilt[category][name].params]
+                    == [repr(p.default) for p in spec.params])
+
+
+def test_build_spec_reads_every_key():
+    entry = {"brief": "A recipe.", "details": "More.", "url": "page.html",
+             "gui_hidden": True, "branching": True, "requires": ("z_em", "resolution"),
+             "params": [{"name": "x", "type": float, "default": 1.0, "doc": "The x.",
+                         "gui_hidden": True, "optional": True, "keep": ("_current_",),
+                         "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True},
+                        {"name": "y", "type": int, "default": 3}]}
+    spec = build_spec("edit", "r", entry)
+    assert (spec.category, spec.name, spec.brief, spec.details, spec.url) == \
+        ("edit", "r", "A recipe.", "More.", "page.html")
+    assert spec.gui_hidden and spec.branching
+    assert spec.requires == frozenset({"z_em", "resolution"})
+    x, y = spec.params
+    assert (x.name, x.type, x.default, x.doc, x.gui_hidden, x.optional, x.keep,
+            x.min, x.max, x.gt, x.allow_nan) == \
+        ("x", float, 1.0, "The x.", True, True, ("_current_",), 0.0, 2.0, -1.0, True)
+    # The defaults of the optional keys
+    assert (y.doc, y.gui_hidden, y.optional, y.keep, y.min, y.max, y.gt, y.allow_nan) == \
+        ("y", False, False, (), None, None, None, False)
+    bare = build_spec("flux", "s", {"brief": "B."})
+    assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching) == \
+        ("", None, (), False, False)

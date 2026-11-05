@@ -25,7 +25,7 @@ FLUX_RECIPES_SCHEMAS = {
     },
     "smooth": {
         "brief": "Smooth spectrum.",
-        "details": "Apply a Gaussian filter to the spectrum flux (y-axis). The error (dy-axis) is not changed.",
+        "details": "Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission).",
         "params": [
             {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
         ],
