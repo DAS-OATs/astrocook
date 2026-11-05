@@ -593,3 +593,28 @@ def test_run_recipe_returns_the_warnings_of_a_recipe():
     result, warnings = run_recipe("rebin", session.flux.rebin, norm="True")
     assert isinstance(result, SessionV2)
     assert len(warnings) == 1 and "'norm' is ignored" in warnings[0]
+
+
+def test_doublets_auto_with_the_mask_of_the_session(forest_archive):
+    # F50 (phase 6-bis, PR 6b): mask='session' uses the mask of the session
+    # (here that of an estimate_auto with kappa 3) instead of a new one with
+    # the defaults; the default 'new' gives the result of before
+    from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite
+    from astrocook.recipes.result import run
+    session = load_session_from_file(str(forest_archive), "f", None, "auto")
+    cont = session.continuum.estimate_auto(kappa="3.0")
+    new = run(cont, "absorbers.doublets_auto")
+    assert new.params["mask"] == "new" and new.params["z_em_margin_kms"] == 3000.0
+    assert "continuum.find_absorbed" in new.steps
+    own = run(cont, "absorbers.doublets_auto", mask="session")
+    assert "continuum.find_absorbed" not in own.steps
+    assert (own.session.spec.get_column("abs_mask").value
+            == cont.spec.get_column("abs_mask").value).all()
+    with pytest.raises(InvalidParameter, match="mask: 'old' is not 'new' or 'session'"):
+        cont.absorbers.doublets_auto(mask="old")
+    spec = cont.spec
+    aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
+    no_mask = cont.with_new_spectrum(SpectrumV2(
+        data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
+    with pytest.raises(MissingPrerequisite, match="no mask 'abs_mask'"):
+        no_mask.absorbers.doublets_auto(mask="session")

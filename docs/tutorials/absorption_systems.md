@@ -35,7 +35,7 @@ For finding distinct metal systems (CIV, SiIV, MgII) redward of the Ly$\alpha$ e
 2.  **Multiplets:** You can customize the list (e.g., `CIV, SiIV, MgII`).
 3.  Click **Run**.
 
-This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios. Each doublet gives one candidate system, from its stronger line; candidates beyond the emission redshift by more than 3000 km/s (a margin for absorbers associated with the quasar) are not considered.
+This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios. Each doublet gives one candidate system, from its stronger line; candidates beyond the emission redshift by more than **Margin on z_em** (`z_em_margin_kms`, 3000 km/s by default: a margin for absorbers associated with the quasar and for the uncertainty of z_em) are not considered. The absorbed regions are found on a new mask, made with the defaults of **Find Absorbed Regions**; to use the mask already in the session instead (e.g. that of **Auto-estimate Continuum** with other parameters), set **Mask** to `session`.
 
 :::{note}
 This recipe requires **Emission Redshift ($z_{em}$)**, **Resolution ($R$)** and a continuum. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog, and to estimate the continuum, before proceeding.
