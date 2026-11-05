@@ -516,7 +516,10 @@
 <span class="sd">(None is a value: no value, or automatic), ``keep`` (special strings passed</span>
 <span class="sd">as they are, e.g. ``'_current_'``), ``min`` and ``max`` (bounds of a</span>
 <span class="sd">number, included), ``gt`` (a bound excluded: the value must be above it),</span>
-<span class="sd">``allow_nan`` (NaN is a value; infinities never are), ``agents`` (False:</span>
+<span class="sd">``allow_nan`` (NaN is a value; infinities never are), ``choices`` (the</span>
+<span class="sd">values allowed, for a string: a list in the GUI and for the agents),</span>
+<span class="sd">``kind`` (what a string names: ``'session'``, an open session, or</span>
+<span class="sd">``'column'``, a column of the spectrum; phase 6-bis, PR 6c), ``agents`` (False:</span>
 <span class="sd">not offered to agents, which get the default: the options of debug and the</span>
 <span class="sd">questions of the GUI, phase 6-bis, PR 6; every recipe is offered, Guido:</span>
 <span class="sd">the basic ones are blocks of new recipes).</span>
@@ -537,7 +540,10 @@
 <span class="n">_RECIPE_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'brief'</span><span class="p">,</span> <span class="s1">'details'</span><span class="p">,</span> <span class="s1">'url'</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'branching'</span><span class="p">,</span>
                 <span class="s1">'requires'</span><span class="p">,</span> <span class="s1">'provides'</span><span class="p">}</span>
 <span class="n">_PARAM_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'type'</span><span class="p">,</span> <span class="s1">'default'</span><span class="p">,</span> <span class="s1">'doc'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'optional'</span><span class="p">,</span> <span class="s1">'keep'</span><span class="p">,</span>
-               <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">,</span> <span class="s1">'gt'</span><span class="p">,</span> <span class="s1">'allow_nan'</span><span class="p">,</span> <span class="s1">'agents'</span><span class="p">}</span>
+               <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">,</span> <span class="s1">'gt'</span><span class="p">,</span> <span class="s1">'allow_nan'</span><span class="p">,</span> <span class="s1">'agents'</span><span class="p">,</span> <span class="s1">'choices'</span><span class="p">,</span> <span class="s1">'kind'</span><span class="p">}</span>
+
+<span class="c1">#: What a string parameter can name (the key ``kind``)</span>
+<span class="n">KINDS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'session'</span><span class="p">,</span> <span class="s1">'column'</span><span class="p">})</span>
 
 
 <div class="viewcode-block" id="ParamSpec">
@@ -566,6 +572,10 @@
     <span class="n">allow_nan</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="c1">#: Offered to agents (False: they get the default)</span>
     <span class="n">agents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1">#: The values allowed (a string parameter), in their spelling</span>
+    <span class="n">choices</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="c1">#: What the value names: ``'session'``, ``'column'``, or "" (nothing)</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="n">_default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="nd">@property</span>
@@ -624,6 +634,11 @@
     <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span> <span class="o">-</span> <span class="n">_PARAM_KEYS</span>
     <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown keys </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'kind'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">KINDS</span> <span class="o">|</span> <span class="p">{</span><span class="s1">''</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown kind </span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">'kind'</span><span class="p">]</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">choices</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'choices'</span><span class="p">,</span> <span class="p">()))</span>
+    <span class="k">if</span> <span class="n">choices</span> <span class="ow">and</span> <span class="n">entry</span><span class="p">[</span><span class="s1">'default'</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">choices</span><span class="p">,</span> <span class="s1">''</span><span class="p">):</span>  <span class="c1"># '' : required</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: the default </span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">'default'</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> is not a choice"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ParamSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">'name'</span><span class="p">],</span> <span class="nb">type</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">'type'</span><span class="p">],</span>
                      <span class="n">doc</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'doc'</span><span class="p">,</span> <span class="n">entry</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]),</span>
                      <span class="n">gui_hidden</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
@@ -632,6 +647,7 @@
                      <span class="nb">min</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'min'</span><span class="p">),</span> <span class="nb">max</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'max'</span><span class="p">),</span> <span class="n">gt</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'gt'</span><span class="p">),</span>
                      <span class="n">allow_nan</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'allow_nan'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
                      <span class="n">agents</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'agents'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+                     <span class="n">choices</span><span class="o">=</span><span class="n">choices</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'kind'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)),</span>
                      <span class="n">_default</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">'default'</span><span class="p">]))</span>
 
 
