@@ -1221,15 +1221,12 @@
             <span class="c1"># You can tweak z_window_kms or max_nfev here if needed, </span>
             <span class="c1"># or expose them as advanced params in the schema.</span>
             <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
-            <span class="n">refitted_session</span> <span class="o">=</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                                                 <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">refitted_session</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">refitted_session</span>
-            <span class="c1"># The import stays (Guido's choice, phase 6); refit_all has</span>
-            <span class="c1"># logged why it failed</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The imported systems could not be refitted: they keep "</span>
-                           <span class="s2">"their imported values."</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">rec_abs</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The import stays (Guido's choice, phase 6), with the reason</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The imported systems could not be refitted (</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">): "</span>
+                               <span class="s2">"they keep their imported values."</span><span class="p">)</span>
 
         <span class="c1"># Return unfitted result</span>
         <span class="k">return</span> <span class="n">intermediate_session</span>

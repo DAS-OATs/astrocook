@@ -49,11 +49,11 @@ try:
 except RecipeError as e:
     print(e)  # Smooth spectrum: sigma_kms: 'fifty' is not a number.
 ```
-The error of a step of a longer recipe names both, e.g. *Populate
-components from identification → Auto-estimate continuum (single-click):
-...*. Some recipes of the *Absorbers* menu still report a failure by
-logging an error and returning `0` instead of a session, until the next
-release: check `result == 0` for them.
+The error of a step of a longer recipe names both, e.g. *Auto-fit metal
+doublets (Red Side) → Auto-detect and fit components → Refit all systems:
+...*. A recipe with nothing to do (e.g. *Refit All* on a session without
+components) is not a failure: it gives the session back and logs a
+warning.
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 

@@ -550,11 +550,11 @@ asked (a session that is not open, a file that cannot be read). Catch
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>  <span class="c1"># Smooth spectrum: sigma_kms: 'fifty' is not a number.</span>
 </pre></div>
 </div>
-<p>The error of a step of a longer recipe names both, e.g. <em>Populate
-components from identification → Auto-estimate continuum (single-click):
-…</em>. Some recipes of the <em>Absorbers</em> menu still report a failure by
-logging an error and returning <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, until the next
-release: check <code class="docutils literal notranslate"><span class="pre">result</span> <span class="pre">==</span> <span class="pre">0</span></code> for them.
+<p>The error of a step of a longer recipe names both, e.g. <em>Auto-fit metal
+doublets (Red Side) → Auto-detect and fit components → Refit all systems:
+…</em>. A recipe with nothing to do (e.g. <em>Refit All</em> on a session without
+components) is not a failure: it gives the session back and logs a
+warning.
 The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
