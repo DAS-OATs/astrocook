@@ -2683,6 +2683,9 @@ record):
      add;
   8. closing: the docs page *Using Astrocook from an AI Agent*
      rewritten for the full server, the result of the phase.
+  Proposed (code review of 2.5.0, to be agreed; see "Code quality" after
+  phase 7): a type checker in CI on `recipes/` and `mcp_server/`, ruff
+  with `B`, `SessionV2` out of `core/`.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -2697,7 +2700,10 @@ manual fits); those of the continuum and the identification go with
 phase 7, with the collections of elements to fill some parameters. To be
 decided in its plan: how the session logs and the scripts that use a
 renamed parameter still replay (e.g. the old name kept as an alias in the
-registry). Plan to be agreed with Guido.
+registry). Plan to be agreed with Guido. Proposed (code review of 2.5.0,
+to be agreed; see "Code quality" after phase 7): the `V2` suffixes of the
+class names, with the same aliases; the complex functions of the
+recipes reviewed.
 
 ### Phase 7 – Robust components: emission model and identification
 Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
@@ -2721,6 +2727,57 @@ benchmark shows it better; then it becomes the default, with the change
 stated in the release notes. #465 (phase 4) is a robustness fix of the
 current continuum, not a replacement. This phase is the first step of the
 path of section 5, and a possible basis for a paper.
+Proposed (code review of 2.5.0, to be agreed): a ceiling on the
+complexity of the code it rewrites (see "Code quality" below).
+
+### Code quality (review of 2.5.0)
+A review of the code of 2.5.0 (November 2026, after the question of how
+the package compares with similar codes), with measurements, and where
+each proposal could go. **Proposals, to be agreed with Guido**; none is
+in a plan of a phase yet.
+
+*Measurements* (2.5.0; the package has not changed since on master):
+- Coverage 86% (`pytest -n 4 --cov=astrocook`, slow tests skipped).
+  Lowest: `io/loaders.py` 17% (waits for sample files),
+  `gui/corner_plot.py` 0%, `gui/main_window.py` 61%,
+  `gui/system_inspector.py` 69%.
+- Cyclomatic complexity (`radon cc`): average 5.1 over 1000 functions,
+  methods and classes; 31 above 20, the highest
+  `SystemTableModel.data` (68, `gui/inspector_table.py`),
+  `RecipeAbsorbersV2.refit_all` (58, 293 lines),
+  `PlotMouseMixin.show_data_tooltip` (58),
+  `MainPanelsMixin._update_ui_state` (56),
+  `MainRecipesMixin._process_recipe_result` (54),
+  `VelocityPlotWidget._update_plot` (52),
+  `MainRecipesMixin._on_recipe_requested` (48),
+  `LinesMixin.identify_lines` (43, 307 lines),
+  `VoigtFitterV2.prepare_fit_context` (42). 25 functions are longer
+  than 150 lines. Phase 5 split the files, not the functions.
+- Types: 45% of the functions annotate their return type; no type
+  checker in CI.
+- Ruff runs the pyflakes rules only. With flake8-bugbear (`B`): 33
+  warnings, 21 of them `zip()` without `strict`; the two of `B023`
+  (a function defined in a loop, `voigt_fitter.py` and `io/adapter.py`)
+  checked and harmless (the function is called in the same iteration).
+- Layers: `core/session.py` imports `recipes` and `io`, so the core is
+  not the bottom layer (no cycle today; `SessionV2` is imported from
+  `astrocook.core` in 72 places).
+- No bare `except`, no `print`, no TODO left; `core`, `fitting`,
+  `recipes`, `io` and `mcp_server` import neither Qt nor matplotlib.
+
+*Proposals and where they could go:*
+
+| Proposal | Phase | Why there |
+|---|---|---|
+| A type checker (mypy or pyright) in CI, gradually: `recipes/` and `mcp_server/` first, then `core/` and `fitting/`; the GUI last, if ever | 6-ter | the server builds the tools from the typed parameters: checked types serve the agents first |
+| `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | 6-ter | the headless server works on the sessions; the core becomes the bottom layer |
+| Ruff with `B` (flake8-bugbear), a PR of its own; the style rules (`E`, `W`) left out | start of 6-ter | small and mechanical; finds bugs, not style |
+| The `V2` suffixes of the class names (`SpectrumV2`, `RecipeAbsorbersV2`, ...) dropped, the old names kept as aliases | 6-quater | changes the interface of the scripts, as a renamed parameter: the same mechanism of aliases |
+| The complex functions of the recipes that phase 7 does not rewrite (e.g. `RecipeEditV2.equalize_and_stitch`, 31) | 6-quater | the recipes are reviewed one by one there |
+| `identify_lines`, `refit_all` and the rest of the continuum and identification: a ceiling on the complexity of the new code (e.g. no function above 20) among the criteria of the new algorithms | 7 | phase 7 rewrites them: cleaning them before would be work thrown away |
+| The complex functions of the GUI (the list above) and the mixins of `MainWindowV2`, which share their state through `self` | a phase after 7 (name to Guido) | phase 7 changes the GUI of the identification (alternatives, credibility) |
+| Coverage of `io/loaders.py` | when the sample files arrive | waits for data from Guido |
+| A test of `gui/corner_plot.py` | any time | one small PR |
 
 ### Releases
 So far, releases have been distributed as a macOS app through the GitHub
