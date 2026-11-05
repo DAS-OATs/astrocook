@@ -33,18 +33,18 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "components_auto": {
         "brief": "Auto-detect and fit components.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "General pipeline: Identifies candidates (doublets or singles), populates them as systems, and refits the spectrum.",
+        "details": "Finds the absorbed regions, identifies the candidate systems of the given multiplets (Identify lines), adds them as components and fits them all (Refit all); the pipeline behind the other automatic recipes.",
         "params": [
-            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min R^2 score (0-1) to accept a candidate."},
-            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Max velocity (km/s) to merge adjacent regions."},
-            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Min pixels for a region."},
-            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Window for fitting (km/s)."},
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Comma-separated multiplets to search for, e.g. 'CIV,SiIV,MgII,Ly_ab'."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the lines of a multiplet) to accept a candidate."},
+            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Absorbed regions closer than this (km/s) are merged."},
+            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width of an absorbed region (pixels)."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask of the absorbed pixels."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             # New generic region limiter
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit search to 'red_side', 'lya_forest', or 'None'."}
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."}
         ],
         "url": "absorbers_cb.html#components_auto"
     },
@@ -52,11 +52,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "doublets_auto": {
         "brief": "Auto-fit metal doublets (Red Side).",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Wrapper for components_auto targeted at the red side (z < z_em). Finds CIV, SiIV, MgII.",
+        "details": "Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to 3000 km/s beyond z_em.",
         "params": [
-            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min score."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Comma-separated doublets to search for."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the two lines) to accept a candidate."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
@@ -65,11 +65,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "lya_auto": {
         "brief": "Auto-fit Ly-alpha forest.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
+        "details": "Finds and fits single Lyman-alpha lines in the forest (between Ly-beta and Ly-alpha); lines narrower than min_b (metal lines or noise) are removed and the rest refitted.",
         "params": [
-            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Lower threshold for single lines."},
-            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Minimum b parameter (km/s) to keep."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Minimum score (0-1) to accept a line; low, as single lines have no partner to match."},
+            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Lines narrower than this (km/s) are removed as interlopers."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
@@ -78,11 +78,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "forest_auto": {
         "brief": "Auto-fit full Lyman series.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously.",
+        "details": "Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed.",
         "params": [
-            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Threshold for detection."},
-            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Minimum b parameter (km/s): narrower Lyman systems are removed."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Minimum score (0-1) to accept a line."},
+            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Lyman systems narrower than this (km/s) are removed."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
@@ -91,11 +91,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "metals_auto": {
         "brief": "Check for associated metals.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift.",
+        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each only if it improves the fit by the AIC penalty; then refits all.",
         "params": [
-            {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated list of ions to check."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "AIC improvement required to keep a new ion."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated ions to try, e.g. 'CIV,SiIV,NV,OVI,CII,MgII'."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new ion."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
@@ -105,15 +105,15 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Identify likely absorption systems.",
         "requires": ("z_em", "resolution", "continuum"),
         "branching": True,
-        "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
+        "details": "Finds the absorbed regions from the mask, scores how well each multiplet matches them (the R^2 of the correlation of its lines) and keeps the best candidate systems; writes them in a new session, with the region and the score of each.",
         "params": [
-            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for (comma-separated)."},
-            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column (True=Unabsorbed)"},
-            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width in pixels to count as a region"},
-            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Max velocity (km/s) to merge adjacent regions."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
-            {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."},
-            {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."},
+            {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Comma-separated multiplets to search for, e.g. 'CIV,SiIV,MgII,Ly_ab'."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions."},
+            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width of an absorbed region (pixels)."},
+            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Absorbed regions closer than this (km/s) are merged."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the lines) to accept a candidate."},
+            {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept every candidate found by the positions of its lines, without the score (for debugging).", "agents": False},
+            {"name": "debug_rating", "type": bool, "default": False, "doc": "Show the plots of the scores (for debugging).", "agents": False},
         ],
         "url": "absorbers_cb.html#identify_lines"
     },
@@ -122,9 +122,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("continuum",),
         "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
         "params": [
-            {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column containing region IDs."},
-            {"name": "series_map_json", "type": str, "default": "", "doc": "JSON mapping Region ID -> Series."},
-            {"name": "z_map_json", "type": str, "default": "", "doc": "JSON mapping Region ID -> Redshift."}
+            {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column of the region of each pixel, written by Identify lines."},
+            {"name": "series_map_json", "type": str, "default": "", "doc": "JSON object: region -> series of its candidate."},
+            {"name": "z_map_json", "type": str, "default": "", "doc": "JSON object: region -> redshift of its candidate."}
         ],
         "url": "absorbers_cb.html#populate_from_identification",
         "gui_hidden": True
@@ -132,92 +132,94 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "add_component": {
         "brief": "Add a single component.",
         "requires": ("resolution", "continuum"),
-        "details": "Adds a new manual Voigt component at a specific redshift.",
+        "details": "Adds a Voigt component of a transition or multiplet at a redshift and fits it with its neighbours.",
         "params": [
-            {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or Multiplet name (e.g. 'CIV')"},
-            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Column Density (log)"},
-            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)"},
-            {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Max shift for initial fit (km/s)"}
+            {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or multiplet, e.g. 'Ly_a', 'CIV'."},
+            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift."},
+            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Starting column density (log cm^-2)."},
+            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Starting Doppler parameter (km/s)."},
+            {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
         ],
         "url": "absorbers_cb.html#add_component" 
     },
     "update_component": {
         "brief": "Update component.",
-        "details": "Modify parameters of an existing component.",
+        "details": "Changes the parameters of a component; a parameter left at None keeps its value.",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
-            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23, "doc": "logN"},
-            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "b (km/s)"},
-            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "btur (km/s)"},
-            {"name": "series", "type": str, "default": None, "optional": True, "doc": "Series"},
-            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of this component (overrides the spectrum)"}
+            {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
+            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift."},
+            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23, "doc": "Column density (log cm^-2)."},
+            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)."},
+            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
+            {"name": "series", "type": str, "default": None, "optional": True, "doc": "Transition or multiplet, e.g. 'CIV'."},
+            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of this component (overrides the spectrum)."}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
     },
     "update_components": {
         "brief": "Batch update components.",
+        "details": "Sets the same parameters on several components; a parameter left at None keeps its value.",
         "params": [
-            {"name": "uuids", "type": list, "default": None, "gui_hidden": True},
-            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1},
-            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23},
-            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300},
-            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100},
-            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0}
+            {"name": "uuids", "type": list, "default": None, "gui_hidden": True, "doc": "Identifiers of the components."},
+            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift."},
+            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23, "doc": "Column density (log cm^-2)."},
+            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)."},
+            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
+            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of these components (overrides the spectrum)."}
         ]
     },
     "delete_component": {
         "brief": "Delete component(s).",
+        "details": "Deletes one or more components and recomputes the model.",
         "params": [
-            {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True},
-            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True}
+            {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifier of the component to delete."},
+            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components to delete."}
         ]
     },
     "detect_anchor": {
         "brief": "Detect doublet anchor redshift.",
-        "details": "Finds the redshift of maximum overlap between this session and a sibling session (doublet).",
+        "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best.",
         "params": [
             {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session."},
-            {"name": "trans_self", "type": str, "default": "OVI_1031", "doc": "Transition in this session."},
-            {"name": "trans_sibling", "type": str, "default": "OVI_1037", "doc": "Transition in sibling session."}
+            {"name": "trans_self", "type": str, "default": "OVI_1031", "doc": "Transition in this session, e.g. 'OVI_1031'."},
+            {"name": "trans_sibling", "type": str, "default": "OVI_1037", "doc": "Transition in the sibling session, e.g. 'OVI_1037'."}
         ],
         "url": "absorbers_cb.html#detect_anchor"
     },
     "fit_component": {
         "brief": "Fit component.",
         "requires": ("resolution", "continuum"),
-        "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
+        "details": "Fits a component with its neighbours (the components blended with it) using the Voigt fitter.",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
-            {"name": "max_nfev", "type": int, "default": 2000, "min": 1, "doc": "Max iterations"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Max velocity shift allowed (km/s)"},
-            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth (1=Neighbors, 2=FoF)"} 
+            {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
+            {"name": "max_nfev", "type": int, "default": 2000, "min": 1, "doc": "Maximum number of evaluations of the model."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the component alone, 1 the components blended with it, 2 also those blended with them."} 
         ],
         "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
     },
     "update_constraint": {
         "brief": "Update constraint.",
-        "details": "Freeze, unfreeze, or link component parameters.",
+        "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression.",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
-            {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b)"},
-            {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "Is the parameter free to vary?"},
-            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Math expression for linking"},
-            {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "UUID of the source component (for linking)"} 
+            {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
+            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'."},
+            {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "True: free to vary in the fits; False: frozen."},
+            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. 'p[\"z\"]' (None: no link)."},
+            {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to."} 
         ],
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
     },
     "update_constraints_column": {
         "brief": "Bulk update constraints.",
-        "details": "Freeze or unfreeze a specific parameter for ALL components.",
+        "details": "Freezes or frees a parameter of all the components.",
         "params": [
-            {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b, btur)"},
-            {"name": "is_free", "type": bool, "default": True, "doc": "Set to True (free) or False (frozen)."}
+            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'."},
+            {"name": "is_free", "type": bool, "default": True, "doc": "True: free to vary in the fits; False: frozen."}
         ],
         "url": "absorbers_cb.html#update_constraints_column",
         "gui_hidden": True
@@ -225,13 +227,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "add_linked_system": {
         "brief": "Add linked system.",
         "requires": ("resolution", "continuum"),
-        "details": "Add multiple components (e.g. CIV, SiIV) and link their redshifts.",
+        "details": "Adds components of several series at the same redshift, with the redshifts linked, and fits them.",
         "params": [
-            {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated list of series."},
-            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Column Density"},
-            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Doppler parameter"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window"}
+            {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated series, e.g. 'CIV,SiIV'."},
+            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift."},
+            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Starting column density (log cm^-2)."},
+            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Starting Doppler parameter (km/s)."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
         ],
         "url": "absorbers_cb.html#add_linked_system",
         "gui_hidden": True
@@ -239,56 +241,56 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "optimize_system": {
         "brief": "Optimize system (Iterative Fit).",
         "requires": ("resolution", "continuum"),
-        "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
+        "details": "Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty.",
         "params": [
-            {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID (seed)", "gui_hidden": True},
-            {"name": "max_components", "type": int, "default": 5, "min": 0, "doc": "Maximum number of extra components to try adding."},
-            {"name": "threshold_sigma", "type": float, "default": 2.5, "gt": 0, "doc": "Residual threshold (sigma) required to trigger a new component."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Minimum AIC improvement required to accept a new component."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Velocity window (km/s) around the system to analyze."},
-            {"name": "min_dv", "type": float, "default": 10.0, "min": 0, "doc": "Min separation (km/s). Lower for de-blending."},
-            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth for finding neighbors."},
-            {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Trials allowed without AIC improvement."}
+            {"name": "uuid", "type": str, "default": "", "doc": "Identifier of a component of the system.", "gui_hidden": True},
+            {"name": "max_components", "type": int, "default": 5, "min": 0, "doc": "Maximum number of components to add."},
+            {"name": "threshold_sigma", "type": float, "default": 2.5, "gt": 0, "doc": "Residual (in sigma) above which a new component is tried."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new component."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the velocity window around the system that is analysed (km/s)."},
+            {"name": "min_dv", "type": float, "default": 10.0, "min": 0, "doc": "Minimum separation of a new component from the others (km/s); lower to resolve blends."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the component alone, 1 the components blended with it, 2 also those blended with them."},
+            {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Number of tries without an improvement before stopping."}
         ],
         "url": "absorbers_cb.html#optimize_system"
     },
     "fit_bayesian": {
         "brief": "Fit Bayesian.",
         "requires": ("resolution", "continuum"),
-        "details": "Runs Bayesian sampling (MCMC or Nested) for the selected group.",
+        "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra.",
         "params": [
-            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True},
-            {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampling engine: 'mcmc' or 'nested'."},
-            {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps (MCMC)."},
-            {"name": "nlive", "type": int, "default": 250, "min": 1, "doc": "Number of live points (Nested)."},
-            {"name": "group_depth", "type": int, "default": 2, "min": 0}
+            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components of the group."},
+            {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampler: 'mcmc' (emcee) or 'nested' (dynesty)."},
+            {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps of each walker (MCMC)."},
+            {"name": "nlive", "type": int, "default": 250, "min": 1, "doc": "Number of live points (nested sampling)."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."}
         ],
         "gui_hidden": True
     },
     "refit_all": {
         "brief": "Refit all systems.",
         "requires": ("resolution", "continuum"),
-        "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
+        "details": "Fits all the components, group by group (the components blended with each other), each group on its own.",
         "params": [
-            {"name": "max_nfev", "type": int, "default": 200, "min": 1, "doc": "Max iterations per group"},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Fit window around lines (km/s)"},
-            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
-            {"name": "max_group_size", "type": int, "default": 20, "min": 1, "doc": "Max components per fit group (chunking)"},
-            {"name": "max_b", "type": float, "default": 300.0, "gt": 1, "max": 300, "doc": "Upper bound on b (km/s)"},
-            {"name": "max_logN", "type": float, "default": 23.0, "gt": 10, "max": 23, "doc": "Upper bound on logN"},
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."},
-            {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True}
+            {"name": "max_nfev", "type": int, "default": 200, "min": 1, "doc": "Maximum number of evaluations of the model, per group."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far a group extends: 0 each component alone, 1 the components blended with it, 2 also those blended with them."},
+            {"name": "max_group_size", "type": int, "default": 20, "min": 1, "doc": "Maximum number of components fitted together: larger groups are split."},
+            {"name": "max_b", "type": float, "default": 300.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s)."},
+            {"name": "max_logN", "type": float, "default": 23.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits (log cm^-2)."},
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Fit only the components in a region: 'red_side', 'lya_forest', or 'None' for all."},
+            {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Fit only these components, with their groups (None: all)."}
         ],
         "url": "absorbers_cb.html#refit_all"
     },
     "clean_negligible": {
         "brief": "Remove unphysical/negligible components.",
-        "details": "Removes components that are too weak, too broad, or unphysically narrow.",
+        "details": "Removes the components that are too weak, too narrow, or too broad (and weak) to be real absorbers.",
         "params": [
-            {"name": "min_logN", "type": float, "default": 11.5, "doc": "Minimum column density to keep."},
-            {"name": "max_b", "type": float, "default": 80.0, "gt": 0, "doc": "Maximum Doppler parameter (km/s)."},
-            {"name": "min_b", "type": float, "default": 3.0, "min": 0, "doc": "Minimum Doppler parameter (km/s)."},
-            {"name": "combined_check", "type": bool, "default": True, "doc": "If True, only removes broad lines if they are ALSO weak (b > max_b AND logN < 13.0)."}
+            {"name": "min_logN", "type": float, "default": 11.5, "doc": "Components with a lower column density (log cm^-2) are removed."},
+            {"name": "max_b", "type": float, "default": 80.0, "gt": 0, "doc": "Components broader than this (km/s) are removed (see combined_check)."},
+            {"name": "min_b", "type": float, "default": 3.0, "min": 0, "doc": "Components narrower than this (km/s) are removed."},
+            {"name": "combined_check", "type": bool, "default": True, "doc": "True: remove a component broader than max_b only if it is also weak (logN < 13); False: remove all of them."}
         ],
         "url": "absorbers_cb.html#clean_negligible"
     },
@@ -1066,7 +1068,7 @@ class RecipeAbsorbersV2:
         multiplets : str, optional
             Multiplets to search for (comma-separated). Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
         mask_col : str, optional
-            Mask column (True=Unabsorbed, used to find absorptions). Defaults to ``"abs_mask"``.
+            Column of the mask (True for the absorbed pixels, used to find the absorbed regions). Defaults to ``"abs_mask"``.
         min_pix_region : int, optional
             Minimum width in pixels to count as a region. Defaults to ``3``.
         merge_dv : float, optional

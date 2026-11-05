@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 FLUX_RECIPES_SCHEMAS = {
     "calculate_running_std": {
         "brief": "Calculate running standard deviation.",
-        "details": "Calculate a running Root-Mean-Square on a column (e.g., 'y') to estimate local error.",
+        "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
-            {"name": "input_col", "type": str, "default": "y", "doc": "Column to use for StdDev calculation (e.g., y)"},
-            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the new column to create (e.g., running_std)"},
-            {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Total window size in pixels (should be odd)"}
+            {"name": "input_col", "type": str, "default": "y", "doc": "Column of which the standard deviation is computed, e.g. 'y' (the flux)."},
+            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write."},
+            {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels; an odd number)."}
         ],
         "url": "edit_cb.html#calculate_running_std" # Placeholder URL
     },
@@ -27,58 +27,58 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Smooth spectrum.",
         "details": "Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission).",
         "params": [
-            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
+            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
         ],
         "url": "edit_cb.html#smooth" # Placeholder URL
     },
     "rebin": {
         "brief": "Rebin spectrum.",
-        "details": "Apply a new binning to a spectrum, with a constant bin size.",
+        "details": "Rebins the spectrum onto a new grid with a constant step, in velocity (uniform in log wavelength) or in wavelength; the flux of each new pixel is the inverse-variance weighted mean of the old ones.",
         "params": [
             # None (written 'None' in the dialog and the log): the data range
-            {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start wavelength (nm, None for auto)"},
-            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End wavelength (nm, None for auto)"},
+            {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start of the new grid (nm); None: the start of the data."},
+            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm); None: the end of the data."},
             
             # CRITICAL: dx needs to be a number (10.0) but the V1 flow expects km/s unit conversion later.
             # We use the raw value here, and the adapter handles the unit.
-            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step in x"}, 
+            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step of the new grid, in the unit of xunit."}, 
             
             # Use string "km/s" for the unit input field
-            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
+            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the step: a velocity (km/s) or a wavelength (nm)."},
             
             # None (written 'None'): no clipping
-            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Sigma clipping threshold (None for off)"},
+            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers; None: no clipping."},
             
             # 'norm' (V1: return the normalized spectrum) is not offered: it
             # was never applied in V2 (findings register F37, #560)
 
             # NaN (written 'nan') is the default
-            {"name": "filling", "type": float, "default": float("nan"), "allow_nan": True, "doc": "Value to fill region without data"},
+            {"name": "filling", "type": float, "default": float("nan"), "allow_nan": True, "doc": "Value of the new pixels without data (NaN by default)."},
         ],
         "url": "edit_cb.html#rebin"
     },
     "equalize": {
         "brief": "Equalize flux to reference.",
-        "details": "Scale the flux of this session to match another 'reference' session.",
+        "details": "Scales the flux of this session to match that of another session where they overlap.",
         "params": [
-            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the reference session"},
-            {"name": "order", "type": int, "default": 0, "doc": "Polynomial order (-1=spline, 0=scalar)"}
+            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the open session whose flux is matched."},
+            {"name": "order", "type": int, "default": 0, "doc": "Model of the scaling: 0 a constant factor, n > 0 a polynomial of order n, -1 a spline."}
         ]
     },
     "resample": {
         "brief": "Resample on another grid.",
         "branching": True,
-        "details": "Resample this spectrum onto the exact wavelength grid of another open session. This is the first step for multi-session arithmetics.",
+        "details": "Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel.",
         "params": [
-            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the session to use as the grid"}
+            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the open session whose grid is used."}
         ],
         "url": "edit_cb.html#resample" # Placeholder URL
     },
     "calibrate_from_magnitudes": {
         "brief": "Flux calibrate (multi-band).",
-        "details": "Warp the spectrum SED to match multiple photometric points. Enter as 'Filter=Mag' pairs separated by commas.",
+        "details": "Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters.",
         "params": [
-            {"name": "magnitudes", "type": str, "default": "SDSS_r=17.0", "doc": "List of 'Filter=Mag' pairs (e.g., 'SDSS_g=17.5, SDSS_r=17.0')"}
+            {"name": "magnitudes", "type": str, "default": "SDSS_r=17.0", "doc": "Comma-separated 'filter=magnitude' pairs, e.g. 'SDSS_g=17.5, SDSS_r=17.0'."}
         ],
         "url": "edit_cb.html#calibrate"
     }

@@ -21,72 +21,72 @@ EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
         "brief": "Set session properties.",
         "provides": ("z_em", "resolution"),
-        "details": "Set core session properties like name, object, redshift, and resolution.",
+        "details": "Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value.",
         "params": [
-            {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Session Name (display label)"},
-            {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Object Name (header)"},
+            {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list."},
+            {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
             # Above -1 (1 + z > 0) and finite (Guido, phase 6-bis, F46)
-            {"name": "z_em", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Emission Redshift (z_em)"},
+            {"name": "z_em", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Emission redshift of the quasar (z_em); needed to locate the Lyman-alpha forest."},
             # A number (R) or 'Npx', checked by the recipe: R > 0, N > 0
-            {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolving Power R (e.g. 50000) OR Pixel FWHM (e.g. '3px')"}, 
+            {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolution of the spectrum: the resolving power R (e.g. '50000'), or the FWHM of the line spread function in pixels (e.g. '3px'); written in the 'resol' column."}, 
             # Replace a resolution column that varies with wavelength by a
             # flat one; False (#526) keeps it. The GUI asks the user
-            {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True}
+            {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
         ],
         "url": "edit_cb.html#set_properties"
     },
     "x_convert": {
         "brief": "Convert X axis.",
-        "details": "Convert the x axis units and zero point to wavelength or velocity units.",
+        "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s) relative to a reference redshift.",
         "params": [
-            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Reference redshift for velocity conversion (defaults to z_em)"},
-            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of wavelength or velocity"},
+            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Reference redshift of the zero of the velocity axis ('_current_': z_em); not used for a unit of wavelength."},
+            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the new x axis: a wavelength (e.g. 'nm', 'Angstrom') or a velocity (e.g. 'km/s')."},
         ],
         "url": "edit_cb.html#convert-x-axis"
     },
     "y_convert": {
         "brief": "Convert Y axis units.",
-        "details": "Converts the flux and error arrays to the specified unit.",
+        "details": "Converts the flux, its error and the columns like the flux to another unit of flux density.",
         "params": [
-            {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density"},
+            {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density, e.g. 'erg/(nm s cm^2)' or 'erg/(Angstrom s cm^2)'."},
         ],
         "url": "edit_cb.html#convert-y-axis"
     },
     "apply_expression": {
         "brief": "Apply expression to columns.",
-        "details": "Apply a NumPy-style expression. Use column names (λ, F, cont...) as variables. E.g., 'F / cont', 'F * 2.0', or 'log10(F)'.",
+        "details": "Evaluates a NumPy expression of the columns and writes it in a column, new or existing. The columns are named as in the GUI (λ, F, dF, cont, model, ...); e.g. 'F / cont', 'F * 2.0', 'log10(F)'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Target column (to be overwritten or created)"},
-            {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression to evaluate (e.g., 'F / 2.0')"},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Column to write: replaced if it exists, created otherwise."},
+            {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression of the columns, e.g. 'F / cont'."},
         ],
         "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
     "mask_expression": {
         "brief": "Mask column by expression.",
-        "details": "Mask a target column by setting values to NaN where the expression is True. E.g., '(λ < 300) | (λ > 400)', or 'dF <= 0'.",
+        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Target column to mask (e.g., F)"},
-            {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression (e.g., '(λ > 300) & (λ < 400)')"},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F'."},
+            {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
     "smooth_column": {
         "brief": "Smooth a single column.",
-        "details": "Apply a Gaussian filter to a single data column (e.g., 'dF' or 'snr').",
+        "details": "Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged.",
         "params": [
-            {"name": "target_col", "type": str, "default": "dF", "doc": "Target column to smooth"},
-            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation for Gaussian kernel (km/s)"},
-            {"name": "renorm_model", "type": bool, "default": False, "doc": "If smoothing 'cont', also re-normalize 'model'?", "gui_hidden": True},
+            {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF'."},
+            {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
+            {"name": "renorm_model", "type": bool, "default": False, "doc": "When smoothing 'cont', rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
         "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
     "import_systems": {
         "brief": "Import systems from session.",
-        "details": "Copy absorption systems from another open session into this one.",
+        "details": "Copies the absorption systems (components and constraints) of another open session into this one.",
         "params": [
-            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the session to import from."},
-            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."},
-            {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems to the new data immediately?"}
+            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the open session to copy the systems from."},
+            {"name": "append", "type": bool, "default": True, "doc": "True: add the systems to those of this session; False: replace them."},
+            {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems on the spectrum of this session after copying them."}
         ],
         "url": "absorbers_cb.html#import_systems"
     },
@@ -94,26 +94,26 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Import systems from an ASCII file.",
         "details": "Read absorption components from an ASCII/CSV table with a header (columns series, z and optionally logN, b, btur, dz, dlogN, db), e.g. the _systems.csv written by Export ASCII.",
         "params": [
-            {"name": "file_path", "type": str, "default": "", "doc": "Path of the ASCII/CSV file.", "gui_hidden": True},
-            {"name": "append", "type": bool, "default": True, "doc": "If True, adds to existing. If False, replaces them."},
-            {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems to the new data immediately?"}
+            {"name": "file_path", "type": str, "default": "", "doc": "Path of the ASCII/CSV file to read.", "gui_hidden": True},
+            {"name": "append", "type": bool, "default": True, "doc": "True: add the components to those of this session; False: replace them."},
+            {"name": "refit", "type": bool, "default": False, "doc": "Refit the components on the spectrum after reading them."}
         ],
         "url": "absorbers_cb.html#import_systems_ascii"
     },
     "delete": {
         "brief": "Delete elements.",
-        "details": "Remove columns from the spectrum or clear the line list.",
+        "details": "Removes columns from the spectrum, or all the components of the system list ('systems').",
         "params": [
-            {"name": "targets", "type": str, "default": "", "doc": "Comma-separated list of items to delete (e.g. 'cont, lines')"}
+            {"name": "targets", "type": str, "default": "", "doc": "Comma-separated items to delete: names of columns (e.g. 'cont, model') and/or 'systems' for the whole system list."}
         ],
         "url": "edit_cb.html#delete"
     },
     "split": {
         "brief": "Split spectrum by expression.",
         "branching": True,
-        "details": "Extract a portion of the spectrum into a new session using a boolean expression. E.g., '(λ > 400) & (λ < 500)'.",
+        "details": "Copies the pixels where a boolean expression of the columns is true into a new session, e.g. '(λ > 400) & (λ < 500)'.",
         "params": [
-            {"name": "expression", "type": str, "default": "(λ > 400) & (λ < 500)", "doc": "Boolean expression to select data"}
+            {"name": "expression", "type": str, "default": "(λ > 400) & (λ < 500)", "doc": "Boolean expression of the columns: the pixels where it is true go to the new session."}
         ],
         "url": "edit_cb.html#split"
     },
@@ -121,55 +121,59 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Extract region by preset.",
         "branching": True,
         "requires": ("z_em",),
-        "details": "Extract a specific standard region (like the Ly-alpha forest) into a new session, based on the current emission redshift (z_em).",
+        "details": "Copies a standard region into a new session, from the emission redshift: 'lya_forest' (between Ly-beta and Ly-alpha), 'all_ly_forest' (between the Lyman limit and Ly-alpha), 'red_side' (redward of Ly-alpha). Several regions, separated by commas, give one session each.",
         "params": [
             # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
-            {"name": "region", "type": str, "default": "lya_forest", "doc": "Preset region ('lya_forest', 'all_ly_forest', 'red_side')"}
+            {"name": "region", "type": str, "default": "lya_forest", "doc": "Region(s) to extract: 'lya_forest', 'all_ly_forest', 'red_side', comma-separated."}
         ],
         "url": "edit_cb.html#extract_preset"
     },
     "trim_common": {
         "brief": "Trim to common velocity coverage.",
-        "details": "Trims the current session to the velocity range shared by a list of other sessions (intersection).",
+        "details": "Trims this session to the velocity range around a redshift that all the given sessions cover, each with its own transition (e.g. the arms of an instrument, or the lines of a doublet).",
         "params": [
-            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of other sessions"},
-            {"name": "z_target", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Target redshift"},
-            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition for current session"},
-            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions for other sessions"},
-            {"name": "window_kms", "type": float, "default": 500.0, "gt": 0, "doc": "Symmetric window width (km/s)"}
+            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of the other sessions."},
+            {"name": "z_target", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift at the centre of the range ('_current_': z_em)."},
+            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition of this session that sets its velocity zero, e.g. 'Ly_a'."},
+            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions of the other sessions, in their order."},
+            {"name": "window_kms", "type": float, "default": 500.0, "gt": 0, "doc": "Half-width of the velocity range kept (km/s)."}
         ],
         "url": "edit_cb.html#trim_common"
     },
     "stitch": {
-        "brief": "Merge multiple sessions",
+        "brief": "Merge multiple sessions.",
+        "details": "Joins this session and other sessions into one spectrum, without equalizing their flux (see Equalize and stitch arms); the step that Equalize and stitch arms ends with.",
         "branching": True,
-        "params": [],
+        "params": [
+            {"name": "other_sessions", "type": list, "default": "", "doc": "The other sessions: their names, or the sessions themselves in a script."},
+            {"name": "sort", "type": bool, "default": True, "doc": "Sort the joined spectrum by wavelength."},
+        ],
         "gui_hidden": True  # Usually called via script
     },
     "equalize_and_stitch": {
         "brief": "Equalize and stitch arms.",
         "branching": True,
-        "details": "Equalize flux levels and stitch multiple sessions at specific wavelengths.",
+        "details": "Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths.",
         "params": [
-            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of other sessions (in blue-to-red order).", "gui_hidden": True},
-            {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated cut-off wavelengths (nm) where arms join."},
-            {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated overlap ranges (e.g., '545-555, 795-805') or 'auto'"},
-            {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated fixed multipliers, or 'auto'."}
+            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of the other sessions, from blue to red.", "gui_hidden": True},
+            {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated wavelengths (nm) where each arm ends and the next begins: one fewer than the sessions."},
+            {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated wavelength ranges (nm) where the flux of adjacent arms is matched (e.g. '545-555, 795-805'), or 'auto' for their overlaps."},
+            {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated factors that multiply the flux of each arm instead of the equalization, or 'auto'."}
         ],
         "url": "edit_cb.html#equalize-and-stitch"
     },
     "coadd": {
         "brief": "Co-add multiple sessions.",
         "branching": True,
-        "details": "Stitches multiple sessions together and rebins them onto a single common grid in one pass (Inverse Variance Weighting).",
+        "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass.",
         "params": [
-            {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of sessions to co-add"},
-            {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start wavelength (nm, None for auto)"},
-            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End wavelength (nm, None for auto)"},
-            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step size for the final grid"},
-            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit for step size (km/s or nm)"},
-            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Sigma clipping threshold (None for off)"},
-            {"name": "equalize_order", "type": int, "default": 0, "doc": "Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear, etc.)"},
+            {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of the sessions to co-add, with this one."},
+            {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start of the new grid (nm); None: the start of the data."},
+            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm); None: the end of the data."},
+            {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step of the new grid, in the unit of xunit."},
+            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the step: a velocity (km/s, a grid uniform in log wavelength) or a wavelength (nm)."},
+            {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers; None: no clipping."},
+            {"name": "equalize_order", "type": int, "default": 0, "doc": "Order of the polynomial that scales each session to the first before co-adding (0: a constant factor; -1: no scaling)."},
         ],
         "url": "edit_cb.html#coadd"
     }

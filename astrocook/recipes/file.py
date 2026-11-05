@@ -18,18 +18,18 @@ logger = logging.getLogger(__name__)
 FILE_RECIPES_SCHEMAS = {
     "export_ascii": {
         "brief": "Export session data to ASCII.",
-        "details": "Saves selected session components (Flux, Continuum, System List) as CSV files.",
+        "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv.",
         "params": [
-            {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated elements to export"},
-            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Destination folder"}
+            {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
+            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Folder where the files are written."}
         ],
         "url": "file_cb.html#export"
     },
     "import_ascii": {
         "brief": "Import session data from ASCII.",
-        "details": "Imports session components (Flux, Continuum, System List) from CSV files.",
+        "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum.",
         "params": [
-            {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Source file"}
+            {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Path of the ASCII/CSV file to read."}
         ],
         "url": "file_cb.html#export"
     }
