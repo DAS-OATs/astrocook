@@ -2363,7 +2363,68 @@ The full MCP server (section 4) is generated from this API.
      they should not;
   8. the MCP pilot moved onto the new API (still a thin layer: the test
      that the phase serves the full server), then the closing of the
-     phase.
+     phase. Done: the recipe tools run through `run` (typed parameters,
+     the warnings, `summary` and `notes` of the result in the output); the
+     prerequisites said, not filled (a tool that cannot run says what is
+     missing and who provides it; `provide_missing=true` provides it with
+     the defaults, reported in `provided` and logged as a step of its
+     own); the new parameters (`mask` as a list, `z_em_margin_kms`);
+     `mcp_server/schemas.py`, the JSON schema of the parameters of any
+     recipe from the registry (types, defaults, bounds, choices, kinds,
+     the parameters offered to agents), tested on all 48 recipes: the
+     generator of the full server; the tutorial for agents (it said that
+     `doublets_auto` uses the mask of the session: F50, it made a new
+     one).
+
+**Result of the phase** (November 2026, PRs #705-#723). The recipe API,
+without a change of the numerical results except where Guido decided it
+(F102, F103):
+- Registry: one read-only description of each recipe (`RecipeSpec`,
+  `ParamSpec`), the only reader of the schemas (F79, half of F12), read by
+  the GUI, the scripts, the log and the MCP server; per parameter its
+  type, bounds, choices, kind (session, column), whether it is offered to
+  agents; per recipe what it requires and provides. Every recipe and
+  parameter described for a reader and a model (F48).
+- Typed parameters: one conversion at the boundary (`typed_recipe`),
+  numbers and booleans or the strings of the dialogs and of old logs;
+  values without a physical meaning refused (F46); the log records the
+  values used, defaults included (#573). Batteries of edge inputs for all
+  the recipes, compared before and after each PR (no valid case changed);
+  mutation testing of the conversion and of the registry (Guido's
+  question on the tests adapted with the code).
+- Exceptions: `RecipeError` (`InvalidParameter`, `RecipeFailed`,
+  `MissingPrerequisite`) that names the recipe, the steps and the reason;
+  no recipe returns 0 any more; the failures logged once, where they are
+  caught.
+- Structured result: `run` gives a `RecipeResult` (the session, what
+  changed by a generic comparison, the warnings, the steps, the values
+  used, the reasons of what was removed or discarded, the candidates of
+  the identification with region and score, the flag `not_fitted`, the
+  steps provided, and the empty fields for phase 7); the GUI says it in the
+  status bar and the log.
+- Prerequisites: the resolver, the policy of the scripts (`provide`,
+  `raise`), the GUI asks for the continuum as for z_em and the resolution,
+  the MCP server says what is missing; a step provided is a state and a
+  log entry of its own.
+- Numbers: the snapshots and the mock benchmark unchanged; changed on
+  purpose, with Guido's decision: F102 (`lya_auto` no longer refits the
+  red side) and F103 (the identification and the pipelines on a spectrum
+  without a continuum: it is now estimated first); the slow tests run
+  before the merge of the PRs that touched the pipelines.
+- Found and fixed: F49 (the rest), F50 and F55 (their parameters), F102,
+  F103, F104 (a pending recipe left after a failed Set Properties), F105
+  (the buttons of the sessions of three dialogs did nothing), the dialogs
+  wider than the window with the new texts; `stitch` without its
+  parameters in the registry; several recipes that failed on values a
+  script or the GUI could give (#710-#712). Left: F101 (the script
+  console), F102 for `forest_auto` (its region, Guido's decision).
+- Decided for later: the review of the parameters recipe by recipe (a
+  phase 6-ter, or phase 7 for the recipes it rewrites), the collections of
+  elements to fill some parameters (phase 7), the user configuration of
+  the defaults (after the full MCP server).
+- Tests 1308 → 3288 (mostly the cases of the batteries of inputs, one
+  test each); coverage 84% → 86% (core 92%, GUI 85%, recipes 95%, the MCP
+  server 99%; `io` 50%, the loaders without sample files).
 
 ### Phase 7 – Robust components: emission model and identification
 Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
@@ -3047,5 +3108,5 @@ review); each of its decisions goes into the log.
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
-| 6-bis – Recipe API | in progress (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c, #712); structured result, `run` (PR 4a, #713); region and score of the candidates, `not_fitted`, the reasons of the removals (PR 4b, #714); F102, the notes of a result in the status bar and the log (PR 4c, #715); prerequisites, core and scripts, F103 (PR 5a, #716); the GUI asks for the continuum, F104 (PR 5b, #717); descriptions reviewed, F48, the parameters not for agents (PR 6a, #718); the dialogs with the longer texts (PR 6a-bis, #719); the mask and the margin on z_em of the pipelines (PR 6b, #720); the kinds of the parameters, F105 (PR 6c, #721); the custom multiplets without the global table, F12 (PR 7) |
+| 6-bis – Recipe API | done (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c, #712); structured result, `run` (PR 4a, #713); region and score of the candidates, `not_fitted`, the reasons of the removals (PR 4b, #714); F102, the notes of a result in the status bar and the log (PR 4c, #715); prerequisites, core and scripts, F103 (PR 5a, #716); the GUI asks for the continuum, F104 (PR 5b, #717); descriptions reviewed, F48, the parameters not for agents (PR 6a, #718); the dialogs with the longer texts (PR 6a-bis, #719); the mask and the margin on z_em of the pipelines (PR 6b, #720); the kinds of the parameters, F105 (PR 6c, #721); the custom multiplets without the global table, F12 (PR 7, #722); the MCP pilot on the new API, the generator of the schemas of the tools (PR 8); closing: result of the phase in "Result of the phase" |
 | 7 – Robust components | not started |

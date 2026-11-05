@@ -111,9 +111,23 @@ and, from `absorbers_doublets_auto`, the number of components added and
 removed and the list of the new ones, each with its flags (e.g.
 `b_at_lower_bound`), from which the agent answers the last question.
 
-If something goes wrong (a missing file, z_em not set), the tool returns
-Astrocook's error message, and the agent can usually correct its request
-by itself.
+Each result also says what the recipe did in one line (`summary`) and
+what else is worth knowing (`notes`): the components removed and why,
+those whose fit failed, the steps run first.
+
+If something goes wrong (a missing file, a value that cannot be used), the
+tool returns Astrocook's error message, which names the recipe and the
+reason, and the agent can usually correct its request by itself.
+
+**What a recipe needs.** A recipe that needs something the session does
+not have (the emission redshift, the resolution, a continuum) does not
+run: the tool says what is missing and which recipe provides it, and the
+agent decides. z_em and the resolution are given to `session_open`. A
+continuum is made with `continuum_estimate_auto`, or, if the agent calls
+the tool again with `provide_missing=true`, with the default parameters of
+*Auto-estimate Continuum* before the recipe: the step is listed in
+`provided` and recorded in the session log, before the recipe, as if it
+had been run on its own.
 
 ## 5. Reviewing the Result in the GUI
 
@@ -128,9 +142,10 @@ replay the log as a script.
 - Only the five tools above: no manual editing of components, no Lyman
   forest fit, no export.
 - Paths are on the computer where the server runs; give them in full.
-- `absorbers_doublets_auto` removes the components already on the red
-  side before fitting. It uses the absorbed mask of the session, if any
-  (e.g. from `continuum_estimate_auto`), and makes one with the default
-  parameters otherwise. A call can take minutes on a large spectrum.
+- `absorbers_doublets_auto` replaces the components already on the red
+  side. It finds the absorbed regions on a new mask made with the default
+  parameters (`mask="new"`, used only inside), or on the mask of the
+  session (`mask="session"`, e.g. that of `continuum_estimate_auto` with
+  other parameters). A call can take minutes on a large spectrum.
 - The recipes are the same as in the GUI, with the same strengths and
   weaknesses: check the results.

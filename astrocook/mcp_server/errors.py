@@ -86,6 +86,8 @@ def run_recipe(name: str, fn: Callable[..., Any], *args, **kwargs
     with collect_log() as records:
         try:
             result = fn(*args, **kwargs)
+        except ToolError:
+            raise  # already a message for the model (e.g. what is missing)
         except RecipeError as e:
             # The message names the recipe and the reason; the errors
             # logged before it (if any) come first

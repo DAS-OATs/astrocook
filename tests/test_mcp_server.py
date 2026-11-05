@@ -277,6 +277,17 @@ def test_recipe_tool_defaults_are_the_gui_defaults():
                 assert prop["default"] == schema[param].default, (name, param)
                 assert prop["description"] == schema[param].doc
         assert tools[name].description.startswith(spec.brief)
+        # Phase 6-bis (PR 8): the pilot offers what the registry offers to
+        # agents (the schema the full server will generate), but mask_col
+        # of identify_lines, and the choices as a list
+        from astrocook.mcp_server.schemas import parameters_schema
+        generated = parameters_schema(spec)["properties"]
+        left_out = {"mask_col"} if recipe == "identify_lines" else set()
+        assert set(generated) - left_out <= set(props), (name, set(generated) - set(props))
+        for param, prop in generated.items():
+            if "enum" in prop and param in props:
+                assert props[param]["enum"] == prop["enum"]
+        assert props["provide_missing"]["default"] is False
 
 
 def test_continuum(forest_archive):
@@ -311,9 +322,20 @@ def test_continuum_is_logged_and_replays(forest_archive, tmp_path):
 
 
 def test_continuum_without_z_em_warns(forest_archive):
+    # Phase 6-bis (PR 8): what is missing is said, and the recipe does not
+    # run; with provide_missing it runs as before, with a warning
     _, result = calls(build_server(),
                       ("session_open", {"path": str(forest_archive), "z_em": 0}),
                       ("continuum_estimate_auto", {"session_id": "forest"}))
+    assert result.is_error
+    assert error_text(result).endswith(
+        "Auto-estimate continuum (single-click): The emission redshift (z_em) is not "
+        "set: set it with Set session properties (edit.set_properties). Here, open "
+        "the file again with session_open, giving z_em and resol.")
+    _, result = calls(build_server(),
+                      ("session_open", {"path": str(forest_archive), "z_em": 0}),
+                      ("continuum_estimate_auto", {"session_id": "forest",
+                                                   "provide_missing": True}))
     info = result.structured_content
     assert any("z_em" in w for w in info["warnings"])
     assert info["continuum"]["absorbed_fraction_forest"] is None
@@ -376,7 +398,7 @@ def test_identify_lines_without_z_em(forest_archive):
     _, result = calls(build_server(),
                       ("session_open", {"path": str(forest_archive), "z_em": 0}),
                       ("absorbers_identify_lines", {"session_id": "forest"}))
-    assert "z_em must be set" in error_text(result)
+    assert "The emission redshift (z_em) is not set" in error_text(result)
 
 
 def test_identification_summary_after_a_round_trip(forest_archive, tmp_path):
@@ -402,7 +424,10 @@ def test_recipe_on_unknown_session():
 def test_j0103_continuum_and_identification():
     *_, result = calls(
         build_server(),
-        ("session_open", {"path": str(J0103_SESSION), "z_em": J0103_Z_EM}),
+        # identify_lines needs the resolution, as in the GUI: the server
+        # says so since phase 6-bis (PR 8), instead of running without it
+        ("session_open", {"path": str(J0103_SESSION), "z_em": J0103_Z_EM,
+                          "resol": 45000}),
         ("continuum_estimate_auto", {"session_id": J0103_SESSION.stem}),
         ("absorbers_identify_lines", {"session_id": J0103_SESSION.stem}))
     ident = result.structured_content["identification"]
@@ -618,3 +643,64 @@ def test_doublets_auto_with_the_mask_of_the_session(forest_archive):
         data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
     with pytest.raises(MissingPrerequisite, match="no mask 'abs_mask'"):
         no_mask.absorbers.doublets_auto(mask="session")
+
+
+# --- The prerequisites and the result (phase 6-bis, PR 8) ----------------------
+
+@pytest.fixture(scope="module")
+def physical_archive(tmp_path_factory):
+    """The small mock in physical units: a spectrum without a continuum."""
+    import astropy.units as au
+    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+    truth = MockTruth(components=[MockComponent("CIV", 1.9, 13.8, 10.0)],
+                      lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
+                      resol=45000.0, snr=50.0, z_em=2.0, seed=1)
+    mock = generate(truth, truth_columns=False)
+    d, k = mock._data, 1e-16 * (mock.x.value / 450.0) ** -1.5
+    flux = au.erg / au.cm**2 / au.s / au.nm
+    spec = SpectrumV2(SpectrumDataV2(
+        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumnV2(mock.y.value * k, flux),
+        dy=DataColumnV2(mock.dy.value * k, flux), aux_cols=dict(d.aux_cols), z_em=d.z_em))
+    path = tmp_path_factory.mktemp("physical") / "physical.acs2"
+    SessionV2("physical", None, spec=spec).save(str(path))
+    return path
+
+
+def test_a_missing_continuum_is_said(physical_archive):
+    _, result = calls(build_server(),
+                      ("session_open", {"path": str(physical_archive)}),
+                      ("absorbers_doublets_auto", {"session_id": "physical"}))
+    assert result.is_error
+    message = error_text(result)
+    assert "The spectrum has no continuum" in message
+    assert "continuum.estimate_auto" in message and "provide_missing=true" in message
+
+
+def test_provide_missing_runs_the_provider_first_and_logs_it(physical_archive, tmp_path):
+    _, result, saved = calls(
+        build_server(),
+        ("session_open", {"path": str(physical_archive)}),
+        ("absorbers_doublets_auto", {"session_id": "physical", "provide_missing": True}),
+        ("session_save", {"session_id": "physical", "path": str(tmp_path / "out.acs2")}))
+    info = result.structured_content
+    assert info["provided"] == ["continuum.estimate_auto"]
+    assert info["notes"][0].startswith("Auto-estimate continuum (single-click) run first")
+    assert info["summary"].startswith("Auto-fit metal doublets (Red Side): 1 component added")
+    assert info["spectrum"]["has_continuum"] and info["fit"]["n_added"] == 1
+    assert info["log_entries"] == 2
+    reloaded = load_session_from_file(str(tmp_path / "out.acs2"), "out", None, "auto")
+    entries = [e["recipe_name"] for e in reloaded.log_manager.to_dict()["entries"]]
+    assert entries == ["estimate_auto", "doublets_auto"]
+
+
+def test_the_parameters_are_typed_in_the_log(forest_archive, tmp_path):
+    # The tools pass typed values (they passed strings), and the log keeps
+    # the values used
+    *_, saved = calls(
+        build_server(),
+        ("session_open", {"path": str(forest_archive)}),
+        ("continuum_estimate_auto", {"session_id": "forest", "kappa": 3}),
+        ("session_save", {"session_id": "forest", "path": str(tmp_path / "t.acs2")}))
+    reloaded = load_session_from_file(str(tmp_path / "t.acs2"), "t", None, "auto")
+    (entry,) = reloaded.log_manager.to_dict()["entries"]
+    assert entry["params"]["kappa"] == 3.0 and entry["params"]["template"] is False
