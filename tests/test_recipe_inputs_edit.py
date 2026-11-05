@@ -4,8 +4,7 @@ As test_recipe_inputs.py for continuum, flux and file: for each value
 given to a parameter (with the other parameters in base), the value
 the recipe uses (the recipe must give the same result as with that typed
 value: same data, name, object, z_em, units and systems), or how it
-fails (REFUSED, FAILS, RETURNS_0, RAISES: ``recipe_outcomes.py``; PR 3b
-turns the RETURNS_0 into exceptions). The cases whose outcome
+fails (REFUSED, FAILS: ``recipe_outcomes.py``; exceptions since PR 3b). The cases whose outcome
 changed from 2.4.0 say what 2.4.0 did (the battery was run on master
 before the code changed). Guido's decisions on the bounds (F46): a
 redshift above -1 and finite; a resolution R or N pixels positive and
@@ -124,23 +123,23 @@ CASES = [
     ('set_properties', 'resol', 2, {}, '2'),
     ('set_properties', 'resol', ' 2 ', {}, ' 2 '),
     ('set_properties', 'resol', '1e1', {}, '1e1'),
-    ('set_properties', 'resol', 'abc', {}, RETURNS_0),
-    ('set_properties', 'resol', '', {}, RETURNS_0),
-    ('set_properties', 'resol', 'None', {}, RETURNS_0),
+    ('set_properties', 'resol', 'abc', {}, REFUSED),
+    ('set_properties', 'resol', '', {}, REFUSED),
+    ('set_properties', 'resol', 'None', {}, REFUSED),
     ('set_properties', 'resol', None, {}, REFUSED),
-    ('set_properties', 'resol', 'nan', {}, RETURNS_0),  # 2.4.0: accepted as no change
-    ('set_properties', 'resol', 'inf', {}, RETURNS_0),  # 2.4.0: accepted as an infinity
-    ('set_properties', 'resol', True, {}, RETURNS_0),
-    ('set_properties', 'resol', '-1', {}, RETURNS_0),  # 2.4.0: accepted as no change
-    ('set_properties', 'resol', '0', {}, RETURNS_0),  # 2.4.0: accepted as no change
+    ('set_properties', 'resol', 'nan', {}, REFUSED),  # 2.4.0: accepted as no change
+    ('set_properties', 'resol', 'inf', {}, REFUSED),  # 2.4.0: accepted as an infinity
+    ('set_properties', 'resol', True, {}, REFUSED),
+    ('set_properties', 'resol', '-1', {}, REFUSED),  # 2.4.0: accepted as no change
+    ('set_properties', 'resol', '0', {}, REFUSED),  # 2.4.0: accepted as no change
     ('set_properties', 'resol', '_current_', {}, '_current_'),
     ('set_properties', 'resol', '45000', {}, '45000'),
     ('set_properties', 'resol', 45000, {}, '45000'),
     ('set_properties', 'resol', '3px', {}, '3px'),
     ('set_properties', 'resol', '3 px', {}, '3 px'),
-    ('set_properties', 'resol', 'px', {}, RETURNS_0),
-    ('set_properties', 'resol', '-3px', {}, RETURNS_0),
-    ('set_properties', 'resol', '0px', {}, RETURNS_0),  # 2.4.0: accepted as an infinite R
+    ('set_properties', 'resol', 'px', {}, REFUSED),
+    ('set_properties', 'resol', '-3px', {}, REFUSED),
+    ('set_properties', 'resol', '0px', {}, REFUSED),  # 2.4.0: accepted as an infinite R
     ('set_properties', 'resol', '45000.5', {}, '45000.5'),
     ('set_properties', 'name', 'new', {}, 'new'),
     ('set_properties', 'name', '', {}, ''),
@@ -185,22 +184,22 @@ CASES = [
     ('x_convert', 'xunit', 'km/s', {}, 'km/s'),
     ('x_convert', 'xunit', 'nm', {}, 'nm'),
     ('x_convert', 'xunit', 'Angstrom', {}, 'Angstrom'),
-    ('x_convert', 'xunit', 'bogus', {}, RETURNS_0),
+    ('x_convert', 'xunit', 'bogus', {}, REFUSED),
     ('x_convert', 'xunit', '', {}, FAILS),
     ('x_convert', 'xunit', None, {}, REFUSED),  # 2.4.0: crashed (TypeError)
     ('x_convert', 'xunit', 5, {}, FAILS),
     ('y_convert', 'yunit', 'erg/(nm s cm^2)', {}, 'erg/(nm s cm^2)'),
     ('y_convert', 'yunit', 'erg/(Angstrom s cm^2)', {}, 'erg/(Angstrom s cm^2)'),
     ('y_convert', 'yunit', 'Jy', {}, FAILS),
-    ('y_convert', 'yunit', 'bogus', {}, RETURNS_0),
+    ('y_convert', 'yunit', 'bogus', {}, REFUSED),
     ('y_convert', 'yunit', '', {}, FAILS),
     ('y_convert', 'yunit', None, {}, REFUSED),  # 2.4.0: crashed (TypeError)
     ('y_convert', 'yunit', 5, {}, FAILS),
     ('apply_expression', 'expression', 'F / cont', {'target_col': 'F'}, 'F / cont'),
     ('apply_expression', 'expression', 'F * 2.0', {'target_col': 'F'}, 'F * 2.0'),
-    ('apply_expression', 'expression', '', {'target_col': 'F'}, RETURNS_0),
-    ('apply_expression', 'expression', '   ', {'target_col': 'F'}, RETURNS_0),
-    ('apply_expression', 'expression', 'F +', {'target_col': 'F'}, RETURNS_0),
+    ('apply_expression', 'expression', '', {'target_col': 'F'}, FAILS),
+    ('apply_expression', 'expression', '   ', {'target_col': 'F'}, FAILS),
+    ('apply_expression', 'expression', 'F +', {'target_col': 'F'}, FAILS),
     ('apply_expression', 'expression', None, {'target_col': 'F'}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('apply_expression', 'expression', 5, {'target_col': 'F'}, '5'),  # 2.4.0: crashed (AttributeError)
     ('apply_expression', 'target_col', 'F', {'expression': 'F * 2'}, 'F'),
@@ -210,8 +209,8 @@ CASES = [
     ('apply_expression', 'target_col', 5, {'expression': 'F * 2'}, '5'),  # 2.4.0: crashed (AttributeError)
     ('mask_expression', 'expression', 'F < 0.5', {'target_col': 'F'}, 'F < 0.5'),
     ('mask_expression', 'expression', '(λ > 400) & (λ < 410)', {'target_col': 'F'}, '(λ > 400) & (λ < 410)'),
-    ('mask_expression', 'expression', '', {'target_col': 'F'}, RETURNS_0),
-    ('mask_expression', 'expression', 'F <', {'target_col': 'F'}, RETURNS_0),
+    ('mask_expression', 'expression', '', {'target_col': 'F'}, FAILS),
+    ('mask_expression', 'expression', 'F <', {'target_col': 'F'}, FAILS),
     ('mask_expression', 'expression', None, {'target_col': 'F'}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('smooth_column', 'sigma_kms', '2.0', {'target_col': 'F'}, 2.0),
     ('smooth_column', 'sigma_kms', 2.0, {'target_col': 'F'}, 2.0),
@@ -244,8 +243,8 @@ CASES = [
     ('smooth_column', 'target_col', 'F', {}, 'F'),
     ('smooth_column', 'target_col', 'dF', {}, 'dF'),
     ('smooth_column', 'target_col', 'cont', {}, 'cont'),
-    ('smooth_column', 'target_col', 'nope', {}, RETURNS_0),
-    ('smooth_column', 'target_col', '', {}, RETURNS_0),
+    ('smooth_column', 'target_col', 'nope', {}, FAILS),
+    ('smooth_column', 'target_col', '', {}, FAILS),
     ('smooth_column', 'target_col', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('import_systems', 'append', 'True', {'source_session': 'blue'}, True),
     ('import_systems', 'append', 'False', {'source_session': 'blue'}, False),
@@ -271,9 +270,9 @@ CASES = [
     ('import_systems', 'refit', None, {'source_session': 'blue'}, REFUSED),  # 2.4.0: accepted as False
     ('import_systems', 'source_session', 'blue', {}, 'blue'),
     ('import_systems', 'source_session', 'red', {}, 'red'),
-    ('import_systems', 'source_session', 'missing', {}, RETURNS_0),
-    ('import_systems', 'source_session', 'None', {}, RETURNS_0),
-    ('import_systems', 'source_session', '', {}, RETURNS_0),
+    ('import_systems', 'source_session', 'missing', {}, FAILS),
+    ('import_systems', 'source_session', 'None', {}, FAILS),
+    ('import_systems', 'source_session', '', {}, FAILS),
     ('import_systems', 'source_session', None, {}, REFUSED),
     ('import_systems_ascii', 'append', 'True', {'file_path': CSV}, True),
     ('import_systems_ascii', 'append', 'False', {'file_path': CSV}, False),
@@ -290,8 +289,8 @@ CASES = [
     ('import_systems_ascii', 'append', None, {'file_path': CSV}, REFUSED),  # 2.4.0: accepted as False
     ('import_systems_ascii', 'append', 'None', {'file_path': CSV}, REFUSED),  # 2.4.0: accepted as False
     ('import_systems_ascii', 'file_path', CSV, {}, CSV),
-    ('import_systems_ascii', 'file_path', '/nonexistent.csv', {}, RETURNS_0),
-    ('import_systems_ascii', 'file_path', '', {}, RETURNS_0),
+    ('import_systems_ascii', 'file_path', '/nonexistent.csv', {}, FAILS),
+    ('import_systems_ascii', 'file_path', '', {}, FAILS),
     ('import_systems_ascii', 'file_path', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('delete', 'targets', 'cont', {}, 'cont'),
     ('delete', 'targets', 'systems', {}, 'systems'),
@@ -301,20 +300,20 @@ CASES = [
     ('delete', 'targets', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('split', 'expression', '(λ > 400) & (λ < 410)', {}, '(λ > 400) & (λ < 410)'),
     ('split', 'expression', 'λ > 1000', {}, FAILS),
-    ('split', 'expression', '', {}, RETURNS_0),
+    ('split', 'expression', '', {}, FAILS),
     ('split', 'expression', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('split', 'expression', 'λ >', {}, RAISES),
+    ('split', 'expression', 'λ >', {}, FAILS),
     ('extract_preset', 'region', 'lya_forest', {}, 'lya_forest'),
     ('extract_preset', 'region', 'red_side', {}, 'red_side'),
     ('extract_preset', 'region', 'lya_forest, red_side', {}, 'lya_forest, red_side'),
-    ('extract_preset', 'region', 'nope', {}, RETURNS_0),
-    ('extract_preset', 'region', '', {}, RETURNS_0),
+    ('extract_preset', 'region', 'nope', {}, FAILS),
+    ('extract_preset', 'region', '', {}, FAILS),
     ('extract_preset', 'region', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('trim_common', 'z_target', '2.0', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'z_target', 2.0, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'z_target', 2, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'z_target', ' 2 ', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'z_target', '1e1', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
+    ('trim_common', 'z_target', '2.0', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'z_target', 2.0, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'z_target', 2, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'z_target', ' 2 ', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'z_target', '1e1', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
     ('trim_common', 'z_target', 'abc', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
     ('trim_common', 'z_target', '', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
     ('trim_common', 'z_target', 'None', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
@@ -323,13 +322,13 @@ CASES = [
     ('trim_common', 'z_target', 'inf', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
     ('trim_common', 'z_target', True, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
     ('trim_common', 'z_target', '-1', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
-    ('trim_common', 'z_target', '0', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'z_target', '_current_', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
+    ('trim_common', 'z_target', '0', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'z_target', '_current_', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
     ('trim_common', 'z_target', '2.45', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, 2.45),
-    ('trim_common', 'window_kms', '2.0', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'window_kms', 2.0, {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'window_kms', 2, {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
-    ('trim_common', 'window_kms', ' 2 ', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, RETURNS_0),
+    ('trim_common', 'window_kms', '2.0', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'window_kms', 2.0, {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'window_kms', 2, {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
+    ('trim_common', 'window_kms', ' 2 ', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
     ('trim_common', 'window_kms', '1e1', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, 10.0),
     ('trim_common', 'window_kms', 'abc', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
     ('trim_common', 'window_kms', '', {'others_names': 'same', 'z_target': '2.45', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, REFUSED),
@@ -343,16 +342,16 @@ CASES = [
     ('equalize_and_stitch', 'stitch_wavelengths', '398', {'other_sessions': 'blue'}, '398'),
     ('equalize_and_stitch', 'stitch_wavelengths', 398, {'other_sessions': 'blue'}, '398'),  # 2.4.0: crashed (AttributeError)
     ('equalize_and_stitch', 'stitch_wavelengths', 398.0, {'other_sessions': 'blue'}, '398.0'),  # 2.4.0: crashed (AttributeError)
-    ('equalize_and_stitch', 'stitch_wavelengths', '', {'other_sessions': 'blue'}, RETURNS_0),
-    ('equalize_and_stitch', 'stitch_wavelengths', 'abc', {'other_sessions': 'blue'}, RETURNS_0),
-    ('equalize_and_stitch', 'stitch_wavelengths', '398, 450', {'other_sessions': 'blue'}, RETURNS_0),
+    ('equalize_and_stitch', 'stitch_wavelengths', '', {'other_sessions': 'blue'}, REFUSED),
+    ('equalize_and_stitch', 'stitch_wavelengths', 'abc', {'other_sessions': 'blue'}, REFUSED),
+    ('equalize_and_stitch', 'stitch_wavelengths', '398, 450', {'other_sessions': 'blue'}, REFUSED),
     ('equalize_and_stitch', 'stitch_wavelengths', None, {'other_sessions': 'blue'}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('equalize_and_stitch', 'manual_factors', 'auto', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, 'auto'),
     ('equalize_and_stitch', 'manual_factors', 'AUTO', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, 'AUTO'),
     ('equalize_and_stitch', 'manual_factors', '1.5', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, '1.5'),
     ('equalize_and_stitch', 'manual_factors', 1.5, {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, '1.5'),  # 2.4.0: crashed (AttributeError)
-    ('equalize_and_stitch', 'manual_factors', 'abc', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, RETURNS_0),
-    ('equalize_and_stitch', 'manual_factors', '', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, RETURNS_0),
+    ('equalize_and_stitch', 'manual_factors', 'abc', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),
+    ('equalize_and_stitch', 'manual_factors', '', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),
     ('equalize_and_stitch', 'manual_factors', None, {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('coadd', 'xstart', '2.0', {'session_names': 'main2, same'}, 2.0),
     ('coadd', 'xstart', 2.0, {'session_names': 'main2, same'}, 2.0),
@@ -366,8 +365,8 @@ CASES = [
     ('coadd', 'xstart', 'nan', {'session_names': 'main2, same'}, REFUSED),
     ('coadd', 'xstart', 'inf', {'session_names': 'main2, same'}, REFUSED),
     ('coadd', 'xstart', True, {'session_names': 'main2, same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'xstart', '-1', {'session_names': 'main2, same'}, RETURNS_0),
-    ('coadd', 'xstart', '0', {'session_names': 'main2, same'}, RETURNS_0),
+    ('coadd', 'xstart', '-1', {'session_names': 'main2, same'}, FAILS),
+    ('coadd', 'xstart', '0', {'session_names': 'main2, same'}, FAILS),
     ('coadd', 'xstart', '390', {'session_names': 'main2, same'}, 390.0),
     ('coadd', 'xstart', 390, {'session_names': 'main2, same'}, 390.0),
     ('coadd', 'xend', '2.0', {'session_names': 'same'}, 2.0),
@@ -382,8 +381,8 @@ CASES = [
     ('coadd', 'xend', 'nan', {'session_names': 'same'}, REFUSED),
     ('coadd', 'xend', 'inf', {'session_names': 'same'}, REFUSED),
     ('coadd', 'xend', True, {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'xend', '-1', {'session_names': 'same'}, RETURNS_0),
-    ('coadd', 'xend', '0', {'session_names': 'same'}, RETURNS_0),
+    ('coadd', 'xend', '-1', {'session_names': 'same'}, FAILS),
+    ('coadd', 'xend', '0', {'session_names': 'same'}, FAILS),
     ('coadd', 'xend', '450', {'session_names': 'same'}, 450.0),
     ('coadd', 'xend', 450, {'session_names': 'same'}, 450.0),
     ('coadd', 'dx', '20', {'session_names': 'same'}, 20.0),
@@ -424,8 +423,8 @@ CASES = [
     ('coadd', 'equalize_order', None, {'session_names': 'same, blue'}, REFUSED),
     ('coadd', 'xunit', 'km/s', {'session_names': 'same'}, 'km/s'),
     ('coadd', 'xunit', 'nm', {'session_names': 'same'}, 'nm'),
-    ('coadd', 'xunit', 'bogus', {'session_names': 'same'}, RETURNS_0),
-    ('coadd', 'xunit', '', {'session_names': 'same'}, RETURNS_0),
+    ('coadd', 'xunit', 'bogus', {'session_names': 'same'}, FAILS),
+    ('coadd', 'xunit', '', {'session_names': 'same'}, FAILS),
     ('coadd', 'xunit', None, {'session_names': 'same'}, REFUSED),
 ]
 

@@ -173,26 +173,27 @@ def test_failed_refit_of_an_import_keeps_the_import(monkeypatch, caplog):
 
 
 @pytest.mark.parametrize("kwargs, message", [
-    (dict(manual_factors="one"), "The manual factors must be numbers"),
-    (dict(manual_factors="1.0, 2.0"), "Give 1 manual factors"),
-    (dict(equalize_ranges="600"), "The equalize ranges must be written"),
-    (dict(equalize_ranges="600-610, 620-630"), "Give 1 equalize ranges"),
+    (dict(manual_factors="one"), "manual_factors: give numbers separated by commas"),
+    (dict(manual_factors="1.0, 2.0"), "manual_factors: give 1, one per other session"),
+    (dict(equalize_ranges="600"), "equalize_ranges: write them 'min-max, min-max'"),
+    (dict(equalize_ranges="600-610, 620-630"), "equalize_ranges: give 1, one per other"),
 ])
-def test_equalize_and_stitch_refuses_parameters_it_cannot_read(kwargs, message, caplog):
-    # They were replaced by 'auto', with a WARNING
+def test_equalize_and_stitch_refuses_parameters_it_cannot_read(kwargs, message):
+    # They were replaced by 'auto', with a WARNING; since phase 6-bis (PR 3)
+    # an InvalidParameter that names them
     session = _session(gui=_gui(red=SimpleNamespace(spec=_spec(620.0, 628.0))))
-    with caplog.at_level(logging.ERROR):
-        assert session.edit.equalize_and_stitch("red", "620.0", **kwargs) == 0
-    assert any(message in m for m in _errors(caplog))
+    with pytest.raises(InvalidParameter) as info:
+        session.edit.equalize_and_stitch("red", "620.0", **kwargs)
+    assert message in str(info.value)
 
 
 def test_trim_common_without_a_common_range_fails(caplog):
     # A WARNING and the session unchanged
     far = SimpleNamespace(spec=_spec(300.0, 301.0, 0.005))
     session = _session(gui=_gui(far=far))
-    with caplog.at_level(logging.ERROR):
-        assert session.edit.trim_common("far", "2.97", "CIV_1548", "Ly_a") == 0
-    assert "The sessions have no range in common: nothing is trimmed." in _errors(caplog)
+    with pytest.raises(RecipeFailed, match="The sessions have no range in common: "
+                                           "nothing is trimmed."):
+        session.edit.trim_common("far", "2.97", "CIV_1548", "Ly_a")
 
 
 # --- PR 5c: the prerequisites of the fits ---------------------------------------------

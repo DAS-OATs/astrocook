@@ -11,6 +11,8 @@ import logging
 
 import pytest
 
+from astrocook.recipes.errors import RecipeFailed
+
 from astrocook.core.session import SessionV2, load_session_from_file
 from astrocook.io.loaders import detect_file_format
 
@@ -63,11 +65,13 @@ def test_short_csv_is_read_as_csv(tmp_path):
 
 def test_failed_expression_is_logged_once_with_the_expression(caplog):
     session = SessionV2("s", None, spec=_spec())
-    with caplog.at_level(logging.ERROR):
-        assert session.edit.apply_expression(target_col="y", expression="nope * 2") == 0
-    errors = _errors(caplog)
-    assert len(errors) == 1
-    assert "Could not apply the expression 'nope * 2'" in errors[0].getMessage()
+    # Since phase 6-bis (PR 3) an exception with the expression, logged
+    # where it is caught (here, nowhere)
+    with caplog.at_level(logging.ERROR), pytest.raises(RecipeFailed) as info:
+        session.edit.apply_expression(target_col="y", expression="nope * 2")
+    assert _errors(caplog) == []
+    assert str(info.value).startswith("Apply expression to columns: The expression "
+                                      "'nope * 2' cannot be evaluated")
 
 
 def test_split_keeps_the_type_of_the_error():

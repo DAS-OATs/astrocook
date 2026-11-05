@@ -15,6 +15,7 @@ from astrocook.core.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 from astrocook.recipes.edit import RecipeEditV2
+from astrocook.recipes.errors import InvalidParameter
 
 CUT_NM = 1000.0
 NIR_MISCALIBRATION = 0.7  # the NIR arm is 30% too faint
@@ -76,9 +77,10 @@ def test_two_arms_one_cut(arms, kwargs):
 
 def test_two_arms_two_cuts_is_rejected(arms):
     session, _, _ = arms
-    result = RecipeEditV2(session).equalize_and_stitch(
-        other_sessions="NIR", stitch_wavelengths="1000, 1010")
-    assert result == 0
+    with pytest.raises(InvalidParameter, match="stitch_wavelengths: give 1, one per other "
+                                               "session \\(2 given\\)"):
+        RecipeEditV2(session).equalize_and_stitch(
+            other_sessions="NIR", stitch_wavelengths="1000, 1010")
 
 
 def test_gui_dialog_asks_for_one_cut_with_two_arms(qtbot, monkeypatch, tmp_path):
