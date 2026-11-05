@@ -283,6 +283,10 @@ class LinesMixin:
         system_z_map = {}
         system_logN_map = {}
         system_b_map = {}
+        # The region and the score each candidate system comes from (the
+        # rest of F49, phase 6-bis PR 4b: they were not kept)
+        system_region_map = {}
+        system_score_map = {}
         
         # [NEW] Rich metadata for UI Tooltips
         region_info = {}
@@ -371,6 +375,8 @@ class LinesMixin:
                         system_z_map[sys_id_counter] = z_peak
                         system_logN_map[sys_id_counter] = logN_guess
                         system_b_map[sys_id_counter] = b_guess
+                        system_region_map[sys_id_counter] = rid_int
+                        system_score_map[sys_id_counter] = float(score)
                         sys_id_counter += 1
                         processed_systems.add(uniq_key)
 
@@ -383,6 +389,8 @@ class LinesMixin:
         new_meta['z_map_json'] = json.dumps(system_z_map)
         new_meta['logN_map_json'] = json.dumps(system_logN_map)
         new_meta['b_map_json'] = json.dumps(system_b_map)
+        new_meta['region_map_json'] = json.dumps(system_region_map)
+        new_meta['score_map_json'] = json.dumps(system_score_map)
         
         # rich UI Metadata [THE FIX]
         new_meta['region_identifications'] = json.dumps(region_info)

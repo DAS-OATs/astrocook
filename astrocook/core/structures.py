@@ -264,7 +264,9 @@ class ComponentDataV2:
     """ Warnings left by the last fit of the component (#517), see
     :data:`astrocook.fitting.voigt_fitter.COMPONENT_FLAGS`: a parameter
     ended at a bound of the fit, or the uncertainties could not be
-    computed. Cleared when a parameter is edited. """
+    computed; or ``not_fitted`` (phase 6-bis): Refit All could not fit its
+    group, and it keeps its values from before. Cleared when a parameter is
+    edited, and set again by the next fit. """
 
     # V2 IDENTIFIER: Stable, Global, Immutable
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()))

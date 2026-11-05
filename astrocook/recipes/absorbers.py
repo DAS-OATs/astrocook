@@ -10,6 +10,7 @@ from astrocook.fitting.voigt_fitter import VoigtFitterV2
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes.params import typed_recipe
+from astrocook.recipes.result import report, report_removed
 from astrocook.recipes.messages import (msg_continuum_estimated, msg_no_resolution,
                                        msg_session_not_found)
 
@@ -306,6 +307,35 @@ def _region_ident_dict(value) -> dict:
     return {int(float(k)): v for k, v in raw.items()}
 
 
+def _identification_extra(spec) -> dict:
+    """The identification of :meth:`RecipeAbsorbersV2.identify_lines`, for
+    the structured result (phase 6-bis, PR 4b; F49: the candidate systems
+    keep their region and their score): the candidate systems and the
+    regions, with their range in x and their identifications."""
+    meta = spec.meta
+    series = _region_ident_dict(meta.get('series_map_json'))
+    maps = {k: _region_ident_dict(meta.get(f"{k}_map_json"))
+            for k in ('z', 'logN', 'b', 'region', 'score')}
+    candidates = [{'series': name, 'z': maps['z'].get(sid),
+                   'logN_guess': maps['logN'].get(sid), 'b_guess': maps['b'].get(sid),
+                   'region': maps['region'].get(sid), 'score': maps['score'].get(sid)}
+                  for sid, name in sorted(series.items())]
+    regions = []
+    idents = _region_ident_dict(meta.get('region_identifications') or {})
+    if spec.has_aux_column('abs_ids'):
+        ids = np.asarray(spec.get_column('abs_ids').value)
+        x = np.asarray(spec.x.value)
+        for rid in sorted(int(r) for r in np.unique(ids) if r > 0):
+            inside = x[ids == rid]
+            regions.append({'region': rid, 'x_min': float(inside.min()),
+                            'x_max': float(inside.max()), 'x_unit': str(spec.x.unit),
+                            'identifications': [
+                                {'transition': t, 'score': float(sc)}
+                                for t, sc in sorted(idents.get(rid, []),
+                                                    key=lambda ts: -ts[1])]})
+    return {'candidates': candidates, 'regions': regions}
+
+
 def merge_region_ids(old_ids, old_ident, new_ids, new_ident):
     """Merge the regions of a new identification with those of earlier
     steps of a pipeline.
@@ -364,6 +394,7 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
         if not uuids:
             break
         logger.info(f"{len(uuids)} lines narrower than {min_b} km/s removed; refitting the others.")
+        report_removed(uuids, f"narrower than min_b = {min_b} km/s")
         if len(uuids) == len(session.systs.components):
             # Nothing left to refit (its 0 said so before phase 6-bis, PR 3)
             return _without_components(session, uuids)
@@ -375,6 +406,7 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
     uuids = narrow(session)
     if uuids:
         logger.info(f"{len(uuids)} lines still narrower than {min_b} km/s after the last refit removed.")
+        report_removed(uuids, f"narrower than min_b = {min_b} km/s after the last refit")
         session = _without_components(session, uuids)
     return session
 
@@ -444,7 +476,25 @@ def _drop_negligible(session):
         return session
     logger.info(f"Removed {len(uuids)} component{'s' if len(uuids) > 1 else ''} "
                  "at the lower bound of logN (negligible).")
+    report_removed(uuids, "logN at the lower bound of the fit (negligible)")
     return _without_components(session, uuids)
+
+
+#: The flag of the components whose group refit_all could not fit (phase
+#: 6-bis, PR 4b): they keep their values from before the fit
+NOT_FITTED = 'not_fitted'
+
+
+def _flag_not_fitted(systs, uuids):
+    """The system list with the flag ``not_fitted`` on the components
+    ``uuids``."""
+    import dataclasses
+    from astrocook.core.system_list import SystemListV2
+    targets = set(uuids)
+    comps = [dataclasses.replace(c, flags=tuple(c.flags or ()) + (NOT_FITTED,))
+             if c.uuid in targets and NOT_FITTED not in (c.flags or ()) else c
+             for c in systs.components]
+    return SystemListV2(dataclasses.replace(systs._data, components=comps))
 
 
 def _log_flags(components) -> None:
@@ -592,6 +642,11 @@ class RecipeAbsorbersV2:
 
             # Delegate logic to SystemListV2
             new_systs = session_current.systs.remove_in_region(obs_min, obs_max)
+            kept = {c.uuid for c in new_systs.components}
+            report_removed([c.uuid for c in session_current.systs.components
+                            if c.uuid not in kept],
+                           f"in the region of the pipeline ({region_limit}): replaced by "
+                           "its components")
             session_current = session_current.with_new_system_list(new_systs)
         
         # --- 1. PREPARE REGION MASK ---
@@ -1044,7 +1099,8 @@ class RecipeAbsorbersV2:
             bypass_scoring=bypass_scoring,
             debug_rating=debug_rating
         )
-            
+        for key, value in _identification_extra(new_spec_v2).items():
+            report(key, value)
         return self._session.with_new_spectrum(new_spec_v2)
     @typed_recipe
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
@@ -1301,6 +1357,9 @@ class RecipeAbsorbersV2:
         # 1. Delegate to SystemListV2 (which we updated to handle lists)
         # We pass both arguments; SystemListV2 handles the set logic.
         new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
+        kept = {c.uuid for c in new_systs.components}
+        report_removed([c.uuid for c in self._session.systs.components if c.uuid not in kept],
+                       "deleted")
         spec = self._session.spec
 
         # 2. Without a continuum the model cannot be computed: delete the
@@ -1968,6 +2027,7 @@ class RecipeAbsorbersV2:
         from astrocook.core.system_list import SystemListV2
 
         failed_units = []
+        not_fitted = []  # the components of the groups that could not be fitted
         for i, target_uuids in enumerate(work_units):
 
             if self._is_stop_requested():
@@ -2020,6 +2080,7 @@ class RecipeAbsorbersV2:
                 # The group keeps its values; reported once below, the
                 # other errors reach the recipe (phase 6)
                 failed_units.append(min(c.z for c in target_comps))
+                not_fitted.extend(c.uuid for c in target_comps)
                 logger.debug(f"The fit of group {i + 1} failed: {e}")
 
         if failed_units:
@@ -2049,6 +2110,11 @@ class RecipeAbsorbersV2:
         # per unit, no refit)
         final_systs = self._final_uncertainties(current_session.spec, final_systs,
                                                 work_units, z_win_f)
+        if not_fitted:
+            # Flagged (phase 6-bis PR 4b, agreed with Guido in phase 6): the
+            # GUI shows them with the other flags, and a later fit clears it
+            final_systs = _flag_not_fitted(final_systs, not_fitted)
+            report('not_fitted', list(not_fitted))
 
         # 4. Final Global Model
         if final_systs.constraint_model:
@@ -2146,12 +2212,14 @@ class RecipeAbsorbersV2:
             if c.b < lim_b_min:
                 logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s, too narrow.")
                 to_remove.append(c.uuid)
+                report_removed([c.uuid], f"b < min_b = {lim_b_min} km/s (too narrow)")
                 continue
 
             # 2. Too Weak (Negligible)
             if c.logN < lim_N:
                 logger.debug(f"{c.series} at z = {c.z:.4f} removed: logN = {c.logN:.2f}, too weak.")
                 to_remove.append(c.uuid)
+                report_removed([c.uuid], f"logN < min_logN = {lim_N} (too weak)")
                 continue
 
             # 3. Too Broad (Continuum drifts / Ghosts)
@@ -2163,10 +2231,13 @@ class RecipeAbsorbersV2:
                         logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s and "
                                      f"logN = {c.logN:.2f}, broad and weak.")
                         to_remove.append(c.uuid)
+                        report_removed([c.uuid], f"b > max_b = {lim_b_max} km/s and "
+                                                 "logN < 13 (broad and weak)")
                 else:
                     # Unconditional removal
                     logger.debug(f"{c.series} at z = {c.z:.4f} removed: b = {c.b:.1f} km/s, too broad.")
                     to_remove.append(c.uuid)
+                    report_removed([c.uuid], f"b > max_b = {lim_b_max} km/s (too broad)")
 
         if to_remove:
             logger.info(f"{len(to_remove)} components removed (too narrow, weak or broad).")
