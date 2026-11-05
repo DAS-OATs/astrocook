@@ -94,11 +94,11 @@ def test_recipe_needs_z_em(window, monkeypatch, answer):
     assert shown[-1]["header"] == "Emission Redshift (z_em) is required."
     if answer == "Yes":
         assert opened == [("edit", "set_properties", None)]
-        assert window._pending_recipe_on_properties_set == {
+        assert window._pending_recipe == {
             "category": "continuum", "name": "estimate_auto", "params": {"a": 1},
-            "mode": "direct"}
+            "mode": "direct", "after": "set_properties"}
     else:
-        assert opened == [] and window._pending_recipe_on_properties_set is None
+        assert opened == [] and window._pending_recipe is None
 
 
 def test_recipe_needs_the_resolution(qtbot, window, monkeypatch):
@@ -119,7 +119,7 @@ def test_recipe_resumed_after_set_properties(ready, monkeypatch, qtbot):
                                    {"z_em": "4.072"}))
     qtbot.waitUntil(lambda: bool(opened))
     assert opened == [("continuum", "estimate_auto", {"a": 1})]
-    assert window._pending_recipe_on_properties_set is None
+    assert window._pending_recipe is None
     requested = []
     monkeypatch.setattr(window, "_on_recipe_requested",
                         lambda cat, name, params, extra: requested.append((cat, name, params)))
@@ -128,6 +128,80 @@ def test_recipe_resumed_after_set_properties(ready, monkeypatch, qtbot):
                                    {"z_em": "4.072"}))
     qtbot.waitUntil(lambda: bool(requested))
     assert requested == [("continuum", "estimate_auto", {"b": 2})]
+
+
+# --- The continuum (phase 6-bis, PR 5b) ---------------------------------------------------
+
+def _requested(window, monkeypatch):
+    requested = []
+    monkeypatch.setattr(window, "_on_recipe_requested",
+                        lambda cat, name, params, extra: requested.append((cat, name, params)))
+    return requested
+
+
+def test_recipe_needs_the_continuum_estimate(ready, monkeypatch):
+    # The archive has z_em and the resolution, and no continuum
+    window = ready
+    assert window.active_history.current_state.spec.norm is None
+    shown = _messages(window, monkeypatch, "Yes")
+    requested = _requested(window, monkeypatch)
+    assert not window._check_and_handle_requirements("absorbers", "refit_all", {"a": 1},
+                                                     mode="direct")
+    assert shown[-1]["header"] == "The spectrum has no continuum."
+    assert shown[-1]["text"].startswith("Refit all systems needs a continuum.")
+    assert shown[-1]["button_texts"][QMessageBox.StandardButton.Open] == \
+        "Open Auto-estimate Continuum…"
+    assert requested == [("continuum", "estimate_auto", {})]
+    assert window._pending_recipe == {"category": "absorbers", "name": "refit_all",
+                                      "params": {"a": 1}, "mode": "direct",
+                                      "after": "estimate_auto"}
+
+
+def test_recipe_needs_the_continuum_open_or_cancel(ready, monkeypatch):
+    window = ready
+    _messages(window, monkeypatch, "Open")
+    opened = _dialogs(window, monkeypatch)
+    assert not window._check_and_handle_requirements("absorbers", "refit_all")
+    assert opened == [("continuum", "estimate_auto", None)]
+    assert window._pending_recipe["after"] == "estimate_auto"
+    window._pending_recipe = None
+    _messages(window, monkeypatch, "Cancel")
+    requested = _requested(window, monkeypatch)
+    assert not window._check_and_handle_requirements("absorbers", "refit_all")
+    assert requested == [] and window._pending_recipe is None
+    # The other gaps come first, in the order z_em, resolution, continuum
+    assert window._check_and_handle_requirements("flux", "smooth")
+
+
+def test_recipe_resumed_after_the_continuum(ready, monkeypatch, qtbot):
+    window = ready
+    requested = _requested(window, monkeypatch)
+    window._set_pending_action("absorbers", "refit_all", {"b": 2}, "direct",
+                               after="estimate_auto")
+    state = window.active_history.current_state
+    # Another recipe does not resume it
+    window._process_recipe_result((state.with_new_spectrum(state.spec), "smooth", {}))
+    qtbot.wait(20)
+    assert requested == [] and window._pending_recipe is not None
+    window._process_recipe_result((state.with_new_spectrum(state.spec), "estimate_auto", {}))
+    qtbot.waitUntil(lambda: bool(requested))
+    assert requested == [("absorbers", "refit_all", {"b": 2})]
+    assert window._pending_recipe is None
+
+
+def test_a_failed_estimate_drops_the_pending_recipe(ready):
+    window = ready
+    window._set_pending_action("absorbers", "refit_all", {}, "direct", after="estimate_auto")
+    window._on_recipe_error(("Recipe Failed", "no unabsorbed pixels", None))
+    assert window._pending_recipe is None
+
+
+def test_cancelled_estimate_drops_the_pending_recipe(ready):
+    window = ready
+    window._set_pending_action("absorbers", "refit_all", {}, "dialog", after="estimate_auto")
+    window._launch_recipe_dialog("continuum", "estimate_auto")
+    window.active_recipe_dialog.reject()
+    assert window._pending_recipe is None
 
 
 # --- The recipe dialog ----------------------------------------------------------------------
@@ -171,7 +245,7 @@ def test_cancelled_set_properties_drops_the_pending_recipe(window, monkeypatch):
     window._hidden_stitch_sessions = "b, c"
     window._launch_recipe_dialog("edit", "set_properties")
     window.active_recipe_dialog.reject()
-    assert window._pending_recipe_on_properties_set is None
+    assert window._pending_recipe is None
     assert not hasattr(window, "_hidden_stitch_sessions")
 
 
@@ -193,8 +267,11 @@ def test_split_from_the_view(window, monkeypatch):
 
 # --- Before a recipe runs --------------------------------------------------------------------
 
-def test_short_and_long_recipes(ready, workers):
+def test_short_and_long_recipes(ready, workers, monkeypatch):
     window = ready
+    # The progress dialogs, not the prerequisites (the archive has no
+    # continuum: the GUI would ask for it first, PR 5b)
+    monkeypatch.setattr(window, "_check_and_handle_requirements", lambda *a, **k: True)
     window._on_recipe_requested("flux", "smooth", {"sigma_kms": "10"}, {})
     assert isinstance(window.progress_dialog, QProgressDialog)
     assert window.qt_log_handler is None
@@ -413,8 +490,9 @@ def test_user_error(ready, monkeypatch, answer):
     assert opened == ([("flux", "smooth", None)] if answer == "Retry" else [])
 
 
-def test_stop(ready, workers):
+def test_stop(ready, workers, monkeypatch):
     window = ready
+    monkeypatch.setattr(window, "_check_and_handle_requirements", lambda *a, **k: True)
     window._on_recipe_requested("absorbers", "lya_auto", {}, {})
     worker = workers[-1]
     stopped = []
