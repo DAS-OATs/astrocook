@@ -492,6 +492,16 @@ class MainRecipesMixin:
             # This is critical for "Sibling" branching (A->B, A->C) instead of "Chain" (A->B->C)
             original_parent_history = self.active_history
 
+            # The recipes run first to provide what the session lacked (PR 5,
+            # Guido): each a state and a log entry of its own, before the
+            # recipe; the replay runs them and gives the same numbers
+            result = getattr(self, 'last_recipe_result', None)
+            if result is not None and result.recipe.split('.')[-1] == recipe_name:
+                for step in result.provided:
+                    _add_log_entry(original_parent_history, step.recipe.split('.')[1],
+                                   dict(step.params))
+                    original_parent_history.add_state(step.session)
+
             # Loop through all returned sessions
             for i, new_session_state in enumerate(new_sessions):
                 

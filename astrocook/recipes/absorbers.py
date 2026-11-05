@@ -8,11 +8,11 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
-from astrocook.recipes.errors import InvalidParameter, RecipeFailed
+from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite, RecipeFailed
 from astrocook.recipes.params import typed_recipe
 from astrocook.recipes.result import report, report_removed
-from astrocook.recipes.messages import (msg_continuum_estimated, msg_no_resolution,
-                                       msg_session_not_found)
+from astrocook.recipes.messages import (msg_no_resolution, msg_session_not_found,
+                                       msg_z_em_unset)
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -32,6 +32,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     # --- 1. THE MASTER PIPELINE ---
     "components_auto": {
         "brief": "Auto-detect and fit components.",
+        "requires": ("z_em", "resolution", "continuum"),
         "details": "General pipeline: Identifies candidates (doublets or singles), populates them as systems, and refits the spectrum.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for."},
@@ -50,7 +51,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     # --- 2. WRAPPERS ---
     "doublets_auto": {
         "brief": "Auto-fit metal doublets (Red Side).",
-        "requires": ("z_em", "resolution"),
+        "requires": ("z_em", "resolution", "continuum"),
         "details": "Wrapper for components_auto targeted at the red side (z < z_em). Finds CIV, SiIV, MgII.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
@@ -63,7 +64,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "lya_auto": {
         "brief": "Auto-fit Ly-alpha forest.",
-        "requires": ("z_em", "resolution"),
+        "requires": ("z_em", "resolution", "continuum"),
         "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Lower threshold for single lines."},
@@ -76,7 +77,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "forest_auto": {
         "brief": "Auto-fit full Lyman series.",
-        "requires": ("z_em", "resolution"),
+        "requires": ("z_em", "resolution", "continuum"),
         "details": "Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Threshold for detection."},
@@ -89,7 +90,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "metals_auto": {
         "brief": "Check for associated metals.",
-        "requires": ("z_em", "resolution"),
+        "requires": ("z_em", "resolution", "continuum"),
         "details": "Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated list of ions to check."},
@@ -102,8 +103,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "identify_lines": {
         "brief": "Identify likely absorption systems.",
+        "requires": ("z_em", "resolution", "continuum"),
         "branching": True,
-        "requires": ("z_em", "resolution"),
         "details": "Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for (comma-separated)."},
@@ -118,6 +119,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "populate_from_identification": {
         "brief": "Populate components from identification.",
+        "requires": ("continuum",),
         "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
         "params": [
             {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column containing region IDs."},
@@ -129,7 +131,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "add_component": {
         "brief": "Add a single component.",
-        "requires": ("resolution",),
+        "requires": ("resolution", "continuum"),
         "details": "Adds a new manual Voigt component at a specific redshift.",
         "params": [
             {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or Multiplet name (e.g. 'CIV')"},
@@ -186,7 +188,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "fit_component": {
         "brief": "Fit component.",
-        "requires": ("resolution",),
+        "requires": ("resolution", "continuum"),
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
@@ -222,6 +224,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "add_linked_system": {
         "brief": "Add linked system.",
+        "requires": ("resolution", "continuum"),
         "details": "Add multiple components (e.g. CIV, SiIV) and link their redshifts.",
         "params": [
             {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated list of series."},
@@ -235,6 +238,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "optimize_system": {
         "brief": "Optimize system (Iterative Fit).",
+        "requires": ("resolution", "continuum"),
         "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID (seed)", "gui_hidden": True},
@@ -250,6 +254,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "fit_bayesian": {
         "brief": "Fit Bayesian.",
+        "requires": ("resolution", "continuum"),
         "details": "Runs Bayesian sampling (MCMC or Nested) for the selected group.",
         "params": [
             {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True},
@@ -262,6 +267,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     "refit_all": {
         "brief": "Refit all systems.",
+        "requires": ("resolution", "continuum"),
         "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
         "params": [
             {"name": "max_nfev", "type": int, "default": 200, "min": 1, "doc": "Max iterations per group"},
@@ -416,22 +422,6 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
 FIT_ERRORS = (ValueError, ArithmeticError)
 
 
-def _with_continuum(session):
-    """The session with a continuum: estimated first with the automatic
-    continuum when there is none (and said so).
-
-    Before phase 6 the 0 of a failed estimate went on as the session, and
-    the recipe failed with "'int' object has no attribute 'systs'". Since
-    phase 6-bis (PR 3) the failure of the estimate is a RecipeError, which
-    names the recipe and Auto-estimate Continuum as its step.
-    """
-    if session.spec.norm is not None:
-        return session
-    logger.info(msg_continuum_estimated)
-    from astrocook.recipes.continuum import RecipeContinuumV2
-    return RecipeContinuumV2(session).estimate_auto()
-
-
 def _warn_if_unconvolved(spec) -> None:
     """WARNING when a fit runs without a resolution (it was at DEBUG only,
     in the fitter): the profiles are not convolved, so b includes the
@@ -459,6 +449,10 @@ def _check_region(spec, region_limit: str) -> None:
     """
     if region_limit == "None":
         return
+    if spec._data.z_em == 0.0:
+        # A prerequisite of the region, not of the recipe (PR 5)
+        raise MissingPrerequisite(f"The region '{region_limit}' needs the emission "
+                                  f"redshift: {msg_z_em_unset}")
     try:
         spec.get_region_bounds(region_limit)
     except ValueError as e:
@@ -1150,7 +1144,8 @@ class RecipeAbsorbersV2:
         spec = self._session.spec
 
         # 1. Trigger Continuum if needed
-        cont_sess = _with_continuum(self._session)
+        # The continuum, if missing, was provided before the recipe (PR 5)
+        cont_sess = self._session
         spec = cont_sess.spec
         
         logger.info(f"Adding {len(series_map)} components from the identification.")
@@ -1464,7 +1459,6 @@ class RecipeAbsorbersV2:
         def check_stop(): return self._is_stop_requested()
 
         try:
-            current_session = _with_continuum(current_session)
             _warn_if_unconvolved(current_session.spec)
 
             with current_session.systs.fitting_context([uuid], group_depth=depth_i,
@@ -1717,7 +1711,6 @@ class RecipeAbsorbersV2:
 
         current_session = self._session
 
-        current_session = _with_continuum(current_session)
         _warn_if_unconvolved(current_session.spec)
 
         new_systs = current_session.systs.optimize_hierarchy(
@@ -1887,8 +1880,8 @@ class RecipeAbsorbersV2:
             logger.warning("There are no components to fit.")
             return self._session
 
-        # (It estimated the continuum without saying so, phase 6)
-        current_session = _with_continuum(self._session)
+        # The continuum, if missing, was provided before the recipe (PR 5)
+        current_session = self._session
         _warn_if_unconvolved(current_session.spec)
 
         # --- START NEW CONSOLIDATED LOGIC FOR BETA.4 ---

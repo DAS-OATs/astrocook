@@ -78,7 +78,42 @@ counts them in the status bar and writes them in the log.
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 
-## 3. Saving the Result
+## 3. What a Recipe Needs
+
+Some recipes need something from the session: the emission redshift
+(`z_em`), the resolution, a continuum. The [API reference](../api/astrocook.recipes)
+lists them for each recipe (`requires`), and
+`astrocook.recipes.prerequisites.missing` says what a session lacks for a
+recipe, and which recipe provides it:
+```python
+from astrocook.recipes.prerequisites import missing
+from astrocook.recipes.registry import find_recipe
+
+for gap in missing(session, find_recipe("doublets_auto")):
+    print(gap.message)
+# The spectrum has no continuum: Auto-estimate continuum (single-click)
+# (continuum.estimate_auto) provides it with its defaults
+```
+By default a script goes on: a continuum that is missing is estimated
+first with *Auto-estimate Continuum* and its defaults, with a warning; a
+recipe that needs `z_em` or the resolution and does not find them goes on
+too, with a warning that says what it does without them. To stop instead,
+with a `MissingPrerequisite` exception that says what is missing and how to
+provide it, choose the policy `"raise"`, for a block of the script or for
+one call:
+```python
+from astrocook.recipes.prerequisites import policy
+
+with policy("raise"):
+    fitted = session.absorbers.doublets_auto()
+
+result = run(session, "absorbers.doublets_auto", on_missing="raise")
+```
+A recipe run first to provide something is in `result.provided`, with the
+session it gave, and the GUI writes it in the session log
+as a step of its own, before the recipe.
+
+## 4. Saving the Result
 
 Save a session as an `.acs2` archive; passing the original session as
 `initial_session` stores the original data in the archive too, as the GUI
@@ -87,7 +122,7 @@ does:
 smoothed.save("my_session_smoothed.acs2", initial_session=session)
 ```
 
-## 4. Seeing Astrocook's Messages
+## 5. Seeing Astrocook's Messages
 
 Astrocook reports its progress with Python's `logging` module and, like
 other libraries, leaves its configuration to your script: by default only

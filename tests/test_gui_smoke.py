@@ -17,6 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -840,3 +841,22 @@ def test_main_plot_highlights_follow_the_selection(qtbot, loaded):
         canvas.draw()
         qtbot.wait(100)
         assert np.array_equal(pixels, np.array(canvas.buffer_rgba())), uuid
+
+
+def test_a_step_provided_is_a_state_and_an_entry_of_its_own(qtbot, ready):
+    # Phase 6-bis, PR 5: the continuum estimated first for a recipe that
+    # needs it is a state of the history and an entry of the log of its
+    # own, before the recipe (the replay runs both)
+    history = ready.active_history
+    state = history.current_state
+    assert state.spec.norm is None  # a physical flux, without a continuum
+    x_mid = float(np.median(state.spec.x.to_value("nm")))
+    _run_recipe(qtbot, ready, "absorbers", "add_component",
+                {"series": "CIV", "z": f"{x_mid / 154.8204 - 1:.4f}"})
+    assert history.current_index == 3
+    entries = [e.recipe_name for e in history.log_manager.entries]
+    assert entries[-2:] == ["estimate_auto", "add_component"]
+    n = len(state.systs.components)
+    assert history.states[2].spec.norm is not None
+    assert len(history.states[2].systs.components) == n  # only the continuum
+    assert len(history.current_state.systs.components) == n + 1

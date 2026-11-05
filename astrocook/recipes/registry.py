@@ -30,8 +30,12 @@ Keys of a recipe entry:
     state of the same session.
 ``requires``
     What the recipe needs from the session before it runs: ``"z_em"``,
-    ``"resolution"``. Today the GUI asks for them; phase 6-bis extends
-    this to the other prerequisites ("Prerequisites of the recipes").
+    ``"resolution"``, ``"continuum"`` (:mod:`astrocook.recipes.prerequisites`
+    says what is missing and fills it).
+``provides``
+    What the recipe gives to the session, among the same names (e.g.
+    ``estimate_auto`` the continuum): the recipes named to the user when a
+    prerequisite is missing.
 
 Keys of a parameter: ``name``, ``type``, ``default``, ``doc`` (optional,
 the name if missing), ``gui_hidden`` (not shown in the dialog), and for the
@@ -52,10 +56,10 @@ from typing import Any, Dict, Iterator, Mapping, Optional, Tuple
 CATEGORIES: Tuple[str, ...] = ('file', 'edit', 'flux', 'continuum', 'absorbers')
 
 #: What a recipe can require (the key ``requires``)
-REQUIREMENTS = frozenset({'z_em', 'resolution'})
+REQUIREMENTS = frozenset({'z_em', 'resolution', 'continuum'})
 
 _RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
-                'requires'}
+                'requires', 'provides'}
 _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
                'min', 'max', 'gt', 'allow_nan'}
 
@@ -111,6 +115,8 @@ class RecipeSpec:
     branching: bool = False
     #: What the recipe needs from the session (a subset of :data:`REQUIREMENTS`)
     requires: frozenset = frozenset()
+    #: What the recipe gives to the session (a subset of :data:`REQUIREMENTS`)
+    provides: frozenset = frozenset()
 
     def param(self, name: str) -> ParamSpec:
         """The parameter called ``name`` (``KeyError`` if there is none)."""
@@ -148,12 +154,15 @@ def build_spec(category: str, name: str, entry: Mapping[str, Any]) -> RecipeSpec
     requires = frozenset(entry.get('requires', ()))
     if requires - REQUIREMENTS:
         raise ValueError(f"{where}: unknown requirements {sorted(requires - REQUIREMENTS)}")
+    provides = frozenset(entry.get('provides', ()))
+    if provides - REQUIREMENTS:
+        raise ValueError(f"{where}: unknown provisions {sorted(provides - REQUIREMENTS)}")
     params = tuple(_param_spec(f"{where}", p) for p in entry.get('params', []))
     return RecipeSpec(category=category, name=name, brief=entry['brief'],
                       details=entry.get('details', ""), url=entry.get('url'),
                       params=params, gui_hidden=bool(entry.get('gui_hidden', False)),
                       branching=bool(entry.get('branching', False)),
-                      requires=requires)
+                      requires=requires, provides=provides)
 
 
 def _build() -> Mapping[str, Mapping[str, RecipeSpec]]:
