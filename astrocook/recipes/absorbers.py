@@ -2,14 +2,15 @@ import astropy.units as au
 import json
 import logging
 import numpy as np
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
+from astrocook.recipes.params import typed_recipe
 from astrocook.recipes.messages import (msg_continuum_estimated, msg_no_resolution,
-                                       msg_param_fail, msg_session_not_found)
+                                       msg_session_not_found)
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -32,13 +33,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "General pipeline: Identifies candidates (doublets or singles), populates them as systems, and refits the spectrum.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0-1) to accept a candidate."},
-            {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
-            {"name": "min_pix_region", "type": int, "default": 3, "doc": "Min pixels for a region."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min R^2 score (0-1) to accept a candidate."},
+            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Max velocity (km/s) to merge adjacent regions."},
+            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Min pixels for a region."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Window for fitting (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Window for fitting (km/s)."},
+            {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             # New generic region limiter
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit search to 'red_side', 'lya_forest', or 'None'."}
         ],
@@ -51,10 +52,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Wrapper for components_auto targeted at the red side (z < z_em). Finds CIV, SiIV, MgII.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Multiplets to search for."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min score."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min score."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#doublets_auto"
     },
@@ -63,11 +64,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("z_em", "resolution"),
         "details": "Wrapper for components_auto targeted at the forest. Includes interloper filtering.",
         "params": [
-            {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Lower threshold for single lines."},
-            {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s) to keep."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Lower threshold for single lines."},
+            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Minimum b parameter (km/s) to keep."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#lya_auto"
     },
@@ -76,11 +77,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("z_em", "resolution"),
         "details": "Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously.",
         "params": [
-            {"name": "score_threshold", "type": float, "default": 0.1, "doc": "Threshold for detection."},
-            {"name": "min_b", "type": float, "default": 10.0, "doc": "Minimum b parameter (km/s): narrower Lyman systems are removed."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Threshold for detection."},
+            {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Minimum b parameter (km/s): narrower Lyman systems are removed."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#forest_auto"
     },
@@ -90,10 +91,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated list of ions to check."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "AIC improvement required to keep a new ion."},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window (km/s)."},
-            {"name": "max_b", "type": float, "default": 50.0, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "AIC improvement required to keep a new ion."},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window (km/s)."},
+            {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
         "url": "absorbers_cb.html#metals_auto"
     },
@@ -105,9 +106,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Multiplets to search for (comma-separated)."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Mask column (True=Unabsorbed)"},
-            {"name": "min_pix_region", "type": int, "default": 3, "doc": "Minimum width in pixels to count as a region"},
-            {"name": "merge_dv", "type": float, "default": 10.0, "doc": "Max velocity (km/s) to merge adjacent regions."},
-            {"name": "score_threshold", "type": float, "default": 0.5, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
+            {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width in pixels to count as a region"},
+            {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Max velocity (km/s) to merge adjacent regions."},
+            {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Min R^2 score (0 to 1) to accept a doublet candidate."},
             {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept all kinematic candidates, ignoring R^2 score."},
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show debug plots for R^2 ratings."},
         ],
@@ -130,11 +131,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Adds a new manual Voigt component at a specific redshift.",
         "params": [
             {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or Multiplet name (e.g. 'CIV')"},
-            {"name": "z", "type": float, "default": 0.0, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": 13.5, "doc": "Column Density (log)"},
-            {"name": "b", "type": float, "default": 10.0, "doc": "Doppler parameter (km/s)"},
-            {"name": "btur", "type": float, "default": 0.0, "doc": "Turbulent broadening (km/s)"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max shift for initial fit (km/s)"}
+            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Column Density (log)"},
+            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)"},
+            {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Max shift for initial fit (km/s)"}
         ],
         "url": "absorbers_cb.html#add_component" 
     },
@@ -143,12 +144,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Modify parameters of an existing component.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
-            {"name": "z", "type": float, "default": None, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": None, "doc": "logN"},
-            {"name": "b", "type": float, "default": None, "doc": "b (km/s)"},
-            {"name": "btur", "type": float, "default": None, "doc": "btur (km/s)"},
-            {"name": "series", "type": str, "default": None, "doc": "Series"},
-            {"name": "resol", "type": float, "default": None, "doc": "Resolving power R of this component (overrides the spectrum)"}
+            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23, "doc": "logN"},
+            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "b (km/s)"},
+            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "btur (km/s)"},
+            {"name": "series", "type": str, "default": None, "optional": True, "doc": "Series"},
+            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of this component (overrides the spectrum)"}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
@@ -157,18 +158,18 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Batch update components.",
         "params": [
             {"name": "uuids", "type": list, "default": None, "gui_hidden": True},
-            {"name": "z", "type": float, "default": None},
-            {"name": "logN", "type": float, "default": None},
-            {"name": "b", "type": float, "default": None},
-            {"name": "btur", "type": float, "default": None},
-            {"name": "resol", "type": float, "default": None}
+            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1},
+            {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23},
+            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300},
+            {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100},
+            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0}
         ]
     },
     "delete_component": {
         "brief": "Delete component(s).",
         "params": [
-            {"name": "uuid", "type": str, "default": None, "gui_hidden": True},
-            {"name": "uuids", "type": list, "default": None, "gui_hidden": True}
+            {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True},
+            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True}
         ]
     },
     "detect_anchor": {
@@ -187,9 +188,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Fits the selected component (and its neighbors) using the Voigt engine.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID", "gui_hidden": True},
-            {"name": "max_nfev", "type": int, "default": 2000, "doc": "Max iterations"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Max velocity shift allowed (km/s)"},
-            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"} 
+            {"name": "max_nfev", "type": int, "default": 2000, "min": 1, "doc": "Max iterations"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Max velocity shift allowed (km/s)"},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth (1=Neighbors, 2=FoF)"} 
         ],
         "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
@@ -200,9 +201,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Component UUID", "gui_hidden": True},
             {"name": "param", "type": str, "default": "", "doc": "Parameter name (z, logN, b)"},
-            {"name": "is_free", "type": bool, "default": None, "doc": "Is the parameter free to vary?"},
-            {"name": "expression", "type": str, "default": None, "doc": "Math expression for linking"},
-            {"name": "target_uuid", "type": str, "default": None, "doc": "UUID of the source component (for linking)"} 
+            {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "Is the parameter free to vary?"},
+            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Math expression for linking"},
+            {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "UUID of the source component (for linking)"} 
         ],
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
@@ -222,10 +223,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Add multiple components (e.g. CIV, SiIV) and link their redshifts.",
         "params": [
             {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated list of series."},
-            {"name": "z", "type": float, "default": 0.0, "doc": "Redshift"},
-            {"name": "logN", "type": float, "default": 13.5, "doc": "Column Density"},
-            {"name": "b", "type": float, "default": 10.0, "doc": "Doppler parameter"},
-            {"name": "z_window_kms", "type": float, "default": 20.0, "doc": "Fit window"}
+            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift"},
+            {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Column Density"},
+            {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Doppler parameter"},
+            {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Fit window"}
         ],
         "url": "absorbers_cb.html#add_linked_system",
         "gui_hidden": True
@@ -235,13 +236,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Target Component UUID (seed)", "gui_hidden": True},
-            {"name": "max_components", "type": int, "default": 5, "doc": "Maximum number of extra components to try adding."},
-            {"name": "threshold_sigma", "type": float, "default": 2.5, "doc": "Residual threshold (sigma) required to trigger a new component."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "doc": "Minimum AIC improvement required to accept a new component."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Velocity window (km/s) around the system to analyze."},
-            {"name": "min_dv", "type": float, "default": 10.0, "doc": "Min separation (km/s). Lower for de-blending."},
-            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth for finding neighbors."},
-            {"name": "patience", "type": int, "default": 2, "doc": "Trials allowed without AIC improvement."}
+            {"name": "max_components", "type": int, "default": 5, "min": 0, "doc": "Maximum number of extra components to try adding."},
+            {"name": "threshold_sigma", "type": float, "default": 2.5, "gt": 0, "doc": "Residual threshold (sigma) required to trigger a new component."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Minimum AIC improvement required to accept a new component."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Velocity window (km/s) around the system to analyze."},
+            {"name": "min_dv", "type": float, "default": 10.0, "min": 0, "doc": "Min separation (km/s). Lower for de-blending."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth for finding neighbors."},
+            {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Trials allowed without AIC improvement."}
         ],
         "url": "absorbers_cb.html#optimize_system"
     },
@@ -249,11 +250,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Fit Bayesian.",
         "details": "Runs Bayesian sampling (MCMC or Nested) for the selected group.",
         "params": [
-            {"name": "uuids", "type": list, "default": None, "gui_hidden": True},
+            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True},
             {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampling engine: 'mcmc' or 'nested'."},
-            {"name": "nsteps", "type": int, "default": 500, "doc": "Number of steps (MCMC)."},
-            {"name": "nlive", "type": int, "default": 250, "doc": "Number of live points (Nested)."},
-            {"name": "group_depth", "type": int, "default": 2}
+            {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps (MCMC)."},
+            {"name": "nlive", "type": int, "default": 250, "min": 1, "doc": "Number of live points (Nested)."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0}
         ],
         "gui_hidden": True
     },
@@ -261,14 +262,14 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Refit all systems.",
         "details": "Iteratively fits all disjoint groups of components (islands) in the spectrum.",
         "params": [
-            {"name": "max_nfev", "type": int, "default": 200, "doc": "Max iterations per group"},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "doc": "Fit window around lines (km/s)"},
-            {"name": "group_depth", "type": int, "default": 2, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
-            {"name": "max_group_size", "type": int, "default": 20, "doc": "Max components per fit group (chunking)"},
-            {"name": "max_b", "type": float, "default": 300.0, "doc": "Upper bound on b (km/s)"},
-            {"name": "max_logN", "type": float, "default": 23.0, "doc": "Upper bound on logN"},
+            {"name": "max_nfev", "type": int, "default": 200, "min": 1, "doc": "Max iterations per group"},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Fit window around lines (km/s)"},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "Grouping depth (1=Neighbors, 2=FoF)"},
+            {"name": "max_group_size", "type": int, "default": 20, "min": 1, "doc": "Max components per fit group (chunking)"},
+            {"name": "max_b", "type": float, "default": 300.0, "gt": 1, "max": 300, "doc": "Upper bound on b (km/s)"},
+            {"name": "max_logN", "type": float, "default": 23.0, "gt": 10, "max": 23, "doc": "Upper bound on logN"},
             {"name": "region_limit", "type": str, "default": "None", "doc": "Limit fitting to 'red_side' or 'lya_forest'."},
-            {"name": "selected_uuids", "type": list, "default": None, "gui_hidden": True}
+            {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True}
         ],
         "url": "absorbers_cb.html#refit_all"
     },
@@ -277,8 +278,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Removes components that are too weak, too broad, or unphysically narrow.",
         "params": [
             {"name": "min_logN", "type": float, "default": 11.5, "doc": "Minimum column density to keep."},
-            {"name": "max_b", "type": float, "default": 80.0, "doc": "Maximum Doppler parameter (km/s)."},
-            {"name": "min_b", "type": float, "default": 3.0, "doc": "Minimum Doppler parameter (km/s)."},
+            {"name": "max_b", "type": float, "default": 80.0, "gt": 0, "doc": "Maximum Doppler parameter (km/s)."},
+            {"name": "min_b", "type": float, "default": 3.0, "min": 0, "doc": "Minimum Doppler parameter (km/s)."},
             {"name": "combined_check", "type": bool, "default": True, "doc": "If True, only removes broad lines if they are ALSO weak (b > max_b AND logN < 13.0)."}
         ],
         "url": "absorbers_cb.html#clean_negligible"
@@ -492,14 +493,15 @@ class RecipeAbsorbersV2:
                     
         return False
 
+    @typed_recipe
     def components_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
-                      score_threshold: str = "0.5",
-                      merge_dv: str = "10.0",
-                      min_pix_region: str = "3",
-                      mask_col: str = "abs_mask",
-                      z_window_kms: str = "20.0",
-                      region_limit: str = "None",
-                      max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
+                        score_threshold: float = 0.5,
+                        merge_dv: float = 10.0,
+                        min_pix_region: int = 3,
+                        mask_col: str = "abs_mask",
+                        z_window_kms: float = 20.0,
+                        region_limit: str = "None",
+                        max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
         """
         Auto-detect and fit components.
 
@@ -512,33 +514,33 @@ class RecipeAbsorbersV2:
         ----------
         multiplets : str, optional
             Comma-separated list of multiplets to search for. Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
-        score_threshold : str, optional
-            Min R^2 score (0-1) to accept a candidate. Defaults to ``"0.5"``.
-        merge_dv : str, optional
-            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
-        min_pix_region : str, optional
-            Minimum width in pixels to count as a region. Defaults to ``"3"``.
+        score_threshold : float, optional
+            Min R^2 score (0-1) to accept a candidate. Defaults to ``0.5``.
+        merge_dv : float, optional
+            Max velocity (km/s) to merge adjacent regions. Defaults to ``10.0``.
+        min_pix_region : int, optional
+            Minimum width in pixels to count as a region. Defaults to ``3``.
         mask_col : str, optional
             Name of the mask column (True=Absorbed). Defaults to ``"abs_mask"``.
-        z_window_kms : str, optional
-            Velocity window for fitting (km/s). Defaults to ``"20.0"``.
+        z_window_kms : float, optional
+            Velocity window for fitting (km/s). Defaults to ``20.0``.
         region_limit : str, optional
             Limit search to ``'red_side'``, ``'lya_forest'``, or ``'None'``.
             Defaults to ``"None"``.
-        max_b : str, optional
+        max_b : float, optional
             Upper bound on b (km/s) in the fits. It keeps the components from
             broadening into their neighbours, which makes the fits of the
             forest slow and gives spurious broad lines; components that end
             at the bound may be broader and can be refitted with
-            :meth:`refit_all` or :meth:`fit_component`. Defaults to ``"50.0"``.
-        max_logN : str, optional
+            :meth:`refit_all` or :meth:`fit_component`. Defaults to ``50.0``.
+        max_logN : float, optional
             Upper bound on logN in the fits. In a saturated trough that the
             candidates do not fill, a component can otherwise fill it with
             its damping wings and run away to logN 20-23, blacking out the
             model around it (findings register F62). With 19, the Lyman-limit
             systems stay within reach; damped systems are to be fitted by
             hand. Components that end at the bound can be refitted with
-            :meth:`refit_all`. Defaults to ``"19.0"``.
+            :meth:`refit_all`. Defaults to ``19.0``.
 
         Returns
         -------
@@ -694,10 +696,11 @@ class RecipeAbsorbersV2:
         logger.debug("Component pipeline complete.")
         return with_kept_mask(final_session)
 
+    @typed_recipe
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
-                      score_threshold: str = "0.5",
-                      z_window_kms: str = "20.0",
-                      max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
+                      score_threshold: float = 0.5,
+                      z_window_kms: float = 20.0,
+                      max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
         """
         Auto-fit metal doublets (Red Side).
 
@@ -708,16 +711,16 @@ class RecipeAbsorbersV2:
         ----------
         multiplets : str, optional
             Multiplets to search for. Defaults to ``"CIV,SiIV,MgII"``.
-        score_threshold : str, optional
-            Min R^2 score (0-1). Defaults to ``"0.5"``.
-        z_window_kms : str, optional
-            Fit window (km/s). Defaults to ``"20.0"``.
-        max_b : str, optional
+        score_threshold : float, optional
+            Min R^2 score (0-1). Defaults to ``0.5``.
+        z_window_kms : float, optional
+            Fit window (km/s). Defaults to ``20.0``.
+        max_b : float, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
-            Defaults to ``"50.0"``.
-        max_logN : str, optional
+            Defaults to ``50.0``.
+        max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
-            Defaults to ``"19.0"``.
+            Defaults to ``19.0``.
 
         Returns
         -------
@@ -733,9 +736,10 @@ class RecipeAbsorbersV2:
             max_logN=max_logN
         )
 
-    def lya_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                 z_window_kms: str = "100.0", max_b: str = "50.0",
-                 max_logN: str = "19.0") -> 'SessionV2':
+    @typed_recipe
+    def lya_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
+                 z_window_kms: float = 100.0, max_b: float = 50.0,
+                 max_logN: float = 19.0) -> 'SessionV2':
         """
         Auto-fit Ly-alpha forest.
 
@@ -745,18 +749,18 @@ class RecipeAbsorbersV2:
 
         Parameters
         ----------
-        score_threshold : str, optional
-            Lower threshold for single lines (R^2). Defaults to ``"0.1"``.
-        min_b : str, optional
-            Minimum b parameter (km/s) to keep. Defaults to ``"10.0"``.
-        z_window_kms : str, optional
-            Fit window (km/s). Defaults to ``"100.0"``.
-        max_b : str, optional
+        score_threshold : float, optional
+            Lower threshold for single lines (R^2). Defaults to ``0.1``.
+        min_b : float, optional
+            Minimum b parameter (km/s) to keep. Defaults to ``10.0``.
+        z_window_kms : float, optional
+            Fit window (km/s). Defaults to ``100.0``.
+        max_b : float, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
-            Defaults to ``"50.0"``.
-        max_logN : str, optional
+            Defaults to ``50.0``.
+        max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
-            Defaults to ``"19.0"``.
+            Defaults to ``19.0``.
 
         Returns
         -------
@@ -784,11 +788,7 @@ class RecipeAbsorbersV2:
         logger.info(">> PROGRESS: 0")
         logger.info(f"Removing the lines narrower than {min_b} km/s (interlopers).")
         
-        try:
-            min_b_val = float(min_b)
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
+        min_b_val = min_b
         if not final_session:
             return final_session
         # A boundary of the step (B, Guido's choice, phase 6): the result of
@@ -803,9 +803,10 @@ class RecipeAbsorbersV2:
 
         return final_session
 
-    def forest_auto(self, score_threshold: str = "0.1", min_b: str = "10.0",
-                    z_window_kms: str = "20.0", max_b: str = "50.0",
-                    max_logN: str = "19.0") -> 'SessionV2':
+    @typed_recipe
+    def forest_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
+                    z_window_kms: float = 20.0, max_b: float = 50.0,
+                    max_logN: float = 19.0) -> 'SessionV2':
         """
         Auto-fit full Lyman series.
 
@@ -814,18 +815,18 @@ class RecipeAbsorbersV2:
 
         Parameters
         ----------
-        score_threshold : str, optional
-            Threshold for detection. Defaults to ``"0.1"``.
-        min_b : str, optional
-            Minimum b parameter (km/s). Defaults to ``"10.0"``.
-        z_window_kms : str, optional
-            Fit window (km/s). Defaults to ``"20.0"``.
-        max_b : str, optional
+        score_threshold : float, optional
+            Threshold for detection. Defaults to ``0.1``.
+        min_b : float, optional
+            Minimum b parameter (km/s). Defaults to ``10.0``.
+        z_window_kms : float, optional
+            Fit window (km/s). Defaults to ``20.0``.
+        max_b : float, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
-            Defaults to ``"50.0"``.
-        max_logN : str, optional
+            Defaults to ``50.0``.
+        max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
-            Defaults to ``"19.0"``.
+            Defaults to ``19.0``.
 
         Returns
         -------
@@ -879,11 +880,7 @@ class RecipeAbsorbersV2:
             return fitted
         # The Lyman systems narrower than min_b are removed as in lya_auto
         # (F65: before, min_b was taken and not used)
-        try:
-            min_b_val = float(min_b)
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
+        min_b_val = min_b
         # A boundary of the step, as in lya_auto (phase 6)
         try:
             fitted = _remove_narrow(fitted, 'Lyman', min_b_val, refit_kwargs)
@@ -891,9 +888,10 @@ class RecipeAbsorbersV2:
             _warn_cleaning_failed(fitted, 'Lyman', min_b_val, e)
         return _drop_negligible(fitted)
 
-    def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII", 
-                    aic_penalty: str = "5.0", z_window_kms: str = "20.0",
-                    max_b: str = "50.0", max_logN: str = "19.0") -> 'SessionV2':
+    @typed_recipe
+    def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII",
+                    aic_penalty: float = 5.0, z_window_kms: float = 20.0,
+                    max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
         """
         Check for associated metals.
 
@@ -905,17 +903,17 @@ class RecipeAbsorbersV2:
         ----------
         ions : str, optional
             Comma-separated list of ions to check. Defaults to ``"CIV,SiIV,NV,OVI,CII,MgII"``.
-        aic_penalty : str, optional
+        aic_penalty : float, optional
             AIC improvement required to keep a new ion (Not currently used in logic).
-            Defaults to ``"5.0"``.
-        z_window_kms : str, optional
-            Fit window (km/s) for local island fitting. Defaults to ``"20.0"``.
-        max_b : str, optional
+            Defaults to ``5.0``.
+        z_window_kms : float, optional
+            Fit window (km/s) for local island fitting. Defaults to ``20.0``.
+        max_b : float, optional
             Upper bound on b (km/s) in the fits, see :meth:`components_auto`.
-            Defaults to ``"50.0"``.
-        max_logN : str, optional
+            Defaults to ``50.0``.
+        max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
-            Defaults to ``"19.0"``.
+            Defaults to ``19.0``.
 
         Returns
         -------
@@ -923,13 +921,11 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with added metals,
             or 0 on failure.
         """
-        try:
-            ion_list = [i.strip() for i in ions.split(',')]
-            float(aic_penalty)  # validated only, not used (see the docstring)
-            z_win = float(z_window_kms)
-            b_max = float(max_b)
-            logN_max = float(max_logN)
-        except ValueError: return 0
+        ion_list = [i.strip() for i in ions.split(',')]
+        # aic_penalty: checked by its bounds only, not used (see the docstring)
+        z_win = z_window_kms
+        b_max = max_b
+        logN_max = max_logN
         
         if not self._session.systs or not self._session.systs.components:
             logger.warning("There are no systems to search metals at: nothing is added.")
@@ -1006,14 +1002,15 @@ class RecipeAbsorbersV2:
             logger.info("No metals found.")
             return current_session
 
+    @typed_recipe
     def identify_lines(self, 
                        multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                        mask_col: str = 'abs_mask', 
-                       min_pix_region: str = '3',
-                       merge_dv: str = '10.0',
-                       score_threshold: str = '0.5',
-                       bypass_scoring: str = 'False',
-                       debug_rating: str = 'False') -> 'SessionV2':
+                       min_pix_region: int = 3,
+                       merge_dv: float = 10.0,
+                       score_threshold: float = 0.5,
+                       bypass_scoring: bool = False,
+                       debug_rating: bool = False) -> 'SessionV2':
         """
         Identify likely absorption systems.
 
@@ -1027,17 +1024,17 @@ class RecipeAbsorbersV2:
             Multiplets to search for (comma-separated). Defaults to ``"CIV,SiIV,MgII,Ly_ab"``.
         mask_col : str, optional
             Mask column (True=Unabsorbed, used to find absorptions). Defaults to ``"abs_mask"``.
-        min_pix_region : str, optional
-            Minimum width in pixels to count as a region. Defaults to ``"3"``.
-        merge_dv : str, optional
-            Max velocity (km/s) to merge adjacent regions. Defaults to ``"10.0"``.
-        score_threshold : str, optional
-            Min R^2 score (0 to 1) to accept a doublet candidate. Defaults to ``"0.5"``.
-        bypass_scoring : str, optional
-            If ``'True'``, accept all kinematic candidates ignoring score.
-            Defaults to ``"False"``.
-        debug_rating : str, optional
-            If ``'True'``, show debug plots. Defaults to ``"False"``.
+        min_pix_region : int, optional
+            Minimum width in pixels to count as a region. Defaults to ``3``.
+        merge_dv : float, optional
+            Max velocity (km/s) to merge adjacent regions. Defaults to ``10.0``.
+        score_threshold : float, optional
+            Min R^2 score (0 to 1) to accept a doublet candidate. Defaults to ``0.5``.
+        bypass_scoring : bool, optional
+            If ``True``, accept all kinematic candidates ignoring score.
+            Defaults to ``False``.
+        debug_rating : bool, optional
+            If ``True``, show debug plots. Defaults to ``False``.
 
         Returns
         -------
@@ -1045,26 +1042,18 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with identification maps
             in metadata, or 0 on failure.
         """
-        try:
-            min_pix_i = int(min_pix_region)
-            merge_dv_f = float(merge_dv)
-            score_thresh_f = float(score_threshold)
-            bypass_scoring_b = bypass_scoring.lower() == 'true'
-            debug_rating_b = debug_rating.lower() == 'true'
-            multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
-        except ValueError:
-            logger.error(msg_param_fail); return 0
+        multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         
         try:
             logger.debug("identify_lines: Calling spec.identify_lines...")
             new_spec_v2 = self._session.spec.identify_lines(
                 multiplet_list=multiplet_list,
                 mask_col=mask_col,
-                min_pix_region=min_pix_i,
-                merge_dv=merge_dv_f,
-                score_threshold=score_thresh_f,
-                bypass_scoring=bypass_scoring_b,
-                debug_rating=debug_rating_b
+                min_pix_region=min_pix_region,
+                merge_dv=merge_dv,
+                score_threshold=score_threshold,
+                bypass_scoring=bypass_scoring,
+                debug_rating=debug_rating
             )
             
             return self._session.with_new_spectrum(new_spec_v2)
@@ -1072,6 +1061,7 @@ class RecipeAbsorbersV2:
             logger.error(f"Could not identify the lines: {e}", exc_info=True)
             return 0
     
+    @typed_recipe
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
                        series_map_json: str = '', z_map_json: str = '') -> 'SessionV2':
         """
@@ -1154,9 +1144,10 @@ class RecipeAbsorbersV2:
 
         return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
-    def add_component(self, series: str = 'Ly_a', z: str = '0.0', 
-                      logN: str = '13.5', b: str = '10.0', btur: str = '0.0',
-                      z_window_kms: str = '20.0') -> 'SessionV2':
+    @typed_recipe
+    def add_component(self, series: str = 'Ly_a', z: float = 0.0,
+                      logN: float = 13.5, b: float = 10.0, btur: float = 0.0,
+                      z_window_kms: float = 20.0) -> 'SessionV2':
         """
         Add a single component.
 
@@ -1167,16 +1158,16 @@ class RecipeAbsorbersV2:
         ----------
         series : str, optional
             Transition or Multiplet name (e.g. ``'CIV'``). Defaults to ``"Ly_a"``.
-        z : str, optional
-            Redshift. Defaults to ``"0.0"``.
-        logN : str, optional
-            Column Density (log cm^-2). Defaults to ``"13.5"``.
-        b : str, optional
-            Doppler parameter (km/s). Defaults to ``"10.0"``.
-        btur : str, optional
-            Turbulent broadening (km/s). Defaults to ``"0.0"``.
-        z_window_kms : str, optional
-            Max shift for initial fit (km/s). Defaults to ``"20.0"``.
+        z : float, optional
+            Redshift. Defaults to ``0.0``.
+        logN : float, optional
+            Column Density (log cm^-2). Defaults to ``13.5``.
+        b : float, optional
+            Doppler parameter (km/s). Defaults to ``10.0``.
+        btur : float, optional
+            Turbulent broadening (km/s). Defaults to ``0.0``.
+        z_window_kms : float, optional
+            Max shift for initial fit (km/s). Defaults to ``20.0``.
 
         Returns
         -------
@@ -1184,10 +1175,7 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with the added component,
             or 0 on failure.
         """
-        try:
-            z_f = float(z); logN_f = float(logN); b_f = float(b); btur_f = float(btur)
-            z_win_f = float(z_window_kms)
-        except ValueError: return 0
+        z_f, logN_f, b_f, btur_f, z_win_f = z, logN, b, btur, z_window_kms
 
         if ',' in series and series not in STANDARD_MULTIPLETS:
             # 1. Parse the string "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
@@ -1216,8 +1204,10 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logger.error(f"Could not add the component: {e}", exc_info=True); return 0
         
-    def update_component(self, uuid: str, z: str = 'None', logN: str = 'None', 
-                         b: str = 'None', btur: str = 'None', series: str = 'None', resol: str = 'None') -> 'SessionV2':
+    @typed_recipe
+    def update_component(self, uuid: str, z: Optional[float] = None, logN: Optional[float] = None,
+                         b: Optional[float] = None, btur: Optional[float] = None,
+                         series: Optional[str] = None, resol: Optional[float] = None) -> 'SessionV2':
         """
         Update component parameters.
 
@@ -1228,18 +1218,18 @@ class RecipeAbsorbersV2:
         ----------
         uuid : str
             Component UUID.
-        z : str, optional
-            Redshift. Defaults to ``'None'``.
-        logN : str, optional
-            Column Density (log). Defaults to ``'None'``.
-        b : str, optional
-            Doppler parameter (km/s). Defaults to ``'None'``.
-        btur : str, optional
-            Turbulent broadening (km/s). Defaults to ``'None'``.
+        z : float or None, optional
+            Redshift. Defaults to None (unchanged).
+        logN : float or None, optional
+            Column Density (log). Defaults to None (unchanged).
+        b : float or None, optional
+            Doppler parameter (km/s). Defaults to None (unchanged).
+        btur : float or None, optional
+            Turbulent broadening (km/s). Defaults to None (unchanged).
         series : str, optional
             Series name. Defaults to ``'None'``.
-        resol : str, optional
-            Resolution (R or FWHM). Defaults to ``'None'``.
+        resol : float or None, optional
+            Resolution (R or FWHM). Defaults to None (unchanged).
 
         Returns
         -------
@@ -1249,21 +1239,24 @@ class RecipeAbsorbersV2:
         """
         try:
             changes = {}
-            if z != 'None': changes['z'] = float(z)
-            if logN != 'None': changes['logN'] = float(logN)
-            if b != 'None': changes['b'] = float(b)
-            if btur != 'None': changes['btur'] = float(btur)
-            if series != 'None': changes['series'] = str(series)
-            if resol != 'None': changes['resol'] = float(resol) # Handle resolution update
+            # None: unchanged ('None' in the dialogs and the log)
+            if z is not None: changes['z'] = z
+            if logN is not None: changes['logN'] = logN
+            if b is not None: changes['b'] = b
+            if btur is not None: changes['btur'] = btur
+            if series is not None: changes['series'] = series
+            if resol is not None: changes['resol'] = resol
             
             new_systs = self._session.systs.update_component(uuid, **changes)
             return self._session.with_new_system_list(new_systs)
         except Exception as e:
             logger.error(f"Could not update the component: {e}", exc_info=True); return 0
         
-    def update_components(self, uuids: list, z: str = 'None', logN: str = 'None', 
-                          b: str = 'None', btur: str = 'None',
-                          series: str = 'None', resol: str = 'None') -> 'SessionV2':
+    @typed_recipe
+    def update_components(self, uuids: list, z: Optional[float] = None,
+                          logN: Optional[float] = None, b: Optional[float] = None,
+                          btur: Optional[float] = None, series: str = 'None',
+                          resol: Optional[float] = None) -> 'SessionV2':
         """
         Batch update component parameters.
 
@@ -1274,18 +1267,18 @@ class RecipeAbsorbersV2:
         ----------
         uuids : list
             List of component UUIDs to update.
-        z : str, optional
-            Redshift. Defaults to ``'None'``.
-        logN : str, optional
-            Column Density (log). Defaults to ``'None'``.
-        b : str, optional
-            Doppler parameter (km/s). Defaults to ``'None'``.
-        btur : str, optional
-            Turbulent broadening (km/s). Defaults to ``'None'``.
+        z : float or None, optional
+            Redshift. Defaults to None (unchanged).
+        logN : float or None, optional
+            Column Density (log). Defaults to None (unchanged).
+        b : float or None, optional
+            Doppler parameter (km/s). Defaults to None (unchanged).
+        btur : float or None, optional
+            Turbulent broadening (km/s). Defaults to None (unchanged).
         series : str, optional
             Series name. Defaults to ``'None'``.
-        resol : str, optional
-            Resolution (R or FWHM). Defaults to ``'None'``.
+        resol : float or None, optional
+            Resolution (R or FWHM). Defaults to None (unchanged).
 
         Returns
         -------
@@ -1296,12 +1289,14 @@ class RecipeAbsorbersV2:
         try:
             # Parse values
             changes = {}
-            if z != 'None': changes['z'] = float(z)
-            if logN != 'None': changes['logN'] = float(logN)
-            if b != 'None': changes['b'] = float(b)
-            if btur != 'None': changes['btur'] = float(btur)
-            if series != 'None': changes['series'] = str(series)
-            if resol != 'None': changes['resol'] = float(resol)
+            # None: unchanged ('None' in the dialogs and the log); series is
+            # not in the registry and stays a string, 'None' for unchanged
+            if z is not None: changes['z'] = z
+            if logN is not None: changes['logN'] = logN
+            if b is not None: changes['b'] = b
+            if btur is not None: changes['btur'] = btur
+            if series not in (None, 'None'): changes['series'] = str(series)
+            if resol is not None: changes['resol'] = resol
             
             if not changes: return self._session
 
@@ -1313,6 +1308,7 @@ class RecipeAbsorbersV2:
             logger.error(f"Could not update the components: {e}", exc_info=True)
             return 0
 
+    @typed_recipe
     def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
         """
         Delete component(s).
@@ -1368,6 +1364,7 @@ class RecipeAbsorbersV2:
             logger.error(f"Could not delete the components: {e}", exc_info=True)
             return 0
 
+    @typed_recipe
     def detect_anchor(self, sibling_name: str, trans_self: str, trans_sibling: str) -> float:
         """
         Detect doublet anchor redshift.
@@ -1413,7 +1410,9 @@ class RecipeAbsorbersV2:
             logger.error(f"Could not detect the anchor redshift: {e}", exc_info=True)
             return 0.0
 
-    def fit_component(self, uuid: str, max_nfev: str = '2000', z_window_kms: str = '20.0', group_depth: str = '2') -> 'SessionV2':
+    @typed_recipe
+    def fit_component(self, uuid: str, max_nfev: int = 2000, z_window_kms: float = 20.0,
+                      group_depth: int = 2) -> 'SessionV2':
         """
         Fit component.
 
@@ -1425,12 +1424,12 @@ class RecipeAbsorbersV2:
         ----------
         uuid : str
             Target Component UUID.
-        max_nfev : str, optional
-            Max iterations for the optimizer. Defaults to ``"2000"``.
-        z_window_kms : str, optional
-            Max velocity shift allowed during fit (km/s). Defaults to ``"20.0"``.
-        group_depth : str, optional
-            Grouping depth (1=Neighbors, 2=FoF). Defaults to ``"2"``.
+        max_nfev : int, optional
+            Max iterations for the optimizer. Defaults to ``2000``.
+        z_window_kms : float, optional
+            Max velocity shift allowed during fit (km/s). Defaults to ``20.0``.
+        group_depth : int, optional
+            Grouping depth (1=Neighbors, 2=FoF). Defaults to ``2``.
 
         Returns
         -------
@@ -1439,10 +1438,8 @@ class RecipeAbsorbersV2:
             and model, or 0 on failure.
         """
         try:
-            max_nfev_i = int(max_nfev)
-            z_win_f = float(z_window_kms)
-            depth_i = int(group_depth)
-            
+            max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
+
             if not self._session.systs: return 0
 
             current_session = self._session
@@ -1478,6 +1475,7 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logger.error(f"Could not fit the component: {e}", exc_info=True); return 0
         
+    @typed_recipe
     def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
                           expression: str = None, target_uuid: str = None) -> 'SessionV2':
         """
@@ -1543,6 +1541,7 @@ class RecipeAbsorbersV2:
             logger.error(f"Could not set the constraint: {e}", exc_info=True)
             return 0
 
+    @typed_recipe
     def update_constraints_column(self, param: str, is_free: bool) -> 'SessionV2':
         """
         Bulk update constraints.
@@ -1588,6 +1587,7 @@ class RecipeAbsorbersV2:
             
         return self._session.with_new_system_list(running_systs)
 
+    @typed_recipe
     def add_linked_system(self, series_list: str, z: float, logN: float = 13.5, 
                           b: float = 10.0, z_window_kms: float = 20.0) -> 'SessionV2':
         """
@@ -1665,10 +1665,11 @@ class RecipeAbsorbersV2:
         
         return final_session
 
-    def optimize_system(self, uuid: str, max_components: str = '5', 
-                        threshold_sigma: str = '2.5', aic_penalty: str = '5.0',
-                        z_window_kms: str = '100.0', min_dv: str = '10.0',
-                        group_depth: str = '2', patience: str = '2') -> 'SessionV2':
+    @typed_recipe
+    def optimize_system(self, uuid: str, max_components: int = 5,
+                        threshold_sigma: float = 2.5, aic_penalty: float = 5.0,
+                        z_window_kms: float = 100.0, min_dv: float = 10.0,
+                        group_depth: int = 2, patience: int = 2) -> 'SessionV2':
         """
         Optimize system (Iterative Fit).
 
@@ -1680,22 +1681,22 @@ class RecipeAbsorbersV2:
         ----------
         uuid : str
             Target Component UUID (seed).
-        max_components : str, optional
-            Max extra components to try. Defaults to ``"5"``.
-        threshold_sigma : str, optional
-            Residual threshold (sigma) to trigger new component. Defaults to ``"2.5"``.
-        aic_penalty : str, optional
+        max_components : int, optional
+            Max extra components to try. Defaults to ``5``.
+        threshold_sigma : float, optional
+            Residual threshold (sigma) to trigger new component. Defaults to ``2.5``.
+        aic_penalty : float, optional
             Min AIC improvement to accept new component (the AIC already
             counts 2 per free parameter; 5 asks for substantial support).
-            Defaults to ``"5.0"``.
-        z_window_kms : str, optional
-            Velocity window (km/s) to analyze. Defaults to ``"100.0"``.
-        min_dv : str, optional
-            Min separation (km/s). Defaults to ``"10.0"``.
-        group_depth : str, optional
-            Grouping depth. Defaults to ``"2"``.
-        patience : str, optional
-            Trials allowed without AIC improvement. Defaults to ``"2"``.
+            Defaults to ``5.0``.
+        z_window_kms : float, optional
+            Velocity window (km/s) to analyze. Defaults to ``100.0``.
+        min_dv : float, optional
+            Min separation (km/s). Defaults to ``10.0``.
+        group_depth : int, optional
+            Grouping depth. Defaults to ``2``.
+        patience : int, optional
+            Trials allowed without AIC improvement. Defaults to ``2``.
 
         Returns
         -------
@@ -1704,10 +1705,8 @@ class RecipeAbsorbersV2:
             or 0 on failure.
         """
         try:
-            max_c = int(max_components); thresh = float(threshold_sigma)
-            aic_p = float(aic_penalty); z_win = float(z_window_kms)
-            min_dv_f = float(min_dv)
-            depth = int(group_depth); pat = int(patience)
+            max_c, thresh, aic_p = max_components, threshold_sigma, aic_penalty
+            z_win, min_dv_f, depth, pat = z_window_kms, min_dv, group_depth, patience
 
             if not self._session.systs: return 0
 
@@ -1746,9 +1745,10 @@ class RecipeAbsorbersV2:
              logger.error(f"Could not optimize the system: {e}", exc_info=True)
              return 0
     
-    def fit_bayesian(self, uuids: list[str] = None, engine: str = 'mcmc', 
-                     nsteps: str = '500', nlive: str = '250', 
-                     group_depth: str = '2') -> int:
+    @typed_recipe
+    def fit_bayesian(self, uuids: list[str] = None, engine: str = 'mcmc',
+                     nsteps: int = 500, nlive: int = 250,
+                     group_depth: int = 2) -> int:
         """
         Run Bayesian sampling (MCMC or Nested) on a group of components.
 
@@ -1759,12 +1759,12 @@ class RecipeAbsorbersV2:
             must be specified via other means (not supported here).
         engine : {'mcmc', 'nested'}, optional
             The sampling engine to use (default: 'mcmc').
-        nsteps : str, optional
-            Number of MCMC steps (default: '500').
-        nlive : str, optional
-            Number of live points for Nested Sampling (default: '250').
-        group_depth : str, optional
-            Depth of connected group search (FoF) to define the fitting group (default: '2').
+        nsteps : int, optional
+            Number of MCMC steps (default: 500).
+        nlive : int, optional
+            Number of live points for Nested Sampling (default: 250).
+        group_depth : int, optional
+            Depth of connected group search (FoF) to define the fitting group (default: 2).
 
         Raises
         ------
@@ -1781,7 +1781,7 @@ class RecipeAbsorbersV2:
         require_bayes_engine(str(engine))
 
         try:
-            nsteps_i = int(nsteps); nlive_i = int(nlive); depth_i = int(group_depth)
+            nsteps_i, nlive_i, depth_i = nsteps, nlive, group_depth
             
             if not self._session.systs: return 0
             current_session = self._session
@@ -1841,11 +1841,12 @@ class RecipeAbsorbersV2:
         except Exception as e:
             logger.error(f"Could not run the Bayesian fit: {e}", exc_info=True); return 0
 
-    def refit_all(self, max_nfev: str = '200', z_window_kms: str = '100.0', 
-                  group_depth: str = '2', max_group_size: str = '20',
+    @typed_recipe
+    def refit_all(self, max_nfev: int = 200, z_window_kms: float = 100.0,
+                  group_depth: int = 2, max_group_size: int = 20,
                   region_limit: str = "None",
                   selected_uuids: list = None,
-                  max_b: str = '300.0', max_logN: str = '23.0') -> 'SessionV2':
+                  max_b: float = 300.0, max_logN: float = 23.0) -> 'SessionV2':
         """
         Refit all systems.
 
@@ -1856,23 +1857,23 @@ class RecipeAbsorbersV2:
 
         Parameters
         ----------
-        max_nfev : str, optional
-            Max iterations per group. Defaults to ``"200"``.
-        z_window_kms : str, optional
-            Fit window around lines (km/s). Defaults to ``"100.0"``.
-        group_depth : str, optional
+        max_nfev : int, optional
+            Max iterations per group. Defaults to ``200``.
+        z_window_kms : float, optional
+            Fit window around lines (km/s). Defaults to ``100.0``.
+        group_depth : int, optional
             Grouping depth (0=Iterative Single, 1=Neighbors, 2=FoF).
-            Defaults to ``"2"``, as the GUI dialog (#573, F11).
-        max_group_size : str, optional
-            Max components per fit group (chunking). Defaults to ``"20"``.
+            Defaults to ``2``, as the GUI dialog (#573, F11).
+        max_group_size : int, optional
+            Max components per fit group (chunking). Defaults to ``20``.
         region_limit : str, optional
             Limit fitting to ``'red_side'`` or ``'lya_forest'``. Defaults to ``"None"``.
-        max_b : str, optional
-            Upper bound on b (km/s). Defaults to ``"300.0"``, the physical
+        max_b : float, optional
+            Upper bound on b (km/s). Defaults to ``300.0``, the physical
             limit of the constraint model; the automatic pipelines pass
             ``"50.0"`` (see :meth:`components_auto`).
-        max_logN : str, optional
-            Upper bound on logN. Defaults to ``"23.0"``, the physical limit
+        max_logN : float, optional
+            Upper bound on logN. Defaults to ``23.0``, the physical limit
             of the constraint model; the automatic pipelines pass ``"19.0"``
             (see :meth:`components_auto`).
 
@@ -1883,12 +1884,8 @@ class RecipeAbsorbersV2:
             or 0 on failure.
         """
         try:
-            max_nfev_i = int(max_nfev)
-            z_win_f = float(z_window_kms)
-            depth_i = int(group_depth)
-            max_size_i = int(max_group_size)
-            b_max_f = float(max_b)
-            logN_max_f = float(max_logN)
+            max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
+            max_size_i, b_max_f, logN_max_f = max_group_size, max_b, max_logN
 
             if not self._session.systs or not self._session.systs.components:
                 logger.warning("There are no components to fit.")
@@ -2174,8 +2171,9 @@ class RecipeAbsorbersV2:
         comps = [updated.get(c.uuid, c) for c in systs.components]
         return SystemListV2(dataclasses.replace(systs._data, components=comps))
 
-    def clean_negligible(self, min_logN: str = "11.5", max_b: str = "80.0", 
-                       min_b: str = "3.0", combined_check: str = "True") -> 'SessionV2':
+    @typed_recipe
+    def clean_negligible(self, min_logN: float = 11.5, max_b: float = 80.0,
+                         min_b: float = 3.0, combined_check: bool = True) -> 'SessionV2':
         r"""
         Clean negligible components.
 
@@ -2194,31 +2192,26 @@ class RecipeAbsorbersV2:
 
         Parameters
         ----------
-        min_logN : str, optional
-            Minimum column density (log cm\ :sup:`-2`) to keep. Defaults to ``"11.5"``.
-        max_b : str, optional
+        min_logN : float, optional
+            Minimum column density (log cm\ :sup:`-2`) to keep. Defaults to ``11.5``.
+        max_b : float, optional
             Maximum Doppler parameter (km/s). Components broader than this may be removed. 
-            Defaults to ``"80.0"``.
-        min_b : str, optional
+            Defaults to ``80.0``.
+        min_b : float, optional
             Minimum Doppler parameter (km/s). Components narrower than this are always removed. 
-            Defaults to ``"3.0"``.
-        combined_check : str, optional
-            If ``"True"``, broad components (``b > max_b``) are only removed if they are 
-            also weak (``logN < 13.0``). If ``"False"``, all broad components are removed. 
-            Defaults to ``"True"``.
+            Defaults to ``3.0``.
+        combined_check : bool, optional
+            If ``True``, broad components (``b > max_b``) are only removed if they are 
+            also weak (``logN < 13.0``). If ``False``, all broad components are removed. 
+            Defaults to ``True``.
 
         Returns
         -------
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the flagged components removed.
         """
-        try:
-            lim_N = float(min_logN)
-            lim_b_max = float(max_b)
-            lim_b_min = float(min_b)
-            use_combined = (combined_check.lower() == "true")
-        except ValueError:
-            logger.error(msg_param_fail); return 0
+        lim_N, lim_b_max, lim_b_min = min_logN, max_b, min_b
+        use_combined = combined_check
 
         if not self._session.systs: return 0
         

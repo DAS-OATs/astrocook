@@ -33,12 +33,6 @@ logger = logging.getLogger(__name__)
 #: 2a: an empty ``kappa`` of *Rebin* is not "no clipping")
 NONE_STRING = 'None'
 
-#: The names of the recipes whose parameters are typed (filled by
-#: :func:`typed_recipe`): the others still receive and log what is passed,
-#: until phase 6-bis types them all (PR 2b, 2c)
-TYPED_RECIPES: set = set()
-
-
 class InvalidParameter(ValueError):
     """A parameter of a recipe cannot be converted to its type, or is out
     of its bounds; the message names the parameter and the value."""
@@ -106,6 +100,8 @@ def convert(param, value: Any) -> Any:
                 or (value.strip() == '' and param.default is None)))):
         return None
     if value is None:
+        if param.optional:
+            return None  # e.g. a string that may be absent (phase 6-bis, PR 2c)
         raise InvalidParameter(f"{param.name}: a value is needed")
     if param.type is float:
         result = _number(param, value, float)
@@ -148,12 +144,12 @@ def convert_params(spec, params: Mapping[str, Any]) -> Dict[str, Any]:
 def resolve_params(name: str, params: Mapping[str, Any]) -> Dict[str, Any]:
     """The values that the recipe ``name`` uses with ``params``: those
     passed, converted, and the defaults of the others, in the order of the
-    registry; for the session log (#573, item 3). The parameters of a recipe
-    that is not typed yet, and the ones passed that the registry does not
-    declare (e.g. ``alias_map``), are returned as passed."""
+    registry; for the session log (#573, item 3). The parameters passed that
+    the registry does not declare (e.g. ``alias_map``), and those of a name
+    that is not a recipe, are returned as passed."""
     from astrocook.recipes.registry import find_recipe
     spec = find_recipe(name)
-    if spec is None or name not in TYPED_RECIPES:
+    if spec is None:
         return dict(params)
     resolved = {}
     for p in spec.params:
@@ -168,7 +164,6 @@ def typed_recipe(method: Callable) -> Callable:
     be converted, or is out of bounds, stops the recipe as a failure (the
     reason logged at ERROR, 0 returned; an exception in PR 3 of the phase).
     """
-    TYPED_RECIPES.add(method.__name__)
     signature = inspect.signature(method)
 
     @functools.wraps(method)
@@ -184,4 +179,5 @@ def typed_recipe(method: Callable) -> Callable:
             return 0
         return method(self, **converted)
 
+    wrapper.typed_recipe = True  # checked by tests/test_recipe_params.py
     return wrapper
