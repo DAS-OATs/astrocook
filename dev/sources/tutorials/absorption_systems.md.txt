@@ -8,12 +8,13 @@ For most science cases, you should start with one of the automated pipelines in 
 
 :::{important}
 **Normalization:** All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the `cont` column (multiplied by `telluric_model` if present) as the reference.
-* If no continuum exists, the software assumes the flux `F` is already normalized (median $\approx$ 1).
+* If no continuum exists and the flux `F` is already normalized (median $\approx$ 1), the continuum is taken as 1.
+* Otherwise the identification and the fits need a continuum first: a recipe that needs it asks how to provide it, **Estimate** (with the defaults of **Auto-estimate Continuum**), **Open Auto-estimate Continuum...** (to choose its parameters), or **Cancel**; the recipe then runs. The estimate is a step of its own in the session log, before the recipe.
 * To use an alternative continuum (e.g., a power-law `cont_pl`), you must first copy it into the main `cont` column using **Edit > Apply Expression...** (`cont = cont_pl`).
 :::
 
 :::{note}
-This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+This recipe requires **Emission Redshift ($z_{em}$)**, **Resolution ($R$)** and a continuum. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog, and to estimate the continuum, before proceeding.
 :::
 
 ### Ly-alpha Forest
@@ -37,7 +38,7 @@ For finding distinct metal systems (CIV, SiIV, MgII) redward of the Ly$\alpha$ e
 This recipe searches for pairs of lines with the correct velocity separation and optical depth ratios. Each doublet gives one candidate system, from its stronger line; candidates beyond the emission redshift by more than 3000 km/s (a margin for absorbers associated with the quasar) are not considered.
 
 :::{note}
-This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+This recipe requires **Emission Redshift ($z_{em}$)**, **Resolution ($R$)** and a continuum. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog, and to estimate the continuum, before proceeding.
 :::
 
 ### General Detection
@@ -47,7 +48,7 @@ For a more generic search (or if you are looking for specific ions):
 3.  You can then visualize these regions by selecting `abs_ids` in the **Auxiliary column** dropdown of the Plot Controls.
 
 :::{note}
-This recipe requires **Emission Redshift ($z_{em}$)** and **Resolution ($R$)** to be defined. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog before proceeding.
+This recipe requires **Emission Redshift ($z_{em}$)**, **Resolution ($R$)** and a continuum. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog, and to estimate the continuum, before proceeding.
 :::
 
 ```{image} ../_static/absorbers_auto_pipeline.png
