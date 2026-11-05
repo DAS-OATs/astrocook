@@ -95,8 +95,10 @@ class RecipeWorker(QRunnable):
                 self.signals.finished.emit((result_session, self.recipe_name, self.params))
                 return
 
-            if not new_session_state or new_session_state == 0:
-                raise ValueError(f"{self.recipe_name} did not give a result: the reason is in the log.")
+            if new_session_state is None or isinstance(new_session_state, int):
+                # A recipe raises when it fails (phase 6-bis, PR 3): no result
+                # is a bug, shown with its traceback
+                raise RuntimeError(f"{self.recipe_name} gave no result ({new_session_state!r}).")
             
             # 4. Success!
             self.signals.finished.emit((new_session_state, self.recipe_name, self.params))
@@ -230,8 +232,9 @@ class ScriptWorker(QRunnable):
                 
                 new_session_state = recipe_method(**params_dict)
                 
-                if not new_session_state or new_session_state == 0:
-                    raise ValueError("Recipe failed to execute (returned 0).")
+                if new_session_state is None or isinstance(new_session_state, int):
+                    # A recipe raises when it fails (phase 6-bis, PR 3)
+                    raise RuntimeError(f"{recipe_name} gave no result ({new_session_state!r}).")
                     
                 # 3c. Success! Add to the new history
                 params_to_log = params_dict.copy()

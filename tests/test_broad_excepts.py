@@ -32,10 +32,13 @@ BROAD_EXCEPTS = {
     "astrocook/gui/qt_workers.py": 3,
     "astrocook/gui/script_dialog.py": 1,
     "astrocook/mcp_server/errors.py": 1,
-    "astrocook/recipes/absorbers.py": 15,
+    # The boundaries of the cleaning of the narrow lines of lya_auto and
+    # forest_auto (phase 6, Guido's choice: the result is kept, with a
+    # WARNING); the 13 others went in phase 6-bis (PR 3c)
+    "astrocook/recipes/absorbers.py": 2,
     # The boundary of the recipes (typed_recipe): it names the recipe in
     # a note and re-raises (phase 6-bis, PR 3, which removed the 11 of
-    # continuum.py, file.py and flux.py in 3a, the 6 of edit.py in 3b;
+    # continuum.py, file.py and flux.py in 3a, the 6 of edit.py in 3b, 13 of
     # absorbers.py in 3c)
     "astrocook/recipes/params.py": 1,
 }

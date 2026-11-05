@@ -3,7 +3,7 @@
 A battery of edge cases, the same as the comparison with 2.4.0 made for
 the PR: for each value given to a parameter, the value the recipe uses
 (the recipe must give the same result as with that typed value), or how
-it fails (REFUSED, FAILS, RETURNS_0, RAISES: ``recipe_outcomes.py``; since
+it fails (REFUSED, FAILS, RAISES: ``recipe_outcomes.py``; since
 phase 6-bis, PR 3, an exception that names the recipe). The
 cases whose outcome changed from 2.4.0 say what 2.4.0 did; every other
 case behaved the same. Decisions of Guido: 1 and 0 are booleans; an empty
@@ -28,7 +28,7 @@ from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
-from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, RETURNS_0, check_failure  # noqa: E402,F401
+from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, check_failure  # noqa: E402,F401
 NAN = float("nan")
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 CATEGORY = {"estimate_auto": "continuum", "find_absorbed": "continuum",

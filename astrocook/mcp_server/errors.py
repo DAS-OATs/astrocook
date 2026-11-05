@@ -2,9 +2,8 @@
 
 The recipes report a failure by raising a
 :class:`~astrocook.recipes.errors.RecipeError`, whose message names the
-recipe and the reason (phase 6-bis, PR 3; the recipes not converted yet
-log an error and return 0), and a problem that does not stop them by
-logging a warning. The model sees
+recipe and the reason (phase 6-bis, PR 3), and a problem that does not stop
+them by logging a warning. The model sees
 neither: it sees only what a tool returns. :func:`run_recipe` collects the
 records logged while a recipe runs; a failure becomes a
 :class:`~mcp.server.mcpserver.exceptions.ToolError` carrying the logged
@@ -98,6 +97,8 @@ def run_recipe(name: str, fn: Callable[..., Any], *args, **kwargs
                 errors + [f"{name} failed: {type(e).__name__}: {e}"])) from e
     warnings = _messages(records, logging.WARNING, logging.WARNING)
     if result is None or (isinstance(result, int) and result == 0):
+        # A recipe raises when it fails (phase 6-bis, PR 3): no result is a
+        # bug; the errors logged, if any, are given
         errors = _messages(records, logging.ERROR) or warnings
         detail = "; ".join(errors) if errors else "no reason was logged"
         raise ToolError(f"{name} failed: {detail}")
