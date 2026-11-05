@@ -1,9 +1,9 @@
 # Using Astrocook from an AI Agent
 
 :::{warning}
-This is a **pilot**: a few recipes only, to learn what an agent needs
-from Astrocook. Tools, parameters and outputs may change in later
-versions.
+The server is **being completed**: since the pilot every recipe is a
+tool, and tools to inspect and edit the sessions are coming. Tools,
+parameters and outputs may change in later versions.
 :::
 
 An AI agent, such as [Claude Code](https://claude.com/claude-code) or the
@@ -73,16 +73,45 @@ arguments.
 
 ## 3. The Tools
 
-Each tool is named after the recipe it runs, prefixed with its menu, and
-uses the same defaults as the recipe dialog of the GUI.
+**Every recipe is a tool**, named after the recipe, prefixed with its
+menu: *Continuum > Auto-estimate Continuum* is `continuum_estimate_auto`,
+*Absorbers > Auto-detect Doublets* is `absorbers_doublets_auto`, and so on
+for the menus *File*, *Edit*, *Flux*, *Continuum* and *Absorbers*, also the
+recipes that the GUI runs from the System Inspector (e.g.
+`absorbers_fit_component`). The tools are made from the same description
+of the recipes as the dialogs of the GUI: the same parameters, defaults,
+bounds and texts, and a recipe added to Astrocook becomes a tool by
+itself. Two more tools handle the sessions:
 
 | Tool | What it does |
 |---|---|
 | `session_open` | Opens a spectrum or a session file (`.acs2`, V1 `.acs`) as a new session; optionally sets z_em and the resolving power (*Edit > Set Properties*). |
-| `continuum_estimate_auto` | *Continuum > Auto-estimate Continuum*. Returns the fraction of absorbed pixels (in the Lyman-alpha forest and on the red side) and the S/N. |
-| `absorbers_identify_lines` | *Absorbers > Identify Absorption Lines*, without creating components. Returns the identified regions with their candidate transitions and scores, and the candidate systems. |
-| `absorbers_doublets_auto` | *Absorbers > Auto-detect Doublets*: identifies and fits the CIV, SiIV and MgII doublets on the red side. Returns the new components, with errors, reduced chi2 and flags for the ones stuck at a bound of the fit. |
 | `session_save` | Saves the session as `.acs2`, with the original data and the session log. |
+
+Every recipe tool takes the `session_id` of the session to run on, the
+parameters of the recipe, and:
+- `provide_missing`: see "What a recipe needs" below;
+- `max_listed`: the maximum number of items in each list of the output.
+
+It returns the session after the call (the spectrum in a few numbers, the
+number of log entries), what the recipe did in one line (`summary`) and
+what else is worth knowing (`notes`), the warnings, and what changed,
+listed: the components removed (with the reason, when the recipe gives
+one) and changed, the columns and properties of the session. Some results
+add a summary of their own: the continuum and the absorbed pixels after a
+recipe that makes a continuum, the regions and candidate systems after an
+identification, the new components (with errors, reduced chi2 and flags)
+after a fit.
+
+A recipe that opens new sessions in the GUI (e.g. *Edit > Split*, or
+*Absorbers > Identify Absorption Lines*) does so here too: the session it
+runs on does not change, and the result lists the new ones, each with its
+`session_id`, named after the original (`J0103-1305-1`, ...). A parameter
+that names another open session (e.g. the reference of *Flux > Equalize*)
+takes its `session_id`.
+
+Not a tool, for now: *File > Export to ASCII* (it overwrites files
+without asking).
 
 The sessions live in the server while the client is running: save the
 result with `session_save` before closing the client.
@@ -122,7 +151,8 @@ reason, and the agent can usually correct its request by itself.
 **What a recipe needs.** A recipe that needs something the session does
 not have (the emission redshift, the resolution, a continuum) does not
 run: the tool says what is missing and which recipe provides it, and the
-agent decides. z_em and the resolution are given to `session_open`. A
+agent decides. z_em and the resolution are given to `session_open` or
+`edit_set_properties`. A
 continuum is made with `continuum_estimate_auto`, or, if the agent calls
 the tool again with `provide_missing=true`, with the default parameters of
 *Auto-estimate Continuum* before the recipe: the step is listed in
@@ -139,8 +169,8 @@ replay the log as a script.
 
 ## 6. Limits of the Pilot
 
-- Only the five tools above: no manual editing of components, no Lyman
-  forest fit, no export.
+- No tools yet to list the components, read the spectrum, undo a step,
+  or duplicate and close a session (coming); no export to ASCII.
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` replaces the components already on the red
   side. It finds the absorbed regions on a new mask made with the default
