@@ -3338,6 +3338,35 @@ complete models**, with uncertainties and a reliability map, which also
 report the possible alternative identifications of the same feature, each
 with a parameter quantifying its credibility.
 
+### A collector of recipes, not an automatic fitter (principle)
+Agreed with Guido in phase 6-ter, PR 0 (November 2026), on his question:
+with a whole spectrum fitted in a single pass, does Astrocook risk turning
+from a collector of recipes into an automatic fitter? The risk is a
+monolithic module that takes a spectrum and returns a model: opaque (why
+this continuum, these components?), and absorbing the work while the
+recipes wither. Three rules keep the single pass a composition of
+recipes:
+1. every automatic step is a recipe, also offered on its own (in the
+   GUI, the scripts and the MCP server), as the pipelines of today
+   (`doublets_auto`, `forest_auto`) are made of recipes;
+2. every automatic decision goes into the log with its reason (which
+   alternative, by which criterion), so that the single pass opens step
+   by step in the GUI, replays, and can be corrected at any step;
+3. the automatic result is a starting point to review, not a final
+   answer: a collection of alternative models with their credibility
+   (the goal above), from which the astronomer chooses.
+The workflow of the final pass is not one for all spectra (Guido): it
+can differ from spectrum to spectrum, optimized for the object and for
+the observational parameters as the final spectrum reflects them
+(resolution, S/N, wavelength coverage, z_em and the extent of the forest,
+DLAs and BALs, tellurics). Whether it is chosen by rules from the
+spectrum or by an agent combining the recipes, the choice itself is
+logged with its reasons, so the result stays reproducible: the workflow
+of a spectrum is its log, and replays as such. A sequence of recipes
+that agents or users run again and again on similar spectra becomes a
+recipe of its own; the gaps the agents meet (phase 6-ter, decision 6)
+say which recipes are missing.
+
 ### Iterative loop (deterministic and reproducible)
 1. Initial continuum with uncertainty.
 2. Detection of absorbed regions and decomposition into independent blocks
@@ -3372,7 +3401,10 @@ First the robust components (phase 7: emission model and identification,
 measured on the benchmark of phase 4), then the loop.
 Pilot on metals outside the forest, then extension to the Lyα forest. The
 LLM agent stays at the margins (strategy in stuck cases, guidance during
-review); each of its decisions goes into the log.
+review); each of its decisions goes into the log. Revised in phase 6-ter,
+PR 0 (Guido): the agent may also choose the workflow of a spectrum (the
+principle above); the steps it runs stay recipes, logged with their
+reasons.
 
 ### Implications for the v2 work
 - The mock generator from phase 1 is the first core of the v3 test bench.
