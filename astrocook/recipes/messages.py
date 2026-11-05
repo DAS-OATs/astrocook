@@ -18,11 +18,6 @@ session log records the recipes and their parameters, not these texts.
 msg_param_fail = ("The values of the parameters cannot be read: check them "
                   "and run the recipe again.")
 
-#: Logged (``INFO``) when a recipe that needs a continuum estimates it first
-#: with the automatic continuum, because the spectrum has none.
-msg_continuum_estimated = ("There is no continuum: it is estimated first, as "
-                           "with Auto-estimate Continuum.")
-
 #: Logged (``WARNING``) when a fit runs on a spectrum without a resolution:
 #: the profiles are not convolved with the instrumental profile.
 msg_no_resolution = ("The spectrum has no resolution: the profiles are fitted "

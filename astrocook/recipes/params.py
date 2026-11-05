@@ -189,6 +189,11 @@ def collect_steps():
         _STEPS.reset(token)
 
 
+#: How many recipes are running, one inside the other: the prerequisites
+#: filled by the outermost are the steps of the session log (PR 5)
+_DEPTH: contextvars.ContextVar = contextvars.ContextVar('astrocook_recipe_depth', default=0)
+
+
 def typed_recipe(method: Callable) -> Callable:
     """Decorator of a recipe method, its boundary.
 
@@ -200,7 +205,10 @@ def typed_recipe(method: Callable) -> Callable:
     :data:`DATA_ERRORS` become :class:`RecipeFailed`, with the original
     error as their cause; any other exception (a bug) goes on unchanged,
     with a note naming the recipe. Nothing is logged here: the error is
-    logged where it is caught (phase 6-bis, PR 3).
+    logged where it is caught (phase 6-bis, PR 3). Before the method runs,
+    the prerequisites that the registry declares for it are filled, or
+    their absence raised, as the policy of
+    :mod:`astrocook.recipes.prerequisites` says (PR 5).
     """
     signature = inspect.signature(method)
 
@@ -214,10 +222,15 @@ def typed_recipe(method: Callable) -> Callable:
             if steps.depth:
                 steps.names.append(f"{spec.category}.{spec.name}")
             steps.depth += 1
+        depth = _DEPTH.set(_DEPTH.get() + 1)
         try:
             bound = signature.bind(self, *args, **kwargs)
             passed = {k: v for k, v in bound.arguments.items() if k != 'self'}
             converted = convert_params(spec, passed)
+            from astrocook.recipes.prerequisites import fill
+            session = fill(self._session, spec, outermost=_DEPTH.get() == 1)
+            if session is not self._session:
+                self = type(self)(session)
             return method(self, **converted)
         except RecipeError as e:
             e.enter(*where)
@@ -230,6 +243,7 @@ def typed_recipe(method: Callable) -> Callable:
             e.add_note(f"In the recipe {spec.category}.{spec.name} ({where[2]}).")
             raise
         finally:
+            _DEPTH.reset(depth)
             if steps is not None:
                 steps.depth -= 1
 

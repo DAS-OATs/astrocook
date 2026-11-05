@@ -8,6 +8,7 @@ from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
+from astrocook.recipes.prerequisites import collect_provided
 from astrocook.recipes.registry import find_recipe
 from astrocook.recipes.result import run
 
@@ -242,7 +243,8 @@ class ScriptWorker(QRunnable):
                 if recipe_name in ("apply_expression", "mask_expression"):
                     params_dict['alias_map'] = alias_map
                 
-                new_session_state = recipe_method(**params_dict)
+                with collect_provided() as provided:
+                    new_session_state = recipe_method(**params_dict)
                 
                 if new_session_state is None or isinstance(new_session_state, int):
                     # A recipe raises when it fails (phase 6-bis, PR 3)
@@ -251,6 +253,10 @@ class ScriptWorker(QRunnable):
                 # 3c. Success! Add to the new history
                 params_to_log = params_dict.copy()
                 params_to_log.pop('alias_map', None)
+                # What was provided first: its own state and entry (PR 5)
+                for step in provided:
+                    new_log.add_entry(step.recipe.split('.')[1], dict(step.params))
+                    new_history.add_state(step.session)
                 new_log.add_entry(recipe_name, resolve_params(recipe_name, params_to_log))
 
                 new_history.add_state(new_session_state)

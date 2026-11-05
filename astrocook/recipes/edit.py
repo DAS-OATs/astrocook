@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
         "brief": "Set session properties.",
+        "provides": ("z_em", "resolution"),
         "details": "Set core session properties like name, object, redshift, and resolution.",
         "params": [
             {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Session Name (display label)"},

@@ -23,9 +23,9 @@ import contextvars
 import logging
 import threading
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Mapping, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -123,6 +123,10 @@ class RecipeResult:
     #: (the components whose group could not be fitted), ``candidates`` and
     #: ``regions`` (the identification of ``identify_lines``)
     extra: Mapping[str, Any] = field(default_factory=dict)
+    #: The recipes run first to provide what the session lacked (PR 5),
+    #: as :class:`~astrocook.recipes.prerequisites.ProvidedStep`: each with
+    #: its session, for the callers that keep the history and the log
+    provided: Tuple[Any, ...] = ()
     #: Reserved for phase 7 (the algorithms do not provide them yet): the
     #: uncertainty of the continuum, the credibility of an identification
     #: and its alternatives
@@ -144,7 +148,9 @@ class RecipeResult:
         a pipeline made and dropped, those whose fit failed, the candidate
         systems found; one line each, e.g. ``'2 components removed: logN <
         min_logN = 14.0 (too weak)'``."""
-        out = []
+        from astrocook.recipes.registry import find_recipe
+        out = [f"{find_recipe(p.recipe.split('.')[1]).brief.rstrip('.')} run first: "
+               f"{p.reason}" for p in self.provided]
         for key, what in (("removed", "removed"),
                           ("discarded", "made and discarded by the recipe")):
             reasons = Counter(self.extra.get(key, {}).values())
@@ -343,15 +349,20 @@ def _collect_warnings() -> Iterator[List[str]]:
         logger.removeHandler(handler)
 
 
-def run(session, recipe: str, **params) -> RecipeResult:
+def run(session, recipe: str, *, on_missing: Optional[str] = None,
+        **params) -> RecipeResult:
     """Run the recipe ``recipe`` (``'category.name'``, or the name alone)
     on ``session`` and return its :class:`RecipeResult`.
 
     The parameters are given as to the method of the recipe (typed, or as
     strings); a recipe that cannot do what was asked raises its
     :class:`~astrocook.recipes.errors.RecipeError`, as the method does.
+    ``on_missing`` is the policy for a prerequisite the session lacks,
+    ``"provide"`` or ``"raise"`` (:mod:`astrocook.recipes.prerequisites`);
+    by default, the one in force.
     """
     from astrocook.recipes.params import collect_steps, resolve_params
+    from astrocook.recipes.prerequisites import collect_provided, policy
     from astrocook.recipes.registry import find_recipe, get_recipe
     if '.' in recipe:
         spec = get_recipe(*recipe.split('.', 1))
@@ -360,8 +371,9 @@ def run(session, recipe: str, **params) -> RecipeResult:
         if spec is None:
             raise KeyError(f"There is no recipe {recipe}")
     method = getattr(getattr(session, spec.category), spec.name)
-    with _collect_warnings() as warnings, collect_steps() as steps, \
-            _collect_extra() as extra:
+    chosen = policy(on_missing) if on_missing is not None else nullcontext()
+    with chosen, _collect_warnings() as warnings, collect_steps() as steps, \
+            _collect_extra() as extra, collect_provided() as provided:
         out = method(**params)
     used = resolve_params(spec.name, params)
     if 'removed' in extra:
@@ -386,4 +398,4 @@ def run(session, recipe: str, **params) -> RecipeResult:
     return RecipeResult(recipe=f"{spec.category}.{spec.name}", title=spec.brief.rstrip('.'),
                         session=new, branching=spec.branching, changes=changes,
                         params=used, warnings=tuple(warnings), steps=tuple(steps),
-                        value=value, extra=dict(extra))
+                        value=value, extra=dict(extra), provided=tuple(provided))

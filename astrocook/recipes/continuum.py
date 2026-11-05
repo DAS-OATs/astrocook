@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 CONTINUUM_RECIPES_SCHEMAS = {
     "estimate_auto": {
         "brief": "Auto-estimate continuum (single-click).",
+        "provides": ("continuum",),
         "requires": ("z_em",),
         "details": "A single-click recipe that runs 'find_absorbed' and then 'fit_continuum' in sequence, based on the V1 'clip_flux' algorithm.",
         "params": [
@@ -42,6 +43,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
     },
     "fit_continuum": {
         "brief": "Fit continuum to mask (V1 logic).",
+        "provides": ("continuum",),
         "details": "Interpolate unabsorbed regions from a mask, optionally auto-center (fudge='auto'), and smooth result.",
         "params": [
             # CHANGED: type is now str, default is "auto"
@@ -64,6 +66,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
     },
     "update_from_knots": {
         "brief": "Update continuum from manual knots.",
+        "provides": ("continuum",),
         "details": "Interpolate a spline through manually placed knots and update the continuum.",
         "params": [
             {"name": "knots_x", "type": list, "default": [], "doc": "List of x coordinates", "gui_hidden": True},

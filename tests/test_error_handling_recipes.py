@@ -210,8 +210,12 @@ import numpy as np  # noqa: E402
 import astropy.units as au  # noqa: E402
 
 import astrocook.recipes.continuum as continuum  # noqa: E402
-from astrocook.recipes.messages import (msg_continuum_estimated,  # noqa: E402
-                                        msg_no_resolution)
+from astrocook.recipes.messages import msg_no_resolution  # noqa: E402
+
+# Said when the continuum is estimated first (phase 6-bis, PR 5: by the
+# boundary of the recipe, at WARNING; it was msg_continuum_estimated, INFO)
+CONTINUUM_ESTIMATED = ("The spectrum has no continuum: it is estimated first with "
+                       "Auto-estimate continuum (single-click), with its defaults.")
 
 FIT_RECIPES = {
     "refit_all": lambda s, uuid: s.absorbers.refit_all(),
@@ -244,7 +248,7 @@ def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplo
     monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
     with caplog.at_level(logging.INFO), pytest.raises(RecipeFailed) as info:
         FIT_RECIPES[name](session, uuid)
-    assert msg_continuum_estimated in [r.getMessage() for r in caplog.records]
+    assert CONTINUUM_ESTIMATED in [r.getMessage() for r in caplog.records]
     # The recipe, the step and the reason (phase 6-bis, PR 3)
     assert str(info.value).endswith(" → Auto-estimate continuum (single-click): "
                                     "no unabsorbed pixels.")
@@ -265,7 +269,7 @@ def test_refit_all_says_it_estimates_the_continuum(caplog):
     session, _ = _without_continuum()
     with caplog.at_level(logging.INFO):
         assert session.absorbers.refit_all() != 0
-    assert msg_continuum_estimated in [r.getMessage() for r in caplog.records]
+    assert CONTINUUM_ESTIMATED in [r.getMessage() for r in caplog.records]
 
 
 @pytest.mark.parametrize("name", FIT_RECIPES)
