@@ -21,7 +21,7 @@ If you are analyzing a high-redshift quasar ($z > 2$):
 1.  Ensure your [Emission Redshift is set](#editing-properties) correctly.
 2.  Go to **Absorbers > Auto-fit Ly-alpha Forest...**.
 3.  **Threshold:** The default score (`0.1`) is usually fine.
-4.  **Min b:** The minimum Doppler parameter (e.g., `10` km/s) helps filter out noise spikes or unphysically narrow lines (interlopers). The Ly-alpha lines narrower than this are removed after the fit and the rest is fitted again; the lines that the last fit leaves below **Min b** are removed too, so none is left in the result.
+4.  **Min b:** The minimum Doppler parameter (e.g., `10` km/s) helps filter out noise spikes or unphysically narrow lines (interlopers). The Ly-alpha lines narrower than this are removed after the fit and the rest is fitted again; the lines that the last fit leaves below **Min b** are removed too, so none is left in the result. These refits, like the pipeline, touch only the components in the forest: those outside it (e.g. metal doublets already fitted on the red side) keep their values; to fit everything again, use **Refit All** from the table menu of the System Inspector.
 5.  Click **Run**.
 
 This pipeline focuses on the region between the Ly$\beta$ and Ly$\alpha$ emission lines.

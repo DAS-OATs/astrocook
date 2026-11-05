@@ -461,9 +461,20 @@ class MainRecipesMixin:
             text += f", {n_before} \u2192 {n_after} components"
         warnings = [w for w in dict.fromkeys(getattr(self, '_captured_warnings', None) or [])
                     if "Recipe" not in w and "Aborted" not in w]
+        # What the user should know of the result (phase 6-bis, PR 4c,
+        # Guido): the components removed and why, those discarded, those not
+        # fitted; counted here, said in full in the tooltip and in the log
+        result = getattr(self, 'last_recipe_result', None)
+        notes = ()
+        if result is not None and result.recipe.split('.')[-1] == recipe_name:
+            notes = result.notes
+            if result.counts:
+                text += ", " + ", ".join(result.counts)
+            for note in notes:
+                logger.info(f"{brief.rstrip('.')}: {note}.")
         if warnings:
             text += f", with {len(warnings)} warning{'s' if len(warnings) > 1 else ''}"
-        self.show_status(text)
+        self.show_status(text, "\n".join(f"{note}." for note in notes))
 
     def _process_recipe_result(self, result_data: tuple):
         """The actual GUI update."""

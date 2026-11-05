@@ -235,3 +235,47 @@ def test_report_outside_run_does_nothing():
     from astrocook.recipes.result import report, report_removed
     report("x", 1)
     report_removed(["u"], "why")  # no error, nothing kept
+
+
+# --- What the user is told (PR 4c) ----------------------------------------------
+
+def test_the_notes_of_a_result(sessions):
+    _, cont, fitted = sessions
+    uuid = fitted.systs.components[0].uuid
+    cleaned = run(fitted, "absorbers.clean_negligible", min_logN=14.0)
+    assert cleaned.notes == ("1 component removed: logN < min_logN = 14.0 (too weak)",)
+    assert cleaned.counts == ("1 removed",)
+    result = RecipeResult("absorbers.refit_all", "Refit all systems", None, False, None, {},
+                          extra={"not_fitted": [uuid, "u2"],
+                                 "discarded": {"a": "why", "b": "why", "c": "other"}})
+    assert result.notes == ("2 components made and discarded by the recipe: why",
+                            "1 component made and discarded by the recipe: other",
+                            "2 components not fitted: the fit of their group failed, "
+                            "the values are those from before")
+    assert result.counts == ("3 discarded", "2 not fitted")
+    identified = run(cont, "absorbers.identify_lines")
+    n = len(identified.extra["candidates"])
+    assert f"{n} candidates" in identified.counts
+    assert run(cont, "flux.smooth", sigma_kms=10.0).notes == ()
+
+
+def test_lya_auto_does_not_refit_the_red_side():
+    # F102 (phase 6-bis, PR 4c, Guido's decision): the refit after the
+    # removal of the narrow lines is limited to the forest, as the pipeline;
+    # it refitted the CIV of the red side too, which changed slightly
+    truth = MockTruth(components=[MockComponent("Ly_a", 2.65, 13.5, 25.0),
+                                  MockComponent("Ly_a", 2.64, 14.0, 30.0),
+                                  MockComponent("CIV", 1.93, 13.8, 10.0)],
+                      lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5, resol=45000.0,
+                      snr=50.0, z_em=2.7, seed=1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        cont = SessionV2("m", None, spec=generate(truth, truth_columns=False)
+                         ).continuum.estimate_auto()
+        civ = cont.absorbers.doublets_auto()
+        result = run(civ, "absorbers.lya_auto", min_b=40.0)
+    assert result.extra["discarded"]  # the cleanup and its refit did run
+    before = [(c.uuid, c.z, c.logN, c.b) for c in civ.systs.components]
+    after = [(c.uuid, c.z, c.logN, c.b) for c in result.session.systs.components
+             if c.series == "CIV"]
+    assert after == before

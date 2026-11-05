@@ -22,6 +22,7 @@ from __future__ import annotations
 import contextvars
 import logging
 import threading
+from collections import Counter
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Mapping, Tuple
@@ -137,6 +138,41 @@ class RecipeResult:
         return self.session if isinstance(self.session, tuple) else (self.session,)
 
     @property
+    def notes(self) -> Tuple[str, ...]:
+        """What the user should know of the result besides the changes
+        (phase 6-bis, PR 4c, Guido): the components removed and why, those
+        a pipeline made and dropped, those whose fit failed, the candidate
+        systems found; one line each, e.g. ``'2 components removed: logN <
+        min_logN = 14.0 (too weak)'``."""
+        out = []
+        for key, what in (("removed", "removed"),
+                          ("discarded", "made and discarded by the recipe")):
+            reasons = Counter(self.extra.get(key, {}).values())
+            for reason, n in reasons.items():
+                out.append(f"{_count(n, 'component')} {what}: {reason}")
+        not_fitted = self.extra.get("not_fitted", ())
+        if not_fitted:
+            out.append(f"{_count(len(not_fitted), 'component')} not fitted: the fit of "
+                       f"{'its' if len(not_fitted) == 1 else 'their'} group failed, "
+                       f"the values are those from before")
+        candidates = self.extra.get("candidates")
+        if candidates is not None:
+            out.append(f"{_count(len(candidates), 'candidate system')} found")
+        return tuple(out)
+
+    @property
+    def counts(self) -> Tuple[str, ...]:
+        """The notes in a word each, for a status bar, e.g. ``('2
+        removed', '1 not fitted')``."""
+        out = []
+        for key, what in (("removed", "removed"), ("discarded", "discarded"),
+                          ("not_fitted", "not fitted"), ("candidates", "candidates")):
+            items = self.extra.get(key)
+            if items is not None and (len(items) or key == "candidates"):
+                out.append(f"{len(items)} {what}")
+        return tuple(out)
+
+    @property
     def summary(self) -> str:
         """One line: the recipe, what changed, the warnings."""
         all_changes = self.changes if isinstance(self.changes, tuple) else (self.changes,)
@@ -148,6 +184,10 @@ class RecipeResult:
             n = len(self.warnings)
             text += f", with {n} warning{'s' if n > 1 else ''}"
         return text + "."
+
+
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}{'s' if n != 1 else ''}"
 
 
 # --- The comparison --------------------------------------------------------
