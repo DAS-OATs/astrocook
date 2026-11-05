@@ -70,11 +70,19 @@ def test_recipe_names_are_unique_and_found_by_name():
         get_recipe("edit", "no_such_recipe")
 
 
+#: Added in phase 6-bis (PR 5): every recipe that fits needs the resolution
+#: (F99), components_auto z_em as the pipelines that wrap it
+ADDED_Z_EM = {"components_auto"}
+ADDED_RESOLUTION = {"components_auto", "refit_all", "optimize_system", "fit_bayesian",
+                    "add_linked_system"}
+
+
 def test_flags_as_before_the_registry():
     specs = list(registry.all_recipes())
     assert {s.name for s in specs if s.branching} == BRANCHING
-    assert {s.name for s in specs if "z_em" in s.requires} == REQUIRING_Z_EM
-    assert {s.name for s in specs if "resolution" in s.requires} == REQUIRING_RESOLUTION
+    assert {s.name for s in specs if "z_em" in s.requires} == REQUIRING_Z_EM | ADDED_Z_EM
+    assert ({s.name for s in specs if "resolution" in s.requires}
+            == REQUIRING_RESOLUTION | ADDED_RESOLUTION)
 
 
 def test_registry_is_read_only():
@@ -111,7 +119,9 @@ def test_build_spec_rejects_unknown_keys_and_requirements():
         build_spec("edit", "r", {**entry, "params": [
             {"name": "x", "type": int, "default": 0, "dok": "x"}]})
     with pytest.raises(ValueError, match="unknown requirements"):
-        build_spec("edit", "r", {**entry, "requires": ("continuum",)})
+        build_spec("edit", "r", {**entry, "requires": ("mask",)})
+    with pytest.raises(ValueError, match="unknown provisions"):
+        build_spec("edit", "r", {**entry, "provides": ("mask",)})
 
 
 def test_schema_dictionaries_read_only_by_the_registry():
@@ -144,6 +154,7 @@ def test_the_registry_built_again_is_the_same():
 def test_build_spec_reads_every_key():
     entry = {"brief": "A recipe.", "details": "More.", "url": "page.html",
              "gui_hidden": True, "branching": True, "requires": ("z_em", "resolution"),
+             "provides": ("continuum",),
              "params": [{"name": "x", "type": float, "default": 1.0, "doc": "The x.",
                          "gui_hidden": True, "optional": True, "keep": ("_current_",),
                          "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True},
@@ -153,6 +164,7 @@ def test_build_spec_reads_every_key():
         ("edit", "r", "A recipe.", "More.", "page.html")
     assert spec.gui_hidden and spec.branching
     assert spec.requires == frozenset({"z_em", "resolution"})
+    assert spec.provides == frozenset({"continuum"})
     x, y = spec.params
     assert (x.name, x.type, x.default, x.doc, x.gui_hidden, x.optional, x.keep,
             x.min, x.max, x.gt, x.allow_nan) == \
@@ -161,5 +173,6 @@ def test_build_spec_reads_every_key():
     assert (y.doc, y.gui_hidden, y.optional, y.keep, y.min, y.max, y.gt, y.allow_nan) == \
         ("y", False, False, (), None, None, None, False)
     bare = build_spec("flux", "s", {"brief": "B."})
-    assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching) == \
-        ("", None, (), False, False)
+    assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching,
+            bare.requires, bare.provides) == ("", None, (), False, False, frozenset(),
+                                              frozenset())
