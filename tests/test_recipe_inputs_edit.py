@@ -27,7 +27,7 @@ from astrocook.core.structures import (ComponentDataV2, DataColumnV2, SpectrumDa
 from astrocook.core.system_list import SystemListV2
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
-from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, RETURNS_0, check_failure  # noqa: E402,F401
+from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, check_failure  # noqa: E402,F401
 NAN = float("nan")
 CSV = "<the CSV file of the fixture>"
 FLUX = au.erg / au.cm**2 / au.s / au.nm

@@ -124,3 +124,51 @@ def test_the_mcp_server_passes_it_to_the_agent():
     with pytest.raises(ToolError) as info:
         run_recipe("flux_smooth", session.flux.smooth, sigma_kms="fifty")
     assert str(info.value) == "Smooth spectrum: sigma_kms: 'fifty' is not a number."
+
+
+# --- Absorbers (PR 3c): nothing to do, a pipeline whose fit fails --------
+
+def test_nothing_to_do_is_not_a_failure(caplog):
+    # Guido's decision: the session back, with a WARNING (it was a failure, 0)
+    session = _session()
+    with caplog.at_level(logging.WARNING):
+        assert session.absorbers.refit_all() is session
+        assert session.absorbers.metals_auto() is session
+        assert session.absorbers.clean_negligible() is session
+    warned = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert "There are no components to fit." in warned
+    assert "There are no systems to search metals at: nothing is added." in warned
+    assert "There are no components to clean." in warned
+
+
+@pytest.mark.parametrize("call, message", [
+    (lambda s: s.absorbers.fit_component("x"), "Fit component: There are no components to fit."),
+    (lambda s: s.absorbers.optimize_system("x"), "There are no components to optimize."),
+    (lambda s: s.absorbers.update_constraints_column("b", False), "There are no components."),
+    (lambda s: s.absorbers.fit_bayesian([]), "Fit Bayesian: No components are selected."),
+])
+def test_without_components_the_reason_is_given(call, message):
+    # It returned 0, logging nothing (Guido, phase 6-bis, PR 3)
+    with pytest.raises(RecipeFailed) as info:
+        call(_session())
+    assert message in str(info.value)
+
+
+def test_a_pipeline_whose_fit_fails_fails(monkeypatch):
+    # The 0 of a failed refit was taken for "no components to fit", and the
+    # pipeline gave back the components unfitted, as a result (Guido, PR 3c)
+    from astrocook.mocks import MockComponent, MockTruth, generate
+    from astrocook.recipes import absorbers
+
+    @typed_recipe
+    def refit_all(self, **kwargs):
+        raise RecipeFailed("the fit did not converge")
+    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "refit_all", refit_all)
+    truth = MockTruth(components=[MockComponent("CIV", 1.93, 13.8, 10.0)],
+                      lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5, resol=45000.0,
+                      snr=50.0, z_em=2.7, seed=1)
+    session = SessionV2("mock", None, spec=generate(truth, truth_columns=False))
+    with pytest.raises(RecipeFailed) as info:
+        session.continuum.estimate_auto().absorbers.doublets_auto()
+    assert str(info.value) == ("Auto-fit metal doublets (Red Side) → Auto-detect and fit "
+                               "components → Refit all systems: the fit did not converge.")

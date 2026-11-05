@@ -36,11 +36,10 @@ def test_linked_value_uses_the_functions_of_the_fit(caplog):
 
 def test_link_with_sqrt_is_refused(caplog):
     session, (a, b) = _two()
-    with caplog.at_level(logging.ERROR):
-        assert session.absorbers.update_constraint(
-            b, "b", is_free=False, expression=f"sqrt(p['{a}'].b)", target_uuid=a) == 0
-    assert "Could not set the constraint" in caplog.text
-    assert "NameError" in caplog.text
+    with pytest.raises(RecipeFailed, match="Update constraint: The link of b") as info:
+        session.absorbers.update_constraint(
+            b, "b", is_free=False, expression=f"sqrt(p['{a}'].b)", target_uuid=a)
+    assert "NameError" in str(info.value)
 
 
 # --- PR 5b: the rows D of the recipes -------------------------------------------------
@@ -69,9 +68,8 @@ def _warnings(caplog):
 def test_unknown_region_fails(recipe, caplog):
     # It was skipped with a WARNING: the whole spectrum was used
     session, _ = _two()
-    with caplog.at_level(logging.ERROR):
-        assert getattr(session.absorbers, recipe)(region_limit="nowhere") == 0
-    assert any("The region 'nowhere' cannot be used" in m for m in _errors(caplog))
+    with pytest.raises(RecipeFailed, match="The region 'nowhere' cannot be used"):
+        getattr(session.absorbers, recipe)(region_limit="nowhere")
 
 
 def test_failed_cleaning_keeps_the_result_of_lya_auto(monkeypatch, caplog):
@@ -119,8 +117,10 @@ def test_failed_groups_of_refit_all_are_counted(monkeypatch, caplog):
 
 def test_unexpected_error_in_refit_all_fails_the_recipe(monkeypatch):
     session, _ = _two()
+    # A KeyError is turned into RecipeFailed at the boundary (phase 6-bis, PR 3)
     _failing_fit(monkeypatch, KeyError("bug"))
-    assert session.absorbers.refit_all() == 0
+    with pytest.raises(RecipeFailed, match="Refit all systems: 'bug' not found"):
+        session.absorbers.refit_all()
 
 
 def test_failed_trial_fits_of_metals_auto_are_counted(monkeypatch, caplog):
@@ -150,26 +150,32 @@ def test_unexpected_error_in_metals_auto_reaches_the_caller(monkeypatch):
     assert "In the recipe absorbers.metals_auto" in info.value.__notes__[-1]
 
 
-def test_failed_delete_component_returns_0(monkeypatch):
-    # It returned the session unchanged, which the GUI took as a success
+def test_failed_delete_component_fails(monkeypatch):
+    # It returned the session unchanged, which the GUI took as a success;
+    # since phase 6-bis (PR 3) the error goes on, naming the recipe (an
+    # error that is not one of the core's is a bug, shown with its traceback)
     session, (a, _) = _two()
 
     def broken(self, **kwargs):
         raise RuntimeError("delete")
     monkeypatch.setattr(SystemListV2, "delete_component", broken)
-    assert session.absorbers.delete_component(uuid=a) == 0
+    with pytest.raises(RuntimeError) as info:
+        session.absorbers.delete_component(uuid=a)
+    assert "In the recipe absorbers.delete_component" in info.value.__notes__[-1]
 
 
 def test_failed_refit_of_an_import_keeps_the_import(monkeypatch, caplog):
     # Option (b), Guido's choice
     source = SimpleNamespace(systs=_systs(("CIV", 2.97, 13.6, 12.0)))
     session = _session(gui=_gui(src=source))
-    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "refit_all", lambda self, **kw: 0)
+    def failing(self, **kwargs):
+        raise RecipeFailed("the fit did not converge")
+    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "refit_all", failing)
     with caplog.at_level(logging.WARNING):
         out = session.edit.import_systems("src", refit=True)
-    assert out != 0 and len(out.systs.components) == 1
-    assert ("The imported systems could not be refitted: they keep their imported "
-            "values.") in _warnings(caplog)
+    assert len(out.systs.components) == 1
+    assert ("The imported systems could not be refitted (the fit did not converge): "
+            "they keep their imported values.") in _warnings(caplog)
 
 
 @pytest.mark.parametrize("kwargs, message", [
@@ -236,14 +242,13 @@ def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplo
     # no attribute 'systs'"
     session, uuid = _without_continuum()
     monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
-    with caplog.at_level(logging.INFO):
-        assert FIT_RECIPES[name](session, uuid) == 0  # until PR 3c
-    messages = [r.getMessage() for r in caplog.records]
-    assert msg_continuum_estimated in messages
-    # The step and the reason are in the message (phase 6-bis, PR 3)
-    assert any("Auto-estimate continuum (single-click): no unabsorbed pixels." in m
-               for m in messages)
-    assert not any("'int' object" in m for m in messages)
+    with caplog.at_level(logging.INFO), pytest.raises(RecipeFailed) as info:
+        FIT_RECIPES[name](session, uuid)
+    assert msg_continuum_estimated in [r.getMessage() for r in caplog.records]
+    # The recipe, the step and the reason (phase 6-bis, PR 3)
+    assert str(info.value).endswith(" → Auto-estimate continuum (single-click): "
+                                    "no unabsorbed pixels.")
+    assert info.value.chain[0][1] == name
 
 
 def test_failed_estimate_of_the_continuum_stops_populate(monkeypatch):

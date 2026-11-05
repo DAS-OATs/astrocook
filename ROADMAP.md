@@ -1668,8 +1668,8 @@ PR 5b, each with a test):
 | `_run_astrocook.py` | 153 | `main` | `Exception` | N: done | splash screen |
 | `_run_astrocook.py` | 207 | `main` | `Exception` | B: done | files given on the command line |
 | `core/session.py` | 74 | `load_session_from_file` | `Exception` | N: done | format detection, falls back to `generic_spectrum` |
-| `core/session.py` | 82 | `load_session_from_file` | `Exception` | B | V2 loader, returns 0 (6-bis: exception) |
-| `core/session.py` | 172 | `load_session_from_file` | `Exception` | B | archive or spectrum loading, returns 0 (6-bis: exception) |
+| `core/session.py` | 82 | `load_session_from_file` | `Exception` | B | V2 loader, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `core/session.py` | 172 | `load_session_from_file` | `Exception` | B | archive or spectrum loading, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `core/session.py` | 296 | `SessionV2.open_new` | `Exception` | R: done | wraps `load_session_from_file`, which already catches and logs |
 | `core/spectrum.py` | 483 | `SpectrumV2._renormalize_model` | `Exception` | D: done | model left against the old continuum, with a WARNING |
 | `core/spectrum_combine.py` | 205 | `CombineMixin.rebin` | `Exception` | N: done | aux column dropped by `rebin`, with a WARNING |
@@ -1812,46 +1812,46 @@ PR 5b, each with a test):
 | `recipes/absorbers.py` | 734 | `RecipeAbsorbersV2.lya_auto` | `Exception` | D: done | `lya_auto`: cleanup of the narrow components skipped (WARNING only) |
 | `recipes/absorbers.py` | 817 | `RecipeAbsorbersV2.forest_auto` | `Exception` | D: done | `forest_auto`: cleanup of the narrow components skipped (WARNING only) |
 | `recipes/absorbers.py` | 916 | `RecipeAbsorbersV2.metals_auto` | `Exception` | D: done | `metals_auto`: a failed trial fit logged at DEBUG only |
-| `recipes/absorbers.py` | 990 | `RecipeAbsorbersV2.identify_lines` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 990 | `RecipeAbsorbersV2.identify_lines` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 1029 | `RecipeAbsorbersV2.populate_from_identification` | `Exception` | N: done | JSON of the identification maps, returns 0 |
-| `recipes/absorbers.py` | 1134 | `RecipeAbsorbersV2.add_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1179 | `RecipeAbsorbersV2.update_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1230 | `RecipeAbsorbersV2.update_components` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1134 | `RecipeAbsorbersV2.add_component` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1179 | `RecipeAbsorbersV2.update_component` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1230 | `RecipeAbsorbersV2.update_components` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 1283 | `RecipeAbsorbersV2.delete_component` | `Exception` | D: done | `delete_component` returns the unchanged session: a failure looks like a success |
 | `recipes/absorbers.py` | 1327 | `RecipeAbsorbersV2.detect_anchor` | `Exception` | D: done | `detect_anchor` returns 0.0 on failure |
-| `recipes/absorbers.py` | 1394 | `RecipeAbsorbersV2.fit_component` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1394 | `RecipeAbsorbersV2.fit_component` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 1449 | `RecipeAbsorbersV2.update_constraint` | `Exception` | N: done | auto-update of a linked value |
-| `recipes/absorbers.py` | 1454 | `RecipeAbsorbersV2.update_constraint` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1658 | `RecipeAbsorbersV2.optimize_system` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
-| `recipes/absorbers.py` | 1753 | `RecipeAbsorbersV2.fit_bayesian` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1454 | `RecipeAbsorbersV2.update_constraint` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1658 | `RecipeAbsorbersV2.optimize_system` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 1753 | `RecipeAbsorbersV2.fit_bayesian` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 1841 | `RecipeAbsorbersV2.refit_all` | `Exception` | B: done | `refit_all`, consolidated fit, returns 0 |
 | `recipes/absorbers.py` | 2006 | `RecipeAbsorbersV2.refit_all` | `Exception` | D: done | `refit_all`: a group whose fit fails is left unfitted (WARNING only) |
-| `recipes/absorbers.py` | 2043 | `RecipeAbsorbersV2.refit_all` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception); parameter parsing to `msg_param_fail` |
+| `recipes/absorbers.py` | 2043 | `RecipeAbsorbersV2.refit_all` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception); parameter parsing to `msg_param_fail` |
 | `recipes/absorbers.py` | 2070 | `RecipeAbsorbersV2._final_uncertainties` | `Exception` | N: done | final uncertainties of a group |
-| `recipes/continuum.py` | 181 | `RecipeContinuumV2.estimate_auto` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 236 | `RecipeContinuumV2.find_absorbed` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 297 | `RecipeContinuumV2.fit_continuum` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/continuum.py` | 338 | `RecipeContinuumV2.fit_powerlaw` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/continuum.py` | 181 | `RecipeContinuumV2.estimate_auto` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/continuum.py` | 236 | `RecipeContinuumV2.find_absorbed` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/continuum.py` | 297 | `RecipeContinuumV2.fit_continuum` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/continuum.py` | 338 | `RecipeContinuumV2.fit_powerlaw` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `recipes/edit.py` | 393 | `RecipeEditV2.set_properties` | `Exception` | R: done | `except Exception as e: raise e` |
-| `recipes/edit.py` | 515 | `RecipeEditV2.apply_expression` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 561 | `RecipeEditV2.mask_expression` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/edit.py` | 610 | `RecipeEditV2.smooth_column` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 515 | `RecipeEditV2.apply_expression` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/edit.py` | 561 | `RecipeEditV2.mask_expression` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/edit.py` | 610 | `RecipeEditV2.smooth_column` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `recipes/edit.py` | 689 | `RecipeEditV2._merge_imported_systems` | `Exception` | N: done | imported systems filtered by range |
 | `recipes/edit.py` | 725 | `RecipeEditV2._merge_imported_systems` | `Exception` | D: done | import of systems: the automatic refit fails, the unfitted systems are returned (ERROR only) |
 | `recipes/edit.py` | 768 | `RecipeEditV2.import_systems_ascii` | `Exception` | N: done | ASCII table of systems that cannot be read |
 | `recipes/edit.py` | 952 | `RecipeEditV2.extract_preset` | `Exception` | N: done | `extract_preset`: a region that cannot be extracted is skipped |
-| `recipes/edit.py` | 1035 | `RecipeEditV2.trim_common` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1035 | `RecipeEditV2.trim_common` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `recipes/edit.py` | 1107 | `RecipeEditV2.stitch` | `Exception` | N: done | `stitch`: cleanup of the NaNs |
-| `recipes/edit.py` | 1113 | `RecipeEditV2.stitch` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1113 | `RecipeEditV2.stitch` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `recipes/edit.py` | 1191 | `RecipeEditV2.equalize_and_stitch` | `Exception` | D: done | `equalize_and_stitch`: invalid ranges replaced by `auto` (WARNING only) |
-| `recipes/edit.py` | 1372 | `RecipeEditV2.coadd` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/edit.py` | 1372 | `RecipeEditV2.coadd` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 | `recipes/file.py` | 105 | `RecipeFileV2.export_ascii` | `Exception` | B: done | `export_ascii`, returns False |
 | `recipes/file.py` | 207 | `RecipeFileV2.import_ascii` | `Exception` | B: done | `import_ascii`, returns 0 |
-| `recipes/flux.py` | 143 | `RecipeFluxV2.calculate_running_std` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 177 | `RecipeFluxV2.smooth` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 290 | `RecipeFluxV2.equalize` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 341 | `RecipeFluxV2.resample` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
-| `recipes/flux.py` | 369 | `RecipeFluxV2.calibrate_from_magnitudes` | `Exception` | B: done | recipe entry point, returns 0 (6-bis: exception) |
+| `recipes/flux.py` | 143 | `RecipeFluxV2.calculate_running_std` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/flux.py` | 177 | `RecipeFluxV2.smooth` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/flux.py` | 290 | `RecipeFluxV2.equalize` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/flux.py` | 341 | `RecipeFluxV2.resample` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
+| `recipes/flux.py` | 369 | `RecipeFluxV2.calibrate_from_magnitudes` | `Exception` | B: done | recipe entry point, returns 0 (removed in 6-bis, PR 3: an exception) |
 
 </details>
 
@@ -2208,7 +2208,25 @@ The full MCP server (section 4) is generated from this API.
      `extract_preset` fails with the reason of each region when none can
      be extracted. The battery of edit: no valid case changed, the 50
      RETURNS_0 now exceptions, the last RAISES (`split('λ >')`) a
-     RecipeFailed;
+     RecipeFailed. Done in 3c, absorbers (38 `return 0`, 13 of its 15
+     broad excepts; the 2 of the cleaning of the narrow lines stay, phase
+     6, Guido), with Guido's decisions: nothing to do is not a failure
+     (`refit_all`, `metals_auto`, `clean_negligible` without components:
+     the session back, a WARNING; the pipelines that find no candidate go
+     on with it); a final fit that fails fails the pipeline (its 0 made
+     the pipeline give back the components unfitted, found by the battery
+     of 2c); without components or a selection, RecipeFailed with the
+     reason. The checks of "no components" looked at the list object,
+     always true, so the recipes ran on an empty list: they look at the
+     components now. `_remove_narrow`: nothing left to refit is checked
+     first; a refit that fails goes to the cleaning boundary (a WARNING,
+     the result kept) instead of removing the lines without a refit,
+     silently. `detect_anchor` without the GUI failed with an
+     AttributeError hidden by its broad except. No recipe returns 0 any
+     more: the workers of the GUI and the MCP server treat a result of 0
+     or None as a bug; `RETURNS_0` removed from the batteries; the 26 rows
+     of the recipes in the inventory of phase 6 marked as removed. The
+     battery of absorbers: no valid case changed;
   4. *structured result* (4a, 4b): `RecipeResult` (the session, a summary,
      what changed, listed and not only counted, flags, warnings, the steps
      added to fill a prerequisite, and the empty fields for phase 7: the
@@ -2905,5 +2923,5 @@ review); each of its decisions goes into the log.
 | 5 – Splitting large files (and GUI performance) | done (October 2026): order of the phase agreed, F12 moved to 6-bis; GUI benchmark (`benchmarks/bench_gui.py`, #634); inspector table (first opening 3.7 → 1.3 s, #635); ticks of the main plot (redraw 0.19 → 0.13 s, #636), found F66; draws of the velocity plot coalesced (first opening 1.43 → 1.19 s, #637); Qt enums of the table read once (first opening 1.22 → 0.54 s; from 3.96 s before the phase, #638); highlights of the main plot blitted (selection of a row 0.32 → 0.22 s, #639); split of `SpectrumV2`: continuum (#640), found F67; lines (#641), found F68; calibration fixed (`np.trapz` removed from NumPy, #642), found F69, F70; flux (#643); combination (#644), found F71, F72; expressions and masks: split of `SpectrumV2` complete (2826 → 774 lines, #645); tests in parallel (#646); split of the GUI: F7 fixed (#647); inspector table (#648); velocity plot (#649); its rebuild and layout faster (selection 0.23 → 0.18 s, #650); parts of the main plot in their modules, found F73 (#651); continuum editor in a mixin, found F74 (#652); mouse handlers and tooltip in a mixin (#653); `plot_spectrum` split into its parts, found F75, F76 (#654); split of `main_window.py`: accessory widgets and dialogs (#655), menus, found F77 (#656); panels, found F78 (#657); controls of the continuum editor, F74 fixed (#658); sessions, found F79 (#659); recipes and scripts, found F80-F83: split of `main_window.py` complete (4831 → 541 lines) (#660); F82, F83 fixed (#661); F66 fixed, found F84 (#662); closing: documentation of the API (the methods of `SpectrumV2` back on its page), result of the phase (System Inspector opened ~7× faster, selection ~3×; `spectrum.py` 2826 → 774 lines, `main_window.py` 4831 → 541; coverage 67% → 81%) |
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
-| 6-bis – Recipe API | in progress (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b) |
+| 6-bis – Recipe API | in progress (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c) |
 | 7 – Robust components | not started |

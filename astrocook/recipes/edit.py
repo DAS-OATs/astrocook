@@ -722,15 +722,12 @@ class RecipeEditV2:
             # You can tweak z_window_kms or max_nfev here if needed, 
             # or expose them as advanced params in the schema.
             # max_nfev as before the defaults were aligned with the GUI (#573)
-            refitted_session = rec_abs.refit_all(z_window_kms=20.0, group_depth=1,
-                                                 max_nfev='100')
-
-            if refitted_session != 0:
-                return refitted_session
-            # The import stays (Guido's choice, phase 6); refit_all has
-            # logged why it failed
-            logger.warning("The imported systems could not be refitted: they keep "
-                           "their imported values.")
+            try:
+                return rec_abs.refit_all(z_window_kms=20.0, group_depth=1, max_nfev='100')
+            except RecipeError as e:
+                # The import stays (Guido's choice, phase 6), with the reason
+                logger.warning(f"The imported systems could not be refitted ({e.reason}): "
+                               "they keep their imported values.")
 
         # Return unfitted result
         return intermediate_session

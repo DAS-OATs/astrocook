@@ -24,7 +24,7 @@ import json
 
 import numpy as np
 import pytest
-from astrocook.recipes.errors import InvalidParameter  # phase 6-bis, PR 3
+from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.session import SessionV2
@@ -228,7 +228,8 @@ def test_add_linked_system(data):
     assert _dv(civ.z, CIV_Z) < 3.0
     constraint = out.systs._data.v2_constraints_map[siiv.uuid]["z"]
     assert constraint.target_uuid == civ.uuid and not constraint.is_free
-    assert _session(data).absorbers.add_linked_system("", CIV_Z) == 0
+    with pytest.raises(InvalidParameter, match="series_list: give at least one series"):
+        _session(data).absorbers.add_linked_system("", CIV_Z)
 
 
 # --- Optimize, metals, clean ----------------------------------------------
@@ -253,7 +254,9 @@ def test_metals_auto(one_civ, data):
     # No other ion is kept at the redshift of the CIV system
     out = one_civ.absorbers.metals_auto()
     assert [c.series for c in out.systs.components] == ["CIV"]
-    assert _session(data).absorbers.metals_auto() == 0
+    # No systems: nothing to do, not a failure (Guido, phase 6-bis, PR 3)
+    empty = _session(data)
+    assert empty.absorbers.metals_auto() is empty
     with pytest.raises(InvalidParameter):
         one_civ.absorbers.metals_auto(ions="CIV", aic_penalty="x")
 
@@ -421,7 +424,8 @@ def test_fit_bayesian_non_finite_result_returns_0(one_civ, monkeypatch):
 
     monkeypatch.setattr(BayesianVoigtFitter, "run_mcmc", nan_mcmc)
     uuid = one_civ.systs.components[0].uuid
-    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="500") == 0
+    with pytest.raises(RecipeFailed, match="non-finite parameters"):
+        one_civ.absorbers.fit_bayesian([uuid], nsteps="500")
 
 
 def test_run_mcmc_rejects_an_empty_chain(one_civ):
@@ -448,7 +452,8 @@ def test_fit_bayesian_without_the_extra_names_it(one_civ, monkeypatch, engine, p
 
 def test_fit_bayesian_bad_input_returns_0(one_civ):
     uuid = one_civ.systs.components[0].uuid
-    assert one_civ.absorbers.fit_bayesian(None) == 0
+    with pytest.raises(RecipeFailed, match="No components are selected"):
+        one_civ.absorbers.fit_bayesian(None)
     with pytest.raises(InvalidParameter):
         one_civ.absorbers.fit_bayesian([uuid], nsteps="x")
     with pytest.raises(InvalidParameter):
@@ -456,7 +461,8 @@ def test_fit_bayesian_bad_input_returns_0(one_civ):
 
 
 def test_detect_anchor_without_sibling(one_civ):
-    assert one_civ.absorbers.detect_anchor("missing", "CIV_1548", "CIV_1550") == 0.0
+    with pytest.raises(RecipeFailed, match="There is no open session named 'missing'"):
+        one_civ.absorbers.detect_anchor("missing", "CIV_1548", "CIV_1550")
 
 
 def test_wider_z_window_reaches_a_distant_guess(data):

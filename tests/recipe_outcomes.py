@@ -5,8 +5,6 @@
   whose message names the recipe and the parameter.
 - FAILS: the value is converted, then the recipe cannot give a result; it
   raises another RecipeError, whose message names the recipe.
-- RETURNS_0: as FAILS, by the old convention (an error logged and 0),
-  until PR 3b and 3c convert Edit and Absorbers.
 - RAISES: another exception leaves the recipe (a bug, or an error of a
   library that the boundary does not convert); it says which recipe in a
   note.
@@ -18,19 +16,14 @@ from astrocook.recipes.registry import find_recipe
 
 REFUSED = "refused"
 FAILS = "fails"
-RETURNS_0 = "returns 0"
 RAISES = "raises"
-FAILURES = (REFUSED, FAILS, RETURNS_0, RAISES)
+FAILURES = (REFUSED, FAILS, RAISES)
 
 
 def check_failure(run, name, param, expected):
     """Run ``run()`` (the recipe ``name`` with a value of ``param``) and
     check its failure ``expected``, one of :data:`FAILURES`."""
     title = find_recipe(name).brief.rstrip('.')
-    if expected == RETURNS_0:
-        result = run()
-        assert isinstance(result, int) and result == 0
-        return
     if expected == REFUSED:
         with pytest.raises(InvalidParameter) as info:
             run()
