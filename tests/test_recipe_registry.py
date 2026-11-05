@@ -106,8 +106,32 @@ def test_param_lookup_and_defaults():
     assert spec.defaults()["fudge"] == "auto"
     with pytest.raises(KeyError, match="no parameter 'nope'"):
         spec.param("nope")
-    # A parameter without a description is described by its name
-    assert get_recipe("absorbers", "delete_component").param("uuid").doc == "uuid"
+    # A parameter without a description is described by its name (none of
+    # the registry is, since phase 6-bis PR 6: see the test below)
+    bare = build_spec("edit", "r", {"brief": "B.", "params": [
+        {"name": "uuid", "type": str, "default": ""}]})
+    assert bare.param("uuid").doc == "uuid"
+
+
+def test_every_recipe_and_parameter_is_described():
+    """The texts are what the dialogs show and what a model reads (phase
+    6-bis, PR 6, F48): a recipe has its details, a parameter a sentence
+    that is not its name; the parameters not offered to agents are those
+    agreed with Guido (debug, questions of the GUI)."""
+    for spec in registry.all_recipes():
+        assert spec.brief.endswith(".") and spec.details, spec.name
+        for p in spec.params:
+            assert p.doc != p.name and p.doc.endswith((".", ")")), (spec.name, p.name)
+    hidden = {(s.name, p.name) for s in registry.all_recipes() for p in s.params
+              if not p.agents}
+    assert hidden == {("identify_lines", "debug_rating"), ("identify_lines", "bypass_scoring"),
+                      ("estimate_auto", "renorm_model"), ("fit_continuum", "renorm_model"),
+                      ("update_from_knots", "renorm_model"), ("smooth_column", "renorm_model")}
+    # F48: the mask is True for the absorbed pixels, as find_absorbed makes it
+    for name in ("identify_lines", "fit_continuum"):
+        assert "True for the absorbed pixels" in get_recipe(
+            "absorbers" if name == "identify_lines" else "continuum", name
+        ).param("mask_col").doc
 
 
 def test_build_spec_rejects_unknown_keys_and_requirements():
@@ -157,7 +181,8 @@ def test_build_spec_reads_every_key():
              "provides": ("continuum",),
              "params": [{"name": "x", "type": float, "default": 1.0, "doc": "The x.",
                          "gui_hidden": True, "optional": True, "keep": ("_current_",),
-                         "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True},
+                         "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True,
+                         "agents": False},
                         {"name": "y", "type": int, "default": 3}]}
     spec = build_spec("edit", "r", entry)
     assert (spec.category, spec.name, spec.brief, spec.details, spec.url) == \
@@ -167,11 +192,11 @@ def test_build_spec_reads_every_key():
     assert spec.provides == frozenset({"continuum"})
     x, y = spec.params
     assert (x.name, x.type, x.default, x.doc, x.gui_hidden, x.optional, x.keep,
-            x.min, x.max, x.gt, x.allow_nan) == \
-        ("x", float, 1.0, "The x.", True, True, ("_current_",), 0.0, 2.0, -1.0, True)
+            x.min, x.max, x.gt, x.allow_nan, x.agents) == \
+        ("x", float, 1.0, "The x.", True, True, ("_current_",), 0.0, 2.0, -1.0, True, False)
     # The defaults of the optional keys
-    assert (y.doc, y.gui_hidden, y.optional, y.keep, y.min, y.max, y.gt, y.allow_nan) == \
-        ("y", False, False, (), None, None, None, False)
+    assert (y.doc, y.gui_hidden, y.optional, y.keep, y.min, y.max, y.gt, y.allow_nan,
+            y.agents) == ("y", False, False, (), None, None, None, False, True)
     bare = build_spec("flux", "s", {"brief": "B."})
     assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching,
             bare.requires, bare.provides) == ("", None, (), False, False, frozenset(),

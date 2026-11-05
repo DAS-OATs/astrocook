@@ -43,7 +43,10 @@ conversion of its value (:mod:`astrocook.recipes.params`): ``optional``
 (None is a value: no value, or automatic), ``keep`` (special strings passed
 as they are, e.g. ``'_current_'``), ``min`` and ``max`` (bounds of a
 number, included), ``gt`` (a bound excluded: the value must be above it),
-``allow_nan`` (NaN is a value; infinities never are).
+``allow_nan`` (NaN is a value; infinities never are), ``agents`` (False:
+not offered to agents, which get the default: the options of debug and the
+questions of the GUI, phase 6-bis, PR 6; every recipe is offered, Guido:
+the basic ones are blocks of new recipes).
 """
 from __future__ import annotations
 
@@ -61,7 +64,7 @@ REQUIREMENTS = frozenset({'z_em', 'resolution', 'continuum'})
 _RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
                 'requires', 'provides'}
 _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
-               'min', 'max', 'gt', 'allow_nan'}
+               'min', 'max', 'gt', 'allow_nan', 'agents'}
 
 
 @dataclass(frozen=True)
@@ -86,6 +89,8 @@ class ParamSpec:
     gt: Optional[float] = None
     #: NaN is a value of a number
     allow_nan: bool = False
+    #: Offered to agents (False: they get the default)
+    agents: bool = True
     _default: Any = field(default=None, repr=False)
 
     @property
@@ -141,6 +146,7 @@ def _param_spec(where: str, entry: Mapping[str, Any]) -> ParamSpec:
                      keep=tuple(entry.get('keep', ())),
                      min=entry.get('min'), max=entry.get('max'), gt=entry.get('gt'),
                      allow_nan=bool(entry.get('allow_nan', False)),
+                     agents=bool(entry.get('agents', True)),
                      _default=copy.deepcopy(entry['default']))
 
 
