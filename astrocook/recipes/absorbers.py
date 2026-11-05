@@ -382,19 +382,18 @@ FIT_ERRORS = (ValueError, ArithmeticError)
 
 def _with_continuum(session):
     """The session with a continuum: estimated first with the automatic
-    continuum when there is none (and said so), or 0 if that fails.
+    continuum when there is none (and said so).
 
     Before phase 6 the 0 of a failed estimate went on as the session, and
-    the recipe failed with "'int' object has no attribute 'systs'".
+    the recipe failed with "'int' object has no attribute 'systs'". Since
+    phase 6-bis (PR 3) the failure of the estimate is a RecipeError, which
+    names the recipe and Auto-estimate Continuum as its step.
     """
     if session.spec.norm is not None:
         return session
     logger.info(msg_continuum_estimated)
     from astrocook.recipes.continuum import RecipeContinuumV2
-    estimated = RecipeContinuumV2(session).estimate_auto()
-    if estimated == 0:
-        logger.error("The continuum could not be estimated: the recipe is not run.")
-    return estimated
+    return RecipeContinuumV2(session).estimate_auto()
 
 
 def _warn_if_unconvolved(spec) -> None:

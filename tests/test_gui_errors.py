@@ -8,6 +8,8 @@ import logging
 import sys
 
 import pytest
+
+from astrocook.recipes.errors import RecipeFailed
 from PySide6.QtWidgets import QMessageBox
 
 from astrocook.core.structures import HistoryLogV2
@@ -126,9 +128,17 @@ def test_failed_export_is_shown(ready, monkeypatch, tmp_path):  # noqa: F811
     _messages(win, monkeypatch, "Yes")
     _save_as(win, monkeypatch, tmp_path)
     recipes = type(win.active_history.current_state.file)
-    monkeypatch.setattr(recipes, "export_ascii", lambda self, **kw: False)
     warned = []
     monkeypatch.setattr(QMessageBox, "warning", staticmethod(lambda *a: warned.append(a[2])))
+    # Since phase 6-bis (PR 3) the recipe raises the reason, shown here
+
+    def fail(self, **kw):
+        raise RecipeFailed("No space left on device")
+    monkeypatch.setattr(recipes, "export_ascii", fail)
     win._on_recipe_requested("file", "export_ascii", {"targets": "y, dy"}, {})
-    assert warned == ["The data could not be exported: the reason is in the log."]
+    assert warned == ["The data could not be exported:\nNo space left on device."]
+    # False: the targets name nothing to export
+    monkeypatch.setattr(recipes, "export_ascii", lambda self, **kw: False)
+    win._on_recipe_requested("file", "export_ascii", {"targets": "y, dy"}, {})
+    assert warned[-1].startswith("There is nothing to export")
 

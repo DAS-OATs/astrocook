@@ -24,6 +24,7 @@ import json
 
 import numpy as np
 import pytest
+from astrocook.recipes.errors import InvalidParameter  # phase 6-bis, PR 3
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.session import SessionV2
@@ -96,8 +97,9 @@ def test_add_component_fits_it(one_civ):
 
 @pytest.mark.parametrize("kwargs", [dict(z="abc"), dict(logN=""),
                                     dict(z_window_kms="x")])
-def test_add_component_bad_input_returns_0(data, kwargs):
-    assert _session(data).absorbers.add_component("CIV", **{"z": "2.97", **kwargs}) == 0
+def test_add_component_bad_input_is_refused(data, kwargs):
+    with pytest.raises(InvalidParameter):
+        _session(data).absorbers.add_component("CIV", **{"z": "2.97", **kwargs})
 
 
 def test_add_component_custom_multiplet(data, restore_multiplets):
@@ -113,7 +115,8 @@ def test_update_component(one_civ):
     comp = out.systs.components[0]
     assert (comp.logN, comp.b) == (14.0, 20.0)
     assert comp.z == one_civ.systs.components[0].z  # 'None' leaves it as is
-    assert one_civ.absorbers.update_component(uuid, z="abc") == 0
+    with pytest.raises(InvalidParameter, match="z: 'abc' is not a number"):
+        one_civ.absorbers.update_component(uuid, z="abc")
     # Unknown UUID: logged, list unchanged
     same = one_civ.absorbers.update_component("unknown", logN="14.0")
     assert same.systs.components == one_civ.systs.components
@@ -179,9 +182,10 @@ def test_delete_component_resets_links_to_it(data):
 
 @pytest.mark.parametrize("kwargs", [dict(max_nfev="x"), dict(z_window_kms="x"),
                                     dict(group_depth="x")])
-def test_fit_component_bad_input_returns_0(one_civ, kwargs):
+def test_fit_component_bad_input_is_refused(one_civ, kwargs):
     uuid = one_civ.systs.components[0].uuid
-    assert one_civ.absorbers.fit_component(uuid, **kwargs) == 0
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.fit_component(uuid, **kwargs)
 
 
 def test_frozen_parameter_is_not_fitted(one_civ):
@@ -241,7 +245,8 @@ def test_optimize_system_adds_the_blended_component(one_civ):
     # With the default threshold (2.5 sigma) no component is added
     default = one_civ.absorbers.optimize_system(uuid)
     assert len(default.systs.components) == 1
-    assert one_civ.absorbers.optimize_system(uuid, max_components="x") == 0
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.optimize_system(uuid, max_components="x")
 
 
 def test_metals_auto(one_civ, data):
@@ -249,7 +254,8 @@ def test_metals_auto(one_civ, data):
     out = one_civ.absorbers.metals_auto()
     assert [c.series for c in out.systs.components] == ["CIV"]
     assert _session(data).absorbers.metals_auto() == 0
-    assert one_civ.absorbers.metals_auto(ions="CIV", aic_penalty="x") == 0
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.metals_auto(ions="CIV", aic_penalty="x")
 
 
 @pytest.mark.parametrize("combined, removed", [
@@ -271,7 +277,8 @@ def test_clean_negligible(data, combined, removed):
 def test_clean_negligible_nothing_to_do(data):
     session = _session(data, _systs(("Ly_a", 4.059, 13.8, 25.0)))
     assert session.absorbers.clean_negligible() is session
-    assert session.absorbers.clean_negligible(min_logN="x") == 0
+    with pytest.raises(InvalidParameter):
+        session.absorbers.clean_negligible(min_logN="x")
 
 
 # --- Reproducibility of refit_all (F19) ----------------------------------
@@ -358,7 +365,8 @@ def test_refit_all_errors_come_from_the_final_model(data):
 def test_refit_all_max_b(one_civ):
     out = one_civ.absorbers.refit_all(max_b="8.0")
     assert all(c.b <= 8.0 + 1e-9 for c in out.systs.components)
-    assert one_civ.absorbers.refit_all(max_b="x") == 0
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.refit_all(max_b="x")
 
 
 def test_pipelines_bound_b_and_manual_fits_do_not():
@@ -441,8 +449,10 @@ def test_fit_bayesian_without_the_extra_names_it(one_civ, monkeypatch, engine, p
 def test_fit_bayesian_bad_input_returns_0(one_civ):
     uuid = one_civ.systs.components[0].uuid
     assert one_civ.absorbers.fit_bayesian(None) == 0
-    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="x") == 0
-    assert one_civ.absorbers.fit_bayesian([uuid], nsteps="0") == 0
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.fit_bayesian([uuid], nsteps="x")
+    with pytest.raises(InvalidParameter):
+        one_civ.absorbers.fit_bayesian([uuid], nsteps="0")
 
 
 def test_detect_anchor_without_sibling(one_civ):

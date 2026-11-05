@@ -33,10 +33,11 @@ BROAD_EXCEPTS = {
     "astrocook/gui/script_dialog.py": 1,
     "astrocook/mcp_server/errors.py": 1,
     "astrocook/recipes/absorbers.py": 15,
-    "astrocook/recipes/continuum.py": 4,
     "astrocook/recipes/edit.py": 6,
-    "astrocook/recipes/file.py": 2,
-    "astrocook/recipes/flux.py": 5,
+    # The boundary of the recipes (typed_recipe): it names the recipe in
+    # a note and re-raises (phase 6-bis, PR 3, which removed the 11 of
+    # continuum.py, file.py and flux.py; edit.py and absorbers.py in 3b, 3c)
+    "astrocook/recipes/params.py": 1,
 }
 
 

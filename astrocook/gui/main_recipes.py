@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
 from astrocook.recipes.registry import find_recipe
 
@@ -251,11 +252,19 @@ class MainRecipesMixin:
                 if ret != QMessageBox.StandardButton.Yes: return
         
             # 4. EXECUTION
-            saved = self.active_history.current_state.file.export_ascii(
-                targets=raw_targets, 
-                path=folder, 
-                prefix=filename_prefix
-            )
+            try:
+                saved = self.active_history.current_state.file.export_ascii(
+                    targets=raw_targets,
+                    path=folder,
+                    prefix=filename_prefix
+                )
+            except RecipeError as e:
+                # The recipe raises the reason, logged here once (phase
+                # 6-bis, PR 3; it returned False and logged it)
+                logger.error(str(e))
+                QMessageBox.warning(self, "Export Failed",
+                                    f"The data could not be exported:\n{e}")
+                return
 
             if saved:
                 files_created = []
@@ -268,9 +277,9 @@ class MainRecipesMixin:
                     text=f"Saved in {folder}:\n\n" + "\n".join(files_created)
                 )
             else:
-                # export_ascii logged why (nothing was shown, phase 6)
                 QMessageBox.warning(self, "Export Failed",
-                                    "The data could not be exported: the reason is in the log.")
+                                    "There is nothing to export: no column or structure "
+                                    "of the session matches the targets.")
             return
 
         # --- [NEW] GUI-Thread Pre-checks ---
