@@ -843,20 +843,48 @@ def test_main_plot_highlights_follow_the_selection(qtbot, loaded):
         assert np.array_equal(pixels, np.array(canvas.buffer_rgba())), uuid
 
 
-def test_a_step_provided_is_a_state_and_an_entry_of_its_own(qtbot, ready):
-    # Phase 6-bis, PR 5: the continuum estimated first for a recipe that
-    # needs it is a state of the history and an entry of the log of its
-    # own, before the recipe (the replay runs both)
-    history = ready.active_history
-    state = history.current_state
-    assert state.spec.norm is None  # a physical flux, without a continuum
+def _add_civ(qtbot, window):
+    state = window.active_history.current_state
     x_mid = float(np.median(state.spec.x.to_value("nm")))
-    _run_recipe(qtbot, ready, "absorbers", "add_component",
+    _run_recipe(qtbot, window, "absorbers", "add_component",
                 {"series": "CIV", "z": f"{x_mid / 154.8204 - 1:.4f}"})
-    assert history.current_index == 3
+
+
+def _check_two_steps(qtbot, history, n):
+    qtbot.waitUntil(lambda: history.current_index == 3, timeout=60000)
     entries = [e.recipe_name for e in history.log_manager.entries]
     assert entries[-2:] == ["estimate_auto", "add_component"]
-    n = len(state.systs.components)
     assert history.states[2].spec.norm is not None
     assert len(history.states[2].systs.components) == n  # only the continuum
     assert len(history.current_state.systs.components) == n + 1
+
+
+def test_the_gui_asks_for_the_continuum(qtbot, ready, monkeypatch):
+    # Phase 6-bis, PR 5b: "Estimate" runs Auto-estimate Continuum as a
+    # recipe of its own, then the recipe that needed it
+    history = ready.active_history
+    assert history.current_state.spec.norm is None  # a physical flux
+    n = len(history.current_state.systs.components)
+    asked = []
+
+    def answer(*args, **kwargs):
+        asked.append(kwargs.get("header"))
+        return QMessageBox.StandardButton.Yes
+    monkeypatch.setattr(ready, "_show_custom_message", answer)
+    _add_civ(qtbot, ready)
+    _check_two_steps(qtbot, history, n)
+    # Asked once, before anything ran (the dialog of the warnings of a
+    # recipe may follow)
+    assert asked[0] == "The spectrum has no continuum."
+    assert asked.count("The spectrum has no continuum.") == 1
+
+
+def test_a_step_provided_is_a_state_and_an_entry_of_its_own(qtbot, ready, monkeypatch):
+    # Phase 6-bis, PR 5a: a continuum provided by the recipe itself (the GUI
+    # did not ask) is a state and an entry of the log of its own, before the
+    # recipe (the replay runs both)
+    history = ready.active_history
+    n = len(history.current_state.systs.components)
+    monkeypatch.setattr(ready, "_check_and_handle_requirements", lambda *a, **k: True)
+    _add_civ(qtbot, ready)
+    _check_two_steps(qtbot, history, n)
