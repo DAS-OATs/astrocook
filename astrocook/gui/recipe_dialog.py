@@ -1,4 +1,5 @@
 import logging
+import html
 import webbrowser
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
@@ -13,6 +14,11 @@ from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DA
                     INPUT_BORDER, WARNING, themed)
 
 logger = logging.getLogger(__name__)
+
+#: Width of the labels of the parameters (points): they wrap within it
+LABEL_WIDTH = 340
+#: Width of the description of the recipe (points), the label and the field
+DIALOG_TEXT_WIDTH = LABEL_WIDTH + 260
 
 class RecipeDialog(QDialog):
     """
@@ -150,6 +156,7 @@ class RecipeDialog(QDialog):
         if self.schema.details:
             desc_label = QLabel(self.schema.details)
             desc_label.setWordWrap(True)
+            desc_label.setMaximumWidth(DIALOG_TEXT_WIDTH)
             main_layout.addWidget(desc_label)
 
         # 2. Parameters Form
@@ -173,8 +180,14 @@ class RecipeDialog(QDialog):
                 if is_current:
                     param_default, current_hint = self._current_value(param_name)
 
+                # The descriptions are sentences (phase 6-bis, PR 6a): the
+                # label wraps, so that the dialog keeps a reasonable width
                 label = QLabel(f"{param_doc.rstrip('.')}:")
-                label.setToolTip(param_doc) 
+                label.setWordWrap(True)
+                label.setFixedWidth(LABEL_WIDTH)
+                # As rich text, which Qt wraps (a plain one is one line)
+                tooltip = f"<p>{html.escape(param_doc)}</p>"
+                label.setToolTip(tooltip)
 
                 widget = None
                 
@@ -190,11 +203,13 @@ class RecipeDialog(QDialog):
                 elif param_type == bool:
                     def_c = param.default
                     if isinstance(def_c, str): def_c = def_c.lower() == 'true'
-                    widget = QCheckBox(); widget.setChecked(def_c); label.setText(""); widget.setText(f"{param_doc}")
+                    # The text in the label, which wraps (that of a check
+                    # box does not)
+                    widget = QCheckBox(); widget.setChecked(def_c)
                 else:
                     widget = QLineEdit(param_default)
 
-                widget.setToolTip(param_doc)
+                widget.setToolTip(tooltip)
                 if is_current and isinstance(widget, QLineEdit):
                     # Left empty, the parameter keeps its current value (F63)
                     widget.setPlaceholderText(current_hint or "current value")
