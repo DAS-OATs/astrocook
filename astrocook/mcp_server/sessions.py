@@ -63,9 +63,18 @@ class SessionStore:
                             f"{known}; open one with session_open.") from None
 
     def apply(self, session_id: str, new_state: SessionV2, recipe_name: str,
-              params: dict[str, Any]) -> SessionV2:
-        """Record a recipe in the log and make its result the current state."""
+              params: dict[str, Any], provided=()) -> SessionV2:
+        """Record a recipe in the log and make its result the current state.
+
+        The recipes run first to provide what the session lacked
+        (``provided``, :class:`~astrocook.recipes.prerequisites.ProvidedStep`)
+        are recorded before it, each with its state, as in the GUI (phase
+        6-bis, PR 8): the replay of the log runs them."""
         history = self.get(session_id)
+        for step in provided:
+            history.log_manager.add_entry(step.recipe.split('.')[1], dict(step.params))
+            step.session.log_manager = history.log_manager
+            history.add_state(step.session)
         # The values the recipe used, defaults included (#573, item 3)
         history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params))
         new_state.log_manager = history.log_manager

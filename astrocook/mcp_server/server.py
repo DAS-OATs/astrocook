@@ -7,15 +7,20 @@ The docstrings of the tools are their descriptions for the model.
 The defaults and the parameter descriptions of the recipe tools are read
 from the recipe registry (:mod:`astrocook.recipes.registry`, the one the
 GUI dialogs use), so that the tools and the GUI share them (F40: the method
-signatures may differ). Parameters that need the GUI (debug plots) or
-the internals (column names) are left out.
+signatures may differ). The parameters not offered to agents (``agents``
+in the registry: debug, questions of the GUI) are left out, and
+``mask_col`` of ``identify_lines``. The recipes run through
+:func:`astrocook.recipes.result.run` (phase 6-bis, PR 8): typed
+parameters, the structured result, the prerequisites said instead of
+filled unless ``provide_missing``. :mod:`astrocook.mcp_server.schemas`
+generates the schema of the parameters of any recipe, for the full server.
 
 Launch with ``astrocook-mcp`` (``stdio`` transport); a client starts it as
 a subprocess, e.g. ``claude mcp add astrocook -- astrocook-mcp``.
 """
 import os
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -28,7 +33,9 @@ from astrocook.mcp_server.outputs import (
     ContinuumInfo, FitInfo, IdentificationInfo, SaveResult, SessionInfo,
     continuum_summary, fit_summary, identification_summary, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
+from astrocook.recipes.errors import MissingPrerequisite
 from astrocook.recipes.registry import get_recipe
+from astrocook.recipes.result import run as run_registry
 
 INSTRUCTIONS = """\
 Astrocook analyses quasar spectra: continuum, identification of absorption
@@ -37,7 +44,28 @@ session_id it returns in the other tools; each tool returns a summary of
 the session, not the data. Save the result with session_save, so that a
 person can review it in the Astrocook GUI. Paths are on the machine where
 the server runs; give them absolute.
+
+A recipe that needs something the session lacks (the emission redshift,
+the resolution, a continuum) does not run: the tool says what is missing
+and how to provide it. z_em and the resolution are set with session_open;
+a continuum is made with continuum_estimate_auto, or, with
+provide_missing=true, with its default parameters before the recipe (the
+step is reported in 'provided' and recorded in the session log).
 """
+
+PROVIDE_MISSING = Annotated[bool, Field(description=(
+    "Provide what the session lacks and a recipe can make with its default "
+    "parameters (a continuum), before running this one; the step is "
+    "reported and logged. False: the tool says what is missing instead."))]
+
+#: Added to the message of z_em or the resolution missing (the pilot has no
+#: tool for set_properties)
+_PROPERTIES_HINT = (" Here, open the file again with session_open, giving z_em and "
+                    "resol.")
+
+#: Added to the message of a prerequisite that a recipe can provide
+_PROVIDE_HINT = (" Run it first, or call this tool again with provide_missing=true to "
+                 "provide it with its defaults.")
 
 
 SESSION_ID = Annotated[str, Field(description=(
@@ -70,7 +98,7 @@ def build_server() -> MCPServer:
                        version=__version__, log_level="WARNING")
     store = SessionStore()
 
-    def info(session_id: str, warnings: list[str]) -> SessionInfo:
+    def info(session_id: str, warnings: list[str], result=None) -> SessionInfo:
         history = store.get(session_id)
         state = history.current_state
         return SessionInfo(
@@ -79,17 +107,37 @@ def build_server() -> MCPServer:
             log_entries=len(history.log_manager.to_dict()["entries"]),
             saved_with_version=history.states[0].saved_with_version,
             warnings=warnings,
+            summary=result.summary if result is not None else "",
+            notes=list(result.notes) if result is not None else [],
+            provided=[p.recipe for p in result.provided] if result is not None else [],
         )
 
-    def run(session_id: str, menu: str, recipe: str, params: dict):
-        """Run a recipe on the current state of a session, record it in
-        the log and return the new state with the warnings."""
+    def run(session_id: str, menu: str, recipe: str, params: dict,
+            provide_missing: bool = False):
+        """Run a recipe on the current state of a session through the
+        registry (:func:`astrocook.recipes.result.run`: the parameters
+        typed, the structured result), record it in the log with the steps
+        run first, and return the new state, the warnings and the result.
+
+        What the session lacks is said, not provided, unless
+        ``provide_missing`` (phase 6-bis, PR 8: the agent decides)."""
         current = store.get(session_id).current_state
-        new_state, warnings = run_recipe(
-            f"{menu}_{recipe}", getattr(getattr(current, menu), recipe),
-            **params)
-        store.apply(session_id, new_state, recipe, params)
-        return new_state, warnings
+
+        def call():
+            try:
+                return run_registry(current, f"{menu}.{recipe}",
+                                    on_missing="provide" if provide_missing else "raise",
+                                    **params)
+            except MissingPrerequisite as e:
+                hint = _PROVIDE_HINT if "provides it with its defaults" in str(e) else ""
+                if "edit.set_properties" in str(e):
+                    # Not a tool of the pilot: its values go to session_open
+                    hint += _PROPERTIES_HINT
+                raise ToolError(str(e) + hint) from e
+        result, _ = run_recipe(f"{menu}_{recipe}", call)
+        store.apply(session_id, result.session, recipe, result.params,
+                    provided=result.provided)
+        return result.session, list(result.warnings), result
 
     @server.tool()
     def session_open(
@@ -120,7 +168,7 @@ def build_server() -> MCPServer:
             if z_em is not None or resol is not None:
                 params = {}
                 if z_em is not None:
-                    params["z_em"] = str(z_em)
+                    params["z_em"] = z_em
                 if resol is not None:
                     params["resol"] = str(resol)
                 warnings += run(session_id, "edit", "set_properties",
@@ -177,20 +225,22 @@ def build_server() -> MCPServer:
             "continuum", "estimate_auto", "smooth_fwhm"))] = default("continuum", "estimate_auto", "smooth_fwhm"),
         template: Annotated[bool, Field(description=doc(
             "continuum", "estimate_auto", "template"))] = default("continuum", "estimate_auto", "template"),
+        provide_missing: PROVIDE_MISSING = False,
     ) -> ContinuumInfo:
-        params = {"smooth_len_lya": str(smooth_len_lya),
-                  "smooth_len_out": str(smooth_len_out), "kappa": str(kappa),
-                  "fudge": str(fudge), "smooth_fwhm": str(smooth_fwhm),
-                  "template": str(template)}
+        params = {"smooth_len_lya": smooth_len_lya, "smooth_len_out": smooth_len_out,
+                  "kappa": kappa, "fudge": fudge, "smooth_fwhm": smooth_fwhm,
+                  "template": template}
         with store.lock:
-            state, warnings = run(session_id, "continuum", "estimate_auto",
-                                  params)
-            return ContinuumInfo(**info(session_id, warnings).model_dump(),
+            state, warnings, result = run(session_id, "continuum", "estimate_auto",
+                                          params, provide_missing)
+            return ContinuumInfo(**info(session_id, warnings, result).model_dump(),
                                  continuum=continuum_summary(state))
 
     @server.tool(description=description("absorbers", "identify_lines", (
-        "Needs z_em; uses the absorbed mask of continuum_estimate_auto (or "
-        "makes one with the default parameters). Creates no component: "
+        "Needs z_em, the resolution and a continuum; uses the absorbed mask "
+        "of continuum_estimate_auto (or makes one with the default "
+        "parameters). Opens no new session here: the identification is "
+        "added to this one. Creates no component: "
         "returns the identified regions with their candidate transitions "
         "and scores, and the candidate systems with initial guesses of "
         "logN and b.")))
@@ -204,36 +254,38 @@ def build_server() -> MCPServer:
             "absorbers", "identify_lines", "merge_dv"))] = default("absorbers", "identify_lines", "merge_dv"),
         score_threshold: Annotated[float, Field(description=doc(
             "absorbers", "identify_lines", "score_threshold"))] = default("absorbers", "identify_lines", "score_threshold"),
-        bypass_scoring: Annotated[bool, Field(description=doc(
-            "absorbers", "identify_lines", "bypass_scoring"))] = default("absorbers", "identify_lines", "bypass_scoring"),
+        z_em_margin_kms: Annotated[float, Field(description=doc(
+            "absorbers", "identify_lines", "z_em_margin_kms"))] = default("absorbers", "identify_lines", "z_em_margin_kms"),
+        provide_missing: PROVIDE_MISSING = False,
         max_listed: Annotated[int, Field(ge=0, description=(
             "Maximum number of regions and of systems listed in the "
             "output; the counts are always complete."))] = 50,
     ) -> IdentificationInfo:
-        # mask_col (a column name) and debug_rating (plots in the GUI)
-        # are left out
-        params = {"multiplets": multiplets,
-                  "min_pix_region": str(min_pix_region),
-                  "merge_dv": str(merge_dv),
-                  "score_threshold": str(score_threshold),
-                  "bypass_scoring": str(bypass_scoring)}
+        # mask_col (the column of the mask: abs_mask) is left out in the
+        # pilot; debug_rating and bypass_scoring are not offered to agents
+        # (phase 6-bis, PR 6a)
+        params = {"multiplets": multiplets, "min_pix_region": min_pix_region,
+                  "merge_dv": merge_dv, "score_threshold": score_threshold,
+                  "z_em_margin_kms": z_em_margin_kms}
         with store.lock:
-            state, warnings = run(session_id, "absorbers", "identify_lines",
-                                  params)
+            state, warnings, result = run(session_id, "absorbers", "identify_lines",
+                                          params, provide_missing)
             return IdentificationInfo(
-                **info(session_id, warnings).model_dump(),
+                **info(session_id, warnings, result).model_dump(),
                 identification=identification_summary(state, max_listed))
 
     @server.tool(description=description("absorbers", "doublets_auto", (
         "Identifies the doublets redwards of the Lyman-alpha emission, adds "
         "a component for each candidate and fits them (Voigt profiles, "
         "least squares). Needs z_em and the resolution (session_open) and "
-        "a continuum (made with the default parameters if missing). It "
-        "makes a new absorbed mask with the default parameters, replacing "
-        "the one of continuum_estimate_auto, and removes the components "
-        "already on the red side before fitting. Can take minutes on a "
-        "large spectrum. Returns the components added, with errors, "
-        "reduced chi2 and flags for the ones at a bound of the fit.")))
+        "a continuum (continuum_estimate_auto, or provide_missing=true). "
+        "It finds the absorbed regions on a new mask made with the default "
+        "parameters (mask='new'), used only inside, or on the mask of the "
+        "session (mask='session', e.g. that of continuum_estimate_auto), "
+        "and replaces the components already on the red side. Can take "
+        "minutes on a large spectrum. Returns the components added, with "
+        "errors, reduced chi2 and flags for the ones at a bound of the "
+        "fit, and in 'notes' those removed and why.")))
     def absorbers_doublets_auto(
         session_id: SESSION_ID,
         multiplets: Annotated[str, Field(description=doc(
@@ -246,19 +298,23 @@ def build_server() -> MCPServer:
             "absorbers", "doublets_auto", "max_b"))] = default("absorbers", "doublets_auto", "max_b"),
         max_logN: Annotated[float, Field(description=doc(
             "absorbers", "doublets_auto", "max_logN"))] = default("absorbers", "doublets_auto", "max_logN"),
+        mask: Annotated[Literal["new", "session"], Field(description=doc(
+            "absorbers", "doublets_auto", "mask"))] = default("absorbers", "doublets_auto", "mask"),
+        z_em_margin_kms: Annotated[float, Field(description=doc(
+            "absorbers", "doublets_auto", "z_em_margin_kms"))] = default("absorbers", "doublets_auto", "z_em_margin_kms"),
+        provide_missing: PROVIDE_MISSING = False,
         max_listed: Annotated[int, Field(ge=0, description=(
             "Maximum number of components listed in the output; the "
             "counts are always complete."))] = 50,
     ) -> FitInfo:
-        params = {"multiplets": multiplets,
-                  "score_threshold": str(score_threshold),
-                  "z_window_kms": str(z_window_kms), "max_b": str(max_b),
-                  "max_logN": str(max_logN)}
+        params = {"multiplets": multiplets, "score_threshold": score_threshold,
+                  "z_window_kms": z_window_kms, "max_b": max_b, "max_logN": max_logN,
+                  "mask": mask, "z_em_margin_kms": z_em_margin_kms}
         with store.lock:
             before = store.get(session_id).current_state
-            state, warnings = run(session_id, "absorbers", "doublets_auto",
-                                  params)
-            return FitInfo(**info(session_id, warnings).model_dump(),
+            state, warnings, result = run(session_id, "absorbers", "doublets_auto",
+                                          params, provide_missing)
+            return FitInfo(**info(session_id, warnings, result).model_dump(),
                            fit=fit_summary(before, state, max_listed))
 
     return server

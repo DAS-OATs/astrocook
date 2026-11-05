@@ -43,6 +43,17 @@ class SessionInfo(BaseModel):
         "that records it."))
     warnings: list[str] = Field(default_factory=list, description=(
         "Warnings logged by Astrocook during the call."))
+    summary: str = Field("", description=(
+        "What the recipe did, in one line (e.g. the components added and "
+        "removed, the columns added)."))
+    notes: list[str] = Field(default_factory=list, description=(
+        "What else is worth knowing: the components removed and why, those "
+        "the recipe made and discarded, those whose fit failed, the steps "
+        "run first to provide what the session lacked."))
+    provided: list[str] = Field(default_factory=list, description=(
+        "Recipes run first, with their defaults, to provide what the "
+        "session lacked (provide_missing=true); each is in the session "
+        "log before the recipe."))
 
 
 class SaveResult(BaseModel):
