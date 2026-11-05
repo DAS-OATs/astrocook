@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 from typing import List
 
 from ..core.structures import ComponentDataV2
-from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA
+from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
 from ..fitting.voigt_fitter import voigt_optical_depth
@@ -528,7 +528,7 @@ class VelocityPlotWidget(QWidget):
                                session.spec.xmax.to(au.Angstrom).value[mask])
                     for sel_c in self._selected_components:
                         is_match = (sel_c.series == trans_name) or \
-                                   (sel_c.series in STANDARD_MULTIPLETS and trans_name in STANDARD_MULTIPLETS[sel_c.series])
+                                   (is_multiplet(sel_c.series) and trans_name in series_lines(sel_c.series))
                         if is_match:
                             
                             # --- [FIX] Resolution Priority ---
@@ -563,8 +563,8 @@ class VelocityPlotWidget(QWidget):
 
             for other_c in session.systs.components:
                 comp_lines = []
-                if other_c.series in STANDARD_MULTIPLETS:
-                    comp_lines = STANDARD_MULTIPLETS[other_c.series]
+                if is_multiplet(other_c.series):
+                    comp_lines = series_lines(other_c.series)
                 elif other_c.series in xem_d:
                     comp_lines = [other_c.series]
                 

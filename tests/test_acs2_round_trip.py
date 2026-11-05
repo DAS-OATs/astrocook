@@ -98,7 +98,13 @@ def rich_session():
 
 
 def test_rich_session_round_trip(rich_session, tmp_path):
+    from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+    saved = dict(STANDARD_MULTIPLETS)
     reloaded, _ = _round_trip(rich_session, tmp_path)
+    # F12 (phase 6-bis, PR 7): reading the custom multiplet does not add it
+    # to the global table (it did, for the whole process)
+    assert STANDARD_MULTIPLETS == saved
+    assert "CIV_1548,SiIV_1393" in [c.series for c in reloaded.systs.components]
     _assert_same(rich_session, reloaded, meta=False)
     before, after = rich_session.spec.meta, reloaded.spec.meta
     assert after["OBJECT"] == "QSO J0000-0000"

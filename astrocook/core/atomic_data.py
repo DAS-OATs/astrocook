@@ -72,6 +72,28 @@ HYDROGEN_MULTIPLETS = {
 
 STANDARD_MULTIPLETS = {**METAL_MULTIPLETS, **HYDROGEN_MULTIPLETS}
 
+
+def is_multiplet(series: str) -> bool:
+    """The series is a multiplet: a standard one, or a custom one written as
+    its transitions separated by commas (e.g. ``'FeII_2586,FeII_2600'``)."""
+    return series in STANDARD_MULTIPLETS or ',' in series
+
+
+def series_lines(series: str) -> List[str]:
+    """The transitions of a series: those of a standard multiplet, those of
+    a custom one (its name, split at the commas), or the series itself.
+
+    A custom series carries its transitions in its name, so it needs no
+    entry in :data:`STANDARD_MULTIPLETS`: it was added there at run time,
+    for the whole process, when a component or a session used it (F12,
+    phase 6-bis PR 7).
+    """
+    if series in STANDARD_MULTIPLETS:
+        return list(STANDARD_MULTIPLETS[series])
+    if ',' in series:
+        return [s.strip() for s in series.split(',') if s.strip()]
+    return [series]
+
 # Built from ATOM_DATA to be used by V2 functions.
 # This replaces the dependency on legacy.vars.xem_d
 xem_d = {

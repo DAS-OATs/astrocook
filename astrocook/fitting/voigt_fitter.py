@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 
-from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.lsf import PixelLSF
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import ComponentDataV2
@@ -613,7 +613,7 @@ class VoigtFitterV2:
             current_b = p_full[base_idx + 2]
             if not (np.isclose(current_logN, 13.5) and np.isclose(current_b, 10.0)): continue
 
-            if comp.series in STANDARD_MULTIPLETS: primary = STANDARD_MULTIPLETS[comp.series][0]
+            if is_multiplet(comp.series): primary = series_lines(comp.series)[0]
             elif comp.series in ATOM_DATA: primary = comp.series
             else: continue
             
@@ -675,7 +675,7 @@ class VoigtFitterV2:
         active_uuids = self._constraints._active_uuids
         
         def get_trans_list(series):
-            if series in STANDARD_MULTIPLETS: return STANDARD_MULTIPLETS[series]
+            if is_multiplet(series): return series_lines(series)
             if series in ATOM_DATA: return [series]
             return []
 
@@ -800,7 +800,7 @@ class VoigtFitterV2:
         for i, comp in enumerate(self._system_list.components):
             base_idx = i * 4
             if not is_free_mask[base_idx]: continue 
-            if comp.series in STANDARD_MULTIPLETS: primary = STANDARD_MULTIPLETS[comp.series][0]
+            if is_multiplet(comp.series): primary = series_lines(comp.series)[0]
             elif comp.series in ATOM_DATA: primary = comp.series
             else: continue
             
