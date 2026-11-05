@@ -17,7 +17,7 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Calculate running standard deviation.",
         "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
-            {"name": "input_col", "type": str, "default": "y", "doc": "Column of which the standard deviation is computed, e.g. 'y' (the flux)."},
+            {"name": "input_col", "type": str, "default": "y", "doc": "Column of which the standard deviation is computed, e.g. 'y' (the flux).", "kind": "column"},
             {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write."},
             {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels; an odd number)."}
         ],
@@ -61,7 +61,7 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Equalize flux to reference.",
         "details": "Scales the flux of this session to match that of another session where they overlap.",
         "params": [
-            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the open session whose flux is matched."},
+            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the open session whose flux is matched.", "kind": "session"},
             {"name": "order", "type": int, "default": 0, "doc": "Model of the scaling: 0 a constant factor, n > 0 a polynomial of order n, -1 a spline."}
         ]
     },
@@ -70,7 +70,7 @@ FLUX_RECIPES_SCHEMAS = {
         "branching": True,
         "details": "Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel.",
         "params": [
-            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the open session whose grid is used."}
+            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the open session whose grid is used.", "kind": "session"}
         ],
         "url": "edit_cb.html#resample" # Placeholder URL
     },

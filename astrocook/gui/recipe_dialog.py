@@ -191,7 +191,11 @@ class RecipeDialog(QDialog):
 
                 widget = None
                 
-                if param_type == str or (param_type in (int, float)
+                if param.choices:
+                    # The values allowed, as a list (phase 6-bis, PR 6c)
+                    widget = QComboBox(); widget.addItems(list(param.choices))
+                    widget.setCurrentText(param_default)
+                elif param_type == str or (param_type in (int, float)
                                          and (param.optional or param.allow_nan)):
                     # A number that can be None or NaN: no validator, which
                     # would not let the user write 'None' or 'nan'
@@ -233,7 +237,8 @@ class RecipeDialog(QDialog):
         main_layout.addWidget(form_widget)
 
         # Trigger Helper Pane
-        if self.recipe_name in ("export_ascii", "apply_expression", "mask_expression", "split", "delete", "import_systems", "equalize", "resample"):
+        if (self.recipe_name in ("export_ascii", "apply_expression", "mask_expression", "split", "delete")
+                or self._session_param() is not None):
             self._setup_usability_pane(main_layout) 
 
         # 3. Buttons
@@ -243,6 +248,10 @@ class RecipeDialog(QDialog):
         button_box.rejected.connect(self.reject) 
         button_box.helpRequested.connect(self._show_help) 
         main_layout.addWidget(button_box)
+
+    def _session_param(self):
+        """The parameter of the recipe that names an open session, or None."""
+        return next((p for p in self.schema.params if p.kind == 'session'), None)
 
     def _setup_usability_pane(self, main_layout):
         available_cols = self._get_available_columns()
@@ -310,15 +319,16 @@ class RecipeDialog(QDialog):
             main_layout.addWidget(ref_container)
             return
 
-        # --- BLOCK 1: SESSION SELECTION (Import & Resample) ---
-        if self.recipe_name in ("import_systems", "equalize", "resample"):
-            # Update title logic to include Equalize
-            if self.recipe_name == 'resample':
-                title_text = "<b>Select Target Session:</b>"
-            elif self.recipe_name == 'equalize':
-                title_text = "<b>Select Reference Session:</b>"
-            else:
-                title_text = "<b>Select Source Session:</b>"
+        # --- BLOCK 1: SESSION SELECTION ---
+        # For every recipe with a parameter that names a session (the key
+        # 'kind' of the registry, phase 6-bis PR 6c; it was for three
+        # recipes written here)
+        session_param = self._session_param()
+        if session_param is not None:
+            titles = {'resample': "<b>Select Target Session:</b>",
+                      'equalize': "<b>Select Reference Session:</b>",
+                      'import_systems': "<b>Select Source Session:</b>"}
+            title_text = titles.get(self.recipe_name, "<b>Select Session:</b>")
                 
             title = QLabel(title_text)
             ref_layout.addWidget(title)
@@ -339,8 +349,12 @@ class RecipeDialog(QDialog):
                     button.setText(f"{alias} ({full_name})")
                     button.setStyleSheet("text-align: left; padding: 5px;")
                     
-                    # On click, insert the FULL NAME
-                    button.clicked.connect(lambda checked=False, t=full_name: self._insert_text_into_expression(t))
+                    # On click, the name goes in the parameter of the session
+                    # (F105: it went to a field 'expression' that these
+                    # dialogs do not have, and nothing happened)
+                    button.clicked.connect(
+                        lambda checked=False, t=full_name, p=session_param.name:
+                        self._set_param_text(p, t))
                     
                     sess_grid.addWidget(button, row, col)
                     col += 1
@@ -498,6 +512,13 @@ class RecipeDialog(QDialog):
     def _on_resample_target_changed(self, target_name: str):
         # Legacy/Unused
         pass 
+
+    def _set_param_text(self, param_name: str, text: str):
+        """Write ``text`` in the field of a parameter."""
+        widget = self.input_widgets.get(param_name)
+        if isinstance(widget, QLineEdit):
+            widget.setText(text)
+            widget.setFocus()
 
     def _insert_text_into_expression(self, text):
         """

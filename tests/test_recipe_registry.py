@@ -144,6 +144,12 @@ def test_build_spec_rejects_unknown_keys_and_requirements():
             {"name": "x", "type": int, "default": 0, "dok": "x"}]})
     with pytest.raises(ValueError, match="unknown requirements"):
         build_spec("edit", "r", {**entry, "requires": ("mask",)})
+    with pytest.raises(ValueError, match="unknown kind 'file'"):
+        build_spec("edit", "r", {**entry, "params": [
+            {"name": "x", "type": str, "default": "", "kind": "file"}]})
+    with pytest.raises(ValueError, match="the default 'c' is not a choice"):
+        build_spec("edit", "r", {**entry, "params": [
+            {"name": "x", "type": str, "default": "c", "choices": ("a", "b")}]})
     with pytest.raises(ValueError, match="unknown provisions"):
         build_spec("edit", "r", {**entry, "provides": ("mask",)})
 
@@ -183,6 +189,8 @@ def test_build_spec_reads_every_key():
                          "gui_hidden": True, "optional": True, "keep": ("_current_",),
                          "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True,
                          "agents": False},
+                        {"name": "s", "type": str, "default": "a", "choices": ("a", "b"),
+                         "kind": "session"},
                         {"name": "y", "type": int, "default": 3}]}
     spec = build_spec("edit", "r", entry)
     assert (spec.category, spec.name, spec.brief, spec.details, spec.url) == \
@@ -190,7 +198,9 @@ def test_build_spec_reads_every_key():
     assert spec.gui_hidden and spec.branching
     assert spec.requires == frozenset({"z_em", "resolution"})
     assert spec.provides == frozenset({"continuum"})
-    x, y = spec.params
+    x, z, y = spec.params
+    assert (z.choices, z.kind) == (("a", "b"), "session")
+    assert (y.choices, y.kind) == ((), "")
     assert (x.name, x.type, x.default, x.doc, x.gui_hidden, x.optional, x.keep,
             x.min, x.max, x.gt, x.allow_nan, x.agents) == \
         ("x", float, 1.0, "The x.", True, True, ("_current_",), 0.0, 2.0, -1.0, True, False)

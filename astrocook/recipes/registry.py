@@ -43,7 +43,10 @@ conversion of its value (:mod:`astrocook.recipes.params`): ``optional``
 (None is a value: no value, or automatic), ``keep`` (special strings passed
 as they are, e.g. ``'_current_'``), ``min`` and ``max`` (bounds of a
 number, included), ``gt`` (a bound excluded: the value must be above it),
-``allow_nan`` (NaN is a value; infinities never are), ``agents`` (False:
+``allow_nan`` (NaN is a value; infinities never are), ``choices`` (the
+values allowed, for a string: a list in the GUI and for the agents),
+``kind`` (what a string names: ``'session'``, an open session, or
+``'column'``, a column of the spectrum; phase 6-bis, PR 6c), ``agents`` (False:
 not offered to agents, which get the default: the options of debug and the
 questions of the GUI, phase 6-bis, PR 6; every recipe is offered, Guido:
 the basic ones are blocks of new recipes).
@@ -64,7 +67,10 @@ REQUIREMENTS = frozenset({'z_em', 'resolution', 'continuum'})
 _RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
                 'requires', 'provides'}
 _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
-               'min', 'max', 'gt', 'allow_nan', 'agents'}
+               'min', 'max', 'gt', 'allow_nan', 'agents', 'choices', 'kind'}
+
+#: What a string parameter can name (the key ``kind``)
+KINDS = frozenset({'session', 'column'})
 
 
 @dataclass(frozen=True)
@@ -91,6 +97,10 @@ class ParamSpec:
     allow_nan: bool = False
     #: Offered to agents (False: they get the default)
     agents: bool = True
+    #: The values allowed (a string parameter), in their spelling
+    choices: Tuple[str, ...] = ()
+    #: What the value names: ``'session'``, ``'column'``, or "" (nothing)
+    kind: str = ""
     _default: Any = field(default=None, repr=False)
 
     @property
@@ -139,6 +149,11 @@ def _param_spec(where: str, entry: Mapping[str, Any]) -> ParamSpec:
     unknown = set(entry) - _PARAM_KEYS
     if unknown:
         raise ValueError(f"{where}: unknown keys {sorted(unknown)}")
+    if entry.get('kind', '') not in KINDS | {''}:
+        raise ValueError(f"{where}: unknown kind {entry['kind']!r}")
+    choices = tuple(entry.get('choices', ()))
+    if choices and entry['default'] not in (*choices, ''):  # '' : required
+        raise ValueError(f"{where}: the default {entry['default']!r} is not a choice")
     return ParamSpec(name=entry['name'], type=entry['type'],
                      doc=entry.get('doc', entry['name']),
                      gui_hidden=bool(entry.get('gui_hidden', False)),
@@ -147,6 +162,7 @@ def _param_spec(where: str, entry: Mapping[str, Any]) -> ParamSpec:
                      min=entry.get('min'), max=entry.get('max'), gt=entry.get('gt'),
                      allow_nan=bool(entry.get('allow_nan', False)),
                      agents=bool(entry.get('agents', True)),
+                     choices=choices, kind=str(entry.get('kind', '')),
                      _default=copy.deepcopy(entry['default']))
 
 

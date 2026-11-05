@@ -89,6 +89,18 @@ def _list(param, value):
     raise InvalidParameter(f"{param.name}: {value!r} is not a list")
 
 
+def _choice(param, text: str) -> str:
+    """One of the choices of ``param``, in its spelling (the case is not
+    checked: ``'NESTED'`` is ``'nested'``, as the recipes read it before);
+    :class:`InvalidParameter` otherwise (phase 6-bis, PR 6c: an unknown
+    value was taken silently, e.g. ``engine='foo'`` ran MCMC)."""
+    for choice in param.choices:
+        if text.strip().lower() == choice.lower():
+            return choice
+    allowed = ", ".join(repr(c) for c in param.choices)
+    raise InvalidParameter(f"{param.name}: {text!r} is not one of {allowed}")
+
+
 def convert(param, value: Any) -> Any:
     """``value`` converted to the type of ``param`` (a
     :class:`~astrocook.recipes.registry.ParamSpec`) and checked against its
@@ -115,7 +127,8 @@ def convert(param, value: Any) -> Any:
     elif param.type is str:
         if param.optional and isinstance(value, str) and value == 'None':
             return None
-        return value if isinstance(value, str) else str(value)
+        text = value if isinstance(value, str) else str(value)
+        return _choice(param, text) if param.choices else text
     else:
         return value
     if math.isnan(result):
