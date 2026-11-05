@@ -569,7 +569,13 @@ steps and the values of the parameters it used:</p>
 <span class="n">fitted</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">session</span>
 </pre></div>
 </div>
-<p>The recipes and their parameters are listed in the
+<p><code class="docutils literal notranslate"><span class="pre">result.notes</span></code> says what else is worth knowing, one line each: the
+components removed and why (e.g. <em>1 component removed: logN &lt; min_logN =
+14.0 (too weak)</em>), those the recipe made and discarded, those whose fit
+failed (flagged <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code>, with the values from before), the candidate
+systems found; <code class="docutils literal notranslate"><span class="pre">result.extra</span></code> has the same as data (by component). The GUI
+counts them in the status bar and writes them in the log.
+The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
 <section id="saving-the-result">

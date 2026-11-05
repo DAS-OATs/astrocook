@@ -1330,9 +1330,13 @@
             <span class="c1"># A boundary of the step (B, Guido's choice, phase 6): the result of</span>
         <span class="c1"># the pipeline is kept if the cleaning fails, with a WARNING</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># The refit is limited to the forest, as the pipeline: before</span>
+            <span class="c1"># phase 6-bis (PR 4c, F102, Guido's decision) it refitted every</span>
+            <span class="c1"># component of the session, e.g. the metals of the red side</span>
             <span class="n">final_session</span> <span class="o">=</span> <span class="n">_remove_narrow</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="s1">'Ly_a'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span>
                 <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'200'</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">))</span>
+                <span class="n">max_group_size</span><span class="o">=</span><span class="s1">'25'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span>
+                <span class="n">region_limit</span><span class="o">=</span><span class="s1">'lya_forest'</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">_warn_cleaning_failed</span><span class="p">(</span><span class="n">final_session</span><span class="p">,</span> <span class="s1">'Ly_a'</span><span class="p">,</span> <span class="n">min_b_val</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
         <span class="n">final_session</span> <span class="o">=</span> <span class="n">_drop_negligible</span><span class="p">(</span><span class="n">final_session</span><span class="p">)</span>

@@ -69,6 +69,12 @@ for c in result.changes.components_added:
 print(result.warnings, result.steps)
 fitted = result.session
 ```
+`result.notes` says what else is worth knowing, one line each: the
+components removed and why (e.g. *1 component removed: logN < min_logN =
+14.0 (too weak)*), those the recipe made and discarded, those whose fit
+failed (flagged `not_fitted`, with the values from before), the candidate
+systems found; `result.extra` has the same as data (by component). The GUI
+counts them in the status bar and writes them in the log.
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 

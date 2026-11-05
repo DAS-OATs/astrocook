@@ -799,6 +799,23 @@ and its alternatives</p>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.notes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">notes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.notes" title="Link to this definition">#</a></dt>
+<dd><p>What the user should know of the result besides the changes
+(phase 6-bis, PR 4c, Guido): the components removed and why, those
+a pipeline made and dropped, those whose fit failed, the candidate
+systems found; one line each, e.g. <code class="docutils literal notranslate"><span class="pre">'2</span> <span class="pre">components</span> <span class="pre">removed:</span> <span class="pre">logN</span> <span class="pre">&lt;</span>
+<span class="pre">min_logN</span> <span class="pre">=</span> <span class="pre">14.0</span> <span class="pre">(too</span> <span class="pre">weak)'</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.counts">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">counts</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.counts" title="Link to this definition">#</a></dt>
+<dd><p>The notes in a word each, for a status bar, e.g. <code class="docutils literal notranslate"><span class="pre">('2</span>
+<span class="pre">removed',</span> <span class="pre">'1</span> <span class="pre">not</span> <span class="pre">fitted')</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.summary">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">summary</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.summary" title="Link to this definition">#</a></dt>
 <dd><p>the recipe, what changed, the warnings.</p>
@@ -941,6 +958,8 @@ strings); a recipe that cannot do what was asked raises its
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.credibility"><code class="docutils literal notranslate"><span class="pre">RecipeResult.credibility</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.alternatives"><code class="docutils literal notranslate"><span class="pre">RecipeResult.alternatives</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.sessions"><code class="docutils literal notranslate"><span class="pre">RecipeResult.sessions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.notes"><code class="docutils literal notranslate"><span class="pre">RecipeResult.notes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.counts"><code class="docutils literal notranslate"><span class="pre">RecipeResult.counts</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.summary"><code class="docutils literal notranslate"><span class="pre">RecipeResult.summary</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeResult.__init__()</span></code></a></li>
 </ul>
