@@ -39,13 +39,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the lines of a multiplet) to accept a candidate."},
             {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Absorbed regions closer than this (km/s) are merged."},
             {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width of an absorbed region (pixels)."},
-            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask of the absorbed pixels."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask of the absorbed pixels.", "kind": "column"},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             # New generic region limiter
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."},
-            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', 'all_ly_forest', or 'None' for the whole spectrum.", "choices": ["None", "lya_forest", "all_ly_forest", "red_side"]},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#components_auto"
@@ -61,7 +61,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
-            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#doublets_auto"
@@ -76,7 +76,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
-            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#lya_auto"
@@ -115,7 +115,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Finds the absorbed regions from the mask, scores how well each multiplet matches them (the R^2 of the correlation of its lines) and keeps the best candidate systems; writes them in a new session, with the region and the score of each.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Comma-separated multiplets to search for, e.g. 'CIV,SiIV,MgII,Ly_ab'."},
-            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions.", "kind": "column"},
             {"name": "min_pix_region", "type": int, "default": 3, "min": 1, "doc": "Minimum width of an absorbed region (pixels)."},
             {"name": "merge_dv", "type": float, "default": 10.0, "min": 0, "doc": "Absorbed regions closer than this (km/s) are merged."},
             {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the lines) to accept a candidate."},
@@ -130,7 +130,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("continuum",),
         "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
         "params": [
-            {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column of the region of each pixel, written by Identify lines."},
+            {"name": "region_id_col", "type": str, "default": "abs_ids", "doc": "Column of the region of each pixel, written by Identify lines.", "kind": "column"},
             {"name": "series_map_json", "type": str, "default": "", "doc": "JSON object: region -> series of its candidate."},
             {"name": "z_map_json", "type": str, "default": "", "doc": "JSON object: region -> redshift of its candidate."}
         ],
@@ -190,7 +190,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Detect doublet anchor redshift.",
         "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best.",
         "params": [
-            {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session."},
+            {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session.", "kind": "session"},
             {"name": "trans_self", "type": str, "default": "OVI_1031", "doc": "Transition in this session, e.g. 'OVI_1031'."},
             {"name": "trans_sibling", "type": str, "default": "OVI_1037", "doc": "Transition in the sibling session, e.g. 'OVI_1037'."}
         ],
@@ -214,7 +214,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
-            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'."},
+            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
             {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "True: free to vary in the fits; False: frozen."},
             {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. 'p[\"z\"]' (None: no link)."},
             {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to."} 
@@ -226,7 +226,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Bulk update constraints.",
         "details": "Freezes or frees a parameter of all the components.",
         "params": [
-            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'."},
+            {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
             {"name": "is_free", "type": bool, "default": True, "doc": "True: free to vary in the fits; False: frozen."}
         ],
         "url": "absorbers_cb.html#update_constraints_column",
@@ -268,7 +268,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra.",
         "params": [
             {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components of the group."},
-            {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampler: 'mcmc' (emcee) or 'nested' (dynesty)."},
+            {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampler: 'mcmc' (emcee) or 'nested' (dynesty).", "choices": ["mcmc", "nested"]},
             {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps of each walker (MCMC)."},
             {"name": "nlive", "type": int, "default": 250, "min": 1, "doc": "Number of live points (nested sampling)."},
             {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."}
@@ -286,7 +286,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_group_size", "type": int, "default": 20, "min": 1, "doc": "Maximum number of components fitted together: larger groups are split."},
             {"name": "max_b", "type": float, "default": 300.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s)."},
             {"name": "max_logN", "type": float, "default": 23.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits (log cm^-2)."},
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Fit only the components in a region: 'red_side', 'lya_forest', or 'None' for all."},
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Fit only the components in a region: 'red_side', 'lya_forest', 'all_ly_forest', or 'None' for all.", "choices": ["None", "lya_forest", "all_ly_forest", "red_side"]},
             {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Fit only these components, with their groups (None: all)."}
         ],
         "url": "absorbers_cb.html#refit_all"
@@ -629,8 +629,6 @@ class RecipeAbsorbersV2:
         # restricted by region_limit, is used only inside the pipeline (F50)
         user_mask = session_current.spec._data.aux_cols.get(mask_col)
         
-        if mask not in ("new", "session"):
-            raise InvalidParameter(f"mask: {mask!r} is not 'new' or 'session'.")
         if mask == "session":
             # The mask of the session, e.g. of Auto-estimate continuum with
             # other parameters (F50, phase 6-bis, PR 6b)

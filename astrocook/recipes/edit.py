@@ -56,7 +56,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Apply expression to columns.",
         "details": "Evaluates a NumPy expression of the columns and writes it in a column, new or existing. The columns are named as in the GUI (λ, F, dF, cont, model, ...); e.g. 'F / cont', 'F * 2.0', 'log10(F)'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Column to write: replaced if it exists, created otherwise."},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Column to write: replaced if it exists, created otherwise.", "kind": "column"},
             {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression of the columns, e.g. 'F / cont'."},
         ],
         "url": "edit_cb.html#apply_expression" # Placeholder URL
@@ -65,7 +65,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Mask column by expression.",
         "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F'."},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F'.", "kind": "column"},
             {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
@@ -74,7 +74,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Smooth a single column.",
         "details": "Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged.",
         "params": [
-            {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF'."},
+            {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF'.", "kind": "column"},
             {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
             {"name": "renorm_model", "type": bool, "default": False, "doc": "When smoothing 'cont', rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
@@ -84,7 +84,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Import systems from session.",
         "details": "Copies the absorption systems (components and constraints) of another open session into this one.",
         "params": [
-            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the open session to copy the systems from."},
+            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the open session to copy the systems from.", "kind": "session"},
             {"name": "append", "type": bool, "default": True, "doc": "True: add the systems to those of this session; False: replace them."},
             {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems on the spectrum of this session after copying them."}
         ],

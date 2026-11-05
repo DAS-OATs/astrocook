@@ -64,3 +64,51 @@ def test_set_properties_keeps_a_varying_resolution(qapp):
 def test_redshifts_default_to_z_em(qapp, name, param):
     dialog, params = _run(_session(), "edit", name)
     assert float(params[param]) == pytest.approx(3.2)
+
+
+# --- The kinds of the parameters (phase 6-bis, PR 6c) -------------------------
+
+def _window_with(*names):
+    from PySide6.QtWidgets import QWidget
+
+    class History:
+        def __init__(self, name):
+            self.display_name = name
+
+    window = QWidget()
+    window.session_histories = [History("my session")] + [History(n) for n in names]
+    return window
+
+
+@pytest.mark.parametrize("category, name, param", [
+    ("edit", "import_systems", "source_session"), ("flux", "equalize", "reference_session"),
+    ("flux", "resample", "target_session"), ("absorbers", "detect_anchor", "sibling_name")])
+def test_the_session_buttons_fill_the_session(qapp, category, name, param):
+    # F105: the buttons of the sessions wrote into a field 'expression' that
+    # these dialogs do not have, and did nothing; detect_anchor had none
+    from PySide6.QtWidgets import QPushButton
+    from astrocook.gui.recipe_dialog import RecipeDialog
+    window = _window_with("blue", "red")
+    dialog = RecipeDialog(category, name, _session(), parent=window)
+    buttons = [b for b in dialog.findChildren(QPushButton) if "(red)" in b.text()]
+    assert len(buttons) == 1
+    buttons[0].click()
+    assert dialog.input_widgets[param].text() == "red"
+    dialog.reject()
+
+
+def test_the_choices_are_a_list(qapp):
+    from PySide6.QtWidgets import QComboBox
+    _, sent = _run(_session(), "absorbers", "refit_all")
+    assert sent["region_limit"] == "None"
+    from astrocook.gui.recipe_dialog import RecipeDialog
+    dialog = RecipeDialog("absorbers", "refit_all", _session())
+    box = dialog.input_widgets["region_limit"]
+    assert isinstance(box, QComboBox)
+    assert [box.itemText(i) for i in range(box.count())] == [
+        "None", "lya_forest", "all_ly_forest", "red_side"]
+    box.setCurrentText("red_side")
+    sent = []
+    dialog.recipe_requested.connect(lambda cat, rec, params, aliases: sent.append(params))
+    dialog.accept()
+    assert sent[0]["region_limit"] == "red_side"

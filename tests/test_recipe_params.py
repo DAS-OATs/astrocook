@@ -100,6 +100,18 @@ def test_optional_none_nan_kept_and_bounds():
         convert(bounded, 2)
 
 
+def test_choices():
+    # Phase 6-bis, PR 6c: a value outside the choices is refused (engine
+    # 'foo' ran MCMC, a constraint on 'foo' was stored); the case is not
+    # checked, as the recipes did not
+    engine = ParamSpec(name="engine", type=str, doc="x", choices=("mcmc", "nested"))
+    assert convert(engine, "nested") == "nested" and convert(engine, " NESTED ") == "nested"
+    with pytest.raises(InvalidParameter, match="engine: 'foo' is not one of 'mcmc', 'nested'"):
+        convert(engine, "foo")
+    from astrocook.recipes.registry import get_recipe
+    assert convert(get_recipe("absorbers", "refit_all").param("region_limit"), "none") == "None"
+
+
 def test_registry_defaults_convert_to_themselves():
     """Every default of a typed recipe is a valid value of its parameter."""
     from astrocook.recipes.registry import all_recipes

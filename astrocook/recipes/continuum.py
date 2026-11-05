@@ -49,7 +49,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
             # CHANGED: type is now str, default is "auto"
             {"name": "fudge", "type": str, "default": "auto", "doc": "Factor that multiplies the continuum: 'auto' to centre it on the unabsorbed pixels, or a number (e.g. '1.0')."}, 
             {"name": "smooth_fwhm", "type": float, "default": 800.0, "gt": 0, "doc": "FWHM of the Gaussian smoothing of the continuum (km/s)."},
-            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions."},
+            {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions.", "kind": "column"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
         "url": "continuum_cb.html#fit_continuum"

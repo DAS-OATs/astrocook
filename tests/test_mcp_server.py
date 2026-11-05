@@ -610,7 +610,7 @@ def test_doublets_auto_with_the_mask_of_the_session(forest_archive):
     assert "continuum.find_absorbed" not in own.steps
     assert (own.session.spec.get_column("abs_mask").value
             == cont.spec.get_column("abs_mask").value).all()
-    with pytest.raises(InvalidParameter, match="mask: 'old' is not 'new' or 'session'"):
+    with pytest.raises(InvalidParameter, match="mask: 'old' is not one of 'new', 'session'"):
         cont.absorbers.doublets_auto(mask="old")
     spec = cont.spec
     aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
