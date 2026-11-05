@@ -858,19 +858,18 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_with_continuum</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The session with a continuum: estimated first with the automatic</span>
-<span class="sd">    continuum when there is none (and said so), or 0 if that fails.</span>
+<span class="sd">    continuum when there is none (and said so).</span>
 
 <span class="sd">    Before phase 6 the 0 of a failed estimate went on as the session, and</span>
-<span class="sd">    the recipe failed with "'int' object has no attribute 'systs'".</span>
+<span class="sd">    the recipe failed with "'int' object has no attribute 'systs'". Since</span>
+<span class="sd">    phase 6-bis (PR 3) the failure of the estimate is a RecipeError, which</span>
+<span class="sd">    names the recipe and Auto-estimate Continuum as its step.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">session</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-    <span class="n">estimated</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">estimated</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"The continuum could not be estimated: the recipe is not run."</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">estimated</span>
+    <span class="k">return</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_if_unconvolved</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

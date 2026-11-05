@@ -479,6 +479,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -550,46 +551,47 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
-<span class="sd">            ``True`` if at least one file was successfully saved, ``False`` otherwise.</span>
+<span class="sd">            ``True`` if at least one file was saved, ``False`` if the targets</span>
+<span class="sd">            name nothing to export.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RecipeError</span>
+<span class="sd">            If a file cannot be written (phase 6-bis, PR 3: it returned False).</span>
 <span class="sd">        """</span>
         <span class="n">spec_req</span><span class="p">,</span> <span class="n">write_systems</span><span class="p">,</span> <span class="n">syst_req</span><span class="p">,</span> <span class="n">target_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_targets</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
         <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Spectrum Export</span>
-            <span class="k">if</span> <span class="n">spec_req</span><span class="p">:</span>
-                <span class="n">valid_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">+</span> <span class="n">spec_req</span>
-                <span class="n">raw_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_cols</span><span class="p">}</span>
-                <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_spec.csv"</span><span class="p">)</span>
-                <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Table</span><span class="p">(</span><span class="n">raw_data</span><span class="p">),</span> <span class="n">out_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'csv'</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">spec_req</span><span class="p">:</span>
+            <span class="n">valid_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">+</span> <span class="n">spec_req</span>
+            <span class="n">raw_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_cols</span><span class="p">}</span>
+            <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_spec.csv"</span><span class="p">)</span>
+            <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Table</span><span class="p">(</span><span class="n">raw_data</span><span class="p">),</span> <span class="n">out_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'csv'</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
 
-            <span class="c1"># 2. Systems Export (Refined)</span>
-            <span class="k">if</span> <span class="n">write_systems</span><span class="p">:</span>
-                <span class="n">syst_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">t</span>
+        <span class="c1"># 2. Systems Export (Refined)</span>
+        <span class="k">if</span> <span class="n">write_systems</span><span class="p">:</span>
+            <span class="n">syst_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">t</span>
+            
+            <span class="k">if</span> <span class="s2">"systems"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
+                <span class="c1"># [NEW LOGIC] Always include 'series' and 'z' for context.</span>
+                <span class="c1"># We use dict.fromkeys to maintain order and uniqueness.</span>
+                <span class="c1"># 'series' first, then 'z', then other requested params.</span>
+                <span class="n">base_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'series'</span><span class="p">,</span> <span class="s1">'z'</span><span class="p">]</span>
+                <span class="c1"># Add any other columns requested that aren't already z/series</span>
+                <span class="n">extra_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">syst_req</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base_cols</span><span class="p">]</span>
                 
-                <span class="k">if</span> <span class="s2">"systems"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target_list</span><span class="p">:</span>
-                    <span class="c1"># [NEW LOGIC] Always include 'series' and 'z' for context.</span>
-                    <span class="c1"># We use dict.fromkeys to maintain order and uniqueness.</span>
-                    <span class="c1"># 'series' first, then 'z', then other requested params.</span>
-                    <span class="n">base_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'series'</span><span class="p">,</span> <span class="s1">'z'</span><span class="p">]</span>
-                    <span class="c1"># Add any other columns requested that aren't already z/series</span>
-                    <span class="n">extra_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">syst_req</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base_cols</span><span class="p">]</span>
-                    
-                    <span class="n">cols_to_keep</span> <span class="o">=</span> <span class="n">base_cols</span> <span class="o">+</span> <span class="n">extra_cols</span>
-                    <span class="c1"># Verify they exist in the actual table before slicing</span>
-                    <span class="n">cols_to_keep</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols_to_keep</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">syst_table</span><span class="o">.</span><span class="n">colnames</span><span class="p">]</span>
-                    <span class="n">syst_table</span> <span class="o">=</span> <span class="n">syst_table</span><span class="p">[</span><span class="n">cols_to_keep</span><span class="p">]</span>
-                
-                <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_systems.csv"</span><span class="p">)</span>
-                <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">syst_table</span><span class="p">,</span> <span class="n">out_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'csv'</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
-                
-            <span class="k">return</span> <span class="n">saved_any</span>
+                <span class="n">cols_to_keep</span> <span class="o">=</span> <span class="n">base_cols</span> <span class="o">+</span> <span class="n">extra_cols</span>
+                <span class="c1"># Verify they exist in the actual table before slicing</span>
+                <span class="n">cols_to_keep</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols_to_keep</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">syst_table</span><span class="o">.</span><span class="n">colnames</span><span class="p">]</span>
+                <span class="n">syst_table</span> <span class="o">=</span> <span class="n">syst_table</span><span class="p">[</span><span class="n">cols_to_keep</span><span class="p">]</span>
+            
+            <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_systems.csv"</span><span class="p">)</span>
+            <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">syst_table</span><span class="p">,</span> <span class="n">out_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'csv'</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
+            
+        <span class="k">return</span> <span class="n">saved_any</span></div>
 
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not export the data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">False</span></div>
 
         
 <div class="viewcode-block" id="RecipeFileV2.export_ascii_outputs">
@@ -667,38 +669,39 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
-<span class="sd">            A new session instance containing the imported data. Returns ``0`` if the import fails.</span>
+<span class="sd">            A new session instance containing the imported data.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RecipeError</span>
+<span class="sd">            If the file cannot be read, or its length is not that of the</span>
+<span class="sd">            spectrum.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Load the table</span>
-            <span class="n">table</span> <span class="o">=</span> <span class="n">ascii</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
-            <span class="n">current_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
-            <span class="n">import_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">ascii</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="n">current_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">import_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
 
-            <span class="c1"># 2. Safety Check: Pixel count must match</span>
-            <span class="k">if</span> <span class="n">import_len</span> <span class="o">!=</span> <span class="n">current_len</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Length mismatch: File has </span><span class="si">{</span><span class="n">import_len</span><span class="si">}</span><span class="s2"> pixels, but current session has </span><span class="si">{</span><span class="n">current_len</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="c1"># 2. Safety Check: Pixel count must match</span>
+        <span class="k">if</span> <span class="n">import_len</span> <span class="o">!=</span> <span class="n">current_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The file has </span><span class="si">{</span><span class="n">import_len</span><span class="si">}</span><span class="s2"> pixels and the session "</span>
+                               <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current_len</span><span class="si">}</span><span class="s2">: they must be the same."</span><span class="p">)</span>
 
-            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
-            <span class="n">imported_cols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
+        <span class="n">imported_cols</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="c1"># 3. Iterate through columns in the ASCII file</span>
-            <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
-                <span class="c1"># We skip 'x' to prevent grid misalignment, but use everything else</span>
-                <span class="k">if</span> <span class="n">col_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'x'</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                
-                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">col_name</span><span class="p">])</span>
-                <span class="c1"># Update the column (this handles both core y/dy and aux columns)</span>
-                <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
-                <span class="n">imported_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
+        <span class="c1"># 3. Iterate through columns in the ASCII file</span>
+        <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
+            <span class="c1"># We skip 'x' to prevent grid misalignment, but use everything else</span>
+            <span class="k">if</span> <span class="n">col_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'x'</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">col_name</span><span class="p">])</span>
+            <span class="c1"># Update the column (this handles both core y/dy and aux columns)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+            <span class="n">imported_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
 
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns imported: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imported_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not import the columns: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns imported: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imported_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

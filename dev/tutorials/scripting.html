@@ -538,15 +538,24 @@ out, e.g. the start of <em>Rebin</em>), or as strings, as typed in the dialogs a
 written in the session log (<code class="docutils literal notranslate"><span class="pre">sigma_kms=&quot;50.0&quot;</span></code>): they are converted before
 the recipe runs. A value that cannot be converted, or that has no physical
 meaning (a negative smoothing width, a redshift of -1 or below, a column
-density outside 10-23), stops the recipe: it logs an error that names the
-parameter and returns <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, so check the result before
-going on:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"fifty"</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"The recipe failed"</span><span class="p">)</span>  <span class="c1"># sigma_kms: 'fifty' is not a number</span>
+density outside 10-23), stops the recipe with an exception that says in
+which recipe it happened and why; so does a recipe that cannot do what was
+asked (a session that is not open, a file that cannot be read). Catch
+<code class="docutils literal notranslate"><span class="pre">RecipeError</span></code> to go on after it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeError</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"fifty"</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>  <span class="c1"># Smooth spectrum: sigma_kms: 'fifty' is not a number.</span>
 </pre></div>
 </div>
-<p>The recipes and their parameters are listed in the
+<p>The error of a step of a longer recipe names both, e.g. <em>Populate
+components from identification → Auto-estimate continuum (single-click):
+…</em>. Some recipes of the <em>Edit</em> and <em>Absorbers</em> menus still report a
+failure by logging an error and returning <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, until
+the next release: check <code class="docutils literal notranslate"><span class="pre">result</span> <span class="pre">==</span> <span class="pre">0</span></code> for them.
+The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
 <section id="saving-the-result">

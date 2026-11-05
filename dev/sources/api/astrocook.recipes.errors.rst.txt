@@ -1,0 +1,7 @@
+astrocook.recipes.errors module
+===============================
+
+.. automodule:: astrocook.recipes.errors
+   :members:
+   :show-inheritance:
+   :undoc-members:

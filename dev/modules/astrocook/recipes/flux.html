@@ -476,7 +476,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span><span class="p">,</span> <span class="n">msg_session_not_found</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeFailed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_session_not_found</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -557,6 +558,16 @@
 <span class="p">}</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_session</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="s1">'SessionV2'</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The history of the open session called ``name`` (RecipeFailed if</span>
+<span class="sd">    there is none, or no GUI to find it in)."""</span>
+    <span class="n">gui</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'_gui'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gui</span><span class="p">,</span> <span class="s1">'session_histories'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+        <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hist</span>
+    <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="RecipeFluxV2">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeFluxV2</span><span class="p">:</span>
@@ -600,28 +611,19 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,</span>
-<span class="sd">            or 0 on failure.</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added.</span>
 <span class="sd">        """</span>
         <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">window_pix</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
             <span class="n">window_pix_i</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Call the immutable V2 operation</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
-                <span class="n">input_col</span><span class="o">=</span><span class="n">input_col</span><span class="p">,</span>
-                <span class="n">output_col</span><span class="o">=</span><span class="n">output_col</span><span class="p">,</span>
-                <span class="n">window_pix</span><span class="o">=</span><span class="n">window_pix_i</span>
-            <span class="p">)</span>
-            
-            <span class="c1"># 2. Return a NEW SessionV2 instance</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
-            
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not compute the running standard deviation: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
+            <span class="n">input_col</span><span class="o">=</span><span class="n">input_col</span><span class="p">,</span>
+            <span class="n">output_col</span><span class="o">=</span><span class="n">output_col</span><span class="p">,</span>
+            <span class="n">window_pix</span><span class="o">=</span><span class="n">window_pix_i</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeFluxV2.smooth">
@@ -642,18 +644,11 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns,</span>
-<span class="sd">            or 0 on failure.</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span>
-                <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not smooth the spectrum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecipeFluxV2.rebin">
@@ -694,9 +689,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum,</span>
-<span class="sd">            or 0 on failure.</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum.</span>
 <span class="sd">        """</span>
 
         <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xstart</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -705,9 +699,8 @@
             <span class="c1"># V1 logic from cookbook_flux.py uses the unit attached to xunit for dx</span>
             <span class="n">dx_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">))</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-            <span class="c1"># Return 0 like the other recipes (findings register F23)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">msg_param_fail</span><span class="si">}</span><span class="s2"> xunit: </span><span class="si">{</span><span class="n">xunit</span><span class="si">!r}</span><span class="s2"> is not a unit."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
+            <span class="c1"># (Findings register F23: it crashed the GUI)</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"xunit: </span><span class="si">{</span><span class="n">xunit</span><span class="si">!r}</span><span class="s2"> is not a unit"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="c1"># The V1 normalization was never applied in V2 and is not offered</span>
         <span class="c1"># any more (F37, #560): say so instead of ignoring it silently</span>
@@ -746,26 +739,15 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SessionV2</span>
-<span class="sd">            A new session with the scaled flux. Returns ``0`` (int) on failure.</span>
+<span class="sd">            A new session with the scaled flux. </span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'None'</span><span class="p">,</span> <span class="s1">''</span><span class="p">]:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No reference session is selected."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Find the reference session object via the GUI bridge</span>
-            <span class="n">ref_hist</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span> 
-                            <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">reference_session</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">ref_hist</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">reference_session</span><span class="p">))</span>
-
-            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
-                <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not equalize the flux: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"No reference session is selected."</span><span class="p">)</span>
+        <span class="n">ref_hist</span> <span class="o">=</span> <span class="n">_find_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">)</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
+            <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
 
     
 <div class="viewcode-block" id="RecipeFluxV2.resample">
@@ -786,41 +768,16 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid,</span>
-<span class="sd">            or 0 on failure.</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">'None'</span> <span class="ow">or</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"No target session is selected."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># 1. Find the target session object from the main window</span>
-            <span class="n">target_hist</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">'_gui'</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="p">,</span> <span class="s1">'session_histories'</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">_gui</span><span class="o">.</span><span class="n">session_histories</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">target_session</span><span class="p">:</span>
-                        <span class="n">target_hist</span> <span class="o">=</span> <span class="n">hist</span>
-                        <span class="k">break</span>
-            
-            <span class="k">if</span> <span class="n">target_hist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find an open session named '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
-
-            <span class="n">target_spec</span> <span class="o">=</span> <span class="n">target_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span>
-            <span class="k">if</span> <span class="n">target_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Target session '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">' has no spectrum data."</span><span class="p">)</span>
-
-            <span class="c1"># 2. Execute the immutable V2 operation</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">resample_on_grid</span><span class="p">(</span>
-                <span class="n">target_grid_spec</span><span class="o">=</span><span class="n">target_spec</span>
-            <span class="p">)</span>
-            
-            <span class="c1"># 3. Return a NEW SessionV2 instance</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
-            
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not resample the spectrum: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"No target session is selected."</span><span class="p">)</span>
+        <span class="n">target_spec</span> <span class="o">=</span> <span class="n">_find_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">target_session</span><span class="p">)</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span>
+        <span class="k">if</span> <span class="n">target_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The session '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">' has no spectrum."</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">resample_on_grid</span><span class="p">(</span><span class="n">target_grid_spec</span><span class="o">=</span><span class="n">target_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
         
 <div class="viewcode-block" id="RecipeFluxV2.calibrate_from_magnitudes">
@@ -841,19 +798,11 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux,</span>
-<span class="sd">            or 0 on failure.</span>
+<span class="sd">        SessionV2</span>
+<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.</span>
 <span class="sd">        """</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># The API layer now handles all the complexity</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>
-            
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c1"># Standard error logging for the worker</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not calibrate the flux: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

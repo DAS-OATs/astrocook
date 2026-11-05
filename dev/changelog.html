@@ -501,6 +501,12 @@
 <li><p>The session log records the values a recipe used, its defaults included, typed (e.g. <code class="docutils literal notranslate"><span class="pre">kappa=3.0</span></code>, not <code class="docutils literal notranslate"><span class="pre">'3.0'</span></code>), so that a later change of a default does not change the replay (#573). Logs written before are read and replayed as before.</p></li>
 </ul>
 </section>
+<section id="changed-failures">
+<h3>Changed (failures)<a class="headerlink" href="#changed-failures" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>A recipe that cannot do what was asked raises an exception that says in which recipe it happened and why (<code class="docutils literal notranslate"><span class="pre">astrocook.recipes.errors</span></code>: <code class="docutils literal notranslate"><span class="pre">InvalidParameter</span></code> for a value that cannot be used, <code class="docutils literal notranslate"><span class="pre">RecipeFailed</span></code>, <code class="docutils literal notranslate"><span class="pre">MissingPrerequisite</span></code>), instead of logging the reason and returning <code class="docutils literal notranslate"><span class="pre">0</span></code>: for now the recipes of the <em>Continuum</em>, <em>Flux</em> and <em>File</em> menus and every value that cannot be read; the other recipes follow. The error of a step of a pipeline names both, e.g. <em>Populate components from identification → Auto-estimate continuum (single-click): …</em>. The GUI shows the message as before; a script gets the exception (<code class="docutils literal notranslate"><span class="pre">except</span> <span class="pre">RecipeError</span></code>); an agent gets the message from the MCP server. <em>Export to ASCII</em> says why it failed (it pointed to the log), and says when there is nothing to export.</p></li>
+</ul>
+</section>
 <section id="fixed">
 <h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">#</a></h3>
 <ul class="simple">
@@ -876,6 +882,7 @@
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unreleased">[Unreleased]</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-failures">Changed (failures)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
 </ul>
 </li>

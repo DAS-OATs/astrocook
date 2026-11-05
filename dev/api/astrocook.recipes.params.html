@@ -452,6 +452,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
@@ -571,44 +572,12 @@ emptied by mistake does not switch an option off (Guido, phase 6-bis, PR
 </dl>
 </dd></dl>
 
-<dl class="py exception">
-<dt class="sig sig-object py" id="astrocook.recipes.params.InvalidParameter">
-<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">InvalidParameter</span></span><a class="reference internal" href="../modules/astrocook/recipes/params.html#InvalidParameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.params.InvalidParameter" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
-<p>A parameter of a recipe cannot be converted to its type, or is out
-of its bounds; the message names the parameter and the value.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.params.InvalidParameter.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.params.InvalidParameter.__init__" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.params.InvalidParameter.add_note">
-<span class="sig-name descname"><span class="pre">add_note</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.params.InvalidParameter.add_note" title="Link to this definition">#</a></dt>
-<dd><p>Exception.add_note(note) –
-add a note to the exception</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.recipes.params.InvalidParameter.args">
-<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#astrocook.recipes.params.InvalidParameter.args" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.params.InvalidParameter.with_traceback">
-<span class="sig-name descname"><span class="pre">with_traceback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.params.InvalidParameter.with_traceback" title="Link to this definition">#</a></dt>
-<dd><p>Exception.with_traceback(tb) –
-set self.__traceback__ to tb and return self.</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.recipes.params.convert">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/params.html#convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.params.convert" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">value</span></code> converted to the type of <code class="docutils literal notranslate"><span class="pre">param</span></code> (a
 <a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec" title="astrocook.recipes.registry.ParamSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParamSpec</span></code></a>) and checked against its
-bounds; <a class="reference internal" href="#astrocook.recipes.params.InvalidParameter" title="astrocook.recipes.params.InvalidParameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">InvalidParameter</span></code></a> if it cannot be.</p>
+bounds; <code class="xref py py-class docutils literal notranslate"><span class="pre">InvalidParameter</span></code> if it cannot be.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -628,13 +597,27 @@ the registry does not declare (e.g. <code class="docutils literal notranslate"><
 that is not a recipe, are returned as passed.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.params.DATA_ERRORS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">DATA_ERRORS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;class</span> <span class="pre">'ValueError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'KeyError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'OSError'&gt;)</span></span><a class="headerlink" href="#astrocook.recipes.params.DATA_ERRORS" title="Link to this definition">#</a></dt>
+<dd><p>The errors of the core that mean “this data or this value cannot be
+used”: the decorator of the recipes turns them into RecipeFailed (Guido,
+phase 6-bis, PR 3). The others, usually bugs, go on as they are</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.recipes.params.typed_recipe">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">typed_recipe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/params.html#typed_recipe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.params.typed_recipe" title="Link to this definition">#</a></dt>
-<dd><p>Decorator of a recipe method: the parameters passed are converted to
-the types of the registry before the method runs. A value that cannot
-be converted, or is out of bounds, stops the recipe as a failure (the
-reason logged at ERROR, 0 returned; an exception in PR 3 of the phase).</p>
+<dd><p>Decorator of a recipe method, its boundary.</p>
+<p>The parameters passed are converted to the types of the registry
+before the method runs (<code class="xref py py-class docutils literal notranslate"><span class="pre">InvalidParameter</span></code> if one cannot be, or
+is out of its bounds). Every <code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeError</span></code> that leaves the
+method records the recipe (so that the message names the recipe, and
+the steps of a pipeline); the errors of the core in
+<a class="reference internal" href="#astrocook.recipes.params.DATA_ERRORS" title="astrocook.recipes.params.DATA_ERRORS"><code class="xref py py-data docutils literal notranslate"><span class="pre">DATA_ERRORS</span></code></a> become <code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeFailed</span></code>, with the original
+error as their cause; any other exception (a bug) goes on unchanged,
+with a note naming the recipe. Nothing is logged here: the error is
+logged where it is caught (phase 6-bis, PR 3).</p>
 </dd></dl>
 
 </section>
@@ -687,16 +670,10 @@ reason logged at ERROR, 0 returned; an exception in PR 3 of the phase).</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.NONE_STRING"><code class="docutils literal notranslate"><span class="pre">NONE_STRING</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.InvalidParameter"><code class="docutils literal notranslate"><span class="pre">InvalidParameter</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.InvalidParameter.__init__"><code class="docutils literal notranslate"><span class="pre">InvalidParameter.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.InvalidParameter.add_note"><code class="docutils literal notranslate"><span class="pre">InvalidParameter.add_note()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.InvalidParameter.args"><code class="docutils literal notranslate"><span class="pre">InvalidParameter.args</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.InvalidParameter.with_traceback"><code class="docutils literal notranslate"><span class="pre">InvalidParameter.with_traceback()</span></code></a></li>
-</ul>
-</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.convert"><code class="docutils literal notranslate"><span class="pre">convert()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.convert_params"><code class="docutils literal notranslate"><span class="pre">convert_params()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.resolve_params"><code class="docutils literal notranslate"><span class="pre">resolve_params()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.DATA_ERRORS"><code class="docutils literal notranslate"><span class="pre">DATA_ERRORS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.typed_recipe"><code class="docutils literal notranslate"><span class="pre">typed_recipe()</span></code></a></li>
 </ul>
   </nav></div>

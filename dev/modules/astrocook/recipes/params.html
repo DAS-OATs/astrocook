@@ -494,7 +494,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_param_fail</span>
+<span class="c1"># InvalidParameter is defined with the other exceptions of the recipes</span>
+<span class="c1"># (phase 6-bis, PR 3) and raised here</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeError</span><span class="p">,</span> <span class="n">RecipeFailed</span><span class="p">,</span> <span class="n">reason_of</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -505,12 +507,6 @@
 <span class="c1">#: emptied by mistake does not switch an option off (Guido, phase 6-bis, PR</span>
 <span class="c1">#: 2a: an empty ``kappa`` of *Rebin* is not "no clipping")</span>
 <span class="n">NONE_STRING</span> <span class="o">=</span> <span class="s1">'None'</span>
-
-<div class="viewcode-block" id="InvalidParameter">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.InvalidParameter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">InvalidParameter</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""A parameter of a recipe cannot be converted to its type, or is out</span>
-<span class="sd">    of its bounds; the message names the parameter and the value."""</span></div>
 
 
 
@@ -643,13 +639,26 @@
 
 
 
+<span class="c1">#: The errors of the core that mean "this data or this value cannot be</span>
+<span class="c1">#: used": the decorator of the recipes turns them into RecipeFailed (Guido,</span>
+<span class="c1">#: phase 6-bis, PR 3). The others, usually bugs, go on as they are</span>
+<span class="n">DATA_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="typed_recipe">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.typed_recipe">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">typed_recipe</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Decorator of a recipe method: the parameters passed are converted to</span>
-<span class="sd">    the types of the registry before the method runs. A value that cannot</span>
-<span class="sd">    be converted, or is out of bounds, stops the recipe as a failure (the</span>
-<span class="sd">    reason logged at ERROR, 0 returned; an exception in PR 3 of the phase).</span>
+<span class="w">    </span><span class="sd">"""Decorator of a recipe method, its boundary.</span>
+
+<span class="sd">    The parameters passed are converted to the types of the registry</span>
+<span class="sd">    before the method runs (:class:`InvalidParameter` if one cannot be, or</span>
+<span class="sd">    is out of its bounds). Every :class:`RecipeError` that leaves the</span>
+<span class="sd">    method records the recipe (so that the message names the recipe, and</span>
+<span class="sd">    the steps of a pipeline); the errors of the core in</span>
+<span class="sd">    :data:`DATA_ERRORS` become :class:`RecipeFailed`, with the original</span>
+<span class="sd">    error as their cause; any other exception (a bug) goes on unchanged,</span>
+<span class="sd">    with a note naming the recipe. Nothing is logged here: the error is</span>
+<span class="sd">    logged where it is caught (phase 6-bis, PR 3).</span>
 <span class="sd">    """</span>
     <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
 
@@ -657,14 +666,22 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">passed</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">'self'</span><span class="p">}</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">passed</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">'self'</span><span class="p">}</span>
             <span class="n">converted</span> <span class="o">=</span> <span class="n">convert_params</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">passed</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">InvalidParameter</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">msg_param_fail</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
-            <span class="k">return</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">converted</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">converted</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">enter</span><span class="p">(</span><span class="o">*</span><span class="n">where</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">DATA_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="n">reason_of</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">error</span><span class="o">.</span><span class="n">enter</span><span class="p">(</span><span class="o">*</span><span class="n">where</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">add_note</span><span class="p">(</span><span class="sa">f</span><span class="s2">"In the recipe </span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">where</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+            <span class="k">raise</span>
 
     <span class="n">wrapper</span><span class="o">.</span><span class="n">typed_recipe</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># checked by tests/test_recipe_params.py</span>
     <span class="k">return</span> <span class="n">wrapper</span></div>

@@ -452,6 +452,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
@@ -593,10 +594,14 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">True</s
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with updated continuum
-and absorption mask, or 0 on failure.</p>
+and absorption mask.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If a parameter cannot be used, or the continuum cannot be
+    estimated (<a class="reference internal" href="astrocook.recipes.errors.html#module-astrocook.recipes.errors" title="astrocook.recipes.errors"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.errors</span></code></a>).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -622,10 +627,13 @@ considered absorbed. Defaults to <code class="docutils literal notranslate"><spa
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">abs_mask</span></code>
-column added/updated, or 0 on failure.</p>
+column added/updated.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If the recipe cannot run (<a class="reference internal" href="astrocook.recipes.errors.html#module-astrocook.recipes.errors" title="astrocook.recipes.errors"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.errors</span></code></a>).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -652,10 +660,13 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'auto'<
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">cont</span></code>
-column added/updated, or 0 on failure.</p>
+column added/updated.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If the recipe cannot run (<a class="reference internal" href="astrocook.recipes.errors.html#module-astrocook.recipes.errors" title="astrocook.recipes.errors"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.errors</span></code></a>).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -678,10 +689,13 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'128.0-
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>
-column added/updated, or 0 on failure.</p>
+column added/updated.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If the recipe cannot run (<a class="reference internal" href="astrocook.recipes.errors.html#module-astrocook.recipes.errors" title="astrocook.recipes.errors"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.errors</span></code></a>).</p>
 </dd>
 </dl>
 </dd></dl>
