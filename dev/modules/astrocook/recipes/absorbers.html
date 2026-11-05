@@ -481,11 +481,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LINK_ERRORS</span><span class="p">,</span> <span class="n">LINK_FUNCTIONS</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeFailed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">MissingPrerequisite</span><span class="p">,</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">report</span><span class="p">,</span> <span class="n">report_removed</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">,</span> <span class="n">msg_no_resolution</span><span class="p">,</span>
-                                       <span class="n">msg_session_not_found</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_no_resolution</span><span class="p">,</span> <span class="n">msg_session_not_found</span><span class="p">,</span>
+                                       <span class="n">msg_z_em_unset</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span>
@@ -505,6 +505,7 @@
     <span class="c1"># --- 1. THE MASTER PIPELINE ---</span>
     <span class="s2">"components_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-detect and fit components."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"General pipeline: Identifies candidates (doublets or singles), populates them as systems, and refits the spectrum."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII,Ly_ab"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for."</span><span class="p">},</span>
@@ -523,7 +524,7 @@
     <span class="c1"># --- 2. WRAPPERS ---</span>
     <span class="s2">"doublets_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit metal doublets (Red Side)."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Wrapper for components_auto targeted at the red side (z &lt; z_em). Finds CIV, SiIV, MgII."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for."</span><span class="p">},</span>
@@ -536,7 +537,7 @@
     <span class="p">},</span>
     <span class="s2">"lya_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit Ly-alpha forest."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Wrapper for components_auto targeted at the forest. Includes interloper filtering."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lower threshold for single lines."</span><span class="p">},</span>
@@ -549,7 +550,7 @@
     <span class="p">},</span>
     <span class="s2">"forest_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit full Lyman series."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit) simultaneously."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold for detection."</span><span class="p">},</span>
@@ -562,7 +563,7 @@
     <span class="p">},</span>
     <span class="s2">"metals_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Check for associated metals."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scans existing systems and attempts to add other common metal ions (e.g. NV, SiIV) at the same redshift."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"ions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,NV,OVI,CII,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated list of ions to check."</span><span class="p">},</span>
@@ -575,8 +576,8 @@
     <span class="p">},</span>
     <span class="s2">"identify_lines"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Identify likely absorption systems."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds absorption regions, computes correlation signals for multiplets, and identifies the most likely candidates."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII,Ly_ab"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Multiplets to search for (comma-separated)."</span><span class="p">},</span>
@@ -591,6 +592,7 @@
     <span class="p">},</span>
     <span class="s2">"populate_from_identification"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Populate components from identification."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"continuum"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Populates the system list using the regions and candidates found by 'identify_lines'."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_id_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"abs_ids"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column containing region IDs."</span><span class="p">},</span>
@@ -602,7 +604,7 @@
     <span class="p">},</span>
     <span class="s2">"add_component"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Add a single component."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds a new manual Voigt component at a specific redshift."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"series"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"Ly_a"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Transition or Multiplet name (e.g. 'CIV')"</span><span class="p">},</span>
@@ -659,7 +661,7 @@
     <span class="p">},</span>
     <span class="s2">"fit_component"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit component."</span><span class="p">,</span>
-        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,),</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits the selected component (and its neighbors) using the Voigt engine."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Target Component UUID"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
@@ -695,6 +697,7 @@
     <span class="p">},</span>
     <span class="s2">"add_linked_system"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Add linked system."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Add multiple components (e.g. CIV, SiIV) and link their redshifts."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"series_list"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated list of series."</span><span class="p">},</span>
@@ -708,6 +711,7 @@
     <span class="p">},</span>
     <span class="s2">"optimize_system"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Optimize system (Iterative Fit)."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Iteratively adds components to a system to minimize residuals using Akaike Information Criterion (AIC)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Target Component UUID (seed)"</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
@@ -723,6 +727,7 @@
     <span class="p">},</span>
     <span class="s2">"fit_bayesian"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit Bayesian."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Runs Bayesian sampling (MCMC or Nested) for the selected group."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
@@ -735,6 +740,7 @@
     <span class="p">},</span>
     <span class="s2">"refit_all"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Refit all systems."</span><span class="p">,</span>
+        <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Iteratively fits all disjoint groups of components (islands) in the spectrum."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_nfev"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Max iterations per group"</span><span class="p">},</span>
@@ -892,22 +898,6 @@
 <span class="n">FIT_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">ArithmeticError</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_with_continuum</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The session with a continuum: estimated first with the automatic</span>
-<span class="sd">    continuum when there is none (and said so).</span>
-
-<span class="sd">    Before phase 6 the 0 of a failed estimate went on as the session, and</span>
-<span class="sd">    the recipe failed with "'int' object has no attribute 'systs'". Since</span>
-<span class="sd">    phase 6-bis (PR 3) the failure of the estimate is a RecipeError, which</span>
-<span class="sd">    names the recipe and Auto-estimate Continuum as its step.</span>
-<span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">session</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg_continuum_estimated</span><span class="p">)</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-    <span class="k">return</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">estimate_auto</span><span class="p">()</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_if_unconvolved</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""WARNING when a fit runs without a resolution (it was at DEBUG only,</span>
 <span class="sd">    in the fitter): the profiles are not convolved, so b includes the</span>
@@ -935,6 +925,10 @@
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">region_limit</span> <span class="o">==</span> <span class="s2">"None"</span><span class="p">:</span>
         <span class="k">return</span>
+    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="c1"># A prerequisite of the region, not of the recipe (PR 5)</span>
+        <span class="k">raise</span> <span class="n">MissingPrerequisite</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The region '</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">' needs the emission "</span>
+                                  <span class="sa">f</span><span class="s2">"redshift: </span><span class="si">{</span><span class="n">msg_z_em_unset</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region_limit</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1651,7 +1645,8 @@
         <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
 
         <span class="c1"># 1. Trigger Continuum if needed</span>
-        <span class="n">cont_sess</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="c1"># The continuum, if missing, was provided before the recipe (PR 5)</span>
+        <span class="n">cont_sess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">cont_sess</span><span class="o">.</span><span class="n">spec</span>
         
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">series_map</span><span class="p">)</span><span class="si">}</span><span class="s2"> components from the identification."</span><span class="p">)</span>
@@ -1983,7 +1978,6 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">check_stop</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">()</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
             <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
@@ -2248,7 +2242,6 @@
 
         <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-        <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="n">current_session</span><span class="p">)</span>
         <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
         <span class="n">new_systs</span> <span class="o">=</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">optimize_hierarchy</span><span class="p">(</span>
@@ -2424,8 +2417,8 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"There are no components to fit."</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
-        <span class="c1"># (It estimated the continuum without saying so, phase 6)</span>
-        <span class="n">current_session</span> <span class="o">=</span> <span class="n">_with_continuum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="c1"># The continuum, if missing, was provided before the recipe (PR 5)</span>
+        <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
         <span class="c1"># --- START NEW CONSOLIDATED LOGIC FOR BETA.4 ---</span>

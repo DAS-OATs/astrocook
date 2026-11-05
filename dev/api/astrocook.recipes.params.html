@@ -54,7 +54,7 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="astrocook.recipes.registry module" href="astrocook.recipes.registry.html" />
+    <link rel="next" title="astrocook.recipes.prerequisites module" href="astrocook.recipes.prerequisites.html" />
     <link rel="prev" title="astrocook.recipes.messages module" href="astrocook.recipes.messages.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
@@ -457,6 +457,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -625,7 +626,10 @@ the steps of a pipeline); the errors of the core in
 <a class="reference internal" href="#astrocook.recipes.params.DATA_ERRORS" title="astrocook.recipes.params.DATA_ERRORS"><code class="xref py py-data docutils literal notranslate"><span class="pre">DATA_ERRORS</span></code></a> become <code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeFailed</span></code>, with the original
 error as their cause; any other exception (a bug) goes on unchanged,
 with a note naming the recipe. Nothing is logged here: the error is
-logged where it is caught (phase 6-bis, PR 3).</p>
+logged where it is caught (phase 6-bis, PR 3). Before the method runs,
+the prerequisites that the registry declares for it are filled, or
+their absence raised, as the policy of
+<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a> says (PR 5).</p>
 </dd></dl>
 
 </section>
@@ -650,11 +654,11 @@ logged where it is caught (phase 6-bis, PR 3).</p>
       </div>
     </a>
     <a class="right-next"
-       href="astrocook.recipes.registry.html"
+       href="astrocook.recipes.prerequisites.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook.recipes.registry module</p>
+        <p class="prev-next-title">astrocook.recipes.prerequisites module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

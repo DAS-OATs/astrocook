@@ -503,8 +503,12 @@
 <span class="sd">    state of the same session.</span>
 <span class="sd">``requires``</span>
 <span class="sd">    What the recipe needs from the session before it runs: ``"z_em"``,</span>
-<span class="sd">    ``"resolution"``. Today the GUI asks for them; phase 6-bis extends</span>
-<span class="sd">    this to the other prerequisites ("Prerequisites of the recipes").</span>
+<span class="sd">    ``"resolution"``, ``"continuum"`` (:mod:`astrocook.recipes.prerequisites`</span>
+<span class="sd">    says what is missing and fills it).</span>
+<span class="sd">``provides``</span>
+<span class="sd">    What the recipe gives to the session, among the same names (e.g.</span>
+<span class="sd">    ``estimate_auto`` the continuum): the recipes named to the user when a</span>
+<span class="sd">    prerequisite is missing.</span>
 
 <span class="sd">Keys of a parameter: ``name``, ``type``, ``default``, ``doc`` (optional,</span>
 <span class="sd">the name if missing), ``gui_hidden`` (not shown in the dialog), and for the</span>
@@ -525,10 +529,10 @@
 <span class="n">CATEGORIES</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'file'</span><span class="p">,</span> <span class="s1">'edit'</span><span class="p">,</span> <span class="s1">'flux'</span><span class="p">,</span> <span class="s1">'continuum'</span><span class="p">,</span> <span class="s1">'absorbers'</span><span class="p">)</span>
 
 <span class="c1">#: What a recipe can require (the key ``requires``)</span>
-<span class="n">REQUIREMENTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'z_em'</span><span class="p">,</span> <span class="s1">'resolution'</span><span class="p">})</span>
+<span class="n">REQUIREMENTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'z_em'</span><span class="p">,</span> <span class="s1">'resolution'</span><span class="p">,</span> <span class="s1">'continuum'</span><span class="p">})</span>
 
 <span class="n">_RECIPE_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'brief'</span><span class="p">,</span> <span class="s1">'details'</span><span class="p">,</span> <span class="s1">'url'</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'branching'</span><span class="p">,</span>
-                <span class="s1">'requires'</span><span class="p">}</span>
+                <span class="s1">'requires'</span><span class="p">,</span> <span class="s1">'provides'</span><span class="p">}</span>
 <span class="n">_PARAM_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'type'</span><span class="p">,</span> <span class="s1">'default'</span><span class="p">,</span> <span class="s1">'doc'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'optional'</span><span class="p">,</span> <span class="s1">'keep'</span><span class="p">,</span>
                <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">,</span> <span class="s1">'gt'</span><span class="p">,</span> <span class="s1">'allow_nan'</span><span class="p">}</span>
 
@@ -589,6 +593,8 @@
     <span class="n">branching</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="c1">#: What the recipe needs from the session (a subset of :data:`REQUIREMENTS`)</span>
     <span class="n">requires</span><span class="p">:</span> <span class="nb">frozenset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+    <span class="c1">#: What the recipe gives to the session (a subset of :data:`REQUIREMENTS`)</span>
+    <span class="n">provides</span><span class="p">:</span> <span class="nb">frozenset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
 
 <div class="viewcode-block" id="RecipeSpec.param">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.param">[docs]</a>
@@ -635,12 +641,15 @@
     <span class="n">requires</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'requires'</span><span class="p">,</span> <span class="p">()))</span>
     <span class="k">if</span> <span class="n">requires</span> <span class="o">-</span> <span class="n">REQUIREMENTS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown requirements </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">requires</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">REQUIREMENTS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">provides</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'provides'</span><span class="p">,</span> <span class="p">()))</span>
+    <span class="k">if</span> <span class="n">provides</span> <span class="o">-</span> <span class="n">REQUIREMENTS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown provisions </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">provides</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">REQUIREMENTS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_param_spec</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'params'</span><span class="p">,</span> <span class="p">[]))</span>
     <span class="k">return</span> <span class="n">RecipeSpec</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">brief</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">'brief'</span><span class="p">],</span>
                       <span class="n">details</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'details'</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">url</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'url'</span><span class="p">),</span>
                       <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">gui_hidden</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
                       <span class="n">branching</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'branching'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
-                      <span class="n">requires</span><span class="o">=</span><span class="n">requires</span><span class="p">)</span></div>
+                      <span class="n">requires</span><span class="o">=</span><span class="n">requires</span><span class="p">,</span> <span class="n">provides</span><span class="o">=</span><span class="n">provides</span><span class="p">)</span></div>
 
 
 

@@ -15,6 +15,7 @@ Submodules
    astrocook.recipes.flux
    astrocook.recipes.messages
    astrocook.recipes.params
+   astrocook.recipes.prerequisites
    astrocook.recipes.registry
    astrocook.recipes.result
 

@@ -578,8 +578,43 @@ counts them in the status bar and writes them in the log.
 The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
+<section id="what-a-recipe-needs">
+<h2>3. What a Recipe Needs<a class="headerlink" href="#what-a-recipe-needs" title="Link to this heading">#</a></h2>
+<p>Some recipes need something from the session: the emission redshift
+(<code class="docutils literal notranslate"><span class="pre">z_em</span></code>), the resolution, a continuum. The <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>
+lists them for each recipe (<code class="docutils literal notranslate"><span class="pre">requires</span></code>), and
+<code class="docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites.missing</span></code> says what a session lacks for a
+recipe, and which recipe provides it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">missing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+
+<span class="k">for</span> <span class="n">gap</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">find_recipe</span><span class="p">(</span><span class="s2">"doublets_auto"</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gap</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+<span class="c1"># The spectrum has no continuum: Auto-estimate continuum (single-click)</span>
+<span class="c1"># (continuum.estimate_auto) provides it with its defaults</span>
+</pre></div>
+</div>
+<p>By default a script goes on: a continuum that is missing is estimated
+first with <em>Auto-estimate Continuum</em> and its defaults, with a warning; a
+recipe that needs <code class="docutils literal notranslate"><span class="pre">z_em</span></code> or the resolution and does not find them goes on
+too, with a warning that says what it does without them. To stop instead,
+with a <code class="docutils literal notranslate"><span class="pre">MissingPrerequisite</span></code> exception that says what is missing and how to
+provide it, choose the policy <code class="docutils literal notranslate"><span class="pre">&quot;raise&quot;</span></code>, for a block of the script or for
+one call:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">policy</span>
+
+<span class="k">with</span> <span class="n">policy</span><span class="p">(</span><span class="s2">"raise"</span><span class="p">):</span>
+    <span class="n">fitted</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">absorbers</span><span class="o">.</span><span class="n">doublets_auto</span><span class="p">()</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s2">"absorbers.doublets_auto"</span><span class="p">,</span> <span class="n">on_missing</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A recipe run first to provide something is in <code class="docutils literal notranslate"><span class="pre">result.provided</span></code>, with the
+session it gave, and the GUI writes it in the session log
+as a step of its own, before the recipe.</p>
+</section>
 <section id="saving-the-result">
-<h2>3. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
+<h2>4. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
 <p>Save a session as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive; passing the original session as
 <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> stores the original data in the archive too, as the GUI
 does:</p>
@@ -588,7 +623,7 @@ does:</p>
 </div>
 </section>
 <section id="seeing-astrocook-s-messages">
-<h2>4. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
+<h2>5. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
 <p>Astrocook reports its progress with Python’s <code class="docutils literal notranslate"><span class="pre">logging</span></code> module and, like
 other libraries, leaves its configuration to your script: by default only
 warnings and errors are shown. To see the progress messages as well, add
@@ -660,8 +695,9 @@ hide the messages of the fits:</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#opening-a-session">1. Opening a Session</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-recipes">2. Running Recipes</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">3. Saving the Result</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">4. Seeing Astrocook’s Messages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-recipe-needs">3. What a Recipe Needs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">4. Saving the Result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">5. Seeing Astrocook’s Messages</a></li>
 </ul>
   </nav></div>
 

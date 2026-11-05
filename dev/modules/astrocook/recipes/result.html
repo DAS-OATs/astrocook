@@ -496,9 +496,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">nullcontext</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -610,6 +610,10 @@
     <span class="c1">#: (the components whose group could not be fitted), ``candidates`` and</span>
     <span class="c1">#: ``regions`` (the identification of ``identify_lines``)</span>
     <span class="n">extra</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="c1">#: The recipes run first to provide what the session lacked (PR 5),</span>
+    <span class="c1">#: as :class:`~astrocook.recipes.prerequisites.ProvidedStep`: each with</span>
+    <span class="c1">#: its session, for the callers that keep the history and the log</span>
+    <span class="n">provided</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
     <span class="c1">#: Reserved for phase 7 (the algorithms do not provide them yet): the</span>
     <span class="c1">#: uncertainty of the continuum, the credibility of an identification</span>
     <span class="c1">#: and its alternatives</span>
@@ -631,7 +635,9 @@
 <span class="sd">        a pipeline made and dropped, those whose fit failed, the candidate</span>
 <span class="sd">        systems found; one line each, e.g. ``'2 components removed: logN &lt;</span>
 <span class="sd">        min_logN = 14.0 (too weak)'``."""</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">find_recipe</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="si">}</span><span class="s2"> run first: "</span>
+               <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">provided</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">what</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"removed"</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">),</span>
                           <span class="p">(</span><span class="s2">"discarded"</span><span class="p">,</span> <span class="s2">"made and discarded by the recipe"</span><span class="p">)):</span>
             <span class="n">reasons</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -842,15 +848,20 @@
 
 <div class="viewcode-block" id="run">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.run">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RecipeResult</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">on_missing</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RecipeResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Run the recipe ``recipe`` (``'category.name'``, or the name alone)</span>
 <span class="sd">    on ``session`` and return its :class:`RecipeResult`.</span>
 
 <span class="sd">    The parameters are given as to the method of the recipe (typed, or as</span>
 <span class="sd">    strings); a recipe that cannot do what was asked raises its</span>
 <span class="sd">    :class:`~astrocook.recipes.errors.RecipeError`, as the method does.</span>
+<span class="sd">    ``on_missing`` is the policy for a prerequisite the session lacks,</span>
+<span class="sd">    ``"provide"`` or ``"raise"`` (:mod:`astrocook.recipes.prerequisites`);</span>
+<span class="sd">    by default, the one in force.</span>
 <span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_steps</span><span class="p">,</span> <span class="n">resolve_params</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_provided</span><span class="p">,</span> <span class="n">policy</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span><span class="p">,</span> <span class="n">get_recipe</span>
     <span class="k">if</span> <span class="s1">'.'</span> <span class="ow">in</span> <span class="n">recipe</span><span class="p">:</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">get_recipe</span><span class="p">(</span><span class="o">*</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
@@ -859,8 +870,9 @@
         <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no recipe </span><span class="si">{</span><span class="n">recipe</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">),</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">_collect_warnings</span><span class="p">()</span> <span class="k">as</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">collect_steps</span><span class="p">()</span> <span class="k">as</span> <span class="n">steps</span><span class="p">,</span> \
-            <span class="n">_collect_extra</span><span class="p">()</span> <span class="k">as</span> <span class="n">extra</span><span class="p">:</span>
+    <span class="n">chosen</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">on_missing</span><span class="p">)</span> <span class="k">if</span> <span class="n">on_missing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nullcontext</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">chosen</span><span class="p">,</span> <span class="n">_collect_warnings</span><span class="p">()</span> <span class="k">as</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">collect_steps</span><span class="p">()</span> <span class="k">as</span> <span class="n">steps</span><span class="p">,</span> \
+            <span class="n">_collect_extra</span><span class="p">()</span> <span class="k">as</span> <span class="n">extra</span><span class="p">,</span> <span class="n">collect_provided</span><span class="p">()</span> <span class="k">as</span> <span class="n">provided</span><span class="p">:</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
     <span class="n">used</span> <span class="o">=</span> <span class="n">resolve_params</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
     <span class="k">if</span> <span class="s1">'removed'</span> <span class="ow">in</span> <span class="n">extra</span><span class="p">:</span>
@@ -885,7 +897,7 @@
     <span class="k">return</span> <span class="n">RecipeResult</span><span class="p">(</span><span class="n">recipe</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">),</span>
                         <span class="n">session</span><span class="o">=</span><span class="n">new</span><span class="p">,</span> <span class="n">branching</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">branching</span><span class="p">,</span> <span class="n">changes</span><span class="o">=</span><span class="n">changes</span><span class="p">,</span>
                         <span class="n">params</span><span class="o">=</span><span class="n">used</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">warnings</span><span class="p">),</span> <span class="n">steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">steps</span><span class="p">),</span>
-                        <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">extra</span><span class="p">))</span></div>
+                        <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">extra</span><span class="p">),</span> <span class="n">provided</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">provided</span><span class="p">))</span></div>
 
 </pre></div>
 

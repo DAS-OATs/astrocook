@@ -1,0 +1,7 @@
+astrocook.recipes.prerequisites module
+======================================
+
+.. automodule:: astrocook.recipes.prerequisites
+   :members:
+   :show-inheritance:
+   :undoc-members:

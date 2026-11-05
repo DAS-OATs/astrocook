@@ -457,6 +457,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -565,13 +566,6 @@ the recipe then returns 0 instead of a new session.</p>
 </dd></dl>
 
 <dl class="py data">
-<dt class="sig sig-object py" id="astrocook.recipes.messages.msg_continuum_estimated">
-<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_continuum_estimated</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'There</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">continuum:</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">estimated</span> <span class="pre">first,</span> <span class="pre">as</span> <span class="pre">with</span> <span class="pre">Auto-estimate</span> <span class="pre">Continuum.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_continuum_estimated" title="Link to this definition">#</a></dt>
-<dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">INFO</span></code>) when a recipe that needs a continuum estimates it first
-with the automatic continuum, because the spectrum has none.</p>
-</dd></dl>
-
-<dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.messages.msg_no_resolution">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.messages.</span></span><span class="sig-name descname"><span class="pre">msg_no_resolution</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">spectrum</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">resolution:</span> <span class="pre">the</span> <span class="pre">profiles</span> <span class="pre">are</span> <span class="pre">fitted</span> <span class="pre">without</span> <span class="pre">the</span> <span class="pre">instrumental</span> <span class="pre">broadening,</span> <span class="pre">so</span> <span class="pre">b</span> <span class="pre">includes</span> <span class="pre">it.</span> <span class="pre">Set</span> <span class="pre">the</span> <span class="pre">resolution</span> <span class="pre">with</span> <span class="pre">Edit</span> <span class="pre">&gt;</span> <span class="pre">Set</span> <span class="pre">Properties.'</span></span><a class="headerlink" href="#astrocook.recipes.messages.msg_no_resolution" title="Link to this definition">#</a></dt>
 <dd><p>Logged (<code class="docutils literal notranslate"><span class="pre">WARNING</span></code>) when a fit runs on a spectrum without a resolution:
@@ -642,7 +636,6 @@ redshift and it is not set.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_param_fail"><code class="docutils literal notranslate"><span class="pre">msg_param_fail</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_continuum_estimated"><code class="docutils literal notranslate"><span class="pre">msg_continuum_estimated</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_no_resolution"><code class="docutils literal notranslate"><span class="pre">msg_no_resolution</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_session_not_found"><code class="docutils literal notranslate"><span class="pre">msg_session_not_found</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.messages.msg_z_em_unset"><code class="docutils literal notranslate"><span class="pre">msg_z_em_unset</span></code></a></li>
