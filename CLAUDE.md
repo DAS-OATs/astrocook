@@ -129,6 +129,11 @@ Current version: 2.5.0. Python ≥3.12.
   structured outputs, reliable natural-language log.
 - v3 (horizon): a collection of complete models with alternative
   identifications and credibility, generated automatically in under an hour.
+- Papers (`ROADMAP.md`, section 6; the full plan in the private
+  `astrocook-data`, `papers/plan.md`): a reference paper (MNRAS) with the
+  validation on mocks and the automatic re-analysis of HE0940–1050, after
+  phase 7. The real spectrum stays blind until then: develop only on the
+  mocks and on its synthetic twin.
 
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6 and 6-bis done (October-November 2026; details per item in `ROADMAP.md`).
