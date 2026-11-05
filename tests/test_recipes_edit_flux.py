@@ -18,7 +18,7 @@ from types import SimpleNamespace
 import numpy as np
 import astropy.units as au
 import pytest
-from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
+from astrocook.recipes.errors import InvalidParameter, RecipeError, RecipeFailed  # phase 6-bis, PR 3
 
 from astrocook.core.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
@@ -120,16 +120,10 @@ def test_set_properties_keeps_column_if_asked():
 @pytest.mark.parametrize("kwargs", [dict(z_em="abc"), dict(resol="abc"),
                                     dict(resol="xpx")])
 def test_set_properties_bad_input_fails(kwargs):
-    # z_em is refused by the conversion; resol is read by the recipe, which
-    # returns 0 until PR 3b (phase 6-bis)
-    if "z_em" in kwargs:
-        with pytest.raises(InvalidParameter):
-            _session().edit.set_properties(**kwargs)
-    else:
-        assert _session().edit.set_properties(**kwargs) == 0
-
-
-# --- Edit > Apply / Mask expression ---------------------------------------
+    # z_em is refused by the conversion, resol by the recipe, which reads it
+    (param, _), = kwargs.items()
+    with pytest.raises(InvalidParameter, match=f"Set session properties: {param}: "):
+        _session().edit.set_properties(**kwargs)
 
 def test_apply_expression_ui_names():
     session = _session()
@@ -152,10 +146,9 @@ def test_apply_expression_other_session():
 
 
 @pytest.mark.parametrize("expression", ["", "F +", "unknown * 2"])
-def test_apply_expression_bad_input_returns_0(expression):
-    assert _session().edit.apply_expression("F", expression) == 0
-
-
+def test_apply_expression_bad_input_fails(expression):
+    with pytest.raises(RecipeError):
+        _session().edit.apply_expression("F", expression)
 def test_mask_expression():
     session = _session()
     out = session.edit.mask_expression("F", "λ < 614")
@@ -167,10 +160,9 @@ def test_mask_expression():
 
 @pytest.mark.parametrize("target, expression", [
     ("missing", "λ < 614"), ("F", "F * 2"), ("F", "")])
-def test_mask_expression_bad_input_returns_0(target, expression):
-    assert _session().edit.mask_expression(target, expression) == 0
-
-
+def test_mask_expression_bad_input_fails(target, expression):
+    with pytest.raises(RecipeError):
+        _session().edit.mask_expression(target, expression)
 @pytest.mark.parametrize("operation", [
     lambda s: s.edit.apply_expression("F", "F * 1"),
     lambda s: s.edit.mask_expression("F", "λ < 0"),
@@ -214,11 +206,8 @@ def test_smooth_column_cont_renormalises_model():
 
 @pytest.mark.parametrize("target, sigma", [("missing", "10.0"), ("F", "abc")])
 def test_smooth_column_bad_input_fails(target, sigma):
-    if sigma == "abc":
-        with pytest.raises(InvalidParameter):
-            _session().edit.smooth_column(target, sigma)
-    else:
-        assert _session().edit.smooth_column(target, sigma) == 0  # until PR 3b
+    with pytest.raises(InvalidParameter if sigma == "abc" else RecipeFailed):
+        _session().edit.smooth_column(target, sigma)
 
 
 def test_delete_columns_and_systems():
@@ -241,10 +230,9 @@ def test_split_keeps_rows_and_systems_in_range():
     assert [c.z for c in out.systs.components] == [2.97]
 
 
-def test_split_empty_expression_returns_0():
-    assert _session().edit.split("") == 0
-
-
+def test_split_empty_expression_fails():
+    with pytest.raises(RecipeError):
+        _session().edit.split("")
 def test_extract_preset():
     # z_em = 4.1: Lyman-beta at 523.1 nm, Lyman-alpha at 620.0 nm
     session = _session(_spec(500.0, 700.0, 0.05))
@@ -258,10 +246,9 @@ def test_extract_preset():
 
 
 @pytest.mark.parametrize("z_em, region", [(Z_EM, "unknown"), (0.0, "lya_forest")])
-def test_extract_preset_bad_input_returns_0(z_em, region):
-    assert _session(_spec(z_em=z_em)).edit.extract_preset(region) == 0
-
-
+def test_extract_preset_bad_input_fails(z_em, region):
+    with pytest.raises(RecipeError):
+        _session(_spec(z_em=z_em)).edit.extract_preset(region)
 def test_trim_common():
     # CIV 1548 at z = 2.97 (614.7 nm) in this session, Ly-alpha at the same z
     # (482.6 nm) in the other: the common coverage is +-200 km/s
@@ -275,13 +262,11 @@ def test_trim_common():
     assert x.max() == pytest.approx(lam * (1 + 200 / C_KMS), abs=0.006)
 
 
-def test_trim_common_mismatch_returns_0():
+def test_trim_common_mismatch_fails():
     # Two transitions for one session found
     session = _session(gui=_gui(ly=SimpleNamespace(spec=_spec())))
-    assert session.edit.trim_common("ly", "2.97", "CIV_1548", "Ly_a, Ly_b") == 0
-
-
-# --- Edit > Import systems ------------------------------------------------
+    with pytest.raises(RecipeError):
+        session.edit.trim_common("ly", "2.97", "CIV_1548", "Ly_a, Ly_b")
 
 @pytest.mark.parametrize("append, expected", [(True, [2.95, 2.97]),
                                               (False, [2.97])])
@@ -301,10 +286,8 @@ def test_import_systems_nothing_to_import():
         assert session.edit.import_systems(name) is session
     # A session that is not open is a failure (phase 6: it returned the
     # session unchanged, which looked like a success)
-    assert session.edit.import_systems("missing") == 0
-
-
-# --- Edit > Import systems from ASCII (#480) ------------------------------
+    with pytest.raises(RecipeError):
+        session.edit.import_systems("missing")
 
 def test_import_systems_ascii_round_trip(tmp_path):
     # The _systems.csv written by Export ASCII can be read back
@@ -331,11 +314,10 @@ def test_import_systems_ascii_bad_input(tmp_path):
     path = tmp_path / "bad.csv"
     path.write_text("name,redshift\nCIV,2.97\n")
     session = _session()
-    assert session.edit.import_systems_ascii(str(path)) == 0
-    assert session.edit.import_systems_ascii(str(tmp_path / "missing.csv")) == 0
-
-
-# --- Edit > Stitch, Co-add ------------------------------------------------
+    with pytest.raises(RecipeError):
+        session.edit.import_systems_ascii(str(path))
+    with pytest.raises(RecipeError):
+        session.edit.import_systems_ascii(str(tmp_path / "missing.csv"))
 
 def test_stitch():
     blue, red = _spec(612.0, 616.0), _spec(616.0, 620.0, seed=1)
@@ -346,10 +328,10 @@ def test_stitch():
                                    np.concatenate([blue.x.value, red.x.value]))
     # Unknown names are skipped; nothing to stitch returns the same session
     # Nothing to stitch is a failure (phase 6: the session unchanged)
-    assert session.edit.stitch(["missing"]) == 0
-    assert session.edit.stitch([]) == 0
-
-
+    with pytest.raises(RecipeError):
+        session.edit.stitch(["missing"])
+    with pytest.raises(RecipeError):
+        session.edit.stitch([])
 def test_stitch_overlap_asks_for_scatter_plot():
     # Issue #442: overlapping regions give interleaved pixels, drawn as a
     # zigzag by the default step plot; stitch asks the GUI for a scatter plot
@@ -379,11 +361,8 @@ def test_coadd(snapshot):
                                            ("a", dict(dx="abc"))])
 def test_coadd_bad_input_fails(names, kwargs):
     session = _session(gui=_gui(a=SimpleNamespace(spec=_spec())))
-    if kwargs:
-        with pytest.raises(InvalidParameter):
-            session.edit.coadd(names, **kwargs)
-    else:
-        assert session.edit.coadd(names, **kwargs) == 0  # until PR 3b
+    with pytest.raises(InvalidParameter if kwargs else RecipeFailed):
+        session.edit.coadd(names, **kwargs)
 
 
 # --- Flux recipes ---------------------------------------------------------

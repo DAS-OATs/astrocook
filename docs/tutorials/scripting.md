@@ -51,9 +51,9 @@ except RecipeError as e:
 ```
 The error of a step of a longer recipe names both, e.g. *Populate
 components from identification → Auto-estimate continuum (single-click):
-...*. Some recipes of the *Edit* and *Absorbers* menus still report a
-failure by logging an error and returning `0` instead of a session, until
-the next release: check `result == 0` for them.
+...*. Some recipes of the *Absorbers* menu still report a failure by
+logging an error and returning `0` instead of a session, until the next
+release: check `result == 0` for them.
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 

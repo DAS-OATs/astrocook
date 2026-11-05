@@ -1,3 +1,4 @@
+import contextlib
 from astropy import units as au
 import logging
 import numpy as np
@@ -6,8 +7,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
-from astrocook.recipes.params import typed_recipe
-from astrocook.recipes.messages import msg_param_fail, msg_session_not_found
+from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
+                                      reason_of)
+from astrocook.recipes.params import DATA_ERRORS, typed_recipe
+from astrocook.recipes.messages import msg_session_not_found
 
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
@@ -171,6 +174,18 @@ EDIT_RECIPES_SCHEMAS = {
     }
 }
 
+@contextlib.contextmanager
+def _expression_errors(expression: str):
+    """An expression that cannot be evaluated (a syntax error, a name that
+    is not a column, ...) fails the recipe with the expression in the
+    message (phase 6-bis, PR 3; a SyntaxError reached the GUI as a bug)."""
+    try:
+        yield
+    except (*DATA_ERRORS, SyntaxError, TypeError) as e:
+        raise RecipeFailed(f"The expression '{expression}' cannot be evaluated: "
+                           f"{reason_of(e)}") from e
+
+
 SESSION_VAR_REGEX = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
 
 class RecipeEditV2:
@@ -295,12 +310,12 @@ class RecipeEditV2:
             # Extract the number part
             match = re.match(r"([\d\.]+)", clean_str)
             if not match:
-                raise ValueError(f"Could not parse pixel width from '{resol_str}'")
+                raise ValueError(f"resol: '{resol_str}' is not a number of pixels ('Npx')")
             
             pix_fwhm = float(match.group(1))
             if not (np.isfinite(pix_fwhm) and pix_fwhm > 0):
                 # '0px' gave an infinite R (Guido, phase 6-bis, F46)
-                raise ValueError(f"resol: the FWHM in pixels must be positive ('{resol_str}').")
+                raise ValueError(f"resol: the FWHM in pixels must be positive ('{resol_str}')")
             logger.debug(f"Estimating the resolution for a FWHM of {pix_fwhm:.1f} pixels.")
             
             # 1. Get raw x array
@@ -335,7 +350,7 @@ class RecipeEditV2:
         try:
             resol_f = float(clean_str)
         except ValueError:
-            raise ValueError(f"resol: '{resol_str}' is not a number (R) or 'Npx'.") from None
+            raise ValueError(f"resol: '{resol_str}' is not a number (R) or 'Npx'") from None
         if not (np.isfinite(resol_f) and resol_f > 0):
             # 0, a negative R and NaN were taken as "no change", silently
             # (Guido, phase 6-bis, F46): '_current_' is the way to say it
@@ -375,9 +390,8 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with updated properties,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with updated properties.
         """
         # 1. Parse numerical inputs (z_em, resol)
         try:
@@ -391,8 +405,7 @@ class RecipeEditV2:
             else:
                 resol_f = self._parse_resolution_string(str(resol))
         except ValueError as e:
-            logger.error(f"{msg_param_fail} {e}")
-            return 0
+            raise InvalidParameter(str(e)) from None
 
         # 2. Handle text inputs
         current_meta = self._session.spec.meta
@@ -436,9 +449,8 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the converted X-axis,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the converted X-axis.
         """
         # Handle default logic here
         if z_ref == '_current_':
@@ -449,9 +461,7 @@ class RecipeEditV2:
         try:
             xunit_obj = au.Unit(xunit)
         except ValueError:
-            # Replicates V1 error handling path to avoid crash in the GUI context
-            logger.error(msg_param_fail)
-            return 0 # Returning 0 prevents crashing and triggers V1 logging
+            raise InvalidParameter(f"xunit: {xunit!r} is not a unit") from None
 
         # 1. Get the new SpectrumV2 instance (the immutable operation)
         new_spec_v2 = self._session.spec.x_convert(z_ref=z_ref_float, xunit=xunit_obj)
@@ -474,16 +484,14 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the converted Y-axis,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the converted Y-axis.
         """
         # C. Parameter Validation and Type Casting
         try:
             yunit_obj = au.Unit(yunit)
         except ValueError:
-            logger.error(msg_param_fail)
-            return 0 
+            raise InvalidParameter(f"yunit: {yunit!r} is not a unit") from None
 
         # 1. Execute the immutable V2 operation
         new_spec_v2 = self._session.spec.y_convert(yunit=yunit_obj)
@@ -511,35 +519,28 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the computed column,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the computed column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("The expression is empty.")
-            return 0
-        try:
-            # 1. Prepare multi-session vars
-            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
-            logger.debug(f"Original expression: '{expression}'")
-            logger.debug(f"Final expression: '{final_expression}'")
-            logger.debug(f"Extra vars: {list(extra_vars.keys())}")
+            raise RecipeFailed("The expression is empty.")
+        # 1. Prepare multi-session vars
+        final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+        logger.debug(f"Original expression: '{expression}'")
+        logger.debug(f"Final expression: '{final_expression}'")
+        logger.debug(f"Extra vars: {list(extra_vars.keys())}")
 
-            # 2. Call the API with the prepared data
+        # 2. Call the API with the prepared data
+        with _expression_errors(expression):
             new_spec_v2 = self._session.spec.apply_expression(
                 target_col=target_col,
                 expression=final_expression,
                 extra_vars=extra_vars
             )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not apply the expression '{expression}': {e}",
-                         exc_info=True)
-            return 0 
-            
+        return self._session.with_new_spectrum(new_spec_v2)
     @typed_recipe
     def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
         """
@@ -559,35 +560,28 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the masked column,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the masked column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("The expression is empty.")
-            return 0
-        try:
-            # 1. Prepare multi-session vars
-            final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
-            logger.debug(f"Original expression: '{expression}'")
-            logger.debug(f"Final expression: '{final_expression}'")
-            logger.debug(f"Extra vars: {list(extra_vars.keys())}")
-            
-            # 2. Call the API with the prepared data
+            raise RecipeFailed("The expression is empty.")
+        # 1. Prepare multi-session vars
+        final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
+        logger.debug(f"Original expression: '{expression}'")
+        logger.debug(f"Final expression: '{final_expression}'")
+        logger.debug(f"Extra vars: {list(extra_vars.keys())}")
+        
+        # 2. Call the API with the prepared data
+        with _expression_errors(expression):
             new_spec_v2 = self._session.spec.mask_expression(
                 target_col=target_col,
                 expression=final_expression,
                 extra_vars=extra_vars
             )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not apply the mask expression '{expression}': {e}",
-                         exc_info=True)
-            return 0
-
+        return self._session.with_new_spectrum(new_spec_v2)
     @typed_recipe
     def smooth_column(self, target_col: str = 'dF', sigma_kms: float = 100.0, renorm_model: bool = False) -> 'SessionV2':
         """
@@ -609,26 +603,20 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the smoothed column,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the smoothed column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
-        try:
-            # 1. Call the immutable V2 operation
-            new_spec_v2 = self._session.spec.smooth_column(
-                target_col=target_col,
-                sigma_kms=sigma_kms,
-                renorm_model=renorm_model
-            )
-            
-            # 2. Return a NEW SessionV2 instance
-            return self._session.with_new_spectrum(new_spec_v2)
-            
-        except Exception as e:
-            logger.error(f"Could not smooth the column '{target_col}': {e}", exc_info=True)
-            return 0
+        # 1. Call the immutable V2 operation
+        new_spec_v2 = self._session.spec.smooth_column(
+            target_col=target_col,
+            sigma_kms=sigma_kms,
+            renorm_model=renorm_model
+        )
+        
+        # 2. Return a NEW SessionV2 instance
+        return self._session.with_new_spectrum(new_spec_v2)
         
     @typed_recipe
     def import_systems(self, source_session: str, append: bool = True, refit: bool = False) -> 'SessionV2':
@@ -668,8 +656,7 @@ class RecipeEditV2:
         
         if not target_hist:
             # (It returned the session unchanged, which looked like a success)
-            logger.error(msg_session_not_found.format(name=source_session))
-            return 0
+            raise RecipeFailed(msg_session_not_found.format(name=source_session))
 
         source_systs = target_hist.current_state.systs
         if not source_systs or not source_systs.components:
@@ -787,12 +774,10 @@ class RecipeEditV2:
             table = ap_ascii.read(file_path, guess=True)
         except (OSError, ValueError) as e:
             # ValueError covers the table errors of astropy and the decoding
-            logger.error(f"Could not read '{file_path}': {e}")
-            return 0
+            raise RecipeFailed(f"Could not read '{file_path}': {e}") from e
         missing = [c for c in ('series', 'z') if c not in table.colnames]
         if missing:
-            logger.error(f"'{file_path}' lacks the column(s) {', '.join(missing)}.")
-            return 0
+            raise RecipeFailed(f"'{file_path}' lacks the column(s) {', '.join(missing)}.")
 
         def value(row, name, default):
             if name not in table.colnames:
@@ -883,23 +868,22 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` containing the subset of data,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` containing the subset of data.
         """
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            logger.error("The expression is empty.")
-            return 0
+            raise RecipeFailed("The expression is empty.")
             
         # 1. Prepare multi-session vars (re-using our existing helper!)
         final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
         
         # 2. Call the immutable V2 operation
-        new_spec_v2 = self._session.spec.split(
-            expression=final_expression,
-            extra_vars=extra_vars
-        )
+        with _expression_errors(expression):
+            new_spec_v2 = self._session.spec.split(
+                expression=final_expression,
+                extra_vars=extra_vars
+            )
 
         new_systs = self._session.systs
         if new_spec_v2 and len(new_spec_v2.x) > 0 and new_systs:
@@ -938,15 +922,15 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or List[SessionV2] or int
-            One or more new :class:`~astrocook.core.session.SessionV2` instances,
-            or 0 on failure.
+        SessionV2 or List[SessionV2]
+            One or more new :class:`~astrocook.core.session.SessionV2` instances.
         """
         # Parse inputs (split by comma and strip whitespace)
         region_list = [r.strip() for r in region.split(',') if r.strip()]
         
         results = []
-        
+        failures = []
+
         for reg in region_list:
             try:
                 # Calculate bounds
@@ -970,12 +954,16 @@ class RecipeEditV2:
                 
                 results.append(new_session)
                 
-            except (ValueError, KeyError, TypeError) as e:
-                # The other regions are extracted; with none, the recipe fails
-                logger.warning(f"The region {reg} could not be extracted ({e}): it is skipped.")
+            except (ValueError, KeyError, TypeError, RecipeError) as e:
+                # The other regions are extracted; with none, the recipe
+                # fails with the reasons (phase 6-bis, PR 3)
+                reason = e.reason if isinstance(e, RecipeError) else reason_of(e)
+                failures.append(f"{reg}: {reason}")
+                logger.warning(f"The region {reg} could not be extracted ({reason}): "
+                               "it is skipped.")
 
         if not results:
-            return 0 # Return failure code if nothing worked
+            raise RecipeFailed("No region could be extracted (" + "; ".join(failures) + ")")
 
         # Return single object if one, or list if multiple
         if len(results) == 1:
@@ -1008,59 +996,51 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` trimmed to the common coverage,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` trimmed to the common coverage.
         """
-        try:
-            # 1. Parse Inputs
-            z_f = float(z_target)
-            win_f = float(window_kms)
-            others_list = [n.strip() for n in others_names.split(',') if n.strip()]
-            trans_list_others = [t.strip() for t in trans_others.split(',') if t.strip()]
+        # 1. Parse Inputs
+        z_f = float(z_target)
+        win_f = float(window_kms)
+        others_list = [n.strip() for n in others_names.split(',') if n.strip()]
+        trans_list_others = [t.strip() for t in trans_others.split(',') if t.strip()]
+        
+        # 2. Resolve Session Objects (GUI Logic)
+        resolved_others_specs = []
+        if hasattr(self._session, '_gui'):
+            for name in others_list:
+                found = False
+                for hist in self._session._gui.session_histories:
+                    if hist.display_name == name:
+                        resolved_others_specs.append(hist.current_state.spec)
+                        found = True
+                        break
+                if not found:
+                    logger.warning(msg_session_not_found.format(name=name))
+        
+        if len(resolved_others_specs) != len(trans_list_others):
+            raise RecipeFailed(f"There are {len(resolved_others_specs)} sessions and "
+                         f"{len(trans_list_others)} transitions: give one transition per session.")
             
-            # 2. Resolve Session Objects (GUI Logic)
-            resolved_others_specs = []
-            if hasattr(self._session, '_gui'):
-                for name in others_list:
-                    found = False
-                    for hist in self._session._gui.session_histories:
-                        if hist.display_name == name:
-                            resolved_others_specs.append(hist.current_state.spec)
-                            found = True
-                            break
-                    if not found:
-                        logger.warning(msg_session_not_found.format(name=name))
-            
-            if len(resolved_others_specs) != len(trans_list_others):
-                logger.error(f"There are {len(resolved_others_specs)} sessions and "
-                             f"{len(trans_list_others)} transitions: give one transition per session.")
-                return 0
-                
-            # 3. Delegate Calculation to Core (SSOT)
-            # The core calculates the physics and returns the boolean expression string
-            split_expression = self._session.spec.calc_intersection_expression(
-                others_specs=resolved_others_specs,
-                z_target=z_f,
-                trans_self=trans_self,
-                trans_others=trans_list_others,
-                window_kms=win_f
-            )
-            
-            if not split_expression:
-                # (A WARNING and the session unchanged, phase 6)
-                logger.error("The sessions have no range in common: nothing is trimmed.")
-                return 0
+        # 3. Delegate Calculation to Core (SSOT)
+        # The core calculates the physics and returns the boolean expression string
+        split_expression = self._session.spec.calc_intersection_expression(
+            others_specs=resolved_others_specs,
+            z_target=z_f,
+            trans_self=trans_self,
+            trans_others=trans_list_others,
+            window_kms=win_f
+        )
+        
+        if not split_expression:
+            # (A WARNING and the session unchanged, phase 6)
+            raise RecipeFailed("The sessions have no range in common: nothing is trimmed.")
 
-            logger.info(f"Trimming to the range in common: {split_expression}.")
-            
-            # 4. Execute Split
-            return self.split(split_expression)
+        logger.info(f"Trimming to the range in common: {split_expression}.")
+        
+        # 4. Execute Split
+        return self.split(split_expression)
 
-        except Exception as e:
-            logger.error(f"Could not trim the sessions to their common range: {e}", exc_info=True)
-            return 0
-    
     @typed_recipe
     def stitch(self, other_sessions: List[Union['SessionV2', str]], sort: bool = True) -> 'SessionV2':
         """
@@ -1079,17 +1059,15 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` containing the merged data,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` containing the merged data.
         """
         # Delayed import to avoid circular dependency
         from astrocook.core.session import SessionV2 
 
         if not other_sessions:
             # (A WARNING and the session unchanged, phase 6)
-            logger.error("No sessions to stitch.")
-            return 0
+            raise RecipeFailed("No sessions to stitch.")
 
         # 1. Resolve Inputs (GUI/Script Logic)
         resolved_specs = []
@@ -1114,35 +1092,29 @@ class RecipeEditV2:
 
         if not resolved_specs:
             # (An ERROR and the session unchanged, phase 6)
-            logger.error("There are no valid sessions to stitch.")
-            return 0
+            raise RecipeFailed("There are no valid sessions to stitch.")
 
+        # 2. Delegate Data Manipulation to Core
+        new_spec = self._session.spec.stitch(resolved_specs, sort=sort)
+
+        # Remove NaNs which break the 'step' plot (causing "scatter" look)
+        # We use the public split API to keep valid data only.
         try:
-            # 2. Delegate Data Manipulation to Core
-            new_spec = self._session.spec.stitch(resolved_specs, sort=sort)
-
-            # Remove NaNs which break the 'step' plot (causing "scatter" look)
-            # We use the public split API to keep valid data only.
-            try:
-                # Check for NaNs in X or Y
-                x_val = new_spec.x.value
-                y_val = new_spec.y.value
-                if not (np.all(np.isfinite(x_val)) and np.all(np.isfinite(y_val))):
-                    logger.debug("Removing the pixels with NaN values.")
-                    # Filter: Keep rows where X and Y are finite
-                    # Note: We rely on the core's split expression evaluator
-                    new_spec = new_spec.split("isfinite(x) & isfinite(y)")
-            except (ValueError, KeyError, TypeError) as clean_err:
-                logger.warning(f"The pixels with NaN values could not be removed "
-                               f"({clean_err}): they are kept.")
-            
-            # 3. Return New Session
-            return self._session.with_new_spectrum(new_spec)
-            
-        except Exception as e:
-            logger.error(f"Could not stitch the sessions: {e}", exc_info=True)
-            return 0
-
+            # Check for NaNs in X or Y
+            x_val = new_spec.x.value
+            y_val = new_spec.y.value
+            if not (np.all(np.isfinite(x_val)) and np.all(np.isfinite(y_val))):
+                logger.debug("Removing the pixels with NaN values.")
+                # Filter: Keep rows where X and Y are finite
+                # Note: We rely on the core's split expression evaluator
+                new_spec = new_spec.split("isfinite(x) & isfinite(y)")
+        except (ValueError, KeyError, TypeError) as clean_err:
+            logger.warning(f"The pixels with NaN values could not be removed "
+                           f"({clean_err}): they are kept.")
+        
+        # 3. Return New Session
+        return self._session.with_new_spectrum(new_spec)
+        
     @typed_recipe
     def equalize_and_stitch(self, other_sessions: str, stitch_wavelengths: str, 
                             equalize_ranges: str = 'auto', manual_factors: str = 'auto') -> 'SessionV2':
@@ -1176,26 +1148,25 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
+        SessionV2
             A new :class:`~astrocook.core.session.SessionV2` containing the equalized 
-            and stitched spectrum, or 0 on failure.
+            and stitched spectrum.
         """
         
         # 1. Parse Input Lists
         others_list = [s.strip() for s in other_sessions.split(',') if s.strip()]
         if not others_list:
-            logger.error("No other sessions to stitch.")
-            return 0
+            raise RecipeFailed("No other sessions to stitch.")
             
         try:
             cuts = [float(c.strip()) for c in stitch_wavelengths.split(',')]
         except ValueError:
-            logger.error("The stitch wavelengths must be numbers separated by commas.")
-            return 0
+            raise InvalidParameter("stitch_wavelengths: give numbers separated by "
+                                   "commas") from None
 
         if len(cuts) != len(others_list):
-            logger.error(f"Give {len(others_list)} stitch wavelengths, one per other session.")
-            return 0
+            raise InvalidParameter(f"stitch_wavelengths: give {len(others_list)}, one per "
+                                   f"other session ({len(cuts)} given)")
 
         # Parse Manual Factors
         factors = []
@@ -1205,13 +1176,11 @@ class RecipeEditV2:
             try:
                 factors = [float(f.strip()) for f in manual_factors.split(',')]
             except ValueError:
-                logger.error("The manual factors must be numbers separated by commas, "
-                             "or 'auto'.")
-                return 0
+                raise InvalidParameter("manual_factors: give numbers separated by commas, "
+                                       "or 'auto'") from None
             if len(factors) != len(others_list):
-                logger.error(f"Give {len(others_list)} manual factors, one per other "
-                             f"session ({len(factors)} given).")
-                return 0
+                raise InvalidParameter(f"manual_factors: give {len(others_list)}, one per "
+                                       f"other session ({len(factors)} given)")
 
         # Parse Equalize Ranges
         eq_ranges = []
@@ -1221,13 +1190,11 @@ class RecipeEditV2:
                     vmin, vmax = map(float, r.split('-'))
                     eq_ranges.append((vmin, vmax))
             except ValueError:
-                logger.error("The equalize ranges must be written 'min-max, min-max' "
-                             "(in nm), or 'auto'.")
-                return 0
+                raise InvalidParameter("equalize_ranges: write them 'min-max, min-max' "
+                                       "(in nm), or 'auto'") from None
             if len(eq_ranges) != len(others_list):
-                logger.error(f"Give {len(others_list)} equalize ranges, one per other "
-                             f"session ({len(eq_ranges)} given).")
-                return 0
+                raise InvalidParameter(f"equalize_ranges: give {len(others_list)}, one per "
+                                       f"other session ({len(eq_ranges)} given)")
 
         # 2. Resolve GUI Sessions
         resolved_others = []
@@ -1240,11 +1207,11 @@ class RecipeEditV2:
                         found = True
                         break
                 if not found:
-                    logger.error(msg_session_not_found.format(name=name))
-                    return 0
+                    raise RecipeFailed(msg_session_not_found.format(name=name))
         
         if len(resolved_others) != len(others_list):
-            return 0
+            raise RecipeFailed("The other sessions are looked for among the sessions "
+                               "open in the GUI, and there are none.")
 
         # --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---
         # It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.
@@ -1355,15 +1322,13 @@ class RecipeEditV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` containing the co-added spectrum,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` containing the co-added spectrum.
         """
         
         names_list = [n.strip() for n in session_names.split(',') if n.strip()]
         if not names_list:
-            logger.warning("No sessions to combine.")
-            return 0
+            raise RecipeFailed("No sessions to combine.")
 
         # 1. Resolve Session Objects
         # We assume the first session in the list is the "primary" (self is implied context, 
@@ -1378,37 +1343,31 @@ class RecipeEditV2:
                         break
         
         if not resolved_specs:
-            logger.error("There are no valid sessions to combine.")
-            return 0
+            raise RecipeFailed("There are no valid sessions to combine.")
 
         # 2. Parse Parameters
-        try:
-            eq_order = equalize_order
-            xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
-            xend_q = au.Quantity(xend, au.nm) if xend is not None else None
-            dx_unit = au.Unit(xunit) 
-            dx_q = au.Quantity(dx, dx_unit)
-            kappa_f = kappa
+        eq_order = equalize_order
+        xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
+        xend_q = au.Quantity(xend, au.nm) if xend is not None else None
+        dx_unit = au.Unit(xunit) 
+        dx_q = au.Quantity(dx, dx_unit)
+        kappa_f = kappa
 
-            # 3. Delegate to Core
-            # We use the first spectrum in the list as the 'base' to call the method on.
-            base_spec = resolved_specs[0]
-            others = resolved_specs[1:]
-            
-            logger.info(f"Combining {len(resolved_specs)} sessions on a grid of step {dx_q}.")
-            
-            new_spec = base_spec.coadd(
-                others=others,
-                xstart=xstart_q,
-                xend=xend_q,
-                dx=dx_q,
-                kappa=kappa_f,
-                equalize_order=eq_order
-            )
-            
-            # 4. Return New Session
-            return self._session.with_new_spectrum(new_spec)
-
-        except Exception as e:
-            logger.error(f"Could not combine the sessions: {e}", exc_info=True)
-            return 0
+        # 3. Delegate to Core
+        # We use the first spectrum in the list as the 'base' to call the method on.
+        base_spec = resolved_specs[0]
+        others = resolved_specs[1:]
+        
+        logger.info(f"Combining {len(resolved_specs)} sessions on a grid of step {dx_q}.")
+        
+        new_spec = base_spec.coadd(
+            others=others,
+            xstart=xstart_q,
+            xend=xend_q,
+            dx=dx_q,
+            kappa=kappa_f,
+            equalize_order=eq_order
+        )
+        
+        # 4. Return New Session
+        return self._session.with_new_spectrum(new_spec)
