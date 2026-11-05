@@ -229,6 +229,22 @@ def test_recipe_dialog(ready, monkeypatch):
     assert window.active_recipe_dialog is None
 
 
+def test_the_dialogs_keep_a_reasonable_width(ready):
+    # The descriptions are sentences since phase 6-bis (PR 6a): their labels
+    # wrap, and the dialogs did grow wider than the window without it
+    from astrocook.recipes.registry import all_recipes
+    window = ready
+    for spec in all_recipes():
+        if spec.gui_hidden:
+            continue
+        window._launch_recipe_dialog(spec.category, spec.name)
+        dialog = window.active_recipe_dialog
+        if dialog is None:
+            continue
+        assert dialog.sizeHint().width() < 900, spec.name
+        dialog.reject()
+
+
 def test_set_properties_dialog_shows_the_current_values(ready):
     window = ready
     window._launch_recipe_dialog("edit", "set_properties", {"object": "QSO"})
