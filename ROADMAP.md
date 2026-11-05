@@ -2465,6 +2465,9 @@ Revised at the end of phase 6 (November 2026, Guido): phase 6 → 2.4.0 →
 phase 6-bis → full MCP server → phase 7 (the fix of a data loss, F94, and
 the changed behaviour on failures, published before 6-bis changes the
 interface of the recipes).
+Revised at the end of phase 6-bis (November 2026, Guido): phase 6-bis →
+2.5.0 → full MCP server → phase 7 (the new interface of the recipes,
+published stable before the full server is built on it).
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
 step, not tied to a phase. The LICENSE (#549) and the first publication on
 PyPI go into the first release after INAF answers: 2.1.1 if the answer
@@ -2525,6 +2528,16 @@ publishes the docs of the tag at the root of the website.
   behaviour changes (Guido agreed). A stable point before phase 6-bis.
   Published on GitHub with the macOS app; not on PyPI (INAF has not
   answered yet, #549).
+- **2.5.0, after phase 6-bis (November 2026):** the recipe API: one
+  registry of the recipes, typed parameters, exceptions instead of `0`,
+  the structured result (`run`), the prerequisites (estimated, asked or
+  said), the texts reviewed, the MCP pilot on the new API; F12, F46, F48,
+  F49, F50, F55 (parameters), F79, F102-F105. Numbers: the *Accuracy*
+  page unchanged; changed on purpose F103 (spectra without a continuum)
+  and F102 (`lya_auto`). A minor version, as 2.4.0 (Guido): the interface
+  of the recipes for scripts changes (exceptions), the logs replay
+  unchanged. Published on GitHub with the macOS app; not on PyPI (INAF
+  has not answered yet, #549).
 
 ### 3.1 User-reported issues
 GitHub issues are the single source of truth; this section only says *when*
