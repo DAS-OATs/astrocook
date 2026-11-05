@@ -23,7 +23,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.4.0. Python ≥3.12.
+Current version: 2.5.0. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -179,7 +179,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 11. phase 6 – error handling (done), then release 2.4.0 (done);
 12. phase 6-bis – recipe API (typed parameters, structured results,
     exceptions), from the report of the MCP pilot; with F12 (moved from
-    phase 5) (done);
+    phase 5) (done), then release 2.5.0 (Guido);
 13. full MCP server, with a headless Docker image, its tools generated
     from the recipe registry;
 14. phase 7 – robust components: emission model and
@@ -331,8 +331,15 @@ left F101 (script console), F102 for `forest_auto`. For later: the review
 of the parameters recipe by recipe (phase 6-ter or phase 7), the
 collections of elements to fill parameters (phase 7).
 
-Now: the next step to be agreed with Guido (a release, the full MCP
-server of item 13, a phase 6-ter). Work in
+Release 2.5.0 (November 2026): phase 6-bis, on GitHub with the macOS
+app, not on PyPI (INAF has not answered, #549). The results on the mock
+benchmark unchanged (the *Accuracy* page as for 2.2.0); changed on
+purpose F103 (spectra without a continuum) and F102 (`lya_auto`); the
+interface of the recipes for scripts changes (exceptions instead of 0), a
+minor version as 2.4.0.
+
+Next: the full MCP server (item 13), or a phase 6-ter (the review of the
+parameters recipe by recipe), to be agreed with Guido. Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
