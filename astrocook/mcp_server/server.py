@@ -1,26 +1,24 @@
-"""The MCP server and its tools (pilot, ``ROADMAP.md`` section 4.1).
+"""The MCP server and its tools (``ROADMAP.md``, section 4; phase 6-ter).
 
 Each tool is named after what it calls: ``<menu>_<recipe>`` for a recipe,
-``session_<method>`` for a method of :class:`~astrocook.core.session.SessionV2`.
-The docstrings of the tools are their descriptions for the model.
+``session_<method>`` for the sessions. The tools of the recipes are
+generated from the recipe registry (:mod:`astrocook.mcp_server.tools`,
+phase 6-ter PR 1): their parameters, descriptions and outputs come from the
+registry and from :class:`~astrocook.recipes.result.RecipeResult`, so that
+a recipe added to the registry reaches the agents with no code here. The
+tools of the sessions are written here; the docstrings of the tools are
+their descriptions for the model.
 
-The defaults and the parameter descriptions of the recipe tools are read
-from the recipe registry (:mod:`astrocook.recipes.registry`, the one the
-GUI dialogs use), so that the tools and the GUI share them (F40: the method
-signatures may differ). The parameters not offered to agents (``agents``
-in the registry: debug, questions of the GUI) are left out, and
-``mask_col`` of ``identify_lines``. The recipes run through
-:func:`astrocook.recipes.result.run` (phase 6-bis, PR 8): typed
-parameters, the structured result, the prerequisites said instead of
-filled unless ``provide_missing``. :mod:`astrocook.mcp_server.schemas`
-generates the schema of the parameters of any recipe, for the full server.
+What a session lacks (z_em, the resolution, a continuum) is said, not
+provided, unless the agent asks with ``provide_missing`` (phase 6-bis,
+PR 8: the agent decides).
 
 Launch with ``astrocook-mcp`` (``stdio`` transport); a client starts it as
 a subprocess, e.g. ``claude mcp add astrocook -- astrocook-mcp``.
 """
 import os
 from pathlib import Path
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Optional
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -29,43 +27,44 @@ from pydantic import Field
 from astrocook import __version__
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
-from astrocook.mcp_server.outputs import (
-    ContinuumInfo, FitInfo, IdentificationInfo, SaveResult, SessionInfo,
-    continuum_summary, fit_summary, identification_summary, spectrum_summary)
+from astrocook.mcp_server.outputs import SaveResult, SessionInfo
 from astrocook.mcp_server.sessions import SessionStore
-from astrocook.recipes.errors import MissingPrerequisite
+from astrocook.mcp_server.tools import (
+    menus_text, register_recipe_tools, run_tool, session_info)
 from astrocook.recipes.registry import get_recipe
-from astrocook.recipes.result import run as run_registry
 
-INSTRUCTIONS = """\
+INSTRUCTIONS_HEAD = """\
 Astrocook analyses quasar spectra: continuum, identification of absorption
 systems, Voigt fitting. Open a spectrum with session_open and use the
 session_id it returns in the other tools; each tool returns a summary of
-the session, not the data. Save the result with session_save, so that a
-person can review it in the Astrocook GUI. Paths are on the machine where
-the server runs; give them absolute.
+the session and of what changed, not the data. Save the result with
+session_save, so that a person can review it in the Astrocook GUI. Paths
+are on the machine where the server runs; give them absolute.
+
+Each recipe of Astrocook is a tool, named <menu>_<recipe>, as in the menus
+of the GUI:
+"""
+
+INSTRUCTIONS_TAIL = """
+A recipe runs on the current state of a session and makes the next one,
+recorded in the session log with its parameters (the log replays). A
+recipe that opens new sessions (e.g. a region extracted) leaves the
+session unchanged and lists the new ones, each with its session_id.
 
 A recipe that needs something the session lacks (the emission redshift,
 the resolution, a continuum) does not run: the tool says what is missing
-and how to provide it. z_em and the resolution are set with session_open;
-a continuum is made with continuum_estimate_auto, or, with
-provide_missing=true, with its default parameters before the recipe (the
-step is reported in 'provided' and recorded in the session log).
+and which tool provides it. z_em and the resolution are set with
+session_open or edit_set_properties; a continuum is made with
+continuum_estimate_auto, or, with provide_missing=true, with its default
+parameters before the recipe (the step is reported in 'provided' and
+recorded in the session log).
 """
 
-PROVIDE_MISSING = Annotated[bool, Field(description=(
-    "Provide what the session lacks and a recipe can make with its default "
-    "parameters (a continuum), before running this one; the step is "
-    "reported and logged. False: the tool says what is missing instead."))]
 
-#: Added to the message of z_em or the resolution missing (the pilot has no
-#: tool for set_properties)
-_PROPERTIES_HINT = (" Here, open the file again with session_open, giving z_em and "
-                    "resol.")
-
-#: Added to the message of a prerequisite that a recipe can provide
-_PROVIDE_HINT = (" Run it first, or call this tool again with provide_missing=true to "
-                 "provide it with its defaults.")
+def instructions() -> str:
+    """The instructions of the server: the menus of the recipes come from
+    the registry."""
+    return INSTRUCTIONS_HEAD + menus_text() + "\n" + INSTRUCTIONS_TAIL
 
 
 SESSION_ID = Annotated[str, Field(description=(
@@ -76,68 +75,12 @@ def _resolve(path: str) -> Path:
     return Path(os.path.expanduser(path)).resolve()
 
 
-def default(menu: str, recipe: str, name: str):
-    """Default of a recipe parameter, as in the GUI dialog."""
-    return get_recipe(menu, recipe).param(name).default
-
-
-def doc(menu: str, recipe: str, name: str) -> str:
-    """Description of a recipe parameter, as in the GUI dialog."""
-    return get_recipe(menu, recipe).param(name).doc
-
-
-def description(menu: str, recipe: str, more: str) -> str:
-    """Tool description: the recipe brief and details, then ``more``."""
-    spec = get_recipe(menu, recipe)
-    return f"{spec.brief} {spec.details}\n\n{more}"
-
-
 def build_server() -> MCPServer:
-    """Return a new server, with its own (empty) set of sessions."""
-    server = MCPServer("astrocook", instructions=INSTRUCTIONS,
+    """Return a new server, with its own (empty) set of sessions, and a
+    tool for each recipe of the registry at that time."""
+    server = MCPServer("astrocook", instructions=instructions(),
                        version=__version__, log_level="WARNING")
     store = SessionStore()
-
-    def info(session_id: str, warnings: list[str], result=None) -> SessionInfo:
-        history = store.get(session_id)
-        state = history.current_state
-        return SessionInfo(
-            session_id=session_id,
-            spectrum=spectrum_summary(state),
-            log_entries=len(history.log_manager.to_dict()["entries"]),
-            saved_with_version=history.states[0].saved_with_version,
-            warnings=warnings,
-            summary=result.summary if result is not None else "",
-            notes=list(result.notes) if result is not None else [],
-            provided=[p.recipe for p in result.provided] if result is not None else [],
-        )
-
-    def run(session_id: str, menu: str, recipe: str, params: dict,
-            provide_missing: bool = False):
-        """Run a recipe on the current state of a session through the
-        registry (:func:`astrocook.recipes.result.run`: the parameters
-        typed, the structured result), record it in the log with the steps
-        run first, and return the new state, the warnings and the result.
-
-        What the session lacks is said, not provided, unless
-        ``provide_missing`` (phase 6-bis, PR 8: the agent decides)."""
-        current = store.get(session_id).current_state
-
-        def call():
-            try:
-                return run_registry(current, f"{menu}.{recipe}",
-                                    on_missing="provide" if provide_missing else "raise",
-                                    **params)
-            except MissingPrerequisite as e:
-                hint = _PROVIDE_HINT if "provides it with its defaults" in str(e) else ""
-                if "edit.set_properties" in str(e):
-                    # Not a tool of the pilot: its values go to session_open
-                    hint += _PROPERTIES_HINT
-                raise ToolError(str(e) + hint) from e
-        result, _ = run_recipe(f"{menu}_{recipe}", call)
-        store.apply(session_id, result.session, recipe, result.params,
-                    provided=result.provided)
-        return result.session, list(result.warnings), result
 
     @server.tool()
     def session_open(
@@ -163,17 +106,20 @@ def build_server() -> MCPServer:
         with store.lock:
             session, warnings = run_recipe(
                 "session_open", SessionV2.open_new, str(file_path),
-                file_path.stem, None, "auto")
+                file_path.stem, store.context, "auto")
             session_id = store.add(session, str(file_path))
-            if z_em is not None or resol is not None:
-                params = {}
-                if z_em is not None:
-                    params["z_em"] = z_em
-                if resol is not None:
-                    params["resol"] = str(resol)
-                warnings += run(session_id, "edit", "set_properties",
-                                params)[1]
-            return info(session_id, warnings)
+        params = {}
+        if z_em is not None:
+            params["z_em"] = z_em
+        if resol is not None:
+            params["resol"] = str(resol)
+        if params:
+            # Through the tool of the recipe (it takes the lock): logged, as
+            # in the GUI
+            result = run_tool(store, get_recipe("edit", "set_properties"), session_id,
+                              params, False, 0)
+            warnings += result.warnings
+        return session_info(store, session_id).model_copy(update={"warnings": warnings})
 
     @server.tool()
     def session_save(
@@ -207,116 +153,7 @@ def build_server() -> MCPServer:
                 log_entries=len(history.log_manager.to_dict()["entries"]),
                 warnings=warnings)
 
-    @server.tool(description=description("continuum", "estimate_auto", (
-        "Needs z_em (set it with session_open), to tell the Lyman-alpha "
-        "forest from the red side. Replaces any existing continuum and "
-        "mask. Returns the fraction of absorbed pixels and the S/N.")))
-    def continuum_estimate_auto(
-        session_id: SESSION_ID,
-        smooth_len_lya: Annotated[float, Field(description=doc(
-            "continuum", "estimate_auto", "smooth_len_lya"))] = default("continuum", "estimate_auto", "smooth_len_lya"),
-        smooth_len_out: Annotated[float, Field(description=doc(
-            "continuum", "estimate_auto", "smooth_len_out"))] = default("continuum", "estimate_auto", "smooth_len_out"),
-        kappa: Annotated[float, Field(description=doc(
-            "continuum", "estimate_auto", "kappa"))] = default("continuum", "estimate_auto", "kappa"),
-        fudge: Annotated[str, Field(description=doc(
-            "continuum", "estimate_auto", "fudge"))] = default("continuum", "estimate_auto", "fudge"),
-        smooth_fwhm: Annotated[float, Field(description=doc(
-            "continuum", "estimate_auto", "smooth_fwhm"))] = default("continuum", "estimate_auto", "smooth_fwhm"),
-        template: Annotated[bool, Field(description=doc(
-            "continuum", "estimate_auto", "template"))] = default("continuum", "estimate_auto", "template"),
-        provide_missing: PROVIDE_MISSING = False,
-    ) -> ContinuumInfo:
-        params = {"smooth_len_lya": smooth_len_lya, "smooth_len_out": smooth_len_out,
-                  "kappa": kappa, "fudge": fudge, "smooth_fwhm": smooth_fwhm,
-                  "template": template}
-        with store.lock:
-            state, warnings, result = run(session_id, "continuum", "estimate_auto",
-                                          params, provide_missing)
-            return ContinuumInfo(**info(session_id, warnings, result).model_dump(),
-                                 continuum=continuum_summary(state))
-
-    @server.tool(description=description("absorbers", "identify_lines", (
-        "Needs z_em, the resolution and a continuum; uses the absorbed mask "
-        "of continuum_estimate_auto (or makes one with the default "
-        "parameters). Opens no new session here: the identification is "
-        "added to this one. Creates no component: "
-        "returns the identified regions with their candidate transitions "
-        "and scores, and the candidate systems with initial guesses of "
-        "logN and b.")))
-    def absorbers_identify_lines(
-        session_id: SESSION_ID,
-        multiplets: Annotated[str, Field(description=doc(
-            "absorbers", "identify_lines", "multiplets"))] = default("absorbers", "identify_lines", "multiplets"),
-        min_pix_region: Annotated[int, Field(description=doc(
-            "absorbers", "identify_lines", "min_pix_region"))] = default("absorbers", "identify_lines", "min_pix_region"),
-        merge_dv: Annotated[float, Field(description=doc(
-            "absorbers", "identify_lines", "merge_dv"))] = default("absorbers", "identify_lines", "merge_dv"),
-        score_threshold: Annotated[float, Field(description=doc(
-            "absorbers", "identify_lines", "score_threshold"))] = default("absorbers", "identify_lines", "score_threshold"),
-        z_em_margin_kms: Annotated[float, Field(description=doc(
-            "absorbers", "identify_lines", "z_em_margin_kms"))] = default("absorbers", "identify_lines", "z_em_margin_kms"),
-        provide_missing: PROVIDE_MISSING = False,
-        max_listed: Annotated[int, Field(ge=0, description=(
-            "Maximum number of regions and of systems listed in the "
-            "output; the counts are always complete."))] = 50,
-    ) -> IdentificationInfo:
-        # mask_col (the column of the mask: abs_mask) is left out in the
-        # pilot; debug_rating and bypass_scoring are not offered to agents
-        # (phase 6-bis, PR 6a)
-        params = {"multiplets": multiplets, "min_pix_region": min_pix_region,
-                  "merge_dv": merge_dv, "score_threshold": score_threshold,
-                  "z_em_margin_kms": z_em_margin_kms}
-        with store.lock:
-            state, warnings, result = run(session_id, "absorbers", "identify_lines",
-                                          params, provide_missing)
-            return IdentificationInfo(
-                **info(session_id, warnings, result).model_dump(),
-                identification=identification_summary(state, max_listed))
-
-    @server.tool(description=description("absorbers", "doublets_auto", (
-        "Identifies the doublets redwards of the Lyman-alpha emission, adds "
-        "a component for each candidate and fits them (Voigt profiles, "
-        "least squares). Needs z_em and the resolution (session_open) and "
-        "a continuum (continuum_estimate_auto, or provide_missing=true). "
-        "It finds the absorbed regions on a new mask made with the default "
-        "parameters (mask='new'), used only inside, or on the mask of the "
-        "session (mask='session', e.g. that of continuum_estimate_auto), "
-        "and replaces the components already on the red side. Can take "
-        "minutes on a large spectrum. Returns the components added, with "
-        "errors, reduced chi2 and flags for the ones at a bound of the "
-        "fit, and in 'notes' those removed and why.")))
-    def absorbers_doublets_auto(
-        session_id: SESSION_ID,
-        multiplets: Annotated[str, Field(description=doc(
-            "absorbers", "doublets_auto", "multiplets"))] = default("absorbers", "doublets_auto", "multiplets"),
-        score_threshold: Annotated[float, Field(description=doc(
-            "absorbers", "doublets_auto", "score_threshold"))] = default("absorbers", "doublets_auto", "score_threshold"),
-        z_window_kms: Annotated[float, Field(description=doc(
-            "absorbers", "doublets_auto", "z_window_kms"))] = default("absorbers", "doublets_auto", "z_window_kms"),
-        max_b: Annotated[float, Field(description=doc(
-            "absorbers", "doublets_auto", "max_b"))] = default("absorbers", "doublets_auto", "max_b"),
-        max_logN: Annotated[float, Field(description=doc(
-            "absorbers", "doublets_auto", "max_logN"))] = default("absorbers", "doublets_auto", "max_logN"),
-        mask: Annotated[Literal["new", "session"], Field(description=doc(
-            "absorbers", "doublets_auto", "mask"))] = default("absorbers", "doublets_auto", "mask"),
-        z_em_margin_kms: Annotated[float, Field(description=doc(
-            "absorbers", "doublets_auto", "z_em_margin_kms"))] = default("absorbers", "doublets_auto", "z_em_margin_kms"),
-        provide_missing: PROVIDE_MISSING = False,
-        max_listed: Annotated[int, Field(ge=0, description=(
-            "Maximum number of components listed in the output; the "
-            "counts are always complete."))] = 50,
-    ) -> FitInfo:
-        params = {"multiplets": multiplets, "score_threshold": score_threshold,
-                  "z_window_kms": z_window_kms, "max_b": max_b, "max_logN": max_logN,
-                  "mask": mask, "z_em_margin_kms": z_em_margin_kms}
-        with store.lock:
-            before = store.get(session_id).current_state
-            state, warnings, result = run(session_id, "absorbers", "doublets_auto",
-                                          params, provide_missing)
-            return FitInfo(**info(session_id, warnings, result).model_dump(),
-                           fit=fit_summary(before, state, max_listed))
-
+    register_recipe_tools(server, store)
     return server
 
 

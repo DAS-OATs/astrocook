@@ -24,15 +24,22 @@ from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
 from astrocook.mcp_server import server as server_module  # noqa: E402
 from astrocook.mcp_server.server import build_server  # noqa: E402
-from astrocook.recipes.registry import get_recipe  # noqa: E402
+from astrocook.mcp_server.tools import EXCLUDED  # noqa: E402
+from astrocook.recipes.registry import all_recipes, get_recipe  # noqa: E402
 from astrocook.core.spectrum import SpectrumV2  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
 from conftest import J0103_SESSION, J0103_Z_EM  # noqa: E402
 from full_chain import mock_session, mock_truth  # noqa: E402
 
-TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
-         "absorbers_identify_lines", "absorbers_doublets_auto"}
+#: The tools of the pilot, kept with their names by the full server
+PILOT_TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
+               "absorbers_identify_lines", "absorbers_doublets_auto"}
+#: Phase 6-ter (PR 1): every recipe of the registry is a tool, but those
+#: excluded with a reason
+TOOLS = {"session_open", "session_save"} | {
+    f"{s.category}_{s.name}" for s in all_recipes()
+    if f"{s.category}.{s.name}" not in EXCLUDED}
 
 
 def call(server, tool, **args):
@@ -73,6 +80,7 @@ def test_tools_have_descriptions_and_schemas():
             return (await client.list_tools()).tools
     tools = {t.name: t for t in asyncio.run(go())}
     assert set(tools) == TOOLS
+    assert PILOT_TOOLS <= set(tools)
     for tool in tools.values():
         assert tool.description
         assert tool.output_schema["properties"]
@@ -330,8 +338,7 @@ def test_continuum_without_z_em_warns(forest_archive):
     assert result.is_error
     assert error_text(result).endswith(
         "Auto-estimate continuum (single-click): The emission redshift (z_em) is not "
-        "set: set it with Set session properties (edit.set_properties). Here, open "
-        "the file again with session_open, giving z_em and resol.")
+        "set: set it with Set session properties (tool edit_set_properties).")
     _, result = calls(build_server(),
                       ("session_open", {"path": str(forest_archive), "z_em": 0}),
                       ("continuum_estimate_auto", {"session_id": "forest",
@@ -350,14 +357,18 @@ def test_identify_lines(forest_archive):
                                       "max_listed": 1000}))
     assert not result.is_error
     info = result.structured_content
-    assert info["log_entries"] == 2
+    # A branching recipe, as in the GUI (phase 6-ter, PR 1; the pilot added
+    # the identification to the same session): a new session, logged there
+    assert info["log_entries"] == 1 and info["changes"] is None
+    (new,) = info["new_sessions"]
+    assert new["session_id"] == "forest-1"
     ident = info["identification"]
     assert not ident["truncated"]
     assert ident["n_systems"] == len(ident["systems"])
     assert ident["n_regions"] == len(ident["regions"])
     assert sum(ident["systems_by_series"].values()) == ident["n_systems"]
     assert 0 < ident["absorbed_fraction_identified"] <= 1
-    assert info["spectrum"]["n_components"] == 0  # no component created
+    assert new["spectrum"]["n_components"] == 0  # no component created
     civ = [s["z"] for s in ident["systems"] if s["series"] == "CIV"]
     for z in MOCK_CIV_Z:
         assert min(abs(c - z) for c in civ) / (1 + z) * C_KMS < 20, z
@@ -673,7 +684,7 @@ def test_a_missing_continuum_is_said(physical_archive):
     assert result.is_error
     message = error_text(result)
     assert "The spectrum has no continuum" in message
-    assert "continuum.estimate_auto" in message and "provide_missing=true" in message
+    assert "continuum_estimate_auto" in message and "provide_missing=true" in message
 
 
 def test_provide_missing_runs_the_provider_first_and_logs_it(physical_archive, tmp_path):

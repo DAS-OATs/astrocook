@@ -5,7 +5,7 @@ client shows it to the model next to the tool description: the field
 descriptions are part of the interface.
 """
 import json
-from typing import Optional
+from typing import Any, Optional
 
 import astropy.units as au
 import numpy as np
@@ -319,3 +319,146 @@ def fit_summary(before: SessionV2, after: SessionV2, max_listed: int) -> FitSumm
         n_removed=len(old - new_uuids),
         n_flagged=sum(bool(c.flags) for c in listed),
         components=listed[:max_listed], truncated=len(listed) > max_listed)
+
+
+# --- The result of any recipe (phase 6-ter, PR 1) -----------------------
+#
+# Built from the RecipeResult in the same way for every recipe: nothing
+# here names a recipe. The summaries of the pilot (continuum,
+# identification, fit) are chosen by what the recipe changed or provides.
+
+class ComponentRemoved(BaseModel):
+    uuid: str
+    series: str
+    z: float
+    logN: float
+    b: float
+    reason: Optional[str] = Field(None, description=(
+        "Why the recipe removed it, when it says so."))
+
+
+class ComponentChanged(BaseModel):
+    uuid: str
+    series: str
+    z: float = Field(description="Redshift after the call.")
+    changed: dict[str, list] = Field(description=(
+        "The parameters that changed, each as [before, after]."))
+
+
+class ChangesSummary(BaseModel):
+    """What the recipe changed in the session, listed (at most max_listed
+    items per list; the counts are complete)."""
+
+    n_components_added: int = 0
+    n_components_removed: int = 0
+    n_components_changed: int = 0
+    components_removed: list[ComponentRemoved] = Field(default_factory=list, description=(
+        "Components that were in the session and are no longer, with the "
+        "reason when the recipe gives one."))
+    components_changed: list[ComponentChanged] = Field(default_factory=list)
+    columns_added: list[str] = Field(default_factory=list)
+    columns_removed: list[str] = Field(default_factory=list)
+    columns_changed: list[str] = Field(default_factory=list)
+    properties_changed: dict[str, list] = Field(default_factory=dict, description=(
+        "Properties of the session that changed (name, z_em, resolution "
+        "as the median R, units, number of pixels), each as [before, after]."))
+    truncated: bool = Field(False, description=(
+        "True if a list was cut to max_listed."))
+
+
+class NewSession(BaseModel):
+    """A session opened by a recipe that branches (e.g. a region extracted
+    from the spectrum)."""
+
+    session_id: str = Field(description="Identifier of the new session.")
+    spectrum: SpectrumSummary
+    summary: str = Field(description="What changed, compared with the original.")
+
+
+class RecipeInfo(SessionInfo):
+    """The session after a recipe, and what the recipe did."""
+
+    recipe: str = Field(description="The recipe that ran, as menu.recipe.")
+    changes: Optional[ChangesSummary] = Field(None, description=(
+        "What the recipe changed in this session; null if it opened new "
+        "sessions instead (new_sessions) or returned a value (value)."))
+    new_sessions: list[NewSession] = Field(default_factory=list, description=(
+        "Sessions opened by the recipe; this session is unchanged."))
+    value: Optional[Any] = Field(None, description=(
+        "The result of a recipe that returns a value instead of changing "
+        "the session (e.g. a redshift)."))
+    not_fitted: list[str] = Field(default_factory=list, description=(
+        "Components whose fit group failed: their values are those from "
+        "before the call."))
+    continuum: Optional[ContinuumSummary] = Field(None, description=(
+        "The continuum and the absorbed mask, when the recipe made or "
+        "changed them."))
+    identification: Optional[IdentificationSummary] = Field(None, description=(
+        "The identified regions and candidate systems, when the recipe "
+        "identified lines."))
+    fit: Optional[FitSummary] = Field(None, description=(
+        "The components added by the recipe, with errors, reduced chi2 and "
+        "flags, when it added any."))
+
+
+def _jsonable(value):
+    """A value of a change, as JSON can carry it."""
+    if isinstance(value, (np.floating, np.integer, np.bool_)):
+        value = value.item()
+    if isinstance(value, float) and not np.isfinite(value):
+        return None
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    return str(value)
+
+
+def changes_summary(changes, removed_reasons: dict, max_listed: int) -> ChangesSummary:
+    """The :class:`~astrocook.recipes.result.Changes` of a recipe, listed."""
+    removed = [ComponentRemoved(uuid=c.uuid, series=c.series, z=c.z, logN=c.logN,
+                                b=c.b, reason=removed_reasons.get(c.uuid))
+               for c in changes.components_removed]
+    changed = [ComponentChanged(uuid=c.component.uuid, series=c.component.series,
+                                z=c.component.z,
+                                changed={k: [_jsonable(a), _jsonable(b)]
+                                         for k, (a, b) in c.changed.items()})
+               for c in changes.components_changed]
+    return ChangesSummary(
+        n_components_added=len(changes.components_added),
+        n_components_removed=len(removed), n_components_changed=len(changed),
+        components_removed=removed[:max_listed],
+        components_changed=changed[:max_listed],
+        columns_added=list(changes.columns_added),
+        columns_removed=list(changes.columns_removed),
+        columns_changed=list(changes.columns_changed),
+        properties_changed={k: [_jsonable(a), _jsonable(b)]
+                            for k, (a, b) in changes.properties_changed.items()},
+        truncated=len(removed) > max_listed or len(changed) > max_listed)
+
+
+def _value(value):
+    """The value of a recipe that does not return a session."""
+    if isinstance(value, (np.generic,)):
+        value = value.item()
+    return _jsonable(value)
+
+
+def summaries(result, before: SessionV2, after: SessionV2, provides,
+              max_listed: int) -> dict:
+    """The summaries of the pilot that fit what the recipe did: the
+    continuum when it provides one or changed it, the identification when
+    it identified lines, the fit when it added components."""
+    out = {}
+    changes = result.changes
+    touched = set(changes.columns_added) | set(changes.columns_changed)
+    if after.spec.cont is not None and after.spec.has_aux_column("abs_mask") and (
+            "continuum" in provides or touched & {"cont", "abs_mask"}):
+        out["continuum"] = continuum_summary(after)
+    if ("candidates" in result.extra or "regions" in result.extra) \
+            and after.spec.has_aux_column("abs_ids") \
+            and "region_identifications" in after.spec.meta:
+        out["identification"] = identification_summary(after, max_listed)
+    if changes.components_added:
+        out["fit"] = fit_summary(before, after, max_listed)
+    return out
