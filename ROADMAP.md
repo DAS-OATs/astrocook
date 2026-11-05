@@ -2441,8 +2441,9 @@ as in the pilot (section 4.2). Plan of the phase to be agreed with Guido in
 its PR 0. The order matters little with the next phase: a parameter
 renamed later reaches the tools by the registry.
 
-**Plan of the phase** (proposed in PR 0, November 2026; the decisions
-below to be taken with Guido on the text, the options written out):
+**Plan of the phase** (agreed with Guido in PR 0, November 2026: the
+proposal of each decision below accepted; the options kept for the
+record):
 - *Starting point* (master after 2.5.0).
   - The registry holds 48 recipes (file 2, edit 15, flux 6, continuum 5,
     absorbers 20); 7 are branching (a new session), 8 hidden in the GUI
@@ -2486,7 +2487,45 @@ below to be taken with Guido on the text, the options written out):
   layer: what an agent needs and a recipe can give goes into the recipe
   or `RecipeResult` (for the GUI and the scripts too), not into the
   server.
-- *Decisions* (options for Guido; a proposal marked where there is one).
+- *Principle: a server open to new recipes* (Guido, PR 0). Phase 7 and
+  the phases after it will add recipes, to cover more of the analysis
+  and give the agents more tools for practical problems: that is also
+  why the code was put on solid ground. A recipe added to the registry
+  reaches the server as a tool with no server code, as it reaches the
+  GUI's menus and dialogs:
+  - the tool, its schema and its description come from the registry
+    only; nothing in the server names a recipe, except the list of the
+    excluded ones, each with its reason;
+  - the output of a tool is built from `RecipeResult` only, in the same
+    way for every recipe: what is specific to a recipe (the score of a
+    candidate, the regions of the forest) reaches the agent through
+    `RecipeResult.extra`, filled by the recipe; the summaries of the
+    pilot written per tool (continuum, identification, fit) become
+    summaries chosen by what changed (the continuum column, the
+    components, the identification metadata), not by the name of the
+    recipe;
+  - a new prerequisite (something a recipe requires and another
+    provides) is declared in the registry and in the resolver
+    (`recipes/prerequisites.py`), and the tools say it without a change
+    of the server;
+  - the instructions of the server (what the client shows the model
+    first) list the menus and what they are for from the registry, not
+    by hand;
+  - a test adds a fake recipe to the registry and checks that the
+    server offers it, with its schema, runs it and returns its result;
+    another that every recipe of the registry is a tool or excluded with
+    a reason (a new recipe that is neither fails the test).
+  The number of tools grows with the recipes (some 55 at the end of this
+  phase, with those of the server). Clients show every tool to the
+  model, so many tools cost context and choice; the trials (PR 7)
+  measure it. If needed, a fallback that stays generated from the
+  registry: the tools grouped (a tool per menu with the recipe as a
+  parameter), or a few generic tools (`recipes_list`, `recipe_describe`,
+  `recipe_run`) next to the most used ones.
+  Later (section 4, Guido, 6-bis PR 6): from the sequences of tools the
+  agents run, and what they compute without a tool, the recipes worth
+  adding.
+- *Decisions* (all agreed with Guido in PR 0, as proposed).
   1. *Destructive recipes* (the lesson of the pilot: `doublets_auto`
      removed 190 components, the agent protected the work only by
      opening a second copy).
@@ -2504,7 +2543,7 @@ below to be taken with Guido on the text, the options written out):
        server and in the result of a recipe that removed components).
      - (c) both: (b) always, (a) only for the recipes that remove
        components.
-     Proposal: (b), with the result of every recipe listing what it
+     Agreed: (b), with the result of every recipe listing what it
      removed (already in `RecipeResult.changes`) and saying how to undo
      it; (a) later if the trials ask for it.
   2. *Docker image*.
@@ -2525,18 +2564,19 @@ below to be taken with Guido on the text, the options written out):
      listed by hand, checked by the CI job), without changing the
      dependencies of the package. Making the GUI an optional extra
      (`astrocook[gui]`) would change the installation for every user: not
-     proposed in this phase. Proposal: (a) in this phase, without
+     proposed in this phase. Agreed: (a) in this phase, without
      PySide6 in the image; (b) with the first release after #549.
   3. *Which recipes become tools.* Guido (6-bis, PR 6): as many as
-     possible, the basic ones too. Proposal: all 48, also the 8 hidden
+     possible, the basic ones too. Agreed: all 48, also the 8 hidden
      in the GUI (`fit_component`, `update_component`, ... are exactly the
      editing tools the agents of the pilot missed), except the ones a
-     test lists as excluded with a reason. Candidates to exclude:
-     `update_from_knots` (section 4 called it interactive; but the knots
-     are a parameter, an agent could pass them: to be decided),
-     `fit_bayesian` (minutes to hours, optional `[bayes]` extra: offered
-     only when installed?), `import_ascii`, `export_ascii` (they read and
-     write files: allowed, as `session_open` and `session_save`?).
+     test lists as excluded with a reason. By the same rule, the
+     candidates to exclude are offered: `update_from_knots` (section 4
+     called it interactive, but the knots are a parameter an agent can
+     give), `import_ascii` and `export_ascii` (they read and write files,
+     as `session_open` and `session_save`), `fit_bayesian` only when the
+     `[bayes]` extra is installed (its description says that it runs for
+     minutes or more). The list of exclusions starts empty.
   4. *Agent decisions in the log* (section 4, item 3; Guido's trial: z_em
      estimated from the Ly-a peak, R from the header, nowhere in the
      log).
@@ -2545,7 +2585,7 @@ below to be taken with Guido on the text, the options written out):
      - (b) a tool `session_note(session_id, text)` that adds an entry
        without a state (a note, skipped by the replay);
      - (c) both.
-     Proposal: (c); (a) is where the agent states why it ran a recipe,
+     Agreed: (c); (a) is where the agent states why it ran a recipe,
      (b) where it records what it did outside the server. Either needs
      a field of `LogEntryV2` (`reason`, and a kind for the notes), saved
      in `.acs2` and shown in the GUI's log: old archives open as before
@@ -2557,7 +2597,7 @@ below to be taken with Guido on the text, the options written out):
      (`session_methods`) and in the GUI (*File > Export Log as Text*?).
      The text: one paragraph per step, with the references of the
      algorithms (e.g. the atomic data of *Atomic Data*). How it reads is
-     Guido's to judge, on a draft in its PR.
+     Guido's to judge, on a draft in its PR. Agreed.
 - *PRs*, one at a time, each with characterization tests first:
   0. this plan (docs only);
   1. *generated tools*: one tool per recipe from the registry (schema
@@ -2565,10 +2605,12 @@ below to be taken with Guido on the text, the options written out):
      calling `run`; the output from `RecipeResult` (summary, changes,
      warnings, notes, steps provided, the new session of a branching
      recipe under its own identifier); a test that every recipe is a
-     tool or listed as excluded with a reason; the five tools of the
-     pilot replaced, their names kept, their extra summaries
-     (continuum, identification, fit) kept as fields of the output where
-     `RecipeResult` lacks them;
+     tool or listed as excluded with a reason, and the test of the fake
+     recipe (the principle above); the five tools of the pilot replaced,
+     their names kept, their extra summaries (continuum, identification,
+     fit) chosen by what changed, what `RecipeResult` lacks moved into
+     `extra` by the recipes; the instructions of the server from the
+     registry;
   2. *sessions*: `session_list`, `session_describe` (the spectrum, the
      columns, z_em, R, the continuum, the systems, the log),
      `session_duplicate`, `session_close`, and decision 1
@@ -2587,7 +2629,8 @@ below to be taken with Guido on the text, the options written out):
   6. *Docker* (decision 2): the image, its CI job, the docs;
   7. *trials* with fresh agents, as in section 4.2 (the mock archive
      without its true continuum; J0103-1305; a request that needs the
-     editing tools), and a report in section 4;
+     editing tools), and a report in section 4, with the measure of the
+     number of tools (the principle above);
   8. closing: the docs page *Using Astrocook from an AI Agent*
      rewritten for the full server, the result of the phase.
   Found along the way: the startup hook of the cloud sessions created
@@ -3306,6 +3349,6 @@ review); each of its decisions goes into the log.
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
 | 6-bis – Recipe API | done (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c, #712); structured result, `run` (PR 4a, #713); region and score of the candidates, `not_fitted`, the reasons of the removals (PR 4b, #714); F102, the notes of a result in the status bar and the log (PR 4c, #715); prerequisites, core and scripts, F103 (PR 5a, #716); the GUI asks for the continuum, F104 (PR 5b, #717); descriptions reviewed, F48, the parameters not for agents (PR 6a, #718); the dialogs with the longer texts (PR 6a-bis, #719); the mask and the margin on z_em of the pipelines (PR 6b, #720); the kinds of the parameters, F105 (PR 6c, #721); the custom multiplets without the global table, F12 (PR 7, #722); the MCP pilot on the new API, the generator of the schemas of the tools (PR 8); closing: result of the phase in "Result of the phase" |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase proposed (PR 0), decisions 1-5 open |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

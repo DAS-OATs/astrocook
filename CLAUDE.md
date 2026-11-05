@@ -343,8 +343,8 @@ interface of the recipes for scripts changes (exceptions instead of 0), a
 minor version as 2.4.0.
 
 Next: phase 6-ter, the full MCP server (`ROADMAP.md`, phase 6-ter and
-section 4): plan of the phase proposed in PR 0 (decisions 1-5 open, to be
-agreed with Guido);
+section 4): plan of the phase agreed in PR 0 (#726), a server open to the
+recipes that phase 7 and later phases add (no server code per recipe);
 then phase 6-quater (the review of the recipe parameters) and phase 7.
 Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
