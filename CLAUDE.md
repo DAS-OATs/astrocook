@@ -180,9 +180,12 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 12. phase 6-bis – recipe API (typed parameters, structured results,
     exceptions), from the report of the MCP pilot; with F12 (moved from
     phase 5) (done), then release 2.5.0 (Guido);
-13. full MCP server, with a headless Docker image, its tools generated
-    from the recipe registry;
-14. phase 7 – robust components: emission model and
+13. phase 6-ter – full MCP server, with a headless Docker image, its
+    tools generated from the recipe registry (named after 2.5.0, Guido:
+    each step a phase with its own name);
+14. phase 6-quater – review of the recipe parameters, recipe by recipe,
+    for the recipes that phase 7 does not rewrite;
+15. phase 7 – robust components: emission model and
     absorption identification, algorithmic choices by Guido, measured
     on the benchmark of phase 4.
 
@@ -328,8 +331,9 @@ the new API and the generator of the schemas of the tools
 (`mcp_server/schemas.py`). Numbers unchanged but F102 and F103 (Guido's
 decisions). Found and fixed F49 (rest), F50/F55 (parameters), F102-F105;
 left F101 (script console), F102 for `forest_auto`. For later: the review
-of the parameters recipe by recipe (phase 6-ter or phase 7), the
-collections of elements to fill parameters (phase 7).
+of the parameters recipe by recipe (phase 6-quater, phase 7 for the
+recipes it rewrites), the collections of elements to fill parameters
+(phase 7).
 
 Release 2.5.0 (November 2026): phase 6-bis, on GitHub with the macOS
 app, not on PyPI (INAF has not answered, #549). The results on the mock
@@ -338,8 +342,10 @@ purpose F103 (spectra without a continuum) and F102 (`lya_auto`); the
 interface of the recipes for scripts changes (exceptions instead of 0), a
 minor version as 2.4.0.
 
-Next: the full MCP server (item 13), or a phase 6-ter (the review of the
-parameters recipe by recipe), to be agreed with Guido. Work in
+Next: phase 6-ter, the full MCP server (`ROADMAP.md`, phase 6-ter and
+section 4), starting from the plan of the phase (PR 0) agreed with Guido;
+then phase 6-quater (the review of the recipe parameters) and phase 7.
+Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
