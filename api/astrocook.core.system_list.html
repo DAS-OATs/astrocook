@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.system_list module &#8212; Astrocook 2.4.0 documentation</title>
+    <title>astrocook.core.system_list module &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -452,9 +452,14 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -659,9 +664,9 @@ guarantees cleanup (resetting the mask) even if errors occur.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>active_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – List of UUIDs to set as active.</p></li>
-<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Grouping depth for finding connected components. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
-<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><em>optional</em>) – The spectrum to be fitted: its resolution sets the blend
+<li><p><strong>active_uuids</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – List of UUIDs to set as active.</p></li>
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Grouping depth for finding connected components. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The spectrum to be fitted: its resolution sets the blend
 threshold of the grouping (see <a class="reference internal" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="astrocook.core.system_list.SystemListV2.get_connected_group"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_connected_group()</span></code></a>).</p></li>
 </ul>
 </dd>
@@ -780,9 +785,9 @@ Changes are applied identically to all specified components.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>uuid</strong> (<em>str</em>) – The component UUID.</p></li>
 <li><p><strong>param</strong> (<em>str</em>) – The parameter name (e.g., <code class="docutils literal notranslate"><span class="pre">'z'</span></code>, <code class="docutils literal notranslate"><span class="pre">'logN'</span></code>).</p></li>
-<li><p><strong>is_free</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, parameter varies freely. If False, it is fixed or linked.</p></li>
-<li><p><strong>expression</strong> (<em>str</em><em>, </em><em>optional</em>) – Mathematical string for linking (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;p['target_uuid'].z&quot;</span></code>).</p></li>
-<li><p><strong>target_uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – UUID of the component this parameter is linked to.</p></li>
+<li><p><strong>is_free</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, parameter varies freely. If False, it is fixed or linked.</p></li>
+<li><p><strong>expression</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Mathematical string for linking (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;p['target_uuid'].z&quot;</span></code>).</p></li>
+<li><p><strong>target_uuid</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – UUID of the component this parameter is linked to.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -801,8 +806,8 @@ Changes are applied identically to all specified components.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>uuid</strong> (<em>str</em><em>, </em><em>optional</em>) – Single UUID to delete.</p></li>
-<li><p><strong>uuids</strong> (<em>list</em><em>, </em><em>optional</em>) – List of UUIDs to delete.</p></li>
+<li><p><strong>uuid</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Single UUID to delete.</p></li>
+<li><p><strong>uuids</strong> (<em>list</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – List of UUIDs to delete.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -824,8 +829,8 @@ the seed components (via links, spectral overlap, or kinematic proximity).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>seed_uuids</strong> (<em>list</em><em> of </em><em>str</em>) – The UUIDs of the components initially selected for fitting.</p></li>
-<li><p><strong>max_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – How many degrees of separation to traverse. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
-<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><em>optional</em>) – The spectrum the components are fitted to. Lines closer than its
+<li><p><strong>max_depth</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – How many degrees of separation to traverse. Defaults to <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p></li>
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The spectrum the components are fitted to. Lines closer than its
 instrumental FWHM are blended (findings register F14, see
 <a class="reference internal" href="#astrocook.core.system_list.are_overlapping" title="astrocook.core.system_list.are_overlapping"><code class="xref py py-func docutils literal notranslate"><span class="pre">are_overlapping()</span></code></a>); without it, only <code class="docutils literal notranslate"><span class="pre">max(4</span> <span class="pre">b,</span> <span class="pre">30</span> <span class="pre">km/s)</span></code>.</p></li>
 </ul>
@@ -847,7 +852,7 @@ instrumental FWHM are blended (findings register F14, see
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>other</strong> (<a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The source list to copy from.</p></li>
-<li><p><strong>copy_uuids</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, keeps original UUIDs (risky if merging into self).
+<li><p><strong>copy_uuids</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, keeps original UUIDs (risky if merging into self).
 If False, regenerates UUIDs to avoid conflicts. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
@@ -881,16 +886,16 @@ the new component is kept.</p></li>
 <li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectrum data used for fitting and residual calculation.</p></li>
 <li><p><strong>uuid_seed</strong> (<em>str</em>) – UUID of the seed component. This defines the series (e.g. CIV) and the center of the
 velocity search window.</p></li>
-<li><p><strong>max_components</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of additional components to attempt adding (default: 5).</p></li>
-<li><p><strong>threshold_sigma</strong> (<em>float</em><em>, </em><em>optional</em>) – Significance level (in standard deviations) of the residual dip required to trigger
+<li><p><strong>max_components</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Maximum number of additional components to attempt adding (default: 5).</p></li>
+<li><p><strong>threshold_sigma</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Significance level (in standard deviations) of the residual dip required to trigger
 a new component trial (default: 2.5).</p></li>
-<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum AIC improvement required to accept a new component (default: 0.0).
+<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Minimum AIC improvement required to accept a new component (default: 0.0).
 Higher values favor simpler models (Occam’s razor).</p></li>
-<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><em>optional</em>) – The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</p></li>
-<li><p><strong>min_dv</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum velocity separation (km/s) required between a candidate and
+<li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</p></li>
+<li><p><strong>min_dv</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Minimum velocity separation (km/s) required between a candidate and
 existing components. Lower this to de-blend close doublets (default: 10.0).</p></li>
-<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><em>optional</em>) – Depth for finding connected neighbors during the fit (default: 2).</p></li>
-<li><p><strong>patience</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</p></li>
+<li><p><strong>group_depth</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Depth for finding connected neighbors during the fit (default: 2).</p></li>
+<li><p><strong>patience</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

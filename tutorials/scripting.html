@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Using Astrocook from Python &#8212; Astrocook 2.4.0 documentation</title>
+    <title>Using Astrocook from Python &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -529,23 +529,92 @@ The function returns <code class="docutils literal notranslate"><span class="pre
 <code class="docutils literal notranslate"><span class="pre">session.flux</span></code>, <code class="docutils literal notranslate"><span class="pre">session.continuum</span></code>, <code class="docutils literal notranslate"><span class="pre">session.absorbers</span></code> and
 <code class="docutils literal notranslate"><span class="pre">session.file</span></code>. Each recipe returns a <strong>new</strong> session and leaves the
 original unchanged, so the steps can be chained:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"50.0"</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="mf">50.0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The parameters are the same as in the recipe dialogs, and are given as
-strings, as typed in the dialogs. If a parameter cannot be understood, the
-recipe logs an error and returns <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, so check the
-result before going on:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"fifty"</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"The recipe failed"</span><span class="p">)</span>
+<p>The parameters are the same as in the recipe dialogs. Give them with their
+types (numbers, <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code> where a parameter can be left
+out, e.g. the start of <em>Rebin</em>), or as strings, as typed in the dialogs and
+written in the session log (<code class="docutils literal notranslate"><span class="pre">sigma_kms=&quot;50.0&quot;</span></code>): they are converted before
+the recipe runs. A value that cannot be converted, or that has no physical
+meaning (a negative smoothing width, a redshift of -1 or below, a column
+density outside 10-23), stops the recipe with an exception that says in
+which recipe it happened and why; so does a recipe that cannot do what was
+asked (a session that is not open, a file that cannot be read). Catch
+<code class="docutils literal notranslate"><span class="pre">RecipeError</span></code> to go on after it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeError</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"fifty"</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>  <span class="c1"># Smooth spectrum: sigma_kms: 'fifty' is not a number.</span>
 </pre></div>
 </div>
-<p>The recipes and their parameters are listed in the
+<p>The error of a step of a longer recipe names both, e.g. <em>Auto-fit metal
+doublets (Red Side) → Auto-detect and fit components → Refit all systems:
+…</em>. A recipe with nothing to do (e.g. <em>Refit All</em> on a session without
+components) is not a failure: it gives the session back and logs a
+warning.</p>
+<p>To know what a recipe did, run it with <code class="docutils literal notranslate"><span class="pre">run</span></code>, which returns its whole
+result: the new session, what changed (the components added, removed and
+changed, the columns, the properties), the warnings, the recipes it ran as
+steps and the values of the parameters it used:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">run</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s2">"absorbers.doublets_auto"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>   <span class="c1"># Auto-fit metal doublets (Red Side): 3 components added; ...</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">changes</span><span class="o">.</span><span class="n">components_added</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+<span class="n">fitted</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">session</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">result.notes</span></code> says what else is worth knowing, one line each: the
+components removed and why (e.g. <em>1 component removed: logN &lt; min_logN =
+14.0 (too weak)</em>), those the recipe made and discarded, those whose fit
+failed (flagged <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code>, with the values from before), the candidate
+systems found; <code class="docutils literal notranslate"><span class="pre">result.extra</span></code> has the same as data (by component). The GUI
+counts them in the status bar and writes them in the log.
+The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
+<section id="what-a-recipe-needs">
+<h2>3. What a Recipe Needs<a class="headerlink" href="#what-a-recipe-needs" title="Link to this heading">#</a></h2>
+<p>Some recipes need something from the session: the emission redshift
+(<code class="docutils literal notranslate"><span class="pre">z_em</span></code>), the resolution, a continuum. The <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>
+lists them for each recipe (<code class="docutils literal notranslate"><span class="pre">requires</span></code>), and
+<code class="docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites.missing</span></code> says what a session lacks for a
+recipe, and which recipe provides it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">missing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+
+<span class="k">for</span> <span class="n">gap</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">find_recipe</span><span class="p">(</span><span class="s2">"doublets_auto"</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gap</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+<span class="c1"># The spectrum has no continuum: Auto-estimate continuum (single-click)</span>
+<span class="c1"># (continuum.estimate_auto) provides it with its defaults</span>
+</pre></div>
+</div>
+<p>By default a script goes on: a continuum that is missing is estimated
+first with <em>Auto-estimate Continuum</em> and its defaults, with a warning; a
+recipe that needs <code class="docutils literal notranslate"><span class="pre">z_em</span></code> or the resolution and does not find them goes on
+too, with a warning that says what it does without them. To stop instead,
+with a <code class="docutils literal notranslate"><span class="pre">MissingPrerequisite</span></code> exception that says what is missing and how to
+provide it, choose the policy <code class="docutils literal notranslate"><span class="pre">&quot;raise&quot;</span></code>, for a block of the script or for
+one call:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">policy</span>
+
+<span class="k">with</span> <span class="n">policy</span><span class="p">(</span><span class="s2">"raise"</span><span class="p">):</span>
+    <span class="n">fitted</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">absorbers</span><span class="o">.</span><span class="n">doublets_auto</span><span class="p">()</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s2">"absorbers.doublets_auto"</span><span class="p">,</span> <span class="n">on_missing</span><span class="o">=</span><span class="s2">"raise"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A recipe run first to provide something is in <code class="docutils literal notranslate"><span class="pre">result.provided</span></code>, with the
+session it gave, and the GUI writes it in the session log
+as a step of its own, before the recipe.</p>
+</section>
 <section id="saving-the-result">
-<h2>3. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
+<h2>4. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
 <p>Save a session as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive; passing the original session as
 <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> stores the original data in the archive too, as the GUI
 does:</p>
@@ -554,7 +623,7 @@ does:</p>
 </div>
 </section>
 <section id="seeing-astrocook-s-messages">
-<h2>4. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
+<h2>5. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
 <p>Astrocook reports its progress with Python’s <code class="docutils literal notranslate"><span class="pre">logging</span></code> module and, like
 other libraries, leaves its configuration to your script: by default only
 warnings and errors are shown. To see the progress messages as well, add
@@ -626,8 +695,9 @@ hide the messages of the fits:</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#opening-a-session">1. Opening a Session</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-recipes">2. Running Recipes</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">3. Saving the Result</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">4. Seeing Astrocook’s Messages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-recipe-needs">3. What a Recipe Needs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">4. Saving the Result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">5. Seeing Astrocook’s Messages</a></li>
 </ul>
   </nav></div>
 

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.recipes.prerequisites &#8212; Astrocook 2.5.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/recipes/prerequisites';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.5.0" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.prerequisites</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.recipes.prerequisites</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""What a recipe needs from the session, and who provides it (phase 6-bis, PR 5).</span>
+
+<span class="sd">The registry declares what each recipe *requires* (``z_em``, the</span>
+<span class="sd">``resolution``, the ``continuum``) and what it *provides*; this module</span>
+<span class="sd">says what is missing for a recipe (:func:`missing`, for the GUI and the</span>
+<span class="sd">MCP server, which ask before the recipe runs) and fills the gaps at the</span>
+<span class="sd">boundary of the recipe (:func:`fill`, called by ``typed_recipe``),</span>
+<span class="sd">following a policy chosen by the script:</span>
+
+<span class="sd">- ``"provide"`` (the default): what a recipe can provide with its</span>
+<span class="sd">  defaults is provided first, with a WARNING (the continuum, by</span>
+<span class="sd">  *Auto-estimate Continuum*); what no recipe can provide by itself (the</span>
+<span class="sd">  emission redshift, the resolution) is left to the recipe, which goes on</span>
+<span class="sd">  as before with its own WARNING (Guido: the numbers do not change);</span>
+<span class="sd">- ``"raise"``: a :class:`~astrocook.recipes.errors.MissingPrerequisite`</span>
+<span class="sd">  that says what is missing and which recipe provides it.</span>
+
+<span class="sd">The policy is set for a block of a script with :func:`policy`, or for one</span>
+<span class="sd">call with ``run(..., on_missing="raise")``.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextvars</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">MissingPrerequisite</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1">#: The policies of the scripts</span>
+<span class="n">POLICIES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"provide"</span><span class="p">,</span> <span class="s2">"raise"</span><span class="p">)</span>
+
+<span class="n">_POLICY</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s1">'astrocook_prerequisites_policy'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"provide"</span><span class="p">)</span>
+<span class="n">_PROVIDED</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s1">'astrocook_prerequisites_provided'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_z_em</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="o">!=</span> <span class="mf">0.0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_resolution</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolution_summary</span>
+    <span class="k">return</span> <span class="n">resolution_summary</span><span class="p">(</span><span class="n">spec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_continuum</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="c1"># A spectrum normalized already (flux ~1) has a continuum of 1</span>
+    <span class="k">return</span> <span class="n">spec</span><span class="o">.</span><span class="n">norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="Prerequisite">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.Prerequisite">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Prerequisite</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Something a recipe can require from the session."""</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: Said when it is missing, e.g. "the spectrum has no continuum"</span>
+    <span class="n">missing</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: Whether the session has it (from its spectrum)</span>
+    <span class="n">check</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
+    <span class="c1">#: The recipe that provides it with its defaults, as ``category.name``;</span>
+    <span class="c1">#: None when a value must be given (e.g. z_em)</span>
+    <span class="n">automatic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<span class="n">PREREQUISITES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Prerequisite</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"z_em"</span><span class="p">:</span> <span class="n">Prerequisite</span><span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"the emission redshift (z_em) is not set"</span><span class="p">,</span> <span class="n">_has_z_em</span><span class="p">),</span>
+    <span class="s2">"resolution"</span><span class="p">:</span> <span class="n">Prerequisite</span><span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"the spectrum has no resolution"</span><span class="p">,</span>
+                               <span class="n">_has_resolution</span><span class="p">),</span>
+    <span class="s2">"continuum"</span><span class="p">:</span> <span class="n">Prerequisite</span><span class="p">(</span><span class="s2">"continuum"</span><span class="p">,</span> <span class="s2">"the spectrum has no continuum"</span><span class="p">,</span> <span class="n">_has_continuum</span><span class="p">,</span>
+                              <span class="n">automatic</span><span class="o">=</span><span class="s2">"continuum.estimate_auto"</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="Missing">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.Missing">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Missing</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A prerequisite that a recipe needs and the session does not have."""</span>
+    <span class="c1">#: ``z_em``, ``resolution`` or ``continuum``</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: e.g. "the spectrum has no continuum"</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The recipes that provide it, as ``category.name``</span>
+    <span class="n">providers</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="c1">#: The one that provides it with its defaults, or None</span>
+    <span class="n">automatic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The reason and how to fill the gap, e.g. "The spectrum has no</span>
+<span class="sd">        continuum: Auto-estimate continuum (single-click)</span>
+<span class="sd">        (continuum.estimate_auto) provides it with its defaults"; all the</span>
+<span class="sd">        recipes that provide it are in :attr:`providers`."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">named</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">find_recipe</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">automatic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">how</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">named</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">automatic</span><span class="p">)</span><span class="si">}</span><span class="s2"> provides it with its defaults"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">how</span> <span class="o">=</span> <span class="s2">"set it with "</span> <span class="o">+</span> <span class="s2">" or "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">named</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">providers</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reason</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">reason</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">how</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="ProvidedStep">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.ProvidedStep">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProvidedStep</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A recipe run first to provide a prerequisite (policy "provide")."""</span>
+    <span class="c1">#: The recipe, as ``category.name``</span>
+    <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The values of its parameters (its defaults), for the session log</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1">#: Why it was run, e.g. "the spectrum has no continuum"</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The session it gave, on which the recipe then ran</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Any</span></div>
+
+
+
+<div class="viewcode-block" id="providers_of">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.providers_of">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">providers_of</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The recipes that declare that they provide ``name``, as</span>
+<span class="sd">    ``category.name``, the automatic one first."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">all_recipes</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">all_recipes</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">provides</span><span class="p">]</span>
+    <span class="n">automatic</span> <span class="o">=</span> <span class="n">PREREQUISITES</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">automatic</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">automatic</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="missing">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.missing">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">missing</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Missing</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What ``recipe`` (a :class:`~astrocook.recipes.registry.RecipeSpec`)</span>
+<span class="sd">    needs and ``session`` does not have; pure, nothing is run."""</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">recipe</span><span class="o">.</span><span class="n">requires</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">PREREQUISITES</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+        <span class="n">prerequisite</span> <span class="o">=</span> <span class="n">PREREQUISITES</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prerequisite</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">spec</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Missing</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">prerequisite</span><span class="o">.</span><span class="n">missing</span><span class="p">,</span> <span class="n">providers_of</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+                               <span class="n">prerequisite</span><span class="o">.</span><span class="n">automatic</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="policy">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.policy">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">policy</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The policy for the recipes run in the block: ``"provide"`` or</span>
+<span class="sd">    ``"raise"``.</span>
+
+<span class="sd">    &gt;&gt;&gt; with policy("raise"):</span>
+<span class="sd">    ...     session = session.absorbers.refit_all()   # doctest: +SKIP</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">POLICIES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown policy </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">: use one of </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">POLICIES</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">_POLICY</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">_POLICY</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="current_policy">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.current_policy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">current_policy</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The policy in force."""</span>
+    <span class="k">return</span> <span class="n">_POLICY</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="collect_provided">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.collect_provided">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_provided</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ProvidedStep</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The steps run to provide the prerequisites of the outermost recipe</span>
+<span class="sd">    called in the block (used by ``run`` and by the callers that write the</span>
+<span class="sd">    session log)."""</span>
+    <span class="n">provided</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ProvidedStep</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">_PROVIDED</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">provided</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">provided</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">_PROVIDED</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="fill">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.fill">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fill</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">,</span> <span class="n">outermost</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The session with the prerequisites of ``recipe`` filled, as the</span>
+<span class="sd">    policy says (see the module); called by ``typed_recipe`` before the</span>
+<span class="sd">    recipe runs. Raises :class:`MissingPrerequisite` with the policy</span>
+<span class="sd">    ``"raise"``."""</span>
+    <span class="n">gaps</span> <span class="o">=</span> <span class="n">missing</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">gaps</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">session</span>
+    <span class="k">if</span> <span class="n">_POLICY</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"raise"</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MissingPrerequisite</span><span class="p">(</span><span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">message</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gaps</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_params</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+    <span class="k">for</span> <span class="n">gap</span> <span class="ow">in</span> <span class="n">gaps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">gap</span><span class="o">.</span><span class="n">automatic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># the recipe goes on, with its own WARNING (as before)</span>
+        <span class="n">category</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">automatic</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">gap</span><span class="o">.</span><span class="n">reason</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}{</span><span class="n">gap</span><span class="o">.</span><span class="n">reason</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">: it is estimated first "</span>
+                       <span class="sa">f</span><span class="s2">"with </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">, with its defaults."</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">category</span><span class="p">),</span> <span class="n">name</span><span class="p">)()</span>
+        <span class="n">provided</span> <span class="o">=</span> <span class="n">_PROVIDED</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">outermost</span> <span class="ow">and</span> <span class="n">provided</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">provided</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ProvidedStep</span><span class="p">(</span><span class="n">recipe</span><span class="o">=</span><span class="n">gap</span><span class="o">.</span><span class="n">automatic</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">resolve_params</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{}),</span>
+                                         <span class="n">reason</span><span class="o">=</span><span class="n">gap</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">session</span></div>
+
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

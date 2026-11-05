@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.structures module &#8212; Astrocook 2.4.0 documentation</title>
+    <title>astrocook.core.structures module &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -454,9 +454,14 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -617,7 +622,7 @@ register F45).</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>values</strong> (<em>np.ndarray</em>) – The numerical data array.</p></li>
 <li><p><strong>unit</strong> (<em>astropy.units.Unit</em>) – The physical unit associated with the values.</p></li>
-<li><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – A short description of the column’s content.</p></li>
+<li><p><strong>description</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – A short description of the column’s content.</p></li>
 </ul>
 </dd>
 </dl>
@@ -736,11 +741,11 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <li><p><strong>y_values</strong> (<em>np.ndarray</em>) – Flux data.</p></li>
 <li><p><strong>y_unit</strong> (<em>astropy.units.Unit</em>) – Unit for the y-axis (and dy).</p></li>
 <li><p><strong>dy_values</strong> (<em>np.ndarray</em>) – Error data.</p></li>
-<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
-<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
-<li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
-<li><p><strong>meta</strong> (<em>dict</em><em>, </em><em>optional</em>) – Metadata dictionary.</p></li>
-<li><p><strong>z_em</strong> (<em>float</em><em>, </em><em>optional</em>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
+<li><p><strong>xmin_values</strong> (<em>np.ndarray</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Lower bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>xmax_values</strong> (<em>np.ndarray</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bin edges. Defaults to <code class="docutils literal notranslate"><span class="pre">x_values</span></code> if None.</p></li>
+<li><p><strong>aux_data</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Dictionary of auxiliary columns: <code class="docutils literal notranslate"><span class="pre">{'name':</span> <span class="pre">(values,</span> <span class="pre">unit,</span> <span class="pre">description)}</span></code>.</p></li>
+<li><p><strong>meta</strong> (<em>dict</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Metadata dictionary.</p></li>
+<li><p><strong>z_em</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Emission redshift. Defaults to <code class="docutils literal notranslate"><span class="pre">0.0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -824,7 +829,7 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <dd><p><code class="docutils literal notranslate"><span class="pre">'voigt'</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Profile function name (default</p>
+<dd class="field-odd"><p>Profile function name (<a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.default" title="astrocook.recipes.registry.ParamSpec.default">default</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -853,7 +858,9 @@ and auxiliary columns. It is the data payload for <a class="reference internal" 
 <dd><p>Warnings left by the last fit of the component (#517), see
 <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.COMPONENT_FLAGS" title="astrocook.fitting.voigt_fitter.COMPONENT_FLAGS"><code class="xref py py-data docutils literal notranslate"><span class="pre">astrocook.fitting.voigt_fitter.COMPONENT_FLAGS</span></code></a>: a parameter
 ended at a bound of the fit, or the uncertainties could not be
-computed. Cleared when a parameter is edited.</p>
+computed; or <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code> (phase 6-bis): Refit All could not fit its
+group, and it keeps its values from before. Cleared when a parameter is
+edited, and set again by the next fit.</p>
 </dd></dl>
 
 <dl class="py attribute">

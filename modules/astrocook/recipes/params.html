@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.recipes.params &#8212; Astrocook 2.5.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/recipes/params';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.5.0" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.params</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.recipes.params</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Typed parameters of the recipes: one conversion, at the boundary.</span>
+
+<span class="sd">The GUI dialogs, the session log, the log window and the scripts pass the</span>
+<span class="sd">parameters of a recipe as strings (``'5000.0'``, ``'True'``, ``'None'``);</span>
+<span class="sd">the MCP server and the scripts may pass them typed. The decorator</span>
+<span class="sd">:func:`typed_recipe` converts them once, to the types declared in the</span>
+<span class="sd">recipe registry (:mod:`astrocook.recipes.registry`), and checks them</span>
+<span class="sd">against its bounds before the recipe runs, so that the body of a recipe</span>
+<span class="sd">receives typed values (phase 6-bis, PR 2).</span>
+
+<span class="sd">:func:`resolve_params` gives the values a recipe actually used (the</span>
+<span class="sd">parameters passed, converted, and the defaults of the others), which the</span>
+<span class="sd">session log records (#573, item 3).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextvars</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="c1"># InvalidParameter is defined with the other exceptions of the recipes</span>
+<span class="c1"># (phase 6-bis, PR 3) and raised here</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeError</span><span class="p">,</span> <span class="n">RecipeFailed</span><span class="p">,</span> <span class="n">reason_of</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1">#: The string that means "no value" for an optional parameter: what the</span>
+<span class="c1">#: dialogs and the log write for None. An empty field of a dialog (``''``)</span>
+<span class="c1">#: means None only for a parameter whose default is None (e.g. the start of</span>
+<span class="c1">#: *Rebin*: the range of the data); elsewhere it is an error, so that a field</span>
+<span class="c1">#: emptied by mistake does not switch an option off (Guido, phase 6-bis, PR</span>
+<span class="c1">#: 2a: an empty ``kappa`` of *Rebin* is not "no clipping")</span>
+<span class="n">NONE_STRING</span> <span class="o">=</span> <span class="s1">'None'</span>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_number</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="c1"># bool is an int: True for a number is a mistake, not 1</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not a number"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">kind</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not "</span>
+                                   <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'an integer'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">kind</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="nb">int</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'a number'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not an integer"</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not an integer"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not a number"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_boolean</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="c1"># 1 and 0 too, which scripts often write (Guido, phase 6-bis, PR 2a)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'true'</span><span class="p">,</span> <span class="s1">'false'</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">,</span> <span class="s1">'0'</span><span class="p">):</span>
+        <span class="c1"># The dialogs and the log write 'True' and 'False'; some recipes</span>
+        <span class="c1"># also read 'true' and 'false'</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'true'</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not True or False"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_list</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">SyntaxError</span><span class="p">):</span>
+            <span class="n">parsed</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not a list"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_choice</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One of the choices of ``param``, in its spelling (the case is not</span>
+<span class="sd">    checked: ``'NESTED'`` is ``'nested'``, as the recipes read it before);</span>
+<span class="sd">    :class:`InvalidParameter` otherwise (phase 6-bis, PR 6c: an unknown</span>
+<span class="sd">    value was taken silently, e.g. ``engine='foo'`` ran MCMC)."""</span>
+    <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">choice</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">choice</span>
+    <span class="n">allowed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">choices</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">text</span><span class="si">!r}</span><span class="s2"> is not one of </span><span class="si">{</span><span class="n">allowed</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="convert">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.convert">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``value`` converted to the type of ``param`` (a</span>
+<span class="sd">    :class:`~astrocook.recipes.registry.ParamSpec`) and checked against its</span>
+<span class="sd">    bounds; :class:`InvalidParameter` if it cannot be."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">keep</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>  <span class="c1"># a special value, such as '_current_'</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">optional</span> <span class="ow">and</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">NONE_STRING</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">''</span> <span class="ow">and</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)))):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">optional</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># e.g. a string that may be absent (phase 6-bis, PR 2c)</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: a value is needed"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_number</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_number</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_boolean</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_list</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">optional</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">'None'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_choice</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">choices</span> <span class="k">else</span> <span class="n">text</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">allow_nan</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not a number"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+        <span class="c1"># Not a value of any parameter so far (Guido, phase 6-bis, PR 2b)</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> is not a finite number"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">gt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">result</span> <span class="o">&gt;</span> <span class="n">param</span><span class="o">.</span><span class="n">gt</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2"> is not above </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">gt</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">result</span> <span class="o">&lt;</span> <span class="n">param</span><span class="o">.</span><span class="n">min</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2"> is below </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">min</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">result</span> <span class="o">&gt;</span> <span class="n">param</span><span class="o">.</span><span class="n">max</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2"> is above </span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">max</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="convert_params">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.convert_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_params</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The parameters of ``spec`` in ``params`` converted to their types;</span>
+<span class="sd">    the others (e.g. ``alias_map``, deprecated parameters) unchanged."""</span>
+    <span class="n">declared</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">params</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">convert</span><span class="p">(</span><span class="n">declared</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">declared</span> <span class="k">else</span> <span class="n">value</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+
+<div class="viewcode-block" id="resolve_params">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.resolve_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_params</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The values that the recipe ``name`` uses with ``params``: those</span>
+<span class="sd">    passed, converted, and the defaults of the others, in the order of the</span>
+<span class="sd">    registry; for the session log (#573, item 3). The parameters passed that</span>
+<span class="sd">    the registry does not declare (e.g. ``alias_map``), and those of a name</span>
+<span class="sd">    that is not a recipe, are returned as passed."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+        <span class="n">resolved</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">])</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">else</span> <span class="n">p</span><span class="o">.</span><span class="n">default</span>
+    <span class="n">resolved</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resolved</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">resolved</span></div>
+
+
+
+<span class="c1">#: The errors of the core that mean "this data or this value cannot be</span>
+<span class="c1">#: used": the decorator of the recipes turns them into RecipeFailed (Guido,</span>
+<span class="c1">#: phase 6-bis, PR 3). The others, usually bugs, go on as they are</span>
+<span class="n">DATA_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Steps</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The recipes run inside the one that :func:`collect_steps` watches."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="n">_STEPS</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s1">'astrocook_recipe_steps'</span><span class="p">,</span>
+                                                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="collect_steps">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.collect_steps">[docs]</a>
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_steps</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Collect, as ``category.name``, the recipes that the next recipe runs</span>
+<span class="sd">    as its steps (phase 6-bis, PR 4: the ``steps`` of a RecipeResult)."""</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">_Steps</span><span class="p">()</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">_STEPS</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">steps</span><span class="o">.</span><span class="n">names</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">_STEPS</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#: How many recipes are running, one inside the other: the prerequisites</span>
+<span class="c1">#: filled by the outermost are the steps of the session log (PR 5)</span>
+<span class="n">_DEPTH</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s1">'astrocook_recipe_depth'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="typed_recipe">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.typed_recipe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">typed_recipe</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Decorator of a recipe method, its boundary.</span>
+
+<span class="sd">    The parameters passed are converted to the types of the registry</span>
+<span class="sd">    before the method runs (:class:`InvalidParameter` if one cannot be, or</span>
+<span class="sd">    is out of its bounds). Every :class:`RecipeError` that leaves the</span>
+<span class="sd">    method records the recipe (so that the message names the recipe, and</span>
+<span class="sd">    the steps of a pipeline); the errors of the core in</span>
+<span class="sd">    :data:`DATA_ERRORS` become :class:`RecipeFailed`, with the original</span>
+<span class="sd">    error as their cause; any other exception (a bug) goes on unchanged,</span>
+<span class="sd">    with a note naming the recipe. Nothing is logged here: the error is</span>
+<span class="sd">    logged where it is caught (phase 6-bis, PR 3). Before the method runs,</span>
+<span class="sd">    the prerequisites that the registry declares for it are filled, or</span>
+<span class="sd">    their absence raised, as the policy of</span>
+<span class="sd">    :mod:`astrocook.recipes.prerequisites` says (PR 5).</span>
+<span class="sd">    """</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">))</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">_STEPS</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">steps</span><span class="o">.</span><span class="n">depth</span><span class="p">:</span>
+                <span class="n">steps</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">_DEPTH</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">_DEPTH</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">passed</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">'self'</span><span class="p">}</span>
+            <span class="n">converted</span> <span class="o">=</span> <span class="n">convert_params</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">passed</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">fill</span>
+            <span class="n">session</span> <span class="o">=</span> <span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">outermost</span><span class="o">=</span><span class="n">_DEPTH</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">:</span>
+                <span class="bp">self</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">session</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">converted</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">enter</span><span class="p">(</span><span class="o">*</span><span class="n">where</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">DATA_ERRORS</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="n">reason_of</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">error</span><span class="o">.</span><span class="n">enter</span><span class="p">(</span><span class="o">*</span><span class="n">where</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">error</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">add_note</span><span class="p">(</span><span class="sa">f</span><span class="s2">"In the recipe </span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">where</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">_DEPTH</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">depth</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">steps</span><span class="o">.</span><span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="n">wrapper</span><span class="o">.</span><span class="n">typed_recipe</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># checked by tests/test_recipe_params.py</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.file module &#8212; Astrocook 2.4.0 documentation</title>
+    <title>astrocook.recipes.file module &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -55,11 +55,11 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="astrocook.recipes.flux module" href="astrocook.recipes.flux.html" />
-    <link rel="prev" title="astrocook.recipes.edit module" href="astrocook.recipes.edit.html" />
+    <link rel="prev" title="astrocook.recipes.errors module" href="astrocook.recipes.errors.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -452,9 +452,14 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -574,10 +579,14 @@ and redshift (<cite>z</cite>).</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if at least one file was successfully saved, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if at least one file was saved, <code class="docutils literal notranslate"><span class="pre">False</span></code> if the targets
+name nothing to export.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If a file cannot be written (phase 6-bis, PR 3: it returned False).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -617,10 +626,14 @@ grid alignment.</p>
 <dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The full path to the ASCII/CSV file to import.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session instance containing the imported data. Returns <code class="docutils literal notranslate"><span class="pre">0</span></code> if the import fails.</p>
+<dd class="field-even"><p>A new session instance containing the imported data.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If the file cannot be read, or its length is not that of the
+    spectrum.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -640,12 +653,12 @@ grid alignment.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="astrocook.recipes.edit.html"
+       href="astrocook.recipes.errors.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">astrocook.recipes.edit module</p>
+        <p class="prev-next-title">astrocook.recipes.errors module</p>
       </div>
     </a>
     <a class="right-next"

@@ -10,9 +10,14 @@ Submodules
    astrocook.recipes.absorbers
    astrocook.recipes.continuum
    astrocook.recipes.edit
+   astrocook.recipes.errors
    astrocook.recipes.file
    astrocook.recipes.flux
    astrocook.recipes.messages
+   astrocook.recipes.params
+   astrocook.recipes.prerequisites
+   astrocook.recipes.registry
+   astrocook.recipes.result
 
 Module contents
 ---------------

@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.system_list &#8212; Astrocook 2.4.0 documentation</title>
+    <title>astrocook.core.system_list &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../../../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../static/design-tabs.js?v=f930bc37"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -482,7 +482,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LINK_ERRORS</span><span class="p">,</span> <span class="n">LINK_FUNCTIONS</span><span class="p">,</span> <span class="n">VoigtModelConstraintV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">ParameterConstraintV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">is_multiplet</span><span class="p">,</span> <span class="n">series_lines</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
@@ -501,9 +501,9 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]]</span>
     
     <span class="c1"># 2. Check if it's a standard multiplet tag (e.g., 'CIV')</span>
-    <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">is_multiplet</span><span class="p">(</span><span class="n">series_name</span><span class="p">):</span>
         <span class="n">waves</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">series_lines</span><span class="p">(</span><span class="n">series_name</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">line_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
                 <span class="n">waves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">line_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">waves</span>
@@ -1550,7 +1550,7 @@
 <span class="sd">            A new system list containing the optimized components.</span>
 <span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span>
 
         <span class="c1"># 1. Setup Static Window</span>
         <span class="n">current_systs</span> <span class="o">=</span> <span class="bp">self</span>
@@ -1560,7 +1560,7 @@
         <span class="n">series_name</span> <span class="o">=</span> <span class="n">target_comp</span><span class="o">.</span><span class="n">series</span>
         <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="mf">1215.67</span>
         <span class="k">if</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">series_name</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">series_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]][</span><span class="s1">'wave'</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">is_multiplet</span><span class="p">(</span><span class="n">series_name</span><span class="p">):</span> <span class="n">lam_target_ang</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">series_lines</span><span class="p">(</span><span class="n">series_name</span><span class="p">)[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">'wave'</span><span class="p">]</span>
         
         <span class="n">lam_target_nm</span> <span class="o">=</span> <span class="n">lam_target_ang</span> <span class="o">/</span> <span class="mf">10.0</span>
         <span class="n">c_kms</span> <span class="o">=</span> <span class="mf">299792.458</span>
@@ -1712,9 +1712,9 @@
             <span class="n">lam_rest</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
                 <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">is_multiplet</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
                  <span class="c1"># Use primary line for location check</span>
-                 <span class="n">prim</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                 <span class="n">prim</span> <span class="o">=</span> <span class="n">series_lines</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                  <span class="k">if</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">:</span>
                      <span class="n">lam_rest</span> <span class="o">=</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">prim</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span>
             
@@ -1791,7 +1791,7 @@
         <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">xem_d</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">xem_d</span>
         
         <span class="n">valid_components</span> <span class="o">=</span> <span class="p">[]</span>
         
@@ -1810,8 +1810,8 @@
                 <span class="n">lines_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
             
             <span class="c1"># Case B: It's a Multiplet Tag (e.g., "CIV")</span>
-            <span class="k">elif</span> <span class="n">c</span><span class="o">.</span><span class="n">series</span> <span class="ow">in</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">:</span>
-                <span class="n">lines_to_check</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">is_multiplet</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
+                <span class="n">lines_to_check</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">series_lines</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">))</span>
                 
             <span class="c1"># Case C: Try normalized name (e.g., "CIV 1548" vs "CIV_1548")</span>
             <span class="k">else</span><span class="p">:</span>

@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>astrocook.recipes.result module &#8212; Astrocook 2.5.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.recipes.result';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="astrocook.fitting package" href="astrocook.fitting.html" />
+    <link rel="prev" title="astrocook.recipes.registry module" href="astrocook.recipes.registry.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.5.0" />
+  
+    
+    <script src="../static/searchtools.js"></script>
+    <script src="../static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">High-level analysis recipes available in the menus</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.recipes.html">astrocook.recipes package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.result module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling and fitting logic</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.fitting.html">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.bayesian_fitter.html">astrocook.fitting.bayesian_fitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.lsf.html">astrocook.fitting.lsf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Synthetic spectra with known parameters, for testing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.mocks.html">astrocook.mocks package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="astrocook.recipes.html" class="nav-link">astrocook.recipes package</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.result module</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-astrocook.recipes.result">
+<span id="astrocook-recipes-result-module"></span><h1>astrocook.recipes.result module<a class="headerlink" href="#module-astrocook.recipes.result" title="Link to this heading">#</a></h1>
+<p>The structured result of a recipe (phase 6-bis, PR 4).</p>
+<p><a class="reference internal" href="#astrocook.recipes.result.run" title="astrocook.recipes.result.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a> runs a recipe of the registry and returns a <a class="reference internal" href="#astrocook.recipes.result.RecipeResult" title="astrocook.recipes.result.RecipeResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeResult</span></code></a>:
+the new session (or sessions), what changed in it, listed and not only
+counted (the components added, removed and changed, the columns, the
+properties), the warnings the recipe logged, the recipes it ran as steps,
+and the values of the parameters it used. The GUI, the MCP server and the
+scripts that want the whole result call it; the methods of the recipes
+keep returning the session (Guido, decision 1 of the phase).</p>
+<p>What changed is found by comparing the session before and after, in one
+place for every recipe (Guido’s choice at the start of PR 4: a generic
+comparison, not a description written by each recipe). What a recipe
+knows and the comparison cannot see (the score of an identification, the
+groups a fit could not fit) goes in <code class="docutils literal notranslate"><span class="pre">extra</span></code>, PR 4b; the fields of what
+the algorithms do not provide yet (the uncertainty of the continuum, the
+credibility of an identification and its alternatives) are there, empty,
+so that phase 7 fills them without changing the interface.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.result.COMPONENT_FIELDS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">COMPONENT_FIELDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('series',</span> <span class="pre">'z',</span> <span class="pre">'logN',</span> <span class="pre">'b',</span> <span class="pre">'btur',</span> <span class="pre">'resol',</span> <span class="pre">'flags')</span></span><a class="headerlink" href="#astrocook.recipes.result.COMPONENT_FIELDS" title="Link to this definition">#</a></dt>
+<dd><p>The parameters of a component compared by <a class="reference internal" href="#astrocook.recipes.result.compare_sessions" title="astrocook.recipes.result.compare_sessions"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">ComponentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/result.html#ComponentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.ComponentRef" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A component, as a change names it.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.uuid">
+<span class="sig-name descname"><span class="pre">uuid</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.uuid" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.series">
+<span class="sig-name descname"><span class="pre">series</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.series" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.z">
+<span class="sig-name descname"><span class="pre">z</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.z" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.logN">
+<span class="sig-name descname"><span class="pre">logN</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.logN" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.b">
+<span class="sig-name descname"><span class="pre">b</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.b" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentRef.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentRef.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentChange">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">ComponentChange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.recipes.result.ComponentRef" title="astrocook.recipes.result.ComponentRef"><span class="pre">ComponentRef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/result.html#ComponentChange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.ComponentChange" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A component whose parameters changed: <code class="docutils literal notranslate"><span class="pre">changed</span></code> maps a parameter
+to its values before and after.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentChange.component">
+<span class="sig-name descname"><span class="pre">component</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#astrocook.recipes.result.ComponentRef" title="astrocook.recipes.result.ComponentRef"><span class="pre">ComponentRef</span></a></span><a class="headerlink" href="#astrocook.recipes.result.ComponentChange.component" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentChange.changed">
+<span class="sig-name descname"><span class="pre">changed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentChange.changed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.result.ComponentChange.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.recipes.result.ComponentRef" title="astrocook.recipes.result.ComponentRef"><span class="pre">ComponentRef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.recipes.result.ComponentChange.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">Changes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">components_added</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentRef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_removed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentRef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentChange</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_added</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_removed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Tuple[~typing.Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/result.html#Changes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.Changes" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>What a recipe changed in a session (<a class="reference internal" href="#astrocook.recipes.result.compare_sessions" title="astrocook.recipes.result.compare_sessions"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a>).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.components_added">
+<span class="sig-name descname"><span class="pre">components_added</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.recipes.result.ComponentRef" title="astrocook.recipes.result.ComponentRef"><span class="pre">ComponentRef</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.components_added" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.components_removed">
+<span class="sig-name descname"><span class="pre">components_removed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.recipes.result.ComponentRef" title="astrocook.recipes.result.ComponentRef"><span class="pre">ComponentRef</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.components_removed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.components_changed">
+<span class="sig-name descname"><span class="pre">components_changed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.recipes.result.ComponentChange" title="astrocook.recipes.result.ComponentChange"><span class="pre">ComponentChange</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.components_changed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.columns_added">
+<span class="sig-name descname"><span class="pre">columns_added</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.columns_added" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.columns_removed">
+<span class="sig-name descname"><span class="pre">columns_removed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.columns_removed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.columns_changed">
+<span class="sig-name descname"><span class="pre">columns_changed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.columns_changed" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.properties_changed">
+<span class="sig-name descname"><span class="pre">properties_changed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.properties_changed" title="Link to this definition">#</a></dt>
+<dd><p>before and after</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2.name" title="astrocook.core.session.SessionV2.name">name</a>, object, pixels, <a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2.z_em" title="astrocook.core.structures.SpectrumDataV2.z_em">z_em</a>, resolution (median R), units</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.empty">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">empty</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.empty" title="Link to this definition">#</a></dt>
+<dd><p>True if nothing changed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.describe">
+<span class="sig-name descname"><span class="pre">describe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#Changes.describe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.Changes.describe" title="Link to this definition">#</a></dt>
+<dd><p>The changes in a few words each, e.g. <code class="docutils literal notranslate"><span class="pre">['3</span> <span class="pre">components</span> <span class="pre">added',</span>
+<span class="pre">&quot;column</span> <span class="pre">'cont'</span> <span class="pre">changed&quot;]</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.result.Changes.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">components_added</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentRef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_removed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentRef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ComponentChange</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_added</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_removed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties_changed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Tuple[~typing.Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.recipes.result.Changes.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">RecipeResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">recipe:</span> <span class="pre">str,</span> <span class="pre">title:</span> <span class="pre">str,</span> <span class="pre">session:</span> <span class="pre">~typing.Any,</span> <span class="pre">branching:</span> <span class="pre">bool,</span> <span class="pre">changes:</span> <span class="pre">~typing.Any,</span> <span class="pre">params:</span> <span class="pre">~typing.Mapping[str,</span> <span class="pre">~typing.Any],</span> <span class="pre">warnings:</span> <span class="pre">~typing.Tuple[str,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">steps:</span> <span class="pre">~typing.Tuple[str,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">value:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra:</span> <span class="pre">~typing.Mapping[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">provided:</span> <span class="pre">~typing.Tuple[~typing.Any,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">continuum_uncertainty:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">credibility:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">alternatives:</span> <span class="pre">~typing.Tuple[~typing.Any,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">()</span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/result.html#RecipeResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.RecipeResult" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The result of a recipe run by <a class="reference internal" href="#astrocook.recipes.result.run" title="astrocook.recipes.result.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.recipe">
+<span class="sig-name descname"><span class="pre">recipe</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.recipe" title="Link to this definition">#</a></dt>
+<dd><p>The recipe, as <code class="docutils literal notranslate"><span class="pre">category.name</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.title">
+<span class="sig-name descname"><span class="pre">title</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.title" title="Link to this definition">#</a></dt>
+<dd><p>Its title (the brief of the registry)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.session">
+<span class="sig-name descname"><span class="pre">session</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.session" title="Link to this definition">#</a></dt>
+<dd><p>The new session; a tuple for a recipe that opens several (e.g.
+<code class="docutils literal notranslate"><span class="pre">extract_preset</span></code> with two regions); None for a recipe whose result
+is not a session (<code class="docutils literal notranslate"><span class="pre">value</span></code>)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.branching">
+<span class="sig-name descname"><span class="pre">branching</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.branching" title="Link to this definition">#</a></dt>
+<dd><p>The result opens a new session, instead of being the next state of
+the same one</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.changes">
+<span class="sig-name descname"><span class="pre">changes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.changes" title="Link to this definition">#</a></dt>
+<dd><p>What changed, compared with the session the recipe ran on; one per
+session of <code class="docutils literal notranslate"><span class="pre">session</span></code> when it is a tuple</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.params">
+<span class="sig-name descname"><span class="pre">params</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.params" title="Link to this definition">#</a></dt>
+<dd><p>The values of the parameters the recipe used, defaults included</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.warnings">
+<span class="sig-name descname"><span class="pre">warnings</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.warnings" title="Link to this definition">#</a></dt>
+<dd><p>The warnings the recipe logged</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.steps" title="Link to this definition">#</a></dt>
+<dd><p>The recipes it ran as steps, as <code class="docutils literal notranslate"><span class="pre">category.name</span></code>, in their order</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.value">
+<span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.value" title="Link to this definition">#</a></dt>
+<dd><p>The result when it is not a session (the redshift of
+<code class="docutils literal notranslate"><span class="pre">detect_anchor</span></code>, whether <code class="docutils literal notranslate"><span class="pre">export_ascii</span></code> wrote a file)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.extra">
+<span class="sig-name descname"><span class="pre">extra</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.extra" title="Link to this definition">#</a></dt>
+<dd><p>What the recipe knows and the comparison cannot see (PR 4b):
+<code class="docutils literal notranslate"><span class="pre">removed</span></code> (uuid -&gt; why a component of the session was removed),
+<code class="docutils literal notranslate"><span class="pre">discarded</span></code> (uuid -&gt; why a component the recipe made was dropped,
+e.g. a narrow line of a pipeline), <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code>
+(the components whose group could not be fitted), <code class="docutils literal notranslate"><span class="pre">candidates</span></code> and
+<code class="docutils literal notranslate"><span class="pre">regions</span></code> (the identification of <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code>)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.provided">
+<span class="sig-name descname"><span class="pre">provided</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.provided" title="Link to this definition">#</a></dt>
+<dd><p>The recipes run first to provide what the session lacked (PR 5),
+as <a class="reference internal" href="astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.ProvidedStep" title="astrocook.recipes.prerequisites.ProvidedStep"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProvidedStep</span></code></a>: each with
+its session, for the callers that keep the history and the log</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.continuum_uncertainty">
+<span class="sig-name descname"><span class="pre">continuum_uncertainty</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.continuum_uncertainty" title="Link to this definition">#</a></dt>
+<dd><p>the
+uncertainty of the continuum, the credibility of an identification
+and its alternatives</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Reserved for phase 7 (the algorithms do not provide them yet)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.credibility">
+<span class="sig-name descname"><span class="pre">credibility</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.credibility" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.alternatives">
+<span class="sig-name descname"><span class="pre">alternatives</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.alternatives" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.sessions">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sessions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.sessions" title="Link to this definition">#</a></dt>
+<dd><p>The new sessions, always as a tuple.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.notes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">notes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.notes" title="Link to this definition">#</a></dt>
+<dd><p>What the user should know of the result besides the changes
+(phase 6-bis, PR 4c, Guido): the components removed and why, those
+a pipeline made and dropped, those whose fit failed, the candidate
+systems found; one line each, e.g. <code class="docutils literal notranslate"><span class="pre">'2</span> <span class="pre">components</span> <span class="pre">removed:</span> <span class="pre">logN</span> <span class="pre">&lt;</span>
+<span class="pre">min_logN</span> <span class="pre">=</span> <span class="pre">14.0</span> <span class="pre">(too</span> <span class="pre">weak)'</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.counts">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">counts</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.counts" title="Link to this definition">#</a></dt>
+<dd><p>The notes in a word each, for a status bar, e.g. <code class="docutils literal notranslate"><span class="pre">('2</span>
+<span class="pre">removed',</span> <span class="pre">'1</span> <span class="pre">not</span> <span class="pre">fitted')</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.summary">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">summary</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.summary" title="Link to this definition">#</a></dt>
+<dd><p>the recipe, what changed, the warnings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>One line</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">recipe:</span> <span class="pre">str,</span> <span class="pre">title:</span> <span class="pre">str,</span> <span class="pre">session:</span> <span class="pre">~typing.Any,</span> <span class="pre">branching:</span> <span class="pre">bool,</span> <span class="pre">changes:</span> <span class="pre">~typing.Any,</span> <span class="pre">params:</span> <span class="pre">~typing.Mapping[str,</span> <span class="pre">~typing.Any],</span> <span class="pre">warnings:</span> <span class="pre">~typing.Tuple[str,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">steps:</span> <span class="pre">~typing.Tuple[str,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">value:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">extra:</span> <span class="pre">~typing.Mapping[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">provided:</span> <span class="pre">~typing.Tuple[~typing.Any,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">(),</span> <span class="pre">continuum_uncertainty:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">credibility:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">alternatives:</span> <span class="pre">~typing.Tuple[~typing.Any,</span> <span class="pre">...]</span> <span class="pre">=</span> <span class="pre">()</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.compare_sessions">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">compare_sessions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.recipes.result.Changes" title="astrocook.recipes.result.Changes"><span class="pre">Changes</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#compare_sessions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.compare_sessions" title="Link to this definition">#</a></dt>
+<dd><p>What changed from the session <code class="docutils literal notranslate"><span class="pre">before</span></code> to <code class="docutils literal notranslate"><span class="pre">after</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.report">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.report" title="Link to this definition">#</a></dt>
+<dd><p>Put <code class="docutils literal notranslate"><span class="pre">value</span></code> in the <code class="docutils literal notranslate"><span class="pre">extra</span></code> of the result, under <code class="docutils literal notranslate"><span class="pre">key</span></code>: what a
+recipe knows and the comparison of the sessions cannot see (PR 4b). A
+list value is extended by the steps that report it again. Nothing
+happens outside <a class="reference internal" href="#astrocook.recipes.result.run" title="astrocook.recipes.result.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.report_removed">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">report_removed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#report_removed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.report_removed" title="Link to this definition">#</a></dt>
+<dd><p>Say why the components <code class="docutils literal notranslate"><span class="pre">uuids</span></code> were removed: <code class="docutils literal notranslate"><span class="pre">extra['removed']</span></code>
+maps each to its reason (the comparison lists them, not why).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.run">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_missing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.recipes.result.RecipeResult" title="astrocook.recipes.result.RecipeResult"><span class="pre">RecipeResult</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.run" title="Link to this definition">#</a></dt>
+<dd><p>Run the recipe <code class="docutils literal notranslate"><span class="pre">recipe</span></code> (<code class="docutils literal notranslate"><span class="pre">'category.name'</span></code>, or the name alone)
+on <code class="docutils literal notranslate"><span class="pre">session</span></code> and return its <a class="reference internal" href="#astrocook.recipes.result.RecipeResult" title="astrocook.recipes.result.RecipeResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeResult</span></code></a>.</p>
+<p>The parameters are given as to the method of the recipe (typed, or as
+strings); a recipe that cannot do what was asked raises its
+<a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeError</span></code></a>, as the method does.
+<code class="docutils literal notranslate"><span class="pre">on_missing</span></code> is the policy for a prerequisite the session lacks,
+<code class="docutils literal notranslate"><span class="pre">&quot;provide&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;raise&quot;</span></code> (<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a>);
+by default, the one in force.</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="astrocook.recipes.registry.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">astrocook.recipes.registry module</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="astrocook.fitting.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">astrocook.fitting package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.COMPONENT_FIELDS"><code class="docutils literal notranslate"><span class="pre">COMPONENT_FIELDS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef"><code class="docutils literal notranslate"><span class="pre">ComponentRef</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.uuid"><code class="docutils literal notranslate"><span class="pre">ComponentRef.uuid</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.series"><code class="docutils literal notranslate"><span class="pre">ComponentRef.series</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.z"><code class="docutils literal notranslate"><span class="pre">ComponentRef.z</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.logN"><code class="docutils literal notranslate"><span class="pre">ComponentRef.logN</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.b"><code class="docutils literal notranslate"><span class="pre">ComponentRef.b</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentRef.__init__"><code class="docutils literal notranslate"><span class="pre">ComponentRef.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentChange"><code class="docutils literal notranslate"><span class="pre">ComponentChange</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentChange.component"><code class="docutils literal notranslate"><span class="pre">ComponentChange.component</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentChange.changed"><code class="docutils literal notranslate"><span class="pre">ComponentChange.changed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.ComponentChange.__init__"><code class="docutils literal notranslate"><span class="pre">ComponentChange.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes"><code class="docutils literal notranslate"><span class="pre">Changes</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.components_added"><code class="docutils literal notranslate"><span class="pre">Changes.components_added</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.components_removed"><code class="docutils literal notranslate"><span class="pre">Changes.components_removed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.components_changed"><code class="docutils literal notranslate"><span class="pre">Changes.components_changed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.columns_added"><code class="docutils literal notranslate"><span class="pre">Changes.columns_added</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.columns_removed"><code class="docutils literal notranslate"><span class="pre">Changes.columns_removed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.columns_changed"><code class="docutils literal notranslate"><span class="pre">Changes.columns_changed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.properties_changed"><code class="docutils literal notranslate"><span class="pre">Changes.properties_changed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.empty"><code class="docutils literal notranslate"><span class="pre">Changes.empty</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.describe"><code class="docutils literal notranslate"><span class="pre">Changes.describe()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.Changes.__init__"><code class="docutils literal notranslate"><span class="pre">Changes.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult"><code class="docutils literal notranslate"><span class="pre">RecipeResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.recipe"><code class="docutils literal notranslate"><span class="pre">RecipeResult.recipe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.title"><code class="docutils literal notranslate"><span class="pre">RecipeResult.title</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.session"><code class="docutils literal notranslate"><span class="pre">RecipeResult.session</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.branching"><code class="docutils literal notranslate"><span class="pre">RecipeResult.branching</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.changes"><code class="docutils literal notranslate"><span class="pre">RecipeResult.changes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.params"><code class="docutils literal notranslate"><span class="pre">RecipeResult.params</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.warnings"><code class="docutils literal notranslate"><span class="pre">RecipeResult.warnings</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.steps"><code class="docutils literal notranslate"><span class="pre">RecipeResult.steps</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.value"><code class="docutils literal notranslate"><span class="pre">RecipeResult.value</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.extra"><code class="docutils literal notranslate"><span class="pre">RecipeResult.extra</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.provided"><code class="docutils literal notranslate"><span class="pre">RecipeResult.provided</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.continuum_uncertainty"><code class="docutils literal notranslate"><span class="pre">RecipeResult.continuum_uncertainty</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.credibility"><code class="docutils literal notranslate"><span class="pre">RecipeResult.credibility</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.alternatives"><code class="docutils literal notranslate"><span class="pre">RecipeResult.alternatives</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.sessions"><code class="docutils literal notranslate"><span class="pre">RecipeResult.sessions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.notes"><code class="docutils literal notranslate"><span class="pre">RecipeResult.notes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.counts"><code class="docutils literal notranslate"><span class="pre">RecipeResult.counts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.summary"><code class="docutils literal notranslate"><span class="pre">RecipeResult.summary</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.compare_sessions"><code class="docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report_removed"><code class="docutils literal notranslate"><span class="pre">report_removed()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../sources/api/astrocook.recipes.result.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

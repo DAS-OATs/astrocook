@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.session module &#8212; Astrocook 2.4.0 documentation</title>
+    <title>astrocook.core.session module &#8212; Astrocook 2.5.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=4d935f96"></script>
+    <script src="../static/documentation_options.js?v=3c4615cf"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../static/design-tabs.js?v=f930bc37"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.4.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.4.0" />
+  <meta name="docsearch:version" content="2.5.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -452,9 +452,14 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -622,7 +627,7 @@ archive, or if the archive does not record it (versions up to 2.0.3).</p>
 <dd><p>The container for identified absorption systems and Voigt profile components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, optional</p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, <a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional">optional</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -769,10 +774,10 @@ them.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_path</strong> (<em>str</em>) – The destination path. <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> is appended if missing.</p></li>
-<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><em>optional</em>) – The state of the session <em>before</em> any modifications, saved in the
+<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The state of the session <em>before</em> any modifications, saved in the
 archive so that it contains the original raw data for
 reproducibility.</p></li>
-<li><p><strong>models</strong> (<em>bool</em><em>, </em><em>optional</em>) – Unused; kept for backward compatibility of the signature.</p></li>
+<li><p><strong>models</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unused; kept for backward compatibility of the signature.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
