@@ -505,9 +505,9 @@
 <h1>Using Astrocook from an AI Agent<a class="headerlink" href="#using-astrocook-from-an-ai-agent" title="Link to this heading">#</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>This is a <strong>pilot</strong>: a few recipes only, to learn what an agent needs
-from Astrocook. Tools, parameters and outputs may change in later
-versions.</p>
+<p>The server is <strong>being completed</strong>: since the pilot every recipe is a
+tool, and tools to inspect and edit the sessions are coming. Tools,
+parameters and outputs may change in later versions.</p>
 </div>
 <p>An AI agent, such as <a class="reference external" href="https://claude.com/claude-code">Claude Code</a> or the
 Claude desktop app, can drive Astrocook for you: you ask in plain words
@@ -571,8 +571,15 @@ arguments.</p>
 </section>
 <section id="the-tools">
 <h2>3. The Tools<a class="headerlink" href="#the-tools" title="Link to this heading">#</a></h2>
-<p>Each tool is named after the recipe it runs, prefixed with its menu, and
-uses the same defaults as the recipe dialog of the GUI.</p>
+<p><strong>Every recipe is a tool</strong>, named after the recipe, prefixed with its
+menu: <em>Continuum &gt; Auto-estimate Continuum</em> is <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>,
+<em>Absorbers &gt; Auto-detect Doublets</em> is <code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, and so on
+for the menus <em>File</em>, <em>Edit</em>, <em>Flux</em>, <em>Continuum</em> and <em>Absorbers</em>, also the
+recipes that the GUI runs from the System Inspector (e.g.
+<code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>). The tools are made from the same description
+of the recipes as the dialogs of the GUI: the same parameters, defaults,
+bounds and texts, and a recipe added to Astrocook becomes a tool by
+itself. Two more tools handle the sessions:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Tool</p></th>
@@ -583,21 +590,35 @@ uses the same defaults as the recipe dialog of the GUI.</p>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_open</span></code></p></td>
 <td><p>Opens a spectrum or a session file (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code>) as a new session; optionally sets z_em and the resolving power (<em>Edit &gt; Set Properties</em>).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code></p></td>
-<td><p><em>Continuum &gt; Auto-estimate Continuum</em>. Returns the fraction of absorbed pixels (in the Lyman-alpha forest and on the red side) and the S/N.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_identify_lines</span></code></p></td>
-<td><p><em>Absorbers &gt; Identify Absorption Lines</em>, without creating components. Returns the identified regions with their candidate transitions and scores, and the candidate systems.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code></p></td>
-<td><p><em>Absorbers &gt; Auto-detect Doublets</em>: identifies and fits the CIV, SiIV and MgII doublets on the red side. Returns the new components, with errors, reduced chi2 and flags for the ones stuck at a bound of the fit.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
 <td><p>Saves the session as <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, with the original data and the session log.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>Every recipe tool takes the <code class="docutils literal notranslate"><span class="pre">session_id</span></code> of the session to run on, the
+parameters of the recipe, and:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">provide_missing</span></code>: see “What a recipe needs” below;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_listed</span></code>: the maximum number of items in each list of the output.</p></li>
+</ul>
+<p>It returns the session after the call (the spectrum in a few numbers, the
+number of log entries), what the recipe did in one line (<code class="docutils literal notranslate"><span class="pre">summary</span></code>) and
+what else is worth knowing (<code class="docutils literal notranslate"><span class="pre">notes</span></code>), the warnings, and what changed,
+listed: the components removed (with the reason, when the recipe gives
+one) and changed, the columns and properties of the session. Some results
+add a summary of their own: the continuum and the absorbed pixels after a
+recipe that makes a continuum, the regions and candidate systems after an
+identification, the new components (with errors, reduced chi2 and flags)
+after a fit.</p>
+<p>A recipe that opens new sessions in the GUI (e.g. <em>Edit &gt; Split</em>, or
+<em>Absorbers &gt; Identify Absorption Lines</em>) does so here too: the session it
+runs on does not change, and the result lists the new ones, each with its
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code>, named after the original (<code class="docutils literal notranslate"><span class="pre">J0103-1305-1</span></code>, …). A parameter
+that names another open session (e.g. the reference of <em>Flux &gt; Equalize</em>)
+takes its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
+<p>Not a tool, for now: <em>File &gt; Export to ASCII</em> (it overwrites files
+without asking).</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>
@@ -633,7 +654,8 @@ reason, and the agent can usually correct its request by itself.</p>
 <p><strong>What a recipe needs.</strong> A recipe that needs something the session does
 not have (the emission redshift, the resolution, a continuum) does not
 run: the tool says what is missing and which recipe provides it, and the
-agent decides. z_em and the resolution are given to <code class="docutils literal notranslate"><span class="pre">session_open</span></code>. A
+agent decides. z_em and the resolution are given to <code class="docutils literal notranslate"><span class="pre">session_open</span></code> or
+<code class="docutils literal notranslate"><span class="pre">edit_set_properties</span></code>. A
 continuum is made with <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>, or, if the agent calls
 the tool again with <code class="docutils literal notranslate"><span class="pre">provide_missing=true</span></code>, with the default parameters of
 <em>Auto-estimate Continuum</em> before the recipe: the step is listed in
@@ -651,8 +673,8 @@ replay the log as a script.</p>
 <section id="limits-of-the-pilot">
 <h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>Only the five tools above: no manual editing of components, no Lyman
-forest fit, no export.</p></li>
+<li><p>No tools yet to list the components, read the spectrum, undo a step,
+or duplicate and close a session (coming); no export to ASCII.</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
 side. It finds the absorbed regions on a new mask made with the default

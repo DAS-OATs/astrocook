@@ -490,12 +490,21 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
+<section id="unreleased">
+<h2>[Unreleased]<a class="headerlink" href="#unreleased" title="Link to this heading">#</a></h2>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>MCP server for agents (phase 6-ter): <strong>every recipe is a tool</strong>, named <code class="docutils literal notranslate"><span class="pre">&lt;menu&gt;_&lt;recipe&gt;</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">flux_rebin</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>), made from the description of the recipe that the GUI dialogs use: the same parameters, defaults, bounds and texts, the values checked as in the GUI; a recipe added to Astrocook becomes a tool with no change of the server. The five tools of the pilot keep their names. Every tool returns what the recipe changed, listed (the components removed with the reason, the components changed, the columns, the properties), with the summaries of the pilot where they apply (continuum, identification, fit). A recipe that opens new sessions in the GUI does so in the server too, each with its own <code class="docutils literal notranslate"><span class="pre">session_id</span></code>, and leaves the session it ran on unchanged: <em>Identify Absorption Lines</em> now opens a new session (in the pilot it changed the same one). A parameter that names another session (e.g. the reference of <em>Equalize</em>) takes its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>. The messages name the tools that provide what is missing (<code class="docutils literal notranslate"><span class="pre">edit_set_properties</span></code>, <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>). <em>Export to ASCII</em> is not a tool yet (F106).</p></li>
+</ul>
+</section>
+</section>
 <section id="id1">
 <h2>[2.5.0] - 2026-11-05<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
 <p>Phase 6-bis of the consolidation: the recipe API, for scripts, the GUI and the AI agents. Every recipe is described once (its parameters, their types, limits and values allowed, what it needs from the session and what it provides), and the GUI, scripts and the MCP server read that description. In a script the parameters can be given typed or as strings, and values without a physical meaning are refused. A recipe that cannot do what was asked raises an exception that names it, its step and the reason, instead of returning <code class="docutils literal notranslate"><span class="pre">0</span></code>: <strong>a script that checked for <code class="docutils literal notranslate"><span class="pre">0</span></code> must catch <code class="docutils literal notranslate"><span class="pre">RecipeError</span></code> instead</strong>. <code class="docutils literal notranslate"><span class="pre">run(session,</span> <span class="pre">&quot;absorbers.doublets_auto&quot;)</span></code> gives the whole result (what changed, the warnings, the components removed and why). A recipe that needs a continuum and finds none estimates it first (scripts), asks (GUI) or says so (agents). The descriptions of all the recipes are reviewed, and the dialogs offer lists for the parameters with a few values. The session logs of earlier versions replay with the same results.</p>
 <p><strong>Numerical results.</strong> Unchanged for the benchmark of synthetic spectra (documentation page <em>Accuracy</em>, as for 2.2.0), and in general, with two changes decided on purpose. (1) <em>Identify lines</em>, the automatic pipelines and <em>Check associated metals</em>, on a spectrum without a continuum (flux not normalized), identified the absorbers on the raw flux; the continuum is now estimated first (F103), so their results change for such spectra (not for normalized ones). (2) <em>Auto-fit Ly-alpha forest</em> no longer refits the components outside the forest in its cleanup (F102): metal lines fitted before on the red side keep their values. A minor version, as 2.4.0: the interface of the recipes for scripts changes, the results do not. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
-<section id="changed">
-<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">#</a></h3>
+<section id="id2">
+<h3>Changed<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>For developers: the recipes are described by one read-only registry, <code class="docutils literal notranslate"><span class="pre">astrocook.recipes.registry</span></code> (<code class="docutils literal notranslate"><span class="pre">RECIPES</span></code>, <code class="docutils literal notranslate"><span class="pre">get_recipe</span></code>, <code class="docutils literal notranslate"><span class="pre">RecipeSpec</span></code>, <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code>), built from the schemas of the recipe modules; the GUI (menus, dialogs, the request for z_em or the resolution, the new sessions), the log window and the MCP server read it. Whether a recipe opens a new session and what it needs from the session (z_em, the resolution) are now declared with the recipe, instead of in lists of the GUI and of <code class="docutils literal notranslate"><span class="pre">core/utils.py</span></code> (<code class="docutils literal notranslate"><span class="pre">BRANCHING_RECIPES</span></code>, <code class="docutils literal notranslate"><span class="pre">get_recipe_schema</span></code> and <code class="docutils literal notranslate"><span class="pre">is_branching_recipe</span></code> removed).</p></li>
 <li><p>The parameters of all the recipes are typed: a script can give them as numbers and True/False (<code class="docutils literal notranslate"><span class="pre">session.flux.smooth(sigma_kms=50)</span></code>) or as strings, as the dialogs and the session log do; they are converted once, before the recipe runs, and a value that cannot be read stops the recipe with an error that names the parameter (e.g. <em>sigma_kms: ‘fifty’ is not a number</em>). Values that were read silently in another way are now refused: a boolean written as <code class="docutils literal notranslate"><span class="pre">'yes'</span></code>, <code class="docutils literal notranslate"><span class="pre">''</span></code> or <code class="docutils literal notranslate"><span class="pre">'None'</span></code> (read as False), <code class="docutils literal notranslate"><span class="pre">True</span></code> for a number (read as 1), NaN for a smoothing length or a threshold, a fractional window in pixels; <code class="docutils literal notranslate"><span class="pre">'true'</span></code>, <code class="docutils literal notranslate"><span class="pre">'1'</span></code> and <code class="docutils literal notranslate"><span class="pre">1</span></code> are now True (<code class="docutils literal notranslate"><span class="pre">'true'</span></code> was False for some recipes). <em>Rebin</em>: an empty start or end wavelength means the range of the data, as <code class="docutils literal notranslate"><span class="pre">None</span></code>; an empty clipping threshold is an error (use <code class="docutils literal notranslate"><span class="pre">None</span></code> for no clipping).</p></li>
@@ -537,8 +546,8 @@
 </ul>
 </section>
 </section>
-<section id="id2">
-<h2>[2.4.0] - 2026-11-03<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<section id="id3">
+<h2>[2.4.0] - 2026-11-03<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
 <p>Phase 6 of the consolidation: error handling. Astrocook now says when something goes wrong, instead of going on with a result that looked valid: a recipe that cannot do what was asked stops with its reason (in the status bar, a dialog and the log), a bug in the GUI is shown in a dialog with its details, and the messages of the log follow one rule. <strong>The results of fitting, identification and the automatic pipelines do not change</strong> when nothing goes wrong: the results on the benchmark of synthetic spectra are those of 2.2.0 and 2.3.0 (documentation page <em>Accuracy</em>). What changes is the behaviour on failures, listed under “Fixed”: some operations that returned a result (often the input unchanged) after an error now fail with the reason, for example <em>Auto-fit Ly-alpha Forest</em> without the emission redshift, or a V1 archive whose systems cannot be read. One fix prevents a data loss: a failed save no longer replaces the archive with a partial one (F94). Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
 <section id="added">
 <h3>Added<a class="headerlink" href="#added" title="Link to this heading">#</a></h3>
@@ -546,15 +555,15 @@
 <li><p>GUI: an error that nothing handled (a bug) is shown in a dialog, with the message and, under <em>Details</em>, the traceback to attach to a report; it was written only to the terminal, and the action stopped without a sign. Astrocook goes on after it.</p></li>
 </ul>
 </section>
-<section id="id3">
-<h3>Changed<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<section id="id4">
+<h3>Changed<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Each module of Astrocook logs with its own logger, named after the module (<code class="docutils literal notranslate"><span class="pre">astrocook.recipes.absorbers</span></code>, <code class="docutils literal notranslate"><span class="pre">astrocook.fitting.voigt_fitter</span></code>, …), instead of the root logger: a script can choose the level of Astrocook’s messages, or of a part of it, alone (<code class="docutils literal notranslate"><span class="pre">logging.getLogger(&quot;astrocook&quot;).setLevel(logging.INFO)</span></code>; see <em>Seeing Astrocook’s Messages</em> in the scripting tutorial). The messages themselves and what the GUI shows do not change.</p></li>
 <li><p>The messages of the core, the fit, the loaders, the recipes and the GUI follow one rule (phase 6): English sentences without the name of the function in front, values with their units, and the level by what the user needs: INFO for what an operation did, WARNING when the result needs a check or something was done instead of what was asked, ERROR when there is no result, DEBUG for the internal steps (e.g. the candidates tried by <em>Optimize System</em>, which were WARNING or INFO, are now DEBUG; its accepted components stay INFO). An error is logged once, where it is caught, with its context (e.g. <em>Could not read bad.fits as astrocook_fits: …</em>, or the expression that could not be evaluated), instead of two or three times along the way.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h3>Fixed<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<section id="id5">
+<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Saving a session no longer risks losing the file it replaces (F94). The <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive was written directly over the existing file, which was emptied first: if the save failed while writing (e.g. a full disk, or an error in the original data of the session), the previous archive was left partial or empty. The archive is now written to a temporary file in the same folder and replaces the old one only when complete; a failed save leaves the old file as it was, and the error is shown as before. An error in the original data now stops the save at once: it was logged and the save went on, to fail later with a confusing “No such file or directory”.</p></li>
 <li><p>Failures that went unnoticed now stop the operation with a message (phase 6). Before, Astrocook went on with a result that looked valid and wrote the problem only in the log, or nowhere:</p>
@@ -579,11 +588,11 @@
 </ul>
 </section>
 </section>
-<section id="id5">
-<h2>[2.3.0] - 2026-11-02<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
-<p>Phases 5 and 5-bis of the consolidation: a faster GUI, split into smaller modules, and a review of its look and ergonomics (dark mode, a status bar, a floating toolbar, colour-blind safe plot colours, recent files, files opened in the background, clearer texts and windows). <strong>The results of fitting, identification and the automatic pipelines do not change</strong>: the results on the benchmark of synthetic spectra are those of 2.2.0 (documentation page <em>Accuracy</em>). Three fixes change numbers elsewhere: <em>Flux &gt; Flux Calibrate</em> with two or more magnitudes now reaches them (it missed them by ~0.1 mag, F70); the flux methods scale, calibrate and smooth the same columns (the power-law continuum <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> is now scaled and smoothed with the flux, the telluric transmission is no longer calibrated, F69); linked parameters get an uncertainty propagated through the link instead of 0 (#630). Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
 <section id="id6">
-<h3>Added<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<h2>[2.3.0] - 2026-11-02<a class="headerlink" href="#id6" title="Link to this heading">#</a></h2>
+<p>Phases 5 and 5-bis of the consolidation: a faster GUI, split into smaller modules, and a review of its look and ergonomics (dark mode, a status bar, a floating toolbar, colour-blind safe plot colours, recent files, files opened in the background, clearer texts and windows). <strong>The results of fitting, identification and the automatic pipelines do not change</strong>: the results on the benchmark of synthetic spectra are those of 2.2.0 (documentation page <em>Accuracy</em>). Three fixes change numbers elsewhere: <em>Flux &gt; Flux Calibrate</em> with two or more magnitudes now reaches them (it missed them by ~0.1 mag, F70); the flux methods scale, calibrate and smooth the same columns (the power-law continuum <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code> is now scaled and smoothed with the flux, the telluric transmission is no longer calibrated, F69); linked parameters get an uncertainty propagated through the link instead of 0 (#630). Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
+<section id="id7">
+<h3>Added<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>GUI: <strong>File &gt; Open Recent</strong>, the files opened last (up to ten); the welcome screen has the buttons <strong>Open Session…</strong> and <strong>Open Recent</strong> (the same drop-down menu) and a hint that files can be dropped on the window. The size and position of the main window are remembered.</p></li>
 <li><p>GUI: several files opened together (from <em>Open Session…</em> or dropped on the window) are loaded in the background, with a window that shows the progress (<em>Opening 2 of 5: …</em>) and can cancel the files not yet opened; each session appears as soon as it is loaded, the status bar says how many were opened and in how long, and the files that could not be opened are listed in one message. They were loaded one after the other with the window frozen and no sign of progress.</p></li>
@@ -595,8 +604,8 @@
 <li><p>GUI: a <strong>Select</strong> tool in the toolbar of the main plot (F73: the selection of a region was there, but no button reached it). Drag along the wavelength axis to select a region, then choose <strong>Split region</strong>, <strong>Mask region…</strong>, <strong>Rebin region…</strong> or <strong>Zoom to region</strong>; the recipe dialogs open with the region filled in. See <em>Navigating the Plot</em> in the <em>Getting Started</em> tutorial.</p></li>
 </ul>
 </section>
-<section id="id7">
-<h3>Changed<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<section id="id8">
+<h3>Changed<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>GUI: <em>Import Systems from ASCII…</em> and <em>Import Systems from Session…</em> (was <em>Import Systems…</em>: it copies the systems of another open session) are in the File menu, with <em>Import from ASCII…</em> (they were in Edit); the File menu is in groups (open, save, import, export, close); the entries of the menus show their tooltips (e.g. <em>Smooth Column</em> and <em>Smooth Spectrum</em> say how they differ).</p></li>
 <li><p>GUI: the <em>Identifications</em> window is a table of the identifications as the recipe makes them: one row per doublet found (a pair of absorbed regions), with the redshift range of the two regions, its middle, the score and the alternatives (the other pairs with one of its regions); the regions of the forest that no doublet identified are shown as <em>Ly_a (assumed)</em>, without a score. Sortable by any column; a click on a row shows its regions together in the main plot, with the flux axis fitted to the spectrum, continuum and model in them. It was a list of redshifts per transition.</p></li>
@@ -617,8 +626,8 @@
 <li><p>The code of the spectrum (<code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code>) and of the GUI is split into smaller modules, one per theme (phase 5). Nothing changes for the user or in scripts: <code class="docutils literal notranslate"><span class="pre">SpectrumV2</span></code> has the same methods, documented on its page of the API reference as before.</p></li>
 </ul>
 </section>
-<section id="id8">
-<h3>Fixed<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<section id="id9">
+<h3>Fixed<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Identification: when an automatic pipeline ran on a session that already had absorbed regions (e.g. <em>Auto-fit Ly-alpha Forest</em> after <em>Auto-detect Doublets</em>), the identifications of the old regions were lost and those of the new ones were attached to other regions (F90). The <em>Identifications</em> window then listed only the last run (e.g. Ly-α only), and the tooltip of an absorbed region in the main plot could name the identification of another region. The fits were not affected. Sessions saved before keep the wrong identifications until the pipelines are run again.</p></li>
 <li><p>GUI: moving the redshift cursor after the plot had changed size (e.g. after <em>View &gt; Show Toolbar</em>, or after resizing the window) drew the plot as it was before over the new one (F91).</p></li>
@@ -642,11 +651,11 @@
 </ul>
 </section>
 </section>
-<section id="id9">
-<h2>[2.2.0] - 2026-10-27<a class="headerlink" href="#id9" title="Link to this heading">#</a></h2>
-<p>Phase 4 of the consolidation (scientific correctness), measured on a benchmark of 135 synthetic spectra with known parameters (<code class="docutils literal notranslate"><span class="pre">benchmarks/validate_mocks.py</span></code>). <strong>Results change</strong>: the fits use the exact resolution of each pixel and a correct damping parameter, the identification gives one candidate per doublet and none beyond the emission redshift, the automatic continuum is more robust, and the automatic pipelines remove spurious components and flag those at a bound. On the benchmark, against 2.1.0: duplicate doublet candidates reduced by about three times, spurious fitted components from 428 to 11, flagged components from 413 to 22, the spread of the total column of the systems at R = 8900 from 0.39 to 0.095 dex. The pulls of single components are unchanged (~1.1); those of components in systems with several components are wider, because these systems are now fitted with fewer components (see <em>Result of the phase</em> in <code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>). How accurate the results are on the benchmark is in the new documentation page <em>Accuracy</em>, under <em>Science</em>. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
 <section id="id10">
-<h3>Added<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
+<h2>[2.2.0] - 2026-10-27<a class="headerlink" href="#id10" title="Link to this heading">#</a></h2>
+<p>Phase 4 of the consolidation (scientific correctness), measured on a benchmark of 135 synthetic spectra with known parameters (<code class="docutils literal notranslate"><span class="pre">benchmarks/validate_mocks.py</span></code>). <strong>Results change</strong>: the fits use the exact resolution of each pixel and a correct damping parameter, the identification gives one candidate per doublet and none beyond the emission redshift, the automatic continuum is more robust, and the automatic pipelines remove spurious components and flag those at a bound. On the benchmark, against 2.1.0: duplicate doublet candidates reduced by about three times, spurious fitted components from 428 to 11, flagged components from 413 to 22, the spread of the total column of the systems at R = 8900 from 0.39 to 0.095 dex. The pulls of single components are unchanged (~1.1); those of components in systems with several components are wider, because these systems are now fitted with fewer components (see <em>Result of the phase</em> in <code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>). How accurate the results are on the benchmark is in the new documentation page <em>Accuracy</em>, under <em>Science</em>. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub).</p>
+<section id="id11">
+<h3>Added<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>System Inspector: the components with warnings of the fit are marked (#517): the cell of a parameter at a bound of the fit is highlighted, the ID of a component without uncertainties in red, a ⚠ precedes the ID of both, and their ticks in the velocity plot are dashed; the tooltips say what happened and what to do. <strong>Only flagged</strong> lists them, <strong>Select flagged</strong> selects them, e.g. for <strong>Refit Selected</strong>. See <em>Components with warnings of the fit</em> in the tutorial on absorption systems.</p></li>
 <li><p>Documentation: the screenshots of the tutorials are now made by a script, <code class="docutils literal notranslate"><span class="pre">docs/screenshots/make_screenshots.py</span></code>, which runs the GUI offscreen (one scene per image, see <code class="docutils literal notranslate"><span class="pre">docs/screenshots/README.md</span></code>), and all of them show the current interface.</p></li>
@@ -656,8 +665,8 @@
 <li><p>Documentation: a new page, <em>Atomic Data</em>, describes the table of atomic data, the source of each value, the choices made and the series and multiplets that Astrocook knows (#568).</p></li>
 </ul>
 </section>
-<section id="id11">
-<h3>Fixed<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<section id="id12">
+<h3>Fixed<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Data loss</em> (GUI): the dialogs showed “0.0” in the parameters that keep their current value by default, when the spectrum had no attribute with their name (F63). Pressing Run without editing them renamed the session “0.0” and wrote “0.0” into the OBJECT keyword (<em>Set session properties</em>), and computed the velocities relative to z = 0 instead of the emission redshift (<em>Convert x axis</em>, <em>Trim to common coverage</em>). The dialogs now show the current name, object, emission redshift and resolution; a resolution that varies with wavelength is left empty (with the median as a hint), and an empty field keeps the current value.</p></li>
 <li><p>GUI (Linux, Windows): the unchecked boxes of the plot controls were invisible, and the checked ones showed only the tick; macOS was not affected (F64).</p></li>
@@ -674,8 +683,8 @@
 <li><p>Redshift cursor and identification viewer (GUI): with a series of the V1 syntax such as <code class="docutils literal notranslate"><span class="pre">Ly</span></code>, <code class="docutils literal notranslate"><span class="pre">D</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> the redshift refers to the strongest line (Ly-a), not to the Lyman limit or to the weakest line, as the series followed the order of the V1 table; the aliases <code class="docutils literal notranslate"><span class="pre">Ly-ab</span></code> and <code class="docutils literal notranslate"><span class="pre">Ly-abg</span></code> also start from Ly-a (#568, F39).</p></li>
 </ul>
 </section>
-<section id="id12">
-<h3>Changed<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<section id="id13">
+<h3>Changed<a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Auto-fit Lyman Series</em> (<code class="docutils literal notranslate"><span class="pre">forest_auto</span></code>): <strong>Min b</strong> is now applied, as in <em>Auto-fit Ly-alpha Forest</em>: the Lyman systems narrower than it are removed and the rest refitted (F65; before, the parameter was taken and not used). <strong>Results change</strong> for this pipeline.</p></li>
 <li><p>Automatic pipelines: the output is cleaner (#517, F21). <em>Auto-fit Ly-alpha Forest</em> removes the Ly-alpha lines narrower than <strong>Min b</strong> also after its last fit: before, the filter ran before that fit, which could narrow other lines, and 33 Ly-alpha with b &lt; 10 km/s were left on J0103-1305. All the pipelines remove the components that end at the lower bound of the column density (logN = 10), which absorb nothing measurable. On J0103-1305 the forest has 40 components fewer and its model is slightly closer to the data. <strong>Results change</strong> for the automatic fits.</p></li>
@@ -700,17 +709,17 @@
 </ul>
 </section>
 </section>
-<section id="id13">
-<h2>[2.1.0] - 2026-10-21<a class="headerlink" href="#id13" title="Link to this heading">#</a></h2>
-<p>First consolidated release (phases 3 and 3-bis of the consolidation): Astrocook no longer depends on the V1 code, which is removed, and V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives are read by a new native reader. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub). <strong>Some results change</strong>: refitting a V1 session with links between parameters (now kept as constraints), and the <code class="docutils literal notranslate"><span class="pre">dbtur</span></code> column of the fitted components (now updated; 0 when <code class="docutils literal notranslate"><span class="pre">btur</span></code> is frozen). Nothing else changes numerically with respect to 2.0.3.</p>
 <section id="id14">
-<h3>Added<a class="headerlink" href="#id14" title="Link to this heading">#</a></h3>
+<h2>[2.1.0] - 2026-10-21<a class="headerlink" href="#id14" title="Link to this heading">#</a></h2>
+<p>First consolidated release (phases 3 and 3-bis of the consolidation): Astrocook no longer depends on the V1 code, which is removed, and V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives are read by a new native reader. Published on GitHub with the macOS app; not on PyPI yet (install with pip from GitHub). <strong>Some results change</strong>: refitting a V1 session with links between parameters (now kept as constraints), and the <code class="docutils literal notranslate"><span class="pre">dbtur</span></code> column of the fitted components (now updated; 0 when <code class="docutils literal notranslate"><span class="pre">btur</span></code> is frozen). Nothing else changes numerically with respect to 2.0.3.</p>
+<section id="id15">
+<h3>Added<a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archives record the version of Astrocook that saved them (<code class="docutils literal notranslate"><span class="pre">astrocook_version</span></code> in the metadata file); a session opened from an archive reports it as <code class="docutils literal notranslate"><span class="pre">saved_with_version</span></code> (<code class="docutils literal notranslate"><span class="pre">None</span></code> for archives saved by 2.0.3 or earlier). Older versions of Astrocook ignore it.</p></li>
 </ul>
 </section>
-<section id="id15">
-<h3>Fixed<a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
+<section id="id16">
+<h3>Fixed<a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Data loss</em>: a session that could not be read (an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without its metadata file, a damaged <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive, a file in a format without a loader) was opened with mock data in place of the spectrum, and saving it overwrote the file. An <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive without metadata now opens with its spectrum and systems (without constraints, session log and identifications); the other cases report an error.</p></li>
 <li><p>V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archives: the turbulent broadening (<code class="docutils literal notranslate"><span class="pre">btur</span></code>) and its error, and the reduced chi2 of each component are now read (they were set to 0 or dropped); the flux keeps its unit, erg/(cm2 s Angstrom), so that unit conversions (Edit &gt; Convert y axis) work on V1 sessions.</p></li>
@@ -720,8 +729,8 @@
 <li><p>Voigt fit: the uncertainty of the turbulent broadening (<code class="docutils literal notranslate"><span class="pre">dbtur</span></code>) was never updated and kept its value from before the fit. It is now set like the other errors: computed when <code class="docutils literal notranslate"><span class="pre">btur</span></code> is free, 0 when it is frozen (the default), unchanged for the components outside the fitted group. <strong>The <code class="docutils literal notranslate"><span class="pre">dbtur</span></code> column of the fitted components changes</strong> (usually from empty to 0); no other result changes.</p></li>
 </ul>
 </section>
-<section id="id16">
-<h3>Changed<a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
+<section id="id17">
+<h3>Changed<a class="headerlink" href="#id17" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Scripts that use Astrocook show only warnings and errors unless they configure logging (<code class="docutils literal notranslate"><span class="pre">logging.basicConfig(level=logging.INFO)</span></code> shows the progress messages too, see the new tutorial <em>Using Astrocook from Python</em>): the package no longer configures logging when imported, as is usual for libraries. The GUI is unchanged.</p></li>
 <li><p>Using Astrocook from Python (scripts, notebooks) no longer imports the GUI toolkit (PySide6): the core requested its debug plots through the GUI.</p></li>
@@ -738,19 +747,19 @@
 </ul>
 </section>
 </section>
-<section id="id17">
-<h2>[2.0.3] - 2026-10-19<a class="headerlink" href="#id17" title="Link to this heading">#</a></h2>
-<p>Packaging release. <strong>No numerical result changes</strong> with respect to 2.0.2.</p>
 <section id="id18">
-<h3>Added<a class="headerlink" href="#id18" title="Link to this heading">#</a></h3>
+<h2>[2.0.3] - 2026-10-19<a class="headerlink" href="#id18" title="Link to this heading">#</a></h2>
+<p>Packaging release. <strong>No numerical result changes</strong> with respect to 2.0.2.</p>
+<section id="id19">
+<h3>Added<a class="headerlink" href="#id19" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">[file</span> <span class="pre">...]</span></code> command to launch the GUI; <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">astrocook</span></code> now works from any directory (it needed the root of a source checkout).</p></li>
 <li><p>Installation with pip directly from GitHub: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git</span></code> (see the installation page; Astrocook is not on PyPI yet).</p></li>
 <li><p>Optional extras <code class="docutils literal notranslate"><span class="pre">[docs]</span></code> (to build the documentation) and <code class="docutils literal notranslate"><span class="pre">[build]</span></code> (to build the macOS app).</p></li>
 </ul>
 </section>
-<section id="id19">
-<h3>Fixed<a class="headerlink" href="#id19" title="Link to this heading">#</a></h3>
+<section id="id20">
+<h3>Fixed<a class="headerlink" href="#id20" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Security</em>: opening a crafted <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> or <code class="docutils literal notranslate"><span class="pre">.acs</span></code> archive could write files outside the temporary folder; such archives are now refused.</p></li>
 <li><p>Installed with pip, the GUI started without its window icon and splash screen: the images now ship with the package.</p></li>
@@ -759,19 +768,19 @@
 <li><p>The documentation and build scripts stop at once with the command to run when Sphinx or PyInstaller is missing.</p></li>
 </ul>
 </section>
-<section id="id20">
-<h3>Removed<a class="headerlink" href="#id20" title="Link to this heading">#</a></h3>
+<section id="id21">
+<h3>Removed<a class="headerlink" href="#id21" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p>Unused dependencies <code class="docutils literal notranslate"><span class="pre">statsmodels</span></code> and <code class="docutils literal notranslate"><span class="pre">specutils</span></code>; the minimum NumPy version is now 1.26.</p></li>
 <li><p>Backup data files that were shipped in every package (~54 MB), the old V1 launchers (<code class="docutils literal notranslate"><span class="pre">legacy_home/</span></code>), unused identification code, and the Gemfile of the V1 documentation (the source of all the Dependabot security alerts).</p></li>
 </ul>
 </section>
 </section>
-<section id="id21">
-<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id21" title="Link to this heading">#</a></h2>
-<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
 <section id="id22">
-<h3>Fixed<a class="headerlink" href="#id22" title="Link to this heading">#</a></h3>
+<h2>[2.0.2] - 2026-10-16<a class="headerlink" href="#id22" title="Link to this heading">#</a></h2>
+<p>Corrective release. <strong>Some numerical results change</strong>: see “Changed behaviour” below.</p>
+<section id="id23">
+<h3>Fixed<a class="headerlink" href="#id23" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Data loss</em>: Bayesian fit (MCMC) with 200 steps or fewer overwrote the component parameters with NaN; the burn-in now adapts to the number of steps.</p></li>
 <li><p><em>Data loss</em>: the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive did not keep the session log; it is now saved and restored (also in the GUI).</p></li>
@@ -788,8 +797,8 @@
 <li><p>ASCII export (#476, #481); warning when saving a session with a V2 log to the V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code> format.</p></li>
 </ul>
 </section>
-<section id="id23">
-<h3>Added<a class="headerlink" href="#id23" title="Link to this heading">#</a></h3>
+<section id="id24">
+<h3>Added<a class="headerlink" href="#id24" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><em>Edit &gt; Import Systems from ASCII</em>: read absorption components from a CSV or whitespace-separated table (columns <code class="docutils literal notranslate"><span class="pre">series</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">logN</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, …) (#480).</p></li>
 <li><p>Stitching overlapping regions switches the plot to scatter style (#442).</p></li>
@@ -805,15 +814,15 @@
 </ul>
 </section>
 </section>
-<section id="id24">
-<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id24" title="Link to this heading">#</a></h2>
+<section id="id25">
+<h2>[2.0.1] - 2026-04-21<a class="headerlink" href="#id25" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><em>Feature</em>: Added “Equalize and Stitch” to the GUI with dynamic parameters.</p></li>
 <li><p><em>Fix</em>: Prevented FITS save crashes from Ly-α identifications and ensured tooltips render safely upon reloading.</p></li>
 </ul>
 </section>
-<section id="id25">
-<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id25" title="Link to this heading">#</a></h2>
+<section id="id26">
+<h2>[2.0.0] - 2026-04-07<a class="headerlink" href="#id26" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Added an experimental Bayesian fitting engine supporting MCMC (<code class="docutils literal notranslate"><span class="pre">emcee</span></code>).</p></li>
 <li><p>Introduced interactive Corner Plots to visualize Bayesian posteriors with asymmetric uncertainties and auto-refresh capabilities.</p></li>
@@ -898,51 +907,55 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.5.0] - 2026-11-05</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unreleased">[Unreleased]</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed">Changed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">[2.5.0] - 2026-11-05</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Changed</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-failures">Changed (failures)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed">Fixed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">[2.4.0] - 2026-11-03</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">[2.4.0] - 2026-11-03</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#added">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Changed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Changed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Fixed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">[2.3.0] - 2026-11-02</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Changed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Fixed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">[2.3.0] - 2026-11-02</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Changed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Fixed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">[2.2.0] - 2026-10-27</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">Changed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">[2.2.0] - 2026-10-27</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">Changed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">[2.1.0] - 2026-10-21</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">Changed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">[2.1.0] - 2026-10-21</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">Changed</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#removed">Removed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">[2.0.3] - 2026-10-19</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">Added</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">Removed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">[2.0.3] - 2026-10-19</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">Added</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">Removed</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">Fixed</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">Added</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">[2.0.2] - 2026-10-16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">Fixed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">Added</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changed-behaviour">Changed behaviour</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">[2.0.1] - 2026-04-21</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">[2.0.0] - 2026-04-07</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">[2.0.1] - 2026-04-21</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id26">[2.0.0] - 2026-04-07</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-3-2026-02-18">[2.0.0-beta.3] - 2026-02-18</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-2-2026-01-22">[2.0.0-beta.2] - 2026-01-22</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beta-1-2026-01-02">[2.0.0-beta.1] - 2026-01-02</a></li>
