@@ -109,14 +109,16 @@ class LinesMixin:
                        merge_dv: float = 10.0,
                        score_threshold: float = 0.5,
                        bypass_scoring: bool = False,
-                       debug_rating: bool = False) -> 'SpectrumV2':
+                       debug_rating: bool = False,
+                       z_em_margin_kms: float = Z_EM_MARGIN_KMS) -> 'SpectrumV2':
         """
         Identify absorption lines by correlating regions with multiplet templates.
 
         Uses a de-blending strategy to separate merged features. A doublet
         gives one candidate system per absorption component, from its
         stronger line, and no candidate lies beyond ``z_em`` by more than
-        ``Z_EM_MARGIN_KMS`` (3000 km/s).
+        ``z_em_margin_kms`` (by default ``Z_EM_MARGIN_KMS``, 3000 km/s; a
+        parameter since phase 6-bis, PR 6b).
 
         Parameters
         ----------
@@ -134,6 +136,9 @@ class LinesMixin:
             Accept all candidates if True.
         debug_rating : bool, optional
             Show debug plots if True.
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s): the
+            associated absorbers and the uncertainty of ``z_em`` (F55).
 
         Returns
         -------
@@ -201,8 +206,8 @@ class LinesMixin:
             if m in STANDARD_MULTIPLETS and len(STANDARD_MULTIPLETS[m]) == 2 and m != 'Ly_ab'
         ]
         
-        # Candidate systems at most Z_EM_MARGIN_KMS beyond z_em (F55)
-        z_max = z_em + Z_EM_MARGIN_KMS / 299792.458 * (1.0 + z_em)
+        # Candidate systems at most z_em_margin_kms beyond z_em (F55)
+        z_max = z_em + z_em_margin_kms / 299792.458 * (1.0 + z_em)
         for series_name in metal_doublets:
             candidates_red = _find_kinematic_doublet_candidates(
                 redward_map, spec.x, spec._data.z_em, series_name, z_em

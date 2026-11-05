@@ -73,3 +73,20 @@ def test_candidates_beyond_z_em(dv_kms, kept):
     found = [zf for s, zf in _systems(generate(truth).identify_lines(["CIV"]))
              if s == "CIV"]
     assert (len(found) == 1) == kept, found
+
+
+def test_the_margin_on_z_em_is_a_parameter():
+    # F55 (phase 6-bis, PR 6b): the margin of 3000 km/s is the default of
+    # z_em_margin_kms; a smaller one leaves out a candidate at 2000 km/s
+    z = _z_beyond(2000.0)
+    truth = MockTruth(components=[MockComponent("CIV", z, 14.0, 10.0)],
+                      lam_min_nm=490.0, lam_max_nm=700.0, dv_kms=2.5,
+                      resol=45000.0, snr=100.0, z_em=Z_EM, seed=1)
+    spec = generate(truth)
+
+    def civ(**kwargs):
+        return [zf for s, zf in _systems(spec.identify_lines(["CIV"], **kwargs))
+                if s == "CIV"]
+    assert len(civ()) == 1 and len(civ(z_em_margin_kms=3000.0)) == 1
+    assert civ(z_em_margin_kms=1000.0) == []
+    assert len(civ(z_em_margin_kms=5000.0)) == 1

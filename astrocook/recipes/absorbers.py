@@ -44,7 +44,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             # New generic region limiter
-            {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."}
+            {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#components_auto"
     },
@@ -52,13 +54,15 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "doublets_auto": {
         "brief": "Auto-fit metal doublets (Red Side).",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to 3000 km/s beyond z_em.",
+        "details": "Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to z_em_margin_kms beyond z_em.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII", "doc": "Comma-separated doublets to search for."},
             {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the two lines) to accept a candidate."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#doublets_auto"
     },
@@ -71,7 +75,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Lines narrower than this (km/s) are removed as interlopers."},
             {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
+            {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."},
+            {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#lya_auto"
     },
@@ -84,7 +90,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Lyman systems narrower than this (km/s) are removed."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
-            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
+            {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
+            {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#forest_auto"
     },
@@ -114,6 +121,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "score_threshold", "type": float, "default": 0.5, "min": 0, "max": 1, "doc": "Minimum score (0-1, the R^2 of the match of the lines) to accept a candidate."},
             {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept every candidate found by the positions of its lines, without the score (for debugging).", "agents": False},
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show the plots of the scores (for debugging).", "agents": False},
+            {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
         "url": "absorbers_cb.html#identify_lines"
     },
@@ -548,7 +556,9 @@ class RecipeAbsorbersV2:
                         mask_col: str = "abs_mask",
                         z_window_kms: float = 20.0,
                         region_limit: str = "None",
-                        max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
+                        max_b: float = 50.0, max_logN: float = 19.0,
+                        mask: str = "new",
+                        z_em_margin_kms: float = 3000.0) -> 'SessionV2':
         """
         Auto-detect and fit components.
 
@@ -588,6 +598,16 @@ class RecipeAbsorbersV2:
             systems stay within reach; damped systems are to be fitted by
             hand. Components that end at the bound can be refitted with
             :meth:`refit_all`. Defaults to ``19.0``.
+        mask : str, optional
+            The mask of the absorbed pixels used to find the regions:
+            ``'new'`` (made again with the defaults of
+            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            or ``'session'`` (the ``abs_mask`` already in the session, e.g.
+            from ``estimate_auto`` with other parameters). Defaults to
+            ``'new'`` (F50, phase 6-bis, PR 6b).
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s).
+            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
 
         Returns
         -------
@@ -609,18 +629,30 @@ class RecipeAbsorbersV2:
         # restricted by region_limit, is used only inside the pipeline (F50)
         user_mask = session_current.spec._data.aux_cols.get(mask_col)
         
-        # --- 0. FORCE MASK REGENERATION ---
-        # Always generate a fresh mask to ensure it matches current z_em/flux state.
-        # This prevents "stale mask" bugs when running recipes sequentially.
-        logger.info(f"Finding the absorbed regions (column '{mask_col}').")
-        from astrocook.recipes.continuum import RecipeContinuumV2
-        rec_cont = RecipeContinuumV2(session_current)
-        session_current = rec_cont.find_absorbed(
-            smooth_len_lya="5000.0", 
-            smooth_len_out="400.0",
-            kappa="2.0",
-            template="False"
-        )
+        if mask not in ("new", "session"):
+            raise InvalidParameter(f"mask: {mask!r} is not 'new' or 'session'.")
+        if mask == "session":
+            # The mask of the session, e.g. of Auto-estimate continuum with
+            # other parameters (F50, phase 6-bis, PR 6b)
+            if user_mask is None:
+                raise MissingPrerequisite(
+                    f"The session has no mask '{mask_col}' to use (mask='session'): "
+                    "make it with Find absorbed regions or Auto-estimate continuum, "
+                    "or use mask='new'.")
+            logger.info(f"Using the absorbed regions of the session (column '{mask_col}').")
+        else:
+            # --- 0. FORCE MASK REGENERATION ---
+            # Always generate a fresh mask to ensure it matches current z_em/flux state.
+            # This prevents "stale mask" bugs when running recipes sequentially.
+            logger.info(f"Finding the absorbed regions (column '{mask_col}').")
+            from astrocook.recipes.continuum import RecipeContinuumV2
+            rec_cont = RecipeContinuumV2(session_current)
+            session_current = rec_cont.find_absorbed(
+                smooth_len_lya="5000.0", 
+                smooth_len_out="400.0",
+                kappa="2.0",
+                template="False"
+            )
         kept_mask = (user_mask if user_mask is not None
                      else session_current.spec._data.aux_cols[mask_col])
 
@@ -673,7 +705,8 @@ class RecipeAbsorbersV2:
             merge_dv=merge_dv, 
             score_threshold=score_threshold,
             bypass_scoring="False", 
-            debug_rating="False"
+            debug_rating="False",
+            z_em_margin_kms=z_em_margin_kms
         )
         
         logger.info(">> PROGRESS: 30")
@@ -745,7 +778,9 @@ class RecipeAbsorbersV2:
     def doublets_auto(self, multiplets: str = "CIV,SiIV,MgII",
                       score_threshold: float = 0.5,
                       z_window_kms: float = 20.0,
-                      max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
+                      max_b: float = 50.0, max_logN: float = 19.0,
+                      mask: str = "new",
+                      z_em_margin_kms: float = 3000.0) -> 'SessionV2':
         """
         Auto-fit metal doublets (Red Side).
 
@@ -766,6 +801,16 @@ class RecipeAbsorbersV2:
         max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
             Defaults to ``19.0``.
+        mask : str, optional
+            The mask of the absorbed pixels used to find the regions:
+            ``'new'`` (made again with the defaults of
+            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            or ``'session'`` (the ``abs_mask`` already in the session, e.g.
+            from ``estimate_auto`` with other parameters). Defaults to
+            ``'new'`` (F50, phase 6-bis, PR 6b).
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s).
+            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
 
         Returns
         -------
@@ -778,13 +823,16 @@ class RecipeAbsorbersV2:
             z_window_kms=z_window_kms,
             region_limit="red_side",  # <--- FORCE RED SIDE
             max_b=max_b,
-            max_logN=max_logN
+            max_logN=max_logN,
+            mask=mask,
+            z_em_margin_kms=z_em_margin_kms
         )
 
     @typed_recipe
     def lya_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
                  z_window_kms: float = 100.0, max_b: float = 50.0,
-                 max_logN: float = 19.0) -> 'SessionV2':
+                 max_logN: float = 19.0, mask: str = "new",
+                 z_em_margin_kms: float = 3000.0) -> 'SessionV2':
         """
         Auto-fit Ly-alpha forest.
 
@@ -806,6 +854,16 @@ class RecipeAbsorbersV2:
         max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
             Defaults to ``19.0``.
+        mask : str, optional
+            The mask of the absorbed pixels used to find the regions:
+            ``'new'`` (made again with the defaults of
+            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            or ``'session'`` (the ``abs_mask`` already in the session, e.g.
+            from ``estimate_auto`` with other parameters). Defaults to
+            ``'new'`` (F50, phase 6-bis, PR 6b).
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s).
+            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
 
         Returns
         -------
@@ -823,7 +881,9 @@ class RecipeAbsorbersV2:
             mask_col='abs_mask',
             region_limit='lya_forest', # <--- FORCE FOREST
             max_b=max_b,
-            max_logN=max_logN
+            max_logN=max_logN,
+            mask=mask,
+            z_em_margin_kms=z_em_margin_kms
         )
         if self._is_stop_requested(): return self._session
         
@@ -853,7 +913,8 @@ class RecipeAbsorbersV2:
     @typed_recipe
     def forest_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
                     z_window_kms: float = 20.0, max_b: float = 50.0,
-                    max_logN: float = 19.0) -> 'SessionV2':
+                    max_logN: float = 19.0,
+                    z_em_margin_kms: float = 3000.0) -> 'SessionV2':
         """
         Auto-fit full Lyman series.
 
@@ -874,6 +935,9 @@ class RecipeAbsorbersV2:
         max_logN : float, optional
             Upper bound on logN in the fits, see :meth:`components_auto`.
             Defaults to ``19.0``.
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s).
+            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
 
         Returns
         -------
@@ -890,6 +954,7 @@ class RecipeAbsorbersV2:
         session_id_only = self.identify_lines(
             multiplets="Ly_a", 
             score_threshold=score_threshold,
+            z_em_margin_kms=z_em_margin_kms,
             # We can't easily pass region mask to identify_lines directly via public API without
             # duplicating the logic in components_auto. 
             # Ideally, identify_lines should support region_limit, but for now, 
@@ -1055,7 +1120,8 @@ class RecipeAbsorbersV2:
                        merge_dv: float = 10.0,
                        score_threshold: float = 0.5,
                        bypass_scoring: bool = False,
-                       debug_rating: bool = False) -> 'SessionV2':
+                       debug_rating: bool = False,
+                       z_em_margin_kms: float = 3000.0) -> 'SessionV2':
         """
         Identify likely absorption systems.
 
@@ -1080,6 +1146,9 @@ class RecipeAbsorbersV2:
             Defaults to ``False``.
         debug_rating : bool, optional
             If ``True``, show debug plots. Defaults to ``False``.
+        z_em_margin_kms : float, optional
+            How far beyond ``z_em`` a candidate system can lie (km/s).
+            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
 
         Returns
         -------
@@ -1097,7 +1166,8 @@ class RecipeAbsorbersV2:
             merge_dv=merge_dv,
             score_threshold=score_threshold,
             bypass_scoring=bypass_scoring,
-            debug_rating=debug_rating
+            debug_rating=debug_rating,
+            z_em_margin_kms=z_em_margin_kms
         )
         for key, value in _identification_extra(new_spec_v2).items():
             report(key, value)
