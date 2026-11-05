@@ -20,6 +20,7 @@ from astrocook.core.resolution import resolution_summary
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
+from astrocook.recipes.prerequisites import missing
 from astrocook.recipes.registry import find_recipe
 
 from .qt_workers import RecipeWorker
@@ -61,62 +62,77 @@ class MainRecipesMixin:
     """
 
     def _check_and_handle_requirements(self, category, name, params=None, mode='dialog') -> bool:
-        """
-        Centralized check for z_em and resolution, as the registry
-        declares them (``RecipeSpec.requires``).
-        Returns True if requirements are met.
-        If not, prompts user, sets pending state, launches set_properties, and returns False.
+        """True if the session has what the recipe requires (the registry,
+        :func:`astrocook.recipes.prerequisites.missing`). Otherwise the user
+        is asked how to fill the first gap, the recipe is kept pending and
+        resumed after the recipe that fills it, and False is returned
+        (phase 6-bis, PR 5b: the continuum too, besides z_em and the
+        resolution).
         """
         if not self.active_history or not self.active_history.current_state.spec:
             return True # Let validation fail downstream if no session
 
-        spec = self.active_history.current_state.spec
         recipe = find_recipe(name)
-        requires = recipe.requires if recipe else frozenset()
+        if recipe is None:
+            return True
+        gaps = missing(self.active_history.current_state, recipe)
+        if not gaps:
+            return True
+        gap = gaps[0]
+        if gap.name == 'continuum':
+            return self._ask_for_the_continuum(category, name, params, mode, recipe)
 
-        # 1. Check z_em
-        if 'z_em' in requires:
-            if spec._data.z_em == 0.0:
-                ret = self._show_custom_message(
-                    title="Emission Redshift Required",
-                    header="Emission Redshift (z_em) is required.",
-                    text="This recipe cannot run without z_em.\nDo you want to open 'Set Properties' to set it now?",
-                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                    default_btn=QMessageBox.StandardButton.Yes
-                )
-                if ret == QMessageBox.StandardButton.Yes:
-                    self._set_pending_action(category, name, params, mode)
-                    self._launch_recipe_dialog("edit", "set_properties")
-                return False
+        if gap.name == 'z_em':
+            title, header = "Emission Redshift Required", "Emission Redshift (z_em) is required."
+            text = "This recipe cannot run without z_em."
+        else:
+            title, header = "Resolution Required", "Instrument Resolution is missing."
+            text = "This recipe needs resolution (FWHM or R) for accurate fitting."
+        ret = self._show_custom_message(
+            title=title, header=header,
+            text=text + "\nDo you want to open 'Set Properties' to set it now?",
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            default_btn=QMessageBox.StandardButton.Yes
+        )
+        if ret == QMessageBox.StandardButton.Yes:
+            self._set_pending_action(category, name, params, mode, after="set_properties")
+            self._launch_recipe_dialog("edit", "set_properties")
+        return False
 
-        # 2. Check Resolution
-        if 'resolution' in requires:
-            # The resol column, the single source (#526)
-            has_resol = resolution_summary(spec)[0] > 0
-            
-            if not has_resol:
-                ret = self._show_custom_message(
-                    title="Resolution Required",
-                    header="Instrument Resolution is missing.",
-                    text="This recipe needs resolution (FWHM or R) for accurate fitting.\nDo you want to open 'Set Properties' to set it now?",
-                    buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-                    default_btn=QMessageBox.StandardButton.Yes
-                )
-                if ret == QMessageBox.StandardButton.Yes:
-                    self._set_pending_action(category, name, params, mode)
-                    self._launch_recipe_dialog("edit", "set_properties")
-                return False
-                
-        return True
+    def _ask_for_the_continuum(self, category, name, params, mode, recipe) -> bool:
+        """The spectrum has no continuum: estimate it with the defaults of
+        Auto-estimate Continuum, open its dialog, or cancel (phase 6-bis,
+        PR 5b, Guido); the recipe is resumed after the estimate."""
+        ret = self._show_custom_message(
+            title="Continuum Required",
+            header="The spectrum has no continuum.",
+            text=(f"{recipe.brief.rstrip('.')} needs a continuum. Estimate it now with "
+                  "the defaults of Auto-estimate Continuum, or open its dialog to "
+                  "choose the parameters; the recipe then runs."),
+            buttons=(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Open
+                     | QMessageBox.StandardButton.Cancel),
+            default_btn=QMessageBox.StandardButton.Yes,
+            button_texts={QMessageBox.StandardButton.Yes: "Estimate",
+                          QMessageBox.StandardButton.Open: "Open Auto-estimate Continuum…"}
+        )
+        if ret == QMessageBox.StandardButton.Yes:
+            self._set_pending_action(category, name, params, mode, after="estimate_auto")
+            self._on_recipe_requested("continuum", "estimate_auto", {}, {})
+        elif ret == QMessageBox.StandardButton.Open:
+            self._set_pending_action(category, name, params, mode, after="estimate_auto")
+            self._launch_recipe_dialog("continuum", "estimate_auto")
+        return False
 
-    def _set_pending_action(self, category, name, params, mode):
-        """Stores the intended action to resume after properties are set."""
-        logger.debug(f"Pending recipe: {name} ({mode}).")
-        self._pending_recipe_on_properties_set = {
+    def _set_pending_action(self, category, name, params, mode, after="set_properties"):
+        """The recipe to resume after the recipe ``after``, which provides
+        what it lacked."""
+        logger.debug(f"Pending recipe: {name} ({mode}), after {after}.")
+        self._pending_recipe = {
             'category': category,
             'name': name,
             'params': params,
-            'mode': mode
+            'mode': mode,
+            'after': after,
         }
 
     def _launch_recipe_dialog(self, category, name, initial_params: dict = None,
@@ -641,9 +657,9 @@ class MainRecipesMixin:
             self._report_recipe_outcome(recipe_name, new_sessions[-1])
 
             # --- Resume Pending Action ---
-            if recipe_name == 'set_properties' and self._pending_recipe_on_properties_set:
-                pending = self._pending_recipe_on_properties_set
-                self._pending_recipe_on_properties_set = None 
+            pending = self._pending_recipe
+            if pending and recipe_name == pending['after']:
+                self._pending_recipe = None
                 
                 logger.debug(f"Resuming the pending recipe {pending['name']}.")
                 
@@ -670,15 +686,16 @@ class MainRecipesMixin:
         Slot called when a RecipeDialog is closed (Accepted, Rejected, or 'X').
         This is crucial for cleanup.
         """
-        # If the user clicked "Cancel" or "X" (result=Rejected) AND
-        # we were waiting for them to set properties, clear the pending recipe.
+        # If the user clicked "Cancel" or "X" (result=Rejected) in the dialog
+        # of the recipe that the pending one waits for, drop the pending one
         if (result == QDialog.Rejected and 
-            self._pending_recipe_on_properties_set is not None and
+            self._pending_recipe is not None and
             self.active_recipe_dialog and 
-            self.active_recipe_dialog.recipe_name == 'set_properties'):
+            self.active_recipe_dialog.recipe_name == self._pending_recipe['after']):
             
-            logger.debug("Set Properties cancelled: the pending recipe is dropped.")
-            self._pending_recipe_on_properties_set = None
+            logger.debug(f"{self._pending_recipe['after']} cancelled: the pending recipe "
+                         "is dropped.")
+            self._pending_recipe = None
 
         # We must set this to None so a new dialog can be opened,
         # regardless of how it was closed.
@@ -776,6 +793,8 @@ class MainRecipesMixin:
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""
+        # The recipe waiting for the one that failed is not resumed (PR 5b)
+        self._pending_recipe = None
         title, message, trace = error_data
         
         # 1. Cleanup UI

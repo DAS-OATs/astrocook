@@ -85,7 +85,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         # ** Add History Index **
         self.history_index = -1 # Index of the currently active session in active_sessions
 
-        self._pending_recipe_on_properties_set: Optional[tuple] = None
+        # The recipe to resume after the one that provides what it lacked
+        self._pending_recipe: Optional[dict] = None
 
         self._last_attempted_recipe: Optional[dict] = None
 
@@ -335,7 +336,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                              default_btn=None, 
                              parent=None,
                              checkbox_text=None,
-                             detailed_text=None):
+                             detailed_text=None,
+                             button_texts=None):
         target_parent = parent if parent else self
         
         msg_box = QMessageBox(target_parent)
@@ -360,6 +362,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
             msg_box.setIcon(QMessageBox.Icon.Information)
 
         msg_box.setStandardButtons(buttons)
+        for button, label in (button_texts or {}).items():
+            msg_box.button(button).setText(label)
         if default_btn:
             msg_box.setDefaultButton(default_btn)
 

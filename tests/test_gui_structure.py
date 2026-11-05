@@ -48,7 +48,7 @@ SPECTRUM_PLOT_WIDGET |= {'_update_top_room'}
 MAIN_WINDOW = {
     '_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM', '_add_session_internal',
     '_apply_session_info_changes', '_apply_styles',
-    '_ask_to_renormalize_model', '_blank_swatch', '_check_and_handle_requirements',
+    '_ask_for_the_continuum', '_ask_to_renormalize_model', '_blank_swatch', '_check_and_handle_requirements',
     '_cleanup_progress_ui', '_close_session', '_confirm_discard_continuum_edits',
     '_create_menubar', '_force_restack_floating_widgets', '_get_log_stride',
     '_import_systems_ascii', '_launch_identification_viewer', '_launch_log_scripter',
