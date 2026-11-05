@@ -8,6 +8,8 @@ from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
+from astrocook.recipes.registry import find_recipe
+from astrocook.recipes.result import run
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2
@@ -43,6 +45,8 @@ class RecipeWorker(QRunnable):
         super().__init__()
         
         self.signals = WorkerSignals()
+        #: The RecipeResult of the recipe, once it has run (phase 6-bis, PR 4)
+        self.result = None
         self.session = session
         self.category = category
         self.recipe_name = recipe_name
@@ -80,8 +84,16 @@ class RecipeWorker(QRunnable):
             if self.recipe_name in ("apply_expression", "mask_expression"):
                 self.params['alias_map'] = self.alias_map
 
-            # 3. Run the recipe
-            new_session_state = recipe_method(**self.params)
+            # 3. Run the recipe, with its structured result (phase 6-bis, PR 4)
+            if find_recipe(self.recipe_name) is not None:
+                self.result = run(self.session, f"{self.category}.{self.recipe_name}",
+                                  **self.params)
+                new_session_state = (self.result.session if self.result.session is not None
+                                     else self.result.value)
+                if isinstance(new_session_state, tuple):
+                    new_session_state = list(new_session_state)
+            else:
+                new_session_state = recipe_method(**self.params)
 
             if self._is_stopped or getattr(self.session, '_stop_flag', False):
                 logger.warning(f"{self.recipe_name} was stopped.")

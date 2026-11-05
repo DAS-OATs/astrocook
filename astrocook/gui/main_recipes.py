@@ -736,7 +736,11 @@ class MainRecipesMixin:
         QApplication.restoreOverrideCursor()
 
         new_session_state, recipe_name, params = result_data
-        
+        # The structured result (phase 6-bis, PR 4): what changed, the
+        # warnings, the steps; kept for the windows and the scripts
+        self.last_recipe_result = getattr(getattr(self, '_current_worker', None),
+                                          'result', None)
+
         # [NEW] Check if operation was cancelled (returned same object or flagged)
         if getattr(new_session_state, '_stop_flag', False):
             logger.info("The recipe was stopped: the session is as before it.")
