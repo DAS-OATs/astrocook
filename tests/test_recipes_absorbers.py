@@ -73,14 +73,6 @@ def _dv(z1, z2):
     return abs(z1 - z2) / (1 + z2) * C_KMS
 
 
-@pytest.fixture
-def restore_multiplets():
-    saved = dict(STANDARD_MULTIPLETS)
-    yield
-    STANDARD_MULTIPLETS.clear()
-    STANDARD_MULTIPLETS.update(saved)
-
-
 # --- Add, update, delete --------------------------------------------------
 
 def test_add_component_fits_it(one_civ):
@@ -102,10 +94,16 @@ def test_add_component_bad_input_is_refused(data, kwargs):
         _session(data).absorbers.add_component("CIV", **{"z": "2.97", **kwargs})
 
 
-def test_add_component_custom_multiplet(data, restore_multiplets):
+def test_add_component_custom_multiplet(data):
+    # F12 (phase 6-bis, PR 7): the custom series is not added to the global
+    # STANDARD_MULTIPLETS (it was, for the whole process): its transitions
+    # are in its name
+    from astrocook.core.atomic_data import series_lines
     series = "CIV_1548,SiIV_1393"
+    saved = dict(STANDARD_MULTIPLETS)
     out = _session(data).absorbers.add_component(series, "2.97")
-    assert STANDARD_MULTIPLETS[series] == ["CIV_1548", "SiIV_1393"]
+    assert STANDARD_MULTIPLETS == saved and series not in STANDARD_MULTIPLETS
+    assert series_lines(series) == ["CIV_1548", "SiIV_1393"]
     assert out.systs.components[0].series == series
 
 

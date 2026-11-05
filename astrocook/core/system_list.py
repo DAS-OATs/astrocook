@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS, VoigtModelConstraintV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
-from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+from astrocook.core.atomic_data import ATOM_DATA, is_multiplet, series_lines
 
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
@@ -26,9 +26,9 @@ def get_all_w_rest(series_name: str) -> List[float]:
         return [ATOM_DATA[series_name]['wave']]
     
     # 2. Check if it's a standard multiplet tag (e.g., 'CIV')
-    if series_name in STANDARD_MULTIPLETS:
+    if is_multiplet(series_name):
         waves = []
-        for line_name in STANDARD_MULTIPLETS[series_name]:
+        for line_name in series_lines(series_name):
             if line_name in ATOM_DATA:
                 waves.append(ATOM_DATA[line_name]['wave'])
         return waves
@@ -1031,7 +1031,7 @@ class SystemListV2:
             A new system list containing the optimized components.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
-        from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+        from astrocook.core.atomic_data import ATOM_DATA
 
         # 1. Setup Static Window
         current_systs = self
@@ -1041,7 +1041,7 @@ class SystemListV2:
         series_name = target_comp.series
         lam_target_ang = 1215.67
         if series_name in ATOM_DATA: lam_target_ang = ATOM_DATA[series_name]['wave']
-        elif series_name in STANDARD_MULTIPLETS: lam_target_ang = ATOM_DATA[STANDARD_MULTIPLETS[series_name][0]]['wave']
+        elif is_multiplet(series_name): lam_target_ang = ATOM_DATA[series_lines(series_name)[0]]['wave']
         
         lam_target_nm = lam_target_ang / 10.0
         c_kms = 299792.458
@@ -1190,9 +1190,9 @@ class SystemListV2:
             lam_rest = None
             if c.series in ATOM_DATA:
                 lam_rest = ATOM_DATA[c.series]['wave']
-            elif c.series in STANDARD_MULTIPLETS:
+            elif is_multiplet(c.series):
                  # Use primary line for location check
-                 prim = STANDARD_MULTIPLETS[c.series][0]
+                 prim = series_lines(c.series)[0]
                  if prim in ATOM_DATA:
                      lam_rest = ATOM_DATA[prim]['wave']
             
@@ -1263,7 +1263,7 @@ class SystemListV2:
         import numpy as np
         import astropy.units as au
         import dataclasses
-        from astrocook.core.atomic_data import xem_d, STANDARD_MULTIPLETS
+        from astrocook.core.atomic_data import xem_d
         
         valid_components = []
         
@@ -1282,8 +1282,8 @@ class SystemListV2:
                 lines_to_check.append(c.series)
             
             # Case B: It's a Multiplet Tag (e.g., "CIV")
-            elif c.series in STANDARD_MULTIPLETS:
-                lines_to_check.extend(STANDARD_MULTIPLETS[c.series])
+            elif is_multiplet(c.series):
+                lines_to_check.extend(series_lines(c.series))
                 
             # Case C: Try normalized name (e.g., "CIV 1548" vs "CIV_1548")
             else:

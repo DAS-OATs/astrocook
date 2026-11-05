@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from typing import List
 
 from ..core.structures import ComponentDataV2
-from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
+from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
 
@@ -1061,8 +1061,8 @@ class SystemInspector(QWidget):
         # 1. Direct
         if series_name in ATOM_DATA: return ATOM_DATA[series_name]['mass']
         # 2. Multiplet
-        if series_name in STANDARD_MULTIPLETS:
-            prim = STANDARD_MULTIPLETS[series_name][0]
+        if is_multiplet(series_name):
+            prim = series_lines(series_name)[0]
             if prim in ATOM_DATA: return ATOM_DATA[prim]['mass']
         return None
 

@@ -4,7 +4,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Optional
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.voigt_fitter import VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
@@ -1282,14 +1282,12 @@ class RecipeAbsorbersV2:
         """
         z_f, logN_f, b_f, btur_f, z_win_f = z, logN, b, btur, z_window_kms
 
-        if ',' in series and series not in STANDARD_MULTIPLETS:
-            # 1. Parse the string "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
-            members = [s.strip() for s in series.split(',') if s.strip()]
-            
-            # 2. Register globally so the Fitter can find it
-            STANDARD_MULTIPLETS[series] = members
-            logger.info(f"Custom multiplet {series} added ({', '.join(members)}).")
-        
+        # A custom multiplet ("FeII_2586,FeII_2600") carries its transitions in
+        # its name (atomic_data.series_lines): it was added to
+        # STANDARD_MULTIPLETS here, for the whole process (F12, phase 6-bis PR 7)
+        if is_multiplet(series) and series not in STANDARD_MULTIPLETS:
+            logger.info(f"Custom multiplet {series} ({', '.join(series_lines(series))}).")
+
         if self._session.systs is None:
             from astrocook.core.structures import SystemListDataV2
             from astrocook.core.system_list import SystemListV2
@@ -1995,7 +1993,7 @@ class RecipeAbsorbersV2:
             logger.info(f"Refit limited to {region_limit} ({obs_min_limit:.1f} to {obs_max_limit:.1f}).")
 
         # --- 1. IDENTIFY VALID COMPONENTS (Filtering Step) ---
-        from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
+        from astrocook.core.atomic_data import ATOM_DATA
             
         uuids_in_region = set()
             
@@ -2014,8 +2012,8 @@ class RecipeAbsorbersV2:
                 lam_rest = None
                 if series in ATOM_DATA:
                     lam_rest = ATOM_DATA[series]['wave']
-                elif series in STANDARD_MULTIPLETS:
-                    prim = STANDARD_MULTIPLETS[series][0]
+                elif is_multiplet(series):
+                    prim = series_lines(series)[0]
                     if prim in ATOM_DATA:
                         lam_rest = ATOM_DATA[prim]['wave']
                     

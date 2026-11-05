@@ -198,3 +198,17 @@ def test_every_value_has_a_known_source():
         if column != "wave":
             # "-" (not applicable) exactly for the values that are 0
             assert list(refs == "-") == list(_TABLE[column] == 0), column
+
+
+def test_series_lines():
+    # F12 (phase 6-bis, PR 7): the transitions of a series without a global
+    # registration of the custom ones
+    from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
+    assert series_lines("CIV") == list(STANDARD_MULTIPLETS["CIV"])
+    assert series_lines("CIV_1548") == ["CIV_1548"]
+    assert series_lines("FeII_2586, FeII_2600") == ["FeII_2586", "FeII_2600"]
+    assert is_multiplet("CIV") and is_multiplet("FeII_2586,FeII_2600")
+    assert not is_multiplet("CIV_1548")
+    # A copy: the table cannot be changed through it
+    series_lines("CIV").append("x")
+    assert "x" not in STANDARD_MULTIPLETS["CIV"]

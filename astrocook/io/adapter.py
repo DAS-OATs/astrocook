@@ -16,7 +16,6 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 from .v1_archive import read_v1_spectrum, read_v1_system_list
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS
 from astrocook.core.structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,
@@ -28,25 +27,6 @@ from astrocook.core.system_list import SystemListV2
 logger = logging.getLogger(__name__)
 
 # --- V1 Imports ---
-
-# --- Helper for Multiplet Registration ---
-def _register_custom_multiplets(components: List[ComponentDataV2]):
-    """
-    Scans a list of components for V1-style custom multiplets (comma-separated)
-    and registers them into STANDARD_MULTIPLETS so they are recognized by V2.
-    """
-    if not components: return
-
-    for c in components:
-        series = c.series
-        if series and ',' in series and series not in STANDARD_MULTIPLETS:
-            # Parse: "FeII_2586,FeII_2600" -> ["FeII_2586", "FeII_2600"]
-            members = [s.strip() for s in series.split(',') if s.strip()]
-            
-            # Register globally
-            STANDARD_MULTIPLETS[series] = members
-            logger.info(f"Custom multiplet of the session added: {series} "
-                        f"({', '.join(members)}).")
 
 def load_and_migrate_structure(archive_root, structure_name, gui_context, format_name, spec_file_path=None, v2_metadata=None):
     """
@@ -112,9 +92,9 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
         # opened without its systems, and a save in .acs2 lost them (Guido's
         # choice, phase 6)
         migrated_data = read_v1_system_list(path_to_load)
-        # [FIX] Register custom multiplets found in V1 data
-        if migrated_data.components:
-            _register_custom_multiplets(migrated_data.components)
+        # The custom multiplets of the components carry their transitions in
+        # their names (atomic_data.series_lines): they were added to
+        # STANDARD_MULTIPLETS here (F12, phase 6-bis PR 7)
         return SystemListV2(data=migrated_data)
 
     return None
@@ -207,8 +187,6 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
         components.append(comp)
         id_to_uuid_map[comp.id] = comp.uuid
         
-    _register_custom_multiplets(components)
-    
     return components, id_to_uuid_map
 
 # ... (load_systs_data_v2_from_archive, _serialize_v2_metadata remain same) ...

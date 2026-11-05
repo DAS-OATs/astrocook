@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from typing import List, Optional, TYPE_CHECKING
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
+from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d, is_multiplet, series_lines
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
 
@@ -35,8 +35,8 @@ def _z_range(x_nm, region_map, region, transition):
     """The redshifts of the first and last pixel of a region, for a
     transition."""
     indices = np.where(region_map == region)[0]
-    if transition in STANDARD_MULTIPLETS:  # a multiplet (older sessions): its first line
-        transition = STANDARD_MULTIPLETS[transition][0]
+    if is_multiplet(transition):  # a multiplet (older sessions): its first line
+        transition = series_lines(transition)[0]
     if not indices.size or transition not in xem_d:
         return None
     rest = xem_d[transition].to_value(au.nm)
@@ -257,8 +257,8 @@ class IdentificationViewerDialog(QDialog):
 
     def _get_ref_transition(self, series_name: str) -> Optional[str]:
         """Helper to get the primary transition for a series."""
-        if series_name in STANDARD_MULTIPLETS:
-            return STANDARD_MULTIPLETS[series_name][0]
+        if is_multiplet(series_name):
+            return series_lines(series_name)[0]
         if series_name in xem_d:
             return series_name
         try:

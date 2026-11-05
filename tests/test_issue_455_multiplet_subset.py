@@ -45,16 +45,11 @@ def test_niII_offers_subset():
     assert len(STANDARD_MULTIPLETS["NiII"]) > 2
 
 
-@pytest.fixture
-def restore_multiplets():
-    # add_component registers custom series in the global STANDARD_MULTIPLETS
+def test_add_subset_component_models_and_fits_only_selected_lines():
+    # F12 (phase 6-bis, PR 7): the custom series is not added to the global
+    # STANDARD_MULTIPLETS (it was, for the whole process; a fixture
+    # restored it): its transitions are in its name
     saved = dict(STANDARD_MULTIPLETS)
-    yield
-    STANDARD_MULTIPLETS.clear()
-    STANDARD_MULTIPLETS.update(saved)
-
-
-def test_add_subset_component_models_and_fits_only_selected_lines(restore_multiplets):
     x = np.arange(466.0, 522.0, 0.003)  # FeII 2344-2600 at z = 1
     true = ComponentDataV2(id=1, z=Z, dz=None, logN=13.8, dlogN=None, b=8.0,
                            db=None, series=SUBSET)
@@ -79,3 +74,10 @@ def test_add_subset_component_models_and_fits_only_selected_lines(restore_multip
     # Transitions of the multiplet that were not selected are not modelled
     for trans in ("FeII_2374", "FeII_2586", "FeII_2600"):
         assert _line_depth(x, fitted, trans) < 1e-3
+    assert STANDARD_MULTIPLETS == saved and SUBSET not in STANDARD_MULTIPLETS
+    # A refit, as after reopening the session, knows the series all the same
+    refitted = result.absorbers.refit_all()
+    assert refitted.systs.components[0].logN == pytest.approx(13.8, abs=0.05)
+    model = refitted.spec.get_column("model").value
+    assert _line_depth(x, model, "FeII_2344") > 0.1
+    assert _line_depth(x, model, "FeII_2600") < 1e-3
