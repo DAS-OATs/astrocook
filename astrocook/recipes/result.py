@@ -19,6 +19,7 @@ so that phase 7 fills them without changing the interface.
 """
 from __future__ import annotations
 
+import contextvars
 import logging
 import threading
 from contextlib import contextmanager
@@ -114,7 +115,12 @@ class RecipeResult:
     #: The result when it is not a session (the redshift of
     #: ``detect_anchor``, whether ``export_ascii`` wrote a file)
     value: Any = None
-    #: What the recipe knows and the comparison cannot see (PR 4b)
+    #: What the recipe knows and the comparison cannot see (PR 4b):
+    #: ``removed`` (uuid -> why a component of the session was removed),
+    #: ``discarded`` (uuid -> why a component the recipe made was dropped,
+    #: e.g. a narrow line of a pipeline), ``not_fitted``
+    #: (the components whose group could not be fitted), ``candidates`` and
+    #: ``regions`` (the identification of ``identify_lines``)
     extra: Mapping[str, Any] = field(default_factory=dict)
     #: Reserved for phase 7 (the algorithms do not provide them yet): the
     #: uncertainty of the continuum, the credibility of an identification
@@ -228,6 +234,47 @@ def compare_sessions(before, after) -> Changes:
                             if p_old.get(k) != v})
 
 
+# --- What a recipe knows ------------------------------------------------------
+
+_EXTRA: contextvars.ContextVar = contextvars.ContextVar('astrocook_recipe_extra',
+                                                        default=None)
+
+
+def report(key: str, value: Any) -> None:
+    """Put ``value`` in the ``extra`` of the result, under ``key``: what a
+    recipe knows and the comparison of the sessions cannot see (PR 4b). A
+    list value is extended by the steps that report it again. Nothing
+    happens outside :func:`run`."""
+    extra = _EXTRA.get()
+    if extra is None:
+        return
+    if isinstance(value, list) and isinstance(extra.get(key), list):
+        extra[key].extend(value)
+    else:
+        extra[key] = value
+
+
+def report_removed(uuids, reason: str) -> None:
+    """Say why the components ``uuids`` were removed: ``extra['removed']``
+    maps each to its reason (the comparison lists them, not why)."""
+    extra = _EXTRA.get()
+    if extra is None or not uuids:
+        return
+    removed = extra.setdefault('removed', {})
+    for uuid in uuids:
+        removed.setdefault(uuid, reason)
+
+
+@contextmanager
+def _collect_extra() -> Iterator[Dict[str, Any]]:
+    extra: Dict[str, Any] = {}
+    token = _EXTRA.set(extra)
+    try:
+        yield extra
+    finally:
+        _EXTRA.reset(token)
+
+
 # --- Running a recipe --------------------------------------------------------
 
 class _Warnings(logging.Handler):
@@ -273,9 +320,21 @@ def run(session, recipe: str, **params) -> RecipeResult:
         if spec is None:
             raise KeyError(f"There is no recipe {recipe}")
     method = getattr(getattr(session, spec.category), spec.name)
-    with _collect_warnings() as warnings, collect_steps() as steps:
+    with _collect_warnings() as warnings, collect_steps() as steps, \
+            _collect_extra() as extra:
         out = method(**params)
     used = resolve_params(spec.name, params)
+    if 'removed' in extra:
+        # The components of the session the recipe ran on, and those it made
+        # and dropped itself (e.g. the narrow lines of a pipeline)
+        before = _components(session)
+        reasons = extra.pop('removed')
+        removed = {u: r for u, r in reasons.items() if u in before}
+        discarded = {u: r for u, r in reasons.items() if u not in before}
+        if removed:
+            extra['removed'] = removed
+        if discarded:
+            extra['discarded'] = discarded
     if isinstance(out, list):
         out = tuple(out)
     if isinstance(out, tuple):
@@ -287,4 +346,4 @@ def run(session, recipe: str, **params) -> RecipeResult:
     return RecipeResult(recipe=f"{spec.category}.{spec.name}", title=spec.brief.rstrip('.'),
                         session=new, branching=spec.branching, changes=changes,
                         params=used, warnings=tuple(warnings), steps=tuple(steps),
-                        value=value)
+                        value=value, extra=dict(extra))

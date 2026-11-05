@@ -160,3 +160,78 @@ def test_the_gui_worker_keeps_the_result(qtbot, sessions, caplog):
     # dy is constant on the mock, and stays the same once smoothed
     assert worker.result.changes.columns_changed == ("y",)
     assert np.all(np.isfinite(state.spec.y.value))
+
+
+# --- What a recipe knows (PR 4b) ----------------------------------------------
+
+def test_the_identification_keeps_region_and_score(sessions):
+    # F49: the candidate systems kept neither their region nor their score
+    _, cont, _ = sessions
+    result = run(cont, "absorbers.identify_lines")
+    (civ,) = [c for c in result.extra["candidates"] if c["series"] == "CIV"]
+    assert civ["z"] == pytest.approx(1.93, abs=1e-4)
+    assert civ["score"] > 0.9 and civ["region"] > 0
+    regions = {r["region"]: r for r in result.extra["regions"]}
+    region = regions[civ["region"]]
+    assert region["x_unit"] == "nm"
+    assert region["x_min"] < 154.8204 * (1 + civ["z"]) < region["x_max"]  # CIV 1548
+    assert region["identifications"][0]["transition"].startswith("CIV")
+    # Kept in the session too, with the other maps of the identification
+    meta = result.session.spec.meta
+    assert "region_map_json" in meta and "score_map_json" in meta
+
+
+def test_the_reasons_of_what_is_removed(sessions):
+    _, _, fitted = sessions
+    uuid = fitted.systs.components[0].uuid
+    deleted = run(fitted, "absorbers.delete_component", uuid=uuid)
+    assert deleted.extra["removed"] == {uuid: "deleted"}
+    cleaned = run(fitted, "absorbers.clean_negligible", min_logN=14.0)
+    assert cleaned.extra["removed"] == {uuid: "logN < min_logN = 14.0 (too weak)"}
+    assert [c.uuid for c in cleaned.changes.components_removed] == [uuid]
+    nothing = run(fitted, "absorbers.clean_negligible")
+    assert "removed" not in nothing.extra
+
+
+def test_what_a_pipeline_makes_and_drops_is_discarded():
+    # The narrow lines that lya_auto finds and removes were not in the
+    # session: they are 'discarded', not 'removed'
+    truth = MockTruth(components=[MockComponent("Ly_a", 2.65, 13.5, 25.0),
+                                  MockComponent("Ly_a", 2.64, 14.0, 30.0)],
+                      lam_min_nm=440.0, lam_max_nm=450.0, dv_kms=2.5, resol=45000.0,
+                      snr=50.0, z_em=2.7, seed=1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        cont = SessionV2("m", None, spec=generate(truth, truth_columns=False)
+                         ).continuum.estimate_auto()
+        result = run(cont, "absorbers.lya_auto", min_b=40.0)
+    assert "removed" not in result.extra
+    assert set(result.extra["discarded"].values()) == {"narrower than min_b = 40.0 km/s"}
+
+
+def test_the_groups_that_could_not_be_fitted_are_flagged(sessions, monkeypatch):
+    # Agreed with Guido in phase 6: the flag not_fitted, set by refit_all on
+    # the components of a group whose fit failed (they keep their values)
+    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.gui.inspector_table import flag_cue
+    _, _, fitted = sessions
+
+    def fit(self, *args, **kwargs):
+        raise ValueError("x0 is infeasible")
+    monkeypatch.setattr(VoigtFitterV2, "fit", fit)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = run(fitted, "absorbers.refit_all")
+    (comp,) = result.session.systs.components
+    assert "not_fitted" in comp.flags
+    assert result.extra["not_fitted"] == [comp.uuid]
+    assert comp.z == fitted.systs.components[0].z  # the values of before
+    assert any("could not be fitted" in w for w in result.warnings)
+    _, messages = flag_cue(comp)
+    assert any("The fit of its group failed" in m for m in messages)
+
+
+def test_report_outside_run_does_nothing():
+    from astrocook.recipes.result import report, report_removed
+    report("x", 1)
+    report_removed(["u"], "why")  # no error, nothing kept

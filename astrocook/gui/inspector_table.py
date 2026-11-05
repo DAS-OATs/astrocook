@@ -60,6 +60,8 @@ _BOUND_FLAGS = {
                               "(bound 300 km/s)."),
 }
 _NAN_MESSAGE = "The uncertainties could not be computed: the value is not constrained."
+_NOT_FITTED_MESSAGE = ("The fit of its group failed (Refit All): the values are those from "
+                       "before the fit; refit it, e.g. with Refit Selected.")
 
 
 def flag_cue(comp, attr: str = None):
@@ -76,6 +78,10 @@ def flag_cue(comp, attr: str = None):
                 color = plot_colour('flag_bound')
         elif flag == 'nan_errors' and attr is None:
             messages.append(_NAN_MESSAGE)
+            color = color or plot_colour('flag_nan')
+        elif flag == 'not_fitted' and attr is None:
+            # phase 6-bis, PR 4b
+            messages.append(_NOT_FITTED_MESSAGE)
             color = color or plot_colour('flag_nan')
     return color, messages
 
