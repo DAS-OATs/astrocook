@@ -624,9 +624,21 @@ a structured summary, for instance (from <code class="docutils literal notransla
 <p>and, from <code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, the number of components added and
 removed and the list of the new ones, each with its flags (e.g.
 <code class="docutils literal notranslate"><span class="pre">b_at_lower_bound</span></code>), from which the agent answers the last question.</p>
-<p>If something goes wrong (a missing file, z_em not set), the tool returns
-Astrocook’s error message, and the agent can usually correct its request
-by itself.</p>
+<p>Each result also says what the recipe did in one line (<code class="docutils literal notranslate"><span class="pre">summary</span></code>) and
+what else is worth knowing (<code class="docutils literal notranslate"><span class="pre">notes</span></code>): the components removed and why,
+those whose fit failed, the steps run first.</p>
+<p>If something goes wrong (a missing file, a value that cannot be used), the
+tool returns Astrocook’s error message, which names the recipe and the
+reason, and the agent can usually correct its request by itself.</p>
+<p><strong>What a recipe needs.</strong> A recipe that needs something the session does
+not have (the emission redshift, the resolution, a continuum) does not
+run: the tool says what is missing and which recipe provides it, and the
+agent decides. z_em and the resolution are given to <code class="docutils literal notranslate"><span class="pre">session_open</span></code>. A
+continuum is made with <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>, or, if the agent calls
+the tool again with <code class="docutils literal notranslate"><span class="pre">provide_missing=true</span></code>, with the default parameters of
+<em>Auto-estimate Continuum</em> before the recipe: the step is listed in
+<code class="docutils literal notranslate"><span class="pre">provided</span></code> and recorded in the session log, before the recipe, as if it
+had been run on its own.</p>
 </section>
 <section id="reviewing-the-result-in-the-gui">
 <h2>5. Reviewing the Result in the GUI<a class="headerlink" href="#reviewing-the-result-in-the-gui" title="Link to this heading">#</a></h2>
@@ -642,10 +654,11 @@ replay the log as a script.</p>
 <li><p>Only the five tools above: no manual editing of components, no Lyman
 forest fit, no export.</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> removes the components already on the red
-side before fitting. It uses the absorbed mask of the session, if any
-(e.g. from <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>), and makes one with the default
-parameters otherwise. A call can take minutes on a large spectrum.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
+side. It finds the absorbed regions on a new mask made with the default
+parameters (<code class="docutils literal notranslate"><span class="pre">mask=&quot;new&quot;</span></code>, used only inside), or on the mask of the
+session (<code class="docutils literal notranslate"><span class="pre">mask=&quot;session&quot;</span></code>, e.g. that of <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code> with
+other parameters). A call can take minutes on a large spectrum.</p></li>
 <li><p>The recipes are the same as in the GUI, with the same strengths and
 weaknesses: check the results.</p></li>
 </ul>
