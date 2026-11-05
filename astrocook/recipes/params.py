@@ -21,7 +21,9 @@ import logging
 import math
 from typing import Any, Callable, Dict, Mapping
 
-from astrocook.recipes.messages import msg_param_fail
+# InvalidParameter is defined with the other exceptions of the recipes
+# (phase 6-bis, PR 3) and raised here
+from astrocook.recipes.errors import InvalidParameter, RecipeError, RecipeFailed, reason_of
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +35,6 @@ logger = logging.getLogger(__name__)
 #: 2a: an empty ``kappa`` of *Rebin* is not "no clipping")
 NONE_STRING = 'None'
 
-class InvalidParameter(ValueError):
-    """A parameter of a recipe cannot be converted to its type, or is out
-    of its bounds; the message names the parameter and the value."""
 
 
 def _number(param, value, kind):
@@ -158,11 +157,24 @@ def resolve_params(name: str, params: Mapping[str, Any]) -> Dict[str, Any]:
     return resolved
 
 
+#: The errors of the core that mean "this data or this value cannot be
+#: used": the decorator of the recipes turns them into RecipeFailed (Guido,
+#: phase 6-bis, PR 3). The others, usually bugs, go on as they are
+DATA_ERRORS = (ValueError, KeyError, OSError)
+
+
 def typed_recipe(method: Callable) -> Callable:
-    """Decorator of a recipe method: the parameters passed are converted to
-    the types of the registry before the method runs. A value that cannot
-    be converted, or is out of bounds, stops the recipe as a failure (the
-    reason logged at ERROR, 0 returned; an exception in PR 3 of the phase).
+    """Decorator of a recipe method, its boundary.
+
+    The parameters passed are converted to the types of the registry
+    before the method runs (:class:`InvalidParameter` if one cannot be, or
+    is out of its bounds). Every :class:`RecipeError` that leaves the
+    method records the recipe (so that the message names the recipe, and
+    the steps of a pipeline); the errors of the core in
+    :data:`DATA_ERRORS` become :class:`RecipeFailed`, with the original
+    error as their cause; any other exception (a bug) goes on unchanged,
+    with a note naming the recipe. Nothing is logged here: the error is
+    logged where it is caught (phase 6-bis, PR 3).
     """
     signature = inspect.signature(method)
 
@@ -170,14 +182,22 @@ def typed_recipe(method: Callable) -> Callable:
     def wrapper(self, *args, **kwargs):
         from astrocook.recipes.registry import find_recipe
         spec = find_recipe(method.__name__)
-        bound = signature.bind(self, *args, **kwargs)
-        passed = {k: v for k, v in bound.arguments.items() if k != 'self'}
+        where = (spec.category, spec.name, spec.brief.rstrip('.'))
         try:
+            bound = signature.bind(self, *args, **kwargs)
+            passed = {k: v for k, v in bound.arguments.items() if k != 'self'}
             converted = convert_params(spec, passed)
-        except InvalidParameter as e:
-            logger.error(f"{msg_param_fail} {e}.")
-            return 0
-        return method(self, **converted)
+            return method(self, **converted)
+        except RecipeError as e:
+            e.enter(*where)
+            raise
+        except DATA_ERRORS as e:
+            error = RecipeFailed(reason_of(e))
+            error.enter(*where)
+            raise error from e
+        except Exception as e:
+            e.add_note(f"In the recipe {spec.category}.{spec.name} ({where[2]}).")
+            raise
 
     wrapper.typed_recipe = True  # checked by tests/test_recipe_params.py
     return wrapper

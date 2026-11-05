@@ -2,7 +2,8 @@ import astropy.units as au
 import logging
 from typing import TYPE_CHECKING
 
-from astrocook.recipes.messages import msg_param_fail, msg_z_em_unset
+from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite
+from astrocook.recipes.messages import msg_z_em_unset
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -77,6 +78,16 @@ CONTINUUM_RECIPES_SCHEMAS = {
 FWHM_TO_SIGMA = 1.0 / 2.354820045  # 1 / (2 sqrt(2 ln 2))
 
 
+def _fudge(fudge):
+    """The fudge factor: 'auto' (any case) or a number given as a string."""
+    if str(fudge).strip().lower() == 'auto':
+        return 'auto'
+    try:
+        return float(fudge)
+    except ValueError:
+        raise InvalidParameter(f"fudge: {fudge!r} is not 'auto' or a number") from None
+
+
 def _smoothing_sigma(smooth_fwhm, smooth_std):
     """Sigma (km/s) of the final continuum smoothing.
 
@@ -144,52 +155,43 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2 or int
+        SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with updated continuum
-            and absorption mask, or 0 on failure.
+            and absorption mask.
+
+        Raises
+        ------
+        RecipeError
+            If a parameter cannot be used, or the continuum cannot be
+            estimated (:mod:`astrocook.recipes.errors`).
         """
         smooth_len_lya_q = smooth_len_lya * au.km/au.s
         smooth_len_out_q = smooth_len_out * au.km/au.s
         z_em_f = self._session.spec._data.z_em # Read z_em from session
-        try:
-            # Allow 'auto' or parse float
-            if fudge.lower() == 'auto':
-                fudge_f = 'auto'
-            else:
-                fudge_f = float(fudge)
-            smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)  # sigma, km/s
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
-            
+        fudge_f = _fudge(fudge)
+        smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)  # sigma, km/s
+
         if z_em_f == 0.0:
             logger.warning(msg_z_em_unset + " The continuum of the Lyman-alpha forest "
                            "is estimated as outside it.")
 
-        try:
-            logger.info("Finding the absorbed regions.")
-            # 1. Call the first API method
-            spec_with_mask = self._session.spec.find_absorbed(
-                smooth_len_lya=smooth_len_lya_q,
-                smooth_len_out=smooth_len_out_q,
-                kappa=kappa,
-                template=template
-            )
-            
-            logger.info("Fitting the continuum to the unabsorbed pixels.")
-            spec_with_cont = spec_with_mask.fit_continuum(
-                fudge=fudge_f,
-                smooth_std_kms=smooth_std_f,
-                mask_col='abs_mask',
-                renorm_model=renorm_model,
-                template=template
-            )
-            
-            # 3. Return the final new state
-            return self._session.with_new_spectrum(spec_with_cont)
-        except Exception as e:
-            logger.error(f"Could not estimate the continuum: {e}", exc_info=True)
-            return 0
+        logger.info("Finding the absorbed regions.")
+        spec_with_mask = self._session.spec.find_absorbed(
+            smooth_len_lya=smooth_len_lya_q,
+            smooth_len_out=smooth_len_out_q,
+            kappa=kappa,
+            template=template
+        )
+
+        logger.info("Fitting the continuum to the unabsorbed pixels.")
+        spec_with_cont = spec_with_mask.fit_continuum(
+            fudge=fudge_f,
+            smooth_std_kms=smooth_std_f,
+            mask_col='abs_mask',
+            renorm_model=renorm_model,
+            template=template
+        )
+        return self._session.with_new_spectrum(spec_with_cont)
 
     @typed_recipe
     def find_absorbed(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
@@ -217,9 +219,14 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2 or int
+        SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the ``abs_mask``
-            column added/updated, or 0 on failure.
+            column added/updated.
+
+        Raises
+        ------
+        RecipeError
+            If the recipe cannot run (:mod:`astrocook.recipes.errors`).
         """
         smooth_len_lya_q = smooth_len_lya * au.km/au.s
         smooth_len_out_q = smooth_len_out * au.km/au.s
@@ -230,17 +237,13 @@ class RecipeContinuumV2:
                            "forest are found as outside it.")
             # We don't stop, as the operation function handles z_em=0.0
             
-        try:
-            new_spec_v2 = self._session.spec.find_absorbed(
-                smooth_len_lya=smooth_len_lya_q,
-                smooth_len_out=smooth_len_out_q,
-                kappa=kappa,
-                template=template
-            )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not find the absorbed regions: {e}", exc_info=True)
-            return 0
+        new_spec_v2 = self._session.spec.find_absorbed(
+            smooth_len_lya=smooth_len_lya_q,
+            smooth_len_out=smooth_len_out_q,
+            kappa=kappa,
+            template=template
+        )
+        return self._session.with_new_spectrum(new_spec_v2)
 
     @typed_recipe
     def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: float = 800.0,
@@ -272,36 +275,26 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2 or int
+        SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the ``cont``
-            column added/updated, or 0 on failure.
+            column added/updated.
+
+        Raises
+        ------
+        RecipeError
+            If the recipe cannot run (:mod:`astrocook.recipes.errors`).
         """
-        try:
-            smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)
-            template_b = str(template) == 'True'
-            
-            # Allow 'auto' or parse float
-            if fudge.lower() == 'auto':
-                fudge_arg = 'auto'
-            else:
-                fudge_arg = float(fudge)
-                
-        except ValueError:
-            logger.error(msg_param_fail)
-            return 0
-        
-        try:
-            new_spec_v2 = self._session.spec.fit_continuum(
-                fudge=fudge_arg,
-                smooth_std_kms=smooth_std_f,
-                mask_col=mask_col,
-                renorm_model=renorm_model,
-                template=template_b
-            )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not fit the continuum: {e}", exc_info=True)
-            return 0
+        smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)
+        template_b = str(template) == 'True'
+        fudge_arg = _fudge(fudge)
+        new_spec_v2 = self._session.spec.fit_continuum(
+            fudge=fudge_arg,
+            smooth_std_kms=smooth_std_f,
+            mask_col=mask_col,
+            renorm_model=renorm_model,
+            template=template_b
+        )
+        return self._session.with_new_spectrum(new_spec_v2)
         
     @typed_recipe
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
@@ -324,23 +317,23 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2 or int
+        SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the ``cont_pl``
-            column added/updated, or 0 on failure.
+            column added/updated.
+
+        Raises
+        ------
+        RecipeError
+            If the recipe cannot run (:mod:`astrocook.recipes.errors`).
         """
         if self._session.spec._data.z_em == 0.0:
-            logger.error(msg_z_em_unset + " The power law is fitted in rest-frame regions.")
-            return 0
-            
-        try:
-            new_spec_v2 = self._session.spec.fit_powerlaw(
-                regions_str=regions,
-                kappa=kappa
-            )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not fit the power-law continuum: {e}", exc_info=True)
-            return 0
+            raise MissingPrerequisite(msg_z_em_unset + " The power law is fitted in "
+                                      "rest-frame regions.")
+        new_spec_v2 = self._session.spec.fit_powerlaw(
+            regions_str=regions,
+            kappa=kappa
+        )
+        return self._session.with_new_spectrum(new_spec_v2)
     
     @typed_recipe
     def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':

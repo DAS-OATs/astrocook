@@ -1,7 +1,10 @@
-"""Run a recipe and turn its log records into MCP results.
+"""Run a recipe and turn its errors and log records into MCP results.
 
-The recipes report a failure by logging an error and returning 0, and a
-problem that does not stop them by logging a warning. The model sees
+The recipes report a failure by raising a
+:class:`~astrocook.recipes.errors.RecipeError`, whose message names the
+recipe and the reason (phase 6-bis, PR 3; the recipes not converted yet
+log an error and return 0), and a problem that does not stop them by
+logging a warning. The model sees
 neither: it sees only what a tool returns. :func:`run_recipe` collects the
 records logged while a recipe runs; a failure becomes a
 :class:`~mcp.server.mcpserver.exceptions.ToolError` carrying the logged
@@ -17,6 +20,8 @@ from contextlib import contextmanager
 from typing import Any, Callable, Iterator
 
 from mcp.server.mcpserver.exceptions import ToolError
+
+from astrocook.recipes.errors import RecipeError
 
 
 class _Collector(logging.Handler):
@@ -82,6 +87,11 @@ def run_recipe(name: str, fn: Callable[..., Any], *args, **kwargs
     with collect_log() as records:
         try:
             result = fn(*args, **kwargs)
+        except RecipeError as e:
+            # The message names the recipe and the reason; the errors
+            # logged before it (if any) come first
+            errors = _messages(records, logging.ERROR)
+            raise ToolError("; ".join(errors + [str(e)])) from e
         except Exception as e:
             errors = _messages(records, logging.ERROR)
             raise ToolError("; ".join(

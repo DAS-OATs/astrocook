@@ -18,6 +18,7 @@ from types import SimpleNamespace
 import numpy as np
 import astropy.units as au
 import pytest
+from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
 
 from astrocook.core.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
@@ -118,8 +119,14 @@ def test_set_properties_keeps_column_if_asked():
 
 @pytest.mark.parametrize("kwargs", [dict(z_em="abc"), dict(resol="abc"),
                                     dict(resol="xpx")])
-def test_set_properties_bad_input_returns_0(kwargs):
-    assert _session().edit.set_properties(**kwargs) == 0
+def test_set_properties_bad_input_fails(kwargs):
+    # z_em is refused by the conversion; resol is read by the recipe, which
+    # returns 0 until PR 3b (phase 6-bis)
+    if "z_em" in kwargs:
+        with pytest.raises(InvalidParameter):
+            _session().edit.set_properties(**kwargs)
+    else:
+        assert _session().edit.set_properties(**kwargs) == 0
 
 
 # --- Edit > Apply / Mask expression ---------------------------------------
@@ -206,8 +213,12 @@ def test_smooth_column_cont_renormalises_model():
 
 
 @pytest.mark.parametrize("target, sigma", [("missing", "10.0"), ("F", "abc")])
-def test_smooth_column_bad_input_returns_0(target, sigma):
-    assert _session().edit.smooth_column(target, sigma) == 0
+def test_smooth_column_bad_input_fails(target, sigma):
+    if sigma == "abc":
+        with pytest.raises(InvalidParameter):
+            _session().edit.smooth_column(target, sigma)
+    else:
+        assert _session().edit.smooth_column(target, sigma) == 0  # until PR 3b
 
 
 def test_delete_columns_and_systems():
@@ -366,9 +377,13 @@ def test_coadd(snapshot):
 
 @pytest.mark.parametrize("names, kwargs", [("", {}), ("missing", {}),
                                            ("a", dict(dx="abc"))])
-def test_coadd_bad_input_returns_0(names, kwargs):
+def test_coadd_bad_input_fails(names, kwargs):
     session = _session(gui=_gui(a=SimpleNamespace(spec=_spec())))
-    assert session.edit.coadd(names, **kwargs) == 0
+    if kwargs:
+        with pytest.raises(InvalidParameter):
+            session.edit.coadd(names, **kwargs)
+    else:
+        assert session.edit.coadd(names, **kwargs) == 0  # until PR 3b
 
 
 # --- Flux recipes ---------------------------------------------------------
@@ -383,10 +398,12 @@ def test_rebin(snapshot):
 
 @pytest.mark.parametrize("params", [{"dx": "abc"}, {"xunit": "not_a_unit"},
                                     {"kappa": "x"}, {"xstart": "?"}])
-def test_rebin_bad_input_returns_0(params):
+def test_rebin_bad_input_is_refused(params):
     # Regression test for F23: the parsing error was logged but the recipe
-    # went on and raised UnboundLocalError instead of returning 0
-    assert _session().flux.rebin(**params) == 0
+    # went on and raised UnboundLocalError instead of returning 0; since
+    # phase 6-bis (PR 3) it raises InvalidParameter, which names it
+    with pytest.raises(InvalidParameter, match=f"{next(iter(params))}: "):
+        _session().flux.rebin(**params)
 
 
 def test_rebin_does_not_offer_norm():
@@ -411,8 +428,9 @@ def test_rebin_norm_is_ignored_with_a_warning(caplog):
                                plain.spec.y.value / plain.spec.cont.value)
 
 
-def test_smooth_bad_input_returns_0():
-    assert _session().flux.smooth("abc") == 0
+def test_smooth_bad_input_is_refused():
+    with pytest.raises(InvalidParameter, match="Smooth spectrum: sigma_kms: 'abc'"):
+        _session().flux.smooth("abc")
 
 
 @pytest.mark.parametrize("window, used", [("20", 21), ("1", 3)])
@@ -422,7 +440,8 @@ def test_running_std_window_is_made_odd(window, used):
     ref = session.spec.calculate_running_std("y", "running_std", used)
     np.testing.assert_array_equal(out.spec.get_column("running_std").value,
                                   ref.get_column("running_std").value)
-    assert session.flux.calculate_running_std(window_pix="abc") == 0
+    with pytest.raises(InvalidParameter):
+        session.flux.calculate_running_std(window_pix="abc")
 
 
 def test_equalize():
@@ -434,9 +453,11 @@ def test_equalize():
 
 @pytest.mark.parametrize("name, order", [("None", "0"), ("missing", "0"),
                                          ("ref", "abc")])
-def test_equalize_bad_input_returns_0(name, order):
+def test_equalize_bad_input_fails(name, order):
     session = _session(gui=_gui(ref=SimpleNamespace(spec=_spec())))
-    assert session.flux.equalize(name, order) == 0
+    error = InvalidParameter if order == "abc" else RecipeFailed
+    with pytest.raises(error, match="^Equalize flux to reference: "):
+        session.flux.equalize(name, order)
 
 
 def test_resample():
@@ -446,5 +467,6 @@ def test_resample():
 
 
 @pytest.mark.parametrize("name", ["None", "", "missing"])
-def test_resample_bad_input_returns_0(name):
-    assert _session(gui=_gui()).flux.resample(name) == 0
+def test_resample_bad_input_fails(name):
+    with pytest.raises(RecipeFailed, match="^Resample on another grid: "):
+        _session(gui=_gui()).flux.resample(name)

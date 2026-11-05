@@ -6,6 +6,7 @@ from astropy.io import ascii
 from astropy.table import Table
 from typing import TYPE_CHECKING, List
 
+from astrocook.recipes.errors import RecipeFailed
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -70,46 +71,47 @@ class RecipeFileV2:
         Returns
         -------
         bool
-            ``True`` if at least one file was successfully saved, ``False`` otherwise.
+            ``True`` if at least one file was saved, ``False`` if the targets
+            name nothing to export.
+
+        Raises
+        ------
+        RecipeError
+            If a file cannot be written (phase 6-bis, PR 3: it returned False).
         """
         spec_req, write_systems, syst_req, target_list = self._export_targets(targets)
         saved_any = False
 
-        try:
-            # 1. Spectrum Export
-            if spec_req:
-                valid_cols = ['x'] + spec_req
-                raw_data = {c: self._session.spec.t[c] for c in valid_cols}
-                out_path = os.path.join(path, f"{prefix}_spec.csv")
-                ascii.write(Table(raw_data), out_path, format='csv', overwrite=True)
-                saved_any = True
+        if spec_req:
+            valid_cols = ['x'] + spec_req
+            raw_data = {c: self._session.spec.t[c] for c in valid_cols}
+            out_path = os.path.join(path, f"{prefix}_spec.csv")
+            ascii.write(Table(raw_data), out_path, format='csv', overwrite=True)
+            saved_any = True
 
-            # 2. Systems Export (Refined)
-            if write_systems:
-                syst_table = self._session.systs.t
+        # 2. Systems Export (Refined)
+        if write_systems:
+            syst_table = self._session.systs.t
+            
+            if "systems" not in target_list:
+                # [NEW LOGIC] Always include 'series' and 'z' for context.
+                # We use dict.fromkeys to maintain order and uniqueness.
+                # 'series' first, then 'z', then other requested params.
+                base_cols = ['series', 'z']
+                # Add any other columns requested that aren't already z/series
+                extra_cols = [t for t in syst_req if t not in base_cols]
                 
-                if "systems" not in target_list:
-                    # [NEW LOGIC] Always include 'series' and 'z' for context.
-                    # We use dict.fromkeys to maintain order and uniqueness.
-                    # 'series' first, then 'z', then other requested params.
-                    base_cols = ['series', 'z']
-                    # Add any other columns requested that aren't already z/series
-                    extra_cols = [t for t in syst_req if t not in base_cols]
-                    
-                    cols_to_keep = base_cols + extra_cols
-                    # Verify they exist in the actual table before slicing
-                    cols_to_keep = [c for c in cols_to_keep if c in syst_table.colnames]
-                    syst_table = syst_table[cols_to_keep]
-                
-                out_path = os.path.join(path, f"{prefix}_systems.csv")
-                ascii.write(syst_table, out_path, format='csv', overwrite=True)
-                saved_any = True
-                
-            return saved_any
+                cols_to_keep = base_cols + extra_cols
+                # Verify they exist in the actual table before slicing
+                cols_to_keep = [c for c in cols_to_keep if c in syst_table.colnames]
+                syst_table = syst_table[cols_to_keep]
+            
+            out_path = os.path.join(path, f"{prefix}_systems.csv")
+            ascii.write(syst_table, out_path, format='csv', overwrite=True)
+            saved_any = True
+            
+        return saved_any
 
-        except Exception as e:
-            logger.error(f"Could not export the data: {e}", exc_info=True)
-            return False
         
     def export_ascii_outputs(self, targets: str) -> List[str]:
         """
@@ -181,35 +183,36 @@ class RecipeFileV2:
         Returns
         -------
         SessionV2
-            A new session instance containing the imported data. Returns ``0`` if the import fails.
+            A new session instance containing the imported data.
+
+        Raises
+        ------
+        RecipeError
+            If the file cannot be read, or its length is not that of the
+            spectrum.
         """
-        try:
-            # 1. Load the table
-            table = ascii.read(file_path)
-            current_len = len(self._session.spec.x)
-            import_len = len(table)
+        table = ascii.read(file_path)
+        current_len = len(self._session.spec.x)
+        import_len = len(table)
 
-            # 2. Safety Check: Pixel count must match
-            if import_len != current_len:
-                raise ValueError(f"Length mismatch: File has {import_len} pixels, but current session has {current_len}.")
+        # 2. Safety Check: Pixel count must match
+        if import_len != current_len:
+            raise RecipeFailed(f"The file has {import_len} pixels and the session "
+                               f"{current_len}: they must be the same.")
 
-            new_spec = self._session.spec
-            imported_cols = []
+        new_spec = self._session.spec
+        imported_cols = []
 
-            # 3. Iterate through columns in the ASCII file
-            for col_name in table.colnames:
-                # We skip 'x' to prevent grid misalignment, but use everything else
-                if col_name.lower() == 'x':
-                    continue
-                
-                values = np.array(table[col_name])
-                # Update the column (this handles both core y/dy and aux columns)
-                new_spec = new_spec.update_column(col_name, values)
-                imported_cols.append(col_name)
+        # 3. Iterate through columns in the ASCII file
+        for col_name in table.colnames:
+            # We skip 'x' to prevent grid misalignment, but use everything else
+            if col_name.lower() == 'x':
+                continue
+            
+            values = np.array(table[col_name])
+            # Update the column (this handles both core y/dy and aux columns)
+            new_spec = new_spec.update_column(col_name, values)
+            imported_cols.append(col_name)
 
-            logger.info(f"Columns imported: {', '.join(imported_cols)}.")
-            return self._session.with_new_spectrum(new_spec)
-
-        except Exception as e:
-            logger.error(f"Could not import the columns: {e}", exc_info=True)
-            return 0
+        logger.info(f"Columns imported: {', '.join(imported_cols)}.")
+        return self._session.with_new_spectrum(new_spec)

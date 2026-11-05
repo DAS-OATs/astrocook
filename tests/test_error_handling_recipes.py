@@ -7,6 +7,8 @@ messages follow the rule of phase 6 (``ROADMAP.md``).
 import logging
 
 import pytest
+from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
+from astrocook.recipes.params import typed_recipe
 
 from astrocook.core.session import SessionV2
 
@@ -93,7 +95,8 @@ def test_unreadable_min_b_of_lya_auto_fails(monkeypatch, caplog):
     session = _session(systs=_systs(("Ly_a", 4.0, 13.0, 5.0)))
     monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "components_auto",
                         lambda self, **kwargs: session)
-    assert session.absorbers.lya_auto(min_b="ten") == 0
+    with pytest.raises(InvalidParameter, match="min_b: 'ten' is not a number"):
+        session.absorbers.lya_auto(min_b="ten")
 
 
 def _failing_fit(monkeypatch, error):
@@ -132,10 +135,19 @@ def test_failed_trial_fits_of_metals_auto_are_counted(monkeypatch, caplog):
 def test_unexpected_error_in_metals_auto_reaches_the_caller(monkeypatch):
     # metals_auto has no boundary of its own: the error reaches the caller
     # (in the GUI, the worker, which shows it)
+    # A KeyError is one of the errors of the core that the boundary of the
+    # recipes turns into RecipeFailed (Guido, phase 6-bis, PR 3), with the
+    # original as its cause; another error (a bug) goes on as it is, with a
+    # note naming the recipe
     session = _session(systs=_systs(("CIV", 2.97, 13.6, 12.0)))
     _failing_fit(monkeypatch, KeyError("bug"))
-    with pytest.raises(KeyError):
+    with pytest.raises(RecipeFailed, match="Check for associated metals: 'bug' not found") as info:
         session.absorbers.metals_auto(ions="SiIV")
+    assert isinstance(info.value.__cause__, KeyError)
+    _failing_fit(monkeypatch, AttributeError("bug"))
+    with pytest.raises(AttributeError) as info:
+        session.absorbers.metals_auto(ions="SiIV")
+    assert "In the recipe absorbers.metals_auto" in info.value.__notes__[-1]
 
 
 def test_failed_delete_component_returns_0(monkeypatch):
@@ -209,25 +221,37 @@ def _without_continuum():
     return session, session.systs.components[0].uuid
 
 
+@typed_recipe
+def estimate_auto(self):
+    raise RecipeFailed("no unabsorbed pixels")
+
+
+_failing_estimate = estimate_auto
+
+
 @pytest.mark.parametrize("name", FIT_RECIPES)
 def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplog):
     # The 0 of the failed estimate went on as the session: "'int' object has
     # no attribute 'systs'"
     session, uuid = _without_continuum()
-    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", lambda self: 0)
+    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
     with caplog.at_level(logging.INFO):
-        assert FIT_RECIPES[name](session, uuid) == 0
+        assert FIT_RECIPES[name](session, uuid) == 0  # until PR 3c
     messages = [r.getMessage() for r in caplog.records]
     assert msg_continuum_estimated in messages
-    assert "The continuum could not be estimated: the recipe is not run." in messages
+    # The step and the reason are in the message (phase 6-bis, PR 3)
+    assert any("Auto-estimate continuum (single-click): no unabsorbed pixels." in m
+               for m in messages)
     assert not any("'int' object" in m for m in messages)
 
 
 def test_failed_estimate_of_the_continuum_stops_populate(monkeypatch):
     session, _ = _without_continuum()
-    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", lambda self: 0)
-    assert session.absorbers.populate_from_identification(
-        series_map_json='{"1": "CIV"}', z_map_json='{"1": 2.97}') == 0
+    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
+    with pytest.raises(RecipeFailed, match="Populate components from identification → "
+                                           "Auto-estimate continuum"):
+        session.absorbers.populate_from_identification(
+            series_map_json='{"1": "CIV"}', z_map_json='{"1": 2.97}')
 
 
 def test_refit_all_says_it_estimates_the_continuum(caplog):

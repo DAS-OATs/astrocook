@@ -12,6 +12,7 @@ import logging
 import numpy as np
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.registry import get_recipe
 
 from astrocook.gui.errors import QT_ERRORS
@@ -200,11 +201,12 @@ class ContinuumControlsMixin:
                             # that does not exist)
                             self._update_view_for_session(new_session, set_current_list_item=True)
                             
-                except ValueError as e:
+                except RecipeError as e:
                     # The knots cannot give a continuum (e.g. two at the same
                     # wavelength, phase 6): the user is told, not only the
-                    # log; another error is a bug, shown by the hook
-                    logger.error(f"Failed to save continuum: {e}")
+                    # log; another error is a bug, shown by the hook. The
+                    # recipe raises it, logged here once (phase 6-bis, PR 3)
+                    logger.error(str(e))
                     QMessageBox.warning(self, "Continuum Not Saved",
                                         f"The continuum could not be saved:\n{e}")
 

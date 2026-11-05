@@ -136,17 +136,19 @@ def test_strings_and_typed_values_give_the_same_result():
 
 
 def test_a_value_that_cannot_be_read_stops_the_recipe(caplog):
+    # An exception that names the recipe and the parameter; nothing logged
+    # by the recipe (phase 6-bis, PR 3: logged where it is caught)
     session = _session()
-    with caplog.at_level(logging.ERROR):
-        assert session.flux.smooth(sigma_kms="fifty") == 0
-    assert "The values of the parameters cannot be read" in caplog.text
-    assert "sigma_kms: 'fifty' is not a number" in caplog.text
+    with caplog.at_level(logging.ERROR), pytest.raises(InvalidParameter) as info:
+        session.flux.smooth(sigma_kms="fifty")
+    assert str(info.value) == "Smooth spectrum: sigma_kms: 'fifty' is not a number."
+    assert info.value.recipe == "flux.smooth"
+    assert caplog.text == ""
 
 
-def test_an_unknown_unit_stops_rebin(caplog):
-    with caplog.at_level(logging.ERROR):
-        assert _session().flux.rebin(xunit="furlongs") == 0
-    assert "xunit: 'furlongs' is not a unit" in caplog.text
+def test_an_unknown_unit_stops_rebin():
+    with pytest.raises(InvalidParameter, match="xunit: 'furlongs' is not a unit"):
+        _session().flux.rebin(xunit="furlongs")
 
 
 def test_parameters_outside_the_registry_pass_unchanged(caplog):

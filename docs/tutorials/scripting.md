@@ -37,14 +37,23 @@ out, e.g. the start of *Rebin*), or as strings, as typed in the dialogs and
 written in the session log (`sigma_kms="50.0"`): they are converted before
 the recipe runs. A value that cannot be converted, or that has no physical
 meaning (a negative smoothing width, a redshift of -1 or below, a column
-density outside 10-23), stops the recipe: it logs an error that names the
-parameter and returns `0` instead of a session, so check the result before
-going on:
+density outside 10-23), stops the recipe with an exception that says in
+which recipe it happened and why; so does a recipe that cannot do what was
+asked (a session that is not open, a file that cannot be read). Catch
+`RecipeError` to go on after it:
 ```python
-result = session.flux.smooth(sigma_kms="fifty")
-if result == 0:
-    print("The recipe failed")  # sigma_kms: 'fifty' is not a number
+from astrocook.recipes.errors import RecipeError
+
+try:
+    smoothed = session.flux.smooth(sigma_kms="fifty")
+except RecipeError as e:
+    print(e)  # Smooth spectrum: sigma_kms: 'fifty' is not a number.
 ```
+The error of a step of a longer recipe names both, e.g. *Populate
+components from identification → Auto-estimate continuum (single-click):
+...*. Some recipes of the *Edit* and *Absorbers* menus still report a
+failure by logging an error and returning `0` instead of a session, until
+the next release: check `result == 0` for them.
 The recipes and their parameters are listed in the
 [API reference](../api/astrocook.recipes).
 

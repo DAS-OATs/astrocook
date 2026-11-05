@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
 
 if TYPE_CHECKING:
@@ -105,6 +106,14 @@ class RecipeWorker(QRunnable):
             
             import traceback
             
+            if isinstance(e, RecipeError):
+                # The recipe could not do what was asked: the message names
+                # the recipe (and the step of a pipeline) and the reason.
+                # Logged here, once (phase 6-bis, PR 3)
+                logger.error(str(e))
+                self.signals.error.emit(("Recipe Aborted", str(e), ""))
+                return
+
             # Check if this is a standard "user error" (like empty split, bad input)
             is_user_error = isinstance(e, (ValueError, TypeError))
             
@@ -238,7 +247,10 @@ class ScriptWorker(QRunnable):
         except Exception as e:
             # 5. Failure! Emit the error
             line_info = f"line {i+1}: {line}" if 'i' in locals() else "N/A"
-            logger.error(f"The script failed at {line_info}: {e}", exc_info=True)
+            # A RecipeError names the recipe and the reason: no traceback
+            # (phase 6-bis, PR 3); another error is a bug, with it
+            logger.error(f"The script failed at {line_info}: {e}",
+                         exc_info=not isinstance(e, RecipeError))
             self.signals.error.emit((i+1, line, str(e)))
 
 class SessionLoadSignals(QObject):

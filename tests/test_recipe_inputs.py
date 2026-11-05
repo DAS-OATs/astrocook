@@ -2,10 +2,9 @@
 
 A battery of edge cases, the same as the comparison with 2.4.0 made for
 the PR: for each value given to a parameter, the value the recipe uses
-(the recipe must give the same result as with that typed value), REFUSED
-(the conversion stops the recipe: 0 and an error that names the
-parameter) or FAILS (the value is converted, then the recipe itself
-fails, e.g. on a session that is not open). The
+(the recipe must give the same result as with that typed value), or how
+it fails (REFUSED, FAILS, RETURNS_0, RAISES: ``recipe_outcomes.py``; since
+phase 6-bis, PR 3, an exception that names the recipe). The
 cases whose outcome changed from 2.4.0 say what 2.4.0 did; every other
 case behaved the same. Decisions of Guido: 1 and 0 are booleans; an empty
 field is None only for a parameter whose default is None (an empty kappa
@@ -28,9 +27,8 @@ from astrocook.core.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 
-REFUSED = "refused"  # by the conversion: 0, an error that names the parameter
-FAILS = "fails"  # converted, then the recipe fails (e.g. a session not open): 0
-RAISES = "raises"  # converted, then an exception leaves the recipe (PR 3 turns them into errors)
+# The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
+from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, RETURNS_0, check_failure  # noqa: E402,F401
 NAN = float("nan")
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 CATEGORY = {"estimate_auto": "continuum", "find_absorbed": "continuum",
@@ -183,9 +181,9 @@ CASES = [
     ('estimate_auto', 'fudge', '1.0', '1.0'),
     ('estimate_auto', 'fudge', 1.0, '1.0'),  # 2.4.0: crashed (AttributeError)
     ('estimate_auto', 'fudge', 1, '1'),  # 2.4.0: crashed (AttributeError)
-    ('estimate_auto', 'fudge', 'abc', FAILS),
+    ('estimate_auto', 'fudge', 'abc', REFUSED),
     ('estimate_auto', 'fudge', None, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('estimate_auto', 'fudge', '', FAILS),
+    ('estimate_auto', 'fudge', '', REFUSED),
     ('find_absorbed', 'smooth_len_lya', '2.0', 2.0),
     ('find_absorbed', 'smooth_len_lya', 2.0, 2.0),
     ('find_absorbed', 'smooth_len_lya', 2, 2.0),
@@ -269,9 +267,9 @@ CASES = [
     ('fit_continuum', 'fudge', '1.0', '1.0'),
     ('fit_continuum', 'fudge', 1.0, '1.0'),  # 2.4.0: crashed (AttributeError)
     ('fit_continuum', 'fudge', 1, '1'),  # 2.4.0: crashed (AttributeError)
-    ('fit_continuum', 'fudge', 'abc', FAILS),
+    ('fit_continuum', 'fudge', 'abc', REFUSED),
     ('fit_continuum', 'fudge', None, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('fit_continuum', 'fudge', '', FAILS),
+    ('fit_continuum', 'fudge', '', REFUSED),
     ('fit_powerlaw', 'kappa', '2.0', 2.0),
     ('fit_powerlaw', 'kappa', 2.0, 2.0),
     ('fit_powerlaw', 'kappa', 2, 2.0),
@@ -346,8 +344,8 @@ CASES = [
     ('rebin', 'xstart', 'inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xstart', '-inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xstart', True, REFUSED),  # 2.4.0: accepted as 1
-    ('rebin', 'xstart', '-1', RAISES),
-    ('rebin', 'xstart', '0', RAISES),
+    ('rebin', 'xstart', '-1', FAILS),
+    ('rebin', 'xstart', '0', FAILS),
     ('rebin', 'xstart', '3,5', REFUSED),
     ('rebin', 'xstart', '400', 400.0),
     ('rebin', 'xstart', 400, 400.0),
@@ -364,8 +362,8 @@ CASES = [
     ('rebin', 'xend', 'inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xend', '-inf', REFUSED),  # 2.4.0: crashed (ValueError)
     ('rebin', 'xend', True, REFUSED),  # 2.4.0: accepted as 1
-    ('rebin', 'xend', '-1', RAISES),
-    ('rebin', 'xend', '0', RAISES),
+    ('rebin', 'xend', '-1', FAILS),
+    ('rebin', 'xend', '0', FAILS),
     ('rebin', 'xend', '3,5', REFUSED),
     ('rebin', 'xend', '440', 440.0),
     ('rebin', 'xend', 440, 440.0),
@@ -414,10 +412,10 @@ CASES = [
     ('rebin', 'filling', '3,5', REFUSED),
     ('rebin', 'xunit', 'km/s', 'km/s'),
     ('rebin', 'xunit', 'nm', 'nm'),
-    ('rebin', 'xunit', 'bogus', FAILS),
-    ('rebin', 'xunit', '', RAISES),
+    ('rebin', 'xunit', 'bogus', REFUSED),
+    ('rebin', 'xunit', '', FAILS),
     ('rebin', 'xunit', None, REFUSED),
-    ('rebin', 'xunit', 5, RAISES),
+    ('rebin', 'xunit', 5, FAILS),
     ('equalize', 'order', '21', 21),
     ('equalize', 'order', 21, 21),
     ('equalize', 'order', '21.0', REFUSED),
@@ -456,17 +454,11 @@ def test_input(sessions, caplog, name, param, value, expected):
 
 
 def _check(sessions, caplog, name, param, value, expected):
-    if expected == RAISES:
-        with pytest.raises(Exception):
-            _run(sessions, name, param, value)
+    if expected in FAILURES:
+        check_failure(lambda: _run(sessions, name, param, value), name, param, expected)
         return
     with caplog.at_level(logging.ERROR):
         result = _run(sessions, name, param, value)
-    if expected in (REFUSED, FAILS):
-        assert isinstance(result, int) and result == 0
-        if expected == REFUSED:
-            assert f"{param}: " in caplog.text  # the error names the parameter
-        return
     assert isinstance(result, SessionV2), caplog.text
     with caplog.at_level(logging.ERROR):
         reference = _run(sessions, name, param, expected)

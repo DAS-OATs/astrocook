@@ -3,7 +3,8 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Optional
 
-from astrocook.recipes.messages import msg_param_fail, msg_session_not_found
+from astrocook.recipes.errors import InvalidParameter, RecipeFailed
+from astrocook.recipes.messages import msg_session_not_found
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -84,6 +85,16 @@ FLUX_RECIPES_SCHEMAS = {
 }
 
 
+def _find_session(session: 'SessionV2', name: str):
+    """The history of the open session called ``name`` (RecipeFailed if
+    there is none, or no GUI to find it in)."""
+    gui = getattr(session, '_gui', None)
+    for hist in getattr(gui, 'session_histories', None) or []:
+        if hist.display_name == name:
+            return hist
+    raise RecipeFailed(msg_session_not_found.format(name=name))
+
+
 class RecipeFluxV2:
     """
     Recipes for manipulating spectral flux and grid sampling.
@@ -120,28 +131,19 @@ class RecipeFluxV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added.
         """
         window_pix_i = max(window_pix, 3)
         if window_pix_i % 2 == 0: # Ensure it's odd
             window_pix_i += 1
 
-        try:
-            # 1. Call the immutable V2 operation
-            new_spec_v2 = self._session.spec.calculate_running_std(
-                input_col=input_col,
-                output_col=output_col,
-                window_pix=window_pix_i
-            )
-            
-            # 2. Return a NEW SessionV2 instance
-            return self._session.with_new_spectrum(new_spec_v2)
-            
-        except Exception as e:
-            logger.error(f"Could not compute the running standard deviation: {e}", exc_info=True)
-            return 0
+        new_spec_v2 = self._session.spec.calculate_running_std(
+            input_col=input_col,
+            output_col=output_col,
+            window_pix=window_pix_i
+        )
+        return self._session.with_new_spectrum(new_spec_v2)
 
     @typed_recipe
     def smooth(self, sigma_kms: float = 100.0) -> 'SessionV2':
@@ -159,18 +161,11 @@ class RecipeFluxV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.
         """
-        try:
-            new_spec_v2 = self._session.spec.smooth(
-                sigma_kms=sigma_kms
-            )
-            return self._session.with_new_spectrum(new_spec_v2)
-        except Exception as e:
-            logger.error(f"Could not smooth the spectrum: {e}", exc_info=True)
-            return 0
+        new_spec_v2 = self._session.spec.smooth(sigma_kms=sigma_kms)
+        return self._session.with_new_spectrum(new_spec_v2)
 
     @typed_recipe
     def rebin(self, xstart: Optional[float] = None, xend: Optional[float] = None,
@@ -208,9 +203,8 @@ class RecipeFluxV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum.
         """
 
         xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
@@ -219,9 +213,8 @@ class RecipeFluxV2:
             # V1 logic from cookbook_flux.py uses the unit attached to xunit for dx
             dx_q = au.Quantity(dx, au.Unit(xunit))
         except (ValueError, TypeError):
-            # Return 0 like the other recipes (findings register F23)
-            logger.error(f"{msg_param_fail} xunit: {xunit!r} is not a unit.")
-            return 0
+            # (Findings register F23: it crashed the GUI)
+            raise InvalidParameter(f"xunit: {xunit!r} is not a unit") from None
 
         # The V1 normalization was never applied in V2 and is not offered
         # any more (F37, #560): say so instead of ignoring it silently
@@ -257,26 +250,15 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new session with the scaled flux. Returns ``0`` (int) on failure.
+            A new session with the scaled flux. 
         """
         if reference_session in ['None', '']:
-            logger.error("No reference session is selected.")
-            return 0
-        try:
-            # Find the reference session object via the GUI bridge
-            ref_hist = next((h for h in self._session._gui.session_histories 
-                            if h.display_name == reference_session), None)
-            
-            if not ref_hist:
-                raise ValueError(msg_session_not_found.format(name=reference_session))
-
-            new_spec = self._session.spec.equalize_to_reference(
-                ref_hist.current_state.spec, order=order
-            )
-            return self._session.with_new_spectrum(new_spec)
-        except Exception as e:
-            logger.error(f"Could not equalize the flux: {e}", exc_info=True)
-            return 0
+            raise RecipeFailed("No reference session is selected.")
+        ref_hist = _find_session(self._session, reference_session)
+        new_spec = self._session.spec.equalize_to_reference(
+            ref_hist.current_state.spec, order=order
+        )
+        return self._session.with_new_spectrum(new_spec)
     
     @typed_recipe
     def resample(self, target_session: str = 'None') -> 'SessionV2':
@@ -294,41 +276,16 @@ class RecipeFluxV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid.
         """
         if target_session == 'None' or target_session == '':
-            logger.error("No target session is selected.")
-            return 0
-
-        try:
-            # 1. Find the target session object from the main window
-            target_hist = None
-            if hasattr(self._session, '_gui') and hasattr(self._session._gui, 'session_histories'):
-                for hist in self._session._gui.session_histories:
-                    if hist.display_name == target_session:
-                        target_hist = hist
-                        break
-            
-            if target_hist is None:
-                raise ValueError(f"Could not find an open session named '{target_session}'.")
-
-            target_spec = target_hist.current_state.spec
-            if target_spec is None:
-                 raise ValueError(f"Target session '{target_session}' has no spectrum data.")
-
-            # 2. Execute the immutable V2 operation
-            new_spec_v2 = self._session.spec.resample_on_grid(
-                target_grid_spec=target_spec
-            )
-            
-            # 3. Return a NEW SessionV2 instance
-            return self._session.with_new_spectrum(new_spec_v2)
-            
-        except Exception as e:
-            logger.error(f"Could not resample the spectrum: {e}", exc_info=True)
-            return 0
+            raise RecipeFailed("No target session is selected.")
+        target_spec = _find_session(self._session, target_session).current_state.spec
+        if target_spec is None:
+            raise RecipeFailed(f"The session '{target_session}' has no spectrum.")
+        new_spec_v2 = self._session.spec.resample_on_grid(target_grid_spec=target_spec)
+        return self._session.with_new_spectrum(new_spec_v2)
         
     @typed_recipe
     def calibrate_from_magnitudes(self, magnitudes: str = "SDSS_r=17.0") -> 'SessionV2':
@@ -346,16 +303,8 @@ class RecipeFluxV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux,
-            or 0 on failure.
+        SessionV2
+            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.
         """
-        try:
-            # The API layer now handles all the complexity
-            new_spec_v2 = self._session.spec.calibrate(magnitudes)
-            return self._session.with_new_spectrum(new_spec_v2)
-            
-        except Exception as e:
-            # Standard error logging for the worker
-            logger.error(f"Could not calibrate the flux: {e}", exc_info=True)
-            return 0
+        new_spec_v2 = self._session.spec.calibrate(magnitudes)
+        return self._session.with_new_spectrum(new_spec_v2)

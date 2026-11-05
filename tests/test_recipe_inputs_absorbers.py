@@ -6,10 +6,9 @@ small mock (a CIV doublet on the red side, two Ly-a lines in the forest,
 z_em = 2.7, R = 45000), the value the recipe uses (the recipe must give
 the same result as with that typed value: the data, the mask, the
 components with their flags, the constraints and the identification),
-REFUSED (the conversion stops the recipe: 0 and an error that names the
-parameter), FAILS (converted, then the recipe fails: 0), RAISES (an
-exception leaves the recipe; PR 3) or ACCEPTED (fit_bayesian, whose
-sampling is not seeded: the result is not compared). The cases whose
+how it fails (REFUSED, FAILS, RETURNS_0, RAISES: ``recipe_outcomes.py``;
+PR 3c turns the RETURNS_0 into exceptions) or ACCEPTED (fit_bayesian,
+whose sampling is not seeded: the result is not compared). The cases whose
 outcome changed from 2.4.0 say what 2.4.0 did (the battery was run on
 master before the code changed). Guido's decisions on the bounds: the
 upper bounds of the fits within those of the fitter (max_logN in
@@ -31,9 +30,8 @@ import pytest
 from astrocook.core.session import SessionV2
 from astrocook.mocks import MockComponent, MockTruth, generate
 
-REFUSED = "refused"
-FAILS = "fails"
-RAISES = "raises"
+# The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
+from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, RETURNS_0, check_failure  # noqa: E402,F401
 ACCEPTED = "accepted"
 NAN = float("nan")
 TRUTH = MockTruth(components=[MockComponent("CIV", 1.93, 13.8, 10.0),
@@ -213,8 +211,8 @@ CASES = [
     ('components_auto', 'base', 'region_limit', 'None', {}, 'None'),
     ('components_auto', 'base', 'region_limit', 'red_side', {}, 'red_side'),
     ('components_auto', 'base', 'region_limit', 'lya_forest', {}, 'lya_forest'),
-    ('components_auto', 'base', 'region_limit', 'nope', {}, FAILS),
-    ('components_auto', 'base', 'region_limit', '', {}, FAILS),
+    ('components_auto', 'base', 'region_limit', 'nope', {}, RETURNS_0),
+    ('components_auto', 'base', 'region_limit', '', {}, RETURNS_0),
     ('components_auto', 'base', 'region_limit', None, {}, REFUSED),
     ('components_auto', 'base', 'multiplets', 'CIV', {}, 'CIV'),
     ('components_auto', 'base', 'multiplets', 'CIV,Ly_ab', {}, 'CIV,Ly_ab'),
@@ -510,8 +508,8 @@ CASES = [
     ('identify_lines', 'base', 'debug_rating', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('identify_lines', 'base', 'debug_rating', 'None', {}, REFUSED),  # 2.4.0: accepted as False
     ('populate_from_identification', 'ident', 'series_map_json', SERIES_JSON, {'z_map_json': Z_JSON}, SERIES_JSON),
-    ('populate_from_identification', 'ident', 'series_map_json', '', {'z_map_json': Z_JSON}, FAILS),
-    ('populate_from_identification', 'ident', 'series_map_json', 'abc', {'z_map_json': Z_JSON}, FAILS),
+    ('populate_from_identification', 'ident', 'series_map_json', '', {'z_map_json': Z_JSON}, RETURNS_0),
+    ('populate_from_identification', 'ident', 'series_map_json', 'abc', {'z_map_json': Z_JSON}, RETURNS_0),
     ('populate_from_identification', 'ident', 'series_map_json', None, {'z_map_json': Z_JSON}, REFUSED),
     ('populate_from_identification', 'ident', 'series_map_json', '{}', {'z_map_json': Z_JSON}, '{}'),
     ('add_component', 'fitted', 'z', '2.0', {'series': 'CIV'}, 2.0),
@@ -908,7 +906,7 @@ CASES = [
     ('add_linked_system', 'fitted', 'series_list', 'CIV', {'z': 1.931}, 'CIV'),
     ('add_linked_system', 'fitted', 'series_list', 'CIV,SiIV', {'z': 1.931}, 'CIV,SiIV'),
     ('add_linked_system', 'fitted', 'series_list', 'nope', {'z': 1.931}, 'nope'),
-    ('add_linked_system', 'fitted', 'series_list', '', {'z': 1.931}, FAILS),
+    ('add_linked_system', 'fitted', 'series_list', '', {'z': 1.931}, RETURNS_0),
     ('add_linked_system', 'fitted', 'series_list', None, {'z': 1.931}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('optimize_system', 'fitted', 'max_components', '2', {'uuid': UUID}, 2),
     ('optimize_system', 'fitted', 'max_components', 2, {'uuid': UUID}, 2),
@@ -1128,8 +1126,8 @@ CASES = [
     ('refit_all', 'fitted', 'region_limit', 'None', {}, 'None'),
     ('refit_all', 'fitted', 'region_limit', 'red_side', {}, 'red_side'),
     ('refit_all', 'fitted', 'region_limit', 'lya_forest', {}, 'lya_forest'),
-    ('refit_all', 'fitted', 'region_limit', 'nope', {}, FAILS),
-    ('refit_all', 'fitted', 'region_limit', '', {}, FAILS),
+    ('refit_all', 'fitted', 'region_limit', 'nope', {}, RETURNS_0),
+    ('refit_all', 'fitted', 'region_limit', '', {}, RETURNS_0),
     ('refit_all', 'fitted', 'region_limit', None, {}, REFUSED),
     ('refit_all', 'fitted', 'selected_uuids', [UUID], {}, [UUID]),
     ('refit_all', 'fitted', 'selected_uuids', LIST_AS_TEXT, {}, [UUID]),  # 2.4.0: accepted, the text not read as a list
@@ -1208,17 +1206,12 @@ def test_input(caplog, name, session, param, value, base, expected):
 
 
 def _check(caplog, name, session, param, value, base, expected):
-    if expected == RAISES:
-        with pytest.raises(Exception):
-            _run(name, session, param, value, base)
+    if expected in FAILURES:
+        check_failure(lambda: _run(name, session, param, value, base), name, param,
+                      expected)
         return
     with caplog.at_level(logging.ERROR):
         result = _run(name, session, param, value, base)
-    if expected in (REFUSED, FAILS):
-        assert isinstance(result, int) and result == 0
-        if expected == REFUSED:
-            assert f"{param}: " in caplog.text  # the error names the parameter
-        return
     assert isinstance(result, SessionV2), caplog.text
     if expected == ACCEPTED:
         return
