@@ -2522,10 +2522,10 @@ record):
   registry: the tools grouped (a tool per menu with the recipe as a
   parameter), or a few generic tools (`recipes_list`, `recipe_describe`,
   `recipe_run`) next to the most used ones.
-  Later (section 4, Guido, 6-bis PR 6): from the sequences of tools the
-  agents run, and what they compute without a tool, the recipes worth
-  adding.
-- *Decisions* (all agreed with Guido in PR 0, as proposed).
+  Where to add recipes: decision 6 below records the gaps the agents
+  meet (Guido, PR 0; section 4 had it for later).
+- *Decisions* (1-5 agreed with Guido in PR 0, as proposed; 6 and 7 asked
+  by Guido in PR 0, their design to be agreed in their PRs).
   1. *Destructive recipes* (the lesson of the pilot: `doublets_auto`
      removed 190 components, the agent protected the work only by
      opening a second copy).
@@ -2598,6 +2598,45 @@ record):
      The text: one paragraph per step, with the references of the
      algorithms (e.g. the atomic data of *Atomic Data*). How it reads is
      Guido's to judge, on a draft in its PR. Agreed.
+  6. *Gaps of the collection of recipes* (Guido, PR 0: know where to
+     direct the work). A gap is something the analysis needed and no
+     recipe provided. Two sources:
+     - *declared by the agent*: a kind of note of decision 4
+       (`session_note(..., kind="gap")`: what was needed, what the agent
+       did instead, e.g. "z_em from the Ly-a peak, computed with Python
+       on the flux"; Guido's trial had several); the instructions of the
+       server ask the agent to declare a gap whenever it works outside
+       the tools;
+     - *seen by the server*: a prerequisite that no recipe provides (as
+       `z_em` today), a tool that failed on a valid request, a recipe
+       whose result the agent undid (decision 1: the next step after an
+       undo says why, if the agent gave a reason).
+     The gaps are saved with the session (its log, decision 4) and also
+     appended to a local file of the user (one line each, JSON: date,
+     version, kind, text, session), never sent anywhere; a command (and a
+     tool) summarizes them, grouped, as the input of the plan of a phase
+     (e.g. phase 7, phase 6-quater). Not stored: the data of the user
+     beyond the name of the session and the text the agent wrote.
+  7. *The GUI launched by the server* (Guido, PR 0: the user sees the
+     progress of the analysis as it happens). The GUI is a separate
+     process; options:
+     - (a) *snapshot*: a tool `gui_open(session_id)` saves the current
+       state to an archive and launches `astrocook <archive>`; the user
+       sees the state at that moment and asks again for a newer one;
+     - (b) *follow*: as (a), and the GUI follows the archive: the server
+       saves it after every recipe and the GUI reloads it (a file
+       watcher, `QFileSystemWatcher`; the GUI has none today), keeping
+       the view (range, zoom, the open System Inspector) where it can.
+       The followed session is read-only in the GUI (a banner says so;
+       a copy can be made to edit it), so that the user and the agent do
+       not change the same session at once;
+     - (c) *shared session*: the GUI talks to the server (a local
+       socket), the user's edits go back to the agent; the "review
+       bench" of section 4, item 4, in full, but a protocol between two
+       processes and the conflicts of two editors: not in this phase.
+     Proposal: (b). Not available in the Docker image (no display): the
+     tool says so. On macOS the app is launched as the trial did
+     (`open -a Astrocook`), elsewhere the `astrocook` command.
 - *PRs*, one at a time, each with characterization tests first:
   0. this plan (docs only);
   1. *generated tools*: one tool per recipe from the registry (schema
@@ -2624,13 +2663,24 @@ record):
   4. *progress*: the `>> PROGRESS` lines of the recipes sent as MCP
      progress notifications, and a message for the recipes that run
      long without them;
-  5. *decisions in the log* (decision 4) and the *natural-language log*
-     (decision 5), perhaps in two PRs;
+  5. *decisions in the log* (decision 4), the *gaps* (decision 6) and
+     the *natural-language log* (decision 5), perhaps in three PRs;
+  5-bis. *the GUI from the server* (decision 7): the tool, the file
+     watcher and the read-only followed session in the GUI (with the GUI
+     benchmark, `bench_gui.py`, and the screenshots of the scenes it
+     touches);
   6. *Docker* (decision 2): the image, its CI job, the docs;
   7. *trials* with fresh agents, as in section 4.2 (the mock archive
      without its true continuum; J0103-1305; a request that needs the
      editing tools), and a report in section 4, with the measure of the
-     number of tools (the principle above);
+     number of tools (the principle above). Then *a real analysis*
+     (Guido, PR 0): Guido uses the server on a spectrum and a scientific
+     question of his own, as in the pilot but with the full server and
+     the GUI following it; the criterion of success: a result he would
+     sign after reviewing it in the GUI, and a log he could replay and
+     describe. What fails becomes a finding (for phase 7 or the server),
+     and the gaps recorded (decision 6) the first list of recipes to
+     add;
   8. closing: the docs page *Using Astrocook from an AI Agent*
      rewritten for the full server, the result of the phase.
   Found along the way: the startup hook of the cloud sessions created
