@@ -164,13 +164,16 @@ class MainPanelsMixin:
         bar.addPermanentWidget(self.status_coords)
         self.plot_viewer.toolbar.set_message_sink(self.status_coords.setText)
 
-    def show_status(self, text: str):
+    def show_status(self, text: str, details: str = ""):
         """The outcome of the last recipe, in the status bars of the window
-        and of the System Inspector."""
-        self.status_recipe.setText(text)
+        and of the System Inspector; ``details`` in their tooltips."""
+        labels = [self.status_recipe]
         inspector = getattr(self, 'system_inspector', None)
         if inspector is not None:
-            inspector.status_recipe.setText(text)
+            labels.append(inspector.status_recipe)
+        for label in labels:
+            label.setText(text)
+            label.setToolTip(details)
 
     def _setup_empty_view(self):
         """The window without sessions: the logo, a button to open a file,

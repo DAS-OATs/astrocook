@@ -11,6 +11,7 @@ closed.
 Message boxes are replaced by stubs that record what would have been shown
 (modal dialogs would block an offscreen test).
 """
+import logging
 import os
 import subprocess
 import sys
@@ -448,7 +449,7 @@ def test_status_bar_outcome_of_a_recipe(qtbot, loaded):
     assert loaded.system_inspector.status_recipe.text() == text
 
 
-def test_status_bar_components_and_warnings(loaded):
+def test_status_bar_components_and_warnings(loaded, caplog):
     import time
     state = loaded.active_history.current_state
     n = len(state.systs.components)
@@ -457,6 +458,19 @@ def test_status_bar_components_and_warnings(loaded):
     loaded._report_recipe_outcome("clean_negligible", state)
     text = loaded.status_recipe.text()
     assert f"{n + 3} \u2192 {n} components" in text and text.endswith("with 2 warnings")
+    # What the result says (phase 6-bis, PR 4c): counted, in full in the
+    # tooltip and in the log
+    from astrocook.recipes.result import RecipeResult
+    loaded.last_recipe_result = RecipeResult(
+        "absorbers.clean_negligible", "Clean negligible", state, False, None, {},
+        extra={"removed": {"a": "too weak", "b": "too weak"}})
+    loaded._recipe_started = (time.perf_counter(), "absorbers", "clean_negligible", n + 3)
+    with caplog.at_level(logging.INFO, logger="astrocook"):
+        loaded._report_recipe_outcome("clean_negligible", state)
+    assert "components, 2 removed, with 2 warnings" in loaded.status_recipe.text()
+    assert loaded.status_recipe.toolTip() == "2 components removed: too weak."
+    assert "2 components removed: too weak." in caplog.text
+    text = loaded.status_recipe.text()
     # Only the recipe that was started
     loaded._recipe_started = (time.perf_counter(), "edit", "set_properties", n)
     loaded._report_recipe_outcome("smooth", state)

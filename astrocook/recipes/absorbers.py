@@ -841,9 +841,13 @@ class RecipeAbsorbersV2:
             # A boundary of the step (B, Guido's choice, phase 6): the result of
         # the pipeline is kept if the cleaning fails, with a WARNING
         try:
+            # The refit is limited to the forest, as the pipeline: before
+            # phase 6-bis (PR 4c, F102, Guido's decision) it refitted every
+            # component of the session, e.g. the metals of the red side
             final_session = _remove_narrow(final_session, 'Ly_a', min_b_val, dict(
                 max_nfev='200', z_window_kms=z_window_kms, group_depth='1',
-                max_group_size='25', max_b=max_b, max_logN=max_logN))
+                max_group_size='25', max_b=max_b, max_logN=max_logN,
+                region_limit='lya_forest'))
         except Exception as e:
             _warn_cleaning_failed(final_session, 'Ly_a', min_b_val, e)
         final_session = _drop_negligible(final_session)
