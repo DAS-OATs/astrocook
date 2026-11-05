@@ -488,6 +488,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextvars</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -645,6 +647,33 @@
 <span class="n">DATA_ERRORS</span> <span class="o">=</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">_Steps</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The recipes run inside the one that :func:`collect_steps` watches."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="n">_STEPS</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s1">'astrocook_recipe_steps'</span><span class="p">,</span>
+                                                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="collect_steps">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.collect_steps">[docs]</a>
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_steps</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Collect, as ``category.name``, the recipes that the next recipe runs</span>
+<span class="sd">    as its steps (phase 6-bis, PR 4: the ``steps`` of a RecipeResult)."""</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">_Steps</span><span class="p">()</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">_STEPS</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">steps</span><span class="o">.</span><span class="n">names</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">_STEPS</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="typed_recipe">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.typed_recipe">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">typed_recipe</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
@@ -667,6 +696,11 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="n">where</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">))</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">_STEPS</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">steps</span><span class="o">.</span><span class="n">depth</span><span class="p">:</span>
+                <span class="n">steps</span><span class="o">.</span><span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">steps</span><span class="o">.</span><span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">passed</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">'self'</span><span class="p">}</span>
@@ -682,6 +716,9 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">e</span><span class="o">.</span><span class="n">add_note</span><span class="p">(</span><span class="sa">f</span><span class="s2">"In the recipe </span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">where</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
             <span class="k">raise</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">steps</span><span class="o">.</span><span class="n">depth</span> <span class="o">-=</span> <span class="mi">1</span>
 
     <span class="n">wrapper</span><span class="o">.</span><span class="n">typed_recipe</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># checked by tests/test_recipe_params.py</span>
     <span class="k">return</span> <span class="n">wrapper</span></div>

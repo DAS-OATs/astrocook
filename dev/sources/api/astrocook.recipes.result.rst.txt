@@ -1,0 +1,7 @@
+astrocook.recipes.result module
+===============================
+
+.. automodule:: astrocook.recipes.result
+   :members:
+   :show-inheritance:
+   :undoc-members:

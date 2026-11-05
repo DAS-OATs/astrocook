@@ -458,6 +458,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -606,6 +607,13 @@ phase 6-bis, PR 3). The others, usually bugs, go on as they are</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.params.collect_steps">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">collect_steps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/params.html#collect_steps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.params.collect_steps" title="Link to this definition">#</a></dt>
+<dd><p>Collect, as <code class="docutils literal notranslate"><span class="pre">category.name</span></code>, the recipes that the next recipe runs
+as its steps (phase 6-bis, PR 4: the <code class="docutils literal notranslate"><span class="pre">steps</span></code> of a RecipeResult).</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="astrocook.recipes.params.typed_recipe">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.params.</span></span><span class="sig-name descname"><span class="pre">typed_recipe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/params.html#typed_recipe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.params.typed_recipe" title="Link to this definition">#</a></dt>
 <dd><p>Decorator of a recipe method, its boundary.</p>
@@ -674,6 +682,7 @@ logged where it is caught (phase 6-bis, PR 3).</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.convert_params"><code class="docutils literal notranslate"><span class="pre">convert_params()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.resolve_params"><code class="docutils literal notranslate"><span class="pre">resolve_params()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.DATA_ERRORS"><code class="docutils literal notranslate"><span class="pre">DATA_ERRORS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.collect_steps"><code class="docutils literal notranslate"><span class="pre">collect_steps()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.params.typed_recipe"><code class="docutils literal notranslate"><span class="pre">typed_recipe()</span></code></a></li>
 </ul>
   </nav></div>

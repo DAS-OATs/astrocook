@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.recipes.result &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/recipes/result';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.recipes.result</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.recipes.result</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The structured result of a recipe (phase 6-bis, PR 4).</span>
+
+<span class="sd">:func:`run` runs a recipe of the registry and returns a :class:`RecipeResult`:</span>
+<span class="sd">the new session (or sessions), what changed in it, listed and not only</span>
+<span class="sd">counted (the components added, removed and changed, the columns, the</span>
+<span class="sd">properties), the warnings the recipe logged, the recipes it ran as steps,</span>
+<span class="sd">and the values of the parameters it used. The GUI, the MCP server and the</span>
+<span class="sd">scripts that want the whole result call it; the methods of the recipes</span>
+<span class="sd">keep returning the session (Guido, decision 1 of the phase).</span>
+
+<span class="sd">What changed is found by comparing the session before and after, in one</span>
+<span class="sd">place for every recipe (Guido's choice at the start of PR 4: a generic</span>
+<span class="sd">comparison, not a description written by each recipe). What a recipe</span>
+<span class="sd">knows and the comparison cannot see (the score of an identification, the</span>
+<span class="sd">groups a fit could not fit) goes in ``extra``, PR 4b; the fields of what</span>
+<span class="sd">the algorithms do not provide yet (the uncertainty of the continuum, the</span>
+<span class="sd">credibility of an identification and its alternatives) are there, empty,</span>
+<span class="sd">so that phase 7 fills them without changing the interface.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1">#: The parameters of a component compared by :func:`compare_sessions`</span>
+<span class="n">COMPONENT_FIELDS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'series'</span><span class="p">,</span> <span class="s1">'z'</span><span class="p">,</span> <span class="s1">'logN'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'btur'</span><span class="p">,</span> <span class="s1">'resol'</span><span class="p">,</span> <span class="s1">'flags'</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ComponentRef">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.ComponentRef">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentRef</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A component, as a change names it."""</span>
+    <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">float</span></div>
+
+
+
+<div class="viewcode-block" id="ComponentChange">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.ComponentChange">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentChange</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A component whose parameters changed: ``changed`` maps a parameter</span>
+<span class="sd">    to its values before and after."""</span>
+    <span class="n">component</span><span class="p">:</span> <span class="n">ComponentRef</span>
+    <span class="n">changed</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span></div>
+
+
+
+<div class="viewcode-block" id="Changes">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.Changes">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Changes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What a recipe changed in a session (:func:`compare_sessions`)."""</span>
+    <span class="n">components_added</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ComponentRef</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">components_removed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ComponentRef</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">components_changed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ComponentChange</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">columns_added</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">columns_removed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">columns_changed</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="c1">#: name, object, pixels, z_em, resolution (median R), units: before and after</span>
+    <span class="n">properties_changed</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""True if nothing changed."""</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components_added</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_removed</span>
+                    <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_changed</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_added</span>
+                    <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_removed</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_changed</span>
+                    <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_changed</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Changes.describe">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.Changes.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The changes in a few words each, e.g. ``['3 components added',</span>
+<span class="sd">        "column 'cont' changed"]``."""</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">what</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"added"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_added</span><span class="p">),</span>
+                            <span class="p">(</span><span class="s2">"removed"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_removed</span><span class="p">),</span>
+                            <span class="p">(</span><span class="s2">"changed"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">components_changed</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">items</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">what</span><span class="p">,</span> <span class="n">names</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"added"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_added</span><span class="p">),</span> <span class="p">(</span><span class="s2">"removed"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_removed</span><span class="p">),</span>
+                            <span class="p">(</span><span class="s2">"changed"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns_changed</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">names</span><span class="p">:</span>
+                <span class="n">cols</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">'"</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"column</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">cols</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_changed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">old</span><span class="si">!r}</span><span class="s2"> → </span><span class="si">{</span><span class="n">new</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RecipeResult">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecipeResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The result of a recipe run by :func:`run`."""</span>
+    <span class="c1">#: The recipe, as ``category.name``</span>
+    <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: Its title (the brief of the registry)</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The new session; a tuple for a recipe that opens several (e.g.</span>
+    <span class="c1">#: ``extract_preset`` with two regions); None for a recipe whose result</span>
+    <span class="c1">#: is not a session (``value``)</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="c1">#: The result opens a new session, instead of being the next state of</span>
+    <span class="c1">#: the same one</span>
+    <span class="n">branching</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="c1">#: What changed, compared with the session the recipe ran on; one per</span>
+    <span class="c1">#: session of ``session`` when it is a tuple</span>
+    <span class="n">changes</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="c1">#: The values of the parameters the recipe used, defaults included</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1">#: The warnings the recipe logged</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="c1">#: The recipes it ran as steps, as ``category.name``, in their order</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="c1">#: The result when it is not a session (the redshift of</span>
+    <span class="c1">#: ``detect_anchor``, whether ``export_ascii`` wrote a file)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: What the recipe knows and the comparison cannot see (PR 4b)</span>
+    <span class="n">extra</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="c1">#: Reserved for phase 7 (the algorithms do not provide them yet): the</span>
+    <span class="c1">#: uncertainty of the continuum, the credibility of an identification</span>
+    <span class="c1">#: and its alternatives</span>
+    <span class="n">continuum_uncertainty</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">credibility</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">alternatives</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sessions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The new sessions, always as a tuple."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""One line: the recipe, what changed, the warnings."""</span>
+        <span class="n">all_changes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">changes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">changes</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">changes</span><span class="p">,)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">all_changes</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">describe</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span><span class="si">}</span><span class="s2"> sessions"</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">: "</span> <span class="o">+</span> <span class="p">(</span><span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">parts</span> <span class="k">else</span> <span class="s2">"nothing changed"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">)</span>
+            <span class="n">text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">", with </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> warning</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">text</span> <span class="o">+</span> <span class="s2">"."</span></div>
+
+
+
+<span class="c1"># --- The comparison --------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plain</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A NumPy scalar as a Python one (the result is also read as JSON)."""</span>
+    <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ref</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ComponentRef</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">ComponentRef</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">series</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">_plain</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+                        <span class="n">logN</span><span class="o">=</span><span class="n">_plain</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="p">),</span> <span class="n">b</span><span class="o">=</span><span class="n">_plain</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_components</span><span class="p">(</span><span class="n">session</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'systs'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">systs</span> <span class="k">else</span> <span class="p">[])}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_columns</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'x'</span><span class="p">:</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">:</span> <span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">:</span> <span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="p">}</span>
+    <span class="n">columns</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">columns</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_values</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s1">'values'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="s1">'value'</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_same_column</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s1">'unit'</span><span class="p">,</span> <span class="s1">''</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="s1">'unit'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">va</span><span class="p">,</span> <span class="n">vb</span> <span class="o">=</span> <span class="n">_values</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">_values</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">va</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">vb</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">va</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'fc'</span> <span class="ow">or</span> <span class="n">vb</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">'fc'</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_properties</span><span class="p">(</span><span class="n">session</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolution_summary</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'name'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">'object'</span><span class="p">:</span> <span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OBJECT'</span><span class="p">),</span>
+            <span class="s1">'pixels'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="s1">'z_em'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">),</span>
+            <span class="s1">'resolution'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">resolution_summary</span><span class="p">(</span><span class="n">spec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="s1">'x unit'</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="s1">'y unit'</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">)}</span>
+
+
+<div class="viewcode-block" id="compare_sessions">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_sessions</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Changes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What changed from the session ``before`` to ``after``."""</span>
+    <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="o">=</span> <span class="n">_components</span><span class="p">(</span><span class="n">before</span><span class="p">),</span> <span class="n">_components</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
+    <span class="n">added</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_ref</span><span class="p">(</span><span class="n">new</span><span class="p">[</span><span class="n">u</span><span class="p">])</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">new</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">old</span><span class="p">)</span>
+    <span class="n">removed</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_ref</span><span class="p">(</span><span class="n">old</span><span class="p">[</span><span class="n">u</span><span class="p">])</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">old</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new</span><span class="p">)</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">new</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">old</span><span class="p">:</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="p">(</span><span class="n">_plain</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">old</span><span class="p">[</span><span class="n">u</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span> <span class="n">_plain</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">new</span><span class="p">[</span><span class="n">u</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span>
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">COMPONENT_FIELDS</span>
+                    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">old</span><span class="p">[</span><span class="n">u</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">new</span><span class="p">[</span><span class="n">u</span><span class="p">],</span> <span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)}</span>
+            <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
+                <span class="n">changed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ComponentChange</span><span class="p">(</span><span class="n">_ref</span><span class="p">(</span><span class="n">new</span><span class="p">[</span><span class="n">u</span><span class="p">]),</span> <span class="n">diff</span><span class="p">))</span>
+    <span class="n">cols_old</span> <span class="o">=</span> <span class="n">_columns</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+    <span class="n">cols_new</span> <span class="o">=</span> <span class="n">_columns</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+    <span class="n">p_old</span><span class="p">,</span> <span class="n">p_new</span> <span class="o">=</span> <span class="n">_properties</span><span class="p">(</span><span class="n">before</span><span class="p">),</span> <span class="n">_properties</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
+    <span class="c1"># On another grid (a split, a rebin) every column differs: the change is</span>
+    <span class="c1"># in the pixels, not in the columns that both have</span>
+    <span class="n">same_grid</span> <span class="o">=</span> <span class="n">p_old</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'pixels'</span><span class="p">)</span> <span class="o">==</span> <span class="n">p_new</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'pixels'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Changes</span><span class="p">(</span>
+        <span class="n">components_added</span><span class="o">=</span><span class="n">added</span><span class="p">,</span> <span class="n">components_removed</span><span class="o">=</span><span class="n">removed</span><span class="p">,</span>
+        <span class="n">components_changed</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">changed</span><span class="p">),</span>
+        <span class="n">columns_added</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cols_new</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cols_old</span><span class="p">),</span>
+        <span class="n">columns_removed</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cols_old</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cols_new</span><span class="p">),</span>
+        <span class="n">columns_changed</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cols_new</span> <span class="k">if</span> <span class="n">same_grid</span> <span class="ow">and</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">cols_old</span>
+                              <span class="ow">and</span> <span class="ow">not</span> <span class="n">_same_column</span><span class="p">(</span><span class="n">cols_old</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">cols_new</span><span class="p">[</span><span class="n">n</span><span class="p">])),</span>
+        <span class="n">properties_changed</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="n">p_old</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">p_new</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">p_old</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="n">v</span><span class="p">})</span></div>
+
+
+
+<span class="c1"># --- Running a recipe --------------------------------------------------------</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Warnings</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The warnings logged by Astrocook in one thread."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_id</span> <span class="o">=</span> <span class="n">thread_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">thread</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_id</span> <span class="ow">and</span> <span class="n">record</span><span class="o">.</span><span class="n">levelno</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">getMessage</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">message</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_collect_warnings</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">_Warnings</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">get_ident</span><span class="p">())</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'astrocook'</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">handler</span><span class="o">.</span><span class="n">messages</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="run">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.result.html#astrocook.recipes.result.run">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RecipeResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Run the recipe ``recipe`` (``'category.name'``, or the name alone)</span>
+<span class="sd">    on ``session`` and return its :class:`RecipeResult`.</span>
+
+<span class="sd">    The parameters are given as to the method of the recipe (typed, or as</span>
+<span class="sd">    strings); a recipe that cannot do what was asked raises its</span>
+<span class="sd">    :class:`~astrocook.recipes.errors.RecipeError`, as the method does.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_steps</span><span class="p">,</span> <span class="n">resolve_params</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span><span class="p">,</span> <span class="n">get_recipe</span>
+    <span class="k">if</span> <span class="s1">'.'</span> <span class="ow">in</span> <span class="n">recipe</span><span class="p">:</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">get_recipe</span><span class="p">(</span><span class="o">*</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no recipe </span><span class="si">{</span><span class="n">recipe</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">),</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">_collect_warnings</span><span class="p">()</span> <span class="k">as</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">collect_steps</span><span class="p">()</span> <span class="k">as</span> <span class="n">steps</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">used</span> <span class="o">=</span> <span class="n">resolve_params</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">new</span><span class="p">,</span> <span class="n">changes</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">compare_sessions</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">out</span><span class="p">),</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">):</span>
+        <span class="n">new</span><span class="p">,</span> <span class="n">changes</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">out</span><span class="p">,</span> <span class="n">compare_sessions</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">out</span><span class="p">),</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new</span><span class="p">,</span> <span class="n">changes</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">out</span>
+    <span class="k">return</span> <span class="n">RecipeResult</span><span class="p">(</span><span class="n">recipe</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">),</span>
+                        <span class="n">session</span><span class="o">=</span><span class="n">new</span><span class="p">,</span> <span class="n">branching</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">branching</span><span class="p">,</span> <span class="n">changes</span><span class="o">=</span><span class="n">changes</span><span class="p">,</span>
+                        <span class="n">params</span><span class="o">=</span><span class="n">used</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">warnings</span><span class="p">),</span> <span class="n">steps</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">steps</span><span class="p">),</span>
+                        <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

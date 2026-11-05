@@ -554,8 +554,22 @@ asked (a session that is not open, a file that cannot be read). Catch
 doublets (Red Side) → Auto-detect and fit components → Refit all systems:
 …</em>. A recipe with nothing to do (e.g. <em>Refit All</em> on a session without
 components) is not a failure: it gives the session back and logs a
-warning.
-The recipes and their parameters are listed in the
+warning.</p>
+<p>To know what a recipe did, run it with <code class="docutils literal notranslate"><span class="pre">run</span></code>, which returns its whole
+result: the new session, what changed (the components added, removed and
+changed, the columns, the properties), the warnings, the recipes it ran as
+steps and the values of the parameters it used:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">run</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s2">"absorbers.doublets_auto"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>   <span class="c1"># Auto-fit metal doublets (Red Side): 3 components added; ...</span>
+<span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">changes</span><span class="o">.</span><span class="n">components_added</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+<span class="n">fitted</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">session</span>
+</pre></div>
+</div>
+<p>The recipes and their parameters are listed in the
 <a class="reference internal" href="../api/astrocook.recipes.html"><span class="doc std std-doc">API reference</span></a>.</p>
 </section>
 <section id="saving-the-result">

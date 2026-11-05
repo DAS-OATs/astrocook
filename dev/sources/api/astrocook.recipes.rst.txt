@@ -16,6 +16,7 @@ Submodules
    astrocook.recipes.messages
    astrocook.recipes.params
    astrocook.recipes.registry
+   astrocook.recipes.result
 
 Module contents
 ---------------
