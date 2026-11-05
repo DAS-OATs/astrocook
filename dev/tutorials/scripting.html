@@ -529,16 +529,21 @@ The function returns <code class="docutils literal notranslate"><span class="pre
 <code class="docutils literal notranslate"><span class="pre">session.flux</span></code>, <code class="docutils literal notranslate"><span class="pre">session.continuum</span></code>, <code class="docutils literal notranslate"><span class="pre">session.absorbers</span></code> and
 <code class="docutils literal notranslate"><span class="pre">session.file</span></code>. Each recipe returns a <strong>new</strong> session and leaves the
 original unchanged, so the steps can be chained:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"50.0"</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="mf">50.0</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The parameters are the same as in the recipe dialogs, and are given as
-strings, as typed in the dialogs. If a parameter cannot be understood, the
-recipe logs an error and returns <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, so check the
-result before going on:</p>
+<p>The parameters are the same as in the recipe dialogs. Give them with their
+types (numbers, <code class="docutils literal notranslate"><span class="pre">True</span></code> and <code class="docutils literal notranslate"><span class="pre">False</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code> where a parameter can be left
+out, e.g. the start of <em>Rebin</em>), or as strings, as typed in the dialogs and
+written in the session log (<code class="docutils literal notranslate"><span class="pre">sigma_kms=&quot;50.0&quot;</span></code>): they are converted before
+the recipe runs. A value that cannot be converted, or that has no physical
+meaning (a negative smoothing width, a redshift of -1 or below, a column
+density outside 10-23), stops the recipe: it logs an error that names the
+parameter and returns <code class="docutils literal notranslate"><span class="pre">0</span></code> instead of a session, so check the result before
+going on:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">flux</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="s2">"fifty"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"The recipe failed"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"The recipe failed"</span><span class="p">)</span>  <span class="c1"># sigma_kms: 'fifty' is not a number</span>
 </pre></div>
 </div>
 <p>The recipes and their parameters are listed in the
