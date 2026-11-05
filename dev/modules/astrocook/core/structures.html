@@ -751,7 +751,9 @@
 <span class="w">    </span><span class="sd">""" Warnings left by the last fit of the component (#517), see</span>
 <span class="sd">    :data:`astrocook.fitting.voigt_fitter.COMPONENT_FLAGS`: a parameter</span>
 <span class="sd">    ended at a bound of the fit, or the uncertainties could not be</span>
-<span class="sd">    computed. Cleared when a parameter is edited. """</span>
+<span class="sd">    computed; or ``not_fitted`` (phase 6-bis): Refit All could not fit its</span>
+<span class="sd">    group, and it keeps its values from before. Cleared when a parameter is</span>
+<span class="sd">    edited, and set again by the next fit. """</span>
 
     <span class="c1"># V2 IDENTIFIER: Stable, Global, Immutable</span>
     <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>

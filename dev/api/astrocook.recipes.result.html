@@ -761,7 +761,12 @@ session of <code class="docutils literal notranslate"><span class="pre">session<
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.recipes.result.RecipeResult.extra">
 <span class="sig-name descname"><span class="pre">extra</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.result.RecipeResult.extra" title="Link to this definition">#</a></dt>
-<dd><p>What the recipe knows and the comparison cannot see (PR 4b)</p>
+<dd><p>What the recipe knows and the comparison cannot see (PR 4b):
+<code class="docutils literal notranslate"><span class="pre">removed</span></code> (uuid -&gt; why a component of the session was removed),
+<code class="docutils literal notranslate"><span class="pre">discarded</span></code> (uuid -&gt; why a component the recipe made was dropped,
+e.g. a narrow line of a pipeline), <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code>
+(the components whose group could not be fitted), <code class="docutils literal notranslate"><span class="pre">candidates</span></code> and
+<code class="docutils literal notranslate"><span class="pre">regions</span></code> (the identification of <code class="docutils literal notranslate"><span class="pre">identify_lines</span></code>)</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -815,6 +820,22 @@ and its alternatives</p>
 <dt class="sig sig-object py" id="astrocook.recipes.result.compare_sessions">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">compare_sessions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.recipes.result.Changes" title="astrocook.recipes.result.Changes"><span class="pre">Changes</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#compare_sessions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.compare_sessions" title="Link to this definition">#</a></dt>
 <dd><p>What changed from the session <code class="docutils literal notranslate"><span class="pre">before</span></code> to <code class="docutils literal notranslate"><span class="pre">after</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.report">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.report" title="Link to this definition">#</a></dt>
+<dd><p>Put <code class="docutils literal notranslate"><span class="pre">value</span></code> in the <code class="docutils literal notranslate"><span class="pre">extra</span></code> of the result, under <code class="docutils literal notranslate"><span class="pre">key</span></code>: what a
+recipe knows and the comparison of the sessions cannot see (PR 4b). A
+list value is extended by the steps that report it again. Nothing
+happens outside <a class="reference internal" href="#astrocook.recipes.result.run" title="astrocook.recipes.result.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.result.report_removed">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">report_removed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uuids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#report_removed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.report_removed" title="Link to this definition">#</a></dt>
+<dd><p>Say why the components <code class="docutils literal notranslate"><span class="pre">uuids</span></code> were removed: <code class="docutils literal notranslate"><span class="pre">extra['removed']</span></code>
+maps each to its reason (the comparison lists them, not why).</p>
 </dd></dl>
 
 <dl class="py function">
@@ -925,6 +946,8 @@ strings); a recipe that cannot do what was asked raises its
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.compare_sessions"><code class="docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report_removed"><code class="docutils literal notranslate"><span class="pre">report_removed()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 </ul>
   </nav></div>
