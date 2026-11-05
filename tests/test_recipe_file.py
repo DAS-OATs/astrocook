@@ -69,3 +69,18 @@ def test_export_ascii_whole_spectrum(tmp_path):
     assert session.file.export_ascii(targets="spec", path=str(tmp_path), prefix="qso")
     table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
     assert table.colnames == ["x", "xmin", "xmax", "y", "dy"]
+
+
+def test_export_ascii_does_not_overwrite_unless_asked(tmp_path):
+    # F106: the files were overwritten without a word outside the GUI (the
+    # GUI asks before, F82, and passes overwrite=True)
+    import pytest
+    from astrocook.recipes.errors import RecipeFailed
+    session = _make_session()
+    (tmp_path / "qso_spec.csv").write_text("old")
+    with pytest.raises(RecipeFailed, match="qso_spec.csv already exists .*overwrite=True"):
+        session.file.export_ascii(targets="F, dF", path=str(tmp_path), prefix="qso")
+    assert (tmp_path / "qso_spec.csv").read_text() == "old"
+    assert session.file.export_ascii(targets="F, dF", path=str(tmp_path),
+                                     prefix="qso", overwrite=True)
+    assert (tmp_path / "qso_spec.csv").read_text() != "old"

@@ -21,7 +21,12 @@ FILE_RECIPES_SCHEMAS = {
         "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv.",
         "params": [
             {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
-            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Folder where the files are written."}
+            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Folder where the files are written."},
+            # F106: given by the file dialog of the GUI, required elsewhere
+            {"name": "prefix", "type": str, "default": "", "gui_hidden": True, "doc": "Beginning of the file names: <prefix>_spec.csv and <prefix>_systems.csv."},
+            # F106: the GUI asks before and passes True; a script or an
+            # agent says it (the files were overwritten without a word)
+            {"name": "overwrite", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace the files if they exist; if False, the export stops and names them."}
         ],
         "url": "file_cb.html#export"
     },
@@ -48,7 +53,8 @@ class RecipeFileV2:
         self._tag = 'cb'
 
     @typed_recipe
-    def export_ascii(self, targets: str, path: str, prefix: str) -> bool:
+    def export_ascii(self, targets: str, path: str, prefix: str,
+                     overwrite: bool = False) -> bool:
         """
         Export selected components of the session to ASCII/CSV files.
 
@@ -67,6 +73,11 @@ class RecipeFileV2:
             The destination directory path.
         prefix : str
             The base filename prefix for the exported files.
+        overwrite : bool, optional
+            Replace the files if they exist. If ``False`` (the default) and
+            a file exists, nothing is written and the recipe fails naming the
+            files (F106: they were overwritten without a word outside the
+            GUI, which asks before and passes ``True``).
 
         Returns
         -------
@@ -80,6 +91,14 @@ class RecipeFileV2:
             If a file cannot be written (phase 6-bis, PR 3: it returned False).
         """
         spec_req, write_systems, syst_req, target_list = self._export_targets(targets)
+        outputs = (['spec'] if spec_req else []) + (['systems'] if write_systems else [])
+        existing = [f"{prefix}_{what}.csv" for what in outputs
+                    if os.path.exists(os.path.join(path, f"{prefix}_{what}.csv"))]
+        if existing and not overwrite:
+            raise RecipeFailed(f"{', '.join(existing)} already "
+                               f"{'exists' if len(existing) == 1 else 'exist'} in {path}: "
+                               f"nothing is written. Use overwrite=True to replace "
+                               f"{'it' if len(existing) == 1 else 'them'}.")
         saved_any = False
 
         if spec_req:

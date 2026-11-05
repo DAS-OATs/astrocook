@@ -269,10 +269,13 @@ class MainRecipesMixin:
         
             # 4. EXECUTION
             try:
+                # The user was asked above (F82): the recipe would refuse
+                # to overwrite otherwise (F106)
                 saved = self.active_history.current_state.file.export_ascii(
                     targets=raw_targets,
                     path=folder,
-                    prefix=filename_prefix
+                    prefix=filename_prefix,
+                    overwrite=True
                 )
             except RecipeError as e:
                 # The recipe raises the reason, logged here once (phase

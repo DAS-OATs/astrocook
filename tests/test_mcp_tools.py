@@ -240,3 +240,20 @@ def test_the_components_removed_are_listed_with_their_reason(mock_archive):
     removed = changes["components_removed"]
     assert {c["uuid"] for c in removed} == {c["uuid"] for c in added}
     assert all(c["reason"] for c in removed)
+
+
+def test_export_ascii_as_a_tool(mock_archive, tmp_path):
+    # F106: a tool since the recipe declares its prefix and does not
+    # overwrite unless asked
+    args = {"session_id": "mock", "targets": "F, dF", "path": str(tmp_path),
+            "prefix": "out"}
+    _, first, again, forced = calls(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("file_export_ascii", args),
+        ("file_export_ascii", args),
+        ("file_export_ascii", {**args, "overwrite": True}))
+    assert first.structured_content["value"] is True
+    assert "out_spec.csv already exists" in error_text(again)
+    assert forced.structured_content["value"] is True
+    assert (tmp_path / "out_spec.csv").is_file()

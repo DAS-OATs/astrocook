@@ -52,8 +52,9 @@ def test_what_a_schema_says():
     assert resample["properties"]["target_session"]["x-astrocook-kind"] == "session"
     assert "default" not in parameters_schema(
         get_recipe("flux", "rebin"))["properties"]["filling"]
+    # F106: the prefix of the file names is required, as the folder
     assert parameters_schema(get_recipe("file", "export_ascii"))["required"] == [
-        "path"]
+        "path", "prefix"]
     # The current value of the session: a number or '_current_'
     z_em = parameters_schema(get_recipe("edit", "set_properties"))["properties"]["z_em"]
     assert z_em["type"] == ["number", "string"]
