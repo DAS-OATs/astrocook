@@ -73,8 +73,8 @@ Current version: 2.4.0. Python ≥3.12.
   (headless: `QT_QPA_PLATFORM=offscreen`).
 - Tests: `pytest` (config in `pyproject.toml`), in parallel with
   `pytest -n auto` (pytest-xdist, ~3 minutes instead of ~7; the CI does
-  so); coverage with `pytest --cov=astrocook` (84%, the GUI 84%, the core
-  91%, after phase 6): before changing production code, add
+  so); coverage with `pytest --cov=astrocook` (86%, the GUI 85%, the core
+  92%, after phase 6-bis): before changing production code, add
   characterization tests for the behaviour involved.
 - Warnings are errors in the tests (`filterwarnings = ["error"]` in
   `pyproject.toml`, phase 6): a test that expects a warning says so
@@ -131,7 +131,7 @@ Current version: 2.4.0. Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis and 6 done (October-November 2026; details per item in `ROADMAP.md`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6 and 6-bis done (October-November 2026; details per item in `ROADMAP.md`).
 The safety net: numerical snapshots (pure functions, continuum,
 identification, Voigt model and fit, SpectrumV2 methods, full chain on
 J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
@@ -179,7 +179,7 @@ with the chi2 of the final model). Sequence agreed with Guido (October
 11. phase 6 – error handling (done), then release 2.4.0 (done);
 12. phase 6-bis – recipe API (typed parameters, structured results,
     exceptions), from the report of the MCP pilot; with F12 (moved from
-    phase 5);
+    phase 5) (done);
 13. full MCP server, with a headless Docker image, its tools generated
     from the recipe registry;
 14. phase 7 – robust components: emission model and
@@ -316,9 +316,23 @@ with the macOS app, not on PyPI (INAF has not answered, #549). The
 results on the mock benchmark unchanged (the *Accuracy* page as for
 2.2.0); the behaviour on failures changes (a minor version, not 2.3.1).
 
-Now: phase 6-bis (recipe API; `ROADMAP.md`, phase 6-bis, "Plan of the
-phase": PRs 0-8); the scheme of the prerequisites refined with Guido
-during PRs 1-3. Work in
+Phase 6-bis done (November 2026, PRs #705-#723; `ROADMAP.md`, phase
+6-bis, "Result of the phase"): one read-only registry of the recipes
+(`recipes/registry.py`: types, bounds, choices, kinds, `requires` and
+`provides`, the parameters offered to agents), typed parameters converted
+at the boundary (`typed_recipe`), exceptions (`recipes/errors.py`) instead
+of `return 0`, the structured result (`recipes/result.py`, `run`), the
+prerequisites (`recipes/prerequisites.py`: the policy of the scripts, the
+GUI asks, the MCP server says), all the texts reviewed, the MCP pilot on
+the new API and the generator of the schemas of the tools
+(`mcp_server/schemas.py`). Numbers unchanged but F102 and F103 (Guido's
+decisions). Found and fixed F49 (rest), F50/F55 (parameters), F102-F105;
+left F101 (script console), F102 for `forest_auto`. For later: the review
+of the parameters recipe by recipe (phase 6-ter or phase 7), the
+collections of elements to fill parameters (phase 7).
+
+Now: the next step to be agreed with Guido (a release, the full MCP
+server of item 13, a phase 6-ter). Work in
 small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
 `claude/...` branch (agreed with Guido; say which branch).
 
